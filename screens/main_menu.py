@@ -65,9 +65,9 @@ class MainMenu(QWidget):
             x=button_x, y=start_y + 0 * self.button_spacing, w=250, h=60,
             font_family=self.c_font_b, preset=3
         )
-        self.level_select_button = self.create.button(
+        self.song_select_button = self.create.button(
             "ВЫБОР ПЕСНИ",
-            lambda: self.transitions.open_level_select(),
+            lambda: self.transitions.open_song_select(),
             x=button_x,
             y=start_y + 1 * self.button_spacing,
             w=250,
@@ -99,7 +99,7 @@ class MainMenu(QWidget):
 
         self.widgets_to_restore = [
             self.background_label, self.title_label,
-            self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button
+            self.start_button, self.song_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button
         ]
 
         for widget in self.widgets_to_restore:
@@ -114,9 +114,9 @@ class MainMenu(QWidget):
             widget.move(original_pos)
 
     def disable_buttons(self):
-        for btn in [self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
+        for btn in [self.start_button, self.song_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
             btn.setDisabled(True)
 
     def enable_buttons(self):
-        for btn in [self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
+        for btn in [self.start_button, self.song_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
             btn.setDisabled(False)

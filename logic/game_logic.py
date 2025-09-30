@@ -12,7 +12,7 @@ from logic.music_manager import MusicManager
 from logic.notification_manager import NotificationManager
 from logic.transitions import Transitions
 from screens.game_screen import GameScreen
-from screens.level_select import LevelSelect
+from screens.song_select import SongSelect
 from screens.pause_menu import PauseMenu
 from screens.settings_menu import SettingsMenu
 from screens.main_menu import MainMenu
@@ -40,8 +40,8 @@ class GameEngine(QStackedWidget):
         self.addWidget(self.intro)
         self.addWidget(self.main_menu)
 
-        self.level_select = LevelSelect(parent=self)
-        self.addWidget(self.level_select)
+        self.song_select = SongSelect(parent=self)
+        self.addWidget(self.song_select)
 
         self.settings_menu = SettingsMenu(self)
         self.addWidget(self.settings_menu)

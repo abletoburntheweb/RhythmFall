@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QPushButton, QLabel, QCheckBox, QSlider, QFrame, QVBoxLayout, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QPushButton, QLabel, QCheckBox, QSlider, QFrame, QVBoxLayout, QHBoxLayout, QWidget, \
+    QLineEdit, QListWidget
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 
@@ -454,6 +455,94 @@ class Create:
         title_label.setStyleSheet("color: white; font-size: 48px; font-weight: bold;")
         title_label.setAlignment(Qt.AlignCenter)
         return title_label
-    
+
+    def song_select_search_bar(self):
+        search_bar = QLineEdit(self.parent)
+        search_bar.setPlaceholderText("Поиск по названию или исполнителю...")
+        search_bar.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(0,0,0,0.7);
+                color: white;
+                font-size: 20px;
+                border: 1px solid rgba(255,255,255,0.5);
+                border-radius: 12px;
+                padding: 8px 15px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #00bfff;
+                background-color: rgba(0,0,0,0.8);
+            }
+        """)
+        return search_bar
+
+    def song_select_song_count_label(self, count):
+        label = QLabel(f"Песен: {count}", self.parent)
+        label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
+        return label
+
+    def song_select_list_widget(self):
+        list_widget = QListWidget(self.parent)
+        list_widget.setStyleSheet("""
+            QListWidget { 
+                background-color: rgba(0,0,0,0.65); 
+                border-radius: 15px; 
+                padding: 10px;
+            }
+            QListWidget::item { 
+                color: white; 
+                padding: 18px; 
+                font-size: 50px; 
+            }
+            QListWidget::item:selected { 
+                background-color: rgba(255,255,255,0.25); 
+                border-radius: 8px;
+            }
+            QListWidget::item:hover { 
+                background-color: rgba(255,255,255,0.15); 
+                border-radius: 8px;
+            }
+            QListWidget::item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        """)
+        return list_widget
+
+    def song_select_details_frame(self):
+        frame = QFrame(self.parent)
+        frame.setStyleSheet("background-color: rgba(0,0,0,0.6); border-radius: 15px;")
+        return frame
+
+    def song_select_cover_label(self):
+        label = QLabel(self.parent)
+        label.setFixedSize(400, 400)
+        label.setStyleSheet("background-color: gray; border-radius: 10px;")
+        label.setAlignment(Qt.AlignCenter)
+        return label
+
+    def song_select_info_label(self, text, font_size=22, bold=True):
+        label = QLabel(text, self.parent)
+        label.setStyleSheet(f"color: white; font-size: {font_size}px; font-weight: {'bold' if bold else 'normal'};")
+        return label
+
+    def song_select_button(self, text, callback, fixed_height=60):
+        button = QPushButton(text, self.parent)
+        button.setFixedHeight(fixed_height)
+        button.setStyleSheet("""
+            QPushButton {
+                font-size: 22px;
+                color: white;
+                background-color: rgba(0,0,0,0.5);
+                border-radius: 10px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255,255,255,0.2);
+            }
+        """)
+        button.clicked.connect(callback)
+        return button
+
+    def song_select_separator(self):
+        separator = QFrame(self.parent)
+        separator.setFrameShape(QFrame.HLine)
+        separator.setStyleSheet("background-color: rgba(255,255,255,0.1);")
+        return separator
     def callback(self, callback):
         callback()

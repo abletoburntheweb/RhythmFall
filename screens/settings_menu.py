@@ -4,6 +4,12 @@ from logic.creation import Create
 from logic.transitions import Transitions
 
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QMessageBox
+from logic.creation import Create
+from logic.transitions import Transitions
+
+
 class SettingsMenu(QWidget):
     def __init__(self, parent=None, settings=None, game_screen=None):
         super().__init__(parent)
@@ -62,6 +68,18 @@ class SettingsMenu(QWidget):
         sfx_block.addWidget(self.fullscreen_checkbox)
         layout.addLayout(sfx_block)
 
+        preview_block = QVBoxLayout()
+        preview_label, self.preview_slider = self.create.slider(
+            "Громкость предпросмотра",
+            min_value=0,
+            max_value=100,
+            value=self.parent.settings.get("preview_volume", 70),
+            callback=self.update_preview_volume,
+        )
+        preview_block.addWidget(preview_label)
+        preview_block.addWidget(self.preview_slider)
+        layout.addLayout(preview_block)
+
         layout.addSpacing(40)
 
         self.controls_checkbox = self.create.checkbox(
@@ -106,6 +124,15 @@ class SettingsMenu(QWidget):
             self.parent.settings["effects_volume"] = value
             self.parent.music_manager.set_sfx_volume(value)
             self.parent.save_settings()
+
+    def update_preview_volume(self, value):
+        if self.parent:
+            self.parent.settings["preview_volume"] = value
+            self.parent.save_settings()
+            print(f"[Settings] Громкость предпросмотра: {value}")
+
+            if hasattr(self.parent, "song_select") and self.parent.song_select:
+                self.parent.song_select.set_preview_volume(value)
 
     def toggle_fps(self, state):
         if self.parent:

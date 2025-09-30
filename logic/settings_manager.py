@@ -6,6 +6,7 @@ DEFAULT_SETTINGS = {
     "fullscreen": False,
     "music_volume": 50,
     "effects_volume": 80,
+    "preview_volume": 70,
     "show_fps": False
 }
 

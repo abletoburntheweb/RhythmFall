@@ -22,6 +22,7 @@ class MusicManager:
 
     def _get_full_path(self, filename):
         return os.path.join(self.AUDIO_DIR, filename)
+
     def set_music_volume(self, volume):
         self.music_player.setVolume(volume)
 
@@ -35,17 +36,22 @@ class MusicManager:
             if current and current.canonicalUrl().toString() == QUrl.fromLocalFile(music_path).toString():
                 print("Музыка уже играет. Ничего не делаем.")
                 return
+
             self.music_player.stop()
+
             media_content = QMediaContent(QUrl.fromLocalFile(music_path))
             self.music_player.setMedia(media_content)
             self.music_player.setPosition(0)
+
             if loop:
                 self.music_player.mediaStatusChanged.connect(self.loop_music)
+
             self.music_player.play()
         except Exception as e:
             print(f"Ошибка воспроизведения музыки: {e}")
 
     def loop_music(self, status):
+
         if status == QMediaPlayer.EndOfMedia:
             self.music_player.setPosition(0)
             self.music_player.play()
@@ -71,3 +77,4 @@ class MusicManager:
 
     def play_cancel_sound(self):
         self.play_sfx(self.cancel_sound)
+

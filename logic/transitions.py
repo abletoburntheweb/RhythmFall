@@ -51,22 +51,35 @@ def transition_close_game(parent):
     main_menu.show()
     main_menu.is_game_open = False
 
-def transition_open_level_select(parent):
-    from screens.level_select import LevelSelect
-    if hasattr(parent, "level_select") and parent.level_select:
-        parent.removeWidget(parent.level_select)
-        parent.level_select.deleteLater()
-        parent.level_select = None
+def transition_open_song_select(parent):
+    if not hasattr(parent, "main_menu") or not parent.main_menu.is_intro_finished:
+        return
 
-    parent.level_select = LevelSelect(parent=parent)
-    parent.addWidget(parent.level_select)
-    parent.setCurrentWidget(parent.level_select)
+    if hasattr(parent, "music_manager"):
+        parent.music_manager.stop_music()
 
-def transition_close_level_select(parent):
-    if hasattr(parent, "level_select") and parent.level_select:
-        parent.removeWidget(parent.level_select)
-        parent.level_select.deleteLater()
-        parent.level_select = None
+    from screens.song_select import SongSelect
+    if hasattr(parent, "song_select") and parent.song_select:
+        parent.removeWidget(parent.song_select)
+        parent.song_select.deleteLater()
+        parent.song_select = None
+
+    parent.song_select = SongSelect(parent=parent)
+    parent.addWidget(parent.song_select)
+    parent.setCurrentWidget(parent.song_select)
+
+    parent.song_select.start_preview_music()
+
+def transition_close_song_select(parent):
+    if hasattr(parent, "song_select") and parent.song_select:
+        parent.song_select.music_player.stop()
+        parent.removeWidget(parent.song_select)
+        parent.song_select.deleteLater()
+        parent.song_select = None
+
+    if hasattr(parent, "music_manager"):
+        parent.music_manager.play_music(parent.music_manager.menu_music)
+
     parent.setCurrentWidget(parent.main_menu)
     parent.main_menu.show()
 
@@ -279,11 +292,11 @@ class Transitions:
     def close_game(self):
         transition_close_game(self.parent)
 
-    def open_level_select(self):
-        transition_open_level_select(self.parent)
+    def open_song_select(self):
+        transition_open_song_select(self.parent)
 
-    def close_level_select(self):
-        transition_close_level_select(self.parent)
+    def close_song_select(self):
+        transition_close_song_select(self.parent)
 
     def resume_game(self):
         transition_resume_game(self.parent)
