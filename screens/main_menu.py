@@ -65,31 +65,41 @@ class MainMenu(QWidget):
             x=button_x, y=start_y + 0 * self.button_spacing, w=250, h=60,
             font_family=self.c_font_b, preset=3
         )
+        self.level_select_button = self.create.button(
+            "ВЫБОР ПЕСНИ",
+            lambda: self.transitions.open_level_select(),
+            x=button_x,
+            y=start_y + 1 * self.button_spacing,
+            w=250,
+            h=60,
+            font_family=self.c_font_b,
+            preset=3
+        )
         self.achievements_button = self.create.button(
             "ДОСТИЖЕНИЯ", self.transitions.open_achievements,
-            x=button_x, y=start_y + 1 * self.button_spacing, w=250, h=60,
+            x=button_x, y=start_y + 2 * self.button_spacing, w=250, h=60,
             font_family=self.c_font_b, preset=3
         )
         self.shop_button = self.create.button(
             "МАГАЗИН", self.transitions.open_shop,
             x=button_x,
-            y=start_y + 2 * self.button_spacing,
+            y=start_y + 3 * self.button_spacing,
             w=250, h=60,
             font_family=self.c_font_b,
             preset=3
         )
         self.settings_button = self.create.button(
-            "НАСТРОЙКИ", self.transitions.open_settings, x=button_x, y=start_y + 3 * self.button_spacing, w=250, h=60,
+            "НАСТРОЙКИ", self.transitions.open_settings, x=button_x, y=start_y + 4 * self.button_spacing, w=250, h=60,
             font_family=self.c_font_b, preset=3
         )
         self.exit_button = self.create.button(
-            "ВЫХОД", self.transitions.exit_game, x=button_x, y=start_y + 4 * self.button_spacing, w=250, h=60,
+            "ВЫХОД", self.transitions.exit_game, x=button_x, y=start_y + 5 * self.button_spacing, w=250, h=60,
             font_family=self.c_font_b, preset=3
         )
 
         self.widgets_to_restore = [
             self.background_label, self.title_label,
-            self.start_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button
+            self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button
         ]
 
         for widget in self.widgets_to_restore:
@@ -104,9 +114,9 @@ class MainMenu(QWidget):
             widget.move(original_pos)
 
     def disable_buttons(self):
-        for btn in [self.start_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
+        for btn in [self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
             btn.setDisabled(True)
 
     def enable_buttons(self):
-        for btn in [self.start_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
+        for btn in [self.start_button, self.level_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button]:
             btn.setDisabled(False)

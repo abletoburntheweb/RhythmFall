@@ -72,7 +72,6 @@ class GameScreen(QWidget):
     def check_hit(self, lane):
         for note in self.notes:
             if note.lane == lane and isinstance(note, HoldNote):
-                # включаем удержание только если нота в зоне попадания
                 if abs(note.y - self.hit_zone_y) < 30:
                     note.is_being_held = True
                     print(f"HOLD lane {lane} захвачена")
@@ -99,7 +98,6 @@ class GameScreen(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        # дорожки
         for i in range(self.lanes):
             x = i * self.lane_width
             color = QColor(80, 80, 120) if self.player.lanes_state[i] else QColor(40, 40, 40)

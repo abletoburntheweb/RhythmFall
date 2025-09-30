@@ -51,6 +51,24 @@ def transition_close_game(parent):
     main_menu.show()
     main_menu.is_game_open = False
 
+def transition_open_level_select(parent):
+    from screens.level_select import LevelSelect
+    if hasattr(parent, "level_select") and parent.level_select:
+        parent.removeWidget(parent.level_select)
+        parent.level_select.deleteLater()
+        parent.level_select = None
+
+    parent.level_select = LevelSelect(parent=parent)
+    parent.addWidget(parent.level_select)
+    parent.setCurrentWidget(parent.level_select)
+
+def transition_close_level_select(parent):
+    if hasattr(parent, "level_select") and parent.level_select:
+        parent.removeWidget(parent.level_select)
+        parent.level_select.deleteLater()
+        parent.level_select = None
+    parent.setCurrentWidget(parent.main_menu)
+    parent.main_menu.show()
 
 def transition_resume_game(parent):
     if not hasattr(parent, "game_screen"):
@@ -260,6 +278,12 @@ class Transitions:
 
     def close_game(self):
         transition_close_game(self.parent)
+
+    def open_level_select(self):
+        transition_open_level_select(self.parent)
+
+    def close_level_select(self):
+        transition_close_level_select(self.parent)
 
     def resume_game(self):
         transition_resume_game(self.parent)

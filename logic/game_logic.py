@@ -12,6 +12,7 @@ from logic.music_manager import MusicManager
 from logic.notification_manager import NotificationManager
 from logic.transitions import Transitions
 from screens.game_screen import GameScreen
+from screens.level_select import LevelSelect
 from screens.pause_menu import PauseMenu
 from screens.settings_menu import SettingsMenu
 from screens.main_menu import MainMenu
@@ -38,6 +39,9 @@ class GameEngine(QStackedWidget):
         self.intro = IntroAnimation(parent=self, main_menu_widget=self.main_menu)
         self.addWidget(self.intro)
         self.addWidget(self.main_menu)
+
+        self.level_select = LevelSelect(parent=self)
+        self.addWidget(self.level_select)
 
         self.settings_menu = SettingsMenu(self)
         self.addWidget(self.settings_menu)

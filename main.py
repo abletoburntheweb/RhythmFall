@@ -11,7 +11,7 @@ if __name__ == "__main__":
         print("Запуск цикла событий...")
         game.setFixedSize(1920, 1080)
         game.move(0,0)
-        game.setWindowTitle("BOLLS")
+        game.setWindowTitle("RhythmFall")
         sys.exit(app.exec_())
     except Exception as e:
         print(f"Ошибка: {e}")
