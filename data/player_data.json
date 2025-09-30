@@ -1,0 +1,11 @@
+{
+    "currency": 455415,
+    "items": {
+    },
+    "active_items": {
+        "Balls": "ball_default",
+        "Platforms": "platform_default",
+        "Backgrounds": "background_default",
+        "Misc": null
+    }
+}

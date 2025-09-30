@@ -1,0 +1,94 @@
+{
+    "achievements": [
+        {
+            "id": 1,
+            "title": "Достижение 1",
+            "description": "Описание для достижения 1",
+            "unlocked": false,
+            "current": 0,
+            "total": 10,
+            "image": "assets/achievements/1.png"
+        },
+        {
+            "id": 2,
+            "title": "Достижение 2",
+            "description": "Описание для достижения 2",
+            "unlocked": false,
+            "current": 0,
+            "total": 20,
+            "image": "assets/achievements/2.png"
+        },
+        {
+            "id": 3,
+            "title": "Достижение 3",
+            "description": "Описание для достижения 3",
+            "unlocked": false,
+            "current": 0,
+            "total": 30,
+            "image": "assets/achievements/3.png"
+        },
+        {
+            "id": 4,
+            "title": "Достижение 4",
+            "description": "Описание для достижения 4",
+            "unlocked": false,
+            "current": 0,
+            "total": 40,
+            "image": "assets/achievements/4.png"
+        },
+        {
+            "id": 5,
+            "title": "Достижение 5",
+            "description": "Описание для достижения 5",
+            "unlocked": false,
+            "current": 0,
+            "total": 50,
+            "image": "assets/achievements/5.png"
+        },
+        {
+            "id": 6,
+            "title": "Достижение 6",
+            "description": "Описание для достижения 6",
+            "unlocked": false,
+            "current": 0,
+            "total": 1,
+            "image": "assets/achievements/6.png"
+        },
+        {
+            "id": 7,
+            "title": "Достижение 7",
+            "description": "Описание для достижения 7",
+            "unlocked": false,
+            "current": 0,
+            "total": 3,
+            "image": "assets/achievements/7.png"
+        },
+        {
+            "id": 8,
+            "title": "Достижение 8",
+            "description": "Описание для достижения 8",
+            "unlocked": false,
+            "current": 0,
+            "total": 9,
+             "image": "assets/achievements/8.png"
+        },
+        {
+            "id": 9,
+            "title": "Достижение 9",
+            "description": "Описание для достижения 9",
+            "unlocked": false,
+            "current": 0,
+            "total": 15,
+            "image": "assets/achievements/9.png"
+        },
+        {
+            "id": 10,
+            "title": "Достижение 10",
+            "description": "Описание для достижения 10",
+            "unlocked": false,
+            "current": 0,
+            "total": 10,
+            "image": "assets/achievements/10.png"
+        }
+    ]
+}
