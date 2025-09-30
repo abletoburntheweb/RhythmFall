@@ -12,7 +12,7 @@ from logic.music_manager import MusicManager
 from logic.notification_manager import NotificationManager
 from logic.transitions import Transitions
 from screens.game_screen import GameScreen
-from screens.song_select import SongSelect
+from screens.song_select_screen import SongSelect
 from screens.pause_menu import PauseMenu
 from screens.settings_menu import SettingsMenu
 from screens.main_menu import MainMenu

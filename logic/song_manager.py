@@ -3,9 +3,11 @@ import shutil
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3
 from pydub import AudioSegment
+from .tempo_finder import get_bpm
 
 SONG_FOLDER = "songs"
 PREVIEW_FOLDER = os.path.join("temp", "previews")
+
 
 class SongManager:
     def __init__(self):
@@ -22,6 +24,7 @@ class SongManager:
             if file.lower().endswith(".mp3"):
                 path = os.path.join(SONG_FOLDER, file)
                 metadata = self.read_mp3_metadata(path)
+                metadata['bpm'] = get_bpm(path) or "Н/Д"
                 self.songs.append(metadata)
 
     def read_mp3_metadata(self, filepath):
@@ -87,5 +90,6 @@ class SongManager:
         if not os.path.exists(dest_path):
             shutil.copy(file_path, dest_path)
         metadata = self.read_mp3_metadata(dest_path)
+        metadata['bpm'] = get_bpm(dest_path) or "Н/Д"
         self.songs.append(metadata)
         return metadata

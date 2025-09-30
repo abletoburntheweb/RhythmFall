@@ -17,6 +17,8 @@ class MusicManager:
         self.music_player = QMediaPlayer()
         self.sfx_player = QMediaPlayer()
 
+        self.current_music = None
+
         self.set_music_volume(settings.get("music_volume", 50))
         self.set_sfx_volume(settings.get("effects_volume", 80))
 
@@ -29,15 +31,16 @@ class MusicManager:
     def set_sfx_volume(self, volume):
         self.sfx_player.setVolume(volume)
 
-    def play_music(self, music_file, loop=True):
+    def play_music(self, music_file, loop=True, restart=False):
         music_path = self._get_full_path(music_file)
+
         try:
-            current = self.music_player.currentMedia()
-            if current and current.canonicalUrl().toString() == QUrl.fromLocalFile(music_path).toString():
+            if self.current_music == music_path and not restart:
                 print("Музыка уже играет. Ничего не делаем.")
                 return
 
-            self.music_player.stop()
+            self.stop_music()
+            self.current_music = music_path
 
             media_content = QMediaContent(QUrl.fromLocalFile(music_path))
             self.music_player.setMedia(media_content)
@@ -51,7 +54,6 @@ class MusicManager:
             print(f"Ошибка воспроизведения музыки: {e}")
 
     def loop_music(self, status):
-
         if status == QMediaPlayer.EndOfMedia:
             self.music_player.setPosition(0)
             self.music_player.play()
@@ -59,12 +61,14 @@ class MusicManager:
     def stop_music(self):
         try:
             self.music_player.stop()
+            self.current_music = None
             try:
                 self.music_player.mediaStatusChanged.disconnect()
             except TypeError:
                 pass
         except Exception as e:
             print(f"Ошибка остановки музыки: {e}")
+
 
     def play_sfx(self, sound_path):
         full_path = self._get_full_path(sound_path)

@@ -58,7 +58,7 @@ def transition_open_song_select(parent):
     if hasattr(parent, "music_manager"):
         parent.music_manager.stop_music()
 
-    from screens.song_select import SongSelect
+    from screens.song_select_screen import SongSelect
     if hasattr(parent, "song_select") and parent.song_select:
         parent.removeWidget(parent.song_select)
         parent.song_select.deleteLater()
@@ -72,16 +72,17 @@ def transition_open_song_select(parent):
 
 def transition_close_song_select(parent):
     if hasattr(parent, "song_select") and parent.song_select:
-        parent.song_select.music_player.stop()
+        parent.song_select.stop_preview()
         parent.removeWidget(parent.song_select)
         parent.song_select.deleteLater()
         parent.song_select = None
 
     if hasattr(parent, "music_manager"):
-        parent.music_manager.play_music(parent.music_manager.menu_music)
+        parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
 
     parent.setCurrentWidget(parent.main_menu)
     parent.main_menu.show()
+
 
 def transition_resume_game(parent):
     if not hasattr(parent, "game_screen"):
