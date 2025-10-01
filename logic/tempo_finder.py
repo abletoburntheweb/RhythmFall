@@ -14,7 +14,6 @@ os.makedirs(SONGS_DIR, exist_ok=True)
 BPM_CACHE = {}
 if os.path.exists(CACHE_FILE):
     try:
-        # если файл пустой — инициализируем пустым объектом
         if os.path.getsize(CACHE_FILE) == 0:
             with open(CACHE_FILE, "w", encoding="utf-8") as f:
                 f.write("{}")
@@ -31,6 +30,14 @@ if os.path.exists(CACHE_FILE):
 else:
     BPM_CACHE = {}
 
+# 📌 Словарь эталонных BPM для принта expected
+EXPECTED_BPMS = {
+    "daydreaming": 113,
+    "hyperpop5demo": 157,
+    "killshot - eminem": 106,
+    "listen! - hako": 134,
+    "motto - nf": 80
+}
 
 def get_bpm(file_path, chunk_ms=20, min_bpm=60, max_bpm=200, save_cache=True):
     fname = os.path.basename(file_path).lower()
@@ -84,12 +91,12 @@ def get_bpm(file_path, chunk_ms=20, min_bpm=60, max_bpm=200, save_cache=True):
 
         bpm = int(round(bpm))
 
-        # 🎵 тест с "эталонными" темпами
+        # 🎵 поиск expected BPM через словарь
         expected = None
-        if "daydreaming" in fname:
-            expected = 113
-        elif "hyperpop5demo" in fname:
-            expected = 157
+        for key, val in EXPECTED_BPMS.items():
+            if key in fname:
+                expected = val
+                break
 
         if expected:
             print(f"{fname}: expected {expected}, got {bpm}")
