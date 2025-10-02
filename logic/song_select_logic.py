@@ -1,5 +1,7 @@
-# logic/song_select_logic.py
+# logic/song_select_logic.py    
 import os
+import json
+from pathlib import Path
 
 from PyQt5.QtWidgets import QInputDialog, QFileDialog, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QFont, QColor
@@ -7,6 +9,10 @@ from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from collections import defaultdict
 
+from logic.note_generator import generate_notes_for_song, save_notes_to_file
+
+SONGS_DIR = Path("songs")
+BPM_CACHE_FILE = SONGS_DIR / "bpms.json"
 
 class SongSelectLogic:
     def __init__(self, song_select_widget, song_manager):
@@ -157,7 +163,6 @@ class SongSelectLogic:
             self.song_select._fade_timer.stop()
 
     def toggle_edit_mode(self):
-        """Переключение режима редактирования"""
         self.song_select.edit_mode = not self.song_select.edit_mode
 
         text = "Редактировать"
@@ -240,6 +245,63 @@ class SongSelectLogic:
 
             print(f"Год обновлен: {old_year} -> {new_year}")
 
+    def bpm_double_clicked(self, event):
+        if not self.song_select.edit_mode or not self.song_select.selected_song:
+            return
+
+        current_bpm_str = self.song_select.selected_song.get('bpm', 'Н/Д')
+        current_bpm = '0'
+        if isinstance(current_bpm_str, (int, float)) or (
+                isinstance(current_bpm_str, str) and current_bpm_str.isdigit()):
+            current_bpm = str(current_bpm_str)
+
+        new_bpm_str, ok = QInputDialog.getText(
+            self.song_select,
+            "Редактировать BPM",
+            "Введите новый BPM (60-200):",
+            text=current_bpm
+        )
+
+        if ok and new_bpm_str:
+            try:
+                new_bpm = int(new_bpm_str)
+
+                if 60 <= new_bpm <= 200:
+                    old_bpm = self.song_select.selected_song.get('bpm', 'Н/Д')
+                    self.song_select.selected_song['bpm'] = new_bpm
+
+                    self._update_bpm_cache(self.song_select.selected_song["path"], new_bpm)
+
+                    self.song_manager.update_song_metadata(self.song_select.selected_song)
+
+                    print(f"BPM обновлен: {old_bpm} -> {new_bpm}")
+                else:
+                    print(f"Введенный BPM {new_bpm} вне допустимого диапазона (60-200).")
+            except ValueError:
+                print(f"Введено некорректное значение BPM: {new_bpm_str}. Ожидалось число.")
+                pass
+
+    def _update_bpm_cache(self, song_path, new_bpm):
+        filename = Path(song_path).name.lower()
+
+        cache = {}
+        if BPM_CACHE_FILE.exists():
+            try:
+                with open(BPM_CACHE_FILE, 'r', encoding='utf-8') as f:
+                    cache = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                print(f"⚠️ Ошибка загрузки кэша BPM {BPM_CACHE_FILE}: {e}")
+                cache = {}
+
+        cache[filename] = new_bpm
+
+        try:
+            with open(BPM_CACHE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(cache, f, ensure_ascii=False, indent=4)
+            print(f"BPM кэш обновлен для {filename}: {new_bpm}")
+        except Exception as e:
+            print(f"Ошибка сохранения кэша BPM в {BPM_CACHE_FILE}: {e}")
+
     def cover_double_clicked(self, event):
         if not self.song_select.edit_mode or not self.song_select.selected_song:
             return
@@ -268,14 +330,57 @@ class SongSelectLogic:
             except Exception as e:
                 print(f"Ошибка при обновлении обложки: {e}")
 
+    def play_selected_song(self):
+        if self.song_select.selected_song and hasattr(self.song_select.parent, "transitions"):
+            import json
+            from pathlib import Path
+
+            song_path = self.song_select.selected_song["path"]
+            base_name = Path(song_path).stem
+            notes_file_path = Path("songs") / "notes" / f"{base_name}.json"
+
+            if notes_file_path.exists():
+                print(f"Найден файл нот: {notes_file_path}")
+            else:
+                print(f"Файл нот не найден для {song_path}. Генерация не производилась или файл удален.")
+
+            self.song_select.parent.transitions.open_game_with_song(self.song_select.selected_song)
+
     def add_song(self):
-        filepath, _ = QFileDialog.getOpenFileName(self.song_select, "Select MP3", "", "MP3 Files (*.mp3)")
+        filepath, _ = QFileDialog.getOpenFileName(self.song_select, "Select Song", "", "Audio Files (*.mp3 *.wav)")
         if filepath:
             metadata = self.song_manager.add_song(filepath)
             if metadata:
                 self.populate_song_list()
                 self.song_select.list_widget.setCurrentRow(len(self.song_manager.songs) - 1)
                 self.song_select.song_count_label.setText(f"Песен: {len(self.song_manager.songs)}")
+
+    def generate_notes(self):
+        if not self.song_select.selected_song:
+            print("Нет выбранной песни для генерации нот.")
+            return
+
+        song_path = self.song_select.selected_song["path"]
+        song_bpm = self.song_select.selected_song.get("bpm")
+
+        if not song_bpm:
+            print(f"Для песни {os.path.basename(song_path)} не указан BPM. Невозможно сгенерировать ноты.")
+            return
+
+        try:
+            notes_data = generate_notes_for_song(song_path, song_bpm)
+
+            if notes_data:
+                success = save_notes_to_file(notes_data, song_path)
+                if success:
+                    print(f"Ноты успешно сгенерированы и сохранены для {os.path.basename(song_path)}")
+                else:
+                    print(f"Не удалось сохранить ноты для {os.path.basename(song_path)}")
+            else:
+                print(f"Не удалось сгенерировать ноты для {os.path.basename(song_path)}")
+
+        except Exception as e:
+            print(f"Ошибка при генерации нот для {os.path.basename(song_path)}: {e}")
 
     def delete_song(self):
         if not self.song_select.selected_song:

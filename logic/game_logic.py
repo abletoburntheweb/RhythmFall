@@ -18,6 +18,7 @@ from screens.settings_menu import SettingsMenu
 from screens.main_menu import MainMenu
 from logic.settings_manager import load_settings, save_settings
 from screens.shop_screen import ShopScreen
+from logic.song_manager import SongManager
 
 
 class GameEngine(QStackedWidget):
@@ -32,6 +33,9 @@ class GameEngine(QStackedWidget):
         self.notification_manager.set_parent(self)
         self.currentChanged.connect(self.on_screen_changed)
         self.transitions = Transitions(self)
+
+        self.song_manager = SongManager()
+
         self.init_screens()
 
     def init_screens(self):
@@ -40,7 +44,7 @@ class GameEngine(QStackedWidget):
         self.addWidget(self.intro)
         self.addWidget(self.main_menu)
 
-        self.song_select = SongSelect(parent=self)
+        self.song_select = SongSelect(parent=self, song_manager=self.song_manager)
         self.addWidget(self.song_select)
 
         self.settings_menu = SettingsMenu(self)

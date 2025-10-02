@@ -1,3 +1,4 @@
+# logic/notes.py
 class BaseNote:
     def __init__(self, lane, y=0, height=20):
         self.lane = lane
@@ -27,24 +28,26 @@ class HoldNote(BaseNote):
         self.hit_progress = 0.0
         self.is_being_held = False
         self.captured = False
-        self.speed = 6
+        self.fall_speed = 6
 
-    def update(self, delta_ms=16):
+    def update(self, speed=None, delta_ms=16):
+        current_fall_speed = speed if speed is not None else self.fall_speed
+
         if self.is_being_held and not self.captured:
             self.held_time += delta_ms
             self.hit_progress = min(self.held_time / self.hold_time, 1.0)
 
-            # Если полностью удержана
             if self.hit_progress >= 1.0:
                 self.captured = True
                 self.active = False
         else:
-            self.y += self.speed
+            self.y += current_fall_speed
 
         if self.y > 1080 and not self.captured:
             self.active = False
 
     def on_hit(self):
-        self.active = False
-        return 100
 
+        if not self.is_being_held and not self.captured:
+             self.active = False
+        return 100

@@ -1,6 +1,7 @@
 import os
 import shutil
 import random
+import json
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TDRC, TPE1, TIT2
 from pydub import AudioSegment
@@ -8,25 +9,73 @@ from .tempo_finder import get_bpm
 
 SONG_FOLDER = "songs"
 PREVIEW_FOLDER = os.path.join("temp", "previews")
+CACHE_FILE = os.path.join("data", "songs_cache.json")
 
 
 class SongManager:
     def __init__(self):
         os.makedirs(SONG_FOLDER, exist_ok=True)
         os.makedirs(PREVIEW_FOLDER, exist_ok=True)
+        os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
 
         self.songs = []
         self.cached_previews = {}
         self.load_songs()
 
     def load_songs(self):
+        cache = self._load_cache()
         self.songs.clear()
+
         for file in os.listdir(SONG_FOLDER):
-            if file.lower().endswith(".mp3"):
+            if file.lower().endswith((".mp3", ".wav")):
                 path = os.path.join(SONG_FOLDER, file)
-                metadata = self.read_mp3_metadata(path)
-                metadata['bpm'] = get_bpm(path) or "Н/Д"
+
+
+                cached_song = cache.get(path)
+                file_modified_time = os.path.getmtime(path)
+
+                if cached_song and cached_song.get("file_mtime") == file_modified_time:
+                    metadata = cached_song
+                    print(f"[SongManager] Используем кэшированные данные для: {path}")
+                else:
+                    print(f"[SongManager] Обновляем данные для: {path}")
+
+                    if file.lower().endswith(".mp3"):
+                        metadata = self.read_mp3_metadata(path)
+                    else:
+                        metadata = self.read_wav_metadata(path)
+
+                    metadata['bpm'] = get_bpm(path) or "Н/Д"
+
+                    metadata["file_mtime"] = file_modified_time
+
                 self.songs.append(metadata)
+
+        self._save_cache(cache)
+
+    def _load_cache(self):
+        try:
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            print(f"[SongManager] Кэш песен не найден или поврежден. Будет создан заново.")
+            return {}
+
+    def _save_cache(self, existing_cache):
+        updated_cache = {}
+        for song in self.songs:
+            path = song["path"]
+            song_data = song.copy()
+            song_data.pop("file_mtime", None)
+            song_data.pop("cover", None)
+            updated_cache[path] = song_data
+
+        try:
+            with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(updated_cache, f, ensure_ascii=False, indent=4)
+            print(f"[SongManager] Кэш песен обновлен: {CACHE_FILE}")
+        except Exception as e:
+            print(f"[SongManager] Ошибка сохранения кэша: {e}")
 
     def read_mp3_metadata(self, filepath):
         metadata = {
@@ -36,7 +85,8 @@ class SongManager:
             "cover": None,
             "bpm": "Н/Д",
             "year": "Н/Д",
-            "duration": "00:00"
+            "duration": "00:00",
+            "file_mtime": os.path.getmtime(filepath)
         }
         try:
             audio = MP3(filepath, ID3=ID3)
@@ -59,6 +109,53 @@ class SongManager:
                         break
         except Exception as e:
             print(f"Ошибка чтения mp3: {e}")
+
+        if metadata['cover'] is None:
+            try:
+                covers_dir = os.path.join("songs", "covers")
+                available_covers = [
+                    os.path.join(covers_dir, f)
+                    for f in os.listdir(covers_dir)
+                    if f.lower().endswith((".png", ".jpg", ".jpeg"))
+                ]
+                if available_covers:
+                    random_cover_path = random.choice(available_covers)
+                    with open(random_cover_path, "rb") as f:
+                        metadata['cover'] = f.read()
+            except Exception as e:
+                print(f"Не удалось загрузить дефолтную обложку: {e}")
+
+        return metadata
+
+    def read_wav_metadata(self, filepath):
+        metadata = {
+            "path": filepath,
+            "title": os.path.splitext(os.path.basename(filepath))[0],
+            "artist": "Неизвестен",
+            "cover": None,
+            "bpm": "Н/Д",
+            "year": "Н/Д",
+            "duration": "00:00",
+            "file_mtime": os.path.getmtime(filepath)
+        }
+        try:
+            audio = AudioSegment.from_file(filepath)
+            total_seconds = len(audio) / 1000.0
+            minutes = int(total_seconds // 60)
+            seconds = int(total_seconds % 60)
+            metadata['duration'] = f"{minutes:02d}:{seconds:02d}"
+
+            filename_stem = os.path.splitext(os.path.basename(filepath))[0]
+            if " - " in filename_stem:
+                parts = filename_stem.split(" - ", 1)
+                metadata['artist'] = parts[0].strip()
+                metadata['title'] = parts[1].strip()
+            else:
+                metadata['title'] = filename_stem
+
+        except Exception as e:
+            print(f"Ошибка чтения wav: {e}")
+            metadata['title'] = os.path.splitext(os.path.basename(filepath))[0]
 
         if metadata['cover'] is None:
             try:
@@ -101,20 +198,28 @@ class SongManager:
             return None
 
     def add_song(self, file_path):
-        if not os.path.exists(file_path) or not file_path.lower().endswith(".mp3"):
+        if not os.path.exists(file_path) or not file_path.lower().endswith((".mp3", ".wav")):
             return None
         dest_path = os.path.join(SONG_FOLDER, os.path.basename(file_path))
         if not os.path.exists(dest_path):
             shutil.copy(file_path, dest_path)
-        metadata = self.read_mp3_metadata(dest_path)
+        cache = self._load_cache()
+        cache.pop(dest_path, None)
+        self._save_cache(cache)
+        metadata = self.read_mp3_metadata(dest_path) if file_path.lower().endswith(".mp3") else self.read_wav_metadata(
+            dest_path)
         metadata['bpm'] = get_bpm(dest_path) or "Н/Д"
+        metadata["file_mtime"] = os.path.getmtime(dest_path)
         self.songs.append(metadata)
         return metadata
 
     def update_song_metadata(self, song_data):
-        """Обновление метаданных в MP3 файле"""
+        filepath = song_data['path']
+        if not filepath.lower().endswith(".mp3"):
+            print(f"Обновление метаданных не поддерживается для .wav: {filepath}")
+            return
+
         try:
-            filepath = song_data['path']
             audio = MP3(filepath, ID3=ID3)
 
             try:
@@ -138,9 +243,16 @@ class SongManager:
 
             print(f"Метаданные обновлены для: {filepath}")
 
+            cache = self._load_cache()
+            cached_entry = cache.get(filepath)
+            if cached_entry:
+                cached_entry.update(song_data)
+                cached_entry["file_mtime"] = os.path.getmtime(filepath)
+                self._save_cache(cache)
             for song in self.songs:
                 if song['path'] == filepath:
                     song.update(song_data)
+                    song["file_mtime"] = os.path.getmtime(filepath)
                     break
 
         except Exception as e:

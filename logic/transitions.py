@@ -3,7 +3,7 @@ from PyQt5 import sip
 from PyQt5.QtWidgets import QWidget, QStackedWidget
 
 
-def transition_open_game(parent, start_level=None):
+def transition_open_game(parent, start_level=None, selected_song=None):
     if not hasattr(parent, "main_menu"):
         print("Ошибка: Родительский объект не содержит main_menu.")
         return
@@ -18,10 +18,7 @@ def transition_open_game(parent, start_level=None):
         parent.music_manager.play_select_sound()
 
     from screens.game_screen import GameScreen
-    if start_level is not None:
-        parent.game_screen = GameScreen(parent=parent, start_level=start_level)
-    else:
-        parent.game_screen = GameScreen(parent=parent)
+    parent.game_screen = GameScreen(parent=parent, start_level=start_level, selected_song=selected_song)
 
     main_menu.hide()
 
@@ -30,6 +27,7 @@ def transition_open_game(parent, start_level=None):
 
     parent.game_screen.start_game()
     main_menu.is_game_open = True
+
 
 def transition_close_game(parent):
     if not hasattr(parent, "main_menu"):
@@ -45,11 +43,19 @@ def transition_close_game(parent):
         parent.music_manager.play_cancel_sound()
 
     if hasattr(parent, "game_screen") and parent.game_screen:
+        if hasattr(parent.game_screen, "timer") and parent.game_screen.timer.isActive():
+            parent.game_screen.timer.stop()
+
+    if hasattr(parent, "game_screen") and parent.game_screen:
+        parent.game_screen.close()
         parent.removeWidget(parent.game_screen)
+        parent.game_screen.deleteLater()
+        parent.game_screen = None
 
     parent.setCurrentWidget(parent.main_menu)
     main_menu.show()
     main_menu.is_game_open = False
+
 
 def transition_open_song_select(parent):
     if not hasattr(parent, "main_menu") or not parent.main_menu.is_intro_finished:
@@ -83,6 +89,9 @@ def transition_close_song_select(parent):
     parent.setCurrentWidget(parent.main_menu)
     parent.main_menu.show()
 
+def transition_open_game_with_song(parent, selected_song):
+    """Переход к игре с выбранной песней."""
+    transition_open_game(parent, start_level=None, selected_song=selected_song)
 
 def transition_resume_game(parent):
     if not hasattr(parent, "game_screen"):
@@ -298,6 +307,9 @@ class Transitions:
 
     def close_song_select(self):
         transition_close_song_select(self.parent)
+
+    def open_game_with_song(self, selected_song):
+        transition_open_game_with_song(self.parent, selected_song)
 
     def resume_game(self):
         transition_resume_game(self.parent)

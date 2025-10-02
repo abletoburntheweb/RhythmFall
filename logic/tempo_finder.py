@@ -1,16 +1,13 @@
-import numpy as np
-from pydub import AudioSegment
-from collections import Counter
+# tempo_finder.py
 import os
 import json
+import numpy as np
 
 SONGS_DIR = "songs"
 CACHE_FILE = os.path.join(SONGS_DIR, "bpms.json")
 
-# Убедимся, что папка songs существует
 os.makedirs(SONGS_DIR, exist_ok=True)
 
-# Безопасная загрузка кэша bpms.json — учитываем пустой/битый файл
 BPM_CACHE = {}
 if os.path.exists(CACHE_FILE):
     try:
@@ -22,88 +19,159 @@ if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, "r", encoding="utf-8") as f:
                 BPM_CACHE = json.load(f)
     except json.JSONDecodeError:
-        print(f"⚠️ {CACHE_FILE} повреждён или не является JSON. Сбрасываю кэш.")
+        #print(f"⚠️ {CACHE_FILE} повреждён или не является JSON. Сбрасываю кэш.")
         BPM_CACHE = {}
     except Exception as e:
-        print(f"⚠️ Ошибка при чтении {CACHE_FILE}: {e}")
+        #print(f"⚠️ Ошибка при чтении {CACHE_FILE}: {e}")
         BPM_CACHE = {}
 else:
     BPM_CACHE = {}
 
-# 📌 Словарь эталонных BPM для принта expected
 EXPECTED_BPMS = {
-    "daydreaming": 113,
-    "hyperpop5demo": 157,
-    "killshot - eminem": 106,
-    "listen! - hako": 134,
-    "motto - nf": 80
+    "daydreaming.mp3": 113,
+    "hyperpop5demo.mp3": 157,
+    "killshot - eminem.mp3": 106,
+    "listen! - hako.mp3": 134,
+    "motto - nf.mp3": 80,
+    "intro_mixed_and_mastered.mp3": 130,
+    "main_menu_mixed_and_mastered.mp3": 94
 }
 
-def get_bpm(file_path, chunk_ms=20, min_bpm=60, max_bpm=200, save_cache=True):
+for filename, expected_bpm in EXPECTED_BPMS.items():
+    if filename in BPM_CACHE:
+        calculated_bpm = BPM_CACHE[filename]
+        diff = abs(calculated_bpm - expected_bpm)
+        #print(f"{filename:<30} {expected_bpm:<8} {calculated_bpm:<10} {diff:<8}")
+    else:
+        pass
+        #print(f"{filename:<30} {expected_bpm:<8} {'(кэш)':<10} {'-':<8}")
+
+#print("=" * 60 + "\n")
+
+
+
+def preprocess_audio_for_bpm(y, sr):
+    """Предварительная обработка аудио для лучшего определения BPM"""
+    try:
+        import librosa
+
+        # 1. Если стерео - конвертируем в моно
+        if y.ndim > 1:
+            y = librosa.to_mono(y)
+
+        # 2. Выделение перкуссии (грубый способ - HPF)
+        # Это может помочь для треков с сильным вокалом/мелодией
+        y_hpf = librosa.effects.preemphasis(y, coef=0.97)  # HPF
+
+        # 3. Альтернатива - попробовать выделить "ударные" частоты
+        # Фильтруем полосой, где обычно бывают ударные (100-5000 Hz)
+        # librosa не имеет встроенного bandpass, но можно через STFT
+        # Пока оставим HPF как основной метод
+
+        return y_hpf
+    except:
+        # Если обработка не удалась, возвращаем оригинальный сигнал
+        return y
+
+
+def get_bpm_advanced(file_path, save_cache=True):
+    """Улучшенная функция определения BPM с несколькими подходами"""
     fname = os.path.basename(file_path).lower()
 
-    # ⚡ если BPM уже в кэше — возвращаем его
+    # Проверяем кэш
     if fname in BPM_CACHE:
-        return BPM_CACHE[fname]
+        bpm = BPM_CACHE[fname]
+        #print(f"{fname}: cached bpm={bpm}")
+
+        # Выводим сравнение, если есть эталон
+        for expected_file, expected_bpm in EXPECTED_BPMS.items():
+            if expected_file.lower() in fname:
+                diff = abs(bpm - expected_bpm)
+                #print(f"  -> Сравнение с эталоном: {expected_bpm} (разница: {diff})")
+                break
+        return bpm
 
     try:
-        audio = AudioSegment.from_file(file_path)
-        audio = audio.set_channels(1).set_frame_rate(44100)
+        import librosa
+        from librosa.feature.rhythm import tempo as rhythm_tempo
 
-        # делим на чанки
-        chunks = [audio[i:i + chunk_ms] for i in range(0, len(audio), chunk_ms)]
-        rms_values = np.array([c.rms for c in chunks])
+        y, sr = librosa.load(file_path, sr=44100)
 
-        # нормализация (NumPy 2.0 совместимо)
-        rms_values = rms_values.astype(float)
-        rms_range = np.ptp(rms_values)
-        if rms_range == 0:
-            return None
-        rms_values = (rms_values - rms_values.min()) / rms_range
+        y_processed = preprocess_audio_for_bpm(y, sr)
 
-        # порог по RMS
-        threshold = 0.5 * (np.median(rms_values) + rms_values.max())
-        peaks = np.where(rms_values > threshold)[0]
-        if len(peaks) < 4:
-            return None
+        tempos = []
 
-        # интервалы между пиками
-        intervals = np.diff(peaks) * chunk_ms
-        if len(intervals) == 0:
-            return None
+        onset_env = librosa.onset.onset_strength(y=y_processed, sr=sr)
 
-        # фильтрация слишком коротких/длинных интервалов
-        intervals = [i for i in intervals if 250 < i < 2000]  # 30–240 BPM
-        if not intervals:
-            return None
+        tempo1 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=4.0, max_tempo=300.0)
+        tempos.append(tempo1.item())
 
-        # находим наиболее часто встречающийся интервал
-        counter = Counter(intervals)
-        common_interval = counter.most_common(1)[0][0]
+        tempo2 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=8.0, max_tempo=300.0)
+        tempos.append(tempo2.item())
 
-        bpm = 60000 / common_interval
+        tempo3, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512)
+        tempos.append(tempo3.item())
 
-        # нормализация в диапазон
-        while bpm < min_bpm:
-            bpm *= 2
-        while bpm > max_bpm:
-            bpm /= 2
+        tempo4, _ = librosa.beat.beat_track(y=y_processed, sr=sr, hop_length=512)
+        tempos.append(tempo4.item())
 
-        bpm = int(round(bpm))
+        tempo5 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=2.0, max_tempo=300.0)
+        tempos.append(tempo5.item())
 
-        # 🎵 поиск expected BPM через словарь
-        expected = None
-        for key, val in EXPECTED_BPMS.items():
-            if key in fname:
-                expected = val
+        tempo6 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=16.0, max_tempo=300.0)
+        tempos.append(tempo6.item())
+
+        valid_tempos = []
+        for t in tempos:
+            if t < 20 or t > 300:
+                continue
+
+            temp_t = float(t)
+
+            candidates = [temp_t]
+            if temp_t < 60:
+                candidates.extend([temp_t * 2, temp_t * 4])
+            if temp_t > 200:
+                candidates.extend([temp_t / 2, temp_t / 4])
+            if temp_t < 40:
+                candidates.extend([temp_t * 3, temp_t * 6])
+            if temp_t > 400:
+                candidates.extend([temp_t / 3, temp_t / 6])
+
+            best_candidate = None
+            min_fractional_part = float('inf')
+            for candidate in candidates:
+                if 60 <= candidate <= 200:
+                    fractional_part = abs(candidate - round(candidate))
+                    if fractional_part < min_fractional_part:
+                        min_fractional_part = fractional_part
+                        best_candidate = candidate
+
+            if best_candidate is not None:
+                valid_tempos.append(best_candidate)
+
+        if valid_tempos:
+            bpm = int(round(np.median(valid_tempos)))
+        else:
+            bpm = int(round(np.median(tempos)))
+
+        bpm = max(60, min(200, bpm))
+
+        if len(valid_tempos) > 1:
+            std_dev = np.std(valid_tempos)
+            if std_dev > 10:
+                rounded_tempos = [round(t) for t in valid_tempos]
+                from collections import Counter
+                most_common = Counter(rounded_tempos).most_common(1)[0][0]
+                bpm = most_common
+
+        #print(f"{fname}: calculated bpm={bpm} (from {len(valid_tempos)}/{len(tempos)} valid methods)")
+
+        for expected_file, expected_bpm in EXPECTED_BPMS.items():
+            if expected_file.lower() in fname:
+                diff = abs(bpm - expected_bpm)
                 break
 
-        if expected:
-            print(f"{fname}: expected {expected}, got {bpm}")
-        else:
-            print(f"{fname}: bpm={bpm}")
-
-        # ⚡ сохраняем в кэш (bpms.json в songs/)
         if save_cache:
             BPM_CACHE[fname] = bpm
             with open(CACHE_FILE, "w", encoding="utf-8") as f:
@@ -111,6 +179,53 @@ def get_bpm(file_path, chunk_ms=20, min_bpm=60, max_bpm=200, save_cache=True):
 
         return bpm
 
-    except Exception as e:
-        print(f"BPM error: {e}")
+    except ImportError:
+        #print("librosa не найдена в текущем окружении.")
         return None
+    except Exception as e:
+        #print(f"BPM error: {e}")
+        #print(f"{fname}: error calculating bpm: {e}")
+        return None
+
+
+def get_bpm(file_path, save_cache=True):
+    return get_bpm_advanced(file_path, save_cache)
+
+
+def reset_cache():
+    global BPM_CACHE
+    BPM_CACHE = {}
+    if os.path.exists(CACHE_FILE):
+        os.remove(CACHE_FILE)
+    #print("Кэш BPM сброшен")
+
+
+def analyze_bpm_methods(file_path):
+    try:
+        import librosa
+        from librosa.feature.rhythm import tempo as rhythm_tempo
+
+        y, sr = librosa.load(file_path, sr=44100)
+        fname = os.path.basename(file_path)
+
+        #print(f"\n=== Анализ методов для {fname} ===")
+
+        tempo1, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512)
+        #print(f"Beat track (hop=512): {tempo1.item():.2f}")
+
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+        tempo2 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512)
+        #print(f"Tempo (onset): {tempo2.item():.2f}")
+
+        tempo3, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=1024)
+        #print(f"Beat track (hop=1024): {tempo3.item():.2f}")
+
+        tempo4, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=256)
+        #print(f"Beat track (hop=256): {tempo4.item():.2f}")
+
+        tempo5 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512,
+                              ac_size=4.0, max_tempo=300.0)
+        #print(f"Tempo (autocorr): {tempo5.item():.2f}")
+
+    except Exception as e:
+        print(f"Ошибка анализа: {e}")
