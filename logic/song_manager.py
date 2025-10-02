@@ -1,7 +1,8 @@
 import os
 import shutil
+import random
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3
+from mutagen.id3 import ID3, APIC, TDRC, TPE1, TIT2
 from pydub import AudioSegment
 from .tempo_finder import get_bpm
 
@@ -58,6 +59,22 @@ class SongManager:
                         break
         except Exception as e:
             print(f"Ошибка чтения mp3: {e}")
+
+        if metadata['cover'] is None:
+            try:
+                covers_dir = os.path.join("songs", "covers")
+                available_covers = [
+                    os.path.join(covers_dir, f)
+                    for f in os.listdir(covers_dir)
+                    if f.lower().endswith((".png", ".jpg", ".jpeg"))
+                ]
+                if available_covers:
+                    random_cover_path = random.choice(available_covers)
+                    with open(random_cover_path, "rb") as f:
+                        metadata['cover'] = f.read()
+            except Exception as e:
+                print(f"Не удалось загрузить дефолтную обложку: {e}")
+
         return metadata
 
     def find_loudest_segment(self, filepath, duration_ms=15000):
@@ -93,3 +110,38 @@ class SongManager:
         metadata['bpm'] = get_bpm(dest_path) or "Н/Д"
         self.songs.append(metadata)
         return metadata
+
+    def update_song_metadata(self, song_data):
+        """Обновление метаданных в MP3 файле"""
+        try:
+            filepath = song_data['path']
+            audio = MP3(filepath, ID3=ID3)
+
+            try:
+                audio.add_tags()
+            except:
+                pass
+
+            if 'title' in song_data:
+                audio.tags.add(TIT2(encoding=3, text=song_data['title']))
+
+            if 'artist' in song_data:
+                audio.tags.add(TPE1(encoding=3, text=song_data['artist']))
+
+            if 'year' in song_data:
+                audio.tags.add(TDRC(encoding=3, text=str(song_data['year'])))
+
+            if 'cover' in song_data and song_data['cover']:
+                audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=song_data['cover']))
+
+            audio.save()
+
+            print(f"Метаданные обновлены для: {filepath}")
+
+            for song in self.songs:
+                if song['path'] == filepath:
+                    song.update(song_data)
+                    break
+
+        except Exception as e:
+            print(f"Ошибка при обновлении метаданных: {e}")

@@ -480,6 +480,67 @@ class Create:
         label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
         return label
 
+    def song_select_top_bar_button(self, text, callback):
+        button = QPushButton(text, self.parent)
+        button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px;
+                color: white;
+                background-color: rgba(0,0,0,0.7);
+                border: 1px solid rgba(255,255,255,0.5);
+                border-radius: 12px;
+                padding: 8px 15px;
+                min-width: 120px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0,0,0,0.8);
+                border: 1px solid #00bfff;
+            }
+        """)
+        button.clicked.connect(callback)
+        return button
+
+    def song_select_edit_button(self, text, callback, is_active=False):
+        button = QPushButton(text, self.parent)
+
+        if is_active:
+            # Стиль для активной кнопки (режим редактирования) - чуть более темный серый
+            button.setStyleSheet("""
+                QPushButton {
+                    font-size: 18px;
+                    color: white;
+                    background-color: rgba(60, 60, 60, 0.9); /* Темно-серый цвет */
+                    border: 1px solid rgba(255,255,255,0.7);
+                    border-radius: 12px;
+                    padding: 8px 15px;
+                    min-width: 120px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(80, 80, 80, 0.9); /* Светлее при ховере */
+                    border: 1px solid #00bfff;
+                }
+            """)
+        else:
+            # Обычный стиль
+            button.setStyleSheet("""
+                QPushButton {
+                    font-size: 18px;
+                    color: white;
+                    background-color: rgba(0,0,0,0.7);
+                    border: 1px solid rgba(255,255,255,0.5);
+                    border-radius: 12px;
+                    padding: 8px 15px;
+                    min-width: 120px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(0,0,0,0.8);
+                    border: 1px solid #00bfff;
+                }
+            """)
+
+        button.clicked.connect(callback)
+        return button
+
     def song_select_list_widget(self):
         list_widget = QListWidget(self.parent)
         list_widget.setStyleSheet("""
@@ -522,7 +583,7 @@ class Create:
         label.setStyleSheet(f"color: white; font-size: {font_size}px; font-weight: {'bold' if bold else 'normal'};")
         return label
 
-    def song_select_button(self, text, callback, fixed_height=60):
+    def song_select_action_button(self, text, callback, fixed_height=60):
         button = QPushButton(text, self.parent)
         button.setFixedHeight(fixed_height)
         button.setStyleSheet("""
