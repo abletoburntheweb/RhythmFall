@@ -25,7 +25,6 @@ class GameScreen(QWidget):
         self.lane_width = self.width() // self.lanes
         self.hit_zone_y = 900
         self.score_manager = ScoreManager(self)
-        self.combo = 0
 
         self.bpm = 120
         self.speed = 6
@@ -57,7 +56,7 @@ class GameScreen(QWidget):
 
         self.notes.clear()
         self.note_spawn_queue.clear()
-        self.combo = 0
+        self.score_manager.reset_combo()
         self.score_manager.score = 0
 
         if self.selected_song:
@@ -187,28 +186,33 @@ class GameScreen(QWidget):
                 lane_pressed = self.player.lanes_state[note.lane]
                 in_hit_zone = note.y + note.height >= self.hit_zone_y and note.y <= self.hit_zone_y + 20
                 note.is_being_held = lane_pressed and in_hit_zone
-                # if note.is_being_held:
-                #     print(f"HOLD lane {note.lane} удерживается, прогресс {note.hit_progress:.2f}")
 
             note.update(speed=self.speed)
 
-            if not note.active:
-                self.combo = 0
+            if not note.active and note.y > self.height():
+                self.score_manager.reset_combo()
 
         self.notes = [n for n in self.notes if n.active]
         self.update()
 
     def check_hit(self, lane):
+        hit_occurred = False
+
         for note in self.notes:
             if note.lane == lane and isinstance(note, HoldNote):
                 if abs(note.y - self.hit_zone_y) < 30:
                     note.is_being_held = True
                     print(f"HOLD lane {lane} захвачена")
+                    hit_occurred = True
             elif note.lane == lane and abs(note.y - self.hit_zone_y) < 30:
                 points = note.on_hit()
-                self.score_manager.add_score(points)
-                self.combo += 1
-                print(f"HIT lane {lane} | Combo: {self.combo}")
+                self.score_manager.add_perfect_hit()
+                print(f"PERFECT HIT lane {lane} | Combo: {self.score_manager.get_combo()}")
+                hit_occurred = True
+
+        if not hit_occurred:
+            self.score_manager.reset_combo()
+            print(f"MISSED HIT lane {lane} | Combo сброшен")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -296,11 +300,13 @@ class GameScreen(QWidget):
 
         painter.setPen(QColor(255, 255, 255))
         painter.drawText(20, 40, f"Score: {self.score_manager.get_score()}")
-        painter.drawText(20, 70, f"Combo: {self.combo}")
-        painter.drawText(20, 100, f"BPM: {self.bpm}")
-        painter.drawText(20, 130, f"Speed: {self.speed:.2f}")
-        painter.drawText(20, 160, f"Time: {self.game_time:.3f}s")
-        painter.drawText(20, 190, f"Offset: {self.audio_offset:.3f}s")
+        painter.drawText(20, 70,
+                         f"Combo: {self.score_manager.get_combo()} (x{self.score_manager.get_combo_multiplier():.1f})")
+        painter.drawText(20, 100, f"Max Combo: {self.score_manager.get_max_combo()}")
+        painter.drawText(20, 130, f"BPM: {self.bpm}")
+        painter.drawText(20, 160, f"Speed: {self.speed:.2f}")
+        painter.drawText(20, 190, f"Time: {self.game_time:.3f}s")
+        painter.drawText(20, 220, f"Offset: {self.audio_offset:.3f}s")
 
         if self.countdown_active:
             painter.setFont(QFont("Arial", 72, QFont.Bold))
