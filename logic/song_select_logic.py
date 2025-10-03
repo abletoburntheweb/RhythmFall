@@ -21,8 +21,15 @@ class SongSelectLogic:
 
     def populate_song_list(self):
         self.song_select.list_widget.clear()
-        self.song_manager.load_songs()
         songs_by_letter = defaultdict(list)
+
+        if not self.song_manager.songs:
+            print("[SongSelectLogic] Предупреждение: список песен пуст при попытке заполнения.")
+            empty_item = QListWidgetItem("Нет доступных песен")
+            empty_item.setFlags(Qt.NoItemFlags)
+            self.song_select.list_widget.addItem(empty_item)
+            self.song_select.song_count_label.setText("Песен: 0")
+            return
 
         for song in self.song_manager.songs:
             first_letter = song['title'][0].upper() if song['title'] else 'Unknown'

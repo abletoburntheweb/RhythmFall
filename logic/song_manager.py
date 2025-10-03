@@ -13,14 +13,15 @@ CACHE_FILE = os.path.join("data", "songs_cache.json")
 
 
 class SongManager:
-    def __init__(self):
+    def __init__(self, load_on_init=True):
         os.makedirs(SONG_FOLDER, exist_ok=True)
         os.makedirs(PREVIEW_FOLDER, exist_ok=True)
         os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
 
         self.songs = []
         self.cached_previews = {}
-        self.load_songs()
+        if load_on_init:
+            self.load_songs()
 
     def load_songs(self):
         cache = self._load_cache()

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import math
 
+from logic.debug_menu import DebugMenu
 from logic.player import Player
 from logic.score import ScoreManager
 from logic.notes import DefaultNote, HoldNote
@@ -25,15 +26,20 @@ class GameScreen(QWidget):
         self.lane_width = self.width() // self.lanes
         self.hit_zone_y = 900
         self.score_manager = ScoreManager(self)
-
+        self.debug_menu = DebugMenu(self)
+        self.debug_menu.hide()
         self.bpm = 120
         self.speed = 6
         self.update_speed_from_bpm()
+
+        self._is_being_deleted = False
 
         self.game_timer = QElapsedTimer()
         self.game_start_time = 0.0
         self.game_time = 0.0
         self.audio_offset = -0.05
+
+        self.game_finished = False
 
         self.player = Player()
         self.player.note_hit.connect(self.check_hit)
@@ -58,6 +64,7 @@ class GameScreen(QWidget):
         self.note_spawn_queue.clear()
         self.score_manager.reset_combo()
         self.score_manager.score = 0
+        self.game_finished = False
 
         if self.selected_song:
             self.load_notes_from_file(self.selected_song)
@@ -104,17 +111,36 @@ class GameScreen(QWidget):
         notes_file_path = Path("songs") / "notes" / f"{base_name}.json"
 
         try:
+            if not notes_file_path.exists():
+                print(f"Файл нот не найден: {notes_file_path}")
+                return
+
             with open(notes_file_path, 'r', encoding='utf-8') as f:
                 notes_data = json.load(f)
+
+            if not isinstance(notes_data, list):
+                print(f"Ошибка: Файл нот {notes_file_path} содержит некорректные данные (ожидается список).")
+                return
+
             print(f"Загружено {len(notes_data)} нот из {notes_file_path}")
+
+            for note in notes_data:
+                if not isinstance(note, dict):
+                    print(f"Предупреждение: Некорректная запись ноты в {notes_file_path}: {note}")
+                    continue
+                if "time" not in note or "lane" not in note or "type" not in note:
+                    print(f"Предупреждение: Неполная запись ноты в {notes_file_path}: {note}")
+                    continue
 
             sorted_notes_data = sorted(notes_data, key=lambda x: x.get("time", 0))
             self.note_spawn_queue = sorted_notes_data
 
-        except FileNotFoundError:
-            print(f"Файл нот не найден: {notes_file_path}")
         except json.JSONDecodeError as e:
             print(f"Ошибка чтения JSON из {notes_file_path}: {e}")
+        except FileNotFoundError:
+            print(f"Файл нот не найден: {notes_file_path}")
+        except Exception as e:
+            print(f"Неизвестная ошибка при загрузке нот: {e}")
 
     def start_audio(self):
         if not self.selected_song_path:
@@ -137,12 +163,52 @@ class GameScreen(QWidget):
             success = self.parent().music_manager.play_game_music(self.selected_song_path)
             if success:
                 print(f"[GameScreen] Воспроизведение запущено: {self.selected_song_path}")
+
+                self.check_song_end_timer = QTimer(self)
+                self.check_song_end_timer.timeout.connect(self.check_song_end)
+                self.check_song_end_timer.start(100)
             else:
                 print(f"[GameScreen] Ошибка запуска аудио: {self.selected_song_path}")
 
             self.timer.start()
         else:
             print("[GameScreen] MusicManager не найден!")
+
+    def check_song_end(self):
+        if self.selected_song_path:
+            try:
+                import mutagen
+                audio_file = mutagen.File(self.selected_song_path)
+                duration = audio_file.info.length
+                if self.game_time >= duration - 0.1:
+                    self.end_game()
+            except Exception as e:
+                print(f"[DEBUG] Ошибка проверки окончания песни: {e}")
+                if hasattr(self.parent(), "music_manager"):
+                    if not self.parent().music_manager.pygame_audio.is_playing():
+                        self.end_game()
+
+    def end_game(self):
+        if self.game_finished:
+            return
+
+        self.game_finished = True
+
+        if self.timer.isActive():
+            self.timer.stop()
+        if self.countdown_timer.isActive():
+            self.countdown_timer.stop()
+        if hasattr(self, 'check_song_end_timer') and self.check_song_end_timer.isActive():
+            self.check_song_end_timer.stop()
+
+        from logic.transitions import transition_open_victory_screen
+        transition_open_victory_screen(
+            self.parent(),
+            self.score_manager.get_score(),
+            self.score_manager.get_combo(),
+            self.score_manager.get_max_combo(),
+            self.selected_song
+        )
 
     def update_speed_from_bpm(self):
         base_bpm = 120
@@ -151,7 +217,36 @@ class GameScreen(QWidget):
         self.speed = max(2, min(12, self.speed))
         print(f"[GameScreen] Скорость обновлена: BPM={self.bpm}, Speed={self.speed:.2f}")
 
+    def check_hit(self, lane):
+        if self.game_finished or getattr(self, '_is_being_deleted', False):
+            return
+
+        hit_occurred = False
+
+        for note in self.notes:
+            if note.lane == lane and isinstance(note, HoldNote):
+                if abs(note.y - self.hit_zone_y) < 30:
+                    note.is_being_held = True
+                    print(f"HOLD lane {lane} захвачена")
+                    hit_occurred = True
+            elif note.lane == lane and abs(note.y - self.hit_zone_y) < 30:
+                try:
+                    points = note.on_hit()
+                    self.score_manager.add_perfect_hit()
+                    print(f"PERFECT HIT lane {lane} | Combo: {self.score_manager.get_combo()}")
+                    hit_occurred = True
+                except Exception as e:
+                    print(f"[ERROR] Ошибка при обработке хита ноты: {e}")
+                    if note in self.notes:
+                        self.notes.remove(note)
+
+        if not hit_occurred:
+            self.score_manager.reset_combo()
+            print(f"MISSED HIT lane {lane} | Combo сброшен")
+
     def update_game(self):
+        if self.game_finished or getattr(self, '_is_being_deleted', False):
+            return
 
         if not self.countdown_active and self.game_timer.isValid():
             self.game_time = self.game_timer.elapsed() / 1000.0 + self.audio_offset
@@ -164,7 +259,6 @@ class GameScreen(QWidget):
                 note_type = note_info.get("type", "DefaultNote")
 
                 pixels_per_sec = self.speed * (1000 / 16)
-
                 initial_y_offset_from_top = -20
                 y_now = initial_y_offset_from_top + (self.game_time - time) * pixels_per_sec
 
@@ -187,7 +281,11 @@ class GameScreen(QWidget):
                 in_hit_zone = note.y + note.height >= self.hit_zone_y and note.y <= self.hit_zone_y + 20
                 note.is_being_held = lane_pressed and in_hit_zone
 
-            note.update(speed=self.speed)
+            try:
+                note.update(speed=self.speed)
+            except Exception as e:
+                print(f"[ERROR] Ошибка при обновлении ноты: {e}")
+                note.active = False
 
             if not note.active and note.y > self.height():
                 self.score_manager.reset_combo()
@@ -195,26 +293,13 @@ class GameScreen(QWidget):
         self.notes = [n for n in self.notes if n.active]
         self.update()
 
-    def check_hit(self, lane):
-        hit_occurred = False
-
-        for note in self.notes:
-            if note.lane == lane and isinstance(note, HoldNote):
-                if abs(note.y - self.hit_zone_y) < 30:
-                    note.is_being_held = True
-                    print(f"HOLD lane {lane} захвачена")
-                    hit_occurred = True
-            elif note.lane == lane and abs(note.y - self.hit_zone_y) < 30:
-                points = note.on_hit()
-                self.score_manager.add_perfect_hit()
-                print(f"PERFECT HIT lane {lane} | Combo: {self.score_manager.get_combo()}")
-                hit_occurred = True
-
-        if not hit_occurred:
-            self.score_manager.reset_combo()
-            print(f"MISSED HIT lane {lane} | Combo сброшен")
-
     def keyPressEvent(self, event):
+        if self.game_finished:
+            return
+
+        if event.key() == Qt.Key_AsciiTilde:
+            self.debug_menu.toggle_visibility()
+
         if event.key() == Qt.Key_Escape:
             if hasattr(self.parent(), "transitions"):
                 self.parent().transitions.close_game()
@@ -224,6 +309,9 @@ class GameScreen(QWidget):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
+        if self.game_finished:
+            return
+
         self.player.keyReleaseEvent(event)
         lane = self.player.keymap.get(event.key())
         if lane is not None:
@@ -235,16 +323,26 @@ class GameScreen(QWidget):
 
     def closeEvent(self, event):
         print("[GameScreen] closeEvent вызван.")
-
         if self.timer.isActive():
             self.timer.stop()
         if self.countdown_timer.isActive():
             self.countdown_timer.stop()
+        if hasattr(self, 'check_song_end_timer') and self.check_song_end_timer.isActive():
+            self.check_song_end_timer.stop()
+
+        if hasattr(self, 'debug_menu'):
+            self.debug_menu.hide()
 
         if hasattr(self.parent(), "music_manager"):
             self.parent().music_manager.stop_game_music()
 
-        super().closeEvent(event)
+        for note in self.notes:
+            note.active = False
+        self.notes.clear()
+        self.note_spawn_queue.clear()
+        self.player = None
+
+        event.accept()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -317,3 +415,6 @@ class GameScreen(QWidget):
             x_pos = (self.width() - text_width) // 2
             y_pos = (self.height() + text_height) // 2
             painter.drawText(x_pos, y_pos, str(self.countdown_remaining))
+
+        if self.debug_menu and self.debug_menu.isVisible():
+            self.debug_menu.update_debug_info(self)

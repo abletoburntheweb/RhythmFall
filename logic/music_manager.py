@@ -1,9 +1,5 @@
 # logic/music_manager.py
 import os
-import pygame
-
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtCore import QUrl
 from logic.audio_backend_pygame import PygameAudioManager
 
 
@@ -59,7 +55,7 @@ class MusicManager:
 
     def play_game_music(self, music_file):
         try:
-            success = self.pygame_audio.play_file(music_file) # Не передаем volume!
+            success = self.pygame_audio.play_file(music_file)
             if success:
                 self.current_game_music = music_file
             return success

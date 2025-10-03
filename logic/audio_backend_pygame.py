@@ -65,7 +65,8 @@ class PygameAudioManager:
             return False
 
     def stop(self):
-        pygame.mixer.music.stop()
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
         self._current_file = None
 
     def pause(self):

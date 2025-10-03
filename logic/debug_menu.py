@@ -1,5 +1,5 @@
 # logic/debug_menu.py
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QColor
 
@@ -8,28 +8,72 @@ class DebugMenu(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Debug Menu")
-        self.setFixedSize(400, 200)
+        self.setFixedSize(400, 500)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.create_label("🛠 DEBUG: управление игрой"))
 
-        # Заголовок
-        title = QLabel("🛠 DEBUG: управление игрой", self)
-        title.setStyleSheet("color: white; font-size: 12pt; font-weight: bold;")
-        layout.addWidget(title)
-
-        # FPS
-        self.fps_label = QLabel("FPS: ---", self)
-        self.fps_label.setStyleSheet("color: white; font-size: 11pt;")
+        self.fps_label = self.create_label("FPS: ---")
         layout.addWidget(self.fps_label)
+
+        self.score_label = self.create_label("Счёт: ---")
+        layout.addWidget(self.score_label)
+
+        self.combo_label = self.create_label("Комбо: ---")
+        layout.addWidget(self.combo_label)
+
+        self.max_combo_label = self.create_label("Макс. комбо: ---")
+        layout.addWidget(self.max_combo_label)
+
+        self.combo_multiplier_label = self.create_label("Множитель комбо: ---")
+        layout.addWidget(self.combo_multiplier_label)
+
+        self.max_combo_multiplier_label = self.create_label("Макс. множитель: ---")
+        layout.addWidget(self.max_combo_multiplier_label)
+
+        self.bpm_label = self.create_label("BPM: ---")
+        layout.addWidget(self.bpm_label)
+
+        self.notes_total_label = self.create_label("Всего нот: ---")
+        layout.addWidget(self.notes_total_label)
+
+        self.notes_current_label = self.create_label("Активные ноты: ---")
+        layout.addWidget(self.notes_current_label)
+
+        self.song_time_label = self.create_label("Время песни: ---")
+        layout.addWidget(self.song_time_label)
+
+        self.add_100_button = QPushButton("+100 очков")
+        self.add_100_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
+        self.add_100_button.clicked.connect(self.add_100_points)
+        layout.addWidget(self.add_100_button)
+
+        self.minus_100_button = QPushButton("-100 очков")
+        self.minus_100_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
+        self.minus_100_button.clicked.connect(self.minus_100_points)
+        layout.addWidget(self.minus_100_button)
+
+        self.win_button = QPushButton("✅ Завершить уровень (Победа)")
+        self.win_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
+        self.win_button.clicked.connect(self.finish_level)
+        layout.addWidget(self.win_button)
 
         self.setLayout(layout)
 
+    def create_label(self, text, bold=False):
+        label = QLabel(text, self)
+        style = "color: white; font-size: 11pt; font-family: 'Arial';"
+        if bold:
+            style += " font-weight: bold;"
+        label.setStyleSheet(style)
+        return label
+
     def paintEvent(self, event):
         painter = QPainter(self)
-        background_color = QColor(30, 30, 30, 200)  # полупрозрачный тёмный фон
+        background_color = QColor(30, 30, 30, 200)
         painter.fillRect(self.rect(), background_color)
 
     def toggle_visibility(self):
@@ -41,3 +85,50 @@ class DebugMenu(QWidget):
     def update_debug_info(self, game_screen):
         fps = getattr(game_screen, "fps", "---")
         self.fps_label.setText(f"FPS: {fps}")
+
+        if hasattr(game_screen, "score_manager"):
+            score = game_screen.score_manager.get_score()
+            combo = game_screen.score_manager.get_combo()
+            max_combo = game_screen.score_manager.get_max_combo()
+            combo_multiplier = game_screen.score_manager.get_combo_multiplier()
+            self.score_label.setText(f"Счёт: {score}")
+            self.combo_label.setText(f"Комбо: {combo}")
+            self.max_combo_label.setText(f"Макс. комбо: {max_combo}")
+            self.combo_multiplier_label.setText(f"Множитель комбо: x{combo_multiplier:.1f}")
+
+        if hasattr(game_screen, "notes"):
+            self.notes_current_label.setText(f"Активные ноты: {len(game_screen.notes)}")
+
+        if hasattr(game_screen, "note_spawn_queue"):
+            self.notes_total_label.setText(f"Всего нот: {len(game_screen.note_spawn_queue)}")
+
+        if hasattr(game_screen, "bpm"):
+            self.bpm_label.setText(f"BPM: {game_screen.bpm}")
+
+        if hasattr(game_screen, "game_time") and hasattr(game_screen, "selected_song_path"):
+            try:
+                import mutagen
+                audio_file = mutagen.File(game_screen.selected_song_path)
+                duration = audio_file.info.length
+                current_time = max(0, game_screen.game_time)
+                total_time = int(duration)
+                current_min, current_sec = int(current_time // 60), int(current_time % 60)
+                total_min, total_sec = int(total_time // 60), int(total_time % 60)
+                self.song_time_label.setText(f"Время песни: {current_min:02d}:{current_sec:02d}/{total_min:02d}:{total_sec:02d}")
+            except:
+                self.song_time_label.setText(f"Время песни: {game_screen.game_time:.1f}s")
+
+    def add_100_points(self):
+        if self.parent() and hasattr(self.parent(), "score_manager"):
+            current_score = self.parent().score_manager.get_score()
+            self.parent().score_manager.score = current_score + 100
+
+    def minus_100_points(self):
+        if self.parent() and hasattr(self.parent(), "score_manager"):
+            current_score = self.parent().score_manager.get_score()
+            new_score = max(0, current_score - 100)
+            self.parent().score_manager.score = new_score
+
+    def finish_level(self):
+        if self.parent():
+            self.parent().end_game()

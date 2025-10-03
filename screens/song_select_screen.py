@@ -135,6 +135,11 @@ class SongSelect(QWidget):
         if self.song_manager.songs:
             self.list_widget.setCurrentRow(0)
 
+    def update_songs_list(self):
+        self.populate_song_list()
+        if self.song_manager.songs:
+            self.list_widget.setCurrentRow(0)
+
     def populate_song_list(self):
         self.song_logic.populate_song_list()
 

@@ -230,10 +230,18 @@ def save_notes_to_file(notes_data, song_path):
 
         notes_data_serializable = convert_types(notes_data)
 
-        with open(notes_path, 'w', encoding='utf-8') as f:
+        temp_path = notes_path.with_suffix('.tmp')
+        with open(temp_path, 'w', encoding='utf-8') as f:
             json.dump(notes_data_serializable, f, ensure_ascii=False, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        temp_path.replace(notes_path)
+
         print(f"Ноты сохранены в: {notes_path}")
         return True
     except Exception as e:
         print(f"Ошибка сохранения нот в {notes_path}: {e}")
+
+        if temp_path.exists():
+            temp_path.unlink()
         return False

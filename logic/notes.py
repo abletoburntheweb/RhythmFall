@@ -47,7 +47,7 @@ class HoldNote(BaseNote):
             self.active = False
 
     def on_hit(self):
-
-        if not self.is_being_held and not self.captured:
-             self.active = False
-        return 100
+        if not self.captured:
+            return 100
+        else:
+            return 0

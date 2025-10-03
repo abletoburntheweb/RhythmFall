@@ -3,7 +3,7 @@
 import json
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QStackedWidget
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal, QThread
 
 from logic.achievement_manager import AchievementManager
 from logic.creation import Create
@@ -20,6 +20,16 @@ from logic.settings_manager import load_settings, save_settings
 from screens.shop_screen import ShopScreen
 from logic.song_manager import SongManager
 
+class SongLoaderThread(QThread):
+    songs_loaded = pyqtSignal(list)
+
+    def __init__(self, song_manager):
+        super().__init__()
+        self.song_manager = song_manager
+
+    def run(self):
+        self.song_manager.load_songs()
+        self.songs_loaded.emit(self.song_manager.songs)
 
 class GameEngine(QStackedWidget):
     def __init__(self):
@@ -34,9 +44,22 @@ class GameEngine(QStackedWidget):
         self.currentChanged.connect(self.on_screen_changed)
         self.transitions = Transitions(self)
 
-        self.song_manager = SongManager()
+        self.song_manager = SongManager(load_on_init=False)
 
         self.init_screens()
+
+        self.song_loader_thread = SongLoaderThread(self.song_manager)
+        self.song_loader_thread.songs_loaded.connect(self.on_songs_loaded)
+        self.song_loader_thread.start()
+
+        if self.settings.get("fullscreen", False):
+            self.set_fullscreen(True)
+        else:
+            self.set_fullscreen(False)
+
+        self.achievement_manager.game_screen = self.game_screen
+
+        self.setCurrentWidget(self.intro)
 
     def init_screens(self):
         self.main_menu = MainMenu(self)
@@ -80,6 +103,11 @@ class GameEngine(QStackedWidget):
             self.music_manager.play_music(self.music_manager.menu_music)
         elif isinstance(current_widget, GameScreen):
             self.music_manager.play_music(self.music_manager.game_music)
+
+    def on_songs_loaded(self, songs):
+        print(f"[GameEngine] Песни загружены в потоке. Количество: {len(songs)}")
+        if hasattr(self, 'song_select'):
+            self.song_select.update_songs_list()
 
     def toggle_fullscreen(self):
         if self.isFullScreen():

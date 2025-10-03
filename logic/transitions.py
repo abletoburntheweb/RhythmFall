@@ -45,6 +45,8 @@ def transition_close_game(parent):
     if hasattr(parent, "game_screen") and parent.game_screen:
         if hasattr(parent.game_screen, "timer") and parent.game_screen.timer.isActive():
             parent.game_screen.timer.stop()
+        if hasattr(parent.game_screen, 'check_song_end_timer') and parent.game_screen.check_song_end_timer and parent.game_screen.check_song_end_timer.isActive():
+            parent.game_screen.check_song_end_timer.stop()
 
     if hasattr(parent, "game_screen") and parent.game_screen:
         parent.game_screen.close()
@@ -90,7 +92,6 @@ def transition_close_song_select(parent):
     parent.main_menu.show()
 
 def transition_open_game_with_song(parent, selected_song):
-    """Переход к игре с выбранной песней."""
     transition_open_game(parent, start_level=None, selected_song=selected_song)
 
 def transition_resume_game(parent):
@@ -235,9 +236,6 @@ def transition_open_settings(parent, from_pause=False):
     overlay_parent.settings_menu.show()
     overlay_parent.is_settings_open = True
 
-
-
-
 def transition_close_settings(parent, from_pause=False):
     if from_pause:
         if not hasattr(parent, "pause_menu"):
@@ -262,6 +260,36 @@ def transition_close_settings(parent, from_pause=False):
         overlay_parent.overlay.hide()
 
     overlay_parent.is_settings_open = False
+
+
+def transition_open_victory_screen(parent, score, combo, max_combo, song_info=None):
+    if hasattr(parent, "music_manager"):
+        parent.music_manager.stop_game_music()
+
+    from screens.victory_screen import VictoryScreen
+    victory_screen = VictoryScreen(
+        parent=parent,
+        score=score,
+        combo=combo,
+        max_combo=max_combo,
+        song_info=song_info or {}
+    )
+
+    parent.addWidget(victory_screen)
+    parent.setCurrentWidget(victory_screen)
+
+
+def transition_close_victory_screen(parent):
+    if hasattr(parent, "victory_screen") and parent.victory_screen:
+        parent.removeWidget(parent.victory_screen)
+        parent.victory_screen.deleteLater()
+        parent.victory_screen = None
+
+    if hasattr(parent, "music_manager"):
+        parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
+
+    parent.setCurrentWidget(parent.main_menu)
+    parent.main_menu.show()
 
 def transition_open_pause(parent):
     if not hasattr(parent, "game_screen"):
@@ -334,6 +362,12 @@ class Transitions:
 
     def close_settings(self, from_pause=False):
         transition_close_settings(self.parent, from_pause=from_pause)
+
+    def open_victory_screen(self, score, combo, max_combo, song_info=None):
+        transition_open_victory_screen(self.parent, score, combo, max_combo, song_info)
+
+    def close_victory_screen(self):
+        transition_close_victory_screen(self.parent)
 
     def open_pause(self):
         transition_open_pause(self.parent)
