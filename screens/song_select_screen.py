@@ -12,11 +12,11 @@ from logic.song_select_logic import SongSelectLogic
 
 
 class SongSelect(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, song_manager=None):
         super().__init__(parent)
         self.parent = parent
         self.create = Create(self)
-        self.song_manager = SongManager()
+        self.song_manager = song_manager if song_manager is not None else SongManager()
         self.song_logic = SongSelectLogic(self, self.song_manager)
         self.selected_song = None
         self.is_active = False
@@ -108,6 +108,8 @@ class SongSelect(QWidget):
         details_layout.addWidget(self.year_label)
 
         self.bpm_label = self.create.song_select_info_label("BPM", font_size=18)
+        self.bpm_label.mouseDoubleClickEvent = self.bpm_double_clicked
+        self.bpm_label.setMouseTracking(True)
         details_layout.addWidget(self.bpm_label)
 
         self.duration_label = self.create.song_select_info_label("Длительность: 00:00", font_size=18)
@@ -118,6 +120,9 @@ class SongSelect(QWidget):
 
         self.play_button = self.create.song_select_action_button("Играть", self.play_selected_song)
         details_layout.addWidget(self.play_button)
+
+        self.generate_notes_button = self.create.song_select_action_button("Сгенерировать ноты", self.generate_notes)
+        details_layout.addWidget(self.generate_notes_button)
 
         self.delete_button = self.create.song_select_action_button("Удалить песню", self.delete_song)
         details_layout.addWidget(self.delete_button)
@@ -176,6 +181,9 @@ class SongSelect(QWidget):
     def year_double_clicked(self, event):
         self.song_logic.year_double_clicked(event)
 
+    def bpm_double_clicked(self, event):
+        self.song_logic.bpm_double_clicked(event)
+
     def cover_double_clicked(self, event):
         self.song_logic.cover_double_clicked(event)
 
@@ -206,11 +214,12 @@ class SongSelect(QWidget):
             self._preview_player.setVolume(volume)
 
     def play_selected_song(self):
-        if self.selected_song and hasattr(self.parent, "transitions"):
-            self.parent.transitions.open_game_with_song(self.selected_song)
+        self.song_logic.play_selected_song()
 
     def add_song(self):
         self.song_logic.add_song()
+    def generate_notes(self):
+        self.song_logic.generate_notes()
 
     def delete_song(self):
         self.song_logic.delete_song()
