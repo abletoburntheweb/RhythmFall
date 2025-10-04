@@ -16,11 +16,7 @@ class AchievementsScreen(QWidget):
         self.setFixedSize(1920, 1080)
         self.setFocusPolicy(Qt.StrongFocus)
 
-        self.background_label = QLabel(self)
-        self.background_label.setPixmap(
-            QPixmap("assets/textures/town.png").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
-        self.background_label.setGeometry(0, 0, self.width(), self.height())
-        self.background_label.lower()
+        self.bg_label = self.create.background(texture_path="default")
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(50, 50, 50, 50)
@@ -46,7 +42,7 @@ class AchievementsScreen(QWidget):
         self.update_achievements()
 
         self.back_button = self.create.button(
-            "🔙 Назад",
+            "Назад",
             self.parent.transitions.close_achievements,
             x=40, y=40, w=180, h=60,
             preset=3

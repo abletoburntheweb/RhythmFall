@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QPushButton, QLabel, QCheckBox, QSlider, QFrame, QVBoxLayout, QHBoxLayout, QWidget, \
-    QLineEdit, QListWidget
+    QLineEdit, QListWidget, QScrollArea
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 
@@ -71,7 +71,37 @@ class Create:
                     background-color: #0056b3; /* Темнее при наведении */
                 }
             """)
+        # Стиль 4: Мягкий серый фон с лёгким hover
+        elif preset == 4:
+            button.setStyleSheet("""
+                QPushButton {
+                    background-color: #3a3a3a;  /* тёмно-серый */
+                    color: white;
+                    border: 1px solid #555;
+                    border-radius: 8px;
+                    padding: 10px 15px;
+                    font-size: 20px;
+                }
+                QPushButton:hover {
+                    background-color: #4a4a4a;
+                }
+            """)
 
+        # Стиль 5: Однотонный фиолетовый фон, аккуратный и нейтральный для настроек
+        elif preset == 5:
+            button.setStyleSheet("""
+                QPushButton {
+                    background-color: #4b0082;  /* тёмно-фиолетовый */
+                    color: white;
+                    border: 2px solid #ffffff;
+                    border-radius: 10px;
+                    padding: 10px 20px;
+                    font-size: 22px;
+                }
+                QPushButton:hover {
+                    background-color: #5a0099;  /* чуть светлее на hover */
+                }
+            """)
         return button
 
     def vert_buttons(self, buttons_data, spacing=80):
@@ -135,7 +165,7 @@ class Create:
         """)
         return label
 
-    def slider(self, text, min_value=0, max_value=100, value=50, bold=False, callback=None, x=0, y=0, w=600, h=30,
+    def settings_menu_slider(self, text, min_value=0, max_value=100, value=50, bold=False, callback=None, x=0, y=0, w=600, h=30,
                font_family="Montserrat"):
         label = QLabel(text, self.parent)
         font = QFont(font_family, 18)
@@ -177,7 +207,7 @@ class Create:
 
         return label, slider
 
-    def checkbox(self, text, checked=False, bold=False, callback=None, x=0, y=0, w=250, h=30, font_family="Montserrat"):
+    def settings_menu_checkbox(self, text, checked=False, bold=False, callback=None, x=0, y=0, w=250, h=30, font_family="Montserrat"):
         checkbox = QCheckBox(text, self.parent)
         font = QFont(font_family, 18)
         if bold:
@@ -218,6 +248,26 @@ class Create:
 
         return checkbox
 
+    def settings_menu_content_widget(self, top=20, left=20, right=20, bottom=20, spacing=20):
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+        layout.setAlignment(Qt.AlignTop)
+        layout.setSpacing(spacing)
+        layout.setContentsMargins(left, top, right, bottom)
+        return content_widget, layout
+
+    def settings_menu_scroll_area_widget(self, inner_widget):
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setWidget(inner_widget)
+
+        wrapper = QWidget()
+        layout = QVBoxLayout(wrapper)
+        layout.addWidget(scroll_area)
+        return wrapper
+
     def separator(self, x=0, y=0, w=600, h=20, color="rgba(255, 255, 255, 50)"):
         line = QFrame(self.parent)
         line.setFrameShape(QFrame.HLine)
@@ -226,9 +276,14 @@ class Create:
         line.setGeometry(x, y, w, h)
         return line
 
-    def shop_background(self, texture_path="assets/textures/town.png"):
+    def background(self, texture_path="default"):
+        if texture_path == "default":
+            actual_path = "assets/textures/town.png"
+        else:
+            actual_path = texture_path
+
         bg_label = QLabel(self.parent)
-        pixmap = QPixmap(texture_path).scaled(self.parent.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        pixmap = QPixmap(actual_path).scaled(self.parent.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         bg_label.setPixmap(pixmap)
         bg_label.setGeometry(0, 0, self.parent.width(), self.parent.height())
         return bg_label
@@ -504,7 +559,6 @@ class Create:
         button = QPushButton(text, self.parent)
 
         if is_active:
-            # Стиль для активной кнопки (режим редактирования) - чуть более темный серый
             button.setStyleSheet("""
                 QPushButton {
                     font-size: 18px;
@@ -521,7 +575,6 @@ class Create:
                 }
             """)
         else:
-            # Обычный стиль
             button.setStyleSheet("""
                 QPushButton {
                     font-size: 18px;
@@ -605,5 +658,69 @@ class Create:
         separator.setFrameShape(QFrame.HLine)
         separator.setStyleSheet("background-color: rgba(255,255,255,0.1);")
         return separator
+
+    def victory_button(self, text, callback=None, preset='default'):
+        button = QPushButton(text, self.parent)
+        if preset == 'replay':
+            button.setFixedSize(200, 60)
+        elif preset == 'continue':
+            button.setFixedSize(250, 60)
+        else:
+            button.setFixedSize(200, 60)
+
+        button.setFont(QFont("Arial", 16, QFont.Bold))
+
+        styles = {
+            'replay': """
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: 2px solid #45a049;
+                    border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #45a049;
+                }
+                QPushButton:pressed {
+                    background-color: #3d8b40;
+                }
+            """,
+            'continue': """
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: 2px solid #1976D2;
+                    border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """,
+            'default': """
+                QPushButton {
+                    background-color: #555555; /* Серый по умолчанию */
+                    color: white;
+                    border: 2px solid #777777;
+                    border-radius: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #777777;
+                }
+                QPushButton:pressed {
+                    background-color: #333333;
+                }
+            """
+        }
+
+        style_sheet = styles.get(preset, styles['default'])
+        button.setStyleSheet(style_sheet)
+
+        if callback:
+            button.clicked.connect(callback)
+        return button
+
     def callback(self, callback):
         callback()

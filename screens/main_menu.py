@@ -40,8 +40,7 @@ class MainMenu(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
-        self.background_label = QLabel(self)
-        self.background_label.setPixmap(QPixmap("assets/textures/town.png").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation))
+        self.bg_label = self.create.background(texture_path="default")
 
         self.title_label = self.create.label(
             "ARKANOID", font_size=66, bold=True, x=200, y=220, w=750, h=150, font_family=self.c_font_l
@@ -98,7 +97,7 @@ class MainMenu(QWidget):
         )
 
         self.widgets_to_restore = [
-            self.background_label, self.title_label,
+            self.bg_label, self.title_label,
             self.start_button, self.song_select_button, self.achievements_button, self.shop_button, self.settings_button, self.exit_button
         ]
 

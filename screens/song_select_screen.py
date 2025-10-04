@@ -41,7 +41,7 @@ class SongSelect(QWidget):
     def init_ui(self):
         self.setFixedSize(1920, 1080)
 
-        self.bg_label = self.create.shop_background(texture_path="assets/textures/town.png")
+        self.bg_label = self.create.background(texture_path="assets/textures/town.png")
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(50, 50, 50, 50)

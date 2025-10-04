@@ -1,6 +1,8 @@
-# screens/settings_menu.py
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QMessageBox, QScrollArea
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
+    QStackedWidget, QSizePolicy
+)
 from logic.creation import Create
 from logic.transitions import Transitions
 
@@ -18,110 +20,138 @@ class SettingsMenu(QWidget):
 
     def init_ui(self):
         self.resize(self.parent.size())
+
         panel = self.create.g_panel(x=0, y=0, w=self.parent.width(), h=self.parent.height())
 
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
         content_widget = QWidget()
+        content_widget.setGeometry(0, 0, self.parent.width(), self.parent.height())
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(40, 60, 40, 40)
+        content_layout.setSpacing(20)
 
-        layout = QVBoxLayout(content_widget)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(40)
-        layout.setContentsMargins(20, 20, 20, 20)
+        title_label = self.create.label("Настройки", font_size=72, bold=True)
+        title_layout = QHBoxLayout()
+        title_layout.addStretch(1)
+        title_layout.addWidget(title_label, alignment=Qt.AlignCenter)
+        title_layout.addStretch(1)
+        content_layout.addLayout(title_layout)
 
-        scroll_area.setWidget(content_widget)
+        tabs_layout = QHBoxLayout()
+        tabs_layout.addStretch(1)
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(scroll_area)
+        self.btn_sound = self.create.button("Звук", lambda: self.stacked_widget.setCurrentIndex(0), x=0, y=0, w=100, h=40, preset=2)
+        self.btn_graphics = self.create.button("Графика", lambda: self.stacked_widget.setCurrentIndex(1), x=0, y=0, w=100, h=40, preset=2)
+        self.btn_controls = self.create.button("Управление", lambda: self.stacked_widget.setCurrentIndex(2), x=0, y=0, w=100, h=40, preset=2)
+        self.btn_misc = self.create.button("Прочее", lambda: self.stacked_widget.setCurrentIndex(3), x=0, y=0, w=100, h=40, preset=2)
 
-        self.title_label = self.create.label("Настройки", font_size=72, bold=True)
-        layout.addWidget(self.title_label)
+        tabs_layout.addWidget(self.btn_sound)
+        tabs_layout.addWidget(self.btn_graphics)
+        tabs_layout.addWidget(self.btn_controls)
+        tabs_layout.addWidget(self.btn_misc)
+        tabs_layout.addStretch(1)
+        content_layout.addLayout(tabs_layout)
 
-        music_block = QVBoxLayout()
-        music_label, self.music_slider = self.create.slider(
-            "Громкость музыки",
-            min_value=0,
-            max_value=100,
-            value=self.parent.settings.get("music_volume", 50),
-            callback=self.update_music_volume,
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.sound_widget = self.create_sound_widget()
+        self.graphics_widget = self.create_graphics_widget()
+        self.controls_widget = self.create_controls_widget()
+        self.misc_widget = self.create_misc_widget()
+
+        self.stacked_widget.addWidget(self.sound_widget)
+        self.stacked_widget.addWidget(self.graphics_widget)
+        self.stacked_widget.addWidget(self.controls_widget)
+        self.stacked_widget.addWidget(self.misc_widget)
+
+        content_layout.addWidget(self.stacked_widget)
+
+        bottom_buttons_layout = QHBoxLayout()
+        bottom_buttons_layout.addStretch(1)
+        self.back_button = self.create.button(
+            "Назад",
+            lambda: self.transitions.close_settings(from_pause=bool(self.game_screen)),
+            x=0, y=0, w=400, h=60,
+            preset=3
         )
-        self.fps_toggle = self.create.checkbox(
+        bottom_buttons_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+        bottom_buttons_layout.addStretch(1)
+        content_layout.addLayout(bottom_buttons_layout)
+
+        content_widget.setParent(panel)
+        content_widget.show()
+
+    def create_sound_widget(self):
+        content_widget, layout = self.create.settings_menu_content_widget()
+
+        music_label, self.music_slider = self.create.settings_menu_slider(
+            "Громкость музыки", 0, 100, self.parent.settings.get("music_volume", 50), self.update_music_volume
+        )
+        sfx_label, self.sfx_slider = self.create.settings_menu_slider(
+            "Громкость звуков", 0, 100, self.parent.settings.get("effects_volume", 50), self.update_effects_volume
+        )
+        hit_sounds_label, self.hit_sounds_slider = self.create.settings_menu_slider(
+            "Громкость нажатий", 0, 100, self.parent.settings.get("hit_sounds_volume", 70),
+            self.update_hit_sounds_volume
+        )
+        preview_label, self.preview_slider = self.create.settings_menu_slider(
+            "Громкость предпросмотра", 0, 100, self.parent.settings.get("preview_volume", 70),
+            self.update_preview_volume
+        )
+
+        layout.addWidget(music_label)
+        layout.addWidget(self.music_slider)
+        layout.addWidget(sfx_label)
+        layout.addWidget(self.sfx_slider)
+        layout.addWidget(hit_sounds_label)
+        layout.addWidget(self.hit_sounds_slider)
+        layout.addWidget(preview_label)
+        layout.addWidget(self.preview_slider)
+
+        return self.create.settings_menu_scroll_area_widget(content_widget)
+
+    def create_graphics_widget(self):
+        content_widget, layout = self.create.settings_menu_content_widget()
+
+        self.fps_toggle = self.create.settings_menu_checkbox(
             "Показывать FPS",
             checked=self.parent.settings.get("show_fps", False),
-            callback=self.toggle_fps,
+            callback=self.toggle_fps
         )
-        music_block.addWidget(music_label)
-        music_block.addWidget(self.music_slider)
-        music_block.addWidget(self.fps_toggle)
-        layout.addLayout(music_block)
-
-        sfx_block = QVBoxLayout()
-        sfx_label, self.sfx_slider = self.create.slider(
-            "Громкость звуков",
-            min_value=0,
-            max_value=100,
-            value=self.parent.settings.get("effects_volume", 50),
-            callback=self.update_effects_volume,
-        )
-        hit_sounds_label, self.hit_sounds_slider = self.create.slider(
-            "Громкость нажатий",
-            min_value=0,
-            max_value=100,
-            value=self.parent.settings.get("hit_sounds_volume", 70),
-            callback=self.update_hit_sounds_volume,
-        )
-        self.fullscreen_checkbox = self.create.checkbox(
+        self.fullscreen_checkbox = self.create.settings_menu_checkbox(
             "Полноэкранный режим",
             checked=self.parent.settings.get("fullscreen", False),
-            callback=self.toggle_fullscreen,
+            callback=self.toggle_fullscreen
         )
-        sfx_block.addWidget(sfx_label)
-        sfx_block.addWidget(self.sfx_slider)
-        sfx_block.addWidget(hit_sounds_label)
-        sfx_block.addWidget(self.hit_sounds_slider)
-        sfx_block.addWidget(self.fullscreen_checkbox)
-        layout.addLayout(sfx_block)
+        layout.addWidget(self.fps_toggle)
+        layout.addWidget(self.fullscreen_checkbox)
 
-        preview_block = QVBoxLayout()
-        preview_label, self.preview_slider = self.create.slider(
-            "Громкость предпросмотра",
-            min_value=0,
-            max_value=100,
-            value=self.parent.settings.get("preview_volume", 70),
-            callback=self.update_preview_volume,
-        )
-        preview_block.addWidget(preview_label)
-        preview_block.addWidget(self.preview_slider)
-        layout.addLayout(preview_block)
+        return self.create.settings_menu_scroll_area_widget(content_widget)
 
-        layout.addSpacing(40)
+    def create_controls_widget(self):
+        content_widget, layout = self.create.settings_menu_content_widget()
 
-        self.controls_checkbox = self.create.checkbox(
+        self.controls_checkbox = self.create.settings_menu_checkbox(
             "Управление WASD",
             checked=self.parent.settings.get("use_wasd", False),
-            callback=self.toggle_controls,
+            callback=self.toggle_controls
         )
         layout.addWidget(self.controls_checkbox)
+
+        return self.create.settings_menu_scroll_area_widget(content_widget)
+
+    def create_misc_widget(self):
+        content_widget, layout = self.create.settings_menu_content_widget()
 
         self.reset_achievements_button = self.create.button(
             "🗑️ Стереть прогресс ачивок",
             self.reset_achievements,
             x=0, y=0, w=400, h=60,
-            preset=3
+            preset=5
         )
-        layout.addWidget(self.reset_achievements_button, alignment=Qt.AlignCenter)
+        layout.addWidget(self.reset_achievements_button, alignment=Qt.AlignLeft)
 
-        self.back_button = self.create.button(
-            "🔙 Назад",
-            lambda: self.transitions.close_settings(from_pause=bool(self.game_screen)),
-            x=0, y=0, w=400, h=60,
-            preset=3
-        )
-        layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+        return self.create.settings_menu_scroll_area_widget(content_widget)
 
     def toggle_fullscreen(self, state):
         if self.parent:
@@ -139,7 +169,6 @@ class SettingsMenu(QWidget):
             self.parent.music_manager.set_sfx_volume(value)
             self.parent.save_settings()
 
-
     def update_hit_sounds_volume(self, value):
         if self.parent:
             self.parent.settings["hit_sounds_volume"] = value
@@ -152,7 +181,6 @@ class SettingsMenu(QWidget):
             self.parent.settings["preview_volume"] = value
             self.parent.save_settings()
             print(f"[Settings] Громкость предпросмотра: {value}")
-
             if hasattr(self.parent, "song_select") and self.parent.song_select:
                 self.parent.song_select.set_preview_volume(value)
 

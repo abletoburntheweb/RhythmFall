@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayo
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QFont, QPixmap, QColor
 
+from logic.creation import Create
+
 
 class VictoryScreen(QWidget):
     def __init__(self, parent, score, combo, max_combo, song_info=None):
@@ -19,11 +21,8 @@ class VictoryScreen(QWidget):
         self.displayed_combo = 0
         self.displayed_max_combo = 0
 
-        self.bg_label = QLabel(self)
-        bg_pixmap = QPixmap("assets/textures/town.png").scaled(self.size(), Qt.IgnoreAspectRatio)
-        if not bg_pixmap.isNull():
-            self.bg_label.setPixmap(bg_pixmap)
-        self.bg_label.setGeometry(0, 0, 1920, 1080)
+        self.create = Create(self)
+        self.bg_label = self.create.background(texture_path="assets/textures/town.png")
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
@@ -69,47 +68,14 @@ class VictoryScreen(QWidget):
         layout.addLayout(stats_layout)
 
         button_layout = QHBoxLayout()
-        button_layout.setAlignment(Qt.AlignCenter)
 
-        replay_button = QPushButton("🔄 Повторить")
-        replay_button.setFixedSize(200, 60)
-        replay_button.setFont(QFont("Arial", 16, QFont.Bold))
-        replay_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: 2px solid #45a049;
-                border-radius: 10px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:pressed {
-                background-color: #3d8b40;
-            }
-        """)
-        replay_button.clicked.connect(self.replay_song)
+        button_layout.setAlignment(Qt.AlignCenter)
+        continue_button = self.create.victory_button(text="🎵 К списку песен", callback=self.go_to_song_select, preset='continue')
+        replay_button = self.create.victory_button(text="🔄 Повторить", callback=self.replay_song, preset='replay')
+
+        button_layout.addWidget(continue_button)
         button_layout.addWidget(replay_button)
 
-        continue_button = QPushButton("🎵 К списку песен")
-        continue_button.setFixedSize(250, 60)
-        continue_button.setFont(QFont("Arial", 16, QFont.Bold))
-        continue_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                border: 2px solid #1976D2;
-                border-radius: 10px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-            QPushButton:pressed {
-                background-color: #1565C0;
-            }
-        """)
-        continue_button.clicked.connect(self.go_to_song_select)
-        button_layout.addWidget(continue_button)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
