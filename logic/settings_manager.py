@@ -1,3 +1,4 @@
+# settings_manager.py
 import json
 import os
 
@@ -7,7 +8,8 @@ DEFAULT_SETTINGS = {
     "music_volume": 50,
     "effects_volume": 80,
     "preview_volume": 70,
-    "show_fps": False
+    "show_fps": False,
+    "hit_sounds_volume": 70
 }
 
 def load_settings():

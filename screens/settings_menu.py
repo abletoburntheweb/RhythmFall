@@ -1,11 +1,6 @@
+# screens/settings_menu.py
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QMessageBox
-from logic.creation import Create
-from logic.transitions import Transitions
-
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QMessageBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QMessageBox, QScrollArea
 from logic.creation import Create
 from logic.transitions import Transitions
 
@@ -25,9 +20,23 @@ class SettingsMenu(QWidget):
         self.resize(self.parent.size())
         panel = self.create.g_panel(x=0, y=0, w=self.parent.width(), h=self.parent.height())
 
-        layout = QVBoxLayout()
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        content_widget = QWidget()
+
+        layout = QVBoxLayout(content_widget)
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(40)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        scroll_area.setWidget(content_widget)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(scroll_area)
 
         self.title_label = self.create.label("Настройки", font_size=72, bold=True)
         layout.addWidget(self.title_label)
@@ -58,6 +67,13 @@ class SettingsMenu(QWidget):
             value=self.parent.settings.get("effects_volume", 50),
             callback=self.update_effects_volume,
         )
+        hit_sounds_label, self.hit_sounds_slider = self.create.slider(
+            "Громкость нажатий",
+            min_value=0,
+            max_value=100,
+            value=self.parent.settings.get("hit_sounds_volume", 70),
+            callback=self.update_hit_sounds_volume,
+        )
         self.fullscreen_checkbox = self.create.checkbox(
             "Полноэкранный режим",
             checked=self.parent.settings.get("fullscreen", False),
@@ -65,6 +81,8 @@ class SettingsMenu(QWidget):
         )
         sfx_block.addWidget(sfx_label)
         sfx_block.addWidget(self.sfx_slider)
+        sfx_block.addWidget(hit_sounds_label)
+        sfx_block.addWidget(self.hit_sounds_slider)
         sfx_block.addWidget(self.fullscreen_checkbox)
         layout.addLayout(sfx_block)
 
@@ -105,10 +123,6 @@ class SettingsMenu(QWidget):
         )
         layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
 
-        container = QWidget(self)
-        container.setLayout(layout)
-        container.setGeometry(0, 0, self.width(), self.height())
-
     def toggle_fullscreen(self, state):
         if self.parent:
             self.parent.toggle_fullscreen()
@@ -124,6 +138,14 @@ class SettingsMenu(QWidget):
             self.parent.settings["effects_volume"] = value
             self.parent.music_manager.set_sfx_volume(value)
             self.parent.save_settings()
+
+
+    def update_hit_sounds_volume(self, value):
+        if self.parent:
+            self.parent.settings["hit_sounds_volume"] = value
+            self.parent.music_manager.set_hit_sounds_volume(value)
+            self.parent.save_settings()
+            print(f"[Settings] Громкость нажатий: {value}")
 
     def update_preview_volume(self, value):
         if self.parent:

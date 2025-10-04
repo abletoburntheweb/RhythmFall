@@ -44,8 +44,12 @@ class GameScreen(QWidget):
 
         self.game_finished = False
 
+        self.music_manager = None
+        if hasattr(self.parent(), "music_manager"):
+            self.music_manager = self.parent().music_manager
+
         self.player = Player()
-        self.player.note_hit.connect(self.check_hit)
+        self.player.note_hit.connect(self.on_player_hit)
         self.player.lane_pressed_changed.connect(self.update)
 
         self.timer = QTimer(self)
@@ -59,9 +63,15 @@ class GameScreen(QWidget):
 
         self.selected_song_path = self.selected_song.get("path") if self.selected_song else None
 
+    def reset_hit_sound_chain(self):
+        if self.music_manager:
+            self.music_manager.reset_hit_sound_state()
+
     def start_game(self):
         if hasattr(self.parent(), "music_manager"):
             self.parent().music_manager.stop_music()
+
+        self.reset_hit_sound_chain()
 
         self.notes.clear()
         self.note_spawn_queue.clear()
@@ -82,6 +92,7 @@ class GameScreen(QWidget):
             self.setFocusPolicy(Qt.StrongFocus)
             self.grabKeyboard()
             self.timer.start(16)
+
 
     def start_countdown(self):
         print(f"[GameScreen] Начало отсчета: {self.countdown_remaining} секунд")
@@ -223,6 +234,9 @@ class GameScreen(QWidget):
         self.speed = max(2, min(12, self.speed))
         print(f"[GameScreen] Скорость обновлена: BPM={self.bpm}, Speed={self.speed:.2f}")
 
+    def on_player_hit(self, lane):
+        self.check_hit(lane)
+
     def check_hit(self, lane):
         if self.game_finished or getattr(self, '_is_being_deleted', False):
             return
@@ -238,6 +252,8 @@ class GameScreen(QWidget):
             elif note.lane == lane and abs(note.y - self.hit_zone_y) < 30:
                 try:
                     points = note.on_hit()
+                    if self.music_manager:
+                        self.music_manager.play_hit_sound()
                     self.score_manager.add_perfect_hit()
                     print(f"PERFECT HIT lane {lane} | Combo: {self.score_manager.get_combo()}")
                     hit_occurred = True

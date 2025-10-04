@@ -42,12 +42,19 @@ EXPECTED_BPMS = {
 def preprocess_audio_for_bpm(y, sr):
     try:
         import librosa
+
         if y.ndim > 1:
             y = librosa.to_mono(y)
 
-        y_hpf = librosa.effects.preemphasis(y, coef=0.97)
+        spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+        avg_centroid = np.mean(spectral_centroids)
 
-        return y_hpf
+        if avg_centroid > 2000:
+            y = librosa.effects.preemphasis(y, coef=0.8)
+        else:
+            y = librosa.effects.preemphasis(y, coef=0.97)
+
+        return y
     except:
         return y
 
@@ -82,23 +89,39 @@ def get_bpm_advanced(file_path, save_cache=True):
 
         onset_env = librosa.onset.onset_strength(y=y_processed, sr=sr)
 
-        tempo1 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=4.0, max_tempo=300.0)
-        tempos.append(tempo1.item())
+        tempo_configs = [
+            (512, 4.0),
+            (512, 8.0),
+            (512, 2.0),
+            (512, 16.0),
+            (1024, 4.0),
+            (256, 4.0),
+        ]
 
-        tempo2 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=8.0, max_tempo=300.0)
-        tempos.append(tempo2.item())
+        for hop_length, ac_size in tempo_configs:
+            try:
+                tempo = rhythm_tempo(
+                    onset_envelope=onset_env,
+                    sr=sr,
+                    hop_length=hop_length,
+                    ac_size=ac_size,
+                    max_tempo=300.0
+                )
+                tempos.append(tempo.item())
+            except:
+                continue
 
-        tempo3, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512)
-        tempos.append(tempo3.item())
+        try:
+            tempo_bt, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512)
+            tempos.append(tempo_bt.item())
+        except:
+            pass
 
-        tempo4, _ = librosa.beat.beat_track(y=y_processed, sr=sr, hop_length=512)
-        tempos.append(tempo4.item())
-
-        tempo5 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=2.0, max_tempo=300.0)
-        tempos.append(tempo5.item())
-
-        tempo6 = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512, ac_size=16.0, max_tempo=300.0)
-        tempos.append(tempo6.item())
+        try:
+            tempo_bt_processed, _ = librosa.beat.beat_track(y=y_processed, sr=sr, hop_length=512)
+            tempos.append(tempo_bt_processed.item())
+        except:
+            pass
 
         valid_tempos = []
         for t in tempos:
@@ -109,13 +132,13 @@ def get_bpm_advanced(file_path, save_cache=True):
 
             candidates = [temp_t]
             if temp_t < 60:
-                candidates.extend([temp_t * 2, temp_t * 4])
+                candidates.extend([temp_t * 2, temp_t * 4, temp_t * 3])
             if temp_t > 200:
-                candidates.extend([temp_t / 2, temp_t / 4])
+                candidates.extend([temp_t / 2, temp_t / 4, temp_t / 3])
             if temp_t < 40:
-                candidates.extend([temp_t * 3, temp_t * 6])
+                candidates.extend([temp_t * 6, temp_t * 8])
             if temp_t > 400:
-                candidates.extend([temp_t / 3, temp_t / 6])
+                candidates.extend([temp_t / 6, temp_t / 8])
 
             best_candidate = None
             min_fractional_part = float('inf')
@@ -131,18 +154,17 @@ def get_bpm_advanced(file_path, save_cache=True):
 
         if valid_tempos:
             bpm = int(round(np.median(valid_tempos)))
-        else:
-            bpm = int(round(np.median(tempos)))
 
-        bpm = max(60, min(200, bpm))
-
-        if len(valid_tempos) > 1:
-            std_dev = np.std(valid_tempos)
-            if std_dev > 10:
+            std_dev = np.std(valid_tempos) if len(valid_tempos) > 1 else 0
+            if std_dev > 15:
                 rounded_tempos = [round(t) for t in valid_tempos]
                 from collections import Counter
                 most_common = Counter(rounded_tempos).most_common(1)[0][0]
                 bpm = most_common
+        else:
+            bpm = int(round(np.median(tempos))) if tempos else 120
+
+        bpm = max(60, min(200, bpm))
 
         print(f"{fname}: calculated bpm={bpm} (from {len(valid_tempos)}/{len(tempos)} valid methods)")
 
@@ -154,6 +176,9 @@ def get_bpm_advanced(file_path, save_cache=True):
                 diff = abs(bpm - expected_bpm)
                 song_name = expected_file.replace('.mp3', '').replace('.wav', '')
                 print(f"  -> {song_name}: ожидаемо {expected_bpm} BPM, реальность: {bpm} BPM (разница: {diff})")
+
+                if diff > 20:
+                    print(f"     ⚠️  БОЛЬШАЯ РАЗНИЦА! Проверьте файл или обновите эталон.")
                 break
 
         if save_cache:
@@ -171,6 +196,68 @@ def get_bpm_advanced(file_path, save_cache=True):
         print(f"{fname}: error calculating bpm: {e}")
         return None
 
+
+def update_expected_bpms():
+    updated = {}
+    for expected_file, expected_bpm in EXPECTED_BPMS.items():
+        expected_base = expected_file.replace('.mp3', '').lower()
+        for cached_file, cached_bpm in BPM_CACHE.items():
+            if expected_base in cached_file:
+                updated[expected_file] = cached_bpm
+                print(f"Обновлено: {expected_file} = {cached_bpm} BPM")
+                break
+        else:
+            updated[expected_file] = expected_bpm
+
+    return updated
+
+
+def analyze_bpm_quality(file_path):
+    try:
+        import librosa
+        from librosa.feature.rhythm import tempo as rhythm_tempo
+
+        y, sr = librosa.load(file_path, sr=44100)
+        fname = os.path.basename(file_path)
+
+        print(f"\n=== Анализ качества BPM для {fname} ===")
+
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+        tempo_main = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=512)
+        print(f"Основной метод: {tempo_main.item():.2f}")
+
+        configs = [
+            (256, 4.0, "короткий хоп"),
+            (512, 2.0, "короткий автокорр"),
+            (512, 8.0, "длинный автокорр"),
+            (1024, 4.0, "длинный хоп"),
+        ]
+
+        results = []
+        for hop, ac_size, name in configs:
+            try:
+                tempo = rhythm_tempo(onset_envelope=onset_env, sr=sr, hop_length=hop, ac_size=ac_size)
+                results.append(tempo.item())
+                print(f"{name}: {tempo.item():.2f}")
+            except:
+                print(f"{name}: ошибка")
+
+        if len(results) > 1:
+            std_dev = np.std(results)
+            print(f"Стандартное отклонение: {std_dev:.2f}")
+            if std_dev > 10:
+                print("⚠️  Высокая вариативность результатов - BPM может быть неточным")
+            else:
+                print("✅  Результаты стабильны")
+
+        if results:
+            median_val = np.median(results)
+            outliers = [r for r in results if abs(r - median_val) > 20]
+            if outliers:
+                print(f"⚠️  Найдены выбросы: {outliers}")
+
+    except Exception as e:
+        print(f"Ошибка анализа: {e}")
 
 def get_bpm(file_path, save_cache=True):
     return get_bpm_advanced(file_path, save_cache)

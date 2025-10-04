@@ -8,7 +8,7 @@ class DebugMenu(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Debug Menu")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(400, 550)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -46,6 +46,11 @@ class DebugMenu(QWidget):
         self.song_time_label = self.create_label("Время песни: ---")
         layout.addWidget(self.song_time_label)
 
+        self.auto_play_button = QPushButton("🤖 Автопрохождение: ВЫКЛ")
+        self.auto_play_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
+        self.auto_play_button.clicked.connect(self.toggle_auto_play)
+        layout.addWidget(self.auto_play_button)
+
         self.add_100_button = QPushButton("+100 очков")
         self.add_100_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
         self.add_100_button.clicked.connect(self.add_100_points)
@@ -62,6 +67,8 @@ class DebugMenu(QWidget):
         layout.addWidget(self.win_button)
 
         self.setLayout(layout)
+
+        self.is_auto_playing = False
 
     def create_label(self, text, bold=False):
         label = QLabel(text, self)
@@ -118,6 +125,15 @@ class DebugMenu(QWidget):
             except:
                 self.song_time_label.setText(f"Время песни: {game_screen.game_time:.1f}s")
 
+    def toggle_auto_play(self):
+        self.is_auto_playing = not self.is_auto_playing
+        if self.is_auto_playing:
+            self.auto_play_button.setText("🤖 Автопрохождение: ВКЛ")
+            self.auto_play_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
+        else:
+            self.auto_play_button.setText("🤖 Автопрохождение: ВЫКЛ")
+            self.auto_play_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
+
     def add_100_points(self):
         if self.parent() and hasattr(self.parent(), "score_manager"):
             current_score = self.parent().score_manager.get_score()
@@ -132,3 +148,6 @@ class DebugMenu(QWidget):
     def finish_level(self):
         if self.parent():
             self.parent().end_game()
+
+    def is_auto_play_enabled(self):
+        return self.is_auto_playing

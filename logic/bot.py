@@ -12,8 +12,8 @@ class AutoPlayer:
         if not self.game_screen.debug_menu.is_auto_play_enabled():
             return
 
-        current_time = self.game_screen.game_time * 1000 
-        min_press_duration = 100  
+        current_time = self.game_screen.game_time * 1000
+        min_press_duration = 100
 
         active_notes = []
         for note in self.game_screen.notes:
@@ -38,7 +38,7 @@ class AutoPlayer:
                     'type': 'hold' if isinstance(note, HoldNote) else 'tap'
                 }
                 self.game_screen.player.lanes_state[lane] = True
-                self.game_screen.check_hit(lane)  
+                self.game_screen.check_hit(lane)
                 self.game_screen.player.lane_pressed_changed.emit()
             else:
                 self.pressed_lanes[lane]['time'] = current_time

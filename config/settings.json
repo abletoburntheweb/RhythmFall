@@ -1,7 +1,9 @@
 {
     "fullscreen": true,
-    "music_volume": 2,
+    "music_volume": 7,
     "effects_volume": 4,
+    "preview_volume": 6,
     "show_fps": true,
+    "hit_sounds_volume": 70,
     "use_wasd": false
 }
