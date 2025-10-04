@@ -19,7 +19,7 @@ class Player(QObject):
 
     def keyPressEvent(self, event):
         if event.key() in self.keymap:
-            lane = self.keymap[event.key()]  # <-- без self.player
+            lane = self.keymap[event.key()]
             if not self.lanes_state[lane]:
                 self.lanes_state[lane] = True
                 self.note_hit.emit(lane)
@@ -27,6 +27,6 @@ class Player(QObject):
 
     def keyReleaseEvent(self, event):
         if event.key() in self.keymap:
-            lane = self.keymap[event.key()]  # <-- без self.player
+            lane = self.keymap[event.key()]
             self.lanes_state[lane] = False
             self.lane_pressed_changed.emit()

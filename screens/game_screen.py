@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import math
 
+from logic.bot import AutoPlayer
 from logic.debug_menu import DebugMenu
 from logic.player import Player
 from logic.score import ScoreManager
@@ -31,6 +32,8 @@ class GameScreen(QWidget):
         self.bpm = 120
         self.speed = 6
         self.update_speed_from_bpm()
+
+        self.auto_player = AutoPlayer(self)
 
         self._is_being_deleted = False
 
@@ -201,6 +204,9 @@ class GameScreen(QWidget):
         if hasattr(self, 'check_song_end_timer') and self.check_song_end_timer.isActive():
             self.check_song_end_timer.stop()
 
+        if hasattr(self, 'auto_player'):
+            self.auto_player.reset()
+            
         from logic.transitions import transition_open_victory_screen
         transition_open_victory_screen(
             self.parent(),
@@ -275,12 +281,9 @@ class GameScreen(QWidget):
                 else:
                     print(f"Неизвестный тип ноты: {note_type}")
 
-        for note in self.notes:
-            if isinstance(note, HoldNote):
-                lane_pressed = self.player.lanes_state[note.lane]
-                in_hit_zone = note.y + note.height >= self.hit_zone_y and note.y <= self.hit_zone_y + 20
-                note.is_being_held = lane_pressed and in_hit_zone
+        self.auto_player.simulate()
 
+        for note in self.notes:
             try:
                 note.update(speed=self.speed)
             except Exception as e:
