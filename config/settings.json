@@ -5,5 +5,10 @@
     "preview_volume": 6,
     "show_fps": true,
     "hit_sounds_volume": 70,
-    "use_wasd": false
+    "controls_keymap": {
+        "lane_0_key": 65,
+        "lane_1_key": 83,
+        "lane_2_key": 68,
+        "lane_3_key": 70
+    }
 }
