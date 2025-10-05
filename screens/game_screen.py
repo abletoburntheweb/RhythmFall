@@ -81,6 +81,8 @@ class GameScreen(QWidget):
         self.note_spawn_queue.clear()
         self.score_manager.reset_combo()
         self.score_manager.score = 0
+        self.score_manager.missed_notes = 0
+        self.score_manager.accuracy = 100.0
         self.game_finished = False
 
         if self.selected_song:
@@ -89,6 +91,8 @@ class GameScreen(QWidget):
                 self.bpm = self.selected_song["bpm"]
                 self.update_speed_from_bpm()
             print(f"[GameScreen] Игра стартовала с песней: {self.selected_song.get('title', 'Unknown')}")
+
+            self.score_manager.set_total_notes(len(self.note_spawn_queue))
 
             self.start_countdown()
         else:
@@ -273,10 +277,6 @@ class GameScreen(QWidget):
                     if note in self.notes:
                         self.notes.remove(note)
 
-        if not hit_occurred:
-            self.score_manager.reset_combo()
-            print(f"MISSED HIT lane {lane} | Combo сброшен")
-
     def update_game(self):
         if self.game_finished or getattr(self, '_is_being_deleted', False):
             return
@@ -298,12 +298,14 @@ class GameScreen(QWidget):
                 if note_type == "DefaultNote":
                     if y_now < self.height() + 20:
                         note = DefaultNote(lane, y=y_now)
+                        note.time = time
                         self.notes.append(note)
                 elif note_type == "HoldNote":
                     duration = note_info.get("duration", 1.0)
                     height = int(duration * pixels_per_sec)
                     if y_now < self.height() + height:
                         note = HoldNote(lane, y=y_now, length=height, hold_time=duration * 1000)
+                        note.time = time
                         self.notes.append(note)
                 else:
                     print(f"Неизвестный тип ноты: {note_type}")
@@ -317,8 +319,9 @@ class GameScreen(QWidget):
                 print(f"[ERROR] Ошибка при обновлении ноты: {e}")
                 note.active = False
 
-            if not note.active and note.y > self.height():
-                self.score_manager.reset_combo()
+            if note.y > self.hit_zone_y + 20:
+                self.score_manager.add_miss_hit()
+                note.active = False
 
         self.notes = [n for n in self.notes if n.active]
         self.update()
@@ -435,6 +438,7 @@ class GameScreen(QWidget):
         painter.drawText(20, 160, f"Speed: {self.speed:.2f}")
         painter.drawText(20, 190, f"Time: {self.game_time:.3f}s")
         painter.drawText(20, 220, f"Offset: {self.audio_offset:.3f}s")
+        painter.drawText(20, 250, f"Accuracy: {self.score_manager.get_accuracy():.2f}%")
 
         if self.countdown_active:
             painter.setFont(QFont("Arial", 72, QFont.Bold))

@@ -8,6 +8,10 @@ class ScoreManager:
         self.combo_multiplier = 1.0
         self.base_hit_points = 100
 
+        self.total_notes = 0
+        self.missed_notes = 0
+        self.accuracy = 100.0
+
     def add_score(self, hit_type="perfect"):
 
         combo_multiplier = min(4, 1 + (self.combo // 10))
@@ -41,6 +45,16 @@ class ScoreManager:
     def get_max_combo(self):
         return self.max_combo
 
+    def set_total_notes(self, total):
+        self.total_notes = total
+        self.update_accuracy()
+
+    def update_accuracy(self):
+        if self.total_notes == 0:
+            self.accuracy = 100.0
+        else:
+            self.accuracy = max(0, 100 - (self.missed_notes / self.total_notes) * 100)
+
     def add_perfect_hit(self):
         return self.add_score("perfect")
 
@@ -48,6 +62,11 @@ class ScoreManager:
         return self.add_score("good")
 
     def add_miss_hit(self):
+        self.missed_notes += 1
         self.reset_combo()
-        print(f"[ScoreManager] Miss! Combo сброшен, очки не начислены")
+        self.update_accuracy()
+        print(f"[ScoreManager] Miss! Combo сброшен, очки не начислены. Accuracy: {self.accuracy:.2f}%")
         return 0
+
+    def get_accuracy(self):
+        return self.accuracy
