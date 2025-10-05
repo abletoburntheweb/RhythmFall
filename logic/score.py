@@ -24,12 +24,12 @@ class ScoreManager:
         self.score += final_points
 
         print(
-            f"[ScoreManager] {hit_type} hit! +{self.base_hit_points} -> {final_points} (x{self.combo_multiplier:.1f}) | Combo: {self.combo} | Total: {self.score}")
+            f"[ScoreManager] {hit_type} hit! +{self.base_hit_points} -> {final_points} (x{self.combo_multiplier:.1f}) | Комбо: {self.combo} | Всего: {self.score}")
         return final_points
 
     def reset_combo(self):
         if self.combo > 0:
-            print(f"[ScoreManager] Combo сброшено! Было: {self.combo}")
+            print(f"[ScoreManager] Комбо сброшено! Было: {self.combo}")
         self.combo = 0
         self.combo_multiplier = 1.0
 
@@ -65,7 +65,7 @@ class ScoreManager:
         self.missed_notes += 1
         self.reset_combo()
         self.update_accuracy()
-        print(f"[ScoreManager] Miss! Combo сброшен, очки не начислены. Accuracy: {self.accuracy:.2f}%")
+        print(f"[ScoreManager] Промах! Комбо сброшено, очки не начислены. Точность: {self.accuracy:.2f}%")
         return 0
 
     def get_accuracy(self):

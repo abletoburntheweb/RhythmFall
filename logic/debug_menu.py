@@ -103,11 +103,11 @@ class DebugMenu(QWidget):
             self.max_combo_label.setText(f"Макс. комбо: {max_combo}")
             self.combo_multiplier_label.setText(f"Множитель комбо: x{combo_multiplier:.1f}")
 
-        if hasattr(game_screen, "notes"):
-            self.notes_current_label.setText(f"Активные ноты: {len(game_screen.notes)}")
+        if hasattr(game_screen, "note_manager"):
+            self.notes_current_label.setText(f"Активные ноты: {len(game_screen.note_manager.get_notes())}")
 
-        if hasattr(game_screen, "note_spawn_queue"):
-            self.notes_total_label.setText(f"Всего нот: {len(game_screen.note_spawn_queue)}")
+        if hasattr(game_screen, "note_manager"):
+            self.notes_total_label.setText(f"Всего нот: {game_screen.note_manager.get_spawn_queue_size()}")
 
         if hasattr(game_screen, "bpm"):
             self.bpm_label.setText(f"BPM: {game_screen.bpm}")
@@ -121,7 +121,8 @@ class DebugMenu(QWidget):
                 total_time = int(duration)
                 current_min, current_sec = int(current_time // 60), int(current_time % 60)
                 total_min, total_sec = int(total_time // 60), int(total_time % 60)
-                self.song_time_label.setText(f"Время песни: {current_min:02d}:{current_sec:02d}/{total_min:02d}:{total_sec:02d}")
+                self.song_time_label.setText(
+                    f"Время песни: {current_min:02d}:{current_sec:02d}/{total_min:02d}:{total_sec:02d}")
             except:
                 self.song_time_label.setText(f"Время песни: {game_screen.game_time:.1f}s")
 

@@ -1,4 +1,3 @@
-# logic/bot.py
 from logic.notes import HoldNote, DefaultNote
 
 
@@ -16,7 +15,7 @@ class AutoPlayer:
         min_press_duration = 100
 
         active_notes = []
-        for note in self.game_screen.notes:
+        for note in self.game_screen.note_manager.get_notes():
             in_hit_zone = False
             if isinstance(note, HoldNote):
                 in_hit_zone = (note.y + note.height >= self.game_screen.hit_zone_y - 10 and
@@ -56,7 +55,7 @@ class AutoPlayer:
             press_info = self.pressed_lanes.pop(lane)
             self.game_screen.player.lanes_state[lane] = False
 
-            for note in self.game_screen.notes:
+            for note in self.game_screen.note_manager.get_notes():
                 if isinstance(note, HoldNote) and note.lane == lane:
                     note.is_being_held = False
 
