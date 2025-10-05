@@ -194,8 +194,31 @@ class SettingsMenu(QWidget):
         return self.create.settings_menu_scroll_area_widget(content_widget)
 
     def start_key_remap(self, button):
+        if hasattr(self, 'remap_active') and self.remap_active:
+            if hasattr(self, 'remap_target_button') and self.remap_target_button:
+                lane_key_prev = f"lane_{self.remap_target_lane}_key"
+                current_keymap = self.parent.settings.get("controls_keymap", {})
+                old_scan = current_keymap.get(lane_key_prev, None)
+                restored_text = getattr(self, "remap_old_text", None)
+                if not restored_text:
+                    try:
+                        restored_text = QKeySequence(old_scan).toString() if old_scan else None
+                    except Exception:
+                        restored_text = None
+                if restored_text and len(restored_text) == 1:
+                    self.remap_target_button.setText(restored_text)
+                else:
+                    default_keys_text = ["A", "S", "D", "F"]
+                    self.remap_target_button.setText(default_keys_text[self.remap_target_lane])
+
         self.remap_target_button = button
         self.remap_target_lane = button.property("lane")
+
+        lane_key = f"lane_{self.remap_target_lane}_key"
+        self.remap_old_scan = self.parent.settings.get("controls_keymap", {}).get(lane_key, None)
+
+        self.remap_old_text = button.text()
+
         self.remap_active = True
         button.setText("...")
         print(f"[Settings] Ожидание нажатия клавиши для линии {self.remap_target_lane + 1}...")
@@ -249,77 +272,92 @@ class SettingsMenu(QWidget):
             print("[Settings] Прогресс ачивок сброшен.")
 
     def keyPressEvent(self, event):
-        if hasattr(self, 'remap_active') and self.remap_active:
-            new_key = event.key()
-
-            if new_key not in [Qt.Key_Shift, Qt.Key_Control, Qt.Key_Alt, Qt.Key_Meta, Qt.Key_Space]:
-
-                new_key_text = QKeySequence(new_key).toString()
-                is_duplicate = False
-                for btn in self.key_buttons:
-                    if btn != self.remap_target_button and btn.text() == new_key_text:
-                        print(f"[Settings] Клавиша {new_key_text} уже используется для другой линии.")
-                        is_duplicate = True
-                        break
-
-                if not is_duplicate:
-
-                    self.remap_target_button.setText(new_key_text)
-
-                    lane_key = f"lane_{self.remap_target_lane}_key"
-                    self.parent.settings["controls_keymap"] = self.parent.settings.get("controls_keymap", {})
-                    self.parent.settings["controls_keymap"][lane_key] = new_key
-                    print(f"[Settings] Клавиша для линии {self.remap_target_lane + 1} изменена на {new_key_text}")
-                    self.parent.save_settings()
-
-                    if self.game_screen and hasattr(self.game_screen, 'player'):
-
-                        updated_keymap = {}
-                        for btn_idx, btn_widget in enumerate(self.key_buttons):
-                            btn_text = btn_widget.text()
-                            key_seq = QKeySequence(btn_text)
-                            if not key_seq.isEmpty():
-                                actual_key = key_seq.key() & 0xFFFF
-                                updated_keymap[actual_key] = btn_idx
-                            else:
-
-                                pass
-
-                        self.game_screen.player.set_keymap(updated_keymap)
-
-                else:
-                    print(f"[Settings] Назначение отменено: клавиша уже занята.")
-            else:
-                print(f"[Settings] Назначение отменено: неподходящая клавиша (модификатор или пробел).")
-
-            self.remap_active = False
-
-            if self.remap_target_button.text() == "...":
-
-                current_keymap = self.parent.settings.get("controls_keymap", {})
-                lane_key = f"lane_{self.remap_target_lane}_key"
-                if lane_key in current_keymap:
-                    old_key = current_keymap[lane_key]
-                    self.remap_target_button.setText(QKeySequence(old_key).toString())
-                else:
-
-                    default_keys_text = ["A", "S", "D", "F"]
-                    self.remap_target_button.setText(default_keys_text[self.remap_target_lane])
-
-        elif event.key() == Qt.Key_Escape:
-
+        if event.key() == Qt.Key_Escape:
             if hasattr(self, 'remap_active') and self.remap_active:
                 self.remap_active = False
-                current_keymap = self.parent.settings.get("controls_keymap", {})
-                lane_key = f"lane_{self.remap_target_lane}_key"
-                if lane_key in current_keymap:
-                    old_key = current_keymap[lane_key]
-                    self.remap_target_button.setText(QKeySequence(old_key).toString())
-                else:
-                    default_keys_text = ["A", "S", "D", "F"]
-                    self.remap_target_button.setText(default_keys_text[self.remap_target_lane])
+                if hasattr(self, 'remap_target_button') and self.remap_target_button:
+                    lane_key = f"lane_{self.remap_target_lane}_key"
+                    current_keymap = self.parent.settings.get("controls_keymap", {})
+                    old_scan = current_keymap.get(lane_key, None)
+
+                    restored = None
+                    if old_scan:
+                        try:
+                            restored = QKeySequence(old_scan).toString()
+                        except Exception:
+                            restored = None
+
+                    if not restored or len(restored) != 1 or not restored.isalpha():
+                        restored = ["A", "S", "D", "F"][self.remap_target_lane]
+
+                    self.remap_target_button.setText(restored)
                 print(f"[Settings] Переназначение отменено для линии {self.remap_target_lane + 1}.")
             else:
                 self.transitions.close_settings()
+            return
+
+        if hasattr(self, 'remap_active') and self.remap_active:
+            if Qt.Key_A <= event.key() <= Qt.Key_Z:
+                new_key_text = QKeySequence(event.key()).toString().upper()
+                new_scan = event.nativeScanCode()
+
+                swap_button = None
+                swap_lane = None
+                for i, btn in enumerate(self.key_buttons):
+                    if btn is self.remap_target_button:
+                        continue
+                    if btn.text().upper() == new_key_text:
+                        swap_button = btn
+                        swap_lane = i
+                        break
+                    lane_key_i = f"lane_{i}_key"
+                    saved_scan = self.parent.settings.get("controls_keymap", {}).get(lane_key_i)
+                    if saved_scan == new_scan:
+                        swap_button = btn
+                        swap_lane = i
+                        break
+
+                controls_map = self.parent.settings.setdefault("controls_keymap", {})
+
+                if swap_button:
+                    old_text = getattr(self, "remap_old_text", None)
+                    if not old_text or len(old_text) != 1 or not old_text.isalpha():
+                        if getattr(self, "remap_old_scan", None):
+                            try:
+                                old_text = QKeySequence(self.remap_old_scan).toString()
+                            except Exception:
+                                old_text = None
+                        if not old_text or len(old_text) != 1:
+                            old_text = ["A", "S", "D", "F"][self.remap_target_lane]
+
+                    swap_button.setText(old_text)
+                    self.remap_target_button.setText(new_key_text)
+
+                    if getattr(self, "remap_old_scan", None):
+                        controls_map[f"lane_{swap_lane}_key"] = self.remap_old_scan
+                    else:
+                        controls_map[f"lane_{swap_lane}_key"] = ord(old_text.upper())
+
+                    controls_map[f"lane_{self.remap_target_lane}_key"] = new_scan
+                    print(f"[Settings] Поменяли местами клавиши {old_text} ↔ {new_key_text}")
+                else:
+                    self.remap_target_button.setText(new_key_text)
+                    controls_map[f"lane_{self.remap_target_lane}_key"] = new_scan
+                    print(f"[Settings] Назначена новая клавиша {new_key_text} для линии {self.remap_target_lane + 1}")
+
+                self.parent.save_settings()
+
+                if self.game_screen and hasattr(self.game_screen, 'player'):
+                    updated_keymap = {}
+                    for i, btn in enumerate(self.key_buttons):
+                        lane_key = f"lane_{i}_key"
+                        val = self.parent.settings.get("controls_keymap", {}).get(lane_key)
+                        if val is not None:
+                            updated_keymap[val] = i
+                    self.game_screen.player.set_keymap(updated_keymap)
+
+                self.remap_active = False
+            else:
+                print(f"[Settings] Игнорируем: недопустимая клавиша ({event.key()})")
         else:
             super().keyPressEvent(event)

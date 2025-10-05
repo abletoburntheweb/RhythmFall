@@ -45,10 +45,10 @@ class Player(QObject):
     def get_current_keys_as_text(self):
         from PyQt5.QtGui import QKeySequence
         sorted_items = sorted(self.keymap.items(), key=lambda item: item[1])
-        return [QKeySequence(key).toString() for key, lane in sorted_items]
+        return [f"Scan:{key}" for key, lane in sorted_items] 
 
     def keyPressEvent(self, event):
-        key = event.key()
+        key = event.nativeScanCode()
         if key in self.keymap:
             lane = self.keymap[key]
             if 0 <= lane < len(self.lanes_state) and not self.lanes_state[lane]:
@@ -57,7 +57,7 @@ class Player(QObject):
                 self.lane_pressed_changed.emit()
 
     def keyReleaseEvent(self, event):
-        key = event.key()
+        key = event.nativeScanCode()
         if key in self.keymap:
             lane = self.keymap[key]
             if 0 <= lane < len(self.lanes_state):
