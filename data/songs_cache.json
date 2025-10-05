@@ -1,0 +1,74 @@
+{
+    "songs\\Around the World1 - Daft Punk.wav": {
+        "path": "songs\\Around the World1 - Daft Punk.wav",
+        "title": "Daft Punk",
+        "artist": "Around the World1",
+        "bpm": 120,
+        "year": "Н/Д",
+        "duration": "01:59"
+    },
+    "songs\\Daydreaming.wav": {
+        "path": "songs\\Daydreaming.wav",
+        "title": "Daydreaming",
+        "artist": "Неизвестен",
+        "bpm": 113,
+        "year": "Н/Д",
+        "duration": "03:13"
+    },
+    "songs\\Hypernova.wav": {
+        "path": "songs\\Hypernova.wav",
+        "title": "Hypernova",
+        "artist": "Неизвестен",
+        "bpm": 112,
+        "year": "Н/Д",
+        "duration": "02:05"
+    },
+    "songs\\hyperpop5demo.wav": {
+        "path": "songs\\hyperpop5demo.wav",
+        "title": "hyperpop5demo",
+        "artist": "Неизвестен",
+        "bpm": 105,
+        "year": "Н/Д",
+        "duration": "01:37"
+    },
+    "songs\\Intro_mixed_and_mastered.wav": {
+        "path": "songs\\Intro_mixed_and_mastered.wav",
+        "title": "Intro_mixed_and_mastered",
+        "artist": "Неизвестен",
+        "bpm": 129,
+        "year": "Н/Д",
+        "duration": "01:35"
+    },
+    "songs\\Killshot - Eminem.wav": {
+        "path": "songs\\Killshot - Eminem.wav",
+        "title": "Eminem",
+        "artist": "Killshot",
+        "bpm": 106,
+        "year": "Н/Д",
+        "duration": "04:13"
+    },
+    "songs\\listen! - hako.wav": {
+        "path": "songs\\listen! - hako.wav",
+        "title": "hako",
+        "artist": "listen!",
+        "bpm": 108,
+        "year": "Н/Д",
+        "duration": "01:28"
+    },
+    "songs\\main_menu_mixed_and_mastered.wav": {
+        "path": "songs\\main_menu_mixed_and_mastered.wav",
+        "title": "main_menu_mixed_and_mastered",
+        "artist": "Неизвестен",
+        "bpm": 94,
+        "year": "Н/Д",
+        "duration": "02:42"
+    },
+    "songs\\MOTTO - NF.wav": {
+        "path": "songs\\MOTTO - NF.wav",
+        "title": "NF",
+        "artist": "MOTTO",
+        "bpm": 160,
+        "year": "Н/Д",
+        "duration": "03:37"
+    }
+}

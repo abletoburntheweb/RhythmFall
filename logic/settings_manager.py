@@ -9,7 +9,13 @@ DEFAULT_SETTINGS = {
     "effects_volume": 80,
     "preview_volume": 70,
     "show_fps": False,
-    "hit_sounds_volume": 70
+    "hit_sounds_volume": 70,
+    "controls_keymap": {
+        "lane_0_key": 65,
+        "lane_1_key": 83,
+        "lane_2_key": 68,
+        "lane_3_key": 70,
+    }
 }
 
 def load_settings():

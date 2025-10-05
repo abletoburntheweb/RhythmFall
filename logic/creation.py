@@ -268,6 +268,101 @@ class Create:
         layout.addWidget(scroll_area)
         return wrapper
 
+    def settings_menu_controls_title_label(self, text="Настройка управления"):
+        label = QLabel(text, self.parent)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("""
+            color: #ffcc00;
+            font-size: 40px;
+            font-weight: bold;
+            background: transparent;
+            margin-bottom: 10px;
+        """)
+        return label
+
+    def settings_menu_controls_description_label(self, text="Нажмите на клавишу, чтобы изменить её назначение."):
+        label = QLabel(text, self.parent)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("""
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            background: transparent;
+            margin-bottom: 35px;
+        """)
+        return label
+
+    def settings_menu_controls_header_label(self, text):
+        label = QLabel(text, self.parent)
+        label.setStyleSheet("""
+            color: #ffcc00+;
+            font-size: 26px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        return label
+
+
+    def settings_menu_controls_row_widget(self, action_text, key_text, lane_index, callback=None):
+        row_widget = QWidget()
+        row_widget.setStyleSheet("""
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        """)
+        row_layout = QHBoxLayout(row_widget)
+        row_layout.setSpacing(20)
+        row_layout.setContentsMargins(20, 10, 20, 10)
+
+        line_label = QLabel(action_text)
+        line_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        line_label.setStyleSheet("""
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            padding: 5px 10px;
+            background: transparent;
+        """)
+        row_layout.addWidget(line_label)
+
+        btn = QPushButton(key_text)
+        btn.setFixedSize(160, 55)
+        btn.setProperty("lane", lane_index)
+        if callback:
+            btn.clicked.connect(lambda _, b=btn: callback(b))
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.1);
+                color: white;
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                border-radius: 10px;
+                font-size: 22px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                border-color: white;
+            }
+            QPushButton:pressed {
+                background-color: rgba(255, 255, 255, 0.35);
+                color: black;
+            }
+        """)
+        row_layout.addStretch(1)
+        row_layout.addWidget(btn, alignment=Qt.AlignCenter)
+        row_layout.addStretch(1)
+
+        return row_widget, btn
+
+    def settings_menu_controls_hint_label(self, text="Нажмите ESC, чтобы отменить переназначение клавиши"):
+        label = QLabel(text, self.parent)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet("""
+            color: white;
+            font-size: 16px;
+            margin-top: 25px;
+            background: transparent;
+        """)
+        return label
+
     def separator(self, x=0, y=0, w=600, h=20, color="rgba(255, 255, 255, 50)"):
         line = QFrame(self.parent)
         line.setFrameShape(QFrame.HLine)
@@ -336,7 +431,7 @@ class Create:
                 border-radius: 20px;
                 border: 2px solid #555;
                 box-shadow: 3px 3px 10px rgba(0,0,0,0.7);
-                overflow: hidden; /* Обрезаем всё, что выходит за границы */
+                overflow: hidden;
             }
             QFrame:hover {
                 border-color: gold;
@@ -701,7 +796,7 @@ class Create:
             """,
             'default': """
                 QPushButton {
-                    background-color: #555555; /* Серый по умолчанию */
+                    background-color: #555555;
                     color: white;
                     border: 2px solid #777777;
                     border-radius: 10px;

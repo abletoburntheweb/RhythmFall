@@ -1,7 +1,8 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
-    QStackedWidget, QSizePolicy
+    QStackedWidget, QSizePolicy, QPushButton, QLabel, QGridLayout
 )
 from logic.creation import Create
 from logic.transitions import Transitions
@@ -39,10 +40,14 @@ class SettingsMenu(QWidget):
         tabs_layout = QHBoxLayout()
         tabs_layout.addStretch(1)
 
-        self.btn_sound = self.create.button("Звук", lambda: self.stacked_widget.setCurrentIndex(0), x=0, y=0, w=100, h=40, preset=2)
-        self.btn_graphics = self.create.button("Графика", lambda: self.stacked_widget.setCurrentIndex(1), x=0, y=0, w=100, h=40, preset=2)
-        self.btn_controls = self.create.button("Управление", lambda: self.stacked_widget.setCurrentIndex(2), x=0, y=0, w=100, h=40, preset=2)
-        self.btn_misc = self.create.button("Прочее", lambda: self.stacked_widget.setCurrentIndex(3), x=0, y=0, w=100, h=40, preset=2)
+        self.btn_sound = self.create.button("Звук", lambda: self.stacked_widget.setCurrentIndex(0), x=0, y=0, w=100,
+                                            h=40, preset=2)
+        self.btn_graphics = self.create.button("Графика", lambda: self.stacked_widget.setCurrentIndex(1), x=0, y=0,
+                                               w=100, h=40, preset=2)
+        self.btn_controls = self.create.button("Управление", lambda: self.stacked_widget.setCurrentIndex(2), x=0, y=0,
+                                               w=100, h=40, preset=2)
+        self.btn_misc = self.create.button("Прочее", lambda: self.stacked_widget.setCurrentIndex(3), x=0, y=0, w=100,
+                                           h=40, preset=2)
 
         tabs_layout.addWidget(self.btn_sound)
         tabs_layout.addWidget(self.btn_graphics)
@@ -131,12 +136,47 @@ class SettingsMenu(QWidget):
     def create_controls_widget(self):
         content_widget, layout = self.create.settings_menu_content_widget()
 
-        self.controls_checkbox = self.create.settings_menu_checkbox(
-            "Управление WASD",
-            checked=self.parent.settings.get("use_wasd", False),
-            callback=self.toggle_controls
-        )
-        layout.addWidget(self.controls_checkbox)
+        title = self.create.settings_menu_controls_title_label()
+        layout.addWidget(title)
+
+        desc = self.create.settings_menu_controls_description_label()
+        layout.addWidget(desc)
+
+        headers_layout = QHBoxLayout()
+        headers_layout.setContentsMargins(120, 0, 120, 0)
+
+        actions_header = self.create.settings_menu_controls_header_label("Действия")
+        keys_header = self.create.settings_menu_controls_header_label("Клавиши")
+
+        headers_layout.addWidget(actions_header, alignment=Qt.AlignLeft)
+        headers_layout.addStretch(1)
+        headers_layout.addWidget(keys_header, alignment=Qt.AlignCenter)
+        headers_layout.addStretch(1)
+        layout.addLayout(headers_layout)
+
+        keys_layout = QGridLayout()
+        keys_layout.setSpacing(18)
+        keys_layout.setContentsMargins(120, 10, 120, 10)
+
+        current_keys_text = ["A", "S", "D", "F"]
+        if self.game_screen and hasattr(self.game_screen, 'player'):
+            current_keys_text = self.game_screen.player.get_current_keys_as_text()
+
+        self.key_buttons = []
+        for i, key_text in enumerate(current_keys_text):
+            row_widget, btn = self.create.settings_menu_controls_row_widget(
+                action_text=f"Линия {i + 1}",
+                key_text=key_text,
+                lane_index=i,
+                callback=self.start_key_remap
+            )
+            self.key_buttons.append(btn)
+            keys_layout.addWidget(row_widget, i, 0)
+
+        layout.addLayout(keys_layout)
+
+        hint_label = self.create.settings_menu_controls_hint_label()
+        layout.addWidget(hint_label)
 
         return self.create.settings_menu_scroll_area_widget(content_widget)
 
@@ -152,6 +192,13 @@ class SettingsMenu(QWidget):
         layout.addWidget(self.reset_achievements_button, alignment=Qt.AlignLeft)
 
         return self.create.settings_menu_scroll_area_widget(content_widget)
+
+    def start_key_remap(self, button):
+        self.remap_target_button = button
+        self.remap_target_lane = button.property("lane")
+        self.remap_active = True
+        button.setText("...")
+        print(f"[Settings] Ожидание нажатия клавиши для линии {self.remap_target_lane + 1}...")
 
     def toggle_fullscreen(self, state):
         if self.parent:
@@ -202,7 +249,77 @@ class SettingsMenu(QWidget):
             print("[Settings] Прогресс ачивок сброшен.")
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            self.transitions.close_settings()
+        if hasattr(self, 'remap_active') and self.remap_active:
+            new_key = event.key()
+
+            if new_key not in [Qt.Key_Shift, Qt.Key_Control, Qt.Key_Alt, Qt.Key_Meta, Qt.Key_Space]:
+
+                new_key_text = QKeySequence(new_key).toString()
+                is_duplicate = False
+                for btn in self.key_buttons:
+                    if btn != self.remap_target_button and btn.text() == new_key_text:
+                        print(f"[Settings] Клавиша {new_key_text} уже используется для другой линии.")
+                        is_duplicate = True
+                        break
+
+                if not is_duplicate:
+
+                    self.remap_target_button.setText(new_key_text)
+
+                    lane_key = f"lane_{self.remap_target_lane}_key"
+                    self.parent.settings["controls_keymap"] = self.parent.settings.get("controls_keymap", {})
+                    self.parent.settings["controls_keymap"][lane_key] = new_key
+                    print(f"[Settings] Клавиша для линии {self.remap_target_lane + 1} изменена на {new_key_text}")
+                    self.parent.save_settings()
+
+                    if self.game_screen and hasattr(self.game_screen, 'player'):
+
+                        updated_keymap = {}
+                        for btn_idx, btn_widget in enumerate(self.key_buttons):
+                            btn_text = btn_widget.text()
+                            key_seq = QKeySequence(btn_text)
+                            if not key_seq.isEmpty():
+                                actual_key = key_seq.key() & 0xFFFF
+                                updated_keymap[actual_key] = btn_idx
+                            else:
+
+                                pass
+
+                        self.game_screen.player.set_keymap(updated_keymap)
+
+                else:
+                    print(f"[Settings] Назначение отменено: клавиша уже занята.")
+            else:
+                print(f"[Settings] Назначение отменено: неподходящая клавиша (модификатор или пробел).")
+
+            self.remap_active = False
+
+            if self.remap_target_button.text() == "...":
+
+                current_keymap = self.parent.settings.get("controls_keymap", {})
+                lane_key = f"lane_{self.remap_target_lane}_key"
+                if lane_key in current_keymap:
+                    old_key = current_keymap[lane_key]
+                    self.remap_target_button.setText(QKeySequence(old_key).toString())
+                else:
+
+                    default_keys_text = ["A", "S", "D", "F"]
+                    self.remap_target_button.setText(default_keys_text[self.remap_target_lane])
+
+        elif event.key() == Qt.Key_Escape:
+
+            if hasattr(self, 'remap_active') and self.remap_active:
+                self.remap_active = False
+                current_keymap = self.parent.settings.get("controls_keymap", {})
+                lane_key = f"lane_{self.remap_target_lane}_key"
+                if lane_key in current_keymap:
+                    old_key = current_keymap[lane_key]
+                    self.remap_target_button.setText(QKeySequence(old_key).toString())
+                else:
+                    default_keys_text = ["A", "S", "D", "F"]
+                    self.remap_target_button.setText(default_keys_text[self.remap_target_lane])
+                print(f"[Settings] Переназначение отменено для линии {self.remap_target_lane + 1}.")
+            else:
+                self.transitions.close_settings()
         else:
             super().keyPressEvent(event)

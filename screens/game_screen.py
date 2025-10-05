@@ -44,11 +44,15 @@ class GameScreen(QWidget):
 
         self.game_finished = False
 
-        self.music_manager = None
-        if hasattr(self.parent(), "music_manager"):
-            self.music_manager = self.parent().music_manager
+        self.game_engine = parent
 
-        self.player = Player()
+        self.music_manager = None
+        if hasattr(self.game_engine, "music_manager"):
+            self.music_manager = self.game_engine.music_manager
+
+        settings_for_player = self.game_engine.settings if self.game_engine else None
+        self.player = Player(parent=self, settings=settings_for_player)
+
         self.player.note_hit.connect(self.on_player_hit)
         self.player.lane_pressed_changed.connect(self.update)
 
@@ -68,8 +72,8 @@ class GameScreen(QWidget):
             self.music_manager.reset_hit_sound_state()
 
     def start_game(self):
-        if hasattr(self.parent(), "music_manager"):
-            self.parent().music_manager.stop_music()
+        if hasattr(self.game_engine, "music_manager"):
+            self.game_engine.music_manager.stop_music()
 
         self.reset_hit_sound_chain()
 
@@ -93,6 +97,12 @@ class GameScreen(QWidget):
             self.grabKeyboard()
             self.timer.start(16)
 
+        if hasattr(self, 'player') and self.player:
+            self.player.deleteLater()
+        settings_to_use = self.game_engine.settings if self.game_engine else None
+        self.player = Player(parent=self, settings=settings_to_use)
+        self.player.note_hit.connect(self.on_player_hit)
+        self.player.lane_pressed_changed.connect(self.update)
 
     def start_countdown(self):
         print(f"[GameScreen] Начало отсчета: {self.countdown_remaining} секунд")
@@ -174,7 +184,8 @@ class GameScreen(QWidget):
             self.game_timer.start()
             print("[GameScreen] QElapsedTimer запущен.")
 
-            success = self.parent().music_manager.play_game_music(self.selected_song_path)
+            if hasattr(self.game_engine, "music_manager"):
+                success = self.game_engine.music_manager.play_game_music(self.selected_song_path)
             if success:
                 print(f"[GameScreen] Воспроизведение запущено: {self.selected_song_path}")
 
@@ -198,8 +209,8 @@ class GameScreen(QWidget):
                     self.end_game()
             except Exception as e:
                 print(f"[DEBUG] Ошибка проверки окончания песни: {e}")
-                if hasattr(self.parent(), "music_manager"):
-                    if not self.parent().music_manager.pygame_audio.is_playing():
+                if hasattr(self.game_engine, "music_manager"):
+                    if not self.game_engine.music_manager.pygame_audio.is_playing():
                         self.end_game()
 
     def end_game(self):
@@ -217,10 +228,10 @@ class GameScreen(QWidget):
 
         if hasattr(self, 'auto_player'):
             self.auto_player.reset()
-            
+
         from logic.transitions import transition_open_victory_screen
         transition_open_victory_screen(
-            self.parent(),
+            self.game_engine,
             self.score_manager.get_score(),
             self.score_manager.get_combo(),
             self.score_manager.get_max_combo(),
@@ -320,8 +331,8 @@ class GameScreen(QWidget):
             self.debug_menu.toggle_visibility()
 
         if event.key() == Qt.Key_Escape:
-            if hasattr(self.parent(), "transitions"):
-                self.parent().transitions.close_game()
+            if hasattr(self.game_engine, "transitions"):
+                self.game_engine.transitions.close_game()
             return
 
         self.player.keyPressEvent(event)
@@ -352,8 +363,8 @@ class GameScreen(QWidget):
         if hasattr(self, 'debug_menu'):
             self.debug_menu.hide()
 
-        if hasattr(self.parent(), "music_manager"):
-            self.parent().music_manager.stop_game_music()
+        if hasattr(self.game_engine, "music_manager"):
+            self.game_engine.music_manager.stop_game_music()
 
         for note in self.notes:
             note.active = False

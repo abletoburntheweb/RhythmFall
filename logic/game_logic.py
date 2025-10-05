@@ -70,7 +70,7 @@ class GameEngine(QStackedWidget):
         self.song_select = SongSelect(parent=self, song_manager=self.song_manager)
         self.addWidget(self.song_select)
 
-        self.settings_menu = SettingsMenu(self)
+        self.settings_menu = SettingsMenu(parent=self)
         self.addWidget(self.settings_menu)
 
         self.game_screen = GameScreen(parent=self)
