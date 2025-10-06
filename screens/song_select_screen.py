@@ -119,6 +119,7 @@ class SongSelect(QWidget):
         details_layout.addWidget(separator)
 
         self.play_button = self.create.song_select_action_button("Играть", self.play_selected_song)
+        self.update_play_button_state()
         details_layout.addWidget(self.play_button)
 
         self.generate_notes_button = self.create.song_select_action_button("Сгенерировать ноты", self.generate_notes)
@@ -169,7 +170,26 @@ class SongSelect(QWidget):
         self.bpm_label.setText(f"BPM: {song_data.get('bpm', 'Н/Д')}")
         self.duration_label.setText(f"Длительность: {song_data.get('duration', '00:00')}")
 
+        self.update_play_button_state()
+
         self.play_song_preview(song_data["path"])
+
+    def update_play_button_state(self):
+        if not self.selected_song:
+            self.play_button.setEnabled(False)
+            return
+
+        from pathlib import Path
+        song_path = self.selected_song["path"]
+        base_name = Path(song_path).stem
+        notes_file_path = Path("songs") / "notes" / f"{base_name}.json"
+
+        if notes_file_path.exists():
+            self.play_button.setEnabled(True)
+            self.play_button.setText("Играть")
+        else:
+            self.play_button.setEnabled(False)
+            self.play_button.setText("Сначала сгенерируйте ноты")
 
     def filter_songs(self, text):
         self.song_logic.filter_songs(text)

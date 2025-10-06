@@ -338,19 +338,29 @@ class SongSelectLogic:
                 print(f"Ошибка при обновлении обложки: {e}")
 
     def play_selected_song(self):
-        if self.song_select.selected_song and hasattr(self.song_select.parent, "transitions"):
-            import json
-            from pathlib import Path
+        if not self.song_select.selected_song:
+            print("❌ Нет выбранной песни.")
+            return
 
-            song_path = self.song_select.selected_song["path"]
-            base_name = Path(song_path).stem
-            notes_file_path = Path("songs") / "notes" / f"{base_name}.json"
+        import json
+        from pathlib import Path
 
-            if notes_file_path.exists():
-                print(f"Найден файл нот: {notes_file_path}")
-            else:
-                print(f"Файл нот не найден для {song_path}. Генерация не производилась или файл удален.")
+        song_path = self.song_select.selected_song["path"]
+        base_name = Path(song_path).stem
+        notes_file_path = Path("songs") / "notes" / f"{base_name}.json"
 
+        if not notes_file_path.exists():
+            print(f"❌ Файл нот не найден: {notes_file_path}")
+            from PyQt5.QtWidgets import QMessageBox
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setWindowTitle("Ошибка")
+            msg.setText(f"Файл нот для песни '{base_name}' не найден.")
+            msg.setInformativeText("Сгенерируйте ноты перед игрой.")
+            msg.exec_()
+            return
+
+        if hasattr(self.song_select.parent, "transitions"):
             self.song_select.parent.transitions.open_game_with_song(self.song_select.selected_song)
 
     def add_song(self):
