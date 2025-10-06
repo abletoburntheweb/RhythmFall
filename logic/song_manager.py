@@ -37,9 +37,9 @@ class SongManager:
 
                 if cached_song and cached_song.get("file_mtime") == file_modified_time:
                     metadata = cached_song
-                    print(f"[SongManager] Используем кэшированные данные для: {path}")
+                   # print(f"[SongManager] Используем кэшированные данные для: {path}")
                 else:
-                    print(f"[SongManager] Обновляем данные для: {path}")
+                    #print(f"[SongManager] Обновляем данные для: {path}")
 
                     if file.lower().endswith(".mp3"):
                         metadata = self.read_mp3_metadata(path)
@@ -59,7 +59,7 @@ class SongManager:
             with open(CACHE_FILE, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-            print(f"[SongManager] Кэш песен не найден или поврежден. Будет создан заново.")
+           # print(f"[SongManager] Кэш песен не найден или поврежден. Будет создан заново.")
             return {}
 
     def _save_cache(self, existing_cache):
@@ -74,9 +74,9 @@ class SongManager:
         try:
             with open(CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(updated_cache, f, ensure_ascii=False, indent=4)
-            print(f"[SongManager] Кэш песен обновлен: {CACHE_FILE}")
+          #  print(f"[SongManager] Кэш песен обновлен: {CACHE_FILE}")
         except Exception as e:
-            print(f"[SongManager] Ошибка сохранения кэша: {e}")
+           print(f"[SongManager] Ошибка сохранения кэша: {e}")
 
     def read_mp3_metadata(self, filepath):
         metadata = {

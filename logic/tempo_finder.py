@@ -64,7 +64,7 @@ def get_bpm_advanced(file_path, save_cache=True):
 
     if fname in BPM_CACHE:
         bpm = BPM_CACHE[fname]
-        print(f"{fname}: cached bpm={bpm}")
+       # print(f"{fname}: cached bpm={bpm}")
 
         for expected_file, expected_bpm in EXPECTED_BPMS.items():
             expected_mp3 = expected_file.lower()
@@ -73,7 +73,7 @@ def get_bpm_advanced(file_path, save_cache=True):
             if expected_mp3 in fname or expected_wav in fname:
                 diff = abs(bpm - expected_bpm)
                 song_name = expected_file.replace('.mp3', '').replace('.wav', '')
-                print(f"  -> {song_name}: ожидаемо {expected_bpm} BPM, реальность: {bpm} BPM (разница: {diff})")
+              #  print(f"  -> {song_name}: ожидаемо {expected_bpm} BPM, реальность: {bpm} BPM (разница: {diff})")
                 break
         return bpm
 
