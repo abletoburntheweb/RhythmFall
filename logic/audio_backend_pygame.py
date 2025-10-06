@@ -48,6 +48,22 @@ class PygameAudioManager:
             print(f"Ошибка воспроизведения {filepath}: {e}")
             return False
 
+    def skip_to(self, seconds):
+        if not self._current_file:
+            print("⚠️ Нет загруженного трека для промотки.")
+            return False
+
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load(self._current_file)
+
+            pygame.mixer.music.play(start=seconds)
+            print(f"⏩ Промотка на {seconds:.2f} секунд")
+
+            return True
+        except Exception as e:
+            print(f"Ошибка при промотке: {e}")
+            return False
     def play_sfx(self, filepath, volume=None):
         try:
             sound = pygame.mixer.Sound(filepath)
@@ -81,6 +97,14 @@ class PygameAudioManager:
     def fadeout(self, time_ms):
         pygame.mixer.music.fadeout(time_ms)
         self._current_file = None
+
+    def seek(self, seconds):
+        try:
+            import pygame
+            pygame.mixer.music.rewind()
+            pygame.mixer.music.set_pos(seconds)
+        except Exception as e:
+            print(f"[PygameAudioManager] Ошибка при seek: {e}")
 
     def quit(self):
         pygame.mixer.quit()
