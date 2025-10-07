@@ -1,10 +1,13 @@
 {
-    "currency": 455415,
+    "currency": 454315,
     "items": {
+        "kick_2": true,
+        "snare_2": true,
+        "kick_1": true
     },
     "active_items": {
-        "Balls": "ball_default",
-        "Platforms": "platform_default",
+        "Kick": "kick_1",
+        "Snare": "snare_2",
         "Backgrounds": "background_default",
         "Misc": null
     }

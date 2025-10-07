@@ -56,38 +56,38 @@
         },
         {
             "id": 7,
-            "title": "Достижение 7",
-            "description": "Описание для достижения 7",
-            "unlocked": false,
-            "current": 0,
+            "title": "Коллекционер I",
+            "description": "Купите 3 предмета в магазине",
+            "unlocked": true,
+            "current": 3,
             "total": 3,
             "image": "assets/achievements/7.png"
         },
         {
             "id": 8,
-            "title": "Достижение 8",
-            "description": "Описание для достижения 8",
+            "title": "Коллекционер II",
+            "description": "Купите 5 предметов в магазине",
             "unlocked": false,
-            "current": 0,
-            "total": 9,
-             "image": "assets/achievements/8.png"
+            "current": 3,
+            "total": 5,
+            "image": "assets/achievements/8.png"
         },
         {
             "id": 9,
-            "title": "Достижение 9",
-            "description": "Описание для достижения 9",
+            "title": "Коллекционер III",
+            "description": "Купите 10 предметов в магазине",
             "unlocked": false,
-            "current": 0,
-            "total": 15,
+            "current": 3,
+            "total": 10,
             "image": "assets/achievements/9.png"
         },
         {
             "id": 10,
-            "title": "Достижение 10",
-            "description": "Описание для достижения 10",
+            "title": "Коллекционер IV",
+            "description": "Купите 15 предметов в магазине",
             "unlocked": false,
-            "current": 0,
-            "total": 10,
+            "current": 3,
+            "total": 15,
             "image": "assets/achievements/10.png"
         }
     ]

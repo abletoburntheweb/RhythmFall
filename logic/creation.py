@@ -165,8 +165,9 @@ class Create:
         """)
         return label
 
-    def settings_menu_slider(self, text, min_value=0, max_value=100, value=50, bold=False, callback=None, x=0, y=0, w=600, h=30,
-               font_family="Montserrat"):
+    def settings_menu_slider(self, text, min_value=0, max_value=100, value=50, bold=False, callback=None, x=0, y=0,
+                             w=600, h=30,
+                             font_family="Montserrat"):
         label = QLabel(text, self.parent)
         font = QFont(font_family, 18)
         if bold:
@@ -201,10 +202,8 @@ class Create:
                 border-radius: 5px;
             }
         """)
-
         if callback:
             slider.valueChanged.connect(callback)
-
         return label, slider
 
     def settings_menu_checkbox(self, text, checked=False, bold=False, callback=None, x=0, y=0, w=250, h=30, font_family="Montserrat"):
@@ -446,11 +445,10 @@ class Create:
 
         widget.setProperty("item_data", item)
 
-        if item["category"] == "Платформы":
-            pass
-        else:
+        image_path = item.get("image")
+        if image_path:
             image_label = QLabel(widget)
-            pixmap = QPixmap(item["image"])
+            pixmap = QPixmap(image_path)
             scaled_pixmap = pixmap.scaled(240, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             image_label.setPixmap(scaled_pixmap)
             image_label.setAlignment(Qt.AlignCenter)
@@ -470,6 +468,24 @@ class Create:
         """)
         name_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(name_label)
+
+        if "audio" in item:
+            preview_button = QPushButton("🔊 Прослушать", widget)
+            preview_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #6a5acd;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 16px;
+                    border-radius: 10px;
+                    padding: 8px;
+                }
+                QPushButton:hover {
+                    background-color: #5a4fb0;
+                }
+            """)
+            preview_button.clicked.connect(lambda: self.parent.preview_sound(item))
+            layout.addWidget(preview_button)
 
         if item["item_id"].endswith("_default"):
             default_label = QLabel("✔️ Дефолтный", widget)

@@ -19,6 +19,8 @@ from screens.main_menu import MainMenu
 from logic.settings_manager import load_settings, save_settings
 from screens.shop_screen import ShopScreen
 from logic.song_manager import SongManager
+from logic.player_data import PlayerDataManager
+
 
 class SongLoaderThread(QThread):
     songs_loaded = pyqtSignal(list)
@@ -31,13 +33,16 @@ class SongLoaderThread(QThread):
         self.song_manager.load_songs()
         self.songs_loaded.emit(self.song_manager.songs)
 
+
 class GameEngine(QStackedWidget):
     def __init__(self):
         super().__init__()
         self.settings = load_settings()
         self.selected_modifiers = []
 
-        self.music_manager = MusicManager(self.settings)
+        self.player_data_manager = PlayerDataManager()
+
+        self.music_manager = MusicManager(self.settings, player_data_manager=self.player_data_manager)
         self.achievement_manager = AchievementManager(parent=self)
         self.notification_manager = NotificationManager()
         self.notification_manager.set_parent(self)
@@ -79,7 +84,7 @@ class GameEngine(QStackedWidget):
         self.pause_menu = PauseMenu(parent=self)
         self.addWidget(self.pause_menu)
 
-        self.shop_screen = ShopScreen(parent=self, game_screen=self.game_screen)
+        self.shop_screen = ShopScreen(parent=self, game_screen=self.game_screen, music_manager=self.music_manager)
         self.addWidget(self.shop_screen)
 
         if self.settings.get("fullscreen", False):

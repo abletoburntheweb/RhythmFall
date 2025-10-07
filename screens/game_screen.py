@@ -1,3 +1,4 @@
+# screens/game_screen.py
 from PyQt5.QtGui import QPainter, QColor, QFont
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt, QTimer, QRect, QElapsedTimer
@@ -6,7 +7,6 @@ from pathlib import Path
 import math
 
 from logic.bot import AutoPlayer
-from logic.calibration import get_audio_offset_for_song
 from logic.debug_menu import DebugMenu
 from logic.game_render import GameRenderer
 from logic.note_manager import NoteManager
@@ -42,16 +42,23 @@ class GameScreen(QWidget):
         self.game_timer = QElapsedTimer()
         self.game_start_time = 0.0
         self.game_time = 0.0
-        self.audio_offset = 2.4
+        self.audio_offset = 2.4  
         self.calibration_offset = 0.0
         self.total_audio_offset = self.audio_offset + self.calibration_offset
 
         self.game_finished = False
 
         self.game_engine = parent
-
+        print(f"[GameScreen] game_engine: {self.game_engine is not None}")
+        print(
+            f"[GameScreen] game_engine.music_manager: {hasattr(self.game_engine, 'music_manager') if self.game_engine else False}")
+        print(
+            f"[GameScreen] game_engine.player_data_manager: {hasattr(self.game_engine, 'player_data_manager') if self.game_engine else False}")
         self.music_manager = None
         if hasattr(self.game_engine, "music_manager"):
+            
+            player_data_manager = getattr(self.game_engine, "player_data_manager", None)
+            self.game_engine.music_manager.player_data_manager = player_data_manager
             self.music_manager = self.game_engine.music_manager
 
         settings_for_player = self.game_engine.settings if self.game_engine else None
@@ -72,10 +79,11 @@ class GameScreen(QWidget):
         self.selected_song_path = self.selected_song.get("path") if self.selected_song else None
         self.skip_used = False
         self.skip_time_threshold = 10.0
-        self.time_offset = 0.0
-        self.skip_target_time = 0.0
+        self.time_offset = 0.0  
+        self.skip_target_time = 0.0  
         self.renderer = GameRenderer(self)
 
+        
         self.note_manager = NoteManager(self)
 
     def calibrate_offset(self, offset_adjustment):
@@ -93,18 +101,13 @@ class GameScreen(QWidget):
             self.game_engine.music_manager.stop_music()
 
         self.reset_hit_sound_chain()
-
+        print(f"[GameScreen] Перед reset_hit_sound_chain, music_manager: {self.music_manager is not None}")
         self.note_manager.clear_notes()
         self.score_manager.reset_combo()
         self.score_manager.score = 0
         self.score_manager.missed_notes = 0
         self.score_manager.accuracy = 100.0
         self.game_finished = False
-
-        if self.selected_song_path:
-            self.audio_offset = get_audio_offset_for_song(self.selected_song_path)
-            self.total_audio_offset = self.audio_offset + self.calibration_offset
-            print(f"[GameScreen] Загружен audio_offset: {self.audio_offset:.3f} для {self.selected_song_path}")
 
         if self.selected_song:
             self.note_manager.load_notes_from_file(self.selected_song)
@@ -159,12 +162,15 @@ class GameScreen(QWidget):
             print(f"[GameScreen] Файл не существует: {self.selected_song_path}")
             return
 
+        
         self.note_manager.load_notes_from_file(self.selected_song)
 
+        
         first_note_time = float('inf')
         if self.note_manager.note_spawn_queue:
             first_note_time = self.note_manager.note_spawn_queue[0].get("time", float('inf'))
 
+        
         if first_note_time != float('inf') and first_note_time > 5.0:
             self.skip_target_time = max(0.0, first_note_time - 5.0)
         else:
@@ -176,23 +182,28 @@ class GameScreen(QWidget):
             if self.timer.isActive():
                 self.timer.stop()
 
+            
             self.game_timer.restart()
-            self.game_start_time = 0.0
+            self.game_start_time = 0.0  
             self.game_time = 0.0
 
             print(f"[GameScreen] QElapsedTimer запущен. game_start_time: {self.game_start_time:.3f}")
 
+            
             success = self.game_engine.music_manager.play_game_music(self.selected_song_path)
 
             if success:
                 print(f"[GameScreen] Воспроизведение запущено: {self.selected_song_path}")
 
+                
                 QTimer.singleShot(50, self._sync_audio_and_game_time)
 
+                
                 self.check_song_end_timer = QTimer(self)
                 self.check_song_end_timer.timeout.connect(self.check_song_end)
                 self.check_song_end_timer.start(100)
 
+                
                 self.timer.start()
 
             else:
@@ -202,13 +213,15 @@ class GameScreen(QWidget):
 
     def _sync_audio_and_game_time(self):
         if hasattr(self.game_engine, "music_manager"):
-            if not self.game_engine.music_manager.pygame_audio.is_playing():
+            
+            if not self.game_engine.music_manager.is_game_music_playing():
                 print("[GameScreen] Аудио ещё не запущено, откладываем синхронизацию...")
                 QTimer.singleShot(10, self._sync_audio_and_game_time)
                 return
 
+        
         elapsed = self.game_timer.elapsed() / 1000.0
-
+        
         self.game_start_time = elapsed - self.total_audio_offset
         print(f"[GameScreen] Аудио запущено, синхронизация времени: game_start_time = {self.game_start_time:.3f}")
 
@@ -219,8 +232,9 @@ class GameScreen(QWidget):
                 audio_file = mutagen.File(self.selected_song_path)
                 duration = audio_file.info.length
 
+                
                 if self.skip_used:
-
+                    
                     if self.game_time >= (duration - self.skip_target_time - 0.1):
                         self.end_game()
                 else:
@@ -229,7 +243,7 @@ class GameScreen(QWidget):
             except Exception as e:
                 print(f"[DEBUG] Ошибка проверки окончания песни: {e}")
                 if hasattr(self.game_engine, "music_manager"):
-                    if not self.game_engine.music_manager.pygame_audio.is_playing():
+                    if not self.game_engine.music_manager.is_game_music_playing():
                         self.end_game()
 
     def end_game(self):
@@ -277,9 +291,12 @@ class GameScreen(QWidget):
         for note in self.note_manager.get_notes():
             if note.lane == lane and abs(note.y - self.hit_zone_y) < 30:
                 try:
-
-                    initial_y = -20
-                    speed = self.speed * (1000 / 16)
+                    
+                    
+                    
+                    
+                    initial_y = -20  
+                    speed = self.speed * (1000 / 16)  
                     expected_time_at_hit_zone = note.time + (self.hit_zone_y - initial_y) / speed
 
                     time_diff = abs(current_time - expected_time_at_hit_zone)
@@ -306,8 +323,9 @@ class GameScreen(QWidget):
             return
 
         if not self.countdown_active and self.game_timer.isValid():
+            
             elapsed_time = self.game_timer.elapsed() / 1000.0
-
+            
             self.game_time = self.game_start_time + elapsed_time + self.total_audio_offset
 
         if not self.countdown_active:
@@ -333,34 +351,27 @@ class GameScreen(QWidget):
             print(f"[GameScreen] Первая нота слишком близко ({first_note_time:.2f}с) — пропуск не требуется.")
             return
 
-        target_time = max(0.0, first_note_time - 5.0)
+        target_time = max(0.0, first_note_time - 5.0)  
         print(f"[GameScreen] Промотка песни до {target_time:.2f}с...")
         self.skip_used = True
 
+        
         self.note_manager.note_spawn_queue = [
             n for n in self.note_manager.note_spawn_queue if n.get("time", 0) >= target_time
         ]
 
-        if hasattr(self.music_manager, 'pygame_audio'):
-            try:
+        
+        if hasattr(self.game_engine, "music_manager"):
+            
+            self.game_engine.music_manager.stop_game_music()
+            
+            success = self.game_engine.music_manager.play_game_music(self.selected_song_path)
+            print(f"[GameScreen] Музыка перемотана до {target_time:.2f}с")
 
-                self.music_manager.pygame_audio.stop()
-
-                success = self.music_manager.pygame_audio.play_file(self.selected_song_path)
-                if success and target_time > 0:
-
-                    if hasattr(self.music_manager.pygame_audio, 'skip_to'):
-                        self.music_manager.pygame_audio.skip_to(target_time)
-                    else:
-
-                        pass
-                print(f"[GameScreen] Музыка перемотана до {target_time:.2f}с")
-            except Exception as e:
-                print(f"[GameScreen] Ошибка перемотки музыки: {e}")
-
-        elapsed_time = self.game_timer.elapsed() / 1000.0
-        self.game_timer.restart()
-        self.game_start_time = target_time - self.total_audio_offset
+        
+        elapsed_time = self.game_timer.elapsed() / 1000.0  
+        self.game_timer.restart()  
+        self.game_start_time = target_time - self.total_audio_offset  
         self.game_time = target_time
 
         print(f"[GameScreen] Установлено новое игровое время: {self.game_time:.3f}s")
@@ -370,17 +381,19 @@ class GameScreen(QWidget):
         if self.game_finished:
             return
 
+        
         if self.countdown_active:
             print("[GameScreen] Пропуск недоступен во время отсчёта.")
             return
 
-        if event.key() == Qt.Key_PageUp:
+        
+        if event.key() == Qt.Key_PageUp:  
             self.calibrate_offset(-0.01)
             return
-        elif event.key() == Qt.Key_PageDown:
+        elif event.key() == Qt.Key_PageDown:  
             self.calibrate_offset(0.01)
             return
-        elif event.key() == Qt.Key_Home:
+        elif event.key() == Qt.Key_Home:  
             self.calibration_offset = 0.0
             self.total_audio_offset = self.audio_offset + self.calibration_offset
             print(f"[GameScreen] Оффсет сброшен: {self.total_audio_offset:.3f}")

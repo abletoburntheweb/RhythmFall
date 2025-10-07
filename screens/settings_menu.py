@@ -1,3 +1,4 @@
+# screens/settings_menu.py
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
@@ -87,21 +88,31 @@ class SettingsMenu(QWidget):
         content_widget.show()
 
     def create_sound_widget(self):
+        print(
+            f"[SettingsMenu] Создание sound_widget, parent.settings: {getattr(self.parent, 'settings', 'NO SETTINGS')}")
         content_widget, layout = self.create.settings_menu_content_widget()
 
+        print(
+            f"[SettingsMenu] Подключаю update_music_volume с параметрами: music_volume={self.parent.settings.get('music_volume', 50)}")
         music_label, self.music_slider = self.create.settings_menu_slider(
-            "Громкость музыки", 0, 100, self.parent.settings.get("music_volume", 50), self.update_music_volume
+            "Громкость музыки", 0, 100, self.parent.settings.get("music_volume", 50), callback=self.update_music_volume
         )
+
+        print(
+            f"[SettingsMenu] Подключаю update_effects_volume с параметрами: effects_volume={self.parent.settings.get('effects_volume', 50)}")
         sfx_label, self.sfx_slider = self.create.settings_menu_slider(
-            "Громкость звуков", 0, 100, self.parent.settings.get("effects_volume", 50), self.update_effects_volume
+            "Громкость звуков", 0, 100, self.parent.settings.get("effects_volume", 50),
+            callback=self.update_effects_volume
         )
+
         hit_sounds_label, self.hit_sounds_slider = self.create.settings_menu_slider(
             "Громкость нажатий", 0, 100, self.parent.settings.get("hit_sounds_volume", 70),
-            self.update_hit_sounds_volume
+            callback=self.update_hit_sounds_volume
         )
+
         preview_label, self.preview_slider = self.create.settings_menu_slider(
             "Громкость предпросмотра", 0, 100, self.parent.settings.get("preview_volume", 70),
-            self.update_preview_volume
+            callback=self.update_preview_volume
         )
 
         layout.addWidget(music_label)
@@ -228,23 +239,34 @@ class SettingsMenu(QWidget):
             self.parent.toggle_fullscreen()
 
     def update_music_volume(self, value):
+        print(f"[DEBUG] update_music_volume вызван с значением: {value}")
         if self.parent:
-            self.parent.settings["music_volume"] = value
+            print(f"[DEBUG] self.parent существует: {self.parent}")
+            print(f"[DEBUG] self.parent.music_manager существует: {hasattr(self.parent, 'music_manager')}")
+            
             self.parent.music_manager.set_music_volume(value)
+            
             self.parent.save_settings()
+            print(f"[Settings] Громкость музыки обновлена: {value}")
 
     def update_effects_volume(self, value):
+        print(f"[DEBUG] update_effects_volume вызван с значением: {value}")
         if self.parent:
-            self.parent.settings["effects_volume"] = value
+            print(f"[DEBUG] self.parent существует: {self.parent}")
+            print(f"[DEBUG] self.parent.music_manager существует: {hasattr(self.parent, 'music_manager')}")
+            
             self.parent.music_manager.set_sfx_volume(value)
+            
             self.parent.save_settings()
+            print(f"[Settings] Громкость SFX обновлена: {value}")
 
     def update_hit_sounds_volume(self, value):
         if self.parent:
-            self.parent.settings["hit_sounds_volume"] = value
+            
             self.parent.music_manager.set_hit_sounds_volume(value)
+            
             self.parent.save_settings()
-            print(f"[Settings] Громкость нажатий: {value}")
+            print(f"[Settings] Громкость хит-звуков обновлена: {value}")
 
     def update_preview_volume(self, value):
         if self.parent:

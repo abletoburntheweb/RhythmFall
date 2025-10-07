@@ -9,8 +9,8 @@ class PlayerDataManager:
             "currency": 0,
             "items": {},
             "active_items": {
-                "Balls": "ball_default",
-                "Platforms": "platform_default",
+                "Kick": "kick_default",
+                "Snare": "snare_default",
                 "Backgrounds": "background_default"
             }
         }
@@ -28,10 +28,10 @@ class PlayerDataManager:
 
     def _save(self):
         active_items_clean = {
-            "Balls": self.data["active_items"].get("Balls", "ball_default"),
-            "Platforms": self.data["active_items"].get("Platforms", "platform_default"),
+            "Kick": self.data["active_items"].get("Kick", "kick_default"),
+            "Snare": self.data["active_items"].get("Snare", "snare_default"),
             "Backgrounds": self.data["active_items"].get("Backgrounds", "background_default"),
-            "Misc": None
+            "Misc": self.data["active_items"].get("Misc", None)
         }
         self.data["active_items"] = active_items_clean
 

@@ -6,21 +6,22 @@ from logic.transitions import Transitions
 from logic.player_data import PlayerDataManager
 
 CATEGORY_MAP = {
-    "Категория 1": "Category_1",
-    "Категория 2": "Category_2",
-    "Категория 3": "Category_3",
+    "Кик": "Kick",
+    "Снейр": "Snare",
     "Фоны": "Backgrounds",
     "Прочее": "Misc"
 }
 
+
 class ShopScreen(QWidget):
-    def __init__(self, parent=None, game_screen=None):
+    def __init__(self, parent=None, game_screen=None, music_manager=None):
         super().__init__(parent)
         self.parent = parent
         self.create = Create(self)
         self.transitions = Transitions(self.parent)
         self.player_data_manager = PlayerDataManager()
         self.game_screen = game_screen
+        self.music_manager = music_manager
         self.setFixedSize(1920, 1080)
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -43,7 +44,7 @@ class ShopScreen(QWidget):
 
         category_layout = QHBoxLayout()
         category_layout.setSpacing(20)
-        categories = ["Все", "Категория 1", "Категория 2", "Категория 3", "Фоны", "Прочее"]
+        categories = ["Все", "Кик", "Снейр", "Фоны", "Прочее"]
 
         for category in categories:
             btn = self.create.shop_category_button(
@@ -81,7 +82,7 @@ class ShopScreen(QWidget):
             category_ru = item["category"]
             category = CATEGORY_MAP.get(category_ru, None)
             is_purchased = self.player_data_manager.is_item_unlocked(item_id)
-            is_active = self.player_data_manager.get_active_item(category) == item_id
+            is_active = self.player_data_manager.get_active_item(category) == item_id if category else False
 
             item_widget = self.create.shop_item_widget(
                 item,
@@ -113,7 +114,8 @@ class ShopScreen(QWidget):
             internal_category = CATEGORY_MAP.get(category_ru, category_ru)
 
             is_purchased = self.player_data_manager.is_item_unlocked(item_id)
-            is_active = self.player_data_manager.get_active_item(internal_category) == item_id
+            is_active = self.player_data_manager.get_active_item(
+                internal_category) == item_id if internal_category and internal_category != category_ru else False
 
             item_widget = self.create.shop_item_widget(
                 item,
@@ -149,26 +151,32 @@ class ShopScreen(QWidget):
         category_ru = item["category"]
         category = CATEGORY_MAP.get(category_ru, None)
 
+        if category_ru in ["Кик", "Снейр"]:
+            internal_category = "Kick" if category_ru == "Кик" else "Snare"
+            self.player_data_manager.set_active_item(internal_category, item_id)
+            print(f"[ShopScreen] Игрок выбрал {item_id} для {internal_category}")
+
+            self.preview_sound(item)
+            return
+
         if category:
             self.player_data_manager.set_active_item(category, item_id)
             print(f"[ShopScreen] Игрок использует {item_id}")
 
-            if category == "Platforms" and self.game_screen:
-                image_path = item.get("image", None)
-                color = item.get("color", None)
-
-                if image_path:
-                    print(f"[ShopScreen] Устанавливаем текстуру платформы: {image_path}")
-                    self.game_screen.apply_platform_texture(image_path)
-                elif color:
-                    print(f"[ShopScreen] Устанавливаем цвет платформы: {color}")
-                    self.game_screen.apply_platform_color(color)
-                else:
-                    print(f"[ShopScreen] У платформы {item_id} нет ни цвета, ни текстуры!")
-
             self.refresh()
         else:
             print(f"⚠️ Игнорируем неизвестную категорию: {category_ru}")
+
+    def preview_sound(self, item):
+        audio_path = item.get("audio")
+        if audio_path:
+            print(f"[ShopScreen] Воспроизводим предпросмотр: {audio_path}")
+            if self.music_manager:
+                self.music_manager.play_custom_hit_sound(audio_path)
+            else:
+                print("[ShopScreen] MusicManager не найден для воспроизведения.")
+        else:
+            print(f"[ShopScreen] У элемента {item['item_id']} нет аудио для предпросмотра.")
 
     def refresh(self):
         while self.grid_layout.count():
@@ -178,7 +186,8 @@ class ShopScreen(QWidget):
 
         self.update_items()
 
-    def apply_passive_item(self, item_id):
+    def apply_passive_item(self, item):
+        item_id = item.get("item_id")
         if item_id == "misc_1":
             self.game_screen.lives_display.set_shop_extra_life(True)
             print(f"[ShopScreen] Доп. жизнь активирована ({self.game_screen.lives_display.total_lives})")

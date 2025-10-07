@@ -1,175 +1,131 @@
 {
-    "items": [
-        {
-            "item_id": "cat1_default",
-            "name": "Предмет 1 стандартный",
-            "price": 0,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat2_default",
-            "name": "Предмет 2 стандартный",
-            "price": 200,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-        {
-            "item_id": "background_default",
-            "name": "Default Background",
-            "price": 0,
-            "image": "assets/shop/background/default_background.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "cat1_1",
-            "name": "Предмет 1(1)",
-            "price": 100,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat1_2",
-            "name": "Предмет 1(2)",
-            "price": 200,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat1_3",
-            "name": "Предмет 1(3)",
-            "price": 200,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat1_4",
-            "name": "Предмет 1(4)",
-            "price": 100,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat1_5",
-            "name": "Предмет 1(5)",
-            "price": 200,
-            "image": "assets/shop/cat1/...",
-            "category": "Категория 1"
-        },
-        {
-            "item_id": "cat2_1",
-            "name": "Предмет 2(1)",
-            "price": 100,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-        {
-            "item_id": "cat2_2",
-            "name": "Предмет 2(2)",
-            "price": 200,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-        {
-            "item_id": "cat2_3",
-            "name": "Предмет 2(3)",
-            "price": 200,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-        {
-            "item_id": "cat2_4",
-            "name": "Предмет 2(4)",
-            "price": 100,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-        {
-            "item_id": "cat2_5",
-            "name": "Предмет 2(5)",
-            "price": 200,
-            "image": "assets/shop/cat2/...",
-            "category": "Категория 2"
-        },
-      {
-            "item_id": "cat3_1",
-            "name": "Предмет 3(1)",
-            "price": 100,
-            "image": "assets/shop/cat3/...",
-            "category": "Категория 3"
-        },
-        {
-            "item_id": "cat3_2",
-            "name": "Предмет 3(2)",
-            "price": 200,
-            "image": "assets/shop/cat3/...",
-            "category": "Категория 3"
-        },
-        {
-            "item_id": "background_1",
-            "name": "Background 1",
-            "price": 500,
-            "image": "assets/shop/background/background_1.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "background_2",
-            "name": "Background 2",
-            "price": 550,
-            "image": "assets/shop/background/background_2.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "background_3",
-            "name": "Background 3",
-            "price": 600,
-            "image": "assets/shop/background/background_3.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "background_4",
-            "name": "Background 4",
-            "price": 500,
-            "image": "assets/shop/background/background_4.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "background_5",
-            "name": "Background 5",
-            "price": 550,
-            "image": "assets/shop/background/background_5.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "background_6",
-            "name": "Background 6",
-            "price": 600,
-            "image": "assets/shop/background/background_6.png",
-            "category": "Фоны"
-        },
-        {
-            "item_id": "misc_1",
-            "name": "Бонус 1",
-            "price": 300,
-            "image": "assets/shop/misc/bonus1.png",
-            "category": "Прочее",
-            "is_equippable": false
-        },
-        {
-            "item_id": "misc_2",
-            "name": "Бонус 2",
-            "price": 200,
-            "image": "assets/shop/misc/bonus2.png",
-            "category": "Прочее",
-            "is_equippable": false
-        },
-        {
-            "item_id": "misc_3",
-            "name": "Бонус 3",
-            "price": 250,
-            "image": "assets/shop/misc/bonus3.png",
-            "category": "Прочее",
-            "is_equippable": false
-        }
-    ]
+  "items": [
+    {
+      "item_id": "kick_default",
+      "name": "Стандартный кик",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "kick/kick_default.wav",
+      "image": "assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "snare_default",
+      "name": "Стандартный снейр",
+      "price": 0,
+      "category": "Снейр",
+      "type": "snare",
+      "audio": "snare/snare_default.wav",
+      "image": "assets/textures/snare_icon.png"
+    },
+    {
+      "item_id": "kick_1",
+      "name": "Кик 1",
+      "price": 200,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "kick/kick1.wav",
+      "image": "assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_2",
+      "name": "Кик 2",
+      "price": 200,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "kick/kick2.wav",
+      "image": "assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "snare_1",
+      "name": "Снейр 1",
+      "price": 200,
+      "category": "Снейр",
+      "type": "snare",
+      "audio": "snare/snare1.wav",
+      "image": "assets/textures/snare_icon.png"
+    },
+    {
+      "item_id": "snare_2",
+      "name": "Снейр 2",
+      "price": 300,
+      "category": "Снейр",
+      "type": "snare",
+      "audio": "snare/snare2.wav",
+      "image": "assets/textures/snare_icon.png"
+    },
+    {
+      "item_id": "background_default",
+      "name": "Default Background",
+      "price": 0,
+      "image": "assets/shop/background/default_background.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_1",
+      "name": "Background 1",
+      "price": 500,
+      "image": "assets/shop/background/background_1.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_2",
+      "name": "Background 2",
+      "price": 550,
+      "image": "assets/shop/background/background_2.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_3",
+      "name": "Background 3",
+      "price": 600,
+      "image": "assets/shop/background/background_3.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_4",
+      "name": "Background 4",
+      "price": 500,
+      "image": "assets/shop/background/background_4.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_5",
+      "name": "Background 5",
+      "price": 550,
+      "image": "assets/shop/background/background_5.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "background_6",
+      "name": "Background 6",
+      "price": 600,
+      "image": "assets/shop/background/background_6.png",
+      "category": "Фоны"
+    },
+    {
+      "item_id": "misc_1",
+      "name": "Бонус 1",
+      "price": 300,
+      "image": "assets/shop/misc/bonus1.png",
+      "category": "Прочее",
+      "is_equippable": false
+    },
+    {
+      "item_id": "misc_2",
+      "name": "Бонус 2",
+      "price": 200,
+      "image": "assets/shop/misc/bonus2.png",
+      "category": "Прочее",
+      "is_equippable": false
+    },
+    {
+      "item_id": "misc_3",
+      "name": "Бонус 3",
+      "price": 250,
+      "image": "assets/shop/misc/bonus3.png",
+      "category": "Прочее",
+      "is_equippable": false
+    }
+  ]
 }

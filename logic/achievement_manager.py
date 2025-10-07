@@ -65,3 +65,23 @@ class AchievementManager:
             a["current"] = 0
         self.save_achievements()
         print("[AchievementManager] Все достижения сброшены.")
+
+    def update_purchase_achievements(self, player_data_manager):
+        unlocked_items = player_data_manager.get_all_unlocked_items()
+        purchased_count = len(unlocked_items)
+
+        purchase_achievements = {
+            7: 3,
+            8: 5,
+            9: 10,
+            10: 15
+        }
+
+        for ach_id, required_count in purchase_achievements.items():
+            achievement = next((a for a in self.achievements if a.get("id") == ach_id), None)
+            if achievement:
+                achievement["current"] = purchased_count
+                if purchased_count >= required_count and not achievement.get("unlocked", False):
+                    self.unlock_achievement(achievement)
+
+        self.save_achievements()

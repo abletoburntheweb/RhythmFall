@@ -1,5 +1,6 @@
 # logic/transitions.py
 from PyQt5 import sip
+from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QWidget, QStackedWidget
 
 
@@ -78,6 +79,7 @@ def transition_open_song_select(parent):
 
     parent.song_select.start_preview_music()
 
+
 def transition_close_song_select(parent):
     if hasattr(parent, "song_select") and parent.song_select:
         parent.song_select.stop_preview()
@@ -86,7 +88,12 @@ def transition_close_song_select(parent):
         parent.song_select = None
 
     if hasattr(parent, "music_manager"):
-        parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
+        current_url = parent.music_manager.music_player.currentMedia().canonicalUrl().toString() if parent.music_manager.music_player.currentMedia().canonicalUrl() else ""
+        menu_music_url = QUrl.fromLocalFile(
+            parent.music_manager._get_full_path(parent.music_manager.menu_music)).toString()
+
+        if current_url != menu_music_url:
+            parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
 
     parent.setCurrentWidget(parent.main_menu)
     parent.main_menu.show()
@@ -164,6 +171,7 @@ def transition_open_shop(parent):
     main_menu = parent.main_menu
 
     if hasattr(parent, "music_manager"):
+        parent.music_manager.stop_music()
         parent.music_manager.play_select_sound()
 
     from screens.shop_screen import ShopScreen
@@ -173,11 +181,13 @@ def transition_open_shop(parent):
         parent.shop_screen.deleteLater()
         parent.shop_screen = None
 
-    parent.shop_screen = ShopScreen(parent=parent)
+    parent.shop_screen = ShopScreen(
+        parent=parent,
+        game_screen=parent.game_screen,
+        music_manager=parent.music_manager
+    )
     parent.addWidget(parent.shop_screen)
     parent.setCurrentWidget(parent.shop_screen)
-
-
 def transition_close_shop(parent):
     if not hasattr(parent, "main_menu"):
         print("Ошибка: Родительский объект не содержит main_menu.")
@@ -192,8 +202,21 @@ def transition_close_shop(parent):
 
     parent.setCurrentWidget(main_menu)
     main_menu.show()
+
     if hasattr(parent, "music_manager"):
         parent.music_manager.play_cancel_sound()
+
+        menu_music_url = QUrl.fromLocalFile(
+            parent.music_manager._get_full_path(parent.music_manager.menu_music)
+        )
+        current_url = (
+            parent.music_manager.music_player.currentMedia().canonicalUrl()
+            if parent.music_manager.music_player.currentMedia()
+            else None
+        )
+
+        if not current_url or current_url != menu_music_url:
+            parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
 
 
 def transition_open_settings(parent, from_pause=False):
@@ -226,7 +249,7 @@ def transition_open_settings(parent, from_pause=False):
         game_screen = getattr(parent, "game_screen", None) if from_pause else None
         overlay_parent.settings_menu = SettingsMenu(
             parent=parent,
-            settings=getattr(parent.main_menu, "settings", None),
+            settings=getattr(parent, "settings", None),
             game_screen=game_screen
         )
         overlay_parent.settings_menu.setParent(overlay_parent.overlay)
@@ -286,7 +309,7 @@ def transition_close_victory_screen(parent):
         parent.victory_screen = None
 
     if hasattr(parent, "music_manager"):
-        parent.music_manager.play_music(parent.music_manager.menu_music, restart=True)
+        parent.music_manager.play_music(parent.music_manager.menu_music)
 
     parent.setCurrentWidget(parent.main_menu)
     parent.main_menu.show()
