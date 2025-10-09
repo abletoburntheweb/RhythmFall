@@ -1,4 +1,6 @@
 import sys
+
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 from logic.game_logic import GameEngine
 
@@ -6,6 +8,7 @@ if __name__ == "__main__":
     try:
         print("Инициализация QApplication...")
         app = QApplication(sys.argv)
+        app.setWindowIcon(QIcon("assets/RhythmFall.ico"))
         print("Создание экземпляра GameEngine...")
         game = GameEngine()
         print("Запуск цикла событий...")
