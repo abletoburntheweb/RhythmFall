@@ -19,6 +19,14 @@
       "image": "assets/textures/snare_icon.png"
     },
     {
+      "item_id": "covers_default",
+      "name": "Стандартные обложки",
+      "price": 0,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/default_covers",
+      "images_count": 7
+    },
+    {
       "item_id": "kick_1",
       "name": "Кик 1",
       "price": 200,
@@ -102,6 +110,46 @@
       "price": 600,
       "image": "assets/shop/background/background_6.png",
       "category": "Фоны"
+    },
+    {
+      "item_id": "covers_geometric",
+      "name": "Геометрические обложки",
+      "price": 200,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/geometric",
+      "images_count": 7
+    },
+    {
+      "item_id": "covers_flowing_lines",
+      "name": "Текучие линии",
+      "price": 200,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/flowing_lines",
+      "images_count": 7
+    },
+    {
+      "item_id": "covers_music_note",
+      "name": "Музыкальные ноты",
+      "price": 200,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/music_note",
+      "images_count": 7
+    },
+    {
+      "item_id": "covers_ink_splash",
+      "name": "Брызги чернил",
+      "price": 200,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/ink_splash",
+      "images_count": 7
+    },
+    {
+      "item_id": "covers_vinyl",
+      "name": "Виниловые обложки",
+      "price": 200,
+      "category": "Обложки",
+      "images_folder": "assets/shop/covers/vinyl",
+      "images_count": 7
     },
     {
       "item_id": "misc_1",

@@ -188,6 +188,7 @@ def transition_open_shop(parent):
     )
     parent.addWidget(parent.shop_screen)
     parent.setCurrentWidget(parent.shop_screen)
+
 def transition_close_shop(parent):
     if not hasattr(parent, "main_menu"):
         print("Ошибка: Родительский объект не содержит main_menu.")

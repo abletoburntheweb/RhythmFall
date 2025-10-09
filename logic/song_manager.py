@@ -13,7 +13,8 @@ CACHE_FILE = os.path.join("data", "songs_cache.json")
 
 
 class SongManager:
-    def __init__(self, load_on_init=True):
+    def __init__(self, load_on_init=True, player_data_manager=None):
+        self.player_data_manager = player_data_manager
         os.makedirs(SONG_FOLDER, exist_ok=True)
         os.makedirs(PREVIEW_FOLDER, exist_ok=True)
         os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
@@ -31,16 +32,12 @@ class SongManager:
             if file.lower().endswith((".mp3", ".wav")):
                 path = os.path.join(SONG_FOLDER, file)
 
-
                 cached_song = cache.get(path)
                 file_modified_time = os.path.getmtime(path)
 
                 if cached_song and cached_song.get("file_mtime") == file_modified_time:
                     metadata = cached_song
-                   # print(f"[SongManager] Используем кэшированные данные для: {path}")
                 else:
-                    #print(f"[SongManager] Обновляем данные для: {path}")
-
                     if file.lower().endswith(".mp3"):
                         metadata = self.read_mp3_metadata(path)
                     else:
@@ -59,7 +56,6 @@ class SongManager:
             with open(CACHE_FILE, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-           # print(f"[SongManager] Кэш песен не найден или поврежден. Будет создан заново.")
             return {}
 
     def _save_cache(self, existing_cache):
@@ -74,9 +70,8 @@ class SongManager:
         try:
             with open(CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(updated_cache, f, ensure_ascii=False, indent=4)
-          #  print(f"[SongManager] Кэш песен обновлен: {CACHE_FILE}")
         except Exception as e:
-           print(f"[SongManager] Ошибка сохранения кэша: {e}")
+            print(f"[SongManager] Ошибка сохранения кэша: {e}")
 
     def read_mp3_metadata(self, filepath):
         metadata = {
@@ -112,19 +107,7 @@ class SongManager:
             print(f"Ошибка чтения mp3: {e}")
 
         if metadata['cover'] is None:
-            try:
-                covers_dir = os.path.join("songs", "covers")
-                available_covers = [
-                    os.path.join(covers_dir, f)
-                    for f in os.listdir(covers_dir)
-                    if f.lower().endswith((".png", ".jpg", ".jpeg"))
-                ]
-                if available_covers:
-                    random_cover_path = random.choice(available_covers)
-                    with open(random_cover_path, "rb") as f:
-                        metadata['cover'] = f.read()
-            except Exception as e:
-                print(f"Не удалось загрузить дефолтную обложку: {e}")
+            self._set_cover_from_active_pack(metadata)
 
         return metadata
 
@@ -159,8 +142,40 @@ class SongManager:
             metadata['title'] = os.path.splitext(os.path.basename(filepath))[0]
 
         if metadata['cover'] is None:
+            self._set_cover_from_active_pack(metadata)
+
+        return metadata
+
+    def _set_cover_from_active_pack(self, metadata):
+        active_covers_pack = None
+        if self.player_data_manager:
+            active_covers_pack = self.player_data_manager.get_active_item("Covers")
+
+        covers_dir = None
+        if active_covers_pack and active_covers_pack != "covers_default":
+
+            pack_name = active_covers_pack.replace("covers_", "")
+            covers_dir = os.path.join("assets", "shop", "covers", pack_name)
+        else:
+
+            covers_dir = os.path.join("assets", "shop", "covers", "default_covers")
+
+        try:
+            available_covers = [
+                os.path.join(covers_dir, f)
+                for f in os.listdir(covers_dir)
+                if f.lower().endswith((".png", ".jpg", ".jpeg"))
+            ]
+            if available_covers:
+                random_cover_path = random.choice(available_covers)
+                with open(random_cover_path, "rb") as f:
+                    metadata['cover'] = f.read()
+            else:
+                raise FileNotFoundError(f"Папка {covers_dir} пуста или не существует")
+        except Exception as e:
+
             try:
-                covers_dir = os.path.join("songs", "covers")
+                covers_dir = os.path.join("assets", "shop", "covers", "default_covers")
                 available_covers = [
                     os.path.join(covers_dir, f)
                     for f in os.listdir(covers_dir)
@@ -170,10 +185,8 @@ class SongManager:
                     random_cover_path = random.choice(available_covers)
                     with open(random_cover_path, "rb") as f:
                         metadata['cover'] = f.read()
-            except Exception as e:
-                print(f"Не удалось загрузить дефолтную обложку: {e}")
-
-        return metadata
+            except Exception as e2:
+                pass
 
     def find_loudest_segment(self, filepath, duration_ms=15000):
         filename = os.path.splitext(os.path.basename(filepath))[0] + "_preview.mp3"
@@ -241,8 +254,6 @@ class SongManager:
                 audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=song_data['cover']))
 
             audio.save()
-
-            print(f"Метаданные обновлены для: {filepath}")
 
             cache = self._load_cache()
             cached_entry = cache.get(filepath)

@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QGridLayout
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QGridLayout, QLabel, QFrame, QPushButton
 from PyQt5.QtCore import Qt
 import json
 from logic.creation import Create
@@ -9,6 +10,7 @@ CATEGORY_MAP = {
     "Кик": "Kick",
     "Снейр": "Snare",
     "Фоны": "Backgrounds",
+    "Обложки": "Covers",
     "Прочее": "Misc"
 }
 
@@ -47,7 +49,7 @@ class ShopScreen(QWidget):
 
         category_layout = QHBoxLayout()
         category_layout.setSpacing(20)
-        categories = ["Все", "Кик", "Снейр", "Фоны", "Прочее"]
+        categories = ["Все", "Кик", "Снейр", "Фоны", "Обложки", "Прочее"]
 
         for category in categories:
             btn = self.create.shop_category_button(
@@ -95,7 +97,8 @@ class ShopScreen(QWidget):
                 is_purchased=is_purchased,
                 is_active=is_active,
                 buy_callback=self.buy_item,
-                use_callback=self.use_item if item.get("is_equippable", True) else None
+                use_callback=self.use_item if item.get("is_equippable", True) else None,
+                cover_click_callback=self.show_cover_gallery
             )
             self.grid_layout.addWidget(item_widget, row, col)
 
@@ -129,7 +132,8 @@ class ShopScreen(QWidget):
                 is_purchased=is_purchased,
                 is_active=is_active,
                 buy_callback=self.buy_item,
-                use_callback=self.use_item if item.get("is_equippable", True) else None
+                use_callback=self.use_item if item.get("is_equippable", True) else None,
+                cover_click_callback=self.show_cover_gallery
             )
             self.grid_layout.addWidget(item_widget, row, col)
 
@@ -164,6 +168,18 @@ class ShopScreen(QWidget):
             self.player_data_manager.set_active_item(category, item_id)
             print(f"[ShopScreen] Активирован {item_id} для {category}")
             self.preview_sound(item)
+        elif category == "Covers":
+
+            self.player_data_manager.set_active_item(category, item_id)
+            print(f"[ShopScreen] Активирован пак обложек {item_id}")
+        elif category == "Backgrounds":
+            self.player_data_manager.set_active_item(category, item_id)
+            print(f"[ShopScreen] Активирован фон {item_id}")
+        elif category == "Misc":
+
+            self.player_data_manager.set_active_item(category, item_id)
+            print(f"[ShopScreen] Активирован пассивный предмет {item_id}")
+            self.apply_passive_item(item)
         elif category:
             self.player_data_manager.set_active_item(category, item_id)
             print(f"[ShopScreen] Активирован {item_id}")
@@ -196,6 +212,65 @@ class ShopScreen(QWidget):
             self.game_screen.score_manager.combo_booster_bonus = 1
             print("[ShopScreen] Combo Booster активирован")
             self.player_data_manager.save_player_data()
+
+    def show_cover_gallery(self, item):
+        self.overlay = self.create.shop_cover_gallery_overlay(self)
+
+        back_button = self.create.button(
+            "Назад",
+            self.close_cover_gallery,
+            x=40, y=40, w=180, h=60,
+            preset=3
+        )
+        back_button.setParent(self.overlay)
+
+        images_folder = item.get("images_folder")
+        images_count = item.get("images_count", 0)
+
+        if not images_folder or images_count == 0:
+            error_label = QLabel("Нет доступных обложек", self.overlay)
+            error_label.setStyleSheet("color: red; font-size: 24px;")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setGeometry(0, 150, self.width(), 50)
+            error_label.show()
+            self.overlay.show()
+            return
+
+        loaded_pixmaps = []
+        for i in range(1, images_count + 1):
+            cover_path = f"{images_folder}/cover{i}.png"
+            pixmap = QPixmap(cover_path)
+            if not pixmap.isNull():
+                scaled_pixmap = pixmap.scaled(330, 330, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                loaded_pixmaps.append(scaled_pixmap)
+            else:
+                loaded_pixmaps.append(None)
+
+        cover_widgets = []
+        for i in range(1, images_count + 1):
+            cover_path = f"{images_folder}/cover{i}.png"
+
+            row = 0 if i <= 4 else 1
+            col = (i - 1) % 4 if i <= 4 else (i - 5) % 3
+            x = 300 + col * 370
+            y = 150 + row * 370
+
+            cover_widget = self.create.shop_cover_gallery_cover_widget(cover_path, x, y, size=350)
+            cover_widget.setParent(self.overlay)
+            cover_widgets.append(cover_widget)
+
+        self.overlay.show()
+        back_button.show()
+        for widget in cover_widgets:
+            widget.show()
+
+        self.overlay.setFocusPolicy(Qt.StrongFocus)
+        self.overlay.setFocus()
+
+    def close_cover_gallery(self):
+        if hasattr(self, 'overlay'):
+            self.overlay.deleteLater()
+            del self.overlay
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

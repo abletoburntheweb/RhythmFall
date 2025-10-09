@@ -1,14 +1,17 @@
 {
-    "currency": 454315,
+    "currency": 453915,
     "items": {
         "kick_2": true,
         "snare_2": true,
-        "kick_1": true
+        "kick_1": true,
+        "covers_geometric": true,
+        "covers_vinyl": true
     },
     "active_items": {
         "Kick": "kick_1",
-        "Snare": "snare_2",
+        "Snare": "snare_default",
         "Backgrounds": "background_default",
+        "Covers": "covers_geometric",
         "Misc": null
     }
 }

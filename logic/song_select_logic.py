@@ -24,7 +24,6 @@ class SongSelectLogic:
         songs_by_letter = defaultdict(list)
 
         if not self.song_manager.songs:
-            print("[SongSelectLogic] Предупреждение: список песен пуст при попытке заполнения.")
             empty_item = QListWidgetItem("Нет доступных песен")
             empty_item.setFlags(Qt.NoItemFlags)
             self.song_select.list_widget.addItem(empty_item)

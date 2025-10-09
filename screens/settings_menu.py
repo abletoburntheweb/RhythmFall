@@ -88,8 +88,6 @@ class SettingsMenu(QWidget):
         content_widget.show()
 
     def create_sound_widget(self):
-        print(
-            f"[SettingsMenu] Создание sound_widget, parent.settings: {getattr(self.parent, 'settings', 'NO SETTINGS')}")
         content_widget, layout = self.create.settings_menu_content_widget()
 
         print(

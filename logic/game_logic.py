@@ -49,7 +49,7 @@ class GameEngine(QStackedWidget):
         self.currentChanged.connect(self.on_screen_changed)
         self.transitions = Transitions(self)
 
-        self.song_manager = SongManager(load_on_init=False)
+        self.song_manager = SongManager(load_on_init=False, player_data_manager=self.player_data_manager)
 
         self.init_screens()
 

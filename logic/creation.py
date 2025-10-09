@@ -421,7 +421,8 @@ class Create:
             btn.clicked.connect(callback)
         return btn
 
-    def shop_item_widget(self, item, is_purchased=False, is_active=False, buy_callback=None, use_callback=None):
+    def shop_item_widget(self, item, is_purchased=False, is_active=False, buy_callback=None, use_callback=None,
+                         cover_click_callback=None):
         widget = QFrame(self.parent)
         widget.setFixedSize(280, 350)
         widget.setStyleSheet("""
@@ -442,26 +443,66 @@ class Create:
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
         widget.setLayout(layout)
-
         widget.setProperty("item_data", item)
 
-        image_path = item.get("image")
-        if image_path:
-            image_label = QLabel(widget)
-            pixmap = QPixmap(image_path)
-            scaled_pixmap = pixmap.scaled(240, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            image_label.setPixmap(scaled_pixmap)
-            image_label.setAlignment(Qt.AlignCenter)
-            image_label.setStyleSheet("""
-                border-radius: 20px; /* Скругления для изображения */
-                overflow: hidden;   /* Обрезаем всё, что выходит за границы */
-            """)
-            layout.addWidget(image_label)
+        image_container = QFrame(widget)
+        image_container.setFixedSize(240, 180)
+        image_container.setStyleSheet("""
+            QFrame {
+                border: 1px solid #888;
+                border-radius: 10px;
+                background-color: rgba(60, 60, 60, 100);
+            }
+            QFrame:hover {
+                border: 2px solid gold;
+            }
+        """)
+        image_layout = QVBoxLayout()
+        image_layout.setContentsMargins(0, 0, 0, 0)
+        image_container.setLayout(image_layout)
 
-        name_label = QLabel(item["name"], widget)
+        image_label = QLabel()
+        image_label.setAlignment(Qt.AlignCenter)
+
+        if item["category"] == "Обложки":
+            images_folder = item.get("images_folder")
+            images_count = item.get("images_count", 0)
+            if images_folder and images_count > 0:
+                image_path = f"{images_folder}/cover1.png"
+            else:
+                image_path = None
+        else:
+            image_path = item.get("image")
+
+        if image_path:
+            pixmap = QPixmap(image_path)
+            if not pixmap.isNull():
+                scaled_pixmap = pixmap.scaled(
+                    image_container.width(), image_container.height(),
+                    Qt.KeepAspectRatioByExpanding,
+                    Qt.SmoothTransformation
+                )
+                image_label.setPixmap(scaled_pixmap)
+            else:
+                image_label.setText(item["name"])
+                image_label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
+        else:
+            image_label.setText(item["name"])
+            image_label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
+
+        image_layout.addWidget(image_label)
+        layout.addWidget(image_container, alignment=Qt.AlignCenter)
+
+        if item["category"] == "Обложки" and cover_click_callback:
+            def on_image_click(event):
+                cover_click_callback(item)
+
+            image_container.mousePressEvent = on_image_click
+
+        name_label = QLabel(item["name"])
         name_label.setStyleSheet("""
-            color: white; 
-            font-size: 22px; 
+            color: white;
+            font-size: 22px;
             font-weight: bold;
             border-radius: 10px;
             padding: 5px;
@@ -470,7 +511,7 @@ class Create:
         layout.addWidget(name_label)
 
         if "audio" in item:
-            preview_button = QPushButton("🔊 Прослушать", widget)
+            preview_button = QPushButton("🔊 Прослушать")
             preview_button.setStyleSheet("""
                 QPushButton {
                     background-color: #6a5acd;
@@ -488,26 +529,14 @@ class Create:
             layout.addWidget(preview_button)
 
         if item["item_id"].endswith("_default"):
-            default_label = QLabel("✔️ Дефолтный", widget)
-            default_label.setStyleSheet("""
-                color: lightblue; 
-                font-size: 20px; 
-                font-weight: bold;
-                border-radius: 10px;
-                padding: 5px;
-            """)
+            default_label = QLabel("✔️ Дефолтный")
+            default_label.setStyleSheet("color: lightblue; font-size: 20px; font-weight: bold; padding: 5px;")
             default_label.setAlignment(Qt.AlignCenter)
             layout.addWidget(default_label)
 
             if is_active:
-                active_label = QLabel("✅ Используется", widget)
-                active_label.setStyleSheet("""
-                    color: lightblue; 
-                    font-size: 20px; 
-                    font-weight: bold;
-                    border-radius: 10px;
-                    padding: 5px;
-                """)
+                active_label = QLabel("✅ Используется")
+                active_label.setStyleSheet("color: lightblue; font-size: 20px; font-weight: bold; padding: 5px;")
                 active_label.setAlignment(Qt.AlignCenter)
                 layout.addWidget(active_label)
             elif use_callback is not None:
@@ -516,14 +545,8 @@ class Create:
 
         elif is_purchased:
             if is_active:
-                active_label = QLabel("✅ Используется", widget)
-                active_label.setStyleSheet("""
-                    color: lightblue; 
-                    font-size: 20px; 
-                    font-weight: bold;
-                    border-radius: 10px;
-                    padding: 5px;
-                """)
+                active_label = QLabel("✅ Используется")
+                active_label.setStyleSheet("color: lightblue; font-size: 20px; font-weight: bold; padding: 5px;")
                 active_label.setAlignment(Qt.AlignCenter)
                 layout.addWidget(active_label)
             elif use_callback is not None:
@@ -572,6 +595,41 @@ class Create:
         if callback:
             button.clicked.connect(callback)
         return button
+
+    def shop_cover_gallery_overlay(self, parent_widget):
+        overlay = QWidget(parent_widget)
+        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 180);")
+        overlay.setGeometry(0, 0, parent_widget.width(), parent_widget.height())
+        return overlay
+
+    def shop_cover_gallery_cover_widget(self, image_path, x, y, size=350):
+        cover_widget = QFrame()
+        cover_widget.setFixedSize(size, size)
+        cover_widget.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: 2px solid transparent;
+                border-radius: 10px;
+            }
+            QFrame:hover {
+                border: 2px solid gold;
+                background-color: rgba(60, 60, 60, 100);
+            }
+        """)
+        cover_widget.move(x, y)
+
+        image_label = QLabel(cover_widget)
+        pixmap = QPixmap(image_path)
+        if not pixmap.isNull():
+            scaled_pixmap = pixmap.scaled(size - 20, size - 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            image_label.setPixmap(scaled_pixmap)
+        else:
+            image_label.setText("Cover")
+            image_label.setStyleSheet("color: white; font-size: 24px;")
+        image_label.setAlignment(Qt.AlignCenter)
+        image_label.setGeometry(10, 10, size - 20, size - 20)
+
+        return cover_widget
 
     def achievement_card(self, title, description, progress_text, icon_path, unlocked=False):
         widget = QFrame(self.parent)

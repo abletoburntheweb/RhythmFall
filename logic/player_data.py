@@ -11,7 +11,8 @@ class PlayerDataManager:
             "active_items": {
                 "Kick": "kick_default",
                 "Snare": "snare_default",
-                "Backgrounds": "background_default"
+                "Backgrounds": "background_default",
+                "Covers": "covers_default"
             }
         }
         self._load()
@@ -31,6 +32,7 @@ class PlayerDataManager:
             "Kick": self.data["active_items"].get("Kick", "kick_default"),
             "Snare": self.data["active_items"].get("Snare", "snare_default"),
             "Backgrounds": self.data["active_items"].get("Backgrounds", "background_default"),
+            "Covers": self.data["active_items"].get("Covers", "covers_default"),
             "Misc": self.data["active_items"].get("Misc", None)
         }
         self.data["active_items"] = active_items_clean

@@ -16,7 +16,13 @@ class SongSelect(QWidget):
         super().__init__(parent)
         self.parent = parent
         self.create = Create(self)
-        self.song_manager = song_manager if song_manager is not None else SongManager()
+
+        if song_manager is not None:
+            self.song_manager = song_manager
+        else:
+            player_data_manager = getattr(parent, 'player_data_manager', None) if parent else None
+            self.song_manager = SongManager(player_data_manager=player_data_manager)
+
         self.song_logic = SongSelectLogic(self, self.song_manager)
         self.selected_song = None
         self.is_active = False
@@ -155,6 +161,14 @@ class SongSelect(QWidget):
             return
 
         self.selected_song = song_data
+
+        if song_data['cover']:
+            print(f"[SongSelect] Обложка установлена из метаданных трека")
+        else:
+            active_covers_pack = None
+            if hasattr(self.parent, "player_data_manager"):
+                active_covers_pack = self.parent.player_data_manager.get_active_item("Covers")
+            print(f"[SongSelect] Обложка установлена из пака: {active_covers_pack or 'default_covers'}")
 
         if song_data['cover']:
             pixmap = QPixmap()
