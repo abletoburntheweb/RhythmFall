@@ -162,15 +162,12 @@ class GameScreen(QWidget):
             print(f"[GameScreen] Файл не существует: {self.selected_song_path}")
             return
 
-        
         self.note_manager.load_notes_from_file(self.selected_song)
 
-        
         first_note_time = float('inf')
         if self.note_manager.note_spawn_queue:
             first_note_time = self.note_manager.note_spawn_queue[0].get("time", float('inf'))
 
-        
         if first_note_time != float('inf') and first_note_time > 5.0:
             self.skip_target_time = max(0.0, first_note_time - 5.0)
         else:
@@ -182,28 +179,22 @@ class GameScreen(QWidget):
             if self.timer.isActive():
                 self.timer.stop()
 
-            
             self.game_timer.restart()
-            self.game_start_time = 0.0  
+            self.game_start_time = 0.0
             self.game_time = 0.0
 
             print(f"[GameScreen] QElapsedTimer запущен. game_start_time: {self.game_start_time:.3f}")
 
-            
             success = self.game_engine.music_manager.play_game_music(self.selected_song_path)
 
             if success:
                 print(f"[GameScreen] Воспроизведение запущено: {self.selected_song_path}")
-
-                
                 QTimer.singleShot(50, self._sync_audio_and_game_time)
 
-                
                 self.check_song_end_timer = QTimer(self)
                 self.check_song_end_timer.timeout.connect(self.check_song_end)
                 self.check_song_end_timer.start(100)
 
-                
                 self.timer.start()
 
             else:
@@ -232,14 +223,8 @@ class GameScreen(QWidget):
                 audio_file = mutagen.File(self.selected_song_path)
                 duration = audio_file.info.length
 
-                
-                if self.skip_used:
-                    
-                    if self.game_time >= (duration - self.skip_target_time - 0.1):
-                        self.end_game()
-                else:
-                    if self.game_time >= duration - 0.1:
-                        self.end_game()
+                if self.game_time >= duration - 0.1:
+                    self.end_game()
             except Exception as e:
                 print(f"[DEBUG] Ошибка проверки окончания песни: {e}")
                 if hasattr(self.game_engine, "music_manager"):
@@ -250,6 +235,7 @@ class GameScreen(QWidget):
         if self.game_finished:
             return
 
+        print(f"[GameScreen] Игра завершена в {self.game_time:.3f}с, переход к экрану победы...")
         self.game_finished = True
 
         if self.timer.isActive():
@@ -351,28 +337,23 @@ class GameScreen(QWidget):
             print(f"[GameScreen] Первая нота слишком близко ({first_note_time:.2f}с) — пропуск не требуется.")
             return
 
-        target_time = max(0.0, first_note_time - 5.0)  
+        target_time = max(0.0, first_note_time - 5.0)
         print(f"[GameScreen] Промотка песни до {target_time:.2f}с...")
         self.skip_used = True
 
-        
         self.note_manager.note_spawn_queue = [
             n for n in self.note_manager.note_spawn_queue if n.get("time", 0) >= target_time
         ]
 
-        
         if hasattr(self.game_engine, "music_manager"):
-            
-            self.game_engine.music_manager.stop_game_music()
-            
-            success = self.game_engine.music_manager.play_game_music(self.selected_song_path)
-            print(f"[GameScreen] Музыка перемотана до {target_time:.2f}с")
+            success = self.game_engine.music_manager.set_music_position(target_time)
+            if success:
+                print(f"[GameScreen] Позиция аудио установлена на {target_time:.2f}с")
+            else:
+                print(f"[GameScreen] Не удалось установить позицию аудио")
 
-        
-        elapsed_time = self.game_timer.elapsed() / 1000.0  
-        self.game_timer.restart()  
-        self.game_start_time = target_time - self.total_audio_offset  
         self.game_time = target_time
+        self.game_start_time = target_time - self.total_audio_offset - (self.game_timer.elapsed() / 1000.0)
 
         print(f"[GameScreen] Установлено новое игровое время: {self.game_time:.3f}s")
         print(f"[GameScreen] Общий оффсет: {self.total_audio_offset:.3f}s, время начала: {self.game_start_time:.3f}s")

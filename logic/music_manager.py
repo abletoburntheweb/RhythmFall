@@ -100,6 +100,21 @@ class MusicManager:
             print(f"Ошибка воспроизведения игровой музыки: {e}")
             return False
 
+    def set_music_position(self, seconds):
+        try:
+            self.music_player.setPosition(int(seconds * 1000))
+            return True
+        except Exception as e:
+            print(f"Ошибка установки позиции музыки: {e}")
+            return False
+
+    def get_music_position(self):
+        try:
+            return self.music_player.position() / 1000.0
+        except Exception as e:
+            print(f"Ошибка получения позиции музыки: {e}")
+            return 0.0
+
     def stop_game_music(self):
         try:
             self.music_player.stop()
