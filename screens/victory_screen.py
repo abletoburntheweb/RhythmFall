@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGraphicsOpacityEffect, QFrame
 from PyQt5.QtCore import QTimer, Qt, QPropertyAnimation
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont
 from logic.creation import Create
+from logic.player_data import PlayerDataManager
+from logic.score import ScoreManager
 
 
 class VictoryScreen(QWidget):
@@ -20,6 +22,20 @@ class VictoryScreen(QWidget):
         self.displayed_combo = 0
         self.displayed_max_combo = 0
         self.displayed_accuracy = 0.0
+        self.displayed_currency = 0
+
+        self.player_data_manager = getattr(parent, "player_data_manager", None)
+        if self.player_data_manager is None:
+            self.player_data_manager = PlayerDataManager()
+
+        self.earned_currency = ScoreManager.calculate_currency(
+            score=self.score,
+            max_combo=self.max_combo,
+            combo_multiplier=self.parent().game_screen.score_manager.get_combo_multiplier(),
+            accuracy=self.accuracy,
+            total_notes=self.parent().game_screen.score_manager.total_notes,
+            missed_notes=self.parent().game_screen.score_manager.missed_notes
+        )
 
         self.create = Create(self)
         self.bg_label = self.create.background(texture_path="assets/textures/town.png")
@@ -39,12 +55,14 @@ class VictoryScreen(QWidget):
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
 
+
         if self.song_info.get("title"):
             song_label = QLabel(f"{self.song_info.get('title', 'Неизвестная песня')}")
             song_label.setFont(QFont("Arial", 26, QFont.Bold))
             song_label.setStyleSheet("color: #CCCCCC;")
             song_label.setAlignment(Qt.AlignCenter)
             layout.addWidget(song_label)
+
 
         stats_frame = QFrame()
         stats_frame.setStyleSheet("""
@@ -82,7 +100,15 @@ class VictoryScreen(QWidget):
         self.accuracy_label.setAlignment(Qt.AlignCenter)
         stats_layout.addWidget(self.accuracy_label)
 
+
+        self.currency_label = QLabel("💰 Валюта: 0")
+        self.currency_label.setFont(QFont("Consolas", 32, QFont.Bold))
+        self.currency_label.setStyleSheet("color: #FFD700;")
+        self.currency_label.setAlignment(Qt.AlignCenter)
+        stats_layout.addWidget(self.currency_label)
+
         layout.addWidget(stats_frame)
+
 
         button_layout = QHBoxLayout()
         button_layout.setAlignment(Qt.AlignCenter)
@@ -97,6 +123,7 @@ class VictoryScreen(QWidget):
 
         self.setLayout(layout)
 
+
         self.fade_in_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.fade_in_effect)
         self.fade_in = QPropertyAnimation(self.fade_in_effect, b"opacity")
@@ -105,12 +132,14 @@ class VictoryScreen(QWidget):
         self.fade_in.setEndValue(1)
         self.fade_in.start()
 
+
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.animate_results)
         self.animation_timer.start(30)
 
     def animate_results(self):
         finished = True
+
 
         if self.displayed_score < self.score:
             self.displayed_score += max(1, int(self.score * 0.02))
@@ -119,15 +148,18 @@ class VictoryScreen(QWidget):
             self.score_label.setText(f"Счёт: {self.displayed_score}")
             finished = False
 
+
         if self.displayed_combo < self.combo:
             self.displayed_combo += 1
             self.combo_label.setText(f"Комбо: {self.displayed_combo}")
             finished = False
 
+
         if self.displayed_max_combo < self.max_combo:
             self.displayed_max_combo += 1
             self.max_combo_label.setText(f"Макс. комбо: {self.displayed_max_combo}")
             finished = False
+
 
         if self.displayed_accuracy < self.accuracy:
             self.displayed_accuracy += 0.5
@@ -136,8 +168,19 @@ class VictoryScreen(QWidget):
             self.accuracy_label.setText(f"Точность: {self.displayed_accuracy:.1f}%")
             finished = False
 
+
+        if self.displayed_currency < self.earned_currency:
+            self.displayed_currency += max(1, int(self.earned_currency * 0.03))
+            if self.displayed_currency > self.earned_currency:
+                self.displayed_currency = self.earned_currency
+            self.currency_label.setText(f"💰 Валюта: {self.displayed_currency}")
+            finished = False
+
+
         if finished:
             self.animation_timer.stop()
+            self.player_data_manager.add_currency(self.earned_currency)
+            print(f"💰 Игрок заработал валюту: {self.earned_currency}")
 
     def replay_song(self):
         from logic.transitions import transition_open_game_with_song

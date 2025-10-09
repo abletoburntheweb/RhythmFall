@@ -1,4 +1,7 @@
 # logic/score.py
+import math
+
+
 class ScoreManager:
     def __init__(self, game_screen):
         self.game_screen = game_screen
@@ -70,3 +73,25 @@ class ScoreManager:
 
     def get_accuracy(self):
         return self.accuracy
+
+    def calculate_currency(score, max_combo, combo_multiplier, accuracy, total_notes, missed_notes):
+
+        base_currency = score / 100
+
+        combo_bonus = math.sqrt(max_combo) * 2
+
+        accuracy_bonus = 0
+        if accuracy >= 95:
+            accuracy_bonus = (accuracy - 90) * 1.5
+        elif accuracy == 100:
+            accuracy_bonus += 10
+
+        full_combo_bonus = 0
+        if missed_notes == 0 and total_notes > 0:
+            full_combo_bonus = 20
+
+        multiplier_bonus = (combo_multiplier - 1) * 5
+
+        total_currency = base_currency + combo_bonus + accuracy_bonus + full_combo_bonus + multiplier_bonus
+
+        return max(1, int(total_currency))
