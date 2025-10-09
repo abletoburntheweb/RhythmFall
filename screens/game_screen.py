@@ -362,19 +362,22 @@ class GameScreen(QWidget):
         if self.game_finished:
             return
 
-        
+        if event.key() == Qt.Key_AsciiTilde:
+            if hasattr(self, 'debug_menu') and self.debug_menu:
+                self.debug_menu.toggle_visibility()
+            return
+
         if self.countdown_active:
             print("[GameScreen] Пропуск недоступен во время отсчёта.")
             return
 
-        
-        if event.key() == Qt.Key_PageUp:  
+        if event.key() == Qt.Key_PageUp:
             self.calibrate_offset(-0.01)
             return
-        elif event.key() == Qt.Key_PageDown:  
+        elif event.key() == Qt.Key_PageDown:
             self.calibrate_offset(0.01)
             return
-        elif event.key() == Qt.Key_Home:  
+        elif event.key() == Qt.Key_Home:
             self.calibration_offset = 0.0
             self.total_audio_offset = self.audio_offset + self.calibration_offset
             print(f"[GameScreen] Оффсет сброшен: {self.total_audio_offset:.3f}")
@@ -383,9 +386,6 @@ class GameScreen(QWidget):
         if event.key() == Qt.Key_Space:
             self.skip_intro()
             return
-
-        if event.key() == Qt.Key_AsciiTilde:
-            self.debug_menu.toggle_visibility()
 
         if event.key() == Qt.Key_Escape:
             if hasattr(self.game_engine, "transitions"):

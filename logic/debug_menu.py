@@ -51,15 +51,15 @@ class DebugMenu(QWidget):
         self.auto_play_button.clicked.connect(self.toggle_auto_play)
         layout.addWidget(self.auto_play_button)
 
-        self.add_100_button = QPushButton("+100 очков")
-        self.add_100_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
-        self.add_100_button.clicked.connect(self.add_100_points)
-        layout.addWidget(self.add_100_button)
+        self.add_1000_button = QPushButton("+1000 очков")
+        self.add_1000_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
+        self.add_1000_button.clicked.connect(self.add_1000_points)
+        layout.addWidget(self.add_1000_button)
 
-        self.minus_100_button = QPushButton("-100 очков")
-        self.minus_100_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
-        self.minus_100_button.clicked.connect(self.minus_100_points)
-        layout.addWidget(self.minus_100_button)
+        self.minus_1000_button = QPushButton("-1000 очков")
+        self.minus_1000_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
+        self.minus_1000_button.clicked.connect(self.minus_1000_points)
+        layout.addWidget(self.minus_1000_button)
 
         self.win_button = QPushButton("✅ Завершить уровень (Победа)")
         self.win_button.setStyleSheet("background-color: #3a3; color: white; font-weight: bold;")
@@ -135,15 +135,15 @@ class DebugMenu(QWidget):
             self.auto_play_button.setText("🤖 Автопрохождение: ВЫКЛ")
             self.auto_play_button.setStyleSheet("background-color: #a33; color: white; font-weight: bold;")
 
-    def add_100_points(self):
+    def add_1000_points(self):
         if self.parent() and hasattr(self.parent(), "score_manager"):
             current_score = self.parent().score_manager.get_score()
-            self.parent().score_manager.score = current_score + 100
+            self.parent().score_manager.score = current_score + 1000
 
-    def minus_100_points(self):
+    def minus_1000_points(self):
         if self.parent() and hasattr(self.parent(), "score_manager"):
             current_score = self.parent().score_manager.get_score()
-            new_score = max(0, current_score - 100)
+            new_score = max(0, current_score - 1000)
             self.parent().score_manager.score = new_score
 
     def finish_level(self):
@@ -152,3 +152,13 @@ class DebugMenu(QWidget):
 
     def is_auto_play_enabled(self):
         return self.is_auto_playing
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_1:
+            self.add_1000_points()
+        elif event.key() == Qt.Key_2:
+            self.minus_1000_points()
+        elif event.key() == Qt.Key_3:
+            self.toggle_auto_play()
+        elif event.key() == Qt.Key_4:
+            self.finish_level()
