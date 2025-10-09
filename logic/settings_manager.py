@@ -10,6 +10,7 @@ DEFAULT_SETTINGS = {
     "preview_volume": 70,
     "show_fps": False,
     "hit_sounds_volume": 70,
+    "enable_debug_menu": False,
     "controls_keymap": {
         "lane_0_key": 65,
         "lane_1_key": 83,

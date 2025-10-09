@@ -200,6 +200,13 @@ class SettingsMenu(QWidget):
         )
         layout.addWidget(self.reset_achievements_button, alignment=Qt.AlignLeft)
 
+        self.debug_menu_checkbox = self.create.settings_menu_checkbox(
+            "Дебаг меню",
+            checked=self.parent.settings.get("enable_debug_menu", False),
+            callback=self.toggle_debug_menu_enabled
+        )
+        layout.addWidget(self.debug_menu_checkbox, alignment=Qt.AlignLeft)
+
         return self.create.settings_menu_scroll_area_widget(content_widget)
 
     def start_key_remap(self, button):
@@ -290,6 +297,11 @@ class SettingsMenu(QWidget):
         if hasattr(self.parent, "achievement_manager"):
             self.parent.achievement_manager.reset_achievements()
             print("[Settings] Прогресс ачивок сброшен.")
+
+    def toggle_debug_menu_enabled(self, state):
+        self.parent.settings["enable_debug_menu"] = bool(state)
+        self.parent.save_settings()
+        print(f"[Settings] Дебаг меню {'включено' if state else 'выключено'}")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

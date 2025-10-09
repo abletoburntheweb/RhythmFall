@@ -363,7 +363,7 @@ class GameScreen(QWidget):
             return
 
         if event.key() == Qt.Key_AsciiTilde:
-            if hasattr(self, 'debug_menu') and self.debug_menu:
+            if getattr(self.game_engine, 'settings', {}).get("enable_debug_menu", False):
                 self.debug_menu.toggle_visibility()
             return
 
