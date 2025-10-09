@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QTimer, QPropertyAnimation, QRect, QEasingCurve
@@ -24,13 +26,22 @@ class AchievementPopUp(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
 
-        if icon_path:
+        if icon_path and os.path.exists(icon_path):
             icon_label = QLabel(frame)
             pixmap = QPixmap(icon_path).scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             icon_label.setPixmap(pixmap)
             icon_label.setFixedSize(90, 90)
             icon_label.setAlignment(Qt.AlignCenter)
             layout.addWidget(icon_label, stretch=0)
+        else:
+            default_icon_path = "assets/achievements/default.png"
+            if os.path.exists(default_icon_path):
+                icon_label = QLabel(frame)
+                pixmap = QPixmap(default_icon_path).scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                icon_label.setPixmap(pixmap)
+                icon_label.setFixedSize(90, 90)
+                icon_label.setAlignment(Qt.AlignCenter)
+                layout.addWidget(icon_label, stretch=0)
 
         text_label = QLabel(frame)
         text_label.setText(f"""
