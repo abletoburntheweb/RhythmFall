@@ -51,6 +51,15 @@ class AchievementManager:
             print(f"🏆 Достижение открыто: {achievement['title']}")
             self.save_achievements()
 
+            if hasattr(self, "music_manager") and self.music_manager:
+                print(f"[AchievementManager] Воспроизводим звук ачивки через напрямую")
+                self.music_manager.play_achievement_sound()
+            elif self.parent and hasattr(self.parent, "music_manager"):
+                print(f"[AchievementManager] Воспроизводим звук ачивки через parent")
+                self.parent.music_manager.play_achievement_sound()
+            else:
+                print(f"[AchievementManager] НЕТ music_manager для воспроизведения звука!")
+
             if self.parent and hasattr(self.parent, "get_notification_manager"):
                 notification_manager = self.parent.get_notification_manager()
                 notification_manager.show_popup(

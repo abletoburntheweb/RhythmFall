@@ -15,6 +15,8 @@ class MusicManager:
         self.intro_music = "intro_music.mp3"
         self.select_sound = "select_click.mp3"
         self.cancel_sound = "cancel_click.mp3"
+        self.achievement_sound = "achievement_unlocked.mp3"
+        self.default_shop_sound = "missing_sound.mp3"
 
         
         self.player_data_manager = player_data_manager
@@ -159,6 +161,23 @@ class MusicManager:
 
     def play_cancel_sound(self):
         self.play_sfx(self.cancel_sound)
+
+    def play_achievement_sound(self):
+        self.play_sfx(self.achievement_sound)
+
+    def play_default_shop_sound(self):
+        full_path = self._get_full_path(self.default_shop_sound)
+        temp_player = QMediaPlayer()
+        media_content = QMediaContent(QUrl.fromLocalFile(full_path))
+        temp_player.setMedia(media_content)
+        temp_player.setVolume(self._hit_sounds_volume)
+        temp_player.play()
+
+        def cleanup(state):
+            if state == QMediaPlayer.StoppedState:
+                temp_player.deleteLater()
+
+        temp_player.stateChanged.connect(cleanup)
 
     def _get_kick_sound_file(self):
         if self.player_data_manager:

@@ -43,7 +43,10 @@ class GameEngine(QStackedWidget):
         self.player_data_manager = PlayerDataManager()
 
         self.music_manager = MusicManager(self.settings, player_data_manager=self.player_data_manager)
+
         self.achievement_manager = AchievementManager(parent=self)
+        self.achievement_manager.music_manager = self.music_manager
+
         self.notification_manager = NotificationManager()
         self.notification_manager.set_parent(self)
         self.currentChanged.connect(self.on_screen_changed)

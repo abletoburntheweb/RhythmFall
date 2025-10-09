@@ -192,9 +192,17 @@ class ShopScreen(QWidget):
         audio_path = item.get("audio")
         if audio_path and self.music_manager:
             print(f"[ShopScreen] Предпросмотр: {audio_path}")
-            self.music_manager.play_custom_hit_sound(audio_path)
+            import os
+            full_path = os.path.join("assets", "shop", "sounds", audio_path)
+            if os.path.exists(full_path):
+                self.music_manager.play_custom_hit_sound(audio_path)
+            else:
+                print(f"[ShopScreen] Звук не найден: {audio_path}, используем стандартный")
+                self.music_manager.play_default_shop_sound()
         else:
             print(f"[ShopScreen] Нет аудио у {item.get('item_id')}")
+            if self.music_manager:
+                self.music_manager.play_default_shop_sound()
 
     def refresh(self):
         while self.grid_layout.count():
