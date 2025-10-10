@@ -1,31 +1,78 @@
-# tempo_finder.py
 import os
 import json
 import numpy as np
+from pathlib import Path
 
+SONGS_CACHE_FILE = "data/songs_cache.json"
 SONGS_DIR = "songs"
-CACHE_FILE = os.path.join(SONGS_DIR, "bpms.json")
 
-os.makedirs(SONGS_DIR, exist_ok=True)
 
-BPM_CACHE = {}
-if os.path.exists(CACHE_FILE):
-    try:
-        if os.path.getsize(CACHE_FILE) == 0:
-            with open(CACHE_FILE, "w", encoding="utf-8") as f:
-                f.write("{}")
-            BPM_CACHE = {}
-        else:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                BPM_CACHE = json.load(f)
-    except json.JSONDecodeError:
-        print(f"⚠️ {CACHE_FILE} повреждён или не является JSON. Сбрасываю кэш.")
-        BPM_CACHE = {}
-    except Exception as e:
-        print(f"⚠️ Ошибка при чтении {CACHE_FILE}: {e}")
-        BPM_CACHE = {}
-else:
-    BPM_CACHE = {}
+
+def load_songs_cache():
+    if os.path.exists(SONGS_CACHE_FILE):
+        try:
+            with open(SONGS_CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            print(f"⚠️ Ошибка загрузки кэша песен {SONGS_CACHE_FILE}: {e}")
+            return {}
+    return {}
+
+
+def save_songs_cache(cache):
+    os.makedirs(os.path.dirname(SONGS_CACHE_FILE), exist_ok=True)
+    with open(SONGS_CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+def get_bpm_from_cache(song_path):
+    cache = load_songs_cache()
+    
+    song_key = song_path
+    if song_key in cache:
+        return cache[song_key].get('bpm')
+
+    
+    filename = Path(song_path).name.lower()
+    for key, info in cache.items():
+        if Path(key).name.lower() == filename:
+            return info.get('bpm')
+
+    return None
+
+
+def save_bpm_to_cache(song_path, bpm):
+    cache = load_songs_cache()
+
+    
+    song_key = song_path
+    if song_key not in cache:
+        
+        cache[song_key] = {
+            "path": song_path,
+            "title": Path(song_path).stem,
+            "artist": "Неизвестен",
+            "bpm": bpm,
+            "year": "Н/Д",
+            "duration": "Н/Д"
+        }
+    else:
+        cache[song_key]["bpm"] = bpm
+
+    save_songs_cache(cache)
+
+
+
+def get_bpm_cache():
+    cache = load_songs_cache()
+    bpm_dict = {}
+    for song_path, info in cache.items():
+        filename = Path(song_path).name.lower()
+        bpm_dict[filename] = info.get('bpm')
+    return bpm_dict
+
+
+BPM_CACHE = get_bpm_cache()
 
 EXPECTED_BPMS = {
     "daydreaming.mp3": 113,
@@ -46,6 +93,7 @@ def preprocess_audio_for_bpm(y, sr):
         if y.ndim > 1:
             y = librosa.to_mono(y)
 
+        
         spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
         avg_centroid = np.mean(spectral_centroids)
 
@@ -54,17 +102,22 @@ def preprocess_audio_for_bpm(y, sr):
         else:
             y = librosa.effects.preemphasis(y, coef=0.97)
 
+        
+        y = librosa.util.normalize(y)
+
         return y
     except:
         return y
 
 
 def get_bpm_advanced(file_path, save_cache=True):
-    fname = os.path.basename(file_path).lower()
+    fname = Path(file_path).name.lower()
 
-    if fname in BPM_CACHE:
-        bpm = BPM_CACHE[fname]
-       # print(f"{fname}: cached bpm={bpm}")
+    
+    cached_bpm = get_bpm_from_cache(file_path)
+    if cached_bpm is not None:
+        bpm = cached_bpm
+        
 
         for expected_file, expected_bpm in EXPECTED_BPMS.items():
             expected_mp3 = expected_file.lower()
@@ -73,7 +126,7 @@ def get_bpm_advanced(file_path, save_cache=True):
             if expected_mp3 in fname or expected_wav in fname:
                 diff = abs(bpm - expected_bpm)
                 song_name = expected_file.replace('.mp3', '').replace('.wav', '')
-              #  print(f"  -> {song_name}: ожидаемо {expected_bpm} BPM, реальность: {bpm} BPM (разница: {diff})")
+                
                 break
         return bpm
 
@@ -87,15 +140,19 @@ def get_bpm_advanced(file_path, save_cache=True):
 
         tempos = []
 
+        
         onset_env = librosa.onset.onset_strength(y=y_processed, sr=sr)
 
+        
         tempo_configs = [
-            (512, 4.0),
-            (512, 8.0),
-            (512, 2.0),
-            (512, 16.0),
-            (1024, 4.0),
-            (256, 4.0),
+            (512, 4.0),  
+            (512, 8.0),  
+            (512, 2.0),  
+            (512, 16.0),  
+            (1024, 4.0),  
+            (256, 4.0),  
+            (256, 8.0),  
+            (1024, 2.0),  
         ]
 
         for hop_length, ac_size in tempo_configs:
@@ -111,18 +168,29 @@ def get_bpm_advanced(file_path, save_cache=True):
             except:
                 continue
 
+        
         try:
-            tempo_bt, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512)
+            tempo_bt, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512, start_bpm=120)
             tempos.append(tempo_bt.item())
         except:
             pass
 
         try:
-            tempo_bt_processed, _ = librosa.beat.beat_track(y=y_processed, sr=sr, hop_length=512)
+            tempo_bt_processed, _ = librosa.beat.beat_track(y=y_processed, sr=sr, hop_length=512, start_bpm=120)
             tempos.append(tempo_bt_processed.item())
         except:
             pass
 
+        
+        try:
+            
+            y_harmonic, y_percussive = librosa.effects.hpss(y_processed)
+            tempo_perc, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, hop_length=512)
+            tempos.append(tempo_perc.item())
+        except:
+            pass
+
+        
         valid_tempos = []
         for t in tempos:
             if t < 20 or t > 300:
@@ -130,16 +198,28 @@ def get_bpm_advanced(file_path, save_cache=True):
 
             temp_t = float(t)
 
+            
             candidates = [temp_t]
+
+            
             if temp_t < 60:
                 candidates.extend([temp_t * 2, temp_t * 4, temp_t * 3])
-            if temp_t > 200:
+            
+            elif temp_t > 200:
                 candidates.extend([temp_t / 2, temp_t / 4, temp_t / 3])
+            
+            elif temp_t > 180:
+                candidates.extend([temp_t / 2])
+            elif temp_t < 80:
+                candidates.extend([temp_t * 2])
+            
             if temp_t < 40:
                 candidates.extend([temp_t * 6, temp_t * 8])
+            
             if temp_t > 400:
                 candidates.extend([temp_t / 6, temp_t / 8])
 
+            
             best_candidate = None
             min_fractional_part = float('inf')
             for candidate in candidates:
@@ -153,16 +233,32 @@ def get_bpm_advanced(file_path, save_cache=True):
                 valid_tempos.append(best_candidate)
 
         if valid_tempos:
+            
             bpm = int(round(np.median(valid_tempos)))
 
+            
             std_dev = np.std(valid_tempos) if len(valid_tempos) > 1 else 0
             if std_dev > 15:
+                
                 rounded_tempos = [round(t) for t in valid_tempos]
                 from collections import Counter
                 most_common = Counter(rounded_tempos).most_common(1)[0][0]
                 bpm = most_common
+            else:
+                
+                bpm = int(round(np.median(valid_tempos)))
         else:
             bpm = int(round(np.median(tempos))) if tempos else 120
+
+        
+        if bpm < 60:
+            
+            if bpm * 2 <= 200:
+                bpm = int(bpm * 2)
+        elif bpm > 200:
+            
+            if bpm / 2 >= 60:
+                bpm = int(bpm / 2)
 
         bpm = max(60, min(200, bpm))
 
@@ -182,9 +278,9 @@ def get_bpm_advanced(file_path, save_cache=True):
                 break
 
         if save_cache:
+            save_bpm_to_cache(file_path, bpm)
+            
             BPM_CACHE[fname] = bpm
-            with open(CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump(BPM_CACHE, f, ensure_ascii=False, indent=2)
 
         return bpm
 
@@ -199,12 +295,14 @@ def get_bpm_advanced(file_path, save_cache=True):
 
 def update_expected_bpms():
     updated = {}
+    cache = load_songs_cache()
+
     for expected_file, expected_bpm in EXPECTED_BPMS.items():
         expected_base = expected_file.replace('.mp3', '').lower()
-        for cached_file, cached_bpm in BPM_CACHE.items():
-            if expected_base in cached_file:
-                updated[expected_file] = cached_bpm
-                print(f"Обновлено: {expected_file} = {cached_bpm} BPM")
+        for cached_path, cached_info in cache.items():
+            if expected_base in cached_path.lower():
+                updated[expected_file] = cached_info.get('bpm', expected_bpm)
+                print(f"Обновлено: {expected_file} = {cached_info.get('bpm')} BPM")
                 break
         else:
             updated[expected_file] = expected_bpm
@@ -218,7 +316,7 @@ def analyze_bpm_quality(file_path):
         from librosa.feature.rhythm import tempo as rhythm_tempo
 
         y, sr = librosa.load(file_path, sr=44100)
-        fname = os.path.basename(file_path)
+        fname = Path(file_path).name
 
         print(f"\n=== Анализ качества BPM для {fname} ===")
 
@@ -259,16 +357,22 @@ def analyze_bpm_quality(file_path):
     except Exception as e:
         print(f"Ошибка анализа: {e}")
 
+
 def get_bpm(file_path, save_cache=True):
     return get_bpm_advanced(file_path, save_cache)
 
 
 def reset_cache():
     global BPM_CACHE
+    cache = load_songs_cache()
+
+    for key in cache:
+        if 'bpm' in cache[key]:
+            del cache[key]['bpm']
+
+    save_songs_cache(cache)
     BPM_CACHE = {}
-    if os.path.exists(CACHE_FILE):
-        os.remove(CACHE_FILE)
-    print("Кэш BPM сброшен")
+    print("Кэш BPM сброшен, остальные метаданные сохранены")
 
 
 def analyze_bpm_methods(file_path):
@@ -277,7 +381,7 @@ def analyze_bpm_methods(file_path):
         from librosa.feature.rhythm import tempo as rhythm_tempo
 
         y, sr = librosa.load(file_path, sr=44100)
-        fname = os.path.basename(file_path)
+        fname = Path(file_path).name
 
         print(f"\n=== Анализ методов для {fname} ===")
 

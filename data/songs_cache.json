@@ -1,4 +1,44 @@
 {
+    "songs\\100bpm.wav": {
+        "path": "songs\\100bpm.wav",
+        "title": "100bpm",
+        "artist": "Неизвестен",
+        "bpm": 99,
+        "year": "Н/Д",
+        "duration": "01:00"
+    },
+    "songs\\120bpm.wav": {
+        "path": "songs\\120bpm.wav",
+        "title": "120bpm",
+        "artist": "Неизвестен",
+        "bpm": 120,
+        "year": "Н/Д",
+        "duration": "00:50"
+    },
+    "songs\\140bpm.wav": {
+        "path": "songs\\140bpm.wav",
+        "title": "140bpm",
+        "artist": "Неизвестен",
+        "bpm": 140,
+        "year": "Н/Д",
+        "duration": "00:43"
+    },
+    "songs\\160bpm.wav": {
+        "path": "songs\\160bpm.wav",
+        "title": "160bpm",
+        "artist": "Неизвестен",
+        "bpm": 159,
+        "year": "Н/Д",
+        "duration": "00:38"
+    },
+    "songs\\180bpm.wav": {
+        "path": "songs\\180bpm.wav",
+        "title": "180bpm",
+        "artist": "Неизвестен",
+        "bpm": 91,
+        "year": "Н/Д",
+        "duration": "00:34"
+    },
     "songs\\Around the World1 - Daft Punk.wav": {
         "path": "songs\\Around the World1 - Daft Punk.wav",
         "title": "Daft Punk",
@@ -11,7 +51,7 @@
         "path": "songs\\Daydreaming.wav",
         "title": "Daydreaming",
         "artist": "Неизвестен",
-        "bpm": 113,
+        "bpm": 115,
         "year": "Н/Д",
         "duration": "03:13"
     },
@@ -43,7 +83,7 @@
         "path": "songs\\Killshot - Eminem.wav",
         "title": "Eminem",
         "artist": "Killshot",
-        "bpm": 106,
+        "bpm": 105,
         "year": "Н/Д",
         "duration": "04:13"
     },
@@ -51,7 +91,7 @@
         "path": "songs\\listen! - hako.wav",
         "title": "hako",
         "artist": "listen!",
-        "bpm": 108,
+        "bpm": 133,
         "year": "Н/Д",
         "duration": "01:28"
     },
@@ -67,7 +107,7 @@
         "path": "songs\\MOTTO - NF.wav",
         "title": "NF",
         "artist": "MOTTO",
-        "bpm": 160,
+        "bpm": 161,
         "year": "Н/Д",
         "duration": "03:37"
     }

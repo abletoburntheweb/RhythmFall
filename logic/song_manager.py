@@ -214,16 +214,23 @@ class SongManager:
     def add_song(self, file_path):
         if not os.path.exists(file_path) or not file_path.lower().endswith((".mp3", ".wav")):
             return None
+
         dest_path = os.path.join(SONG_FOLDER, os.path.basename(file_path))
         if not os.path.exists(dest_path):
             shutil.copy(file_path, dest_path)
+
         cache = self._load_cache()
         cache.pop(dest_path, None)
         self._save_cache(cache)
-        metadata = self.read_mp3_metadata(dest_path) if file_path.lower().endswith(".mp3") else self.read_wav_metadata(
-            dest_path)
+
+        if file_path.lower().endswith(".mp3"):
+            metadata = self.read_mp3_metadata(dest_path)
+        else:
+            metadata = self.read_wav_metadata(dest_path)
+
         metadata['bpm'] = get_bpm(dest_path) or "Н/Д"
         metadata["file_mtime"] = os.path.getmtime(dest_path)
+
         self.songs.append(metadata)
         return metadata
 
@@ -261,6 +268,7 @@ class SongManager:
                 cached_entry.update(song_data)
                 cached_entry["file_mtime"] = os.path.getmtime(filepath)
                 self._save_cache(cache)
+
             for song in self.songs:
                 if song['path'] == filepath:
                     song.update(song_data)

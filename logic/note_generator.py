@@ -1,36 +1,38 @@
-# logic/note_generator.py
 import os
 import json
 import random
 import subprocess
 from pathlib import Path
 
-from logic.calibration import set_audio_offset_for_song
-
-SONGS_DIR = Path("songs")
-BPM_CACHE_FILE = SONGS_DIR / "bpms.json"
-NOTES_DIR = SONGS_DIR / "notes"
+SONGS_CACHE_FILE = "data/songs_cache.json"
+NOTES_DIR = Path("songs") / "notes"
 WAV_CACHE_DIR = Path("temp") / "wav_cache"
 SPLITTER_CACHE_DIR = Path("temp") / "demucs_cache"
 
 
-def load_bpm_cache():
-    cache = {}
-    if BPM_CACHE_FILE.exists():
+def load_songs_cache():
+    if os.path.exists(SONGS_CACHE_FILE):
         try:
-            with open(BPM_CACHE_FILE, 'r', encoding='utf-8') as f:
-                cache = json.load(f)
+            with open(SONGS_CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError) as e:
-            print(f"⚠️ Ошибка загрузки кэша BPM {BPM_CACHE_FILE}: {e}")
-    else:
-        print(f"⚠️ Файл кэша BPM не найден: {BPM_CACHE_FILE}")
-    return cache
+            print(f"⚠️ Ошибка загрузки кэша песен {SONGS_CACHE_FILE}: {e}")
+            return {}
+    return {}
 
 
 def get_bpm_for_song(song_path):
-    cache = load_bpm_cache()
+    cache = load_songs_cache()
+
+    if song_path in cache and 'bpm' in cache[song_path]:
+        return cache[song_path]['bpm']
+
     filename = Path(song_path).name.lower()
-    return cache.get(filename)
+    for path_key, info in cache.items():
+        if Path(path_key).name.lower() == filename and 'bpm' in info:
+            return info['bpm']
+
+    return None
 
 
 def convert_to_wav_if_needed(song_path):
@@ -58,6 +60,7 @@ def convert_to_wav_if_needed(song_path):
     except Exception as e:
         print(f"[NoteGen] Ошибка конвертации в .wav: {e}")
         return song_path
+
 
 def separate_audio_with_demucs(wav_path):
     import subprocess
@@ -118,27 +121,6 @@ def separate_audio_with_demucs(wav_path):
         return None, None
 
 
-def simulate_calibration(notes_data, bpm):
-    """
-    Симулирует хиты и вычисляет оптимальный audio_offset.
-    """
-    hit_zone_y = 900
-    initial_y = -20
-    speed = 5.0 * (bpm / 120)
-    pixels_per_sec = speed * (1000 / 16)
-
-    hit_diffs = []
-
-    for note in notes_data:
-        note_time = note.get("time", 0)
-        expected_time_at_hit_zone = note_time + (hit_zone_y - initial_y) / pixels_per_sec
-        hit_diffs.append(expected_time_at_hit_zone - note_time)
-
-    avg_diff = sum(hit_diffs) / len(hit_diffs) if hit_diffs else 0
-    print(f"[CalibrationSim] Средний diff: {avg_diff:.3f}")
-    return 2.4 - avg_diff  # предполагаем, что базовый оффсет = 2.4
-
-
 def generate_notes_for_song(song_path, bpm, lanes=4):
     print(f"Генерация нот для: {song_path} (BPM: {bpm})")
 
@@ -155,7 +137,8 @@ def generate_notes_for_song(song_path, bpm, lanes=4):
 
         accompaniment_path, vocals_path = separate_audio_with_demucs(wav_path)
         if not accompaniment_path:
-            print(f"[NoteGen] Ошибка: Не удалось получить дорожку accompaniment для {song_path}. Использую оригинальный .wav.")
+            print(
+                f"[NoteGen] Ошибка: Не удалось получить дорожку accompaniment для {song_path}. Использую оригинальный .wav.")
             audio_to_analyze_path = wav_path
         else:
             audio_to_analyze_path = accompaniment_path
@@ -164,25 +147,28 @@ def generate_notes_for_song(song_path, bpm, lanes=4):
         y, sr = librosa.load(audio_to_analyze_path, sr=None, mono=False, dtype='float32')
         if y.ndim > 1:
             y = y.mean(axis=0)
-        print(f"[NoteGen] Аудио для анализа загружено: {audio_to_analyze_path}, sr={sr}, shape={y.shape}, dtype={y.dtype}")
+        print(
+            f"[NoteGen] Аудио для анализа загружено: {audio_to_analyze_path}, sr={sr}, shape={y.shape}, dtype={y.dtype}")
 
         y_harmonic, y_percussive = librosa.effects.hpss(y)
         print("[NoteGen] Аудио (для анализа) разделено на гармоническую и перкуссионную дорожки.")
 
         provided_tempo_float = float(bpm)
         tempo, beats = librosa.beat.beat_track(y=y_percussive, sr=sr, bpm=provided_tempo_float, units='time')
-        print(f"[NoteGen] Используем предоставленный BPM: {provided_tempo_float:.2f}. Librosa уточнила его до: {tempo:.2f} и нашла {len(beats)} битов.")
+        print(
+            f"[NoteGen] Используем предоставленный BPM: {provided_tempo_float:.2f}. Librosa уточнила его до: {tempo:.2f} и нашла {len(beats)} битов.")
 
         onset_env = librosa.onset.onset_strength(y=y_percussive, sr=sr)
         times = librosa.times_like(onset_env, sr=sr)
 
-        onset_peaks = librosa.util.peak_pick(onset_env, pre_max=3, post_max=3, pre_avg=3, post_avg=5, delta=onset_env.max() * 0.10, wait=1)
+        onset_peaks = librosa.util.peak_pick(onset_env, pre_max=3, post_max=3, pre_avg=3, post_avg=5,
+                                             delta=onset_env.max() * 0.10, wait=1)
         strong_onset_times = times[onset_peaks]
         print(f"[NoteGen] Найдено {len(strong_onset_times)} отфильтрованных onset'ов")
 
         synchronized_times = []
         for onset_time in strong_onset_times:
-            closest_beat_idx = (beats - onset_time)**2
+            closest_beat_idx = (beats - onset_time) ** 2
             closest_beat_idx = closest_beat_idx.argmin()
             closest_beat_time = beats[closest_beat_idx]
             if abs(onset_time - closest_beat_time) <= 0.25:
@@ -206,13 +192,8 @@ def generate_notes_for_song(song_path, bpm, lanes=4):
                     })
                     last_note_time = onset_time
 
-        print(f"Сгенерировано {len(notes)} нот для {Path(song_path).name} на основе анализа accompaniment (Demucs), синхронизированной с битами")
-
-        # 🌟 Вычисляем и сохраняем audio_offset
-        calibrated_offset = simulate_calibration(notes, bpm)
-        set_audio_offset_for_song(song_path, calibrated_offset)
-        print(f"[NoteGen] Калибровка сохранена: audio_offset = {calibrated_offset:.3f} для {song_path}")
-
+        print(
+            f"Сгенерировано {len(notes)} нот для {Path(song_path).name} на основе анализа accompaniment (Demucs), синхронизированной с битами")
         return notes
 
     except ImportError:

@@ -1,4 +1,3 @@
-# logic/song_select_logic.py    
 import os
 import json
 from pathlib import Path
@@ -11,8 +10,7 @@ from collections import defaultdict
 
 from logic.note_generator import generate_notes_for_song, save_notes_to_file
 
-SONGS_DIR = Path("songs")
-BPM_CACHE_FILE = SONGS_DIR / "bpms.json"
+SONGS_CACHE_FILE = "data/songs_cache.json"
 
 class SongSelectLogic:
     def __init__(self, song_select_widget, song_manager):
@@ -276,7 +274,7 @@ class SongSelectLogic:
                     old_bpm = self.song_select.selected_song.get('bpm', 'Н/Д')
                     self.song_select.selected_song['bpm'] = new_bpm
 
-                    self._update_bpm_cache(self.song_select.selected_song["path"], new_bpm)
+                    self._update_bpm_in_cache(self.song_select.selected_song["path"], new_bpm)
 
                     self.song_manager.update_song_metadata(self.song_select.selected_song)
 
@@ -287,26 +285,34 @@ class SongSelectLogic:
                 print(f"Введено некорректное значение BPM: {new_bpm_str}. Ожидалось число.")
                 pass
 
-    def _update_bpm_cache(self, song_path, new_bpm):
-        filename = Path(song_path).name.lower()
-
+    def _update_bpm_in_cache(self, song_path, new_bpm):
         cache = {}
-        if BPM_CACHE_FILE.exists():
+        if os.path.exists(SONGS_CACHE_FILE):
             try:
-                with open(BPM_CACHE_FILE, 'r', encoding='utf-8') as f:
+                with open(SONGS_CACHE_FILE, 'r', encoding='utf-8') as f:
                     cache = json.load(f)
             except (json.JSONDecodeError, FileNotFoundError) as e:
-                print(f"⚠️ Ошибка загрузки кэша BPM {BPM_CACHE_FILE}: {e}")
+                print(f"⚠️ Ошибка загрузки кэша песен {SONGS_CACHE_FILE}: {e}")
                 cache = {}
 
-        cache[filename] = new_bpm
+        if song_path in cache:
+            cache[song_path]['bpm'] = new_bpm
+        else:
+            cache[song_path] = {
+                "path": song_path,
+                "title": Path(song_path).stem,
+                "artist": "Неизвестен",
+                "bpm": new_bpm,
+                "year": "Н/Д",
+                "duration": "Н/Д"
+            }
 
         try:
-            with open(BPM_CACHE_FILE, 'w', encoding='utf-8') as f:
+            with open(SONGS_CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(cache, f, ensure_ascii=False, indent=4)
-            print(f"BPM кэш обновлен для {filename}: {new_bpm}")
+            print(f"BPM кэш обновлен для {Path(song_path).name}: {new_bpm}")
         except Exception as e:
-            print(f"Ошибка сохранения кэша BPM в {BPM_CACHE_FILE}: {e}")
+            print(f"Ошибка сохранения кэша песен в {SONGS_CACHE_FILE}: {e}")
 
     def cover_double_clicked(self, event):
         if not self.song_select.edit_mode or not self.song_select.selected_song:
@@ -379,7 +385,7 @@ class SongSelectLogic:
         song_path = self.song_select.selected_song["path"]
         song_bpm = self.song_select.selected_song.get("bpm")
 
-        if not song_bpm:
+        if not song_bpm or song_bpm == "Н/Д":
             print(f"Для песни {os.path.basename(song_path)} не указан BPM. Невозможно сгенерировать ноты.")
             return
 

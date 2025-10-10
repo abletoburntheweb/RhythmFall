@@ -200,6 +200,14 @@ class SettingsMenu(QWidget):
         )
         layout.addWidget(self.reset_achievements_button, alignment=Qt.AlignLeft)
 
+        self.reset_bpm_cache_button = self.create.button(
+            "🔄 Сбросить кэш BPM",
+            self.reset_bpm_cache,
+            x=0, y=0, w=400, h=60,
+            preset=5
+        )
+        layout.addWidget(self.reset_bpm_cache_button, alignment=Qt.AlignLeft)
+
         self.debug_menu_checkbox = self.create.settings_menu_checkbox(
             "Дебаг меню",
             checked=self.parent.settings.get("enable_debug_menu", False),
@@ -297,6 +305,20 @@ class SettingsMenu(QWidget):
         if hasattr(self.parent, "achievement_manager"):
             self.parent.achievement_manager.reset_achievements()
             print("[Settings] Прогресс ачивок сброшен.")
+
+    def reset_bpm_cache(self):
+        try:
+            from logic.tempo_finder import reset_cache
+            reset_cache()
+            print("[Settings] Кэш BPM сброшен.")
+
+            if hasattr(self.parent, "notification_manager"):
+                self.parent.notification_manager.add_notification("Кэш BPM сброшен")
+
+        except ImportError:
+            print("[Settings] Ошибка импорта tempo_finder")
+        except Exception as e:
+            print(f"[Settings] Ошибка при сбросе кэша BPM: {e}")
 
     def toggle_debug_menu_enabled(self, state):
         self.parent.settings["enable_debug_menu"] = bool(state)
