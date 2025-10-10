@@ -7,7 +7,6 @@ SONGS_CACHE_FILE = "data/songs_cache.json"
 SONGS_DIR = "songs"
 
 
-
 def load_songs_cache():
     if os.path.exists(SONGS_CACHE_FILE):
         try:
@@ -27,12 +26,11 @@ def save_songs_cache(cache):
 
 def get_bpm_from_cache(song_path):
     cache = load_songs_cache()
-    
+
     song_key = song_path
     if song_key in cache:
         return cache[song_key].get('bpm')
 
-    
     filename = Path(song_path).name.lower()
     for key, info in cache.items():
         if Path(key).name.lower() == filename:
@@ -44,10 +42,8 @@ def get_bpm_from_cache(song_path):
 def save_bpm_to_cache(song_path, bpm):
     cache = load_songs_cache()
 
-    
     song_key = song_path
     if song_key not in cache:
-        
         cache[song_key] = {
             "path": song_path,
             "title": Path(song_path).stem,
@@ -60,7 +56,6 @@ def save_bpm_to_cache(song_path, bpm):
         cache[song_key]["bpm"] = bpm
 
     save_songs_cache(cache)
-
 
 
 def get_bpm_cache():
@@ -82,7 +77,8 @@ EXPECTED_BPMS = {
     "motto - nf.mp3": 80,
     "intro_mixed_and_mastered.mp3": 130,
     "main_menu_mixed_and_mastered.mp3": 94,
-    "around the world - daft punk.mp3": 121
+    "around the world - daft punk.mp3": 121,
+    "hypernova.mp3": 170
 }
 
 
@@ -93,7 +89,6 @@ def preprocess_audio_for_bpm(y, sr):
         if y.ndim > 1:
             y = librosa.to_mono(y)
 
-        
         spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
         avg_centroid = np.mean(spectral_centroids)
 
@@ -102,8 +97,9 @@ def preprocess_audio_for_bpm(y, sr):
         else:
             y = librosa.effects.preemphasis(y, coef=0.97)
 
-        
         y = librosa.util.normalize(y)
+
+        y = librosa.effects.trim(y, top_db=40)[0]
 
         return y
     except:
@@ -113,12 +109,9 @@ def preprocess_audio_for_bpm(y, sr):
 def get_bpm_advanced(file_path, save_cache=True):
     fname = Path(file_path).name.lower()
 
-    
     cached_bpm = get_bpm_from_cache(file_path)
     if cached_bpm is not None:
         bpm = cached_bpm
-        
-
         for expected_file, expected_bpm in EXPECTED_BPMS.items():
             expected_mp3 = expected_file.lower()
             expected_wav = expected_file.lower().replace('.mp3', '.wav')
@@ -126,7 +119,6 @@ def get_bpm_advanced(file_path, save_cache=True):
             if expected_mp3 in fname or expected_wav in fname:
                 diff = abs(bpm - expected_bpm)
                 song_name = expected_file.replace('.mp3', '').replace('.wav', '')
-                
                 break
         return bpm
 
@@ -140,19 +132,20 @@ def get_bpm_advanced(file_path, save_cache=True):
 
         tempos = []
 
-        
         onset_env = librosa.onset.onset_strength(y=y_processed, sr=sr)
 
-        
         tempo_configs = [
-            (512, 4.0),  
-            (512, 8.0),  
-            (512, 2.0),  
-            (512, 16.0),  
-            (1024, 4.0),  
-            (256, 4.0),  
-            (256, 8.0),  
-            (1024, 2.0),  
+            (512, 4.0),
+            (512, 8.0),
+            (512, 2.0),
+            (512, 16.0),
+            (1024, 4.0),
+            (256, 4.0),
+            (256, 8.0),
+            (1024, 2.0),
+
+            (128, 4.0),
+            (2048, 4.0),
         ]
 
         for hop_length, ac_size in tempo_configs:
@@ -168,7 +161,6 @@ def get_bpm_advanced(file_path, save_cache=True):
             except:
                 continue
 
-        
         try:
             tempo_bt, _ = librosa.beat.beat_track(y=y, sr=sr, hop_length=512, start_bpm=120)
             tempos.append(tempo_bt.item())
@@ -181,16 +173,14 @@ def get_bpm_advanced(file_path, save_cache=True):
         except:
             pass
 
-        
         try:
-            
+
             y_harmonic, y_percussive = librosa.effects.hpss(y_processed)
             tempo_perc, _ = librosa.beat.beat_track(y=y_percussive, sr=sr, hop_length=512)
             tempos.append(tempo_perc.item())
         except:
             pass
 
-        
         valid_tempos = []
         for t in tempos:
             if t < 20 or t > 300:
@@ -198,28 +188,27 @@ def get_bpm_advanced(file_path, save_cache=True):
 
             temp_t = float(t)
 
-            
             candidates = [temp_t]
 
-            
             if temp_t < 60:
                 candidates.extend([temp_t * 2, temp_t * 4, temp_t * 3])
-            
+
             elif temp_t > 200:
                 candidates.extend([temp_t / 2, temp_t / 4, temp_t / 3])
-            
+
             elif temp_t > 180:
                 candidates.extend([temp_t / 2])
             elif temp_t < 80:
                 candidates.extend([temp_t * 2])
-            
+
             if temp_t < 40:
                 candidates.extend([temp_t * 6, temp_t * 8])
-            
+
             if temp_t > 400:
                 candidates.extend([temp_t / 6, temp_t / 8])
 
-            
+            candidates.extend([temp_t * 3, temp_t / 3])
+
             best_candidate = None
             min_fractional_part = float('inf')
             for candidate in candidates:
@@ -233,30 +222,36 @@ def get_bpm_advanced(file_path, save_cache=True):
                 valid_tempos.append(best_candidate)
 
         if valid_tempos:
-            
+
             bpm = int(round(np.median(valid_tempos)))
 
-            
             std_dev = np.std(valid_tempos) if len(valid_tempos) > 1 else 0
             if std_dev > 15:
-                
+
                 rounded_tempos = [round(t) for t in valid_tempos]
                 from collections import Counter
                 most_common = Counter(rounded_tempos).most_common(1)[0][0]
                 bpm = most_common
             else:
-                
+
                 bpm = int(round(np.median(valid_tempos)))
+
+                from collections import Counter
+                rounded_tempos = [round(t) for t in valid_tempos]
+                counts = Counter(rounded_tempos)
+                most_common_bpm, count = counts.most_common(1)[0]
+
+                if count > len(valid_tempos) // 2:
+                    bpm = most_common_bpm
         else:
             bpm = int(round(np.median(tempos))) if tempos else 120
 
-        
         if bpm < 60:
-            
+
             if bpm * 2 <= 200:
                 bpm = int(bpm * 2)
         elif bpm > 200:
-            
+
             if bpm / 2 >= 60:
                 bpm = int(bpm / 2)
 
@@ -279,7 +274,6 @@ def get_bpm_advanced(file_path, save_cache=True):
 
         if save_cache:
             save_bpm_to_cache(file_path, bpm)
-            
             BPM_CACHE[fname] = bpm
 
         return bpm
