@@ -1,0 +1,35 @@
+# Godot 4+
+.godot/
+.import/
+.export/
+.cache/
+mono/
+data_*/
+
+# Build outputs
+build/
+bin/
+export_presets.cfg
+
+*.tmp
+*.log
+*.cfg~
+*.swp
+*.bak
+*.old
+*.translation
+
+# System junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+__pycache__/
+*.pyc
+*.pyo
+
+.vscode/
+.idea/
+
+/android/
+ios/

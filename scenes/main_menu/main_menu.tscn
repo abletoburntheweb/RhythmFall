@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8e1wfq8466sn"]
+
+[ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://main_menu.gd" id="1_06t4h"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_06t4h")
+
+[node name="PlayButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 160.0
+offset_right = 1085.0
+offset_bottom = 220.0
+text = "ИГРАТЬ"
+
+[node name="SongSelectButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 240.0
+offset_right = 1085.0
+offset_bottom = 300.0
+text = "ВЫБОР ПЕСНИ"
+
+[node name="AchievementsButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 320.0
+offset_right = 1085.0
+offset_bottom = 380.0
+text = "ДОСТИЖЕНИЯ"
+
+[node name="ShopButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 400.0
+offset_right = 1085.0
+offset_bottom = 460.0
+text = "МАГАЗИН"
+
+[node name="SettingsButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 480.0
+offset_right = 1085.0
+offset_bottom = 540.0
+text = "НАСТРОЙКИ"
+
+[node name="ExitButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 560.0
+offset_right = 1085.0
+offset_bottom = 620.0
+text = "ВЫЙТИ"

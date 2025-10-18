@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://5vghv31ksise"]
+
+[ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
+
+[node name="GameEngine" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_w1ht0")

@@ -1,0 +1,115 @@
+[gd_scene load_steps=2 format=3 uid="uid://c2lldxolkry8n"]
+
+[ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://song_select.gd" id="1_yyygw"]
+
+[node name="SongSelect" type="Control"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_yyygw")
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1000.0
+offset_top = 658.0
+offset_right = 1000.0
+offset_bottom = 658.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBarHBox" type="HBoxContainer" parent="MainVBox"]
+clip_contents = true
+layout_mode = 2
+
+[node name="SearchBar" type="LineEdit" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+placeholder_text = "Поиск..."
+
+[node name="AddButton" type="Button" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+text = "Добавить"
+
+[node name="EditButton" type="Button" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+text = "Редактировать"
+
+[node name="InstrumentButton" type="Button" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "Инструмент:"
+
+[node name="SongCountLabel" type="Label" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Количество:"
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 100)
+layout_mode = 2
+
+[node name="SongListVBox" type="VBoxContainer" parent="MainVBox/ContentHBox"]
+custom_minimum_size = Vector2(1200, 600)
+layout_mode = 2
+
+[node name="SongItemList" type="ItemList" parent="MainVBox/ContentHBox/SongListVBox"]
+custom_minimum_size = Vector2(1200, 600)
+layout_mode = 2
+
+[node name="DetailsVBox" type="VBoxContainer" parent="MainVBox/ContentHBox"]
+layout_direction = 3
+layout_mode = 2
+
+[node name="CoverTextureRect" type="TextureRect" parent="MainVBox/ContentHBox/DetailsVBox"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Название"
+
+[node name="ArtistLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Исполнитель"
+
+[node name="YearLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Год"
+
+[node name="BpmLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "BPM"
+
+[node name="DurationLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Длительность"
+
+[node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Играть"
+
+[node name="GenerateNotesButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Сгенерировать ноты"
+
+[node name="DeleteButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Удалить"
