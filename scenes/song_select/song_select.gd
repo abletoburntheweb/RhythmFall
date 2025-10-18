@@ -4,7 +4,6 @@ extends Control
 var transitions = null
 
 var is_song_selected = false
-
 var song_data_list: Array[Dictionary] = []
 
 var song_item_list_ref: ItemList = null
@@ -13,7 +12,6 @@ var preview_player: AudioStreamPlayer = null
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
-
 
 	var search_bar = $MainVBox/TopBarHBox/SearchBar
 	if search_bar:
@@ -134,6 +132,20 @@ func _on_file_selected(path):
 
 	print("Файл прошёл проверку: ", path)
 
+	var original_file_global_path = ProjectSettings.globalize_path(path) # path - это путь из FileDialog
+	var metadata_dict = _read_metadata_from_plugin(original_file_global_path) # Вызываем MusicMeta с ПУТЕМ К ИСХОДНИКУ
+
+	if metadata_dict.has("error"):
+		print("SongSelect.gd: Ошибка чтения метаданных из исходного файла: ", metadata_dict.error)
+		metadata_dict = {
+			"path": "", # Заполним позже
+			"title": path.get_file().get_basename(),
+			"artist": "Неизвестен",
+			"year": "Н/Д",
+			"bpm": "Н/Д",
+			"duration": "00:00" # Попробуем получить из Godot после копирования
+		}
+
 	if file_dialog:
 		file_dialog.queue_free()
 		file_dialog = null 
@@ -166,29 +178,84 @@ func _on_file_selected(path):
 	else:
 		print("SongSelect.gd: Файл скопирован в: ", target_path)
 
+	metadata_dict["path"] = target_path # Устанавливаем res:// путь для Godot
+
+	var res_path_for_stream = metadata_dict["path"] # res:// путь к файлу в проекте
+	var audio_stream = ResourceLoader.load(res_path_for_stream, "", ResourceLoader.CACHE_MODE_IGNORE) # Загружаем, игнорируя кэш
+	if audio_stream and audio_stream is AudioStream:
+		var duration_seconds = audio_stream.get_length()
+		if duration_seconds > 0:
+			var minutes = int(duration_seconds) / 60
+			var seconds = int(duration_seconds) % 60
+			metadata_dict["duration"] = "%02d:%02d" % [minutes, seconds]
+		else:
+			print("SongSelect.gd: Godot не смог определить длительность для ", res_path_for_stream)
+	else:
+		print("SongSelect.gd: Не удалось загрузить AudioStream для получения длительности: ", res_path_for_stream)
+
 	if song_item_list_ref:
 		var item_index = song_item_list_ref.item_count 
-		song_item_list_ref.add_item(path.get_file())
+		var display_text = metadata_dict.get("artist", "Неизвестен") + " — " + metadata_dict.get("title", path.get_file())
+		song_item_list_ref.add_item(display_text)
 
-		var song_info = {
-			"path": target_path, 
-			"title": path.get_file(),
+		song_data_list.append(metadata_dict)
+
+		print("SongSelect.gd: Файл добавлен в список: ", display_text, " по индексу ", item_index)
+		print("SongSelect.gd: Данные о песне сохранены: ", metadata_dict)
+		_update_song_count_label()
+	else:
+		print("SongSelect.gd: song_item_list_ref не сохранён!")
+
+
+func _read_metadata_from_plugin(global_filepath): # Принимает ГЛОБАЛЬНЫЙ путь к файлу (C:/.../songs/file.mp3)
+	print("SongSelect.gd: Попытка прочитать метаданные через MusicMeta из: ", global_filepath)
+
+	if not FileAccess.file_exists(global_filepath):
+		print("SongSelect.gd: Ошибка: Файл не найден по глобальному пути: ", global_filepath)
+		var localized_path = ProjectSettings.localize_path(global_filepath) # Конвертируем обратно в res://
+		return {
+			"path": localized_path,
+			"title": global_filepath.get_file().get_basename(),
 			"artist": "Неизвестен",
 			"year": "Н/Д",
 			"bpm": "Н/Д",
 			"duration": "00:00"
 		}
 
-		song_data_list.append(song_info)
+	var file_access = FileAccess.open(global_filepath, FileAccess.READ)
+	if not file_access:
+		print("SongSelect.gd: Ошибка открытия файла для чтения: ", global_filepath)
+		var localized_path = ProjectSettings.localize_path(global_filepath)
+		return {
+			"path": localized_path,
+			"title": global_filepath.get_file().get_basename(),
+			"artist": "Неизвестен",
+			"year": "Н/Д",
+			"bpm": "Н/Д",
+			"duration": "00:00"
+		}
 
-		print("SongSelect.gd: Файл добавлен в список: ", path.get_file(), " по индексу ", item_index)
-		print("SongSelect.gd: Данные о песне сохранены: ", song_info)
-		_update_song_count_label()
-	else:
-		print("SongSelect.gd: song_item_list_ref не сохранён!")
+	var file_data = file_access.get_buffer(file_access.get_length())
+	file_access.close()
 
+	var metadata_instance = MusicMetadata.new()
 
+	metadata_instance.set_from_data(file_data)
 
+	var localized_path = ProjectSettings.localize_path(global_filepath) # Конвертируем обратно в res:// для Godot
+	var result_dict = {
+		"path": localized_path,
+		"title": metadata_instance.title if metadata_instance.title != "" else global_filepath.get_file().get_basename(),
+		"artist": metadata_instance.artist if metadata_instance.artist != "" else "Неизвестен",
+		"album": metadata_instance.album, # Может быть пустым
+		"year": str(metadata_instance.year) if metadata_instance.year != 0 else "Н/Д", # Преобразуем int в String
+		"bpm": str(metadata_instance.bpm) if metadata_instance.bpm != 0 else "Н/Д", # Преобразуем int в String
+		"comments": metadata_instance.comments, # Может быть пустым
+		"duration": "00:00" # MusicMeta не предоставляет длительность напрямую из ID3. Нужно вычислять отдельно.
+	}
+
+	print("SongSelect.gd: Метаданные, прочитанные MusicMeta (до получения длительности Godot): ", result_dict)
+	return result_dict
 
 
 func _on_edit_pressed():
@@ -212,7 +279,6 @@ func _on_delete_pressed():
 
 func _on_search_text_changed(new_text):
 	print("Поиск:", new_text)
-
 
 
 func _populate_demo_items(item_list: ItemList):
