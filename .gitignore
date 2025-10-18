@@ -34,3 +34,7 @@ __pycache__/
 /android/
 ios/
 addons/old-git-plugin/
+
+songs/*.mp3
+songs/*.mp3.import
+songs/
