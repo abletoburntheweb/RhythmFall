@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c2lldxolkry8n"]
 
-[ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://song_select.gd" id="1_yyygw"]
+[ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
 
 [node name="SongSelect" type="Control"]
 custom_minimum_size = Vector2(1920, 1080)
