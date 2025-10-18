@@ -1,10 +1,11 @@
 # scenes/song_select/song_select.gd
 extends Control
-
+const SongManager = preload("res://logic/song_manager.gd")
 var transitions = null
 
-var is_song_selected = false
-var song_data_list: Array[Dictionary] = []
+
+var song_manager: SongManager = null 
+
 
 var song_item_list_ref: ItemList = null
 var file_dialog: FileDialog = null
@@ -12,6 +13,9 @@ var preview_player: AudioStreamPlayer = null
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
+	song_manager = SongManager.new()
+	song_manager.load_songs()
+	
 
 	var search_bar = $MainVBox/TopBarHBox/SearchBar
 	if search_bar:
@@ -79,7 +83,9 @@ func _ready():
 					print("  - SongItemList найден внутри SongListVBox по имени!")
 					print("SongSelect.gd: SongItemList найден по указанному пути (через путь).")
 					song_item_list_ref = song_item_list
-					_populate_demo_items(song_item_list)
+					
+					_populate_items_from_manager()
+					
 					song_item_list.item_selected.connect(_on_song_item_selected)
 				else:
 					push_error("SongSelect.gd: ОШИБКА: SongItemList НЕ найден внутри SongListVBox по имени!")
@@ -100,6 +106,29 @@ func _ready():
 func set_transitions(transitions_instance):
 	transitions = transitions_instance
 	print("SongSelect.gd: Transitions инстанс получен")
+
+
+
+func _populate_items_from_manager():
+	if not song_item_list_ref or not song_manager:
+		print("SongSelect.gd: Ошибка: song_item_list_ref или song_manager не инициализированы.")
+		return
+
+	song_item_list_ref.clear()
+	
+
+	var songs_list = song_manager.get_songs_list()
+	print("SongSelect.gd: Очищен список. Заполняем из SongManager: ", songs_list.size(), " песен.")
+
+	for i in range(songs_list.size()):
+		var song_data = songs_list[i]
+		var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
+		song_item_list_ref.add_item(display_text)
+		
+
+	print("SongSelect.gd: Список песен заполнен из SongManager.")
+	_update_song_count_label()
+
 
 
 func _on_add_pressed():
@@ -132,137 +161,50 @@ func _on_file_selected(path):
 
 	print("Файл прошёл проверку: ", path)
 
-	var original_file_global_path = ProjectSettings.globalize_path(path) # path - это путь из FileDialog
-	var metadata_dict = _read_metadata_from_plugin(original_file_global_path) # Вызываем MusicMeta с ПУТЕМ К ИСХОДНИКУ
-
-	if metadata_dict.has("error"):
-		print("SongSelect.gd: Ошибка чтения метаданных из исходного файла: ", metadata_dict.error)
-		metadata_dict = {
-			"path": "", # Заполним позже
-			"title": path.get_file().get_basename(),
-			"artist": "Неизвестен",
-			"year": "Н/Д",
-			"bpm": "Н/Д",
-			"duration": "00:00" # Попробуем получить из Godot после копирования
-		}
-
 	if file_dialog:
 		file_dialog.queue_free()
 		file_dialog = null 
 
-	var target_dir = "res://songs/" 
-	var target_path = target_dir + path.get_file() 
-
-	var base_dir_path = "res://"
-	var base_dir = DirAccess.open(base_dir_path)
-	if not base_dir:
-		print("SongSelect.gd: ОШИБКА: Не удалось открыть корневую директорию проекта: ", base_dir_path)
+	
+	var metadata_dict = song_manager.add_song(path)
+	if metadata_dict.is_empty():
+		print("SongSelect.gd: Ошибка добавления песни через SongManager.")
 		return
 
-	var songs_dir_name = "songs"
-	if not base_dir.dir_exists(songs_dir_name): 
-		print("SongSelect.gd: Создаём папку: ", target_dir)
-		var error = base_dir.make_dir(songs_dir_name)
-		if error != OK:
-			print("SongSelect.gd: ОШИБКА при создании папки: ", target_dir, ", код ошибки: ", error)
-			return
-		base_dir = DirAccess.open(base_dir_path)
-		if not base_dir:
-			print("SongSelect.gd: ОШИБКА: Не удалось повторно открыть корневую директорию после создания папки: ", base_dir_path)
-			return
-
-	var copy_result = base_dir.copy(path, target_path) 
-	if copy_result != OK:
-		print("SongSelect.gd: ОШИБКА при копировании файла: ", path, " -> ", target_path, ", код ошибки: ", copy_result)
-		return
-	else:
-		print("SongSelect.gd: Файл скопирован в: ", target_path)
-
-	metadata_dict["path"] = target_path # Устанавливаем res:// путь для Godot
-
-	var res_path_for_stream = metadata_dict["path"] # res:// путь к файлу в проекте
-	var audio_stream = ResourceLoader.load(res_path_for_stream, "", ResourceLoader.CACHE_MODE_IGNORE) # Загружаем, игнорируя кэш
-	if audio_stream and audio_stream is AudioStream:
-		var duration_seconds = audio_stream.get_length()
-		if duration_seconds > 0:
-			var minutes = int(duration_seconds) / 60
-			var seconds = int(duration_seconds) % 60
-			metadata_dict["duration"] = "%02d:%02d" % [minutes, seconds]
-		else:
-			print("SongSelect.gd: Godot не смог определить длительность для ", res_path_for_stream)
-	else:
-		print("SongSelect.gd: Не удалось загрузить AudioStream для получения длительности: ", res_path_for_stream)
-
+	
 	if song_item_list_ref:
-		var item_index = song_item_list_ref.item_count 
-		var display_text = metadata_dict.get("artist", "Неизвестен") + " — " + metadata_dict.get("title", path.get_file())
-		song_item_list_ref.add_item(display_text)
-
-		song_data_list.append(metadata_dict)
-
-		print("SongSelect.gd: Файл добавлен в список: ", display_text, " по индексу ", item_index)
-		print("SongSelect.gd: Данные о песне сохранены: ", metadata_dict)
-		_update_song_count_label()
+		
+		
+		_populate_items_from_manager()
+		
+		var last_index = song_manager.get_song_count() - 1
+		if last_index >= 0:
+			song_item_list_ref.select(last_index)
+			
+		print("SongSelect.gd: Список обновлён после добавления песни.")
 	else:
 		print("SongSelect.gd: song_item_list_ref не сохранён!")
+	
 
-
-func _read_metadata_from_plugin(global_filepath): # Принимает ГЛОБАЛЬНЫЙ путь к файлу (C:/.../songs/file.mp3)
-	print("SongSelect.gd: Попытка прочитать метаданные через MusicMeta из: ", global_filepath)
-
-	if not FileAccess.file_exists(global_filepath):
-		print("SongSelect.gd: Ошибка: Файл не найден по глобальному пути: ", global_filepath)
-		var localized_path = ProjectSettings.localize_path(global_filepath) # Конвертируем обратно в res://
-		return {
-			"path": localized_path,
-			"title": global_filepath.get_file().get_basename(),
-			"artist": "Неизвестен",
-			"year": "Н/Д",
-			"bpm": "Н/Д",
-			"duration": "00:00"
-		}
-
-	var file_access = FileAccess.open(global_filepath, FileAccess.READ)
-	if not file_access:
-		print("SongSelect.gd: Ошибка открытия файла для чтения: ", global_filepath)
-		var localized_path = ProjectSettings.localize_path(global_filepath)
-		return {
-			"path": localized_path,
-			"title": global_filepath.get_file().get_basename(),
-			"artist": "Неизвестен",
-			"year": "Н/Д",
-			"bpm": "Н/Д",
-			"duration": "00:00"
-		}
-
-	var file_data = file_access.get_buffer(file_access.get_length())
-	file_access.close()
-
-	var metadata_instance = MusicMetadata.new()
-
-	metadata_instance.set_from_data(file_data)
-
-	var localized_path = ProjectSettings.localize_path(global_filepath) # Конвертируем обратно в res:// для Godot
-	var result_dict = {
-		"path": localized_path,
-		"title": metadata_instance.title if metadata_instance.title != "" else global_filepath.get_file().get_basename(),
-		"artist": metadata_instance.artist if metadata_instance.artist != "" else "Неизвестен",
-		"album": metadata_instance.album, # Может быть пустым
-		"year": str(metadata_instance.year) if metadata_instance.year != 0 else "Н/Д", # Преобразуем int в String
-		"bpm": str(metadata_instance.bpm) if metadata_instance.bpm != 0 else "Н/Д", # Преобразуем int в String
-		"comments": metadata_instance.comments, # Может быть пустым
-		"duration": "00:00" # MusicMeta не предоставляет длительность напрямую из ID3. Нужно вычислять отдельно.
-	}
-
-	print("SongSelect.gd: Метаданные, прочитанные MusicMeta (до получения длительности Godot): ", result_dict)
-	return result_dict
 
 
 func _on_edit_pressed():
 	print("Редактировать песню")
+	
 
 func _on_instrument_pressed():
 	print("Выбор инструмента")
+	
+
+func _on_generate_pressed():
+	print("Сгенерировать ноты")
+	
+
+func _on_delete_pressed():
+	print("Удалить песню")
+	
+
+
 
 func _on_play_pressed():
 	print("Играть песню")
@@ -271,40 +213,16 @@ func _on_play_pressed():
 	else:
 		print("SongSelect.gd: transitions не установлен!")
 
-func _on_generate_pressed():
-	print("Сгенерировать ноты")
-
-func _on_delete_pressed():
-	print("Удалить песню")
 
 func _on_search_text_changed(new_text):
 	print("Поиск:", new_text)
+	
 
-
-func _populate_demo_items(item_list: ItemList):
-	item_list.clear()
-	song_data_list.clear()
-
-	print("SongSelect.gd: Очищен список.")
-	for i in range(5):
-		var song_name = "Песня %d" % (i + 1)
-		item_list.add_item(song_name)
-
-		var demo_song_info = {
-			"path": "",
-			"title": song_name,
-			"artist": "Неизвестен",
-			"year": "Н/Д",
-			"bpm": "Н/Д",
-			"duration": "00:00"
-		}
-		song_data_list.append(demo_song_info)
-
-	print("SongSelect.gd: Добавлены демо-песни в количество %d штук." % item_list.item_count)
-	_update_song_count_label()
 
 func _update_song_count_label():
-	var count = song_data_list.size()
+	
+	var count = song_manager.get_song_count() 
+	
 	var label = $MainVBox/TopBarHBox/SongCountLabel
 	if label:
 		label.text = "Песен: %d" % count
@@ -318,12 +236,15 @@ func _on_song_item_selected(index):
 
 	_stop_preview()
 
+	
+	var songs_list = song_manager.get_songs_list()
 	var song_data = {}
-	if index >= 0 and index < song_data_list.size():
-		song_data = song_data_list[index]
+	if index >= 0 and index < songs_list.size():
+		song_data = songs_list[index]
 	else:
-		print("SongSelect.gd: ОШИБКА: Индекс %d выходит за пределы song_data_list (размер %d)" % [index, song_data_list.size()])
+		print("SongSelect.gd: ОШИБКА: Индекс %d выходит за пределы списка песен SongManager (размер %d)" % [index, songs_list.size()])
 		return
+	
 
 	_update_song_details(song_data)
 
@@ -343,19 +264,35 @@ func _update_song_details(song_data):
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + song_data.get("bpm", "Н/Д")
 	$MainVBox/ContentHBox/DetailsVBox/DurationLabel.text = "Длительность: " + song_data.get("duration", "00:00")
 
-	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.texture = null
-
-	is_song_selected = true
+	
+	var cover_texture = song_data.get("cover", null)
+	if cover_texture and cover_texture is ImageTexture:
+		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.texture = cover_texture
+		print("SongSelect.gd: Установлена обложка из метаданных.")
+	else:
+		
+		var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
+		gray_image.fill(Color(0.5, 0.5, 0.5, 1.0)) 
+		var gray_texture = ImageTexture.create_from_image(gray_image)
+		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.texture = gray_texture
+		print("SongSelect.gd: Обложка отсутствует, установлен серый квадрат.")
+	
 
 	_update_play_button_state()
 
 
 func _update_play_button_state():
-	if not is_song_selected:
+	
+	
+	var selected_indices = []
+	if song_item_list_ref:
+		selected_indices = song_item_list_ref.get_selected_items()
+	
+	if selected_indices.size() == 0:
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton.text = "Сначала сгенерируйте ноты"
 		return
-
+	
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.text = "Играть"
 
