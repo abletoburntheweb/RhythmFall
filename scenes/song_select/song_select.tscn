@@ -78,6 +78,7 @@ layout_mode = 2
 [node name="CoverTextureRect" type="TextureRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 custom_minimum_size = Vector2(400, 400)
 layout_mode = 2
+expand_mode = 1
 
 [node name="TitleLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2

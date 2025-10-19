@@ -108,7 +108,7 @@ func transition_open_main_menu():
 func transition_open_achievements():
 
 
-	var new_screen = _instantiate_if_exists("res://scenes/achievements/AchievementsScreen.tscn")
+	var new_screen = _instantiate_if_exists("res://scenes/achievements/achievements_screen.tscn")
 	if new_screen:
 
 		if game_engine.current_screen:
@@ -125,18 +125,25 @@ func transition_close_achievements():
 	transition_open_main_menu()
 
 func transition_open_shop():
-
-
-	var new_screen = _instantiate_if_exists("res://shop/ShopScreen.tscn")
+	print("Transitions.gd: transition_open_shop вызван")
+	var new_screen = _instantiate_if_exists("res://scenes/shop/shop_screen.tscn")
 	if new_screen:
-
-
+		print("Transitions.gd: ShopScreen успешно инстанцирован: ", new_screen)  
 		if game_engine.current_screen:
+			print("Transitions.gd: Удаляем текущий экран перед добавлением магазина: ", game_engine.current_screen) 
 			game_engine.current_screen.queue_free()
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
+		print("Transitions.gd: ShopScreen добавлен и установлен как current_screen") 
 	else:
-		print("Transitions: ShopScreen.tscn не найден, переход отменён.")
+		print("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
+		var scene_resource = load("res://scenes/shop/shop_screen.tscn")
+		if not scene_resource:
+			print("Transitions.gd: load() вернул null для пути shop_screen.tscn")
+		elif not (scene_resource is PackedScene):
+			print("Transitions.gd: Загруженный ресурс не является PackedScene: ", scene_resource)
+		else:
+			print("Transitions.gd: PackedScene загружен, но instantiate() вернул null. Проверьте сцену и скрипт ShopScreen на ошибки!")
 
 func transition_close_shop():
 	game_engine.current_screen = null 
@@ -146,7 +153,7 @@ func transition_close_shop():
 
 func transition_open_settings(_from_pause=false):
 
-	var new_screen = _instantiate_if_exists("res://settings/SettingsMenu.tscn")
+	var new_screen = _instantiate_if_exists("res://scenes/settings/settings_menu.tscn")
 	if new_screen:
 
 		if game_engine.current_screen:

@@ -1,0 +1,179 @@
+{
+  "items": [
+	{
+	  "item_id": "kick_default",
+	  "name": "Стандартный кик",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick_default.wav",
+	  "image": "res://assets/textures/kick_icon.png"
+	},
+	{
+	  "item_id": "snare_default",
+	  "name": "Стандартный снейр",
+	  "price": 0,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare_default.wav",
+	  "image": "res://assets/textures/snare_icon.png"
+	},
+	{
+	  "item_id": "covers_default",
+	  "name": "Стандартные обложки",
+	  "price": 0,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/default_covers",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "kick_1",
+	  "name": "Кик 1",
+	  "price": 200,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick1.wav",
+	  "image": "res://assets/textures/kick_icon.png"
+	},
+	{
+	  "item_id": "kick_2",
+	  "name": "Кик 2",
+	  "price": 200,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick2.wav",
+	  "image": "res://assets/textures/kick_icon.png"
+	},
+	{
+	  "item_id": "snare_1",
+	  "name": "Снейр 1",
+	  "price": 200,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare1.wav",
+	  "image": "res://assets/textures/snare_icon.png"
+	},
+	{
+	  "item_id": "snare_2",
+	  "name": "Снейр 2",
+	  "price": 300,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare2.wav",
+	  "image": "res://assets/textures/snare_icon.png"
+	},
+	{
+	  "item_id": "background_default",
+	  "name": "Default Background",
+	  "price": 0,
+	  "image": "res://assets/shop/background/default_background.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_1",
+	  "name": "Background 1",
+	  "price": 500,
+	  "image": "res://assets/shop/background/background_1.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_2",
+	  "name": "Background 2",
+	  "price": 550,
+	  "image": "res://assets/shop/background/background_2.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_3",
+	  "name": "Background 3",
+	  "price": 600,
+	  "image": "res://assets/shop/background/background_3.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_4",
+	  "name": "Background 4",
+	  "price": 500,
+	  "image": "res://assets/shop/background/background_4.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_5",
+	  "name": "Background 5",
+	  "price": 550,
+	  "image": "res://assets/shop/background/background_5.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "background_6",
+	  "name": "Background 6",
+	  "price": 600,
+	  "image": "res://assets/shop/background/background_6.png",
+	  "category": "Фоны"
+	},
+	{
+	  "item_id": "covers_geometric",
+	  "name": "Геометрические обложки",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/geometric",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_flowing_lines",
+	  "name": "Текучие линии",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/flowing_lines",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_music_note",
+	  "name": "Музыкальные ноты",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/music_note",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_ink_splash",
+	  "name": "Брызги чернил",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/ink_splash",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_vinyl",
+	  "name": "Виниловые обложки",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/vinyl",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "misc_1",
+	  "name": "Бонус 1",
+	  "price": 300,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	},
+	{
+	  "item_id": "misc_2",
+	  "name": "Бонус 2",
+	  "price": 200,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	},
+	{
+	  "item_id": "misc_3",
+	  "name": "Бонус 3",
+	  "price": 250,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	}
+  ]
+}

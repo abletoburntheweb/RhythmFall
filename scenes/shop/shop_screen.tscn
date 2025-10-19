@@ -1,0 +1,86 @@
+[gd_scene load_steps=2 format=3 uid="uid://b78etu3dej4um"]
+
+[ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
+
+[node name="ShopScreen" type="Control"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1072.0
+offset_top = 654.0
+offset_right = 1072.0
+offset_bottom = 654.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_bjeu6")
+
+[node name="MainContent" type="MarginContainer" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="MainVBox" type="VBoxContainer" parent="MainContent"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MainContent/MainVBox/HBoxContainer"]
+layout_mode = 2
+text = "Назад	"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/MainVBox/HBoxContainer"]
+layout_mode = 2
+
+[node name="CurrencyLabel" type="Label" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(1000, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 32
+text = "Валюта: "
+horizontal_alignment = 1
+
+[node name="CategoriesHBox" type="HBoxContainer" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CategoryButtonAll" type="Button" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Все"
+
+[node name="CategoryButtonKick" type="Button" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Кик"
+
+[node name="CategoryButtonSnare" type="Button" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Снейр"
+
+[node name="CategoryButtonCover" type="Button" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Обложки"
+
+[node name="CategoryButtonMisc" type="Button" parent="MainContent/MainVBox/HBoxContainer/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Прочее"
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+
+[node name="ItemListVBox" type="VBoxContainer" parent="MainContent/MainVBox/ContentHBox"]
+layout_mode = 2
+
+[node name="ItemsScroll" type="ScrollContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 2
+
+[node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll"]
+layout_mode = 2
+
+[node name="ItemsGrid" type="GridContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 2
+columns = 5
