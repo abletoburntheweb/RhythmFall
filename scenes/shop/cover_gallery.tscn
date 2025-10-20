@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bol4h51pj023o"]
+
+[node name="CoverGallery" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundOverlay" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0, 0, 0.6901961)
+
+[node name="MainContainer" type="Control" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BackButton" type="Button" parent="MainContainer"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Назад
+"
+
+[node name="CoverGrid" type="GridContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/h_separation = 40
+theme_override_constants/v_separation = 40
+columns = 4

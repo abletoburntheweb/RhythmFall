@@ -56,35 +56,42 @@ func _setup_item():
 		var texture = null
 
 		if image_path != "":
-			if FileAccess.file_exists(image_path):
-				texture = load(image_path)
-				if texture and texture is ImageTexture:
-					image_rect.texture = texture
-					image_rect.visible = true
-					name_label.visible = true
-				else:
-					print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
-					_create_placeholder_with_text()
+			texture = ResourceLoader.load(image_path)
+			if texture and texture is ImageTexture:
+				image_rect.texture = texture
+				image_rect.visible = true
+				name_label.visible = true
+				name_label.visible = false
+				print("ItemCard.gd: Текстура загружена по прямому пути: ", image_path)
 			else:
-				print("ItemCard.gd: Файл не существует: ", image_path)
-				_create_placeholder_with_text()
+				print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
+				name_label.visible = true
+				name_label.text = item_data.get("name", "Без названия")
+
 		elif images_folder != "":
 			var cover_path = images_folder + "/cover1.png"
-			if FileAccess.file_exists(cover_path):
-				texture = load(cover_path)
-				if texture and texture is ImageTexture:
+			print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
+
+			var image = Image.new()
+			var error = image.load(cover_path)
+			if error == OK and image:
+				texture = ImageTexture.create_from_image(image)
+				if texture:
 					image_rect.texture = texture
 					image_rect.visible = true
-					name_label.visible = true
+					name_label.visible = false
+					print("ItemCard.gd: Текстура обложки создана вручную из файла: ", cover_path)
 				else:
-					print("ItemCard.gd: Ошибка загрузки текстуры обложки: ", cover_path)
+					print("ItemCard.gd: Не удалось создать ImageTexture из Image: ", cover_path)
 					_create_placeholder_with_text()
 			else:
-				print("ItemCard.gd: Файл обложки не существует: ", cover_path)
+				print("ItemCard.gd: Ошибка загрузки изображения (Image.load): ", error, " Путь: ", cover_path)
 				_create_placeholder_with_text()
+
 		else:
 			print("ItemCard.gd: Путь к изображению пустой")
 			_create_placeholder_with_text()
+
 	else:
 		print("ItemCard.gd: ImageRect не найден")
 
