@@ -1,6 +1,6 @@
 # scenes/shop/item_card.gd
 extends Control
-
+signal cover_click_pressed(item_data: Dictionary)
 signal buy_pressed(item_id: String)
 signal use_pressed(item_id: String)
 signal preview_pressed(item_id: String)
@@ -25,11 +25,21 @@ func _ready():
 	if preview_button:
 		preview_button.pressed.connect(_on_preview_pressed)
 
+	var image_rect = $MarginContainer/ContentContainer/ImageRect
+	if image_rect:
+		image_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+		image_rect.gui_input.connect(_on_image_rect_gui_input)
+
 	_setup_item()
 
 	custom_minimum_size = Vector2(280, 350)
 	print("ItemCard.gd: Установлен custom_minimum_size: ", custom_minimum_size)
 
+
+func _on_image_rect_gui_input(event: InputEvent):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if item_data.get("category", "") == "Обложки":
+			emit_signal("cover_click_pressed", item_data)
 
 func _setup_item():
 	if not item_data:
@@ -42,41 +52,41 @@ func _setup_item():
 
 	if image_rect:
 		var image_path = item_data.get("image", "")
+		var images_folder = item_data.get("images_folder", "")
 		var texture = null
 
 		if image_path != "":
-			texture = load(image_path)
-			if texture and texture is ImageTexture:
-				image_rect.texture = texture
-				image_rect.visible = true
-				name_label.visible = true
+			if FileAccess.file_exists(image_path):
+				texture = load(image_path)
+				if texture and texture is ImageTexture:
+					image_rect.texture = texture
+					image_rect.visible = true
+					name_label.visible = true
+				else:
+					print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
+					_create_placeholder_with_text()
 			else:
-				print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
+				print("ItemCard.gd: Файл не существует: ", image_path)
+				_create_placeholder_with_text()
+		elif images_folder != "":
+			var cover_path = images_folder + "/cover1.png"
+			if FileAccess.file_exists(cover_path):
+				texture = load(cover_path)
+				if texture and texture is ImageTexture:
+					image_rect.texture = texture
+					image_rect.visible = true
+					name_label.visible = true
+				else:
+					print("ItemCard.gd: Ошибка загрузки текстуры обложки: ", cover_path)
+					_create_placeholder_with_text()
+			else:
+				print("ItemCard.gd: Файл обложки не существует: ", cover_path)
 				_create_placeholder_with_text()
 		else:
 			print("ItemCard.gd: Путь к изображению пустой")
 			_create_placeholder_with_text()
 	else:
 		print("ItemCard.gd: ImageRect не найден")
-
-	if status_label:
-		status_label.visible = false
-
-	is_default = item_data.get("item_id", "").ends_with("_default")
-	if is_default:
-		status_label.text = "✔️ Дефолтный"
-		status_label.visible = true
-
-	is_active = item_data.get("is_active", false)  
-	if is_active and not is_default:
-		status_label.text = "✅ Используется"
-		status_label.visible = true
-
-	is_purchased = item_data.get("is_purchased", false)
-	if is_purchased and not is_default:
-		status_label.visible = false
-
-	_update_buttons_and_status()
 
 func _create_placeholder_with_text():
 	var image_rect = $MarginContainer/ContentContainer/ImageRect

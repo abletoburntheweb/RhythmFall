@@ -2,9 +2,7 @@
 extends Control
 
 var currency: int = 0
-
 var shop_data: Dictionary = {}
-
 var item_cards: Array[Node] = []
 
 func _ready():
@@ -29,7 +27,7 @@ func _ready():
 
 	_connect_category_buttons()
 
-	var items_scroll = $MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll
+	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
 		print("ShopScreen.gd: ItemsScroll найден.")
 
@@ -41,20 +39,27 @@ func _ready():
 			if grid_container:
 				print("ShopScreen.gd: ItemsGrid найден.")
 
+				grid_container.custom_minimum_size = Vector2.ZERO
+
 				grid_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				grid_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-				var num_rows_estimate = 10
-				var row_spacing = 30 
-				var estimated_height = (350 * num_rows_estimate) + (row_spacing * (num_rows_estimate - 1))
-				grid_container.custom_minimum_size = Vector2(280 * 5, estimated_height)
-				print("ShopScreen.gd: Установлен custom_minimum_size для ItemsGrid: ", grid_container.custom_minimum_size)
+				grid_container.add_theme_constant_override("v_separation", 30)
+				grid_container.add_theme_constant_override("h_separation", 30)
 
 				items_list_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				items_list_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 				items_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				items_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+				var content_hbox = $MainContent/MainVBox/ContentMargin/ContentHBox
+				if content_hbox:
+					print("ShopScreen.gd: Устанавливаю size_flags_vertical для ContentHBox")
+					content_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				else:
+					print("ShopScreen.gd: ОШИБКА: ContentHBox не найден.")
+
 			else:
 				print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден внутри ItemsListContainer.")
 		else:
@@ -132,53 +137,60 @@ func _create_item_cards():
 
 	var item_card_scene = preload("res://scenes/shop/item_card.tscn") 
 
-	print("ShopScreen.gd: Попытка найти ItemsGrid по новому пути: $MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
+	print("ShopScreen.gd: Попытка найти ItemsGrid по новому пути: $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
 	var main_content = $MainContent
 	if main_content:
 		print("ShopScreen.gd: MainContent найден.")
 		var main_vbox = main_content.get_node("MainVBox")
 		if main_vbox:
 			print("ShopScreen.gd: MainVBox найден.")
-			var content_hbox = main_vbox.get_node("ContentHBox")
-			if content_hbox:
-				print("ShopScreen.gd: ContentHBox найден.")
-				var item_list_vbox = content_hbox.get_node("ItemListVBox")
-				if item_list_vbox:
-					print("ShopScreen.gd: ItemListVBox найден.")
-					var items_scroll = item_list_vbox.get_node("ItemsScroll")
-					if items_scroll:
-						print("ShopScreen.gd: ItemsScroll найден.")
-						var items_list_container = items_scroll.get_node("ItemsListContainer")
-						if items_list_container:
-							print("ShopScreen.gd: ItemsListContainer найден.")
-							var grid_container = items_list_container.get_node("ItemsGrid") 
-							if grid_container:
-								print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
-								for i in range(items.size()):
-									var item_data = items[i]
+			var content_margin = main_vbox.get_node("ContentMargin")
+			if content_margin:
+				print("ShopScreen.gd: ContentMargin найден.")
+				var content_hbox = content_margin.get_node("ContentHBox")
+				if content_hbox:
+					print("ShopScreen.gd: ContentHBox найден.")
+					var item_list_vbox = content_hbox.get_node("ItemListVBox")
+					if item_list_vbox:
+						print("ShopScreen.gd: ItemListVBox найден.")
+						var items_scroll = item_list_vbox.get_node("ItemsScroll")
+						if items_scroll:
+							print("ShopScreen.gd: ItemsScroll найден.")
+							var items_list_container = items_scroll.get_node("ItemsListContainer")
+							if items_list_container:
+								print("ShopScreen.gd: ItemsListContainer найден.")
+								var grid_container = items_list_container.get_node("ItemsGrid") 
+								if grid_container:
+									print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
+									for i in range(items.size()):
+										var item_data = items[i]
 
-									var new_card = item_card_scene.instantiate()
+										var new_card = item_card_scene.instantiate()
 
-									new_card.item_data = item_data
+										new_card.item_data = item_data
 
-									new_card.buy_pressed.connect(_on_item_buy_pressed)
-									new_card.use_pressed.connect(_on_item_use_pressed)
-									new_card.preview_pressed.connect(_on_item_preview_pressed)
+										new_card.buy_pressed.connect(_on_item_buy_pressed)
+										new_card.use_pressed.connect(_on_item_use_pressed)
+										new_card.preview_pressed.connect(_on_item_preview_pressed)
 
-									grid_container.add_child(new_card)
-									item_cards.append(new_card)
+										grid_container.add_child(new_card)
+										item_cards.append(new_card)
 
-								print("ShopScreen.gd: Создано карточек: ", item_cards.size())
+									print("ShopScreen.gd: Создано карточек: ", item_cards.size())
+									items_scroll.scroll_vertical = 0
+									items_scroll.scroll_horizontal = 0
+								else:
+									print("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsListContainer.")
 							else:
-								print("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsListContainer.")
+								print("ShopScreen.gd: ОШИБКА: ItemsListContainer НЕ найден внутри ItemsScroll.")
 						else:
-							print("ShopScreen.gd: ОШИБКА: ItemsListContainer НЕ найден внутри ItemsScroll.")
+							print("ShopScreen.gd: ОШИБКА: ItemsScroll НЕ найден внутри ItemListVBox.")
 					else:
-						print("ShopScreen.gd: ОШИБКА: ItemsScroll НЕ найден внутри ItemListVBox.")
+						print("ShopScreen.gd: ОШИБКА: ItemListVBox НЕ найден внутри ContentHBox.")
 				else:
-					print("ShopScreen.gd: ОШИБКА: ItemListVBox НЕ найден внутри ContentHBox.")
+					print("ShopScreen.gd: ОШИБКА: ContentHBox НЕ найден внутри ContentMargin.")
 			else:
-				print("ShopScreen.gd: ОШИБКА: ContentHBox НЕ найден внутри MainVBox.")
+				print("ShopScreen.gd: ОШИБКА: ContentMargin НЕ найден внутри MainVBox.")
 		else:
 			print("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден внутри MainContent.")
 	else:
@@ -204,7 +216,7 @@ func _on_category_selected(category: String):
 		new_card.use_pressed.connect(_on_item_use_pressed)
 		new_card.preview_pressed.connect(_on_item_preview_pressed)
 
-		var grid_container = $MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid
+		var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid
 		if grid_container:
 			grid_container.add_child(new_card)
 			item_cards.append(new_card)

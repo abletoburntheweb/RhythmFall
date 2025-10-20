@@ -70,48 +70,6 @@
 	  "category": "Фоны"
 	},
 	{
-	  "item_id": "background_1",
-	  "name": "Background 1",
-	  "price": 500,
-	  "image": "res://assets/shop/background/background_1.png",
-	  "category": "Фоны"
-	},
-	{
-	  "item_id": "background_2",
-	  "name": "Background 2",
-	  "price": 550,
-	  "image": "res://assets/shop/background/background_2.png",
-	  "category": "Фоны"
-	},
-	{
-	  "item_id": "background_3",
-	  "name": "Background 3",
-	  "price": 600,
-	  "image": "res://assets/shop/background/background_3.png",
-	  "category": "Фоны"
-	},
-	{
-	  "item_id": "background_4",
-	  "name": "Background 4",
-	  "price": 500,
-	  "image": "res://assets/shop/background/background_4.png",
-	  "category": "Фоны"
-	},
-	{
-	  "item_id": "background_5",
-	  "name": "Background 5",
-	  "price": 550,
-	  "image": "res://assets/shop/background/background_5.png",
-	  "category": "Фоны"
-	},
-	{
-	  "item_id": "background_6",
-	  "name": "Background 6",
-	  "price": 600,
-	  "image": "res://assets/shop/background/background_6.png",
-	  "category": "Фоны"
-	},
-	{
 	  "item_id": "covers_geometric",
 	  "name": "Геометрические обложки",
 	  "price": 200,

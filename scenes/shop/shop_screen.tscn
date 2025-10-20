@@ -67,20 +67,26 @@ text = "Обложки"
 layout_mode = 2
 text = "Прочее"
 
-[node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox"]
+[node name="ContentMargin" type="MarginContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+theme_override_constants/margin_top = 150
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox/ContentMargin"]
+custom_minimum_size = Vector2(1920, 1230)
 layout_mode = 2
 
-[node name="ItemListVBox" type="VBoxContainer" parent="MainContent/MainVBox/ContentHBox"]
+[node name="ItemListVBox" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox"]
 layout_mode = 2
 
-[node name="ItemsScroll" type="ScrollContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox"]
+[node name="ItemsScroll" type="ScrollContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox"]
+clip_contents = false
 custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 2
 
-[node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll"]
+[node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll"]
 layout_mode = 2
 
-[node name="ItemsGrid" type="GridContainer" parent="MainContent/MainVBox/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer"]
+[node name="ItemsGrid" type="GridContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer"]
 custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 2
 columns = 5
