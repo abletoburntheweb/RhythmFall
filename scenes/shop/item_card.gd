@@ -12,6 +12,10 @@ var is_active: bool = false
 var is_default: bool = false
 
 func _ready():
+	if not item_data.has("item_id"):
+		printerr("ItemCard.gd: item_data не содержит 'item_id'!")
+		return # Выходим из _ready, чтобы не продолжать с неполными данными
+
 	print("ItemCard.gd: _ready вызван для карточки: ", item_data.get("name", "Без названия"))
 	var buy_button = $MarginContainer/ContentContainer/BuyButton
 	if buy_button:
@@ -41,80 +45,88 @@ func _on_image_rect_gui_input(event: InputEvent):
 		if item_data.get("category", "") == "Обложки":
 			emit_signal("cover_click_pressed", item_data)
 
+
 func _setup_item():
-	if not item_data:
-		print("ItemCard.gd: Ошибка: item_data не установлен.")
-		return
+	if not item_data.has("item_id"):
+		printerr("ItemCard.gd: _setup_item: item_data не содержит 'item_id'!")
+		return # Выходим, если нет ключа
+
+	var item_id_str = item_data.get("item_id", "") # Даже если null в JSON, .get() вернет ""
+	is_default = item_id_str.ends_with("_default") # Теперь вызов .ends_with безопасен
 
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
 	var status_label = $MarginContainer/ContentContainer/StatusLabel
 
-	if image_rect:
-		var image_path = item_data.get("image", "")
-		var images_folder = item_data.get("images_folder", "")
-		var texture = null
+	if name_label:
+		name_label.visible = false
+	if status_label:
+		status_label.visible = false
 
-		if image_path != "":
-			texture = ResourceLoader.load(image_path)
+	var image_path = item_data.get("image", "") # .get() возвращает "", если ключа нет или значение null
+	var images_folder = item_data.get("images_folder", "")
+	var texture = null
+	var image_loaded_successfully = false
+
+	if image_path != "":
+		if FileAccess.file_exists(image_path):
+			texture = ResourceLoader.load(image_path, "ImageTexture")
 			if texture and texture is ImageTexture:
 				image_rect.texture = texture
-				image_rect.visible = true
-				name_label.visible = true
-				name_label.visible = false
+				image_loaded_successfully = true
 				print("ItemCard.gd: Текстура загружена по прямому пути: ", image_path)
 			else:
 				print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
-				name_label.visible = true
-				name_label.text = item_data.get("name", "Без названия")
-
-		elif images_folder != "":
-			var cover_path = images_folder + "/cover1.png"
-			print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
-
-			var image = Image.new()
-			var error = image.load(cover_path)
-			if error == OK and image:
-				texture = ImageTexture.create_from_image(image)
-				if texture:
-					image_rect.texture = texture
-					image_rect.visible = true
-					name_label.visible = false
-					print("ItemCard.gd: Текстура обложки создана вручную из файла: ", cover_path)
-				else:
-					print("ItemCard.gd: Не удалось создать ImageTexture из Image: ", cover_path)
-					_create_placeholder_with_text()
-			else:
-				print("ItemCard.gd: Ошибка загрузки изображения (Image.load): ", error, " Путь: ", cover_path)
-				_create_placeholder_with_text()
-
 		else:
-			print("ItemCard.gd: Путь к изображению пустой")
-			_create_placeholder_with_text()
+			print("ItemCard.gd: Файл изображения не найден: ", image_path)
+	elif images_folder != "":
+		var cover_path = images_folder + "/cover1.png"
+		print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
 
+		var image = Image.new()
+		var error = image.load(cover_path)
+		if error == OK and image:
+			texture = ImageTexture.create_from_image(image)
+			if texture:
+				image_rect.texture = texture
+				image_loaded_successfully = true
+				print("ItemCard.gd: Текстура обложки создана вручную из файла: ", cover_path)
+			else:
+				print("ItemCard.gd: Не удалось создать ImageTexture из Image: ", cover_path)
+		else:
+			print("ItemCard.gd: Ошибка загрузки изображения (Image.load): ", error, " Путь: ", cover_path)
 	else:
-		print("ItemCard.gd: ImageRect не найден")
+		print("ItemCard.gd: Пути к изображению (image и images_folder) пусты для предмета: ", item_data.get("name", "Без названия"))
+
+	if image_rect:
+		if image_loaded_successfully:
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			image_rect.visible = true # Показываем ImageRect, если изображение есть
+		else:
+			_create_placeholder_with_text() # Создает плейсхолдер и присваивает его image_rect.texture
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			image_rect.visible = true # Показываем ImageRect с плейсхолдером
+			if name_label:
+				var item_name = item_data.get("name", "Без названия") # .get() возвращает "Без названия", если ключа нет или значение null
+				name_label.text = item_name
+				name_label.visible = true # Показываем NameLabel
+
+	_update_buttons_and_status()
+
 
 func _create_placeholder_with_text():
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
-	var name_label = $MarginContainer/ContentContainer/NameLabel
 
-	if image_rect and name_label:
-		var placeholder_image = Image.create(240, 180, false, Image.FORMAT_RGBA8)
-		placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0))
+	if image_rect:
+		var placeholder_width = 240 # Установите нужный размер
+		var placeholder_height = 180 # Установите нужный размер
+
+		var placeholder_image = Image.create(placeholder_width, placeholder_height, false, Image.FORMAT_RGBA8)
+		placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0)) # Серый цвет
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
+
 		image_rect.texture = placeholder_texture
-		image_rect.visible = true
-
-		name_label.text = item_data.get("name", "Без названия")
-		name_label.visible = true
-		name_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0)) 
-		name_label.add_theme_font_size_override("font_size", 18)
-		name_label.horizontal_alignment = HorizontalAlignment.HORIZONTAL_ALIGNMENT_CENTER
-		name_label.vertical_alignment = VerticalAlignment.VERTICAL_ALIGNMENT_CENTER
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-
+		print("ItemCard.gd: Плейсхолдер создан и присвоен ImageRect")
 
 
 func _update_buttons_and_status():
@@ -141,25 +153,29 @@ func _update_buttons_and_status():
 			preview_button.text = "🔊 Прослушать"
 
 	if status_label:
-		if is_default:
-			status_label.text = "✔️ Дефолтный"
-			status_label.visible = true
-		elif is_active:
+		if is_active:
 			status_label.text = "✅ Используется"
+			status_label.visible = true
+		elif is_default:
+			status_label.text = "✔️ Дефолтный"
 			status_label.visible = true
 		else:
 			status_label.visible = false
 
+
 func _on_buy_pressed():
-	emit_signal("buy_pressed", item_data.get("item_id", ""))
+	var item_id_str = item_data.get("item_id", "") # .get() возвращает "", если ключа нет или значение null
+	emit_signal("buy_pressed", item_id_str)
 
 func _on_use_pressed():
-	emit_signal("use_pressed", item_data.get("item_id", ""))
+	var item_id_str = item_data.get("item_id", "") # .get() возвращает "", если ключа нет или значение null
+	emit_signal("use_pressed", item_id_str)
 
 func _on_preview_pressed():
-	emit_signal("preview_pressed", item_data.get("item_id", ""))
+	var item_id_str = item_data.get("item_id", "") # .get() возвращает "", если ключа нет или значение null
+	emit_signal("preview_pressed", item_id_str)
 
 func update_state(purchased: bool, active: bool):
 	is_purchased = purchased
 	is_active = active
-	_setup_item()
+	_setup_item() # Пересобираем карточку с новым состоянием (изображение, кнопки, статусы)

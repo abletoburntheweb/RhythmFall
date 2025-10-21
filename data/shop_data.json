@@ -63,13 +63,6 @@
 	  "image": "res://assets/textures/snare_icon.png"
 	},
 	{
-	  "item_id": "background_default",
-	  "name": "Default Background",
-	  "price": 0,
-	  "image": "res://assets/shop/background/default_background.png",
-	  "category": "Фоны"
-	},
-	{
 	  "item_id": "covers_geometric",
 	  "name": "Геометрические обложки",
 	  "price": 200,

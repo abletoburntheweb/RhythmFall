@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://bol4h51pj023o"]
+[gd_scene load_steps=2 format=3 uid="uid://bol4h51pj023o"]
+
+[ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
 
 [node name="CoverGallery" type="Control"]
 layout_mode = 3
@@ -7,32 +9,26 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_hwq2b")
 
-[node name="BackgroundOverlay" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-color = Color(0, 0, 0, 0.6901961)
+color = Color(0, 0, 0, 0.003921569)
 
-[node name="MainContainer" type="Control" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="BackButton" type="Button" parent="MainContainer"]
+[node name="GalleryContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-text = "Назад
-"
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 0
 
-[node name="CoverGrid" type="GridContainer" parent="MainContainer"]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-theme_override_constants/h_separation = 40
-theme_override_constants/v_separation = 40
+[node name="BackButton" type="Button" parent="GalleryContainer"]
+custom_minimum_size = Vector2(57, 80)
+layout_mode = 2
+text = "Назад"
+
+[node name="Content" type="GridContainer" parent="GalleryContainer"]
+layout_mode = 2
 columns = 4
