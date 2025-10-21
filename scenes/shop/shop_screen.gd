@@ -8,11 +8,9 @@ var item_cards: Array[Node] = []
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
 
-<<<<<<< HEAD
+
 var player_data_manager: PlayerDataManager = null
 
-=======
->>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 func _ready():
 	print("ShopScreen.gd: _ready вызван.")
 
@@ -152,7 +150,7 @@ func _create_item_cards():
 		if main_vbox:
 			var content_margin = main_vbox.get_node("ContentMargin")
 			if content_margin:
-				var content_hbox = content_margin.get_node("ContentHBox") # <-- Используем только одну переменную
+				var content_hbox = content_margin.get_node("ContentHBox")
 				if content_hbox:
 					var item_list_vbox = content_hbox.get_node("ItemListVBox")
 					if item_list_vbox:
@@ -160,10 +158,8 @@ func _create_item_cards():
 						if items_scroll:
 							var items_list_container = items_scroll.get_node("ItemsListContainer")
 							if items_list_container:
-<<<<<<< HEAD
-=======
+
 								print("ShopScreen.gd: ItemsListContainer найден.")
->>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 								var grid_container = items_list_container.get_node("ItemsGrid")
 								if grid_container:
 									print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
@@ -291,7 +287,7 @@ func _on_item_buy_pressed(item_id: String):
 			player_data_manager.add_currency(-price)
 			player_data_manager.unlock_item(item_id)
 			_update_currency_label()
-			_update_item_card_state(item_id, true, false) # is_purchased=true, is_active=false
+			_update_item_card_state(item_id, true, false)
 			print("ShopScreen.gd: Предмет куплен: ", item_id)
 		else:
 			print("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
@@ -409,7 +405,6 @@ func cleanup_gallery():
 		current_cover_gallery = null
 		current_cover_item_data = {}
 		print("ShopScreen.gd: Галерея очищена в _exit_tree или cleanup_gallery.")
-<<<<<<< HEAD
 
 
 func _find_item_by_id(item_id: String) -> Dictionary:
@@ -432,5 +427,3 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			var is_purchased = player_data_manager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
 			card.update_state(is_purchased, is_active)
-=======
->>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
