@@ -73,6 +73,7 @@ func _setup_item():
 			texture = ResourceLoader.load(image_path, "ImageTexture")
 			if texture and texture is ImageTexture:
 				image_rect.texture = texture
+<<<<<<< HEAD
 				image_loaded_successfully = true
 				print("ItemCard.gd: Текстура загружена по прямому пути: ", image_path)
 			else:
@@ -82,6 +83,45 @@ func _setup_item():
 	elif images_folder != "":
 		var cover_path = images_folder + "/cover1.png"
 		print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
+=======
+				image_rect.visible = true # Убедитесь, что ImageRect видим
+				name_label.visible = false # Скрываем имя, если есть изображение
+				print("ItemCard.gd: Текстура загружена по прямому пути: ", image_path)
+			else:
+				print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
+				_create_placeholder_with_text()
+				name_label.visible = false # Скрываем имя, если используется плейсхолдер
+		elif images_folder != "":
+			var cover_path = images_folder + "/cover1.png"
+			print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
+
+			var image = Image.new()
+			var error = image.load(cover_path)
+			if error == OK and image:
+				texture = ImageTexture.create_from_image(image)
+				if texture:
+					image_rect.texture = texture
+					image_rect.visible = true
+					name_label.visible = false
+					print("ItemCard.gd: Текстура обложки создана вручную из файла: ", cover_path)
+				else:
+					print("ItemCard.gd: Не удалось создать ImageTexture из Image: ", cover_path)
+					_create_placeholder_with_text()
+					name_label.visible = false
+			else:
+				print("ItemCard.gd: Ошибка загрузки изображения (Image.load): ", error, " Путь: ", cover_path)
+				_create_placeholder_with_text()
+				name_label.visible = false
+		else:
+			print("ItemCard.gd: Путь к изображению пустой")
+			_create_placeholder_with_text()
+			name_label.visible = false # Скрываем имя, если используется плейсхолдер
+
+		if image_rect.texture:
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		else:
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 
 		var image = Image.new()
 		var error = image.load(cover_path)
@@ -117,7 +157,11 @@ func _setup_item():
 func _create_placeholder_with_text():
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 
+<<<<<<< HEAD
 	if image_rect:
+=======
+	if image_rect and name_label:
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 		var placeholder_width = 240 # Установите нужный размер
 		var placeholder_height = 180 # Установите нужный размер
 
@@ -126,7 +170,14 @@ func _create_placeholder_with_text():
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 
 		image_rect.texture = placeholder_texture
+<<<<<<< HEAD
 		print("ItemCard.gd: Плейсхолдер создан и присвоен ImageRect")
+=======
+		image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED # Или STRETCH_SCALE_ON_EXPAND
+		image_rect.visible = true # Убедитесь, что ImageRect видим
+
+
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 
 
 func _update_buttons_and_status():

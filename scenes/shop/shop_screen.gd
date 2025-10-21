@@ -8,8 +8,11 @@ var item_cards: Array[Node] = []
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
 
+<<<<<<< HEAD
 var player_data_manager: PlayerDataManager = null
 
+=======
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 func _ready():
 	print("ShopScreen.gd: _ready вызван.")
 
@@ -157,6 +160,10 @@ func _create_item_cards():
 						if items_scroll:
 							var items_list_container = items_scroll.get_node("ItemsListContainer")
 							if items_list_container:
+<<<<<<< HEAD
+=======
+								print("ShopScreen.gd: ItemsListContainer найден.")
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
 								var grid_container = items_list_container.get_node("ItemsGrid")
 								if grid_container:
 									print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGrid")
@@ -197,6 +204,8 @@ func _create_item_cards():
 										new_card.buy_pressed.connect(_on_item_buy_pressed)
 										new_card.use_pressed.connect(_on_item_use_pressed)
 										new_card.preview_pressed.connect(_on_item_preview_pressed)
+										new_card.cover_click_pressed.connect(_on_cover_click_pressed)
+
 										new_card.cover_click_pressed.connect(_on_cover_click_pressed)
 
 										grid_container.add_child(new_card)
@@ -400,6 +409,7 @@ func cleanup_gallery():
 		current_cover_gallery = null
 		current_cover_item_data = {}
 		print("ShopScreen.gd: Галерея очищена в _exit_tree или cleanup_gallery.")
+<<<<<<< HEAD
 
 
 func _find_item_by_id(item_id: String) -> Dictionary:
@@ -422,3 +432,5 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			var is_purchased = player_data_manager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
 			card.update_state(is_purchased, is_active)
+=======
+>>>>>>> 6d2afbc5851a4fe73bcce7a9ff021381d72be28c
