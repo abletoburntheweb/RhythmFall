@@ -12,7 +12,7 @@ var cover_images: Array[Texture] = []
 func _ready():
 	var background = $Background
 	if background and background is ColorRect:
-		background.color = Color(0, 0, 0, 0.7) # Черный цвет с прозрачностью 70%
+		background.color = Color(0, 0, 0, 0.7)
 
 	for i in range(1, images_count + 1):
 		var cover_path = images_folder + "/cover%d.png" % i
@@ -56,7 +56,7 @@ func _on_texture_rect_gui_input(event: InputEvent, index: int):
 
 func _on_back_button_pressed():
 	emit_signal("gallery_closed")
-	queue_free() # Закрываем галерею
+	queue_free()
 
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:

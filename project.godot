@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="RhythmFall (Copy)"
+config/name="RhythmFall"
 run/main_scene="uid://5vghv31ksise"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"

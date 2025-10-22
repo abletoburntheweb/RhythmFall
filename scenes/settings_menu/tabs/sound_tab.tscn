@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://cc6iriedb1tay"]
+
+[node name="SoundTab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MusicVolumeLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость музыки"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="SFXVolumeLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость звуков"
+
+[node name="SFXVolumeSlider" type="HSlider" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="HitSoundsVolumeLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость нажатий"
+
+[node name="HitSoundsVolumeSlider" type="HSlider" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="PreviewVolumeLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость предпросмотра"
+
+[node name="PreviewVolumeSlider" type="HSlider" parent="ContentVBox"]
+layout_mode = 2

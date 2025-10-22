@@ -153,7 +153,7 @@ func transition_close_shop():
 
 func transition_open_settings(_from_pause=false):
 
-	var new_screen = _instantiate_if_exists("res://scenes/settings/settings_menu.tscn")
+	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
 	if new_screen:
 
 		if game_engine.current_screen:

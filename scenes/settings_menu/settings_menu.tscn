@@ -1,0 +1,70 @@
+[gd_scene load_steps=2 format=3 uid="uid://jsjmtg1mfq15"]
+
+[ext_resource type="Script" uid="uid://b1w623ds2gg8i" path="res://scenes/settings_menu/settings_menu.gd" id="1_j78aw"]
+
+[node name="SettingsMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_j78aw")
+
+[node name="Topbar" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 1920.0
+offset_bottom = 35.0
+
+[node name="BackButton" type="Button" parent="Topbar"]
+layout_mode = 2
+text = "Назад"
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+theme_override_constants/separation = 20
+
+[node name="TitleHBox" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainVBox/TitleHBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Настройки"
+horizontal_alignment = 1
+
+[node name="TabsHBox" type="HBoxContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BtnSound" type="Button" parent="MainVBox/TabsHBox"]
+layout_mode = 2
+text = "Звук"
+
+[node name="BtnGraphics" type="Button" parent="MainVBox/TabsHBox"]
+layout_mode = 2
+text = "Графика"
+
+[node name="BtnControls" type="Button" parent="MainVBox/TabsHBox"]
+layout_mode = 2
+text = "Управление"
+
+[node name="BtnMisc" type="Button" parent="MainVBox/TabsHBox"]
+layout_mode = 2
+text = "Прочее"
+
+[node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="SettingsTabContainer" type="TabContainer" parent="MainVBox/ContentContainer"]
+layout_mode = 2
+tab_alignment = 1

@@ -37,6 +37,7 @@ theme_override_font_sizes/font_size = 22
 text = "Название товара"
 horizontal_alignment = 1
 vertical_alignment = 1
+clip_text = true
 
 [node name="StatusLabel" type="Label" parent="MarginContainer/ContentContainer"]
 layout_mode = 2
