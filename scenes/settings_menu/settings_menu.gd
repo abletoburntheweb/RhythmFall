@@ -11,7 +11,7 @@ var transitions = null
 @onready var btn_controls: Button = $MainVBox/TabsHBox/BtnControls
 @onready var btn_misc: Button = $MainVBox/TabsHBox/BtnMisc
 @onready var tab_container: TabContainer = $MainVBox/ContentContainer/SettingsTabContainer
-@onready var back_button: Button = $Topbar/BackButton # Убедитесь, что путь верен!
+@onready var back_button: Button = $Topbar/BackButton
 
 const TAB_PATHS = {
 	"SoundTab": "res://scenes/settings_menu/tabs/sound_tab.tscn",
@@ -41,7 +41,7 @@ func _setup_tabs():
 
 	for tab_name in TAB_PATHS:
 		var scene_path = TAB_PATHS[tab_name]
-		var scene_resource = load(scene_path) # Используем load() вместо preload для динамического пути
+		var scene_resource = load(scene_path)  
 
 		if not scene_resource:
 			printerr("SettingsMenu.gd: Не удалось загрузить ресурс сцены для %s по пути: %s" % [tab_name, scene_path])

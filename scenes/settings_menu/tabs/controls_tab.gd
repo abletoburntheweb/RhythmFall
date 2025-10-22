@@ -1,15 +1,15 @@
 # scenes/settings_menu/tabs/controls_tab.gd
 extends Control
 
-signal settings_changed # Для уведомления SettingsMenu о необходимости сохранить настройки
+signal settings_changed
 
 var _remap_active: bool = false
 var _remap_target_button: Button = null
 var _remap_target_lane: int = -1
 var _remap_old_text: String = ""
 
-var settings_manager: SettingsManager = null # Передаётся из SettingsMenu
-var game_screen = null # Передаётся из SettingsMenu
+var settings_manager: SettingsManager = null 
+var game_screen = null
 
 
 
@@ -31,7 +31,7 @@ func _setup_ui():
 
 	print("ControlsTab.gd: _setup_ui вызван.")
 
-	var keys_container = $ContentVBox/KeysContainer # Используем путь из вашей сцены
+	var keys_container = $ContentVBox/KeysContainer
 	if not keys_container:
 		printerr("ControlsTab.gd: Не найден KeysContainer по пути $ContentVBox/KeysContainer!")
 		return
@@ -45,7 +45,7 @@ func _setup_ui():
 		print("ControlsTab.gd: Клавиши загружены через get_controls_key_texts.")
 	else:
 		print("ControlsTab.gd: Метод get_controls_key_texts не найден, используем get_key_text_for_lane.")
-		for i in range(4): # Предполагаем 4 линии
+		for i in range(4):
 			var key_text = settings_manager.get_key_text_for_lane(i)
 			current_keys_text.append(key_text)
 
@@ -74,12 +74,12 @@ func _setup_ui():
 		print("ControlsTab.gd: DEBUG: Дочерний элемент ", i, ": ", child.name, " (", child.get_class(), ")")
 		if child is HBoxContainer:
 			print("ControlsTab.gd: DEBUG:   - HBoxContainer создан, имя: ", child.name)
-			if child.get_child_count() >= 3: # Проверим Label и Button
+			if child.get_child_count() >= 3:
 				var label_container = child.get_child(0)
 				if label_container and label_container.get_child_count() > 0:
 					var label = label_container.get_child(0)
 					print("ControlsTab.gd: DEBUG:   - Label: ", label.text)
-				var button = child.get_child(2) # Button на индексе 2
+				var button = child.get_child(2)
 				if button and button is Button:
 					print("ControlsTab.gd: DEBUG:   - Button: ", button.text)
 
@@ -120,8 +120,8 @@ func _create_line_label(lane_number: int) -> Label:
 func _create_key_button(key_text: String, lane_index: int) -> Button:
 	var key_button = Button.new()
 	key_button.text = key_text
-	key_button.size = Vector2(160, 55) # Фиксированный размер
-	key_button.flat = true # Без стандартного фона
+	key_button.size = Vector2(160, 55) 
+	key_button.flat = true 
 	key_button.set_meta("lane_index", lane_index)
 
 	key_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -143,7 +143,7 @@ func _create_key_button(key_text: String, lane_index: int) -> Button:
 	key_button.add_theme_stylebox_override("pressed", button_style_pressed)
 
 	key_button.add_theme_color_override("font_color", Color.WHITE)
-	key_button.add_theme_color_override("font_color_pressed", Color.BLACK) # Цвет текста при нажатии
+	key_button.add_theme_color_override("font_color_pressed", Color.BLACK)
 	key_button.add_theme_font_size_override("font_size", 22)
 
 	key_button.pressed.connect(_on_key_button_pressed.bind(key_button))
@@ -207,7 +207,7 @@ func _input(event):
 			var duplicate_lane: int = -1
 			for child in keys_container.get_children():
 				if child is HBoxContainer:
-					var btn = child.get_child(2) # Кнопка на индексе 2
+					var btn = child.get_child(2) 
 					if btn is Button and btn != _remap_target_button and btn.text == new_key_text:
 						duplicate_button = btn
 						duplicate_lane = btn.get_meta("lane_index")

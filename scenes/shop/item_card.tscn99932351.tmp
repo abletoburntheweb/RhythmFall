@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://6mo443yk7t5j"]
+
+[ext_resource type="Script" uid="uid://bmqrkwg0bhrko" path="res://scenes/shop/item_card.gd" id="1_re5xs"]
+
+[node name="ItemCard" type="Control"]
+custom_minimum_size = Vector2(280, 350)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1072.0
+offset_top = 754.0
+offset_right = 1352.0
+offset_bottom = 1104.0
+script = ExtResource("1_re5xs")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -132.0
+offset_right = 272.0
+offset_bottom = 253.0
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="ContentContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ImageRect" type="TextureRect" parent="MarginContainer/ContentContainer"]
+custom_minimum_size = Vector2(240, 180)
+layout_mode = 2
+expand_mode = 1
+
+[node name="NameLabel" type="Label" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Название товара"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "✔️ Дефолтный"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UseButton" type="Button" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+text = "✅ Использовать"
+
+[node name="PreviewButton" type="Button" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+text = "🔊 Прослушать"
+
+[node name="BuyButton" type="Button" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+text = "Купить за 200 💰"

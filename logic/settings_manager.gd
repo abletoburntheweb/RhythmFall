@@ -13,7 +13,7 @@ var default_settings = {
 	"show_fps": false,
 	"fullscreen": false,
 	"enable_debug_menu": false,
-	"controls_keymap": { # Теперь хранит текстовые представления
+	"controls_keymap": {
 		"lane_0_key": "A",
 		"lane_1_key": "S",
 		"lane_2_key": "D",
@@ -40,10 +40,10 @@ func _load_settings():
 			print("SettingsManager: Загруженные настройки: ", settings)
 		else:
 			print("SettingsManager: Ошибка парсинга JSON или данные не являются словарём в ", SETTINGS_PATH)
-			_save_settings() # Сохраняем дефолтные, если ошибка
+			_save_settings()
 	else:
 		print("SettingsManager: Файл settings.json не найден, создаем новый: ", SETTINGS_PATH)
-		_save_settings() # Создаем файл с дефолтными настройками
+		_save_settings() 
 
 
 func _save_settings():
@@ -160,7 +160,7 @@ func set_key_text_for_lane(lane_index: int, new_key_text: String): # Прини�
 
 
 
-func get_key_scancode_for_lane(lane_index: int) -> int: # Возвращает скан-код
+func get_key_scancode_for_lane(lane_index: int) -> int:
 	var text_key = get_key_text_for_lane(lane_index)
 	var key_to_scancode_map = {
 		"A": KEY_A, "B": KEY_B, "C": KEY_C, "D": KEY_D, "E": KEY_E, "F": KEY_F,
@@ -171,6 +171,6 @@ func get_key_scancode_for_lane(lane_index: int) -> int: # Возвращает �
 		"0": KEY_0, "1": KEY_1, "2": KEY_2, "3": KEY_3, "4": KEY_4, "5": KEY_5,
 		"6": KEY_6, "7": KEY_7, "8": KEY_8, "9": KEY_9,
 	}
-	var scancode = key_to_scancode_map.get(text_key.to_upper(), 0) # 0 если не найдено
+	var scancode = key_to_scancode_map.get(text_key.to_upper(), 0)
 	print("SettingsManager: Текст '", text_key, "' преобразован в скан-код ", scancode)
 	return scancode
