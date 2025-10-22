@@ -78,6 +78,14 @@ func _load_settings():
 			settings = loaded_settings
 			print("SettingsManager: Настройки загружены из ", SETTINGS_PATH)
 			print("SettingsManager: Загруженные настройки: ", settings)
+
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
+			if not settings.get("fullscreen", default_settings["fullscreen"]):
+				DisplayServer.window_set_size(Vector2i(1920, 1080))
+				DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+				var screen_size = DisplayServer.screen_get_size()
+				var window_size = Vector2i(1920, 1080)
+				DisplayServer.window_set_position((screen_size - window_size) / 2)
 		else:
 			print("SettingsManager: Ошибка парсинга JSON или данные не являются словарём в ", SETTINGS_PATH)
 			_save_settings()
@@ -159,12 +167,21 @@ func get_show_fps() -> bool:
 
 func set_show_fps(enabled: bool):
 	settings["show_fps"] = enabled
+	_save_settings() 
 
 func get_fullscreen() -> bool:
 	return settings.get("fullscreen", default_settings["fullscreen"])
 
 func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
+	_save_settings()
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED)
+	if not enabled:
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+		var screen_size = DisplayServer.screen_get_size()
+		var window_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_position((screen_size - window_size) / 2)
 
 func get_enable_debug_menu() -> bool:
 	return settings.get("enable_debug_menu", default_settings["enable_debug_menu"])
