@@ -34,6 +34,13 @@ text = "Громкость нажатий"
 [node name="HitSoundsVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
 
+[node name="MetronomeVolumeLabel2" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость метронома"
+
+[node name="MetronomeVolumeSlider2" type="HSlider" parent="ContentVBox"]
+layout_mode = 2
+
 [node name="PreviewVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
 text = "Громкость предпросмотра"
