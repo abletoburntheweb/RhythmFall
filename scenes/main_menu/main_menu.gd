@@ -8,6 +8,18 @@ var is_game_open = false
 
 func _ready():
 	print("MainMenu.gd: _ready вызван")
+
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			print("MainMenu.gd: MusicManager получен через GameEngine.get_music_manager().")
+			music_manager.play_menu_music() 
+		else:
+			printerr("MainMenu.gd: MusicManager не найден через GameEngine.get_music_manager()!")
+	else:
+		printerr("MainMenu.gd: Не удалось получить GameEngine или метод get_music_manager()!")
+
 	var play_btn = $PlayButton
 	if play_btn:
 		play_btn.pressed.connect(_on_play_pressed)
@@ -59,31 +71,61 @@ func set_transitions(transitions_instance):
 
 func _on_play_pressed():
 	print("Кнопка ИГРАТЬ нажата")
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.stop_music()
 	if transitions:
 		transitions.open_game()
 
 func _on_song_select_pressed():
 	print("Кнопка ВЫБОР ПЕСНИ нажата")
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.stop_music()
 	if transitions:
 		transitions.open_song_select()
 
 func _on_achievements_pressed():
 	print("Кнопка ДОСТИЖЕНИЯ нажата")
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.play_select_sound()
 	if transitions:
 		transitions.open_achievements()
 
 func _on_shop_pressed():
 	print("Кнопка МАГАЗИН нажата")
+	var game_engine = get_parent() 
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.play_select_sound()
 	if transitions:
 		transitions.open_shop()
 
 func _on_settings_pressed():
 	print("Кнопка НАСТРОЙКИ нажата")
+	var game_engine = get_parent() 
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.play_select_sound()
 	if transitions:
 		transitions.open_settings()
 
 func _on_exit_pressed():
 	print("MainMenu.gd: Кнопка ВЫХОД нажата") 
+	var game_engine = get_parent() 
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.stop_music()
 	if transitions:
 		print("MainMenu.gd: Вызываю transitions.exit_game()")
 		transitions.exit_game()
@@ -91,5 +133,10 @@ func _on_exit_pressed():
 		print("MainMenu.gd: ОШИБКА! Переменная transitions не установлена!")
 
 func exit_to_main_menu():
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager:
+			music_manager.play_menu_music()
 	if transitions:
 		transitions.exit_to_main_menu()

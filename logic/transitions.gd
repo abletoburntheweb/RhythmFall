@@ -3,11 +3,6 @@ var game_engine = null
 var parent = null
 
 var main_menu_instance = null
-# var game_screen_instance = null
-# var song_select_instance = null
-# var achievements_instance = null
-# var shop_instance = null
-# var settings_instance = null
 
 func _init(p_game_engine):
 	game_engine = p_game_engine
@@ -90,8 +85,9 @@ func transition_close_song_select():
 func transition_open_main_menu():
 	print("Transitions.gd: transition_open_main_menu вызван")
 	print("Transitions.gd: main_menu_instance в Transitions: ", main_menu_instance)
-	if main_menu_instance:
-		print("Transitions.gd: main_menu_instance не null, добавляем как дочерний к game_engine")
+	
+	if main_menu_instance and is_instance_valid(main_menu_instance):
+		print("Transitions.gd: main_menu_instance действителен, добавляем как дочерний к game_engine")
 		print("Transitions.gd: game_engine.current_screen ДО проверки и удаления: ", game_engine.current_screen)
 		if game_engine.current_screen and game_engine.current_screen != main_menu_instance:
 			print("Transitions.gd: Удаляем текущий экран: ", game_engine.current_screen)
@@ -103,7 +99,27 @@ func transition_open_main_menu():
 		game_engine.current_screen = main_menu_instance
 		print("Transitions.gd: game_engine.current_screen ПОСЛЕ обновления: ", game_engine.current_screen)
 	else:
-		print("Transitions.gd: ОШИБКА! main_menu_instance равен null в transition_open_main_menu!")
+		print("Transitions.gd: main_menu_instance недействителен или null. Создаём новый экземпляр MainMenu.")
+		var new_main_menu_instance = _instantiate_if_exists("res://scenes/main_menu/main_menu.tscn")
+		if new_main_menu_instance:
+			if new_main_menu_instance.has_method("set_transitions"):
+				new_main_menu_instance.set_transitions(self)
+				print("Transitions.gd: set_transitions вызван для нового MainMenu.")
+			else:
+				printerr("Transitions.gd: Новый экземпляр MainMenu не имеет метода set_transitions!")
+			
+			main_menu_instance = new_main_menu_instance
+			print("Transitions.gd: main_menu_instance обновлён на новый экземпляр.")
+			
+			if game_engine.current_screen:
+				game_engine.current_screen.queue_free()
+				game_engine.current_screen = null
+			
+			game_engine.add_child(main_menu_instance)
+			game_engine.current_screen = main_menu_instance
+			print("Transitions.gd: Новый MainMenu добавлен и установлен как current_screen.")
+		else:
+			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
 
 func transition_open_achievements():
 
@@ -152,9 +168,22 @@ func transition_close_shop():
 
 
 func transition_open_settings(_from_pause=false):
-
 	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
 	if new_screen:
+		if game_engine and game_engine.has_method("get_settings_manager") and game_engine.has_method("get_music_manager"):
+			var settings_mgr = game_engine.get_settings_manager()
+			var music_mgr = game_engine.get_music_manager()
+			var game_scr = null
+			if settings_mgr and music_mgr:
+				if new_screen.has_method("set_managers"):
+					new_screen.set_managers(settings_mgr, music_mgr, game_scr, self) 
+					print("Transitions.gd: Менеджеры переданы в SettingsMenu.")
+				else:
+					printerr("Transitions.gd: SettingsMenu instance не имеет метода set_managers!")
+			else:
+				printerr("Transitions.gd: Не удалось получить settings_manager или music_manager из game_engine!")
+		else:
+			printerr("Transitions.gd: game_engine не имеет методов get_settings_manager или get_music_manager!")
 
 		if game_engine.current_screen:
 			game_engine.current_screen.queue_free()
@@ -164,9 +193,15 @@ func transition_open_settings(_from_pause=false):
 		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
 
 func transition_close_settings(_from_pause=false):
-	game_engine.current_screen = null
-
-
+	print("Transitions.gd: transition_close_settings called. _from_pause=", _from_pause)
+	
+	if game_engine.current_screen:
+		print("Transitions.gd: Удаляем текущий экран (настройки) перед переходом: ", game_engine.current_screen)
+		game_engine.current_screen.queue_free()
+		game_engine.current_screen = null
+	else:
+		print("Transitions.gd: Текущий экран уже null.")
+	
 	transition_open_main_menu()
 
 func transition_exit_to_main_menu():

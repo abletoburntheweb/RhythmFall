@@ -12,6 +12,7 @@ grow_vertical = 2
 script = ExtResource("1_j78aw")
 
 [node name="Topbar" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(57, 80)
 layout_mode = 0
 offset_top = 4.0
 offset_right = 1920.0

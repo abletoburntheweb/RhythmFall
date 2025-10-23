@@ -6,6 +6,10 @@ var main_menu_instance = null
 var intro_instance = null
 var current_screen = null
 
+var settings_manager: SettingsManager = null
+var player_data_manager: PlayerDataManager = null
+var music_manager: MusicManager = null
+
 func _ready():
 	print("GameEngine запущен")
 	initialize_logic()
@@ -13,7 +17,22 @@ func _ready():
 	show_intro()
 
 func initialize_logic():
+	player_data_manager = PlayerDataManager.new()
+	settings_manager = SettingsManager.new()
+	music_manager = MusicManager.new() 
+
+	if music_manager:
+		music_manager.set_player_data_manager(player_data_manager)
+		if settings_manager:
+			music_manager.update_volumes_from_settings(settings_manager)
+		add_child(music_manager)
+		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
+	else:
+		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
+
+
 	transitions = preload("res://logic/transitions.gd").new(self)
+
 
 func initialize_screens():
 	print("GameEngine.gd: initialize_screens вызван")
@@ -26,6 +45,7 @@ func initialize_screens():
 		if transitions.has_method("set_main_menu_instance"):
 			print("GameEngine.gd: Вызываем set_main_menu_instance в transitions")
 			transitions.set_main_menu_instance(main_menu_instance)
+
 	else:
 		print("GameEngine.gd: ОШИБКА! main_menu_instance равен null после instantiate!")
 
@@ -68,3 +88,12 @@ func get_main_menu_instance():
 
 func get_transitions():
 	return transitions
+
+func get_settings_manager() -> SettingsManager:
+	return settings_manager
+
+func get_player_data_manager() -> PlayerDataManager:
+	return player_data_manager
+
+func get_music_manager() -> MusicManager:
+	return music_manager

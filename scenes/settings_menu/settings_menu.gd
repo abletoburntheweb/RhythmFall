@@ -26,6 +26,13 @@ func _ready():
 		print("SettingsMenu.gd: settings_manager не передан, создаю новый экземпляр.")
 		settings_manager = SettingsManager.new()
 
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		music_manager = game_engine.get_music_manager()
+		print("SettingsMenu.gd: MusicManager получен через GameEngine.")
+	else:
+		printerr("SettingsMenu.gd: MusicManager не найден через GameEngine.")
+
 	_setup_tabs()
 	_connect_signals()
 
@@ -65,10 +72,17 @@ func _setup_tabs():
 
 		if tab_instance.has_method("setup_ui_and_manager"):
 			print("SettingsMenu.gd: Вызываю setup_ui_and_manager для %s." % tab_name)
-			tab_instance.setup_ui_and_manager(settings_manager, game_screen)
+			tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen)
 			print("SettingsMenu.gd: Менеджеры переданы в %s." % tab_name)
 		else:
 			print("SettingsMenu.gd: Вкладка %s не имеет метода setup_ui_and_manager." % tab_name)
+
+		if tab_name == "SoundTab":
+			if tab_instance.has_signal("settings_changed"):
+				tab_instance.connect("settings_changed", Callable(self, "save_settings"))
+				print("SettingsMenu.gd: Подключён сигнал settings_changed от %s." % tab_name)
+			else:
+				print("SettingsMenu.gd: Вкладка SoundTab не имеет сигнала settings_changed.")
 
 		if tab_name == "ControlsTab":
 			if tab_instance.has_signal("settings_changed"):
@@ -134,6 +148,11 @@ func _on_misc_tab_pressed():
 
 func _on_back_pressed():
 	print("SettingsMenu.gd: Нажата кнопка Назад.")
+	if music_manager: 
+		music_manager.play_cancel_sound() 
+		print("SettingsMenu.gd: play_cancel_sound вызван.") 
+	else:
+		printerr("SettingsMenu.gd: music_manager не установлен!")
 	save_settings()
 	if transitions:
 		var from_pause = game_screen != null

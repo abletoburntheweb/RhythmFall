@@ -5,11 +5,11 @@ extends RefCounted
 const SETTINGS_PATH = "user://settings.json"
 
 var default_settings = {
-	"music_volume": 50,
-	"effects_volume": 50,
-	"hit_sounds_volume": 70,
-	"metronome_volume": 30,
-	"preview_volume": 70,
+	"music_volume": 50.0,
+	"effects_volume": 50.0,
+	"hit_sounds_volume": 70.0,
+	"metronome_volume": 30.0, 
+	"preview_volume": 70.0,
 	"show_fps": false,
 	"fullscreen": false,
 	"enable_debug_menu": false,
@@ -78,6 +78,14 @@ func _load_settings():
 			settings = loaded_settings
 			print("SettingsManager: Настройки загружены из ", SETTINGS_PATH)
 			print("SettingsManager: Загруженные настройки: ", settings)
+
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
+			if not settings.get("fullscreen", default_settings["fullscreen"]):
+				DisplayServer.window_set_size(Vector2i(1920, 1080))
+				DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+				var screen_size = DisplayServer.screen_get_size()
+				var window_size = Vector2i(1920, 1080)
+				DisplayServer.window_set_position((screen_size - window_size) / 2)
 		else:
 			print("SettingsManager: Ошибка парсинга JSON или данные не являются словарём в ", SETTINGS_PATH)
 			_save_settings()
@@ -124,47 +132,56 @@ func reset_settings():
 	_save_settings()
 	print("SettingsManager: Настройки сброшены к значениям по умолчанию.")
 
-func get_music_volume() -> int:
-	return settings.get("music_volume", default_settings["music_volume"])
+func get_music_volume() -> float:
+	return float(settings.get("music_volume", default_settings["music_volume"]))
 
-func set_music_volume(volume: int):
-	settings["music_volume"] = clampi(volume, 0, 100)
+func get_effects_volume() -> float:
+	return float(settings.get("effects_volume", default_settings["effects_volume"])) 
 
-func get_effects_volume() -> int:
-	return settings.get("effects_volume", default_settings["effects_volume"])
+func get_hit_sounds_volume() -> float:
+	return float(settings.get("hit_sounds_volume", default_settings["hit_sounds_volume"])) 
 
-func set_effects_volume(volume: int):
-	settings["effects_volume"] = clampi(volume, 0, 100)
+func get_metronome_volume() -> float: 
+	return float(settings.get("metronome_volume", default_settings["metronome_volume"]))
 
-func get_hit_sounds_volume() -> int:
-	return settings.get("hit_sounds_volume", default_settings["hit_sounds_volume"])
+func get_preview_volume() -> float:
+	return float(settings.get("preview_volume", default_settings["preview_volume"]))
 
-func set_hit_sounds_volume(volume: int):
-	settings["hit_sounds_volume"] = clampi(volume, 0, 100)
+func set_music_volume(volume: float): 
+	settings["music_volume"] = clampf(volume, 0.0, 100.0) 
 
-func get_metronome_volume() -> int:
-	return settings.get("metronome_volume", default_settings["metronome_volume"])
+func set_effects_volume(volume: float): 
+	settings["effects_volume"] = clampf(volume, 0.0, 100.0) 
 
-func set_metronome_volume(volume: int):
-	settings["metronome_volume"] = clampi(volume, 0, 100)
+func set_hit_sounds_volume(volume: float):
+	settings["hit_sounds_volume"] = clampf(volume, 0.0, 100.0)
 
-func get_preview_volume() -> int:
-	return settings.get("preview_volume", default_settings["preview_volume"])
+func set_metronome_volume(volume: float):
+	settings["metronome_volume"] = clampf(volume, 0.0, 100.0) 
 
-func set_preview_volume(volume: int):
-	settings["preview_volume"] = clampi(volume, 0, 100)
+func set_preview_volume(volume: float):
+	settings["preview_volume"] = clampf(volume, 0.0, 100.0) 
 
 func get_show_fps() -> bool:
 	return settings.get("show_fps", default_settings["show_fps"])
 
 func set_show_fps(enabled: bool):
 	settings["show_fps"] = enabled
+	_save_settings() 
 
 func get_fullscreen() -> bool:
 	return settings.get("fullscreen", default_settings["fullscreen"])
 
 func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
+	_save_settings()
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED)
+	if not enabled:
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+		var screen_size = DisplayServer.screen_get_size()
+		var window_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_position((screen_size - window_size) / 2)
 
 func get_enable_debug_menu() -> bool:
 	return settings.get("enable_debug_menu", default_settings["enable_debug_menu"])
