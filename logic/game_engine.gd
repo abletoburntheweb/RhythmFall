@@ -18,15 +18,26 @@ func _ready():
 
 func initialize_logic():
 	player_data_manager = PlayerDataManager.new()
-	settings_manager = SettingsManager.new()
+	settings_manager = SettingsManager.new() # SettingsManager загружает настройки из .json в _init()
 	music_manager = MusicManager.new() 
 
 	if music_manager:
 		music_manager.set_player_data_manager(player_data_manager)
-		if settings_manager:
-			music_manager.update_volumes_from_settings(settings_manager)
+
+		# --- ИЗМЕНЕНИЕ: Сначала добавляем в сцену ---
 		add_child(music_manager)
 		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
+
+		# --- ПОТОМ применяем настройки ---
+		if settings_manager:
+			# Вызовите метод MusicManager, который обновит его внутренние уровни громкости
+			# на основе загруженных настроек из SettingsManager.
+			# Теперь MusicManager уже в сцене.
+			music_manager.update_volumes_from_settings(settings_manager)
+			print("GameEngine.gd: Обновлены громкости MusicManager из SettingsManager при инициализации (после добавления в сцену).")
+		else:
+			printerr("GameEngine.gd: SettingsManager не установлен при инициализации MusicManager!")
+
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
