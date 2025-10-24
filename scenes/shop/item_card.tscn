@@ -2,22 +2,16 @@
 
 [ext_resource type="Script" uid="uid://bmqrkwg0bhrko" path="res://scenes/shop/item_card.gd" id="1_re5xs"]
 
-[node name="ItemCard" type="Control"]
+[node name="ItemCard" type="PanelContainer"]
 custom_minimum_size = Vector2(280, 350)
-layout_mode = 3
-anchors_preset = 0
 offset_left = 1072.0
 offset_top = 754.0
 offset_right = 1352.0
-offset_bottom = 1104.0
+offset_bottom = 1139.0
 script = ExtResource("1_re5xs")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
-layout_mode = 0
-offset_left = 2.0
-offset_top = -132.0
-offset_right = 272.0
-offset_bottom = 253.0
+layout_mode = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 15
 theme_override_constants/margin_right = 15

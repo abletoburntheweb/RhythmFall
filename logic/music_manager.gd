@@ -13,7 +13,8 @@ const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.mp3"
 const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
-
+var was_menu_music_playing_before_shop: bool = false
+var menu_music_position_before_shop: float = 0.0
 
 var music_player: AudioStreamPlayer = null
 var sfx_player: AudioStreamPlayer = null
@@ -56,7 +57,37 @@ func _ready():
 	add_child(metronome_player2)
 
 	_metronome_players = [metronome_player1, metronome_player2]
-
+func pause_menu_music():
+	if music_player and current_menu_music_file != "":
+		if music_player.playing:
+			was_menu_music_playing_before_shop = true
+			menu_music_position_before_shop = music_player.get_playback_position() 
+			music_player.stop() 
+			print("MusicManager.gd: Музыка меню остановлена, позиция: ", menu_music_position_before_shop)
+		else:
+			was_menu_music_playing_before_shop = true
+			menu_music_position_before_shop = 0.0
+			print("MusicManager.gd: Музыка меню была загружена, но не играла. Запоминаем для возобновления с начала.")
+	else:
+		print("MusicManager.gd: Музыка меню не была загружена или music_player недоступен.")
+func resume_menu_music():
+	if current_menu_music_file != "":
+		if was_menu_music_playing_before_shop:
+			if not music_player.playing: 
+				music_player.play(menu_music_position_before_shop)
+				print("MusicManager.gd: Музыка меню возобновлена с позиции: ", menu_music_position_before_shop)
+			else:
+				print("MusicManager.gd: Музыка меню уже играет.")
+		else:
+			if not music_player.playing:
+				music_player.play(0.0) 
+				print("MusicManager.gd: Музыка меню запущена с начала (не играла до магазина).")
+			else:
+				print("MusicManager.gd: Музыка меню уже играет (не играла до магазина).")
+	else:
+		print("MusicManager.gd: Нет загруженной музыки меню для возобновления.")
+	was_menu_music_playing_before_shop = false
+	menu_music_position_before_shop = 0.0
 
 func set_player_data_manager(pdm):
 	player_data_manager = pdm
@@ -152,14 +183,20 @@ func stop_music():
 		music_player.stop()
 		current_menu_music_file = ""
 		current_game_music_file = ""
+		was_menu_music_playing_before_shop = false
+		menu_music_position_before_shop = 0.0
 
 func pause_music():
 	if music_player and music_player.playing:
-		music_player.pause()
+		menu_music_position_before_shop = music_player.get_playback_position()
+		music_player.stop()
+		print("MusicManager.gd: Музыка остановлена (pause_music). Позиция: ", menu_music_position_before_shop)
 
 func resume_music():
 	if music_player and not music_player.playing and music_player.stream: 
-		music_player.play()
+		var resume_pos = menu_music_position_before_shop if menu_music_position_before_shop > 0 else 0.0
+		music_player.play(resume_pos)
+		print("MusicManager.gd: Музыка возобновлена (resume_music) с позиции: ", resume_pos)
 
 func is_music_playing() -> bool:
 	if music_player:
@@ -232,7 +269,6 @@ func play_metronome_sound(is_strong_beat: bool = true):
 	var sound_file = DEFAULT_METRONOME_STRONG_SOUND if is_strong_beat else DEFAULT_METRONOME_WEAK_SOUND
 	var full_path = MUSIC_DIR + sound_file
 	var stream = load(full_path) as AudioStream
-
 	if stream:
 		var player_index = _current_metronome_player_index
 		_current_metronome_player_index = (player_index + 1) % _metronome_players.size()

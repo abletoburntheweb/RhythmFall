@@ -89,15 +89,27 @@ func transition_open_main_menu():
 	if main_menu_instance and is_instance_valid(main_menu_instance):
 		print("Transitions.gd: main_menu_instance действителен, добавляем как дочерний к game_engine")
 		print("Transitions.gd: game_engine.current_screen ДО проверки и удаления: ", game_engine.current_screen)
-		if game_engine.current_screen and game_engine.current_screen != main_menu_instance:
-			print("Transitions.gd: Удаляем текущий экран: ", game_engine.current_screen)
-			game_engine.current_screen.queue_free()
-			game_engine.current_screen = null 
-		print("Transitions.gd: Вызываем game_engine.add_child(main_menu_instance)")
-		game_engine.add_child(main_menu_instance)
-		print("Transitions.gd: Установлен game_engine.current_screen = main_menu_instance")
-		game_engine.current_screen = main_menu_instance
-		print("Transitions.gd: game_engine.current_screen ПОСЛЕ обновления: ", game_engine.current_screen)
+		if main_menu_instance.is_inside_tree():
+			print("Transitions.gd: main_menu_instance уже внутри дерева сцен, не добавляем заново.")
+		else:
+			if game_engine.current_screen and game_engine.current_screen != main_menu_instance:
+				print("Transitions.gd: Удаляем текущий экран: ", game_engine.current_screen)
+				game_engine.current_screen.queue_free()
+				game_engine.current_screen = null 
+			print("Transitions.gd: Вызываем game_engine.add_child(main_menu_instance)")
+			game_engine.add_child(main_menu_instance)
+			game_engine.current_screen = main_menu_instance
+			print("Transitions.gd: game_engine.current_screen ПОСЛЕ обновления: ", game_engine.current_screen)
+		if game_engine.has_method("get_music_manager"):
+			var music_manager = game_engine.get_music_manager()
+			if music_manager and music_manager.has_method("play_menu_music"):
+				music_manager.play_menu_music()
+				print("Transitions.gd: Музыка меню запущена при открытии главного меню.")
+			else:
+				print("Transitions.gd: У MusicManager нет метода play_menu_music. Реализуйте его в MusicManager.")
+		else:
+			print("Transitions.gd: У GameEngine нет метода get_music_manager!")
+
 	else:
 		print("Transitions.gd: main_menu_instance недействителен или null. Создаём новый экземпляр MainMenu.")
 		var new_main_menu_instance = _instantiate_if_exists("res://scenes/main_menu/main_menu.tscn")
@@ -118,6 +130,16 @@ func transition_open_main_menu():
 			game_engine.add_child(main_menu_instance)
 			game_engine.current_screen = main_menu_instance
 			print("Transitions.gd: Новый MainMenu добавлен и установлен как current_screen.")
+			if game_engine.has_method("get_music_manager"):
+				var music_manager = game_engine.get_music_manager()
+				if music_manager and music_manager.has_method("play_menu_music"):
+					music_manager.play_menu_music()
+					print("Transitions.gd: Музыка меню запущена при открытии главного меню (новый инстанс).")
+				else:
+					print("Transitions.gd: У MusicManager нет метода play_menu_music. Реализуйте его в MusicManager.")
+			else:
+				print("Transitions.gd: У GameEngine нет метода get_music_manager!")
+
 		else:
 			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
 
@@ -151,6 +173,18 @@ func transition_open_shop():
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 		print("Transitions.gd: ShopScreen добавлен и установлен как current_screen") 
+		if game_engine.has_method("get_music_manager"):
+			var music_manager = game_engine.get_music_manager()
+			if music_manager and music_manager.has_method("pause_menu_music"):
+				music_manager.pause_menu_music()
+				print("Transitions.gd: Музыка меню остановлена при открытии магазина.")
+			elif music_manager and music_manager.has_method("stop"):
+				print("Transitions.gd: У MusicManager нет метода pause_menu_music. Реализуйте его в MusicManager.")
+			else:
+				print("Transitions.gd: У MusicManager нет подходящего метода для остановки музыки меню.")
+		else:
+			print("Transitions.gd: У GameEngine нет метода get_music_manager!")
+
 	else:
 		print("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
 		var scene_resource = load("res://scenes/shop/shop_screen.tscn")
@@ -162,8 +196,15 @@ func transition_open_shop():
 			print("Transitions.gd: PackedScene загружен, но instantiate() вернул null. Проверьте сцену и скрипт ShopScreen на ошибки!")
 
 func transition_close_shop():
-	game_engine.current_screen = null 
-
+	print("Transitions.gd: transition_close_shop вызван")
+	if game_engine.current_screen:
+		print("Transitions.gd: Текущий экран перед закрытием: ", game_engine.current_screen)
+	else:
+		print("Transitions.gd: Текущий экран уже null.")
+	if game_engine.current_screen:
+		print("Transitions.gd: Удаляем текущий экран (магазин) перед переходом: ", game_engine.current_screen)
+		game_engine.current_screen.queue_free()
+		game_engine.current_screen = null
 	transition_open_main_menu()
 
 

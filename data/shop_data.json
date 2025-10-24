@@ -45,6 +45,15 @@
 	  "image": "res://assets/textures/kick_icon.png"
 	},
 	{
+	  "item_id": "kick_unavailable",
+	  "name": "Кик отсутствующий",
+	  "price": 200,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick_unavailable.wav",
+	  "image": "res://assets/textures/kick_icon.png"
+	},
+	{
 	  "item_id": "snare_1",
 	  "name": "Снейр 1",
 	  "price": 200,
@@ -121,6 +130,30 @@
 	{
 	  "item_id": "misc_3",
 	  "name": "Бонус 3",
+	  "price": 250,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	},
+	{
+	  "item_id": "misc_4",
+	  "name": "Бонус 4",
+	  "price": 300,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	},
+	{
+	  "item_id": "misc_5",
+	  "name": "Бонус 5",
+	  "price": 200,
+	  "image": "res://assets/textures/placeholder.png",
+	  "category": "Прочее",
+	  "is_equippable": false
+	},
+	{
+	  "item_id": "misc_6",
+	  "name": "Бонус 6",
 	  "price": 250,
 	  "image": "res://assets/textures/placeholder.png",
 	  "category": "Прочее",

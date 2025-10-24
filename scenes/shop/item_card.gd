@@ -49,10 +49,10 @@ func _on_image_rect_gui_input(event: InputEvent):
 func _setup_item():
 	if not item_data.has("item_id"):
 		printerr("ItemCard.gd: _setup_item: item_data не содержит 'item_id'!")
-		return 
+		return
 
 	var item_id_str = item_data.get("item_id", "") 
-	is_default = item_id_str.ends_with("_default") 
+	is_default = item_id_str.ends_with("_default")
 
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
@@ -99,15 +99,16 @@ func _setup_item():
 	if image_rect:
 		if image_loaded_successfully:
 			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-			image_rect.visible = true
+			image_rect.visible = true 
 		else:
 			_create_placeholder_with_text()
 			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-			image_rect.visible = true
-			if name_label:
-				var item_name = item_data.get("name", "Без названия") 
-				name_label.text = item_name
-				name_label.visible = true
+			image_rect.visible = true 
+
+	if name_label:
+		var item_name = item_data.get("name", "Без названия")
+		name_label.text = item_name
+		name_label.visible = true
 
 	_update_buttons_and_status()
 
@@ -170,7 +171,7 @@ func _on_preview_pressed():
 	var item_id_str = item_data.get("item_id", "") 
 	emit_signal("preview_pressed", item_id_str)
 
-func update_state(purchased: bool, active: bool):
+func update_state(purchased: bool, active: bool, file_available: bool = true):
 	is_purchased = purchased
 	is_active = active
 	_setup_item()

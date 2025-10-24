@@ -11,6 +11,7 @@ var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
 
 func _ready():
+	print("GameEngine.gd: _ready вызван.")
 	print("GameEngine запущен")
 	initialize_logic()
 	initialize_screens()
@@ -23,16 +24,17 @@ func initialize_logic():
 
 	if music_manager:
 		music_manager.set_player_data_manager(player_data_manager)
-		if settings_manager:
-			music_manager.update_volumes_from_settings(settings_manager)
 		add_child(music_manager)
 		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
+		if settings_manager:
+			music_manager.update_volumes_from_settings(settings_manager)
+			print("GameEngine.gd: Обновлены громкости MusicManager из SettingsManager при инициализации (после добавления в сцену).")
+		else:
+			printerr("GameEngine.gd: SettingsManager не установлен при инициализации MusicManager!")
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
-
 	transitions = preload("res://logic/transitions.gd").new(self)
-
 
 func initialize_screens():
 	print("GameEngine.gd: initialize_screens вызван")
@@ -45,10 +47,8 @@ func initialize_screens():
 		if transitions.has_method("set_main_menu_instance"):
 			print("GameEngine.gd: Вызываем set_main_menu_instance в transitions")
 			transitions.set_main_menu_instance(main_menu_instance)
-
 	else:
 		print("GameEngine.gd: ОШИБКА! main_menu_instance равен null после instantiate!")
-
 
 func show_intro():
 	print("GameEngine.gd: show_intro вызван")
@@ -82,6 +82,27 @@ func _switch_to_screen(new_screen_instance):
 func request_quit():
 	print("GameEngine.gd: request_quit вызван. Пытаемся закрыть игру.")
 	get_tree().quit()
+
+func prepare_screen_exit(screen_to_exit: Node) -> bool:
+
+	if current_screen != screen_to_exit:
+		printerr("GameEngine.gd: prepare_screen_exit - переданный узел не является current_screen.")
+		return false
+
+	print("GameEngine.gd: Подготовка к выходу из экрана: ", screen_to_exit)
+
+	if screen_to_exit.has_method("cleanup_before_exit"):
+		screen_to_exit.cleanup_before_exit()
+		print("GameEngine.gd: Вызван cleanup_before_exit на ", screen_to_exit)
+
+	if player_data_manager:
+		print("GameEngine.gd: Данные игрока сохранены перед выходом из экрана.")
+	if settings_manager:
+		settings_manager.save_settings()
+		print("GameEngine.gd: Настройки сохранены перед выходом из экрана.")
+
+
+	return true
 
 func get_main_menu_instance():
 	return main_menu_instance
