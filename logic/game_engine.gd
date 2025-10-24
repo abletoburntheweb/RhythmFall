@@ -27,10 +27,14 @@ func initialize_logic():
 		add_child(music_manager)
 		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
 		if settings_manager:
+			add_child(music_manager)
+		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
+		if settings_manager:
 			music_manager.update_volumes_from_settings(settings_manager)
 			print("GameEngine.gd: Обновлены громкости MusicManager из SettingsManager при инициализации (после добавления в сцену).")
 		else:
 			printerr("GameEngine.gd: SettingsManager не установлен при инициализации MusicManager!")
+
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
