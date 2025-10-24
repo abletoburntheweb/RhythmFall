@@ -1,5 +1,5 @@
 # scenes/shop/shop_screen.gd
-extends Control
+extends BaseScreen
 
 var currency: int = 0
 var shop_data: Dictionary = {}
@@ -8,27 +8,20 @@ var item_cards: Array[Node] = []
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
 
-var player_data_manager: PlayerDataManager = null
-var music_manager = null
-var transitions = null
-
-
 func _ready():
 	print("ShopScreen.gd: _ready вызван.")
 
-	player_data_manager = PlayerDataManager.new()
 	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		music_manager = game_engine.get_music_manager()
-		print("ShopScreen.gd: MusicManager получен через GameEngine.")
-	else:
-		printerr("ShopScreen.gd: MusicManager не найден через GameEngine.")
+	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_player_data_manager") and game_engine.has_method("get_transitions"):
+		var music_mgr = game_engine.get_music_manager()
+		var player_data_mgr = game_engine.get_player_data_manager()
+		var trans = game_engine.get_transitions()
 
-	if game_engine and game_engine.has_method("get_transitions"):
-		transitions = game_engine.get_transitions()
-		print("ShopScreen.gd: Transitions получен через GameEngine.")
+		setup_managers(trans, music_mgr, player_data_mgr)
+
+		print("ShopScreen.gd: Менеджеры получены через GameEngine.")
 	else:
-		printerr("ShopScreen.gd: Transitions не найден через GameEngine.")
+		printerr("ShopScreen.gd: Не удалось получить один из менеджеров (music_manager, player_data_manager, transitions) через GameEngine.")
 
 	var file_path = "res://data/shop_data.json"
 	var file_access = FileAccess.open(file_path, FileAccess.READ)
@@ -147,7 +140,7 @@ func _connect_back_button():
 	var back_button = $MainContent/MainVBox/BackButton
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-		print("ShopScreen.gd: Подключён сигнал pressed кнопки Назад.")
+		print("ShopScreen.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
 	else:
 		printerr("ShopScreen.gd: Кнопка BackButton не найдена по пути $MainContent/MainVBox/BackButton!")
 
@@ -450,22 +443,16 @@ func _on_gallery_closed():
 func _on_cover_selected(index: int):
 	print("ShopScreen.gd: Выбрана обложка %d из пака '%s'." % [index, current_cover_item_data.get("name", "Без названия")])
 
-func _exit_tree():
-	print("ShopScreen.gd: _exit_tree вызван. Экран удаляется из дерева сцен.")
-	cleanup_gallery()
+func cleanup_before_exit():
+	print("ShopScreen.gd: cleanup_before_exit вызван. Очищаем ресурсы магазина.")
+	_cleanup_gallery_internal()
 
-func cleanup_gallery():
-	if current_cover_gallery:
-		if is_instance_valid(current_cover_gallery):
-			if current_cover_gallery.is_connected("gallery_closed", _on_gallery_closed):
-				current_cover_gallery.disconnect("gallery_closed", _on_gallery_closed)
-			if current_cover_gallery.is_connected("cover_selected", _on_cover_selected_stub):
-				current_cover_gallery.disconnect("cover_selected", _on_cover_selected_stub)
-		if is_instance_valid(current_cover_gallery):
-			current_cover_gallery.queue_free()
-		current_cover_gallery = null
-		current_cover_item_data = {}
-		print("ShopScreen.gd: Галерея очищена в _exit_tree или cleanup_gallery.")
+func _execute_close_transition():
+	if transitions:
+		transitions.close_shop()
+		print("ShopScreen.gd: Закрываю магазин через Transitions.")
+	else:
+		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
 
 
 func _find_item_by_id(item_id: String) -> Dictionary:
@@ -488,40 +475,20 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			var is_purchased = player_data_manager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
 			card.update_state(is_purchased, is_active)
-func _on_back_pressed():
-	print("ShopScreen.gd: Нажата кнопка Назад или Escape.")
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("prepare_screen_exit"):
-		if game_engine.prepare_screen_exit(self):
-			print("ShopScreen.gd: Экран подготовлен к выходу через GameEngine.")
-		else:
-			print("ShopScreen.gd: ОШИБКА подготовки экрана к выходу через GameEngine.")
-	else:
-		printerr("ShopScreen.gd: Не удалось получить GameEngine или метод prepare_screen_exit!")
-	if music_manager:
-		music_manager.play_cancel_sound()
-		print("ShopScreen.gd: play_cancel_sound вызван.")
-	else:
-		printerr("ShopScreen.gd: music_manager не установлен!")
-	if player_data_manager:
-		print("ShopScreen.gd: Данные игрока (локально) сохранены бы (если реализован метод save_player_data в PlayerDataManager).")
-	else:
-		printerr("ShopScreen.gd: player_data_manager не установлен!")
-	if transitions:
-		transitions.close_shop()
-		print("ShopScreen.gd: Закрываю магазин через Transitions.")
-	else:
-		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
-func _unhandled_input(event):
-	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
-		print("ShopScreen.gd: Обнаружено нажатие Escape, вызываю _on_back_pressed.")
-		accept_event()
-		_on_back_pressed()
-func cleanup_before_exit():
-	print("ShopScreen.gd: cleanup_before_exit вызван. Очищаем ресурсы.")
+
+func _cleanup_gallery_internal():
 	if current_cover_gallery:
+		if is_instance_valid(current_cover_gallery):
+			if current_cover_gallery.is_connected("gallery_closed", _on_gallery_closed):
+				current_cover_gallery.disconnect("gallery_closed", _on_gallery_closed)
+			if current_cover_gallery.is_connected("cover_selected", _on_cover_selected_stub):
+				current_cover_gallery.disconnect("cover_selected", _on_cover_selected_stub)
 		if is_instance_valid(current_cover_gallery):
 			current_cover_gallery.queue_free()
 		current_cover_gallery = null
 		current_cover_item_data = {}
-		print("ShopScreen.gd: Галерея обложек очищена в cleanup_before_exit.")
+		print("ShopScreen.gd: Галерея обложек очищена в _cleanup_gallery_internal.")
+
+func _exit_tree():
+	print("ShopScreen.gd: _exit_tree вызван. Экран удаляется из дерева сцен.")
+	_cleanup_gallery_internal()

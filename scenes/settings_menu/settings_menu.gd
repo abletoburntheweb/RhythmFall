@@ -1,10 +1,8 @@
 # scenes/settings_menu/settings_menu.gd
-extends Control
-
+extends BaseScreen
+ 
 var settings_manager: SettingsManager = null
-var music_manager = null
-var game_screen = null
-var transitions = null
+var game_screen = null 
 
 @onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound
 @onready var btn_graphics: Button = $MainVBox/TabsHBox/BtnGraphics
@@ -26,11 +24,15 @@ func _ready():
 		print("SettingsMenu.gd: settings_manager не передан, создаю новый экземпляр.")
 		settings_manager = SettingsManager.new()
 	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		music_manager = game_engine.get_music_manager()
-		print("SettingsMenu.gd: MusicManager получен через GameEngine.")
+	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
+		var music_mgr = game_engine.get_music_manager()
+		var trans = game_engine.get_transitions()
+
+		setup_managers(trans, music_mgr, null) 
+
+		print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
 	else:
-		printerr("SettingsMenu.gd: MusicManager не найден через GameEngine (родитель или метод отсутствует).")
+		printerr("SettingsMenu.gd: Не удалось получить один из менеджеров (music_manager, transitions) через GameEngine.")
 
 	_setup_tabs()
 	_connect_signals()
@@ -121,8 +123,8 @@ func _connect_signals():
 		printerr("SettingsMenu.gd: Кнопка btn_misc не найдена!")
 
 	if back_button:
-		back_button.pressed.connect(_on_back_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Назад.")
+		back_button.pressed.connect(_on_back_pressed) 
+		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
 	else:
 		printerr("SettingsMenu.gd: Кнопка back_button не найдена!")
 
@@ -142,28 +144,18 @@ func _on_misc_tab_pressed():
 	print("SettingsMenu.gd: Нажата вкладка Прочее.")
 	tab_container.current_tab = 3
 
-func _on_back_pressed():
-	print("SettingsMenu.gd: Нажата кнопка Назад.")
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("prepare_screen_exit"):
-		if game_engine.prepare_screen_exit(self):
-			print("SettingsMenu.gd: Экран подготовлен к выходу через GameEngine.")
-		else:
-			print("SettingsMenu.gd: ОШИБКА подготовки экрана к выходу через GameEngine.")
-	else:
-		printerr("SettingsMenu.gd: Не удалось получить GameEngine или метод prepare_screen_exit!")
-	if music_manager: 
-		music_manager.play_cancel_sound() 
-		print("SettingsMenu.gd: play_cancel_sound вызван.") 
-	else:
-		printerr("SettingsMenu.gd: music_manager не установлен!")
-	save_settings() 
+func _execute_close_transition():
 	if transitions:
 		var from_pause = game_screen != null
 		print("SettingsMenu.gd: Закрываю настройки, from_pause: %s" % from_pause)
-		transitions.close_settings(from_pause)
+		transitions.close_settings(from_pause) 
+		print("SettingsMenu.gd: Закрываю настройки через Transitions.")
 	else:
 		printerr("SettingsMenu.gd: transitions не установлен, невозможно закрыть настройки.")
+
+func cleanup_before_exit():
+	print("SettingsMenu.gd: cleanup_before_exit вызван. Сохраняем настройки.")
+	save_settings()
 
 func save_settings():
 	if settings_manager:
@@ -175,15 +167,6 @@ func save_settings():
 func set_managers(settings, music, game_scr, trans):
 	print("SettingsMenu.gd: set_managers вызван.")
 	settings_manager = settings
-	music_manager = music
+	setup_managers(trans, music, null) 
 	game_screen = game_scr
-	transitions = trans
-	print("SettingsMenu.gd: Менеджеры установлены.")
-func cleanup_before_exit():
-	print("SettingsMenu.gd: Вызван cleanup_before_exit.")
-	pass
-
-func _unhandled_input(event):
-	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
-		print("SettingsMenu.gd: Обнаружено нажатие Escape, вызываю _on_back_pressed.")
-		_on_back_pressed()
+	print("SettingsMenu.gd: Менеджеры установлены через set_managers и setup_managers.")
