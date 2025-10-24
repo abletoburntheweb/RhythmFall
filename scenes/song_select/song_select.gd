@@ -8,21 +8,22 @@ var transitions = null
 var song_manager: SongManager = null
 
 var edit_mode: bool = false
-var edit_button: Button = null 
+var edit_button: Button = null
 
 var _edit_context = {
 	"dialog": null,
-	"line_edit": null, 
-	"spin_box": null,  
+	"line_edit": null,
+	"spin_box": null,
 	"song_data": null,
-	"field_name": null, 
+	"field_name": null,
 	"selected_index": -1,
-	"type": "" 
+	"type": ""
 }
 
 var song_item_list_ref: ItemList = null
 var file_dialog: FileDialog = null
 var preview_player: AudioStreamPlayer = null
+var music_manager = null
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
@@ -120,8 +121,12 @@ func _ready():
 	var list_via_path = $MainVBox/ContentHBox/SongListVBox/SongItemList
 	if not list_via_path:
 		push_error("SongSelect.gd: Альтернативная проверка: Не найден SongItemList по пути $MainVBox/ContentHBox/SongListVBox/SongItemList")
-
-
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		music_manager = game_engine.get_music_manager()
+		print("SongSelect.gd: MusicManager получен через GameEngine.")
+	else:
+		printerr("SongSelect.gd: MusicManager не найден через GameEngine (родитель или метод отсутствует).")
 func set_transitions(transitions_instance):
 	transitions = transitions_instance
 	print("SongSelect.gd: Transitions инстанс получен")
@@ -204,10 +209,10 @@ func _update_edit_button_style():
 	if not edit_button:
 		return
 	if edit_mode:
-		edit_button.self_modulate = Color(0.8, 0.8, 1.0, 1.0) 
+		edit_button.self_modulate = Color(0.8, 0.8, 1.0, 1.0)
 		edit_button.text = "Редактировать (ON)"
 	else:
-		edit_button.self_modulate = Color(1.0, 1.0, 1.0, 1.0) 
+		edit_button.self_modulate = Color(1.0, 1.0, 1.0, 1.0)
 		edit_button.text = "Редактировать"
 
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
@@ -446,7 +451,7 @@ func _edit_cover():
 
 
 func _on_edit_pressed():
-	_toggle_edit_mode() 
+	_toggle_edit_mode()
 
 func _on_instrument_pressed():
 	print("Выбор инструмента")
@@ -577,10 +582,51 @@ func _stop_preview():
 	if preview_player and preview_player.playing:
 		preview_player.stop()
 		print("SongSelect.gd: Воспроизведение остановлено.")
-
-
 func exit_to_main_menu():
-	if transitions:
-		transitions.exit_to_main_menu()
+	print("SongSelect.gd: Вызван exit_to_main_menu.")
+	_on_back_pressed()
+func _on_back_pressed():
+	print("SongSelect.gd: Нажата кнопка Назад или Escape.")
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("prepare_screen_exit"):
+		if game_engine.prepare_screen_exit(self):
+			print("SongSelect.gd: Экран подготовлен к выходу через GameEngine.")
+		else:
+			print("SongSelect.gd: ОШИБКА подготовки экрана к выходу через GameEngine.")
 	else:
-		print("SongSelect.gd: transitions не установлен!")
+		printerr("SongSelect.gd: Не удалось получить GameEngine или метод prepare_screen_exit!")
+	_stop_preview()
+	if music_manager: 
+		music_manager.play_cancel_sound()
+		print("SongSelect.gd: play_cancel_sound вызван через music_manager.")
+	else:
+		printerr("SongSelect.gd: music_manager не установлен, невозможно воспроизвести звук отмены!")
+	cleanup_before_exit()
+	if transitions:
+		transitions.close_song_select()
+		print("SongSelect.gd: Закрываю SongSelect через Transitions (close_song_select).")
+	else:
+		printerr("SongSelect.gd: transitions не установлен, невозможно закрыть SongSelect через Transitions.")
+func cleanup_before_exit():
+	print("SongSelect.gd: cleanup_before_exit вызван. Очищаем ресурсы.")
+	_stop_preview()
+	if file_dialog and is_instance_valid(file_dialog):
+		file_dialog.queue_free()
+		file_dialog = null
+		print("SongSelect.gd: FileDialog очищен в cleanup_before_exit.")
+	if _edit_context["dialog"] and is_instance_valid(_edit_context["dialog"]):
+		_edit_context["dialog"].queue_free()
+		_cleanup_edit_context() 
+		print("SongSelect.gd: Диалог редактирования очищен в cleanup_before_exit.")
+	if preview_player and is_instance_valid(preview_player):
+		preview_player.queue_free()
+		preview_player = null
+		print("SongSelect.gd: AudioStreamPlayer (preview_player) очищен в cleanup_before_exit.")
+func _unhandled_input(event):
+	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
+		print("SongSelect.gd: Обнаружено нажатие Escape, вызываю _on_back_pressed.")
+		accept_event()
+		_on_back_pressed()
+func _exit_tree():
+	print("SongSelect.gd: _exit_tree вызван. Экран удаляется из дерева сцен.")
+	cleanup_before_exit()

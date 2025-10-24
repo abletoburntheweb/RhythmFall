@@ -63,22 +63,44 @@ func transition_close_game():
 		main_menu_instance.is_game_open = false
 
 func transition_open_song_select():
-
+	if game_engine.has_method("get_music_manager"):
+		var music_manager = game_engine.get_music_manager()
+		if music_manager and music_manager.has_method("play_select_sound"):
+			music_manager.play_select_sound()
+			print("Transitions.gd: play_select_sound вызван перед открытием выбора песен.")
+		else:
+			print("Transitions.gd: У MusicManager нет метода play_select_sound. Реализуйте его в MusicManager.")
+	else:
+		print("Transitions.gd: У GameEngine нет метода get_music_manager!")
 
 	var new_screen = _instantiate_if_exists("res://scenes/song_select/song_select.tscn")
 	if new_screen:
+		if new_screen.has_method("set_transitions"):
+			new_screen.set_transitions(self) 
+			print("Transitions.gd: set_transitions вызван для нового SongSelect.")
+		else:
+			printerr("Transitions.gd: Новый экземпляр SongSelect не имеет метода set_transitions!")
 
 		if game_engine.current_screen:
 			game_engine.current_screen.queue_free()
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
-
 	else:
 		print("Transitions: song_select.tscn не найден, переход отменён.")
 
 func transition_close_song_select():
-	game_engine.current_screen = null 
-
+	print("Transitions.gd: transition_close_song_select вызван")
+	if game_engine.current_screen:
+		print("Transitions.gd: Текущий экран перед закрытием: ", game_engine.current_screen)
+	else:
+		print("Transitions.gd: Текущий экран уже null.")
+	
+	if game_engine.current_screen:
+		print("Transitions.gd: Удаляем текущий экран (выбор песен) перед переходом: ", game_engine.current_screen)
+		game_engine.current_screen.queue_free()
+		game_engine.current_screen = null 
+	else:
+		print("Transitions.gd: Текущий экран уже null, ничего не удаляем.")
 
 	transition_open_main_menu()
 
