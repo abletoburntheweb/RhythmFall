@@ -11,6 +11,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_06t4h")
 
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 0
+offset_top = 110.0
+offset_right = 1920.0
+offset_bottom = 155.0
+theme_override_font_sizes/font_size = 32
+text = "RhythmFall"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="PlayButton" type="Button" parent="."]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 0
