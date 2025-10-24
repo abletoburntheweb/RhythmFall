@@ -9,6 +9,8 @@ var item_list: ItemList = null
 
 var edit_mode: bool = false
 
+var song_metadata_manager = null
+
 var _edit_context = {
 	"dialog": null,
 	"line_edit": null,
@@ -18,6 +20,13 @@ var _edit_context = {
 	"selected_index": -1,
 	"type": ""
 }
+
+func set_metadata_manager(sm_manager):
+	song_metadata_manager = sm_manager
+	if song_metadata_manager:
+		print("SongEditManager.gd: SongMetadataManager установлен.")
+	else:
+		print("SongEditManager.gd: SongMetadataManager сброшен.")
 
 func set_song_manager(manager):
 	song_manager = manager
@@ -80,32 +89,12 @@ func _edit_title():
 	dialog.add_child(vbox_container)
 
 	dialog.confirmed.connect(_on_edit_title_confirmed)
-	dialog.close_requested.connect(_on_dialog_closed)
+	dialog.close_requested.connect(_on_dialog_closed) 
 
 	_edit_context["dialog"] = dialog
 
 	add_child(dialog)
 	dialog.popup_centered()
-
-func _on_edit_title_confirmed():
-	var dialog = _edit_context["dialog"]
-	var line_edit = _edit_context["line_edit"]
-	var song_data = _edit_context["song_data"]
-	var selected_index = _edit_context["selected_index"]
-	var old_title = song_data.get("title", "")
-
-	if dialog and line_edit:
-		var new_title = line_edit.text.strip_edges()
-		if new_title != "" and new_title != old_title:
-			var original_song_data = song_manager.get_songs_list()[selected_index]
-			original_song_data["title"] = new_title
-			if item_list and selected_index < item_list.item_count:
-				var display_text = original_song_data.get("artist", "Неизвестен") + " — " + new_title
-				item_list.set_item_text(selected_index, display_text)
-			print("SongEditManager.gd: Название обновлено: '", old_title, "' -> '", new_title, "'")
-			emit_signal("song_edited", original_song_data)
-
-	_cleanup_edit_context()
 
 func _edit_field(field_name: String):
 	var song_data = _edit_context["song_data"]
@@ -133,27 +122,6 @@ func _edit_field(field_name: String):
 
 	add_child(dialog)
 	dialog.popup_centered()
-
-func _on_edit_field_confirmed():
-	var dialog = _edit_context["dialog"]
-	var line_edit = _edit_context["line_edit"]
-	var song_data = _edit_context["song_data"]
-	var selected_index = _edit_context["selected_index"]
-	var field_name = _edit_context["field_name"]
-	var old_value = str(song_data.get(field_name, ""))
-
-	if dialog and line_edit and song_data and field_name:
-		var new_value = line_edit.text.strip_edges()
-		if new_value != old_value:
-			var original_song_data = song_manager.get_songs_list()[selected_index]
-			original_song_data[field_name] = new_value
-			if item_list and selected_index < item_list.item_count:
-				var display_text = original_song_data.get("artist", "Неизвестен") + " — " + original_song_data.get("title", "Без названия")
-				item_list.set_item_text(selected_index, display_text)
-			print("SongEditManager.gd: Поле '", field_name, "' обновлено: '", old_value, "' -> '", new_value, "'")
-			emit_signal("song_edited", original_song_data)
-
-	_cleanup_edit_context()
 
 func _edit_bpm():
 	var song_data = _edit_context["song_data"]
@@ -190,6 +158,67 @@ func _edit_bpm():
 	add_child(dialog)
 	dialog.popup_centered()
 
+func _edit_cover_stub():
+	print("SongEditManager.gd: Редактирование обложки пока не реализовано (двойной клик).")
+
+func _on_edit_title_confirmed():
+	var dialog = _edit_context["dialog"]
+	var line_edit = _edit_context["line_edit"]
+	var song_data = _edit_context["song_data"]
+	var selected_index = _edit_context["selected_index"]
+	var old_title = song_data.get("title", "")
+
+	if dialog and line_edit:
+		var new_title = line_edit.text.strip_edges()
+		if new_title != "" and new_title != old_title:
+
+			var original_song_data = song_manager.get_songs_list()[selected_index]
+			original_song_data["title"] = new_title
+			if item_list and selected_index < item_list.item_count:
+				var display_text = original_song_data.get("artist", "Неизвестен") + " — " + new_title
+				item_list.set_item_text(selected_index, display_text)
+			print("SongEditManager.gd: Название обновлено: '", old_title, "' -> '", new_title, "'")
+			emit_signal("song_edited", original_song_data)
+			
+			if song_metadata_manager:
+				var song_file_path = original_song_data["path"]
+				var fields_to_update = {"title": new_title}
+				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+				print("SongEditManager.gd: Изменения названия для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
+			else:
+				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения названия не сохранены в файл!")
+
+	_cleanup_edit_context() 
+	
+func _on_edit_field_confirmed():
+	var dialog = _edit_context["dialog"]
+	var line_edit = _edit_context["line_edit"]
+	var song_data = _edit_context["song_data"]
+	var selected_index = _edit_context["selected_index"]
+	var field_name = _edit_context["field_name"]
+	var old_value = str(song_data.get(field_name, ""))
+
+	if dialog and line_edit and song_data and field_name:
+		var new_value = line_edit.text.strip_edges()
+		if new_value != old_value:
+			var original_song_data = song_manager.get_songs_list()[selected_index]
+			original_song_data[field_name] = new_value
+			if item_list and selected_index < item_list.item_count:
+				var display_text = original_song_data.get("artist", "Неизвестен") + " — " + original_song_data.get("title", "Без названия")
+				item_list.set_item_text(selected_index, display_text)
+			print("SongEditManager.gd: Поле '", field_name, "' обновлено: '", old_value, "' -> '", new_value, "'")
+			emit_signal("song_edited", original_song_data)
+
+			if song_metadata_manager:
+				var song_file_path = original_song_data["path"]
+				var fields_to_update = {field_name: new_value}
+				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+				print("SongEditManager.gd: Изменения поля '%s' для '%s' переданы в SongMetadataManager для сохранения." % [field_name, song_file_path])
+			else:
+				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения поля '%s' не сохранены в файл!" % field_name)
+
+	_cleanup_edit_context() 
+	
 func _on_edit_bpm_confirmed():
 	var dialog = _edit_context["dialog"]
 	var spin_box = _edit_context["spin_box"]
@@ -213,15 +242,21 @@ func _on_edit_bpm_confirmed():
 				item_list.set_item_text(selected_index, display_text)
 			print("SongEditManager.gd: BPM обновлен: '", old_bpm, "' -> '", new_bpm_str, "'")
 			emit_signal("song_edited", original_song_data)
+			
+			if song_metadata_manager:
+				var song_file_path = original_song_data["path"]
+				var fields_to_update = {"bpm": new_bpm_str}
+				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+				print("SongEditManager.gd: Изменения BPM для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
+			else:
+				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения BPM не сохранены в файл!")
 
 	_cleanup_edit_context()
-
-func _edit_cover_stub():
-	print("SongEditManager.gd: Редактирование обложки пока не реализовано (двойной клик).")
 
 func _cleanup_edit_context():
 	if _edit_context["dialog"] and is_instance_valid(_edit_context["dialog"]):
 		_edit_context["dialog"].queue_free()
+
 	_edit_context["dialog"] = null
 	_edit_context["line_edit"] = null
 	_edit_context["spin_box"] = null
@@ -231,4 +266,4 @@ func _cleanup_edit_context():
 	_edit_context["type"] = ""
 
 func _on_dialog_closed():
-	_cleanup_edit_context()
+	_cleanup_edit_context() 

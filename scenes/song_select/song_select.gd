@@ -17,33 +17,40 @@ var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_
 func _ready():
 	print("SongSelect.gd: _ready вызван")
 
-	var game_engine = get_parent()
+	var game_engine = get_parent() 
 	
+	var song_meta_mgr = null
+
 	if game_engine and \
 	   game_engine.has_method("get_music_manager") and \
 	   game_engine.has_method("get_transitions") and \
-	   game_engine.has_method("get_player_data_manager"):
-
+	   game_engine.has_method("get_player_data_manager") and \
+	   game_engine.has_method("get_song_metadata_manager"): 
+		
 		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
 		var player_data_mgr = game_engine.get_player_data_manager()
+		song_meta_mgr = game_engine.get_song_metadata_manager() 
 		
 		setup_managers(trans, music_mgr, player_data_mgr) 
 
-		print("SongSelect.gd: MusicManager, Transitions и PlayerDataManager получены через GameEngine.")
+		print("SongSelect.gd: MusicManager, Transitions, PlayerDataManager и SongMetadataManager получены через GameEngine.")
 	else:
-		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager) через GameEngine.")
-
-		return
+		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager, song_metadata_manager) через GameEngine.")
 
 	song_manager = SongManager.new()
+	
+	if song_meta_mgr:
+		song_manager.set_metadata_manager(song_meta_mgr)
+		print("SongSelect.gd: SongMetadataManager передан в SongManager.")
+	else:
+		printerr("SongSelect.gd: SongMetadataManager не получен, пользовательские метаданные песен не будут загружаться/сохраняться.")
+	
 	song_manager.load_songs()
 
-	song_list_manager = SongListManager.new()
 	add_child(song_list_manager)
 	song_list_manager.set_song_manager(song_manager)
 
-	song_details_manager = SongDetailsManager.new()
 	add_child(song_details_manager)
 	song_details_manager.setup_ui_nodes(
 		$MainVBox/ContentHBox/DetailsVBox/TitleLabel,
@@ -55,23 +62,27 @@ func _ready():
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton
 	)
 	song_details_manager.setup_audio_player(music_manager)
+	
 	if player_data_manager:
 		song_details_manager.set_player_data_manager(player_data_manager)
 		print("SongSelect.gd: PlayerDataManager передан в SongDetailsManager.")
 	else:
 		printerr("SongSelect.gd: player_data_manager (унаследованный из BaseScreen) не установлен после setup_managers! Резервные обложки не будут работать.")
 
-	song_edit_manager = SongEditManager.new()
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
+	if song_meta_mgr:
+		song_edit_manager.set_metadata_manager(song_meta_mgr)
+		print("SongSelect.gd: SongMetadataManager передан в SongEditManager.")
+	else:
+		printerr("SongSelect.gd: SongMetadataManager не получен для передачи в SongEditManager.")
 	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList
 	if song_item_list:
 		song_item_list_ref = song_item_list 
-		song_list_manager.set_item_list(song_item_list) 
-		
+		song_list_manager.set_item_list(song_item_list)
+
 		song_list_manager.song_selected.connect(_on_song_item_selected_from_manager) 
 		song_list_manager.song_list_changed.connect(_on_song_list_changed) 
-		
 		song_list_manager.populate_items() 
 		
 		song_edit_manager.set_item_list(song_item_list_ref) 
@@ -79,8 +90,15 @@ func _ready():
 		push_error("SongSelect.gd: SongItemList не найден по пути $MainVBox/ContentHBox/SongListVBox/SongItemList!")
 
 	_connect_ui_signals() 
-
 func _connect_ui_signals():
+	
+	var back_btn = $MainVBox/BackButton
+	if back_btn:
+		back_btn.pressed.connect(_on_back_pressed)
+		print("SongSelect.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
+	else:
+		push_error("SongSelect.gd: Не найден BackButton по пути $MainVBox/BackButton!")
+
 	var search_bar = $MainVBox/TopBarHBox/SearchBar
 	if search_bar:
 		search_bar.text_changed.connect(song_list_manager.filter_items)

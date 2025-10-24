@@ -2,11 +2,11 @@
 class_name BaseScreen
 extends Control
 
-var transitions = null
+var transitions = null 
 var music_manager = null
 var player_data_manager = null
 
-func setup_managers(trans, music, player_data=null):
+func setup_managers(trans, music: MusicManager, player_data: PlayerDataManager = null) -> void:
 	print("BaseScreen.gd: setup_managers вызван.")
 	transitions = trans
 	music_manager = music
@@ -35,20 +35,20 @@ func _on_back_pressed():
 		print("BaseScreen.gd: Данные игрока сохранены перед выходом из экрана.")
 	_execute_close_transition()
 
-func _execute_close_transition():
+func _execute_close_transition() -> void:
 	push_warning("BaseScreen.gd: _execute_close_transition() не переопределён в " + get_script().resource_path)
 	if transitions:
 		transitions.open_main_menu()
 
-func cleanup_before_exit():
+func cleanup_before_exit() -> void:
 	print("BaseScreen.gd: cleanup_before_exit вызван (заглушка). Переопределите в наследнике.")
 
-func _unhandled_input(event):
+func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
 		print("BaseScreen.gd: Обнаружено нажатие Escape, вызываю _on_back_pressed.")
 		accept_event()
 		_on_back_pressed()
 
-func _exit_tree():
+func _exit_tree() -> void:
 	print("BaseScreen.gd: _exit_tree вызван для %s. Экран удаляется из дерева сцен." % get_script().resource_path)
 	cleanup_before_exit()

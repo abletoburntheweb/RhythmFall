@@ -10,6 +10,8 @@ var settings_manager: SettingsManager = null
 var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
 
+var song_metadata_manager: SongMetadataManager = null
+
 func _ready():
 	print("GameEngine.gd: _ready вызван.")
 	print("GameEngine запущен")
@@ -20,21 +22,23 @@ func _ready():
 func initialize_logic():
 	player_data_manager = PlayerDataManager.new()
 	settings_manager = SettingsManager.new()
-	music_manager = MusicManager.new() 
+	
+	song_metadata_manager = SongMetadataManager.new()
+	if song_metadata_manager:
+		print("GameEngine.gd: SongMetadataManager инстанцирован.")
+	else:
+		printerr("GameEngine.gd: Не удалось инстанцировать SongMetadataManager!")
 
+	music_manager = MusicManager.new() 
 	if music_manager:
 		music_manager.set_player_data_manager(player_data_manager)
 		add_child(music_manager)
-		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
-		if settings_manager:
-			add_child(music_manager)
 		print("GameEngine.gd: MusicManager инстанцирован, настроен и добавлен как дочерний.")
 		if settings_manager:
 			music_manager.update_volumes_from_settings(settings_manager)
 			print("GameEngine.gd: Обновлены громкости MusicManager из SettingsManager при инициализации (после добавления в сцену).")
 		else:
 			printerr("GameEngine.gd: SettingsManager не установлен при инициализации MusicManager!")
-
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
@@ -47,12 +51,11 @@ func initialize_screens():
 	if main_menu_instance:
 		print("GameEngine.gd: main_menu_instance не null, вызываем set_transitions")
 		if main_menu_instance.has_method("set_transitions"):
-			main_menu_instance.set_transitions(transitions)
-		if transitions.has_method("set_main_menu_instance"):
-			print("GameEngine.gd: Вызываем set_main_menu_instance в transitions")
-			transitions.set_main_menu_instance(main_menu_instance)
-	else:
-		print("GameEngine.gd: ОШИБКА! main_menu_instance равен null после instantiate!")
+			if transitions:
+				main_menu_instance.set_transitions(transitions)
+				print("GameEngine.gd: Экземпляр Transitions передан в MainMenu.")
+			else:
+				printerr("GameEngine.gd: Экземпляр Transitions равен null!")
 
 func show_intro():
 	print("GameEngine.gd: show_intro вызван")
@@ -71,6 +74,9 @@ func show_main_menu():
 	else:
 		print("GameEngine.gd: ОШИБКА! transitions не установлен!")
 
+func get_song_metadata_manager() -> SongMetadataManager:
+	return song_metadata_manager
+
 func _switch_to_screen(new_screen_instance):
 	print("GameEngine.gd: _switch_to_screen вызван для ", new_screen_instance, ". current_screen до: ", current_screen)
 	if current_screen and current_screen != new_screen_instance:
@@ -88,7 +94,6 @@ func request_quit():
 	get_tree().quit()
 
 func prepare_screen_exit(screen_to_exit: Node) -> bool:
-
 	if current_screen != screen_to_exit:
 		printerr("GameEngine.gd: prepare_screen_exit - переданный узел не является current_screen.")
 		return false
@@ -100,6 +105,7 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 		print("GameEngine.gd: Вызван cleanup_before_exit на ", screen_to_exit)
 
 	if player_data_manager:
+		player_data_manager._save()
 		print("GameEngine.gd: Данные игрока сохранены перед выходом из экрана.")
 	if settings_manager:
 		settings_manager.save_settings()

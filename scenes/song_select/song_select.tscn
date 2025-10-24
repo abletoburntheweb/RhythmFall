@@ -27,6 +27,13 @@ offset_bottom = 658.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="BackButton" type="Button" parent="MainVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Назад	"
+
 [node name="TopBarHBox" type="HBoxContainer" parent="MainVBox"]
 clip_contents = true
 layout_mode = 2
