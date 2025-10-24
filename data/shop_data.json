@@ -20,7 +20,7 @@
 	},
 	{
 	  "item_id": "covers_default",
-	  "name": "Стандартные обложки",
+	  "name": "Волнистый градиент",
 	  "price": 0,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/default_covers",
@@ -73,7 +73,7 @@
 	},
 	{
 	  "item_id": "covers_geometric",
-	  "name": "Геометрические обложки",
+	  "name": "Кристальные грани",
 	  "price": 200,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/geometric",
@@ -89,7 +89,7 @@
 	},
 	{
 	  "item_id": "covers_music_note",
-	  "name": "Музыкальные ноты",
+	  "name": "Одиночная нота",
 	  "price": 200,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/music_note",
@@ -105,7 +105,7 @@
 	},
 	{
 	  "item_id": "covers_vinyl",
-	  "name": "Виниловые обложки",
+	  "name": "Виниловая пластинка",
 	  "price": 200,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/vinyl",
