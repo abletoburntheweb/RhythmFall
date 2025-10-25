@@ -112,6 +112,46 @@
 	  "images_count": 7
 	},
 	{
+	  "item_id": "covers_spiderweb",
+	  "name": "Чернильная паутина",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/spiderweb",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_explosion",
+	  "name": "Радиальные брызги",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/explosion",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_shards",
+	  "name": "Осколки",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/shards",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_cross",
+	  "name": "Крестообразные линии",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/cross",
+	  "images_count": 7
+	},
+	{
+	  "item_id": "covers_brush",
+	  "name": "Графические штрихи",
+	  "price": 200,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/brush",
+	  "images_count": 7
+	},
+	{
 	  "item_id": "misc_1",
 	  "name": "Бонус 1",
 	  "price": 300,
