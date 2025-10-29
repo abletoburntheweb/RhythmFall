@@ -1,8 +1,8 @@
 # scenes/settings_menu/settings_menu.gd
 extends BaseScreen
- 
+
 var settings_manager: SettingsManager = null
-var game_screen = null 
+var game_screen = null
 
 @onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound
 @onready var btn_graphics: Button = $MainVBox/TabsHBox/BtnGraphics
@@ -28,7 +28,7 @@ func _ready():
 		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
 
-		setup_managers(trans, music_mgr, null) 
+		setup_managers(trans, music_mgr, null)
 
 		print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
 	else:
@@ -43,12 +43,15 @@ func _ready():
 
 func _setup_tabs():
 	print("SettingsMenu.gd: _setup_tabs вызван.")
-	
+	var song_metadata_mgr = null
+	if get_parent() and get_parent().has_method("get_song_metadata_manager"):
+		song_metadata_mgr = get_parent().get_song_metadata_manager()
+
 	var loaded_tabs_count = 0
 
 	for tab_name in TAB_PATHS:
 		var scene_path = TAB_PATHS[tab_name]
-		var scene_resource = load(scene_path)  
+		var scene_resource = load(scene_path)
 
 		if not scene_resource:
 			printerr("SettingsMenu.gd: Не удалось загрузить ресурс сцены для %s по пути: %s" % [tab_name, scene_path])
@@ -72,7 +75,10 @@ func _setup_tabs():
 
 		if tab_instance.has_method("setup_ui_and_manager"):
 			print("SettingsMenu.gd: Вызываю setup_ui_and_manager для %s." % tab_name)
-			tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen)
+			if tab_name == "MiscTab":
+				tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen, song_metadata_mgr)
+			else:
+				tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen)
 			print("SettingsMenu.gd: Менеджеры переданы в %s." % tab_name)
 		else:
 			print("SettingsMenu.gd: Вкладка %s не имеет метода setup_ui_and_manager." % tab_name)
@@ -97,7 +103,7 @@ func _setup_tabs():
 
 func _connect_signals():
 	print("SettingsMenu.gd: _connect_signals вызван.")
-	
+
 	if btn_sound:
 		btn_sound.pressed.connect(_on_sound_tab_pressed)
 		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Звук.")
@@ -123,7 +129,7 @@ func _connect_signals():
 		printerr("SettingsMenu.gd: Кнопка btn_misc не найдена!")
 
 	if back_button:
-		back_button.pressed.connect(_on_back_pressed) 
+		back_button.pressed.connect(_on_back_pressed)
 		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
 	else:
 		printerr("SettingsMenu.gd: Кнопка back_button не найдена!")
@@ -148,7 +154,7 @@ func _execute_close_transition():
 	if transitions:
 		var from_pause = game_screen != null
 		print("SettingsMenu.gd: Закрываю настройки, from_pause: %s" % from_pause)
-		transitions.close_settings(from_pause) 
+		transitions.close_settings(from_pause)
 		print("SettingsMenu.gd: Закрываю настройки через Transitions.")
 	else:
 		printerr("SettingsMenu.gd: transitions не установлен, невозможно закрыть настройки.")
@@ -167,6 +173,6 @@ func save_settings():
 func set_managers(settings, music, game_scr, trans):
 	print("SettingsMenu.gd: set_managers вызван.")
 	settings_manager = settings
-	setup_managers(trans, music, null) 
+	setup_managers(trans, music, null)
 	game_screen = game_scr
 	print("SettingsMenu.gd: Менеджеры установлены через set_managers и setup_managers.")

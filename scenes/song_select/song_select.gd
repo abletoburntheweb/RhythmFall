@@ -298,37 +298,25 @@ func _on_delete_pressed():
 	if song_path == "":
 		print("SongSelect.gd: Путь к файлу выбранной песни пуст.")
 		return
-
-	# Подтверждение удаления (опционально, можно реализовать позже)
-	# var confirmation = ConfirmationDialog.new()
-	# confirmation.dialog_text = "Удалить песню '" + selected_song_data.get("title", "Без названия") + "'?"
-	# confirmation.confirmed.connect(_confirm_delete_song.bind(song_path, selected_index))
-	# add_child(confirmation)
-	# confirmation.popup_centered()
-	# return
-
-	# Удаляем файл
+		
 	var dir = DirAccess.open("res://")
 	if dir:
 		var error = dir.remove(song_path)
 		if error == OK:
 			print("SongSelect.gd: Файл песни удалён: ", song_path)
-			# Удаляем метаданные
 			if song_metadata_manager:
 				song_metadata_manager.remove_metadata(song_path)
 				print("SongSelect.gd: Метаданные для песни удалены из SongMetadataManager: ", song_path)
 			else:
 				printerr("SongSelect.gd: SongMetadataManager недоступен, метаданные не удалены.")
 
-			# Удаляем из SongManager и обновляем UI
-			song_manager.load_songs() # Перезагружаем список, чтобы убрать удалённую песню
-			song_list_manager.populate_items() # Обновляем ItemList
-			_on_song_list_changed() # Обновляем счётчик
+			song_manager.load_songs() 
+			song_list_manager.populate_items() 
+			_on_song_list_changed()
 
-			# Очищаем детали, если удалена текущая выбранная
 			var current_selected_items = song_item_list_ref.get_selected_items()
 			if current_selected_items.size() == 0 or current_selected_items[0] >= song_item_list_ref.item_count:
-				song_details_manager.update_details({}) # Пустой словарь или стандартный словарь для "ничего не выбрано"
+				song_details_manager.update_details({}) 
 				song_details_manager.stop_preview()
 				if analyze_bpm_button:
 					analyze_bpm_button.disabled = true

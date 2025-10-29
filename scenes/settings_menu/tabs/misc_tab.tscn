@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://cflfv1lx6qcni"]
+[gd_scene load_steps=2 format=3 uid="uid://cflfv1lx6qcni"]
+
+[ext_resource type="Script" uid="uid://b72o0qprtpesv" path="res://scenes/settings_menu/tabs/misc_tab.gd" id="1_f8lbq"]
 
 [node name="MiscTab" type="Control"]
 layout_mode = 3
@@ -7,3 +9,34 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_f8lbq")
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ClearAchievementsButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Стереть прогресс ачивок"
+
+[node name="ResetBPMBatchButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Сбросить кэш BPM"
+
+[node name="ClearAllCacheButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Очистить весь кэш"
+
+[node name="DebugMenuCheckBox" type="CheckBox" parent="ContentVBox"]
+layout_mode = 2
+text = "Дебаг меню"

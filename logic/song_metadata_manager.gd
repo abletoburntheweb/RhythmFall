@@ -37,14 +37,12 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 	
 	emit_signal("metadata_updated", song_file_path)
 
-# --- НОВОЕ: Метод для удаления метаданных ---
 func remove_metadata(song_file_path: String):
 	if _metadata_cache.erase(song_file_path):
 		_save_metadata()
 		print("SongMetadataManager.gd: Метаданные для '%s' удалены и изменения сохранены." % song_file_path)
 	else:
 		print("SongMetadataManager.gd: Попытка удаления несуществующих метаданных для '%s'." % song_file_path)
-# --- КОНЕЦ НОВОГО ---
 
 func _load_metadata():
 	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.READ)
