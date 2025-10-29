@@ -13,6 +13,7 @@ var file_dialog: FileDialog = null
 var song_list_manager: SongListManager = preload("res://scenes/song_select/song_list_manager.gd").new()
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
 var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
+var settings_manager: SettingsManager = null
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
@@ -25,18 +26,20 @@ func _ready():
 	   game_engine.has_method("get_music_manager") and \
 	   game_engine.has_method("get_transitions") and \
 	   game_engine.has_method("get_player_data_manager") and \
-	   game_engine.has_method("get_song_metadata_manager"): 
+	   game_engine.has_method("get_song_metadata_manager") and \
+	   game_engine.has_method("get_settings_manager"):
 		
 		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
 		var player_data_mgr = game_engine.get_player_data_manager()
+		settings_manager = game_engine.get_settings_manager()
 		song_meta_mgr = game_engine.get_song_metadata_manager() 
-		
+
 		setup_managers(trans, music_mgr, player_data_mgr) 
 
-		print("SongSelect.gd: MusicManager, Transitions, PlayerDataManager и SongMetadataManager получены через GameEngine.")
+		print("SongSelect.gd: MusicManager, Transitions, PlayerDataManager, SettingsManager и SongMetadataManager получены через GameEngine.")
 	else:
-		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager, song_metadata_manager) через GameEngine.")
+		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager, song_metadata_manager, settings_manager) через GameEngine.")
 
 	song_manager = SongManager.new()
 	
@@ -63,11 +66,17 @@ func _ready():
 	)
 	song_details_manager.setup_audio_player(music_manager)
 	
+	if settings_manager: 
+		song_details_manager.set_settings_manager(settings_manager)
+		print("SongSelect.gd: SettingsManager передан в SongDetailsManager.")
+	else:
+		printerr("SongSelect.gd: SettingsManager не установлен в SongSelect (получен от GameEngine)!")
+
 	if player_data_manager:
 		song_details_manager.set_player_data_manager(player_data_manager)
 		print("SongSelect.gd: PlayerDataManager передан в SongDetailsManager.")
 	else:
-		printerr("SongSelect.gd: player_data_manager (унаследованный из BaseScreen) не установлен после setup_managers! Резервные обложки не будут работать.")
+		printerr("SongSelect.gd: player_data_manager (унаследованный из BaseScreen) не установлен! Резервные обложки не будут работать.")
 
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)

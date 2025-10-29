@@ -13,7 +13,8 @@ var play_button: Button = null
 var preview_player: AudioStreamPlayer = null
 
 var music_manager = null
-var player_data_manager = null 
+var player_data_manager = null
+var settings_manager = null
 
 func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
@@ -27,7 +28,12 @@ func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lb
 func setup_audio_player(music_mgr):
 	music_manager = music_mgr
 	preview_player = AudioStreamPlayer.new()
+	preview_player.name = "PreviewPlayer"
 	add_child(preview_player)
+
+func set_settings_manager(settings_mgr):
+	settings_manager = settings_mgr
+	print("SongDetailsManager.gd: SettingsManager передан.")
 
 func set_player_data_manager(player_data_mgr):
 	player_data_manager = player_data_mgr
@@ -148,8 +154,16 @@ func play_song_preview(filepath: String):
 
 	if audio_stream:
 		preview_player.stream = audio_stream
+
+		if settings_manager:
+			var preview_volume_percent = settings_manager.get_preview_volume()
+			preview_player.volume_db = linear_to_db(preview_volume_percent / 100.0)
+			print("SongDetailsManager.gd: Громкость preview_player установлена из SettingsManager: %.2f dB (%.1f%%)" % [preview_player.volume_db, preview_volume_percent])
+		else:
+			print("SongDetailsManager.gd: SettingsManager не установлен, используем значение по умолчанию для preview_player.")
+
 		preview_player.play()
-		print("SongDetailsManager.gd: Воспроизведение запущено.")
+		print("SongDetailsManager.gd: Воспроизведение предпросмотра запущено.")
 	else:
 		print("SongDetailsManager.gd: Не удалось загрузить аудио поток из: ", filepath)
 
