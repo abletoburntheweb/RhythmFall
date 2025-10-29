@@ -1,6 +1,23 @@
-[gd_scene load_steps=2 format=3 uid="uid://bol4h51pj023o"]
+[gd_scene load_steps=10 format=3 uid="uid://bol4h51pj023o"]
 
 [ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hwq2b"]
+bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_hwq2b"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_ot1as"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_qnkv8"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_wt38h"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_5a4q6"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_15g8r"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_mbixv"]
 
 [node name="CoverGallery" type="Control"]
 layout_mode = 3
@@ -16,7 +33,7 @@ custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-color = Color(0, 0, 0, 0.003921569)
+color = Color(0, 0, 0, 0.7058824)
 
 [node name="GalleryContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
@@ -25,10 +42,62 @@ offset_bottom = 1080.0
 mouse_filter = 0
 
 [node name="BackButton" type="Button" parent="GalleryContainer"]
-custom_minimum_size = Vector2(57, 80)
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
-text = "Назад"
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_hwq2b")
+text = "Назад	"
 
-[node name="Content" type="GridContainer" parent="GalleryContainer"]
+[node name="GridMargin" type="MarginContainer" parent="GalleryContainer"]
 layout_mode = 2
+
+[node name="Content" type="GridContainer" parent="GalleryContainer/GridMargin"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/h_separation = 30
+theme_override_constants/v_separation = 30
 columns = 4
+
+[node name="CoverImage1" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_hwq2b")
+stretch_mode = 6
+
+[node name="CoverImage2" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_ot1as")
+stretch_mode = 6
+
+[node name="CoverImage3" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_qnkv8")
+stretch_mode = 6
+
+[node name="CoverImage4" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_wt38h")
+stretch_mode = 6
+
+[node name="CoverImage5" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_5a4q6")
+stretch_mode = 6
+
+[node name="CoverImage6" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+texture = SubResource("CanvasTexture_15g8r")
+stretch_mode = 6
+
+[node name="CoverImage7" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+texture = SubResource("CanvasTexture_mbixv")
+stretch_mode = 6
