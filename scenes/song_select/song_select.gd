@@ -2,6 +2,8 @@
 extends BaseScreen
 
 const SongManager = preload("res://logic/song_manager.gd")
+const BPMAnalyzerClient = preload("res://logic/bpm_analyzer_client.gd")
+
 
 var song_manager: SongManager = null
 
@@ -15,12 +17,14 @@ var song_details_manager: SongDetailsManager = preload("res://scenes/song_select
 var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
 var settings_manager: SettingsManager = null
 
+var analyze_bpm_button: Button = null
+var bpm_analyzer_client: BPMAnalyzerClient = null
+var song_metadata_manager = null
+
 func _ready():
 	print("SongSelect.gd: _ready вызван")
 
 	var game_engine = get_parent() 
-	
-	var song_meta_mgr = null
 
 	if game_engine and \
 	   game_engine.has_method("get_music_manager") and \
@@ -33,7 +37,7 @@ func _ready():
 		var trans = game_engine.get_transitions()
 		var player_data_mgr = game_engine.get_player_data_manager()
 		settings_manager = game_engine.get_settings_manager()
-		song_meta_mgr = game_engine.get_song_metadata_manager() 
+		song_metadata_manager = game_engine.get_song_metadata_manager()
 
 		setup_managers(trans, music_mgr, player_data_mgr) 
 
@@ -43,8 +47,8 @@ func _ready():
 
 	song_manager = SongManager.new()
 	
-	if song_meta_mgr:
-		song_manager.set_metadata_manager(song_meta_mgr)
+	if song_metadata_manager: 
+		song_manager.set_metadata_manager(song_metadata_manager) 
 		print("SongSelect.gd: SongMetadataManager передан в SongManager.")
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен, пользовательские метаданные песен не будут загружаться/сохраняться.")
@@ -80,8 +84,8 @@ func _ready():
 
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
-	if song_meta_mgr:
-		song_edit_manager.set_metadata_manager(song_meta_mgr)
+	if song_metadata_manager:
+		song_edit_manager.set_metadata_manager(song_metadata_manager)
 		print("SongSelect.gd: SongMetadataManager передан в SongEditManager.")
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен для передачи в SongEditManager.")
@@ -98,7 +102,14 @@ func _ready():
 	else:
 		push_error("SongSelect.gd: SongItemList не найден по пути $MainVBox/ContentHBox/SongListVBox/SongItemList!")
 
+	bpm_analyzer_client = BPMAnalyzerClient.new()
+	bpm_analyzer_client.bpm_analysis_started.connect(_on_bpm_analysis_started)
+	bpm_analyzer_client.bpm_analysis_completed.connect(_on_bpm_analysis_completed)
+	bpm_analyzer_client.bpm_analysis_error.connect(_on_bpm_analysis_error)
+	add_child(bpm_analyzer_client)
+
 	_connect_ui_signals() 
+
 func _connect_ui_signals():
 	
 	var back_btn = $MainVBox/BackButton
@@ -146,6 +157,14 @@ func _connect_ui_signals():
 	else:
 		push_error("SongSelect.gd: Не найден GenerateButton по пути $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton")
 
+	analyze_bpm_button = $MainVBox/ContentHBox/DetailsVBox/AnalyzeBPMButton 
+	if analyze_bpm_button:
+		analyze_bpm_button.pressed.connect(_on_analyze_bpm_pressed)
+		print("SongSelect.gd: Подключён сигнал pressed кнопки AnalyzeBPM.")
+		analyze_bpm_button.disabled = true
+	else:
+		push_error("SongSelect.gd: Не найдена кнопка AnalyzeBPM по пути $MainVBox/ContentHBox/DetailsVBox/AnalyzeBPMButton")
+
 	var delete_btn = $MainVBox/ContentHBox/DetailsVBox/DeleteButton
 	if delete_btn:
 		delete_btn.pressed.connect(_on_delete_pressed)
@@ -180,8 +199,12 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	var song_file_path = song_data.get("path", "")
 	if song_file_path != "":
 		song_details_manager.play_song_preview(song_file_path)
+		if analyze_bpm_button:
+			analyze_bpm_button.disabled = false
 	else:
 		print("SongSelect.gd: Нет пути к файлу для воспроизведения.")
+		if analyze_bpm_button:
+			analyze_bpm_button.disabled = true
 
 func _on_song_list_changed():
 	_update_song_count_label()
@@ -260,6 +283,31 @@ func _on_generate_pressed():
 func _on_delete_pressed():
 	print("Удалить песню")
 
+func _on_analyze_bpm_pressed():
+	print("SongSelect.gd: Нажата кнопка AnalyzeBPM.")
+	var selected_items = song_item_list_ref.get_selected_items()
+	if selected_items.size() == 0:
+		print("SongSelect.gd: Нет выбранной песни для анализа BPM.")
+		return
+
+	var selected_index = selected_items[0]
+	var songs_list = song_manager.get_songs_list()
+	if selected_index < 0 or selected_index >= songs_list.size():
+		print("SongSelect.gd: Индекс выбранной песни вне диапазона.")
+		return
+
+	var selected_song_data = songs_list[selected_index]
+	var song_path = selected_song_data.get("path", "")
+	if song_path == "":
+		print("SongSelect.gd: Путь к файлу выбранной песни пуст.")
+		return
+
+	var bpm_label = $MainVBox/ContentHBox/DetailsVBox/BpmLabel
+	if bpm_label:
+		bpm_label.text = "BPM: Загрузка..."
+
+	bpm_analyzer_client.analyze_bpm(song_path)
+
 func _on_play_pressed():
 	print("Играть песню")
 	if transitions:
@@ -288,3 +336,55 @@ func cleanup_before_exit():
 
 	if song_edit_manager:
 		pass
+
+func _on_bpm_analysis_started():
+	if analyze_bpm_button:
+		analyze_bpm_button.disabled = true
+	print("SongSelect.gd: BPM анализ начат.")
+
+func _on_bpm_analysis_completed(bpm_value: int):
+	var bpm_label = $MainVBox/ContentHBox/DetailsVBox/BpmLabel
+	if bpm_label:
+		bpm_label.text = "BPM: " + str(bpm_value)
+
+	var selected_items = song_item_list_ref.get_selected_items()
+	if selected_items.size() > 0:
+		var selected_index = selected_items[0]
+		var songs_list = song_manager.get_songs_list()
+		if selected_index >= 0 and selected_index < songs_list.size():
+			var selected_song_data = songs_list[selected_index]
+			var song_path = selected_song_data.get("path", "")
+
+			if song_path != "" and song_metadata_manager: 
+				var current_metadata = song_metadata_manager.get_metadata_for_song(song_path)
+				if current_metadata.is_empty():
+					current_metadata = {
+						"title": selected_song_data.get("title", "Без названия"),
+						"artist": selected_song_data.get("artist", "Неизвестен"),
+						"bpm": str(bpm_value),
+						"year": selected_song_data.get("year", "Н/Д"),
+						"duration": selected_song_data.get("duration", "00:00"),
+						"cover": selected_song_data.get("cover", null)
+					}
+				else:
+					current_metadata["bpm"] = str(bpm_value)
+
+				song_metadata_manager.update_metadata(song_path, current_metadata)
+				print("SongSelect.gd: BPM обновлён в SongMetadataManager для: ", song_path)
+
+
+			elif song_path != "":
+				printerr("SongSelect.gd: SongMetadataManager недоступен, BPM не сохранён в пользовательские метаданные.")
+
+	print("SongSelect.gd: BPM анализ завершён. BPM: ", bpm_value)
+	if analyze_bpm_button:
+		analyze_bpm_button.disabled = false
+
+func _on_bpm_analysis_error(error_message: String):
+	var bpm_label = $MainVBox/ContentHBox/DetailsVBox/BpmLabel
+	if bpm_label:
+		bpm_label.text = "BPM: Ошибка"
+
+	print("SongSelect.gd: Ошибка BPM анализа: ", error_message)
+	if analyze_bpm_button:
+		analyze_bpm_button.disabled = false

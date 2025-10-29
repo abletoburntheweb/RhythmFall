@@ -114,6 +114,10 @@ layout_mode = 2
 layout_mode = 2
 text = "Играть"
 
+[node name="AnalyzeBPMButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Вычислить BPM"
+
 [node name="GenerateNotesButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 text = "Сгенерировать ноты"
