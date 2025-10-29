@@ -80,7 +80,6 @@ func _on_play_pressed():
 		transitions.open_game()
 
 func _on_song_select_pressed():
-	print("Кнопка ВЫБОР ПЕСНИ нажата")
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_music_manager"):
 		var music_manager = game_engine.get_music_manager()
@@ -90,7 +89,6 @@ func _on_song_select_pressed():
 		transitions.open_song_select()
 
 func _on_achievements_pressed():
-	print("Кнопка ДОСТИЖЕНИЯ нажата")
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_music_manager"):
 		var music_manager = game_engine.get_music_manager()
@@ -100,7 +98,6 @@ func _on_achievements_pressed():
 		transitions.open_achievements()
 
 func _on_shop_pressed():
-	print("Кнопка МАГАЗИН нажата")
 	var game_engine = get_parent() 
 	if game_engine and game_engine.has_method("get_music_manager"):
 		var music_manager = game_engine.get_music_manager()
@@ -110,7 +107,6 @@ func _on_shop_pressed():
 		transitions.open_shop()
 
 func _on_settings_pressed():
-	print("Кнопка НАСТРОЙКИ нажата")
 	var game_engine = get_parent() 
 	if game_engine and game_engine.has_method("get_music_manager"):
 		var music_manager = game_engine.get_music_manager()

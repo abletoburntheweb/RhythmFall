@@ -14,9 +14,9 @@ func _init():
 func set_metadata_manager(sm_manager):
 	song_metadata_manager = sm_manager
 	if song_metadata_manager:
-		print("SongManager.gd: SongMetadataManager установлен.")
+		pass
 	else:
-		print("SongManager.gd: SongMetadataManager сброшен.")
+		pass 
 
 func _create_directories_if_missing():
 	var dir = DirAccess.open("res://")
@@ -65,12 +65,9 @@ func _read_mp3_metadata(filepath: String) -> Dictionary:
 		var user_metadata = song_metadata_manager.get_metadata_for_song(filepath)
 		
 		if not user_metadata.is_empty():
-			print("SongManager.gd: Найдены пользовательские метаданные для ", filepath)
 			for key in user_metadata.keys():
 				if metadata.has(key):
 					metadata[key] = user_metadata[key]
-		else:
-			print("SongManager.gd: Пользовательские метаданные для ", filepath, " не найдены.")
 
 	return metadata
 
@@ -123,12 +120,9 @@ func _read_wav_metadata(filepath: String) -> Dictionary:
 		var user_metadata = song_metadata_manager.get_metadata_for_song(filepath)
 		
 		if not user_metadata.is_empty():
-			print("SongManager.gd: Найдены пользовательские метаданные для ", filepath)
 			for key in user_metadata.keys():
 				if metadata.has(key):
 					metadata[key] = user_metadata[key]
-		else:
-			print("SongManager.gd: Пользовательские метаданные для ", filepath, " не найдены.")
 
 	return metadata
 
@@ -153,12 +147,9 @@ func load_songs():
 					songs.append(_read_mp3_metadata(path))
 				else: 
 					songs.append(_read_wav_metadata(path))
-				print("SongManager.gd: Прочитаны метаданные для: ", path)
 
 		file_name = dir.get_next()
 	dir.list_dir_end()
-
-	print("SongManager.gd: Загружено песен: ", songs.size())
 
 func add_song(file_path: String) -> Dictionary:
 	var file_extension = file_path.get_extension().to_lower()
@@ -178,7 +169,6 @@ func add_song(file_path: String) -> Dictionary:
 		print("SongManager.gd: Ошибка копирования файла: ", file_path, " -> ", dest_path)
 		return {}
 
-
 	var metadata: Dictionary
 	if file_extension == "mp3":
 		metadata = _read_mp3_metadata(dest_path)
@@ -187,10 +177,7 @@ func add_song(file_path: String) -> Dictionary:
 
 	songs.append(metadata)
 
-	print("SongManager.gd: Добавлена новая песня: ", metadata.get("title"))
-	
 	if song_metadata_manager:
-
 		var fields_to_save = {
 			"title": metadata.get("title", "Без названия"),
 			"artist": metadata.get("artist", "Неизвестен"),
@@ -200,7 +187,6 @@ func add_song(file_path: String) -> Dictionary:
 			"cover": metadata.get("cover", null),
 		}
 		song_metadata_manager.update_metadata(dest_path, fields_to_save)
-		print("SongManager.gd: Базовые метаданные для новой песни '%s' переданы в SongMetadataManager для сохранения." % dest_path)
 	else:
 		printerr("SongManager.gd: SongMetadataManager не установлен, базовые метаданные новой песни не будут сохранены!")
 
@@ -226,7 +212,6 @@ func _update_song_data(song_file_path: String):
 			if songs[index].has(key):
 				songs[index][key] = user_metadata[key]
 		
-		print("SongManager.gd: Данные песни '%s' обновлены из метаданных." % song_file_path)
 	else:
 		printerr("SongManager.gd: Песня с путём '%s' не найдена в списке для обновления." % song_file_path)
 

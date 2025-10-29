@@ -16,6 +16,8 @@ var music_manager = null
 var player_data_manager = null
 var settings_manager = null
 
+var _current_preview_file_path: String = ""
+
 func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
@@ -29,6 +31,7 @@ func setup_audio_player(music_mgr):
 	music_manager = music_mgr
 	preview_player = AudioStreamPlayer.new()
 	preview_player.name = "PreviewPlayer"
+	preview_player.finished.connect(_on_preview_finished)
 	add_child(preview_player)
 
 func set_settings_manager(settings_mgr):
@@ -129,6 +132,13 @@ func _update_play_button_state():
 			play_button.disabled = true
 			play_button.text = "Сначала сгенерируйте ноты"
 
+func _on_preview_finished():
+	if _current_preview_file_path != "":
+		print("SongDetailsManager.gd: Воспроизведение предпросмотра завершено, перезапуск: ", _current_preview_file_path)
+		play_song_preview(_current_preview_file_path)
+	else:
+		print("SongDetailsManager.gd: _current_preview_file_path пуст, нечего перезапускать.")
+
 func play_song_preview(filepath: String):
 	if filepath == "":
 		print("SongDetailsManager.gd: Путь к файлу пуст, воспроизведение невозможно.")
@@ -154,6 +164,7 @@ func play_song_preview(filepath: String):
 
 	if audio_stream:
 		preview_player.stream = audio_stream
+		_current_preview_file_path = filepath
 
 		if settings_manager:
 			var preview_volume_percent = settings_manager.get_preview_volume()
@@ -168,6 +179,7 @@ func play_song_preview(filepath: String):
 		print("SongDetailsManager.gd: Не удалось загрузить аудио поток из: ", filepath)
 
 func stop_preview():
+	_current_preview_file_path = ""
 	if preview_player and preview_player.playing:
 		preview_player.stop()
 		print("SongDetailsManager.gd: Воспроизведение остановлено.")
