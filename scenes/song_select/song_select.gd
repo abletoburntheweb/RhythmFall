@@ -281,7 +281,61 @@ func _on_generate_pressed():
 	print("Сгенерировать ноты")
 
 func _on_delete_pressed():
-	print("Удалить песню")
+	print("SongSelect.gd: Запрос на удаление песни.")
+	var selected_items = song_item_list_ref.get_selected_items()
+	if selected_items.size() == 0:
+		print("SongSelect.gd: Нет выбранной песни для удаления.")
+		return
+
+	var selected_index = selected_items[0]
+	var songs_list = song_manager.get_songs_list()
+	if selected_index < 0 or selected_index >= songs_list.size():
+		print("SongSelect.gd: Индекс выбранной песни вне диапазона.")
+		return
+
+	var selected_song_data = songs_list[selected_index]
+	var song_path = selected_song_data.get("path", "")
+	if song_path == "":
+		print("SongSelect.gd: Путь к файлу выбранной песни пуст.")
+		return
+
+	# Подтверждение удаления (опционально, можно реализовать позже)
+	# var confirmation = ConfirmationDialog.new()
+	# confirmation.dialog_text = "Удалить песню '" + selected_song_data.get("title", "Без названия") + "'?"
+	# confirmation.confirmed.connect(_confirm_delete_song.bind(song_path, selected_index))
+	# add_child(confirmation)
+	# confirmation.popup_centered()
+	# return
+
+	# Удаляем файл
+	var dir = DirAccess.open("res://")
+	if dir:
+		var error = dir.remove(song_path)
+		if error == OK:
+			print("SongSelect.gd: Файл песни удалён: ", song_path)
+			# Удаляем метаданные
+			if song_metadata_manager:
+				song_metadata_manager.remove_metadata(song_path)
+				print("SongSelect.gd: Метаданные для песни удалены из SongMetadataManager: ", song_path)
+			else:
+				printerr("SongSelect.gd: SongMetadataManager недоступен, метаданные не удалены.")
+
+			# Удаляем из SongManager и обновляем UI
+			song_manager.load_songs() # Перезагружаем список, чтобы убрать удалённую песню
+			song_list_manager.populate_items() # Обновляем ItemList
+			_on_song_list_changed() # Обновляем счётчик
+
+			# Очищаем детали, если удалена текущая выбранная
+			var current_selected_items = song_item_list_ref.get_selected_items()
+			if current_selected_items.size() == 0 or current_selected_items[0] >= song_item_list_ref.item_count:
+				song_details_manager.update_details({}) # Пустой словарь или стандартный словарь для "ничего не выбрано"
+				song_details_manager.stop_preview()
+				if analyze_bpm_button:
+					analyze_bpm_button.disabled = true
+		else:
+			printerr("SongSelect.gd: Ошибка удаления файла песни: ", song_path, " Код ошибки: ", error)
+	else:
+		printerr("SongSelect.gd: Не удалось открыть директорию res:// для удаления файла.")
 
 func _on_analyze_bpm_pressed():
 	print("SongSelect.gd: Нажата кнопка AnalyzeBPM.")
