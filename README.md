@@ -11,9 +11,9 @@
     ```bash
     git init
     ```
-2.  **Связывание с удалённым репозиторием GitHub** (замените `<URL_вашего_репозитория_на_GitHub>` на реальный адрес, например, `https://github.com/ваш-аккаунт/RhythmFall.git`):
+2.  **Связывание с удалённым репозиторием GitHub**:
     ```bash
-    git remote add origin <URL_вашего_репозитория_на_GitHub>
+    git remote add origin https://github.com/abletoburntheweb/RhythmFall.git
     ```
 3.  **Добавление файлов**:
     ```bash
