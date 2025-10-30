@@ -338,6 +338,9 @@ func _preview_sound(item: Dictionary):
 			music_manager.play_default_shop_sound()
 
 func _on_cover_click_pressed(item_data: Dictionary):
+	if music_manager and music_manager.has_method("play_cover_click_sound"):
+		music_manager.play_cover_click_sound()
+		print("ShopScreen.gd: Воспроизведен звук cover_click при клике на карточку обложки.")
 	_open_cover_gallery(item_data)
 
 func _open_cover_gallery(item_data: Dictionary):

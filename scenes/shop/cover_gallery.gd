@@ -1,3 +1,4 @@
+# scenes/shop/cover_gallery.gd
 extends Control
 
 signal gallery_closed

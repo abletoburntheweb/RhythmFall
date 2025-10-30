@@ -13,6 +13,7 @@ const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.mp3"
 const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
+const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
 var was_menu_music_playing_before_shop: bool = false
 var menu_music_position_before_shop: float = 0.0
 
@@ -237,7 +238,10 @@ func play_achievement_sound():
 
 func play_default_shop_sound():
 	play_sfx(DEFAULT_DEFAULT_SHOP_SOUND)
-
+	
+func play_cover_click_sound():
+	play_sfx(DEFAULT_COVER_CLICK_SOUND)
+	
 func play_hit_sound(is_kick: bool = true):
 	var sound_path = ""
 	if is_kick:
