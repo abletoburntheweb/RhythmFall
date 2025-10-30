@@ -354,6 +354,11 @@ func _open_cover_gallery(item_data: Dictionary):
 	current_cover_gallery.images_folder = item_data.get("images_folder", "")
 	current_cover_gallery.images_count = item_data.get("images_count", 0)
 
+	if music_manager:
+		current_cover_gallery.set_managers(music_manager)
+	else:
+		print("ShopScreen.gd: MusicManager недоступен при открытии галереи обложек.")
+
 	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
 	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)
 
@@ -361,7 +366,6 @@ func _open_cover_gallery(item_data: Dictionary):
 	var self_queued_for_deletion = is_queued_for_deletion()
 	var self_is_inside_tree = is_inside_tree()
 	var gallery_is_valid = is_instance_valid(current_cover_gallery)
-
 
 	if self_is_valid and not self_queued_for_deletion and self_is_inside_tree and gallery_is_valid:
 		call_deferred("_deferred_add_child", current_cover_gallery)

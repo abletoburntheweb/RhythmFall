@@ -1,4 +1,3 @@
-# scenes/shop/cover_gallery.gd
 extends Control
 
 signal gallery_closed
@@ -8,6 +7,16 @@ signal cover_selected(index: int)
 @export var images_count: int = 0
 
 var cover_image_rects: Array[TextureRect] = []
+
+var music_manager = null
+
+func set_managers(music_mgr):
+	music_manager = music_mgr
+	if music_manager:
+		print("CoverGallery.gd: MusicManager установлен.")
+	else:
+		print("CoverGallery.gd: MusicManager не установлен (null).")
+
 
 func _ready():
 	var background = $Background
@@ -38,7 +47,6 @@ func _ready():
 	_load_images()
 
 	_connect_texture_rect_signals()
-
 	show()
 
 
@@ -91,12 +99,18 @@ func _on_texture_rect_gui_input(event: InputEvent, index: int):
 
 
 func _on_back_button_pressed():
+	if music_manager and music_manager.has_method("play_cancel_sound"):
+		music_manager.play_cancel_sound()
+		print("CoverGallery.gd: Воспроизведен звук cancel при нажатии кнопки Назад.")
 	emit_signal("gallery_closed")
 	queue_free()
 
 
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
+		if music_manager and music_manager.has_method("play_cancel_sound"):
+			music_manager.play_cancel_sound()
+			print("CoverGallery.gd: Воспроизведен звук cancel при нажатии Escape.")
 		_on_back_button_pressed()
 
 

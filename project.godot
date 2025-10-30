@@ -13,7 +13,6 @@ config_version=5
 config/name="RhythmFall"
 run/main_scene="uid://5vghv31ksise"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="res://icon.svg"
 
 [display]
 
