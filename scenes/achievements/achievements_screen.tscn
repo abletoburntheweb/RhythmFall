@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0u5mhsmh2wdx"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_j66rc"]
+
+[node name="AchievementsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BackButton" type="Button" parent="MainVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Назад	"
+
+[node name="TitleLabel" type="Label" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Достижения"
+horizontal_alignment = 1
+
+[node name="CounterLabel" type="Label" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Открыто: 0 / 10"
+horizontal_alignment = 1
+
+[node name="SearchAndFilterHBox" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+
+[node name="SearchBar" type="LineEdit" parent="MainVBox/SearchAndFilterHBox"]
+custom_minimum_size = Vector2(1700, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Поиск достижений..."
+
+[node name="FilterBox" type="OptionButton" parent="MainVBox/SearchAndFilterHBox"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+
+[node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 25
+theme_override_constants/margin_bottom = 40
+
+[node name="AchievementsScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
+layout_mode = 2
+
+[node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 2
+
+[node name="AchievementCardTemplate" type="Control" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList"]
+custom_minimum_size = Vector2(800, 100)
+layout_mode = 2
+
+[node name="IconTexture" type="TextureRect" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList/AchievementCardTemplate"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = SubResource("CanvasTexture_j66rc")
+
+[node name="InfoVBox" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList/AchievementCardTemplate"]
+custom_minimum_size = Vector2(1920, 100)
+layout_mode = 1
+anchors_preset = -1
+offset_left = 100.0
+offset_right = 2020.0
+offset_bottom = 100.0
+theme_override_constants/separation = 2
+
+[node name="TitleLabel" type="Label" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList/AchievementCardTemplate/InfoVBox"]
+custom_minimum_size = Vector2(1920, 40)
+layout_mode = 2
+text = "Название"
+
+[node name="DescriptionLabel" type="Label" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList/AchievementCardTemplate/InfoVBox"]
+layout_mode = 2
+text = "Описание"
+
+[node name="ProgressLabel" type="Label" parent="MainVBox/ContentContainer/AchievementsScroll/AchievementsList/AchievementCardTemplate"]
+custom_minimum_size = Vector2(1880, 100)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "0 / 10
+"
+horizontal_alignment = 2
+vertical_alignment = 1
