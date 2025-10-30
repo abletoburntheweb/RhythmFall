@@ -19,9 +19,8 @@ func _ready():
 	if back_button:
 		back_button.pressed.connect(_on_back_button_pressed)
 
-	var grid_container = $GalleryContainer/Content
+	var grid_container = $GalleryContainer/GridMargin/Content
 	if not grid_container or not grid_container is GridContainer:
-		printerr("CoverGallery.gd: Content не является GridContainer!")
 		return
 
 	cover_image_rects.clear()
@@ -30,13 +29,11 @@ func _ready():
 		var image_rect = grid_container.get_node(image_rect_name)
 		if image_rect and image_rect is TextureRect:
 			cover_image_rects.append(image_rect)
-		else:
-			printerr("CoverGallery.gd: Не удалось найти TextureRect с именем: ", image_rect_name)
 
 	if cover_image_rects.size() < 7:
-		printerr("CoverGallery.gd: Найдено только ", cover_image_rects.size(), " TextureRect, а должно быть 7.")
+		pass
 	else:
-		print("CoverGallery.gd: Найдено ", cover_image_rects.size(), " TextureRect.")
+		pass 
 
 	_load_images()
 
@@ -50,26 +47,34 @@ func _load_images():
 		var image_rect = cover_image_rects[i]
 		image_rect.texture = null 
 		image_rect.visible = (i < images_count)
+		if image_rect:
+			image_rect.custom_minimum_size = Vector2(350, 350)
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
 
 	for i in range(images_count):
 		var index = i + 1
 		var image_path = images_folder + "/cover" + str(index) + ".png"
-
-		var image = Image.new()
-		var error = image.load(image_path)
-		if error == OK and image:
-			var texture = ImageTexture.create_from_image(image)
-			if texture:
-				if i < cover_image_rects.size():
-					cover_image_rects[i].texture = texture
-					cover_image_rects[i].visible = true
-					print("CoverGallery.gd: Обложка ", index, " загружена в TextureRect ", i)
-				else:
-					print("CoverGallery.gd: Индекс ", i, " выходит за пределы массива cover_image_rects.")
+		
+		if not FileAccess.file_exists(image_path):
+			continue
+		
+		var texture = ResourceLoader.load(image_path)
+		if texture and texture is Texture:
+			if i < cover_image_rects.size():
+				var image_rect = cover_image_rects[i]
+				image_rect.texture = texture
+				image_rect.visible = true
+				image_rect.custom_minimum_size = Vector2(350, 350)
+				image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 			else:
-				print("CoverGallery.gd: Не удалось создать ImageTexture для: ", image_path)
+				pass
 		else:
-			print("CoverGallery.gd: Ошибка загрузки изображения: ", image_path, " Код ошибки: ", error)
+			var loaded_resource = ResourceLoader.load(image_path)
+			if loaded_resource:
+				pass
+			else:
+				pass
 
 
 func _connect_texture_rect_signals():
@@ -81,7 +86,6 @@ func _connect_texture_rect_signals():
 
 func _on_texture_rect_gui_input(event: InputEvent, index: int):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		print("CoverGallery.gd: Клик на обложку %d." % (index + 1))
 		emit_signal("gallery_closed")
 		queue_free()
 

@@ -9,8 +9,6 @@ var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
 
 func _ready():
-	print("ShopScreen.gd: _ready вызван.")
-
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_player_data_manager") and game_engine.has_method("get_transitions"):
 		var music_mgr = game_engine.get_music_manager()
@@ -19,7 +17,6 @@ func _ready():
 
 		setup_managers(trans, music_mgr, player_data_mgr)
 
-		print("ShopScreen.gd: Менеджеры получены через GameEngine.")
 	else:
 		printerr("ShopScreen.gd: Не удалось получить один из менеджеров (music_manager, player_data_manager, transitions) через GameEngine.")
 
@@ -31,7 +28,6 @@ func _ready():
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
 			shop_data = json_result
-			print("ShopScreen.gd: Данные магазина загружены успешно.")
 		else:
 			print("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
 	else:
@@ -45,16 +41,13 @@ func _ready():
 
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
-		print("ShopScreen.gd: ItemsScroll найден.")
 		items_scroll.clip_contents = true
 
 		var items_list_container = items_scroll.get_node("ItemsListContainer")
 		if items_list_container:
-			print("ShopScreen.gd: ItemsListContainer найден.")
 
 			var grid_container = items_list_container.get_node("ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
 			if grid_container:
-				print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
 
 				grid_container.add_theme_constant_override("v_separation", 30)
 				grid_container.add_theme_constant_override("h_separation", 30)
@@ -64,21 +57,18 @@ func _ready():
 
 				var item_list_vbox = items_scroll.get_parent()
 				if item_list_vbox:
-					print("ShopScreen.gd: Устанавливаю size_flags_vertical для ItemListVBox")
 					item_list_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				else:
 					print("ShopScreen.gd: ОШИБКА: ItemListVBox не найден как родитель ItemsScroll.")
 
 				var content_hbox = item_list_vbox.get_parent()
 				if content_hbox:
-					print("ShopScreen.gd: Устанавливаю size_flags_vertical для ContentHBox")
 					content_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				else:
 					print("ShopScreen.gd: ОШИБКА: ContentHBox не найден как родитель ItemListVBox.")
 
 				var content_margin = content_hbox.get_parent()
 				if content_margin:
-					print("ShopScreen.gd: Устанавливаю size_flags_vertical для ContentMargin")
 					content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				else:
 					print("ShopScreen.gd: ОШИБКА: ContentMargin не найден как родитель ContentHBox.")
@@ -93,16 +83,12 @@ func _ready():
 	_create_item_cards()
 
 func _update_currency_label():
-	print("ShopScreen.gd: Попытка найти CurrencyLabel по пути: $MainContent/MainVBox/VBoxContainer/CurrencyLabel")
 	var main_vbox = $MainContent/MainVBox
 	if main_vbox:
-		print("ShopScreen.gd: MainVBox найден.")
 		var v_box_container = main_vbox.get_node("VBoxContainer")
 		if v_box_container:
-			print("ShopScreen.gd: VBoxContainer найден.")
 			var currency_label = v_box_container.get_node("CurrencyLabel")
 			if currency_label:
-				print("ShopScreen.gd: CurrencyLabel найден по пути $MainContent/MainVBox/VBoxContainer/CurrencyLabel")
 				currency_label.text = "💰 Валюта: %d" % player_data_manager.get_currency()
 				currency_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.0))
 				currency_label.add_theme_font_size_override("font_size", 32)
@@ -140,7 +126,6 @@ func _connect_back_button():
 	var back_button = $MainContent/MainVBox/BackButton
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-		print("ShopScreen.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
 	else:
 		printerr("ShopScreen.gd: Кнопка BackButton не найдена по пути $MainContent/MainVBox/BackButton!")
 
@@ -158,7 +143,6 @@ func _create_item_cards():
 	item_cards.clear()
 
 	var items = shop_data.get("items", [])
-	print("ShopScreen.gd: Найдено предметов: ", items.size())
 
 	var item_card_scene = preload("res://scenes/shop/item_card.tscn")
 
@@ -176,10 +160,8 @@ func _create_item_cards():
 						if items_scroll:
 							var items_list_container = items_scroll.get_node("ItemsListContainer")
 							if items_list_container:
-								print("ShopScreen.gd: ItemsListContainer найден.")
 								var grid_container = items_list_container.get_node("ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
 								if grid_container:
-									print("ShopScreen.gd: ItemsGrid найден по новому пути $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
 
 									grid_container.add_theme_constant_override("v_separation", 30)
 									grid_container.add_theme_constant_override("h_separation", 30)
@@ -208,7 +190,6 @@ func _create_item_cards():
 										grid_container.add_child(new_card)
 										item_cards.append(new_card)
 
-									print("ShopScreen.gd: Создано карточек: ", item_cards.size())
 									items_scroll.scroll_vertical = 0
 									items_scroll.scroll_horizontal = 0
 								else:
@@ -238,7 +219,6 @@ func _get_category_map() -> Dictionary:
 	}
 
 func _on_category_selected(category: String):
-	print("ShopScreen.gd: Выбрана категория: ", category)
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
@@ -274,11 +254,8 @@ func _on_category_selected(category: String):
 	else:
 		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected по новому пути")
 
-	print("ShopScreen.gd: Отфильтровано предметов: ", filtered_items.size())
 
 func _on_item_buy_pressed(item_id: String):
-	print("ShopScreen.gd: Запрос на покупку предмета: ", item_id)
-
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		var price = item_data.get("price", 0)
@@ -289,7 +266,6 @@ func _on_item_buy_pressed(item_id: String):
 			player_data_manager.unlock_item(item_id)
 			_update_currency_label()
 			_update_item_card_state(item_id, true, false)
-			print("ShopScreen.gd: Предмет куплен: ", item_id)
 		else:
 			print("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
 	else:
@@ -324,8 +300,6 @@ func _is_item_file_available(item_data: Dictionary) -> bool:
 	return true
 
 func _on_item_use_pressed(item_id: String):
-	print("ShopScreen.gd: Запрос на использование предмета: ", item_id)
-
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		var category_map = _get_category_map()
@@ -333,13 +307,11 @@ func _on_item_use_pressed(item_id: String):
 		if internal_category:
 			player_data_manager.set_active_item(internal_category, item_id)
 			_update_all_item_cards_in_category(internal_category, item_id)
-			print("ShopScreen.gd: Предмет активирован: ", item_id)
 		else:
 			print("ShopScreen.gd: Неизвестная категория для предмета: ", item_id)
 	else:
 		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
 func _on_item_preview_pressed(item_id: String):
-	print("ShopScreen.gd: Запрос на предпросмотр аудио для предмета: ", item_id)
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		_preview_sound(item_data)
@@ -348,7 +320,6 @@ func _on_item_preview_pressed(item_id: String):
 func _preview_sound(item: Dictionary):
 	var audio_path = item.get("audio", "")
 	if audio_path and music_manager:
-		print("ShopScreen.gd: Предпросмотр: %s" % audio_path)
 		if audio_path.begins_with("res://"):
 			music_manager.play_custom_hit_sound(audio_path)
 		else:
@@ -367,7 +338,6 @@ func _preview_sound(item: Dictionary):
 			music_manager.play_default_shop_sound()
 
 func _on_cover_click_pressed(item_data: Dictionary):
-	print("ShopScreen.gd: Клик по обложке: ", item_data.get("name", "Без названия"))
 	_open_cover_gallery(item_data)
 
 func _open_cover_gallery(item_data: Dictionary):
@@ -379,11 +349,7 @@ func _open_cover_gallery(item_data: Dictionary):
 	current_cover_item_data = item_data
 
 	var gallery_scene = preload("res://scenes/shop/cover_gallery.tscn")
-	print("ShopScreen.gd: Загруженная сцена: ", gallery_scene)
 	current_cover_gallery = gallery_scene.instantiate()
-	print("ShopScreen.gd: Созданный узел: ", current_cover_gallery)
-	print("ShopScreen.gd: Класс созданного узла: ", current_cover_gallery.get_class())
-	print("ShopScreen.gd: Скрипт созданного узла: ", current_cover_gallery.get_script())
 
 	current_cover_gallery.images_folder = item_data.get("images_folder", "")
 	current_cover_gallery.images_count = item_data.get("images_count", 0)
@@ -396,30 +362,19 @@ func _open_cover_gallery(item_data: Dictionary):
 	var self_is_inside_tree = is_inside_tree()
 	var gallery_is_valid = is_instance_valid(current_cover_gallery)
 
-	print("ShopScreen.gd: Проверка перед отложенным add_child:")
-	print(" - is_instance_valid(self): ", self_is_valid)
-	print(" - is_queued_for_deletion(): ", self_queued_for_deletion)
-	print(" - is_inside_tree(): ", self_is_inside_tree)
-	print(" - is_instance_valid(current_cover_gallery): ", gallery_is_valid)
 
 	if self_is_valid and not self_queued_for_deletion and self_is_inside_tree and gallery_is_valid:
-		print("ShopScreen.gd: Планирую отложенное добавление галереи как дочернего узла.")
 		call_deferred("_deferred_add_child", current_cover_gallery)
-		print("ShopScreen.gd: Отложенное добавление запланировано.")
 	else:
-		print("ShopScreen.gd: ShopScreen или галерея недействительны, галерея не будет добавлена.")
 		if is_instance_valid(current_cover_gallery):
 			current_cover_gallery.queue_free()
 		current_cover_item_data = {}
 
 func _deferred_add_child(gallery_node: Node):
 	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(gallery_node):
-		print("ShopScreen.gd: (DEFERRED) Добавляю галерею как дочерний узел.")
 		add_child(gallery_node)
 		gallery_node.grab_focus()
-		print("ShopScreen.gd: (DEFERRED) Галерея добавлена и фокус установлен.")
 	else:
-		print("ShopScreen.gd: (DEFERRED) ShopScreen или галерея недействительны при отложенном добавлении.")
 		if is_instance_valid(gallery_node):
 			gallery_node.queue_free()
 		if current_cover_gallery == gallery_node:
@@ -431,7 +386,6 @@ func _on_cover_selected_stub(index: int):
 	pass
 
 func _on_gallery_closed():
-	print("ShopScreen.gd: Галерея обложек закрыта.")
 	if is_instance_valid(current_cover_gallery):
 		if current_cover_gallery.is_connected("gallery_closed", _on_gallery_closed):
 			current_cover_gallery.disconnect("gallery_closed", _on_gallery_closed)
@@ -444,13 +398,11 @@ func _on_cover_selected(index: int):
 	print("ShopScreen.gd: Выбрана обложка %d из пака '%s'." % [index, current_cover_item_data.get("name", "Без названия")])
 
 func cleanup_before_exit():
-	print("ShopScreen.gd: cleanup_before_exit вызван. Очищаем ресурсы магазина.")
 	_cleanup_gallery_internal()
 
 func _execute_close_transition():
 	if transitions:
 		transitions.close_shop()
-		print("ShopScreen.gd: Закрываю магазин через Transitions.")
 	else:
 		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
 
@@ -487,8 +439,7 @@ func _cleanup_gallery_internal():
 			current_cover_gallery.queue_free()
 		current_cover_gallery = null
 		current_cover_item_data = {}
-		print("ShopScreen.gd: Галерея обложек очищена в _cleanup_gallery_internal.")
+
 
 func _exit_tree():
-	print("ShopScreen.gd: _exit_tree вызван. Экран удаляется из дерева сцен.")
 	_cleanup_gallery_internal()

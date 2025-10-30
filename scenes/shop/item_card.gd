@@ -13,10 +13,8 @@ var is_default: bool = false
 
 func _ready():
 	if not item_data.has("item_id"):
-		printerr("ItemCard.gd: item_data не содержит 'item_id'!")
 		return
 
-	print("ItemCard.gd: _ready вызван для карточки: ", item_data.get("name", "Без названия"))
 	var buy_button = $MarginContainer/ContentContainer/BuyButton
 	if buy_button:
 		buy_button.pressed.connect(_on_buy_pressed)
@@ -37,7 +35,6 @@ func _ready():
 	_setup_item()
 
 	custom_minimum_size = Vector2(280, 350)
-	print("ItemCard.gd: Установлен custom_minimum_size: ", custom_minimum_size)
 
 
 func _on_image_rect_gui_input(event: InputEvent):
@@ -48,7 +45,6 @@ func _on_image_rect_gui_input(event: InputEvent):
 
 func _setup_item():
 	if not item_data.has("item_id"):
-		printerr("ItemCard.gd: _setup_item: item_data не содержит 'item_id'!")
 		return
 
 	var item_id_str = item_data.get("item_id", "") 
@@ -72,14 +68,12 @@ func _setup_item():
 			if texture and texture is ImageTexture:
 				image_rect.texture = texture
 				image_loaded_successfully = true
-				print("ItemCard.gd: Текстура загружена по прямому пути: ", image_path)
 			else:
-				print("ItemCard.gd: Ошибка загрузки текстуры: ", image_path)
+				pass
 		else:
-			print("ItemCard.gd: Файл изображения не найден: ", image_path)
+			pass
 	elif images_folder != "":
 		var cover_path = images_folder + "/cover1.png"
-		print("ItemCard.gd: Попытка загрузить обложку: ", cover_path)
 
 		var image = Image.new()
 		var error = image.load(cover_path)
@@ -88,13 +82,12 @@ func _setup_item():
 			if texture:
 				image_rect.texture = texture
 				image_loaded_successfully = true
-				print("ItemCard.gd: Текстура обложки создана вручную из файла: ", cover_path)
 			else:
-				print("ItemCard.gd: Не удалось создать ImageTexture из Image: ", cover_path)
+				pass
 		else:
-			print("ItemCard.gd: Ошибка загрузки изображения (Image.load): ", error, " Путь: ", cover_path)
+			pass
 	else:
-		print("ItemCard.gd: Пути к изображению (image и images_folder) пусты для предмета: ", item_data.get("name", "Без названия"))
+		pass
 
 	if image_rect:
 		if image_loaded_successfully:
@@ -124,7 +117,6 @@ func _create_placeholder_with_text():
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 
 		image_rect.texture = placeholder_texture
-		print("ItemCard.gd: Плейсхолдер создан и присвоен ImageRect")
 
 
 func _update_buttons_and_status():

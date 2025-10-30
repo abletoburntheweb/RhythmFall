@@ -43,7 +43,7 @@ mouse_filter = 0
 
 [node name="BackButton" type="Button" parent="GalleryContainer"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(140, 31)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_hwq2b")
@@ -63,41 +63,62 @@ columns = 4
 [node name="CoverImage1" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_hwq2b")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage2" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_ot1as")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage3" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_qnkv8")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage4" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_wt38h")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage5" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_5a4q6")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage6" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_15g8r")
+expand_mode = 1
 stretch_mode = 6
 
 [node name="CoverImage7" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = SubResource("CanvasTexture_mbixv")
+expand_mode = 1
 stretch_mode = 6
