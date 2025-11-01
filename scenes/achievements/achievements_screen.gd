@@ -13,7 +13,7 @@ const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
 @onready var achievements_list: VBoxContainer = $MainVBox/ContentContainer/AchievementsScroll/BottomMargin/AchievementsList
 
 var achievements: Array[Dictionary] = []
-var filtered_achievements: Array[Dictionary] = []
+var filtered_achievements: Array[Dictionary] = [] # Не используется напрямую для отображения
 var current_filter: String = "Все"
 
 var transitions_manager = null
@@ -31,7 +31,7 @@ func _ready():
 
 	_init_filter_box()
 	_load_achievements_data()
-	_update_display()
+	_filter_achievements_internal(search_bar.text)
 
 	if transitions_manager and transitions_manager.has_method("close_achievements"):
 		back_button.pressed.connect(transitions_manager.close_achievements)
@@ -80,14 +80,12 @@ func _sort_by_id(a: Dictionary, b: Dictionary) -> bool:
 	return a.id < b.id
 
 
-func _update_display():
+func _update_display(achievements_to_display: Array[Dictionary]):
 	for child in achievements_list.get_children():
 		achievements_list.remove_child(child)
 		child.queue_free() 
 
-	_filter_achievements_internal(search_bar.text)
-
-	for ach in filtered_achievements:
+	for ach in achievements_to_display:
 		var card = ACHIEVEMENT_CARD_SCENE.instantiate()
 		card.title = ach.title
 		card.description = ach.description
@@ -141,13 +139,15 @@ func _filter_achievements_internal(query: String):
 	var base_list = _apply_status_filter(achievements, current_filter)
 	var query_lower = query.strip_edges().to_lower()
 
+	var results: Array[Dictionary]
 	if query_lower != "":
-		filtered_achievements.clear()
+		results = []
 		for ach in base_list:
 			if ach.title.to_lower().contains(query_lower) or ach.description.to_lower().contains(query_lower):
-				filtered_achievements.append(ach)
+				results.append(ach)
 	else:
-		filtered_achievements = base_list
+		results = base_list
+	_update_display(results)
 
 
 func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type: String) -> Array[Dictionary]:
