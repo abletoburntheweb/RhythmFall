@@ -1,4 +1,3 @@
-# scenes/achievements/achievements_screen.gd
 extends Control
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
@@ -11,7 +10,7 @@ const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
 @onready var counter_label: Label = $MainVBox/CounterLabel
 @onready var search_bar: LineEdit = $MainVBox/SearchAndFilterHBox/SearchBar
 @onready var filter_box: OptionButton = $MainVBox/SearchAndFilterHBox/FilterBox
-@onready var achievements_list: VBoxContainer = $MainVBox/ContentContainer/AchievementsScroll/AchievementsList
+@onready var achievements_list: VBoxContainer = $MainVBox/ContentContainer/AchievementsScroll/BottomMargin/AchievementsList
 
 var achievements: Array[Dictionary] = []
 var filtered_achievements: Array[Dictionary] = []

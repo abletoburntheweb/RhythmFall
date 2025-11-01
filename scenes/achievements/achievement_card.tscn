@@ -26,6 +26,7 @@ layout_mode = 2
 
 [node name="TopRowContainer" type="HBoxContainer" parent="MarginContainer/ContentContainer"]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="IconTexture" type="TextureRect" parent="MarginContainer/ContentContainer/TopRowContainer"]
 custom_minimum_size = Vector2(100, 100)
@@ -33,34 +34,36 @@ layout_mode = 2
 texture = SubResource("CanvasTexture_70w6n")
 
 [node name="InfoVBox" type="VBoxContainer" parent="MarginContainer/ContentContainer/TopRowContainer/IconTexture"]
-custom_minimum_size = Vector2(1920, 100)
 layout_mode = 1
 anchors_preset = -1
 offset_left = 100.0
 offset_right = 2020.0
 offset_bottom = 100.0
-theme_override_constants/separation = 2
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox"]
 custom_minimum_size = Vector2(1920, 40)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
-text = "Название"
+text = "Название Ачивки"
 
 [node name="DescriptionLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.827451, 0.827451, 0.827451, 1)
 theme_override_font_sizes/font_size = 18
-text = "Описание"
+text = "Описание ачивки"
 
 [node name="UnlockDateLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox"]
+visible = false
 layout_mode = 2
+theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 16
-text = "Открыто: 23 Окт 12:20"
 
 [node name="ProgressLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer"]
-custom_minimum_size = Vector2(0, 100)
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 size_flags_horizontal = 10
+theme_override_colors/font_color = Color(0.7529412, 0.7529412, 0.7529412, 1)
 theme_override_font_sizes/font_size = 32
 text = "0 / 10"
 horizontal_alignment = 2

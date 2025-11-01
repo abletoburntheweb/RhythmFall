@@ -59,7 +59,12 @@ theme_override_constants/margin_bottom = 40
 
 [node name="AchievementsScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
+horizontal_scroll_mode = 0
 
-[node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
-custom_minimum_size = Vector2(1920, 1080)
+[node name="BottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
+layout_mode = 2
+theme_override_constants/margin_bottom = 160
+
+[node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin"]
+custom_minimum_size = Vector2(1840, 0)
 layout_mode = 2
