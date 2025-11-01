@@ -9,6 +9,7 @@ var current_screen = null
 var settings_manager: SettingsManager = null
 var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
+var achievement_manager: AchievementManager = null
 
 var song_metadata_manager: SongMetadataManager = null
 
@@ -22,9 +23,7 @@ func initialize_logic():
 	settings_manager = SettingsManager.new()
 	
 	song_metadata_manager = SongMetadataManager.new()
-	if song_metadata_manager:
-		pass
-	else:
+	if not song_metadata_manager:
 		printerr("GameEngine.gd: Не удалось инстанцировать SongMetadataManager!")
 
 	music_manager = MusicManager.new() 
@@ -38,8 +37,73 @@ func initialize_logic():
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
+	achievement_manager = AchievementManager.new()
+	achievement_manager.player_data_mgr = player_data_manager 
+	achievement_manager.music_mgr = music_manager
+	
+	player_data_manager.achievement_manager = achievement_manager
+
 	transitions = preload("res://logic/transitions.gd").new(self)
 
+	_handle_player_login()
+
+func _date_dict_to_string(date_dict: Dictionary) -> String:
+	if date_dict.has("year") and date_dict.has("month") and date_dict.has("day"):
+		return "%04d-%02d-%02d" % [date_dict.year, date_dict.month, date_dict.day]
+	return ""
+
+func _string_to_date_dict(date_str: String) -> Dictionary:
+	var parts = date_str.split("-")
+	if parts.size() == 3:
+		return {
+			"year": parts[0].to_int(),
+			"month": parts[1].to_int(),
+			"day": parts[2].to_int()
+		}
+	return {}
+
+func _is_yesterday(date_dict: Dictionary, today_str: String) -> bool:
+	var today_parts = today_str.split("-")
+	if today_parts.size() != 3:
+		return false
+	var today_year = today_parts[0].to_int()
+	var today_month = today_parts[1].to_int()
+	var today_day = today_parts[2].to_int()
+	
+	if date_dict.year == today_year and date_dict.month == today_month and date_dict.day == (today_day - 1):
+		return true
+	return false
+
+func _handle_player_login():
+
+	var today_dict = Time.get_date_dict_from_system()
+	var today_str = _date_dict_to_string(today_dict) 
+	
+	var last_login_str = player_data_manager.data.get("last_login_date", "")
+
+	var last_login_dict = {} 
+	if last_login_str != "":
+		last_login_dict = _string_to_date_dict(last_login_str) 
+	
+	var login_streak = player_data_manager.data.get("login_streak", 0)
+	var new_streak = 1
+
+	if not last_login_dict.is_empty():
+		if last_login_str == today_str:
+			print("[GameEngine] Игрок уже заходил сегодня.")
+			new_streak = login_streak 
+		elif _is_yesterday(last_login_dict, today_str):
+			new_streak = login_streak + 1
+			print("[GameEngine] Вход подряд. Streak: ", new_streak)
+		else:
+			new_streak = 1
+			print("[GameEngine] Разрыв серии входов. Новый streak: ", new_streak)
+	else:
+		new_streak = 1
+		print("[GameEngine] Первый вход или нет данных о входах. Streak: ", new_streak)
+
+	player_data_manager.set_login_streak(new_streak)
+	
 func initialize_screens():
 	main_menu_instance = preload("res://scenes/main_menu/main_menu.tscn").instantiate()
 	if main_menu_instance:
@@ -105,3 +169,6 @@ func get_player_data_manager() -> PlayerDataManager:
 
 func get_music_manager() -> MusicManager:
 	return music_manager
+
+func get_achievement_manager() -> AchievementManager:
+	return achievement_manager

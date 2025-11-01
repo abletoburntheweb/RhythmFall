@@ -1,224 +1,224 @@
 {
 	"achievements": [
 		{
-			"id": 1,
-			"title": "Достижение 1",
+			"current": 0.0,
 			"description": "Описание для достижения 1",
-			"unlocked": false,
-			"current": 0,
-			"total": 10,
+			"id": 1.0,
 			"image": "res://assets/achievements/1.png",
-			"unlock_date": null
+			"title": "Достижение 1",
+			"total": 10.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 2,
-			"title": "Достижение 2",
+			"current": 0.0,
 			"description": "Описание для достижения 2",
-			"unlocked": false,
-			"current": 0,
-			"total": 20,
+			"id": 2.0,
 			"image": "res://assets/achievements/2.png",
-			"unlock_date": null
+			"title": "Достижение 2",
+			"total": 20.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 3,
-			"title": "Достижение 3",
+			"current": 0.0,
 			"description": "Описание для достижения 3",
-			"unlocked": false,
-			"current": 0,
-			"total": 30,
+			"id": 3.0,
 			"image": "res://assets/achievements/3.png",
-			"unlock_date": null
+			"title": "Достижение 3",
+			"total": 30.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 4,
-			"title": "Достижение 4",
+			"current": 0.0,
 			"description": "Описание для достижения 4",
-			"unlocked": false,
-			"current": 0,
-			"total": 40,
+			"id": 4.0,
 			"image": "res://assets/achievements/4.png",
-			"unlock_date": null
+			"title": "Достижение 4",
+			"total": 40.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 5,
-			"title": "Достижение 5",
+			"current": 0.0,
 			"description": "Описание для достижения 5",
-			"unlocked": false,
-			"current": 0,
-			"total": 50,
+			"id": 5.0,
 			"image": "res://assets/achievements/5.png",
-			"unlock_date": null
+			"title": "Достижение 5",
+			"total": 50.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 6,
-			"title": "Первая покупка",
+			"current": 0.0,
 			"description": "Совершить первую покупку в магазине",
-			"unlocked": false,
-			"current": 0,
-			"total": 1,
+			"id": 6.0,
 			"image": "res://assets/achievements/first_purchase.png",
-			"unlock_date": null
+			"title": "Первая покупка",
+			"total": 1.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 7,
-			"title": "Коллекционер I",
+			"current": 0.0,
 			"description": "Купите 3 предмета в магазине",
-			"unlocked": false,
-			"current": 0,
-			"total": 3,
+			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
-			"unlock_date": null
+			"title": "Коллекционер I",
+			"total": 3.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 8,
-			"title": "Коллекционер II",
+			"current": 0.0,
 			"description": "Купите 5 предметов в магазине",
-			"unlocked": false,
-			"current": 0,
-			"total": 5,
+			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
-			"unlock_date": null
+			"title": "Коллекционер II",
+			"total": 5.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 9,
-			"title": "Коллекционер III",
+			"current": 0.0,
 			"description": "Купите 10 предметов в магазине",
-			"unlocked": false,
-			"current": 0,
-			"total": 10,
+			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
-			"unlock_date": null
+			"title": "Коллекционер III",
+			"total": 10.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 10,
-			"title": "Коллекционер IV",
+			"current": 0.0,
 			"description": "Купите 15 предметов в магазине",
-			"unlocked": false,
-			"current": 0,
-			"total": 15,
+			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
-			"unlock_date": null
+			"title": "Коллекционер IV",
+			"total": 15.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 11,
-			"title": "Собиратель I",
+			"current": 0.0,
 			"description": "Собрать 500 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 500,
+			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
-			"unlock_date": null
+			"title": "Собиратель I",
+			"total": 500.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 12,
-			"title": "Собиратель II",
+			"current": 0.0,
 			"description": "Собрать 1000 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 1000,
+			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
-			"unlock_date": null
+			"title": "Собиратель II",
+			"total": 1000.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 13,
-			"title": "Собиратель III",
+			"current": 0.0,
 			"description": "Собрать 2500 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 2500,
+			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
-			"unlock_date": null
+			"title": "Собиратель III",
+			"total": 2500.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 14,
-			"title": "Щедрая рука I",
+			"current": 0.0,
 			"description": "Потратить 500 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 500,
+			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
-			"unlock_date": null
+			"title": "Щедрая рука I",
+			"total": 500.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 15,
-			"title": "Щедрая рука II",
+			"current": 0.0,
 			"description": "Потратить 1000 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 1000,
+			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
-			"unlock_date": null
+			"title": "Щедрая рука II",
+			"total": 1000.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 16,
-			"title": "Щедрая рука III",
+			"current": 0.0,
 			"description": "Потратить 2500 единиц валюты",
-			"unlocked": false,
-			"current": 0,
-			"total": 2500,
+			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
-			"unlock_date": null
+			"title": "Щедрая рука III",
+			"total": 2500.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 17,
-			"title": "Охотник за стилем",
+			"current": 0.0,
 			"description": "Купить по одному предмету из каждой категории",
-			"unlocked": false,
-			"current": 0,
-			"total": 5,
+			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
-			"unlock_date": null
+			"title": "Охотник за стилем",
+			"total": 5.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 18,
-			"title": "Коллекция завершена",
+			"current": 0.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
-			"unlocked": false,
-			"current": 0,
-			"total": 19,
+			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
-			"unlock_date": null
+			"title": "Коллекция завершена",
+			"total": 19.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 19,
-			"title": "Первый день",
+			"current": 0,
 			"description": "Зайти в игру впервые",
-			"unlocked": false,
-			"current": 0,
-			"total": 1,
+			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
-			"unlock_date": null
+			"title": "Первый день",
+			"total": 1.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 20,
-			"title": "В ритме недели",
+			"current": 0,
 			"description": "Заходить в игру 7 дней подряд",
-			"unlocked": false,
-			"current": 0,
-			"total": 7,
+			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
-			"unlock_date": null
+			"title": "В ритме недели",
+			"total": 7.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 21,
-			"title": "Без выходных",
+			"current": 0,
 			"description": "Заходить 30 дней подряд",
-			"unlocked": false,
-			"current": 0,
-			"total": 30,
+			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
-			"unlock_date": null
+			"title": "Без выходных",
+			"total": 30.0,
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
-			"id": 22,
-			"title": "Верный музыкант",
-			"description": "Заходить 365 дней подряд",
-			"unlocked": false,
 			"current": 0,
-			"total": 365,
+			"description": "Заходить 365 дней подряд",
+			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
-			"unlock_date": null
+			"title": "Верный музыкант",
+			"total": 365.0,
+			"unlock_date": null,
+			"unlocked": false
 		}
 	]
 }

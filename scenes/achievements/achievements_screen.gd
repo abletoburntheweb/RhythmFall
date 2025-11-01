@@ -13,7 +13,7 @@ const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
 @onready var achievements_list: VBoxContainer = $MainVBox/ContentContainer/AchievementsScroll/BottomMargin/AchievementsList
 
 var achievements: Array[Dictionary] = []
-var filtered_achievements: Array[Dictionary] = [] # Не используется напрямую для отображения
+var filtered_achievements: Array[Dictionary] = []
 var current_filter: String = "Все"
 
 var transitions_manager = null
