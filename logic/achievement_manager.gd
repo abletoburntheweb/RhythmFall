@@ -308,3 +308,26 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 			if missing_items_count == 0:
 				_perform_unlock(achievement)
 			break
+			
+func reset_all_achievements_and_player_data(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		printerr("[AchievementManager] reset_all_achievements_and_player_data: player_data_mgr не передан!")
+		return
+
+	reset_achievements()
+
+	var current_currency = pdm.get_currency()
+
+	pdm.data["items"] = {}
+
+	pdm.data["active_items"] = pdm.DEFAULT_ACTIVE_ITEMS.duplicate(true)
+
+	pdm.data["login_streak"] = 0
+	pdm.data["last_login_date"] = ""
+	
+	pdm.data["currency"] = current_currency
+
+	pdm._save()
+
+	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")

@@ -3,6 +3,7 @@ extends BaseScreen
 
 var settings_manager: SettingsManager = null
 var game_screen = null
+var achievement_manager = null
 
 @onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound
 @onready var btn_graphics: Button = $MainVBox/TabsHBox/BtnGraphics
@@ -23,16 +24,30 @@ func _ready():
 	if not settings_manager:
 		print("SettingsMenu.gd: settings_manager не передан, создаю новый экземпляр.")
 		settings_manager = SettingsManager.new()
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
-		var music_mgr = game_engine.get_music_manager()
-		var trans = game_engine.get_transitions()
+	
+	var game_engine = get_parent() 
+	if game_engine:
+		if game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
+			var music_mgr = game_engine.get_music_manager()
+			var trans = game_engine.get_transitions()
+			setup_managers(trans, music_mgr, null)
+			print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
+		else:
+			printerr("SettingsMenu.gd: Не удалось получить MusicManager или Transitions через GameEngine.")
 
-		setup_managers(trans, music_mgr, null)
+		if game_engine.has_method("get_player_data_manager"):
+			player_data_manager = game_engine.get_player_data_manager()
+			print("SettingsMenu.gd: PlayerDataManager получен через GameEngine.")
+		else:
+			printerr("SettingsMenu.gd: Не удалось получить PlayerDataManager через GameEngine.")
 
-		print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
+		if game_engine.has_method("get_achievement_manager"):
+			self.achievement_manager = game_engine.get_achievement_manager() 
+			print("SettingsMenu.gd: AchievementManager получен через GameEngine.")
+		else:
+			printerr("SettingsMenu.gd: Не удалось получить AchievementManager через GameEngine.")
 	else:
-		printerr("SettingsMenu.gd: Не удалось получить один из менеджеров (music_manager, transitions) через GameEngine.")
+		printerr("SettingsMenu.gd: GameEngine (get_parent()) не найден!")
 
 	_setup_tabs()
 	_connect_signals()
@@ -43,6 +58,7 @@ func _ready():
 
 func _setup_tabs():
 	print("SettingsMenu.gd: _setup_tabs вызван.")
+	
 	var song_metadata_mgr = null
 	if get_parent() and get_parent().has_method("get_song_metadata_manager"):
 		song_metadata_mgr = get_parent().get_song_metadata_manager()
@@ -76,13 +92,24 @@ func _setup_tabs():
 		if tab_instance.has_method("setup_ui_and_manager"):
 			print("SettingsMenu.gd: Вызываю setup_ui_and_manager для %s." % tab_name)
 			if tab_name == "MiscTab":
-				tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen, song_metadata_mgr)
+				tab_instance.setup_ui_and_manager(
+					settings_manager,
+					music_manager,
+					game_screen,
+					song_metadata_mgr,
+					player_data_manager,
+					self.achievement_manager
+				)
 			else:
-				tab_instance.setup_ui_and_manager(settings_manager, music_manager, game_screen)
+				tab_instance.setup_ui_and_manager(
+					settings_manager,
+					music_manager,
+					game_screen
+				)
 			print("SettingsMenu.gd: Менеджеры переданы в %s." % tab_name)
 		else:
 			print("SettingsMenu.gd: Вкладка %s не имеет метода setup_ui_and_manager." % tab_name)
-
+			
 		if tab_name == "SoundTab":
 			if tab_instance.has_signal("settings_changed"):
 				tab_instance.connect("settings_changed", Callable(self, "save_settings"))
@@ -170,9 +197,11 @@ func save_settings():
 	else:
 		printerr("SettingsMenu.gd: settings_manager не установлен, невозможно сохранить настройки.")
 
-func set_managers(settings, music, game_scr, trans):
+func set_managers(settings, music, game_scr, trans, player_data_mgr = null, achievement_mgr = null):
 	print("SettingsMenu.gd: set_managers вызван.")
 	settings_manager = settings
 	setup_managers(trans, music, null)
 	game_screen = game_scr
+	player_data_manager = player_data_mgr
+	self.achievement_manager = achievement_mgr
 	print("SettingsMenu.gd: Менеджеры установлены через set_managers и setup_managers.")

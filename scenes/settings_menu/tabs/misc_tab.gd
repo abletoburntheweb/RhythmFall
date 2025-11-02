@@ -6,6 +6,7 @@ signal settings_changed
 var settings_manager: SettingsManager = null
 var song_metadata_manager = null
 var player_data_manager = null 
+var achievement_manager = null
 
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
@@ -16,9 +17,11 @@ func _ready():
 	print("MiscTab.gd: _ready вызван.")
 	_connect_signals()
 
-func setup_ui_and_manager(manager: SettingsManager, music, screen = null, metadata_manager = null):
+func setup_ui_and_manager(manager: SettingsManager, music, screen = null, metadata_manager = null, player_data_mgr = null, achievement_mgr = null):
 	settings_manager = manager
 	song_metadata_manager = metadata_manager
+	player_data_manager = player_data_mgr 
+	achievement_manager = achievement_mgr
 	_apply_initial_settings()
 
 func _connect_signals():
@@ -47,6 +50,11 @@ func _on_debug_menu_toggled(enabled: bool):
 
 func _on_clear_achievements_pressed():
 	print("MiscTab.gd: Запрос на очистку прогресса ачивок.")
+	if achievement_manager:
+		achievement_manager.reset_all_achievements_and_player_data(player_data_manager)
+		print("MiscTab.gd: Прогресс ачивок и данных игрока сброшен.")
+	else:
+		printerr("MiscTab.gd: achievement_manager не установлен, невозможно сбросить ачивки!")
 
 func _on_reset_bpm_batch_pressed():
 	print("MiscTab.gd: Запрос на сброс кэша BPM.")
