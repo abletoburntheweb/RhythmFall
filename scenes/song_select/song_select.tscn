@@ -125,3 +125,28 @@ text = "Сгенерировать ноты"
 [node name="DeleteButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 text = "Удалить"
+
+[node name="BPMList" type="Label" parent="MainVBox/ContentHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "hyperpop5demo.mp3 - 157 bpm
+Killshot - Eminem.mp3 - 106 bpm
+hako - listen!.mp3 - 134 bpm
+NF - MOTTO.mp3 - 160 bpm
+Daydreaming.mp3 - 114 bpm
+synth3.mp3 - 100 bpm
+Kayzo - WASTE AWAY.mp3 - 150 bpm
+Stray Kids - We Go.mp3 - 87 bpm
+Awasetsu Mona - Heart Killa.mp3 - 101 bpm
+TAAR - Move Along.mp3 - 109 bpm
+Ouse - Why Did You Tell Me.mp3 - 80 bpm
+Daft Punk - Around the World.mp3 - 121 bpm
+Biology - Fox Vibes.mp3 - 61 bpm
+Simply -BLAH BLAH BLAH.mp3 - 93 bpm
+BUTTERFLY SCISSORS - Blooming.mp3 - 93 bpm
+Daydreaming.mp3 - 114 bpm
+hyperpop5demo.mp3 - 52 bpm
+Killshot - Eminem.mp3 - 106 bpm
+listen! - hako.mp3 - 134 bpm
+MOTTO - NF.mp3 - 80 bpm
+Stray Kids -I Like It .mp3 - 146 bpm"
