@@ -2,6 +2,7 @@
 class_name SongMetadataManager
 extends Node
 signal metadata_updated(song_file_path: String)
+
 const METADATA_FILE_PATH = "user://song_metadata.json"
 
 var _metadata_cache: Dictionary = {}
@@ -26,15 +27,16 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			"duration": "00:00",
 			"cover": null
 		}
-	
+
 	_metadata_cache[song_file_path]["file_mtime"] = FileAccess.get_modified_time(song_file_path)
 
 	for field_name in updated_fields:
-		_metadata_cache[song_file_path][field_name] = updated_fields[field_name]
-	
+		if field_name != "cover":
+			_metadata_cache[song_file_path][field_name] = updated_fields[field_name]
+
 	_save_metadata()
-	print("SongMetadataManager.gd: Метаданные для '%s' обновлены и сохранены." % song_file_path)
-	
+	print("SongMetadataManager.gd: Метаданные для '%s' обновлены и сохранены (cover исключён)." % song_file_path)
+
 	emit_signal("metadata_updated", song_file_path)
 
 func remove_metadata(song_file_path: String):
@@ -52,7 +54,9 @@ func _load_metadata():
 		var parse_result = JSON.parse_string(json_text)
 		if parse_result is Dictionary:
 			_metadata_cache = parse_result
-			print("SongMetadataManager.gd: Метаданные песен загружены из %s. Найдено записей: %d" % [METADATA_FILE_PATH, _metadata_cache.size()])
+			for key in _metadata_cache.keys():
+				_metadata_cache[key].erase("cover")
+			print("SongMetadataManager.gd: Метаданные песен загружены из %s (cover удалён из кэша). Найдено записей: %d" % [METADATA_FILE_PATH, _metadata_cache.size()])
 		else:
 			printerr("SongMetadataManager.gd: Ошибка парсинга JSON из %s или данные не являются словарём." % METADATA_FILE_PATH)
 			_metadata_cache = {}
@@ -63,9 +67,14 @@ func _load_metadata():
 func _save_metadata():
 	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.WRITE)
 	if file_access:
-		var json_text = JSON.stringify(_metadata_cache, "\t")
+		var cache_to_save = {}
+		for path in _metadata_cache.keys():
+			var song_data_copy = _metadata_cache[path].duplicate(true)
+			song_data_copy.erase("cover") 
+			cache_to_save[path] = song_data_copy
+		var json_text = JSON.stringify(cache_to_save, "\t")
 		file_access.store_string(json_text)
 		file_access.close()
-		print("SongMetadataManager.gd: Метаданные песен сохранены в %s." % METADATA_FILE_PATH)
+		print("SongMetadataManager.gd: Метаданные песен сохранены в %s (cover исключён)." % METADATA_FILE_PATH)
 	else:
 		printerr("SongMetadataManager.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)
