@@ -1,10 +1,9 @@
-extends Control
+# scenes/achievements/achievements_screen.gd
+extends BaseScreen
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
-
-@export var parent_node: Node  
 
 @onready var back_button: Button = $MainVBox/BackButton
 @onready var counter_label: Label = $MainVBox/CounterLabel
@@ -16,15 +15,15 @@ var achievements: Array[Dictionary] = []
 var filtered_achievements: Array[Dictionary] = []
 var current_filter: String = "Все"
 
-var transitions_manager = null
 
 func _ready():
-	if parent_node and parent_node.has_method("get_transitions"):
-		transitions_manager = parent_node.get_transitions()
-		if not transitions_manager:
-			printerr("AchievementsScreen: get_transitions() вернул null!")
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_transitions"):
+		var trans = game_engine.get_transitions()
+		setup_managers(trans, null, null)
+		print("AchievementsScreen: Transitions получен через GameEngine и установлен через BaseScreen.")
 	else:
-		printerr("AchievementsScreen: parent_node не задан или не содержит метода get_transitions!")
+		printerr("AchievementsScreen: Не удалось получить Transitions через GameEngine!")
 
 	search_bar.text_changed.connect(_on_search_text_changed)
 	filter_box.item_selected.connect(_on_filter_selected)
@@ -33,10 +32,11 @@ func _ready():
 	_load_achievements_data()
 	_filter_achievements_internal(search_bar.text)
 
-	if transitions_manager and transitions_manager.has_method("close_achievements"):
-		back_button.pressed.connect(transitions_manager.close_achievements)
+	if back_button:
+		back_button.pressed.connect(_on_back_pressed)
+		print("AchievementsScreen: Подключён сигнал pressed кнопки Назад к _on_back_pressed (из BaseScreen).")
 	else:
-		printerr("AchievementsScreen: transitions_manager не задан или не содержит метода close_achievements!")
+		printerr("AchievementsScreen: Кнопка back_button не найдена!")
 
 
 func _init_filter_box():
@@ -163,9 +163,6 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 
 func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"): 
-		if transitions_manager and transitions_manager.has_method("close_achievements"):
-			transitions_manager.close_achievements()
-			print("AchievementsScreen: Закрытие по Esc через transitions_manager.")
-		else:
-			printerr("AchievementsScreen: transitions_manager не задан или не содержит метода close_achievements! Невозможно закрыть экран по Esc.")
+		_on_back_pressed()
+		print("AchievementsScreen: Закрытие по Esc через _on_back_pressed (из BaseScreen).")
 		get_viewport().set_input_as_handled()
