@@ -4,7 +4,7 @@
 			"current": 0.0,
 			"description": "Описание для достижения 1",
 			"id": 1.0,
-			"image": "res://assets/achievements/1.png",
+			"image": "res://assets/achievements/default.png",
 			"title": "Достижение 1",
 			"total": 10.0,
 			"unlock_date": null,
@@ -181,7 +181,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 1.0,
+			"current": 2,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -191,7 +191,7 @@
 			"unlocked": true
 		},
 		{
-			"current": 1,
+			"current": 2,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -201,7 +201,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 1,
+			"current": 2,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -211,7 +211,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 1,
+			"current": 2,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",

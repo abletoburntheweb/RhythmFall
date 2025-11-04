@@ -2,15 +2,14 @@
 @tool
 extends Control
 
-
 @export var title: String = "Название Ачивки"
 @export var description: String = "Описание ачивки"
 @export var progress_text: String = "0 / 10"
 @export var is_unlocked: bool = false
 @export var unlock_date_text: String = ""
-@export var icon_path: String = "res://assets/achievements/default.png"
+@export var icon_texture: ImageTexture = null
 
-@onready var icon_texture: TextureRect = $MarginContainer/ContentContainer/TopRowContainer/IconTexture
+@onready var icon_texture_rect: TextureRect = $MarginContainer/ContentContainer/TopRowContainer/IconTexture
 @onready var title_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/TitleLabel
 @onready var description_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/DescriptionLabel
 @onready var unlock_date_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/UnlockDateLabel
@@ -31,16 +30,24 @@ func _update_display():
 		unlock_date_label.text = ""
 		unlock_date_label.visible = false
 
-	if icon_path and ResourceLoader.exists(icon_path):
-		icon_texture.texture = load(icon_path)
+	print("AchievementCard: Устанавливаю текстуру в TextureRect, которая ", "существует" if self.icon_texture else "ПУСТАЯ")
+	if self.icon_texture:
+		print("AchievementCard: Размеры текстуры: ", self.icon_texture.get_width(), "x", self.icon_texture.get_height())
+
+		icon_texture_rect.texture = self.icon_texture
+		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_texture_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_texture_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	else:
-		if not Engine.is_editor_hint():
-			printerr("AchievementCard: Не удалось загрузить иконку ", icon_path)
-		var default_texture_path = "res://assets/achievements/default.png"
-		if ResourceLoader.exists(default_texture_path):
-			icon_texture.texture = load(default_texture_path)
-		else:
-			printerr("AchievementCard: Иконка по умолчанию также не найдена!")
+		var placeholder_image = Image.create(100, 100, false, Image.FORMAT_RGBA8)
+		placeholder_image.fill(Color.WHITE)
+		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
+		icon_texture_rect.texture = placeholder_texture
+		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_texture_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icon_texture_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	if is_unlocked:
 		title_label.add_theme_color_override("font_color", Color.YELLOW) 
