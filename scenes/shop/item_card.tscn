@@ -4,10 +4,10 @@
 
 [node name="ItemCard" type="PanelContainer"]
 custom_minimum_size = Vector2(280, 350)
-offset_left = 1072.0
-offset_top = 754.0
-offset_right = 1352.0
-offset_bottom = 1139.0
+offset_left = 928.0
+offset_top = 614.0
+offset_right = 1208.0
+offset_bottom = 999.0
 script = ExtResource("1_re5xs")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]

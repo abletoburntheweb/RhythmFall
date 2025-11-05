@@ -78,10 +78,12 @@ layout_mode = 2
 
 [node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll"]
 layout_mode = 2
+size_flags_horizontal = 3
 alignment = 1
 
 [node name="ItemsGridCenter" type="CenterContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer"]
 layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="ItemsGridBottomMargin" type="MarginContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter"]
 layout_mode = 2
