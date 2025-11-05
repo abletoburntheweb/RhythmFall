@@ -3,7 +3,7 @@ extends BaseScreen
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
-const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
+const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default2.png"
 
 @onready var back_button: Button = $MainVBox/BackButton
 @onready var counter_label: Label = $MainVBox/CounterLabel
@@ -26,7 +26,6 @@ func _ready():
 			music_mgr = game_engine.get_music_manager()
 
 		setup_managers(trans, music_mgr, null)
-		print("AchievementsScreen: Transitions и MusicManager получены через GameEngine и установлены через BaseScreen.")
 		
 		if not trans:
 			printerr("AchievementsScreen: Не удалось получить Transitions через GameEngine!")
@@ -44,7 +43,6 @@ func _ready():
 
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-		print("AchievementsScreen: Подключён сигнал pressed кнопки Назад к _on_back_pressed (из BaseScreen).")
 	else:
 		printerr("AchievementsScreen: Кнопка back_button не найдена!")
 
@@ -107,56 +105,46 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 		
 		if ach.image and ach.image != "":
 			var image_path = ach.image
-			print("AchievementsScreen: Пытаюсь загрузить иконку для ачивки '", ach.title, "': ", image_path)
 			if FileAccess.file_exists(image_path):
 				var loaded_resource = ResourceLoader.load(image_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
 				if loaded_resource and loaded_resource is ImageTexture:
 					icon_texture = loaded_resource
-					print("AchievementsScreen: Иконка загружена через ResourceLoader: ", image_path)
 				else:
 					var image = Image.new()
 					var err = image.load(image_path)
 					if err == OK:
 						icon_texture = ImageTexture.create_from_image(image)
-						print("AchievementsScreen: Иконка загружена через Image: ", image_path)
 					else:
 						printerr("AchievementsScreen: Ошибка загрузки изображения через Image: ", image_path, ", ошибка: ", err)
 						used_default = true
 			else:
-				print("AchievementsScreen: Файл иконки не найден (FileAccess): ", image_path)
 				used_default = true
 		else:
-			print("AchievementsScreen: У ачивки '", ach.title, "' нет пути к иконке, использую дефолтную.")
 			used_default = true
 
 		if not icon_texture or used_default:
-			var default_path = "res://assets/achievements/default.png"
-			print("AchievementsScreen: Загружаю дефолтную иконку: ", default_path)
+			var default_path = "res://assets/achievements/default2.png"
 			if FileAccess.file_exists(default_path):
 				var loaded_default_resource = ResourceLoader.load(default_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
 				if loaded_default_resource and loaded_default_resource is ImageTexture:
 					icon_texture = loaded_default_resource
-					print("AchievementsScreen: Дефолтная иконка загружена через ResourceLoader.")
 				else:
 					var image = Image.new()
 					var err = image.load(default_path)
 					if err == OK:
 						icon_texture = ImageTexture.create_from_image(image)
-						print("AchievementsScreen: Дефолтная иконка загружена через Image.")
 					else:
 						printerr("AchievementsScreen: Ошибка загрузки дефолтной иконки через Image: ", default_path, ", ошибка: ", err)
 						var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
 						dummy_image.set_pixel(0, 0, Color.WHITE)
 						var dummy_texture = ImageTexture.create_from_image(dummy_image)
 						icon_texture = dummy_texture
-						print("AchievementsScreen: Создана пустая белая текстура как резерв.")
 			else:
 				printerr("AchievementsScreen: Дефолтная иконка не найдена (FileAccess): ", default_path)
 				var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
 				dummy_image.set_pixel(0, 0, Color.WHITE)
 				var dummy_texture = ImageTexture.create_from_image(dummy_image)
 				icon_texture = dummy_texture
-				print("AchievementsScreen: Создана пустая белая текстура как резерв.")
 
 		card.icon_texture = icon_texture 
 
@@ -231,7 +219,6 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"): 
 		_on_back_pressed()
-		print("AchievementsScreen: Закрытие по Esc через _on_back_pressed (из BaseScreen).")
 		get_viewport().set_input_as_handled()
 
 func _execute_close_transition():
@@ -239,11 +226,9 @@ func _execute_close_transition():
 		music_manager.play_cancel_sound()
 
 	if transitions:
-		print("AchievementsScreen: Закрываю экран достижений через Transitions.")
 		transitions.close_achievements() 
 	else:
 		printerr("AchievementsScreen: transitions (из BaseScreen) не установлен, невозможно закрыть экран достижений.")
 
 	if is_instance_valid(self):
 		queue_free()
-		print("AchievementsScreen: Экран достижений удалён.")

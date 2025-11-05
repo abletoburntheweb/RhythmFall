@@ -10,9 +10,9 @@ extends Control
 @export var icon_texture: ImageTexture = null
 
 @onready var icon_texture_rect: TextureRect = $MarginContainer/ContentContainer/TopRowContainer/IconTexture
-@onready var title_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/TitleLabel
-@onready var description_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/DescriptionLabel
-@onready var unlock_date_label: Label = $MarginContainer/ContentContainer/TopRowContainer/IconTexture/InfoVBox/UnlockDateLabel
+@onready var title_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/TitleLabel
+@onready var description_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel
+@onready var unlock_date_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/UnlockDateLabel
 @onready var progress_label: Label = $MarginContainer/ContentContainer/TopRowContainer/ProgressLabel
 
 func _ready():
@@ -30,15 +30,10 @@ func _update_display():
 		unlock_date_label.text = ""
 		unlock_date_label.visible = false
 
-	print("AchievementCard: Устанавливаю текстуру в TextureRect, которая ", "существует" if self.icon_texture else "ПУСТАЯ")
 	if self.icon_texture:
-		print("AchievementCard: Размеры текстуры: ", self.icon_texture.get_width(), "x", self.icon_texture.get_height())
-
 		icon_texture_rect.texture = self.icon_texture
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon_texture_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		icon_texture_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	else:
 		var placeholder_image = Image.create(100, 100, false, Image.FORMAT_RGBA8)
 		placeholder_image.fill(Color.WHITE)
@@ -46,16 +41,14 @@ func _update_display():
 		icon_texture_rect.texture = placeholder_texture
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon_texture_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		icon_texture_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	if is_unlocked:
-		title_label.add_theme_color_override("font_color", Color.YELLOW) 
-		description_label.add_theme_color_override("font_color", Color.WHITE) 
-		unlock_date_label.add_theme_color_override("font_color", Color.LIGHT_GRAY) 
+		title_label.add_theme_color_override("font_color", Color.YELLOW)
+		description_label.add_theme_color_override("font_color", Color.WHITE)
+		unlock_date_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
 		progress_label.add_theme_color_override("font_color", Color.LIME_GREEN)
 	else:
-		title_label.add_theme_color_override("font_color", Color.GRAY) 
-		description_label.add_theme_color_override("font_color", Color.LIGHT_GRAY) 
+		title_label.add_theme_color_override("font_color", Color.GRAY)
+		description_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
 		unlock_date_label.add_theme_color_override("font_color", Color.GRAY)
-		progress_label.add_theme_color_override("font_color", Color.SILVER) 
+		progress_label.add_theme_color_override("font_color", Color.SILVER)
