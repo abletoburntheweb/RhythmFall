@@ -327,7 +327,8 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["last_login_date"] = ""
 	
 	pdm.data["currency"] = current_currency
-
+	pdm.data["spent_currency"] = 0
+	pdm.data["total_earned_currency"] = 0
 	pdm._save()
 
 	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")
