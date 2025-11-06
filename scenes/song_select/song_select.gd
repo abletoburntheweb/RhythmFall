@@ -4,7 +4,6 @@ extends BaseScreen
 const SongManager = preload("res://logic/song_manager.gd")
 const BPMAnalyzerClient = preload("res://logic/bpm_analyzer_client.gd")
 
-
 var song_manager: SongManager = null
 
 var edit_button: Button = null 
@@ -20,6 +19,8 @@ var settings_manager: SettingsManager = null
 var analyze_bpm_button: Button = null
 var bpm_analyzer_client: BPMAnalyzerClient = null
 var song_metadata_manager = null
+
+var current_displayed_song_path: String = ""
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
@@ -50,6 +51,7 @@ func _ready():
 	if song_metadata_manager: 
 		song_manager.set_metadata_manager(song_metadata_manager) 
 		print("SongSelect.gd: SongMetadataManager передан в SongManager.")
+		song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен, пользовательские метаданные песен не будут загружаться/сохраняться.")
 	
@@ -87,8 +89,10 @@ func _ready():
 	if song_metadata_manager:
 		song_edit_manager.set_metadata_manager(song_metadata_manager)
 		print("SongSelect.gd: SongMetadataManager передан в SongEditManager.")
+		song_edit_manager.song_edited.connect(_on_song_edited)
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен для передачи в SongEditManager.")
+
 	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList
 	if song_item_list:
 		song_item_list_ref = song_item_list 
@@ -198,6 +202,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	song_details_manager.update_details(song_data)
 	var song_file_path = song_data.get("path", "")
 	if song_file_path != "":
+		current_displayed_song_path = song_file_path
 		song_details_manager.play_song_preview(song_file_path)
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = false
@@ -430,3 +435,22 @@ func _on_bpm_analysis_error(error_message: String):
 	print("SongSelect.gd: Ошибка BPM анализа: ", error_message)
 	if analyze_bpm_button:
 		analyze_bpm_button.disabled = false
+
+
+func _on_song_edited(song_data: Dictionary):
+	print("SongSelect.gd: Песня отредактирована: ", song_data)
+	
+	if current_displayed_song_path == song_data.path:
+		song_details_manager.update_details(song_data)
+		print("SongSelect.gd: Информация справа обновлена для песни: ", song_data.title)
+
+func _on_song_metadata_updated(song_file_path: String):
+	print("SongSelect.gd: Метаданные обновлены для: ", song_file_path)
+	
+	if current_displayed_song_path == song_file_path:
+		var songs_list = song_manager.get_songs_list()
+		for song in songs_list:
+			if song.path == song_file_path:
+				song_details_manager.update_details(song)
+				print("SongSelect.gd: Информация справа обновлена из кэша метаданных для песни: ", song.title)
+				break

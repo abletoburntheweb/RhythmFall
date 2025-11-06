@@ -14,9 +14,9 @@ func _init():
 func set_metadata_manager(sm_manager):
 	song_metadata_manager = sm_manager
 	if song_metadata_manager:
-		pass
+		song_metadata_manager.metadata_updated.connect(_on_metadata_updated)
 	else:
-		pass 
+		printerr("SongManager.gd: SongMetadataManager не установлен!")
 
 func _create_directories_if_missing():
 	var dir = DirAccess.open("res://")
@@ -141,12 +141,27 @@ func load_songs():
 			var file_lower = file_name.to_lower()
 			if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
 				var path = SONG_FOLDER_PATH + file_name
-				var file_modified_time = FileAccess.get_modified_time(path)
 
+				var metadata: Dictionary
 				if file_lower.ends_with(".mp3"):
-					songs.append(_read_mp3_metadata(path))
+					metadata = _read_mp3_metadata(path)
 				else: 
-					songs.append(_read_wav_metadata(path))
+					metadata = _read_wav_metadata(path)
+
+				if song_metadata_manager:
+					var cached_metadata = song_metadata_manager.get_metadata_for_song(path)
+					if cached_metadata.is_empty():
+						var fields_to_save = {
+							"title": metadata.get("title", "Без названия"),
+							"artist": metadata.get("artist", "Неизвестен"),
+							"bpm": metadata.get("bpm", "Н/Д"),
+							"year": metadata.get("year", "Н/Д"),
+							"duration": metadata.get("duration", "00:00"),
+						}
+						song_metadata_manager.update_metadata(path, fields_to_save)
+						print("SongManager.gd: Запись в кэше создана для: ", path)
+
+				songs.append(metadata)
 
 		file_name = dir.get_next()
 	dir.list_dir_end()
@@ -210,8 +225,24 @@ func _update_song_data(song_file_path: String):
 
 		for key in user_metadata.keys():
 			if songs[index].has(key):
-				songs[index][key] = user_metadata[key]
+				if key == "cover":
+					continue  
+				elif key == "duration":
+					if user_metadata[key] != "Н/Д":
+						songs[index][key] = user_metadata[key]
+				elif key == "bpm":
+					var bpm_value = user_metadata[key]
+					if bpm_value != "Н/Д":
+						if bpm_value is String:
+							if bpm_value.is_valid_int() and bpm_value.to_int() != 0:
+								songs[index][key] = bpm_value
+						elif bpm_value is int:
+							if bpm_value != 0:
+								songs[index][key] = bpm_value
+				else:
+					songs[index][key] = user_metadata[key]
 		
+		print("SongManager.gd: Данные песни '%s' обновлены из метаданных (cover оставлен без изменений)." % song_file_path)
 	else:
 		printerr("SongManager.gd: Песня с путём '%s' не найдена в списке для обновления." % song_file_path)
 
