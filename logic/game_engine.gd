@@ -40,6 +40,7 @@ func initialize_logic():
 	achievement_manager = AchievementManager.new()
 	achievement_manager.player_data_mgr = player_data_manager 
 	achievement_manager.music_mgr = music_manager
+	achievement_manager.notification_mgr = self
 	
 	player_data_manager.achievement_manager = achievement_manager
 
@@ -154,7 +155,16 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 		settings_manager.save_settings()
 
 	return true
+func show_achievement_popup(achievement: Dictionary):
+	print("Achievement data: ", achievement)
+	var popup = preload("res://scenes/achievements/achievement_pop_up.tscn").instantiate()
+	
+	popup.set_achievement_data(achievement)
 
+	add_child(popup)
+
+	popup.show_popup()
+	
 func get_main_menu_instance():
 	return main_menu_instance
 

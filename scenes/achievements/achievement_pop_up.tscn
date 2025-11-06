@@ -1,4 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://o1npypfkbsw1"]
+[gd_scene load_steps=5 format=3 uid="uid://o1npypfkbsw1"]
+
+[ext_resource type="Script" uid="uid://dnjxdqfm6i7ua" path="res://scenes/achievements/achievement_pop_up.gd" id="1_3ety8"]
 
 [sub_resource type="Animation" id="Animation_jx0ni"]
 resource_name = "popup_show"
@@ -41,26 +43,22 @@ _data = {
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 1420.0
+offset_left = 2380.0
+offset_right = 960.0
 offset_bottom = -956.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(0, 956)
+script = ExtResource("1_3ety8")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
-
-[node name="ContentContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="ContentContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="TopRowContainer" type="HBoxContainer" parent="MarginContainer/ContentContainer"]
+[node name="TopRowContainer" type="HBoxContainer" parent="ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="IconTexture" type="TextureRect" parent="MarginContainer/ContentContainer/TopRowContainer"]
+[node name="IconTexture" type="TextureRect" parent="ContentContainer/TopRowContainer"]
 z_as_relative = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
@@ -69,24 +67,24 @@ size_flags_vertical = 4
 expand_mode = 1
 stretch_mode = 5
 
-[node name="InfoVBox" type="VBoxContainer" parent="MarginContainer/ContentContainer/TopRowContainer"]
+[node name="InfoVBox" type="VBoxContainer" parent="ContentContainer/TopRowContainer"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="TitleLabel" type="Label" parent="ContentContainer/TopRowContainer/InfoVBox"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
 text = "Достижение получено!"
 
-[node name="AchievementTitleLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="AchievementTitleLabel" type="Label" parent="ContentContainer/TopRowContainer/InfoVBox"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
 text = "Название Ачивки"
 
-[node name="DescriptionLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="DescriptionLabel" type="Label" parent="ContentContainer/TopRowContainer/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0.827451, 0.827451, 1)
 theme_override_font_sizes/font_size = 18

@@ -115,6 +115,10 @@ func _perform_unlock(achievement: Dictionary):
 	if music_mgr:
 		music_mgr.play_achievement_sound()
 
+	if notification_mgr:
+		print("Unlocking achievement: ", achievement)
+		notification_mgr.show_achievement_popup(achievement)
+
 func reset_achievements():
 	for a in achievements:
 		a.unlocked = false
