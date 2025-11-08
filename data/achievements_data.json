@@ -61,7 +61,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 5,
+			"current": 5.0,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
@@ -81,7 +81,7 @@
 			"unlocked": true
 		},
 		{
-			"current": 4,
+			"current": 4.0,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
@@ -91,7 +91,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 4,
+			"current": 4.0,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -131,7 +131,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 400,
+			"current": 400.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -141,7 +141,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 400,
+			"current": 400.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -151,7 +151,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 400,
+			"current": 400.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -161,7 +161,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 3,
+			"current": 3.0,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
@@ -171,17 +171,17 @@
 			"unlocked": false
 		},
 		{
-			"current": 4,
+			"current": 4.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
 			"title": "Коллекция завершена",
-			"total": 21,
+			"total": 21.0,
 			"unlock_date": null,
 			"unlocked": false
 		},
 		{
-			"current": 1.0,
+			"current": 3,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -191,7 +191,7 @@
 			"unlocked": true
 		},
 		{
-			"current": 1,
+			"current": 3,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -201,7 +201,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 1,
+			"current": 3,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -211,7 +211,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 1,
+			"current": 3,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",

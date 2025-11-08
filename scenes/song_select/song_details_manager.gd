@@ -18,6 +18,13 @@ var settings_manager = null
 
 var _current_preview_file_path: String = ""
 
+# Добавим переменные для текущего инструмента
+var current_instrument: String = "standard"
+
+func set_current_instrument(instrument: String):
+	current_instrument = instrument
+	_update_play_button_state()
+
 func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
@@ -123,9 +130,23 @@ func _get_fallback_cover_texture():
 
 	return null
 
+func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
+	# Проверяем наличие файла нот для текущего инструмента
+	var base_name = song_path.get_file().get_basename()
+	var notes_filename = "%s_%s.json" % [base_name, instrument]
+	var notes_path = "user://notes/%s" % notes_filename  # или путь к локальным нотам
+	
+	# Проверяем на сервере или локально
+	# Для начала проверим локально
+	var notes_file_exists = FileAccess.file_exists(notes_path)
+	print("SongDetailsManager.gd: Проверка наличия нот для %s (%s): %s" % [song_path, instrument, notes_file_exists])
+	return notes_file_exists
+
 func _update_play_button_state():
 	if play_button:
-		if play_button.get_parent() and play_button.get_parent().get_parent():
+		# Здесь нужно получить текущую выбранную песню и проверить наличие нот
+		# Это будет вызываться извне, когда меняется инструмент или когда обновляется информация о песне
+		if _current_preview_file_path != "" and _has_notes_for_instrument(_current_preview_file_path, current_instrument):
 			play_button.disabled = false
 			play_button.text = "Играть"
 		else:
