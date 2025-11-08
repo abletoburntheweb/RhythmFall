@@ -51,7 +51,6 @@ func _ready():
 	else:
 		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager, song_metadata_manager, settings_manager) через GameEngine.")
 
-	# Устанавливаем начальный инструмент как "Перкуссия"
 	current_instrument = "drums"
 	
 	song_manager = SongManager.new()
@@ -128,7 +127,6 @@ func _ready():
 
 	_connect_ui_signals() 
 
-	# Устанавливаем начальный текст кнопки инструмента
 	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
 	if instrument_btn:
 		instrument_btn.text = "Инструмент: Перкуссия"
@@ -230,7 +228,6 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = true
 
-	# Сбрасываем текст кнопки генерации нот
 	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
 	if generate_btn:
 		generate_btn.text = "Сгенерировать ноты"

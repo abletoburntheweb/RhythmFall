@@ -108,28 +108,19 @@ func _thread_function(data_dict: Dictionary):
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
 
-				var boundary = "----WebKitFormBoundary" + str(Time.get_ticks_msec())
-				var body = PackedByteArray()
-
-				body.append_array(_build_form_field("bpm", str(bpm), boundary))
-				body.append_array(_build_form_field("instrument", instrument_type, boundary))
-
-				body.append_array(_build_file_field(file_data, song_path.get_file(), boundary))
-
-				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
-
 				var headers = PackedStringArray([
 					"Host: localhost:5000",
-					"Content-Type: multipart/form-data; boundary=" + boundary,
-					"Content-Length: " + str(body.size())
+					"Content-Type: application/octet-stream",
+					"Content-Length: " + str(file_data.size()),
+					"X-BPM: " + str(bpm),
+					"X-Instrument: " + instrument_type,
+					"X-Filename: " + song_path.get_file()
 				])
 
 				var request_method = HTTPClient.METHOD_POST
 				var request_url = "/generate_drums" if instrument_type == "drums" else "/generate_notes"
-				if instrument_type != "drums":
-					request_url = "/generate_notes"
-					
-				http_client.request_raw(request_method, request_url, headers, body)
+				
+				http_client.request_raw(request_method, request_url, headers, file_data)
 				http_client.poll()
 
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
@@ -158,6 +149,9 @@ func _thread_function(data_dict: Dictionary):
 							var received_bpm = response_json["bpm"]
 							var received_instrument = response_json.get("instrument_type", instrument_type)
 							print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm)
+	
+							_save_notes_locally(song_path, received_instrument, notes)
+							
 							local_result = {
 								"notes": notes, 
 								"bpm": received_bpm, 
@@ -191,20 +185,22 @@ func _thread_function(data_dict: Dictionary):
 
 	_thread_finished = true
 
-func _build_form_field(field_name: String, field_value: String, boundary: String) -> PackedByteArray:
-	var body = PackedByteArray()
-	var header = ("--%s\r\n" +
-				  "Content-Disposition: form-data; name=\"%s\"\r\n" +
-				  "Content-Type: text/plain\r\n\r\n") % [boundary, field_name]
-	body.append_array(header.to_utf8_buffer())
-	body.append_array(field_value.to_utf8_buffer())
-	return body
-
-func _build_file_field(file_data: PackedByteArray, filename: String, boundary: String) -> PackedByteArray:
-	var body = PackedByteArray()
-	var header = ("--%s\r\n" +
-				  "Content-Disposition: form-data; name=\"audio_file\"; filename=\"%s\"\r\n" +
-				  "Content-Type: application/octet-stream\r\n\r\n") % [boundary, filename]
-	body.append_array(header.to_utf8_buffer())
-	body.append_array(file_data)
-	return body
+func _save_notes_locally(song_path: String, instrument: String, notes_data: Array):
+	var base_name = song_path.get_file().get_basename()
+	var notes_filename = "%s_%s.json" % [base_name, instrument]
+	var notes_path = "user://notes/%s" % notes_filename
+	
+	var dir = DirAccess.open("user://")
+	if not dir:
+		dir = DirAccess.open("res://")
+	if dir:
+		if not dir.dir_exists("user://notes"):
+			dir.make_dir_recursive("user://notes")
+	
+	var file = FileAccess.open(notes_path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(notes_data))
+		file.close()
+		print("NoteGeneratorClient.gd: Ноты сохранены локально: ", notes_path)
+	else:
+		print("NoteGeneratorClient.gd: Ошибка сохранения нот: ", notes_path)
