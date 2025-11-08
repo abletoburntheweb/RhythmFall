@@ -24,7 +24,7 @@ var bpm_analyzer_client: BPMAnalyzerClient = null
 var note_generator_client: NoteGeneratorClient = null  
 var song_metadata_manager = null
 var instrument_selector: Control = null
-var current_instrument: String = "standard"
+var current_instrument: String = "drums"
 var current_displayed_song_path: String = ""
 
 func _ready():
@@ -51,6 +51,9 @@ func _ready():
 	else:
 		printerr("SongSelect.gd: Не удалось получить один или несколько необходимых менеджеров (music_manager, transitions, player_data_manager, song_metadata_manager, settings_manager) через GameEngine.")
 
+	# Устанавливаем начальный инструмент как "Перкуссия"
+	current_instrument = "drums"
+	
 	song_manager = SongManager.new()
 	
 	if song_metadata_manager: 
@@ -124,6 +127,11 @@ func _ready():
 	add_child(note_generator_client)
 
 	_connect_ui_signals() 
+
+	# Устанавливаем начальный текст кнопки инструмента
+	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
+	if instrument_btn:
+		instrument_btn.text = "Инструмент: Перкуссия"
 
 func _connect_ui_signals():
 	
@@ -343,12 +351,10 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	if generate_btn:
 		generate_btn.text = "Готово"
 		generate_btn.disabled = false
-		
-	# Обновляем состояние кнопки Играть
+
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
 		
-	# Обновляем состояние кнопки Играть
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
 

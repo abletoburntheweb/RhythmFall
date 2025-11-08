@@ -108,18 +108,14 @@ func _thread_function(data_dict: Dictionary):
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
 
-				# Создаём multipart тело
 				var boundary = "----WebKitFormBoundary" + str(Time.get_ticks_msec())
 				var body = PackedByteArray()
-				
-				# Добавляем параметры
+
 				body.append_array(_build_form_field("bpm", str(bpm), boundary))
 				body.append_array(_build_form_field("instrument", instrument_type, boundary))
-				
-				# Добавляем аудиофайл
+
 				body.append_array(_build_file_field(file_data, song_path.get_file(), boundary))
 
-				# Завершаем multipart
 				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
 
 				var headers = PackedStringArray([
@@ -131,7 +127,7 @@ func _thread_function(data_dict: Dictionary):
 				var request_method = HTTPClient.METHOD_POST
 				var request_url = "/generate_drums" if instrument_type == "drums" else "/generate_notes"
 				if instrument_type != "drums":
-					request_url = "/generate_notes"  # если будет другой endpoint для других инструментов
+					request_url = "/generate_notes"
 					
 				http_client.request_raw(request_method, request_url, headers, body)
 				http_client.poll()

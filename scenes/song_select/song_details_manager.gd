@@ -20,7 +20,6 @@ var _current_preview_file_path: String = ""
 
 var current_instrument: String = "standard"
 
-# Добавим переменные для отслеживания статуса генерации
 var generation_status_label: Label = null
 var is_generating_notes: bool = false
 
@@ -86,7 +85,7 @@ func update_details(song_data: Dictionary):
 				print("SongDetailsManager.gd: Обложка отсутствует, установлен серый квадрат.")
 
 	_update_play_button_state()
-	_update_generation_status()  # Обновляем статус генерации при обновлении песни
+	_update_generation_status() 
 
 func _get_fallback_cover_texture():
 	if not player_data_manager:
@@ -158,14 +157,12 @@ func _update_play_button_state():
 func set_generation_status(status: String, is_error: bool = false):
 	if generation_status_label:
 		generation_status_label.text = status
-		# Можно изменить цвет текста в зависимости от статуса
 		if is_error:
 			generation_status_label.modulate = Color.RED
 		else:
 			generation_status_label.modulate = Color.YELLOW if status.contains("Генерация") else Color.GREEN
 
 func _update_generation_status():
-	# Обновляем статус генерации в зависимости от наличия нот
 	if _current_preview_file_path != "":
 		if _has_notes_for_instrument(_current_preview_file_path, current_instrument):
 			set_generation_status("Готово", false)
