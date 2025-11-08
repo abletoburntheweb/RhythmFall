@@ -15,7 +15,7 @@ var _thread_finished: bool = false
 func _set_is_generating(value: bool):
 	is_generating = value
 
-func generate_notes(song_path: String, instrument_type: String, bpm: float = -1.0, lanes: int = 4):
+func generate_notes(song_path: String, instrument_type: String, bpm: float):
 	if is_generating:
 		print("NoteGeneratorClient.gd: Генерация уже выполняется, игнорируем новый запрос.")
 		return
@@ -26,8 +26,7 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float = -1.
 	_thread_request_data = {
 		"song_path": song_path,
 		"instrument_type": instrument_type,
-		"bpm": bpm if bpm > 0 else null,
-		"lanes": lanes
+		"bpm": bpm
 	}
 	_thread_result = {}
 	_thread_finished = false
@@ -76,9 +75,8 @@ func _thread_function(data_dict: Dictionary):
 	var local_error_msg = ""
 
 	var song_path = data_dict.get("song_path", "")
-	var instrument_type = data_dict.get("instrument_type", "drums")
-	var bpm = data_dict.get("bpm", null)
-	var lanes = data_dict.get("lanes", 4)
+	var instrument_type = data_dict.get("instrument_type", "standard")
+	var bpm = data_dict.get("bpm", -1.0)
 
 	if song_path == "":
 		local_error_occurred = true
@@ -110,15 +108,13 @@ func _thread_function(data_dict: Dictionary):
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
 
-				# Создаём multipart тело с аудиофайлом и параметрами
+				# Создаём multipart тело
 				var boundary = "----WebKitFormBoundary" + str(Time.get_ticks_msec())
 				var body = PackedByteArray()
 				
-				# Добавляем параметры (instrument, bpm, lanes)
+				# Добавляем параметры
+				body.append_array(_build_form_field("bpm", str(bpm), boundary))
 				body.append_array(_build_form_field("instrument", instrument_type, boundary))
-				if bpm != null:
-					body.append_array(_build_form_field("bpm", str(bpm), boundary))
-				body.append_array(_build_form_field("lanes", str(lanes), boundary))
 				
 				# Добавляем аудиофайл
 				body.append_array(_build_file_field(file_data, song_path.get_file(), boundary))
@@ -132,9 +128,11 @@ func _thread_function(data_dict: Dictionary):
 					"Content-Length: " + str(body.size())
 				])
 
-				# Используем универсальный endpoint
 				var request_method = HTTPClient.METHOD_POST
-				var request_url = "/generate_notes"  # Универсальный endpoint
+				var request_url = "/generate_drums" if instrument_type == "drums" else "/generate_notes"
+				if instrument_type != "drums":
+					request_url = "/generate_notes"  # если будет другой endpoint для других инструментов
+					
 				http_client.request_raw(request_method, request_url, headers, body)
 				http_client.poll()
 
@@ -161,9 +159,14 @@ func _thread_function(data_dict: Dictionary):
 						var response_json = JSON.parse_string(response_text)
 						if response_json and response_json.has("notes") and response_json.has("bpm"):
 							var notes = response_json["notes"]
-							var calculated_bpm = response_json["bpm"]
-							print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", calculated_bpm, ", инструмент: ", instrument_type)
-							local_result = {"notes": notes, "bpm": calculated_bpm, "instrument_type": instrument_type}
+							var received_bpm = response_json["bpm"]
+							var received_instrument = response_json.get("instrument_type", instrument_type)
+							print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm)
+							local_result = {
+								"notes": notes, 
+								"bpm": received_bpm, 
+								"instrument_type": received_instrument
+							}
 						else:
 							local_error_msg = response_json.get("error", "Неизвестная ошибка") if response_json else "Ответ не содержит ожидаемые поля"
 							print("NoteGeneratorClient.gd (Thread): Ошибка от сервера: ", local_error_msg)

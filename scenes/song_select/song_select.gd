@@ -3,7 +3,7 @@ extends BaseScreen
 
 const SongManager = preload("res://logic/song_manager.gd")
 const BPMAnalyzerClient = preload("res://logic/bpm_analyzer_client.gd")
-const NoteGeneratorClient = preload("res://logic/note_generator_client.gd")  # Новый клиент
+const NoteGeneratorClient = preload("res://logic/note_generator_client.gd") 
 const InstrumentSelector = preload("res://scenes/song_select/instrument_selector.gd")
 
 var song_manager: SongManager = null
@@ -21,9 +21,9 @@ var settings_manager: SettingsManager = null
 
 var analyze_bpm_button: Button = null
 var bpm_analyzer_client: BPMAnalyzerClient = null
-var note_generator_client: NoteGeneratorClient = null  # Новый клиент
+var note_generator_client: NoteGeneratorClient = null  
 var song_metadata_manager = null
-var instrument_selector: Control = null  # или Node = null
+var instrument_selector: Control = null
 var current_instrument: String = "standard"
 var current_displayed_song_path: String = ""
 
@@ -222,6 +222,12 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = true
 
+	# Сбрасываем текст кнопки генерации нот
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Сгенерировать ноты"
+		generate_btn.disabled = false
+
 func _on_song_list_changed():
 	_update_song_count_label()
 
@@ -317,7 +323,7 @@ func _generate_notes_for_current_song():
 		return
 
 	var song_bpm = selected_song_data.get("bpm", -1)
-	if song_bpm == -1 or song_bpm == "Н/Д":
+	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
 		print("SongSelect.gd: BPM не указан для песни. Сначала проанализируйте BPM.")
 		return
 
@@ -325,29 +331,44 @@ func _generate_notes_for_current_song():
 
 func _on_notes_generation_started():
 	print("SongSelect.gd: Генерация нот начата.")
-	# Можно обновить UI состояние
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Генерация..."
+		generate_btn.disabled = true
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	print("SongSelect.gd: Генерация нот завершена. Нот: %d, BPM: %f, инструмент: %s" % [notes_data.size(), bpm_value, instrument_type])
 	
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Готово"
+		generate_btn.disabled = false
+		
+	# Обновляем состояние кнопки Играть
+	if song_details_manager:
+		song_details_manager._update_play_button_state()
+		
 	# Обновляем состояние кнопки Играть
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
 
 func _on_notes_generation_error(error_message: String):
 	print("SongSelect.gd: Ошибка генерации нот: ", error_message)
+	
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Ошибка генерации"
+		generate_btn.disabled = false
 
 func _open_instrument_selector():
 	if instrument_selector and is_instance_valid(instrument_selector):
 		instrument_selector.queue_free()
 	
 	instrument_selector = InstrumentSelectorScene.instantiate()
-	
-	# Устанавливаем менеджеры
+
 	if instrument_selector.has_method("set_managers"):
 		instrument_selector.set_managers(music_manager)
-	
-	# Подключаем сигналы - теперь используем лямбды для безопасности
+
 	if instrument_selector.has_signal("instrument_selected"):
 		if not instrument_selector.is_connected("instrument_selected", _on_instrument_selected):
 			instrument_selector.connect("instrument_selected", _on_instrument_selected.bind())
@@ -360,7 +381,6 @@ func _open_instrument_selector():
 
 func _on_instrument_selector_closed():
 	if instrument_selector:
-		# Отключаем сигналы, если они ещё подключены
 		if instrument_selector.is_connected("instrument_selected", _on_instrument_selected):
 			instrument_selector.disconnect("instrument_selected", _on_instrument_selected)
 		if instrument_selector.is_connected("selector_closed", _on_instrument_selector_closed):
@@ -376,10 +396,8 @@ func _on_instrument_selected(instrument_type: String):
 		instrument_btn.text = "Инструмент: " + instrument_name
 	print("SongSelect.gd: Выбран инструмент: ", instrument_type)
 	
-	# Обновляем состояние кнопки Играть
 	if song_details_manager:
 		song_details_manager.set_current_instrument(current_instrument)
-		# Обновляем состояние кнопки Играть
 		song_details_manager._update_play_button_state()
 
 
@@ -456,8 +474,7 @@ func _on_analyze_bpm_pressed():
 func _on_play_pressed():
 	print("SongSelect.gd: Играть песню с инструментом: ", current_instrument)
 	if transitions:
-		# Передаем инструмент в игру
-		transitions.open_game_with_instrument(current_instrument)  # Нужно будет реализовать в transitions
+		transitions.open_game_with_instrument(current_instrument)
 	else:
 		print("SongSelect.gd: transitions не установлен!")
 

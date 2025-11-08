@@ -27,7 +27,6 @@ func _ready():
 		back_button.pressed.connect(_on_back_button_pressed)
 		print("InstrumentSelector.gd: Подключён сигнал BackButton")
 
-	# Находим кнопку Перкуссия из сцены
 	var percussion_button = $GalleryContainer/Content/PercussionButton
 	if percussion_button:
 		percussion_button.pressed.connect(_on_percussion_pressed)
@@ -35,7 +34,6 @@ func _ready():
 	else:
 		printerr("InstrumentSelector.gd: Кнопка PercussionButton не найдена в сцене!")
 
-	# Кнопка Закрыть (если есть)
 	var close_button = $GalleryContainer/Content/CloseButton
 	if close_button:
 		close_button.pressed.connect(_on_close_pressed)

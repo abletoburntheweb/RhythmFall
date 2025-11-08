@@ -18,8 +18,14 @@ var settings_manager = null
 
 var _current_preview_file_path: String = ""
 
-# Добавим переменные для текущего инструмента
 var current_instrument: String = "standard"
+
+# Добавим переменные для отслеживания статуса генерации
+var generation_status_label: Label = null
+var is_generating_notes: bool = false
+
+func set_generation_status_label(status_lbl: Label):
+	generation_status_label = status_lbl
 
 func set_current_instrument(instrument: String):
 	current_instrument = instrument
@@ -80,6 +86,7 @@ func update_details(song_data: Dictionary):
 				print("SongDetailsManager.gd: Обложка отсутствует, установлен серый квадрат.")
 
 	_update_play_button_state()
+	_update_generation_status()  # Обновляем статус генерации при обновлении песни
 
 func _get_fallback_cover_texture():
 	if not player_data_manager:
@@ -131,27 +138,41 @@ func _get_fallback_cover_texture():
 	return null
 
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
-	# Проверяем наличие файла нот для текущего инструмента
 	var base_name = song_path.get_file().get_basename()
 	var notes_filename = "%s_%s.json" % [base_name, instrument]
-	var notes_path = "user://notes/%s" % notes_filename  # или путь к локальным нотам
+	var notes_path = "user://notes/%s" % notes_filename 
 	
-	# Проверяем на сервере или локально
-	# Для начала проверим локально
 	var notes_file_exists = FileAccess.file_exists(notes_path)
 	print("SongDetailsManager.gd: Проверка наличия нот для %s (%s): %s" % [song_path, instrument, notes_file_exists])
 	return notes_file_exists
 
 func _update_play_button_state():
 	if play_button:
-		# Здесь нужно получить текущую выбранную песню и проверить наличие нот
-		# Это будет вызываться извне, когда меняется инструмент или когда обновляется информация о песне
 		if _current_preview_file_path != "" and _has_notes_for_instrument(_current_preview_file_path, current_instrument):
 			play_button.disabled = false
 			play_button.text = "Играть"
 		else:
 			play_button.disabled = true
 			play_button.text = "Сначала сгенерируйте ноты"
+
+func set_generation_status(status: String, is_error: bool = false):
+	if generation_status_label:
+		generation_status_label.text = status
+		# Можно изменить цвет текста в зависимости от статуса
+		if is_error:
+			generation_status_label.modulate = Color.RED
+		else:
+			generation_status_label.modulate = Color.YELLOW if status.contains("Генерация") else Color.GREEN
+
+func _update_generation_status():
+	# Обновляем статус генерации в зависимости от наличия нот
+	if _current_preview_file_path != "":
+		if _has_notes_for_instrument(_current_preview_file_path, current_instrument):
+			set_generation_status("Готово", false)
+		else:
+			set_generation_status("Нет нот", false)
+	else:
+		set_generation_status("", false)
 
 func _on_preview_finished():
 	if _current_preview_file_path != "":
