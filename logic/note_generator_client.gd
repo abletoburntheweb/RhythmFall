@@ -187,11 +187,10 @@ func _thread_function(data_dict: Dictionary):
 
 func _save_notes_locally(song_path: String, instrument: String, notes_data: Array):
 	var base_name = song_path.get_file().get_basename()
-	var song_folder_name = base_name  # Имя папки = имя файла без расширения
+	var song_folder_name = base_name 
 	var notes_filename = "%s_%s.json" % [base_name, instrument]
-	var song_notes_path = "user://notes/%s" % song_folder_name  # Папка для конкретной песни
+	var song_notes_path = "user://notes/%s" % song_folder_name  
 	
-	# Создаём папку песни, если нет
 	var dir = DirAccess.open("user://")
 	if not dir:
 		dir = DirAccess.open("res://")
@@ -199,9 +198,8 @@ func _save_notes_locally(song_path: String, instrument: String, notes_data: Arra
 		if not dir.dir_exists(song_notes_path):
 			dir.make_dir_recursive(song_notes_path)
 	
-	var notes_path = "%s/%s" % [song_notes_path, notes_filename]  # Полный путь к файлу
+	var notes_path = "%s/%s" % [song_notes_path, notes_filename]
 	
-	# Сохраняем файл
 	var file = FileAccess.open(notes_path, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(notes_data))

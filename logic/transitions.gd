@@ -24,17 +24,8 @@ func transition_open_game(start_level=null, selected_song=null, instrument="stan
 		transition_close_game()
 		return
 
-	var new_game_screen = _instantiate_if_exists("res://scenes/game_screen/GameScreen.tscn")
+	var new_game_screen = _instantiate_if_exists("res://scenes/game_screen/game_screen.tscn")
 	if new_game_screen:
-		if new_game_screen.has_method("_set_start_level"):
-			new_game_screen._set_start_level(start_level)
-		if new_game_screen.has_method("_set_selected_song"):
-			new_game_screen._set_selected_song(selected_song)
-		if new_game_screen.has_method("_set_instrument"):
-			new_game_screen._set_instrument(instrument)
-		if new_game_screen.has_method("start_game"):
-			new_game_screen.start_game()
-
 		if game_engine.current_screen:
 			game_engine.current_screen.queue_free()
 		game_engine.add_child(new_game_screen)
