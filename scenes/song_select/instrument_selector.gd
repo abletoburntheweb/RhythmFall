@@ -22,22 +22,17 @@ func _ready():
 		background.color = Color(0, 0, 0, 180.0 / 255.0)
 		background.mouse_filter = Control.MOUSE_FILTER_IGNORE 
 
-	var back_button = $GalleryContainer/BackButton
+	var back_button = $Container/BackButton
 	if back_button:
 		back_button.pressed.connect(_on_back_button_pressed)
 		print("InstrumentSelector.gd: Подключён сигнал BackButton")
 
-	var percussion_button = $GalleryContainer/Content/PercussionButton
+	var percussion_button = $Container/Content/PercussionButton
 	if percussion_button:
 		percussion_button.pressed.connect(_on_percussion_pressed)
 		print("InstrumentSelector.gd: Подключён сигнал PercussionButton")
 	else:
 		printerr("InstrumentSelector.gd: Кнопка PercussionButton не найдена в сцене!")
-
-	var close_button = $GalleryContainer/Content/CloseButton
-	if close_button:
-		close_button.pressed.connect(_on_close_pressed)
-		print("InstrumentSelector.gd: Подключён сигнал CloseButton")
 
 	show()
 

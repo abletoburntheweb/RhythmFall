@@ -26,6 +26,16 @@ func transition_open_game(start_level=null, selected_song=null, instrument="stan
 
 	var new_game_screen = _instantiate_if_exists("res://scenes/game_screen/game_screen.tscn")
 	if new_game_screen:
+		if new_game_screen.has_method("_set_instrument"):
+			new_game_screen._set_instrument(instrument)
+
+		if new_game_screen.has_method("_set_start_level"):
+			new_game_screen._set_start_level(start_level)
+		if new_game_screen.has_method("_set_selected_song"):
+			new_game_screen._set_selected_song(selected_song)
+		if new_game_screen.has_method("start_game"):
+			new_game_screen.start_game()
+
 		if game_engine.current_screen:
 			game_engine.current_screen.queue_free()
 		game_engine.add_child(new_game_screen)
@@ -217,6 +227,16 @@ func transition_exit_game():
 	else:
 		print("Transitions.gd: ОШИБКА! GameEngine не имеет метода request_quit!")
 
+func open_game_with_instrument(instrument="standard"):
+	var current_screen = game_engine.current_screen
+	if current_screen and current_screen.has_method("get_current_selected_song"):
+		var selected_song = current_screen.get_current_selected_song()
+		print("Transitions.gd: Открываем игру с песней: %s и инструментом: %s" % [selected_song.get("title", "Неизвестна"), instrument])
+		open_game_with_song(selected_song, instrument)
+	else:
+		print("Transitions.gd: Не удалось получить выбранную песню из текущего экрана, запуск игры с инструментом: ", instrument)
+		open_game_with_song({}, instrument) 
+
 func open_game(start_level=null):
 	transition_open_game(start_level)
 
@@ -258,5 +278,5 @@ func close_settings(from_pause=false):
 func open_main_menu():
 	transition_open_main_menu()
 
-func exit_game():
+func exit_game(): 
 	transition_exit_game()

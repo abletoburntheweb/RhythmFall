@@ -21,13 +21,13 @@ offset_right = 40.0
 offset_bottom = 40.0
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="GalleryContainer" type="VBoxContainer" parent="."]
+[node name="Container" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_right = 1920.0
 offset_bottom = 1080.0
 mouse_filter = 0
 
-[node name="BackButton" type="Button" parent="GalleryContainer"]
+[node name="BackButton" type="Button" parent="Container"]
 clip_contents = true
 custom_minimum_size = Vector2(140, 31)
 layout_mode = 2
@@ -35,10 +35,10 @@ size_flags_horizontal = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_82k47")
 text = "Назад	"
 
-[node name="Content" type="VBoxContainer" parent="GalleryContainer"]
+[node name="Content" type="VBoxContainer" parent="Container"]
 layout_mode = 2
 
-[node name="PercussionButton" type="Button" parent="GalleryContainer/Content"]
+[node name="PercussionButton" type="Button" parent="Container/Content"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 text = "Перкуссия"

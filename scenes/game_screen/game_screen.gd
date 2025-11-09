@@ -18,11 +18,15 @@ var hit_zone_y: int = 900
 var lanes: int = 4
 var current_instrument: String = "standard"
 
+var selected_song_data: Dictionary = {}
+
 var score_manager
 var note_manager
 var player
 
 var game_engine
+
+var music_manager = null
 
 @onready var score_label: Label = $UIContainer/ScoreLabel
 @onready var combo_label: Label = $UIContainer/ComboLabel
@@ -46,6 +50,15 @@ func _ready():
 
 	game_engine = get_parent()
 	
+	if game_engine and game_engine.has_method("get_music_manager"):
+		music_manager = game_engine.get_music_manager()
+		if music_manager:
+			print("GameScreen: MusicManager получен.")
+		else:
+			print("GameScreen: MusicManager не получен из game_engine (null).")
+	else:
+		print("GameScreen: game_engine не имеет метода get_music_manager.")
+	
 	var settings_for_player = {}
 	if game_engine and "settings" in game_engine:
 		var game_settings = game_engine.settings
@@ -62,7 +75,7 @@ func _ready():
 	player.lane_pressed_changed.connect(_on_lane_pressed_changed) 
 
 	game_timer = Timer.new()
-	game_timer.wait_time = 0.016  # ~60 FPS
+	game_timer.wait_time = 0.016 
 	game_timer.timeout.connect(_update_game)
 	add_child(game_timer)
 	
@@ -116,11 +129,49 @@ func _update_countdown():
 		scene_tree_timer.timeout.connect(_update_countdown)
 		countdown_timer = scene_tree_timer
 
+func _set_selected_song(song_data: Dictionary):
+	print("GameScreen: Получена информация о песне: ", song_data)
+	selected_song_data = song_data.duplicate() 
+
+func _set_instrument(instrument_type: String):
+	print("GameScreen: Установлен инструмент: ", instrument_type)
+	current_instrument = instrument_type
+	if instrument_label: 
+		instrument_label.text = "Инструмент: " + ("Перкуссия" if instrument_type == "drums" else "Стандартный")
+	else:
+		printerr("GameScreen.gd: instrument_label не найден (null), невозможно обновить текст!")
+
+
 func start_gameplay():
 	print("GameScreen: Game started")
 	game_time = 0.0
-	var dummy_song_data = {"path": "res://songs/sample.mp3"}  
-	note_manager.load_notes_from_file(dummy_song_data)
+	
+	if music_manager and selected_song_data and selected_song_data.get("path"):
+		var song_path = selected_song_data.get("path")
+		print("GameScreen: Пытаемся запустить музыку: ", song_path)
+		if music_manager.has_method("play_game_music"):
+			music_manager.play_game_music(song_path)
+		else:
+			printerr("GameScreen: MusicManager не имеет метода play_game_music!")
+	else:
+		print("GameScreen: MusicManager или selected_song_data.path не доступны для воспроизведения музыки.")
+
+	var song_to_load = selected_song_data
+	if not song_to_load or not song_to_load.get("path"):
+		song_to_load = {"path": "res://songs/sample.mp3"}
+		print("GameScreen: Песня не передана, используем заглушку: res://songs/sample.mp3")
+
+	note_manager.load_notes_from_file(song_to_load)
+
+	if song_to_load and song_to_load.has("bpm"):
+		var bpm_str = str(song_to_load.get("bpm", ""))
+		if bpm_str != "" and bpm_str != "Н/Д" and bpm_str != "-1":
+			var new_bpm = float(bpm_str)
+			if new_bpm > 0:
+				bpm = new_bpm
+				update_speed_from_bpm() 
+				print("GameScreen: BPM обновлён из данных песни: ", bpm)
+	
 	
 	if note_manager.get_spawn_queue_size() > 0:
 		notes_loaded = true
@@ -130,12 +181,32 @@ func start_gameplay():
 	else:
 		notes_loaded = false
 		print("GameScreen: Ноты не найдены, запуск без нот")
+	
+	if music_manager and music_manager.has_method("start_metronome"):
+		music_manager.start_metronome(bpm, 0) 
+		print("GameScreen: Метроном запущен с BPM: ", bpm)
+	else:
+		print("GameScreen: MusicManager не имеет метода start_metronome или не установлен.")
+		
+func update_speed_from_bpm():
+	var base_bpm = 120.0
+	var base_speed = 6.0
+	speed = base_speed * (bpm / base_bpm)
+	speed = clamp(speed, 2.0, 12.0)
+	print("GameScreen: Скорость обновлена: BPM=%.1f, Speed=%.2f" % [bpm, speed])
 
 func _update_game():
 	if is_paused or game_finished or countdown_active:
+		if is_paused and music_manager and music_manager.has_method("stop_metronome"):
+			music_manager.stop_metronome()
+			print("GameScreen: Метроном остановлен (пауза).")
 		return
 	
-	game_time += 0.016  # 16ms per frame
+	if not is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
+		music_manager.start_metronome(bpm, 0)
+		print("GameScreen: Метроном возобновлен (снятие с паузы).")
+	
+	game_time += 0.016  
 	
 	if not countdown_active:
 		note_manager.spawn_notes()
@@ -166,7 +237,7 @@ func update_ui():
 	if accuracy_label:
 		accuracy_label.text = "Точность: %.2f%%" % score_manager.get_accuracy()
 	if instrument_label:
-		instrument_label.text = "Инструмент: стандарт"
+		pass
 
 func update_countdown_display():
 	if countdown_label: 

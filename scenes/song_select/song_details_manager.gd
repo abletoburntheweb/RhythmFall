@@ -139,8 +139,8 @@ func _get_fallback_cover_texture():
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
 	var base_name = song_path.get_file().get_basename()
 	var notes_filename = "%s_%s.json" % [base_name, instrument]
-	var notes_path = "user://notes/%s" % notes_filename 
-	
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename] 
+
 	var notes_file_exists = FileAccess.file_exists(notes_path)
 	print("SongDetailsManager.gd: Проверка наличия нот для %s (%s): %s" % [song_path, instrument, notes_file_exists])
 	return notes_file_exists

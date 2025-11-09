@@ -25,6 +25,7 @@ var note_generator_client: NoteGeneratorClient = null
 var song_metadata_manager = null
 var instrument_selector: Control = null
 var current_instrument: String = "drums"
+var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
 
 func _ready():
@@ -215,6 +216,7 @@ func _connect_ui_signals():
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	print("SongSelect.gd: Получен сигнал song_selected от SongListManager для: %s" % song_data.get("title"))
+	current_selected_song_data = song_data
 	song_details_manager.stop_preview() 
 	song_details_manager.update_details(song_data)
 	var song_file_path = song_data.get("path", "")
@@ -577,3 +579,6 @@ func _on_song_metadata_updated(song_file_path: String):
 				song_details_manager.update_details(song)
 				print("SongSelect.gd: Информация справа обновлена из кэша метаданных для песни: ", song.title)
 				break
+				
+func get_current_selected_song() -> Dictionary:
+	return current_selected_song_data.duplicate()
