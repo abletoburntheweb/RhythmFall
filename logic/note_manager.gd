@@ -48,46 +48,48 @@ func spawn_notes():
 	var game_time = game_screen.game_time
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.hit_zone_y
+	var initial_y_offset_from_top = -20
 
 	if note_spawn_queue.size() == 0:
 		return
 
-	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= game_time:
+	var pixels_per_sec = speed * (1000.0 / 16.0)
+	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
+	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
+	var spawn_threshold_time = game_time + time_to_reach_hit_zone
+
+	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
-		var time = note_info.get("time", 0.0)
+		var note_time = note_info.get("time", 0.0) 
 		var note_type = note_info.get("type", "DefaultNote")
-
-		var pixels_per_sec = speed * (1000.0 / 16.0)
-		var initial_y_offset_from_top = -20
-		var y_now = initial_y_offset_from_top + (game_time - time) * pixels_per_sec
+		var time_diff = note_time - game_time
+		var y_spawn = hit_zone_y - time_diff * pixels_per_sec
+		if y_spawn > game_screen.get_viewport_rect().size.y + 20:
+			continue
 
 		var note_object = null
 		var visual_rect = ColorRect.new()
 
 		if note_type == "DefaultNote":
-			if y_now < game_screen.get_viewport_rect().size.y + 20:
-				note_object = DefaultNote.new(lane, y_now)
-				visual_rect.color = note_object.color
+			note_object = DefaultNote.new(lane, y_spawn)
+			visual_rect.color = note_object.color
 		elif note_type == "HoldNote":
 			var duration = note_info.get("duration", 1.0)
 			var height = int(duration * pixels_per_sec)
-			if y_now < game_screen.get_viewport_rect().size.y + height:
-				note_object = HoldNote.new(lane, y_now, height, duration * 1000)
-				visual_rect.color = note_object.color
+			note_object = HoldNote.new(lane, y_spawn, height, duration * 1000)
+			visual_rect.color = note_object.color
 		elif note_type == "KickNote":
-			if y_now < game_screen.get_viewport_rect().size.y + 20:
-				note_object = KickNote.new(lane, y_now)
-				visual_rect.color = note_object.color
+			note_object = KickNote.new(lane, y_spawn)
+			visual_rect.color = note_object.color
 		elif note_type == "SnareNote":
-			if y_now < game_screen.get_viewport_rect().size.y + 20:
-				note_object = SnareNote.new(lane, y_now)
-				visual_rect.color = note_object.color
+			note_object = SnareNote.new(lane, y_spawn)
+			visual_rect.color = note_object.color
 		else:
 			continue
 
 		if note_object:
-			note_object.time = time
+			note_object.time = note_time
 			note_object.visual_node = visual_rect
 
 			var lane_width = 480.0 
@@ -98,7 +100,7 @@ func spawn_notes():
 			else:
 				visual_rect.size = Vector2(lane_width, default_note_height)
 
-			visual_rect.position = Vector2(lane * lane_width, y_now)
+			visual_rect.position = Vector2(lane * lane_width, y_spawn)
 
 			game_screen.notes_container.add_child(visual_rect)
 
