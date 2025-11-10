@@ -43,6 +43,9 @@ var game_timer: Timer
 var countdown_timer
 
 var notes_loaded: bool = false
+var skip_used = false
+var skip_time_threshold = 10.0
+var skip_rewind_seconds = 5.0
 
 @onready var lane_highlight_nodes: Array[ColorRect] = [$LanesContainer/Lane0Highlight, $LanesContainer/Lane1Highlight, $LanesContainer/Lane2Highlight, $LanesContainer/Lane3Highlight]
 
@@ -250,23 +253,60 @@ func update_countdown_display():
 
 func _input(event):
 	if not input_enabled: 
-		print("GameScreen: Input blocked during countdown")
 		return
 	
-	if event is InputEventKey:
-		print("GameScreen: InputEventKey detected, pressed=%s, keycode=%d" % [event.pressed, event.keycode])
+	if event is InputEventKey and event.pressed:
+		var keycode = event.keycode
 		
-		if event.pressed:
-			if event.keycode == KEY_ESCAPE and not countdown_active:
-				pass
-			elif event.keycode == KEY_SPACE and not countdown_active:
-				pass
-			else:
-				print("GameScreen: Key press handled by player: %d" % event.keycode)
-				player.handle_key_press(event.keycode)
-		else:
-			print("GameScreen: Key release handled by player: %d" % event.keycode)
-			player.handle_key_release(event.keycode)
+		if keycode == KEY_ESCAPE and not countdown_active:
+			return
+		elif keycode == KEY_SPACE and not countdown_active:
+			if skip_intro():
+				return
+		
+		if not countdown_active:
+			print("GameScreen: Key press handled by player: %d" % keycode)
+			player.handle_key_press(keycode)
+
+	elif event is InputEventKey and not event.pressed: 
+		var keycode = event.keycode
+		print("GameScreen: Key release handled by player: %d" % keycode)
+		player.handle_key_release(keycode)
+
+func skip_intro() -> bool:
+	if is_paused or game_finished or countdown_active:
+		return false
+
+	if skip_used:
+		return false
+
+	if game_time >= skip_time_threshold:
+		return false
+
+	var spawn_queue = note_manager.get_spawn_queue()
+	if not spawn_queue or spawn_queue.size() == 0:
+		return false
+
+	var first_note_time = spawn_queue[0].get("time", 0.0)
+	if first_note_time <= game_time:
+		return false
+
+	if first_note_time < skip_time_threshold:
+		return false
+
+	var target_time = max(0.0, first_note_time - skip_rewind_seconds)
+	print("[GameScreen] Пропуск вступления. Текущее время: %.2f, первая нота: %.2f, перемотка к: %.2f" % [game_time, first_note_time, target_time])
+
+	game_time = target_time
+
+	if music_manager and music_manager.has_method("set_music_position"):
+		music_manager.set_music_position(target_time)
+		print("[GameScreen] Позиция аудио установлена на %.2fс" % target_time)
+	else:
+		printerr("[GameScreen] MusicManager не имеет метода set_music_position или не установлен.")
+	note_manager.skip_notes_before_time(target_time)
+	skip_used = true
+	return true
 
 func check_hit(lane: int):
 	if notes_loaded:

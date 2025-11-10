@@ -1,4 +1,4 @@
-# res://scenes/game_screen/notes/kick_note.gd
+# scenes/game_screen/notes/kick_note.gd
 class_name KickNote
 extends BaseNote
 

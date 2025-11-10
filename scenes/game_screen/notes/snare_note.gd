@@ -1,4 +1,4 @@
-# res://scenes/game_screen/notes/snare_note.gd
+# scenes/game_screen/notes/snare_note.gd
 class_name SnareNote
 extends BaseNote
 

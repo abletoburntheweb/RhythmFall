@@ -1,4 +1,4 @@
-# res://scenes/game_screen/notes/hold_note.gd
+# scenes/game_screen/notes/hold_note.gd
 class_name HoldNote
 extends BaseNote
 
@@ -17,8 +17,7 @@ func _init(p_lane: int, p_y: float, p_height: float, p_hold_time_ms: float):
 	height = p_height
 	duration = p_hold_time_ms / 1000.0
 	hold_time_ms = p_hold_time_ms
-
-# Обновление для HoldNote
+	
 func update(speed: float):
 	var current_fall_speed = speed if speed != 0 else fall_speed
 

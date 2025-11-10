@@ -16,6 +16,7 @@ func _init(screen):
 
 func load_notes_from_file(song_data):
 	if not song_data or not "path" in song_data:
+		printerr("NoteManager: Нет данных о песне или пути к файлу.")
 		return
 
 	var song_path = song_data["path"]
@@ -29,13 +30,18 @@ func load_notes_from_file(song_data):
 
 	var file = FileAccess.open(notes_file_path, FileAccess.READ)
 	if not file:
+		printerr("NoteManager: Не удалось открыть файл нот: ", notes_file_path)
 		return
 
 	var json_text = file.get_as_text()
 	file.close()
+	if json_text.is_empty():
+		printerr("NoteManager: Файл нот пуст: ", notes_file_path)
+		return
 
 	var json_result = JSON.parse_string(json_text)
 	if not json_result or typeof(json_result) != TYPE_ARRAY:
+		printerr("NoteManager: Не удалось распарсить JSON или это не массив: ", notes_file_path)
 		return
 
 	for note_data in json_result:
@@ -52,7 +58,7 @@ func spawn_notes():
 
 	if note_spawn_queue.size() == 0:
 		return
-
+		
 	var pixels_per_sec = speed * (1000.0 / 16.0)
 	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
@@ -61,8 +67,9 @@ func spawn_notes():
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
-		var note_time = note_info.get("time", 0.0) 
+		var note_time = note_info.get("time", 0.0)
 		var note_type = note_info.get("type", "DefaultNote")
+
 		var time_diff = note_time - game_time
 		var y_spawn = hit_zone_y - time_diff * pixels_per_sec
 		if y_spawn > game_screen.get_viewport_rect().size.y + 20:
@@ -122,6 +129,18 @@ func update_notes():
 
 func get_notes():
 	return notes
+
+func get_spawn_queue():
+	return note_spawn_queue
+
+func skip_notes_before_time(time_threshold: float):
+	var i = 0
+	while i < note_spawn_queue.size():
+		var note_data = note_spawn_queue[i]
+		if note_data.get("time", 0.0) < time_threshold:
+			note_spawn_queue.remove_at(i)
+		else:
+			i += 1
 
 func clear_notes():
 	for note in notes:

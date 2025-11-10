@@ -14,6 +14,7 @@ const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
+
 var was_menu_music_playing_before_shop: bool = false
 var menu_music_position_before_shop: float = 0.0
 
@@ -42,7 +43,6 @@ func _ready():
 
 	sfx_player = AudioStreamPlayer.new() 
 	sfx_player.name = "SFXPlayer"
-	
 	add_child(sfx_player)
 
 	hit_sound_player = AudioStreamPlayer.new()
@@ -58,6 +58,7 @@ func _ready():
 	add_child(metronome_player2)
 
 	_metronome_players = [metronome_player1, metronome_player2]
+
 func pause_menu_music():
 	if music_player and current_menu_music_file != "":
 		if music_player.playing:
@@ -71,6 +72,7 @@ func pause_menu_music():
 			print("MusicManager.gd: Музыка меню была загружена, но не играла. Запоминаем для возобновления с начала.")
 	else:
 		print("MusicManager.gd: Музыка меню не была загружена или music_player недоступен.")
+
 func resume_menu_music():
 	if current_menu_music_file != "":
 		if was_menu_music_playing_before_shop:
@@ -171,13 +173,28 @@ func play_game_music(music_file: String):
 			printerr("MusicManager: Не удалось загрузить аудио для игры: ", music_file)
 			return
 
-
 		if music_player:
-			current_game_music_file = music_file
+			current_game_music_file = music_file 
 			music_player.stream = stream
 			music_player.play()
 	else:
 		printerr("MusicManager: Файл игровой музыки не найден: ", music_file)
+
+func set_music_position(position: float):
+	if music_player and music_player.stream:
+		if music_player.playing:
+			music_player.seek(position)
+			print("MusicManager: Музыка перемотана на %.2fс (seek)" % position)
+		else:
+			music_player.play(position)
+			print("MusicManager: Музыка запущена с позиции %.2fс (play)" % position)
+	else:
+		printerr("MusicManager: Невозможно перемотать музыку. AudioStreamPlayer не установлен или нет аудио потока.")
+
+func get_current_music_position() -> float:
+	if music_player and music_player.playing:
+		return music_player.get_playback_position()
+	return 0.0
 
 func stop_music():
 	if music_player: 
@@ -204,7 +221,6 @@ func is_music_playing() -> bool:
 		return music_player.playing
 	else:
 		return false
-
 
 func play_sfx(sound_path: String):
 	var full_path = MUSIC_DIR + sound_path

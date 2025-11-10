@@ -1,4 +1,4 @@
-# res://scenes/game_screen/notes/base_note.gd
+# scenes/game_screen/notes/base_note.gd
 class_name BaseNote
 extends RefCounted 
 

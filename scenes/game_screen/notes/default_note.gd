@@ -1,4 +1,4 @@
-# res://scenes/game_screen/notes/default_note.gd
+# scenes/game_screen/notes/default_note.gd
 class_name DefaultNote
 extends BaseNote
 
