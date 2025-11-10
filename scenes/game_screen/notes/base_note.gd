@@ -7,6 +7,7 @@ var y: float
 var active: bool = true
 var time: float = 0.0
 var visual_node: Variant 
+var note_type: String = "BaseNote" 
 
 func _init(p_lane: int, p_y: float):
 	lane = p_lane

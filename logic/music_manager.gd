@@ -276,12 +276,14 @@ func play_hit_sound(is_kick: bool = true):
 func play_custom_hit_sound(sound_path: String):
 	var full_path = sound_path
 	if not full_path.begins_with("res://"):
-		full_path = SHOP_SOUND_DIR + sound_path
+		pass
 	var stream = load(full_path) as AudioStream
 	if stream:
 		if hit_sound_player:
 			hit_sound_player.stream = stream
 			hit_sound_player.play()
+		else:
+			printerr("MusicManager: hit_sound_player не установлен!")
 	else:
 		printerr("MusicManager: Не удалось загрузить кастомный звук удара: ", full_path)
 

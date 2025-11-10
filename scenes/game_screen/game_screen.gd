@@ -4,6 +4,7 @@ extends Node2D
 const ScoreManager = preload("res://logic/score_manager.gd")
 const NoteManager = preload("res://logic/note_manager.gd")
 const Player = preload("res://logic/player.gd")
+const SoundInstrumentFactory = preload("res://logic/sound_instrument_factory.gd")
 
 var game_time: float = 0.0
 var countdown_remaining: int = 5
@@ -27,6 +28,7 @@ var player
 var game_engine
 
 var music_manager = null
+var sound_factory = null
 
 @onready var score_label: Label = $UIContainer/ScoreLabel
 @onready var combo_label: Label = $UIContainer/ComboLabel
@@ -77,7 +79,8 @@ func _ready():
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
 	player = Player.new(settings_for_player)  
-
+	sound_factory = SoundInstrumentFactory.new(music_manager)
+	
 	player.note_hit.connect(_on_player_hit)
 	player.lane_pressed_changed.connect(_on_lane_pressed_changed) 
 
@@ -267,7 +270,7 @@ func _input(event):
 		if not countdown_active:
 			print("GameScreen: Key press handled by player: %d" % keycode)
 			player.handle_key_press(keycode)
-
+	
 	elif event is InputEventKey and not event.pressed: 
 		var keycode = event.keycode
 		print("GameScreen: Key release handled by player: %d" % keycode)
@@ -283,7 +286,7 @@ func skip_intro() -> bool:
 	if game_time >= skip_time_threshold:
 		return false
 
-	var spawn_queue = note_manager.get_spawn_queue()
+	var spawn_queue = note_manager.get_spawn_queue() 
 	if not spawn_queue or spawn_queue.size() == 0:
 		return false
 
@@ -304,9 +307,12 @@ func skip_intro() -> bool:
 		print("[GameScreen] Позиция аудио установлена на %.2fс" % target_time)
 	else:
 		printerr("[GameScreen] MusicManager не имеет метода set_music_position или не установлен.")
-	note_manager.skip_notes_before_time(target_time)
+
+	note_manager.skip_notes_before_time(target_time) 
+
 	skip_used = true
 	return true
+
 
 func check_hit(lane: int):
 	if notes_loaded:
@@ -316,6 +322,15 @@ func check_hit(lane: int):
 		for note in note_manager.get_notes():
 			if note.lane == lane and abs(note.y - hit_zone_y) < 30:
 				score_manager.add_perfect_hit()
+				
+				if sound_factory and music_manager:
+					var note_type = note.note_type 
+					var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
+					
+					music_manager.play_custom_hit_sound(sound_path) 
+				else:
+					printerr("GameScreen: sound_factory или music_manager не установлены для проигрывания звука хита.")
+				
 				note.active = false 
 				print("PERFECT HIT lane %d | Combo: %d" % [lane, score_manager.get_combo()])
 				hit_occurred = true
