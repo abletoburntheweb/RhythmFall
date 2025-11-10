@@ -36,7 +36,7 @@ var music_manager = null
 @onready var time_label: Label = $UIContainer/TimeLabel
 @onready var accuracy_label: Label = $UIContainer/AccuracyLabel
 @onready var instrument_label: Label = $UIContainer/InstrumentLabel
-@onready var countdown_label: Label = $CountdownLabe
+@onready var countdown_label: Label = $CountdownLabel
 @onready var notes_container: Node2D = $NotesContainer
 
 var game_timer: Timer
