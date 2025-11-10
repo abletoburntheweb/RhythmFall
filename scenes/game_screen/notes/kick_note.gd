@@ -2,4 +2,4 @@
 class_name KickNote
 extends BaseNote
 
-var color: Color = Color.GREEN
+var color: Color = Color("#32C832")

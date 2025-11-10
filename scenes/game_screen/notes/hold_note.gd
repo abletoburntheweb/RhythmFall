@@ -2,6 +2,7 @@
 class_name HoldNote
 extends BaseNote
 
+var color: Color = Color("#C83232")
 var height: float
 var duration: float
 var hold_time_ms: float
@@ -17,11 +18,12 @@ func _init(p_lane: int, p_y: float, p_height: float, p_hold_time_ms: float):
 	duration = p_hold_time_ms / 1000.0
 	hold_time_ms = p_hold_time_ms
 
+# Обновление для HoldNote
 func update(speed: float):
 	var current_fall_speed = speed if speed != 0 else fall_speed
 
 	if is_being_held and not captured:
-		held_time += 16.0 
+		held_time += 16.0
 		hit_progress = min(held_time / hold_time_ms, 1.0)
 
 		if hit_progress >= 1.0:

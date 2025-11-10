@@ -11,18 +11,11 @@ var HoldNote = load("res://scenes/game_screen/notes/hold_note.gd")
 var KickNote = load("res://scenes/game_screen/notes/kick_note.gd")
 var SnareNote = load("res://scenes/game_screen/notes/snare_note.gd")
 
-
 func _init(screen):
 	game_screen = screen
-	print("NoteManager: Загружен BaseNote: ", BaseNote)
-	print("NoteManager: Загружен DefaultNote: ", DefaultNote)
-	print("NoteManager: Загружен HoldNote: ", HoldNote)
-	print("NoteManager: Загружен KickNote: ", KickNote)
-	print("NoteManager: Загружен SnareNote: ", SnareNote)
 
 func load_notes_from_file(song_data):
 	if not song_data or not "path" in song_data:
-		print("[NoteManager] Нет данных о песне для загрузки нот.")
 		return
 
 	var song_path = song_data["path"]
@@ -34,11 +27,8 @@ func load_notes_from_file(song_data):
 
 	var notes_file_path = "user://notes/%s/%s_%s.json" % [base_name, base_name, current_instrument]
 
-	print("[NoteManager] Попытка загрузки нот из: %s" % notes_file_path)
-
 	var file = FileAccess.open(notes_file_path, FileAccess.READ)
 	if not file:
-		print("[NoteManager] Файл нот не найден: %s" % notes_file_path)
 		return
 
 	var json_text = file.get_as_text()
@@ -46,7 +36,6 @@ func load_notes_from_file(song_data):
 
 	var json_result = JSON.parse_string(json_text)
 	if not json_result or typeof(json_result) != TYPE_ARRAY:
-		print("[NoteManager] Файл нот пуст или не является массивом.")
 		return
 
 	for note_data in json_result:
@@ -54,8 +43,6 @@ func load_notes_from_file(song_data):
 		var lane = note_data.get("lane", 0)
 		var time = note_data.get("time", 0.0)
 		note_spawn_queue.append(note_data)
-
-	print("[NoteManager] Загружено %d нот из %s" % [json_result.size(), notes_file_path.get_file()])
 
 func spawn_notes():
 	var game_time = game_screen.game_time
@@ -74,8 +61,6 @@ func spawn_notes():
 		var pixels_per_sec = speed * (1000.0 / 16.0)
 		var initial_y_offset_from_top = -20
 		var y_now = initial_y_offset_from_top + (game_time - time) * pixels_per_sec
-
-		print("[NoteManager] Попытка спавна ноты: type=", note_type, ", lane=", lane, ", time=", time, ", game_time=", game_time, ", y_now=", y_now)
 
 		var note_object = null
 		var visual_rect = ColorRect.new()
@@ -99,11 +84,9 @@ func spawn_notes():
 				note_object = SnareNote.new(lane, y_now)
 				visual_rect.color = note_object.color
 		else:
-			print("Неизвестный тип ноты: %s" % note_type)
 			continue
 
 		if note_object:
-			print("[NoteManager] Создан объект ноты типа: ", note_object.get_class(), " (", note_object, ")")
 			note_object.time = time
 			note_object.visual_node = visual_rect
 
@@ -117,13 +100,9 @@ func spawn_notes():
 
 			visual_rect.position = Vector2(lane * lane_width, y_now)
 
-			print("[NoteManager] Создана визуальная нота: type=", note_type, ", lane=", lane, ", y=", y_now, ", position=", visual_rect.position, ", size=", visual_rect.size)
-
 			game_screen.notes_container.add_child(visual_rect)
 
 			notes.append(note_object) 
-		else:
-			print("[NoteManager] Нота не создана из-за условия y_now или ошибка в конструкторе. y_now=", y_now, ", time=", time, ", game_time=", game_time, ", lane=", lane, ", type=", note_type)
 
 func update_notes():
 	var speed = game_screen.speed

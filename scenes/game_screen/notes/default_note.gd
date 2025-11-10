@@ -2,4 +2,4 @@
 class_name DefaultNote
 extends BaseNote
 
-var color: Color = Color.RED
+var color: Color = Color("#C83232")

@@ -2,4 +2,4 @@
 class_name SnareNote
 extends BaseNote
 
-var color: Color = Color.BLUE
+var color: Color = Color("#3296FF")

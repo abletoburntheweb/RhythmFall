@@ -282,7 +282,7 @@ func check_hit(lane: int):
 				break 
 
 		if not hit_occurred:
-			score_manager.reset_combo()
+			score_manager.reset_combo() 
 			print("MISSED HIT lane %d | Combo сброшен" % lane)
 	else:
 		score_manager.add_perfect_hit()
