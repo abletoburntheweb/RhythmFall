@@ -58,15 +58,18 @@ func _ready():
 			print("GameScreen: MusicManager не получен из game_engine (null).")
 	else:
 		print("GameScreen: game_engine не имеет метода get_music_manager.")
-	
-	var settings_for_player = {}
-	if game_engine and "settings" in game_engine:
-		var game_settings = game_engine.settings
-		if game_settings is Dictionary:
-			settings_for_player = game_settings
-		else:
-			print("GameScreen: game_engine.settings не является Dictionary, используем пустой словарь")
 
+	var settings_for_player = {}
+	if game_engine and game_engine.has_method("get_settings_manager"):
+		var settings_manager = game_engine.get_settings_manager()
+		if settings_manager:
+			settings_for_player = settings_manager.settings.duplicate(true)
+			print("GameScreen: Настройки получены из SettingsManager: ", settings_for_player)
+		else:
+			print("GameScreen: SettingsManager не получен из game_engine (null).")
+	else:
+		print("GameScreen: game_engine не имеет метода get_settings_manager.")
+		
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
 	player = Player.new(settings_for_player)  

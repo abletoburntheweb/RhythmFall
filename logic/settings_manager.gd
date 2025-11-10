@@ -1,4 +1,3 @@
-# logic/settings_manager.gd
 class_name SettingsManager
 extends RefCounted
 
@@ -60,12 +59,16 @@ func _load_settings():
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
 			var loaded_settings = _merge_defaults_with_loaded(default_settings, json_result)
+			# Привести значения клавиш к целым числам
 			var controls_loaded = loaded_settings.get("controls_keymap", {})
 			var controls_updated = false
 			for i in range(4):
 				var lane_key = "lane_%d_key" % i
 				var value = controls_loaded.get(lane_key)
-				if value is String:
+				if value is float:  # Если значение float, преобразуем в int
+					controls_loaded[lane_key] = int(value)
+					controls_updated = true
+				elif value is String:  # Если строка, конвертируем в scancode
 					var scancode = _string_to_scancode(value)
 					if scancode != 0:
 						controls_loaded[lane_key] = scancode
@@ -74,7 +77,7 @@ func _load_settings():
 						controls_loaded[lane_key] = default_settings["controls_keymap"][lane_key]
 						controls_updated = true
 			if controls_updated:
-				print("SettingsManager: Обновлен формат клавиш управления из строк в scancode при загрузке.")
+				print("SettingsManager: Обновлен формат клавиш управления из float/строк в int при загрузке.")
 			settings = loaded_settings
 			print("SettingsManager: Настройки загружены из ", SETTINGS_PATH)
 			print("SettingsManager: Загруженные настройки: ", settings)
