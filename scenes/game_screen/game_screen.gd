@@ -247,7 +247,7 @@ func update_ui():
 	if accuracy_label:
 		accuracy_label.text = "Точность: %.2f%%" % score_manager.get_accuracy()
 	if instrument_label:
-		pass
+		instrument_label.text = "Инструмент: " + ("Перкуссия" if current_instrument == "drums" else "Стандартный")
 
 func update_countdown_display():
 	if countdown_label: 
