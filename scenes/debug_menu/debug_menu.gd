@@ -16,8 +16,6 @@ var plus_1000_button: Button = null
 var minus_1000_button: Button = null
 var win_button: Button = null
 
-var is_auto_playing: bool = false
-
 func _ready():
 	fps_label = get_node_or_null("FPSLabel") as Label
 	score_label = get_node_or_null("ScoreLabel") as Label
@@ -84,27 +82,48 @@ func update_debug_info(game_screen):
 		song_time_label.text = "Время песни: %.1fс" % game_screen.game_time
 
 func _on_plus_1000_button_pressed():
-	if get_parent() and get_parent().has_method("score_manager"):
-		var parent_score_manager = get_parent().score_manager
-		if parent_score_manager:
-			parent_score_manager.score += 1000
-			print("DebugMenu: Добавлено 1000 очков.")
+	var game_screen = get_parent()
+	if game_screen and game_screen.score_manager:
+		game_screen.score_manager.score += 1000
+		print("DebugMenu: Добавлено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
+		if game_screen.has_method("update_ui"):
+			game_screen.update_ui()
+	else:
+		if not game_screen:
+			printerr("DebugMenu: get_parent() вернул null!")
+		elif not game_screen.score_manager:
+			printerr("DebugMenu: score_manager родителя равен null! (Возможно, GameScreen ещё не инициализировал его или произошла ошибка.)")
+		else:
+			printerr("DebugMenu: Неизвестная ошибка при доступе к score_manager.")
 
 func _on_minus_1000_button_pressed():
-	if get_parent() and get_parent().has_method("score_manager"):
-		var parent_score_manager = get_parent().score_manager
-		if parent_score_manager:
-			parent_score_manager.score = max(0, parent_score_manager.score - 1000)
-			print("DebugMenu: Вычтено 1000 очков.")
+	var game_screen = get_parent()
+	if game_screen and game_screen.score_manager:
+		game_screen.score_manager.score = max(0, game_screen.score_manager.score - 1000)
+		print("DebugMenu: Вычтено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
+		if game_screen.has_method("update_ui"):
+			game_screen.update_ui()
+	else:
+		if not game_screen:
+			printerr("DebugMenu: get_parent() вернул null!")
+		elif not game_screen.score_manager:
+			printerr("DebugMenu: score_manager родителя равен null! (Возможно, GameScreen ещё не инициализировал его или произошла ошибка.)")
+		else:
+			printerr("DebugMenu: Неизвестная ошибка при доступе к score_manager.")
 
 func _on_win_button_pressed():
-	if get_parent() and get_parent().has_method("end_game"):
-		get_parent().end_game()
+	var game_screen = get_parent()
+	if game_screen and game_screen.has_method("end_game"):
+		game_screen.end_game()
 		print("DebugMenu: Игра завершена через DebugMenu.")
+	else:
+		printerr("DebugMenu: Не удалось получить доступ к методу end_game родителя.")
 
 func _on_auto_play_check_box_toggled(button_pressed: bool):
-	is_auto_playing = button_pressed
-	print("DebugMenu: Автопрохождение ", "ВКЛ" if is_auto_playing else "ВЫКЛ")
+	print("DebugMenu: Автопрохождение ", "ВКЛ" if button_pressed else "ВЫКЛ")
 
 func is_auto_play_enabled() -> bool:
-	return is_auto_playing
+	if auto_play_check_box:
+		return auto_play_check_box.button_pressed
+	else:
+		return false 

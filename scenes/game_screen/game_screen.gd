@@ -5,6 +5,7 @@ const ScoreManager = preload("res://logic/score_manager.gd")
 const NoteManager = preload("res://logic/note_manager.gd")
 const Player = preload("res://logic/player.gd")
 const SoundInstrumentFactory = preload("res://logic/sound_instrument_factory.gd")
+const AutoPlayer = preload("res://scenes/debug_menu/bot.gd")
 
 var game_time: float = 0.0
 var countdown_remaining: int = 5
@@ -53,6 +54,8 @@ var lane_highlight_nodes: Array[ColorRect] = []
 
 var debug_menu: DebugMenu = null
 
+var auto_player = null
+
 func _ready():
 	game_engine = get_parent()
 	
@@ -75,6 +78,9 @@ func _ready():
 
 	_find_ui_elements()
 	_instantiate_debug_menu()
+
+	auto_player = AutoPlayer.new(self)
+	print("GameScreen: AutoPlayer создан.")
 
 	game_timer = Timer.new()
 	game_timer.wait_time = 0.016 
@@ -215,6 +221,9 @@ func _update_game():
 		note_manager.spawn_notes()
 	
 	update_ui()
+	
+	if auto_player:
+		auto_player.simulate()
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
