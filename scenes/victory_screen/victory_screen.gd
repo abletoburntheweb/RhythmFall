@@ -44,7 +44,10 @@ func _on_replay_button_pressed():
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_game_with_song"):
-			transitions.open_game_with_song(song_info, "standard")
+			var instrument_to_use = song_info.get("instrument", "standard")
+			transitions.open_game_with_song(song_info, instrument_to_use)
+	
+	queue_free()
 
 func _on_song_select_button_pressed():
 	var game_engine = get_parent()
@@ -52,6 +55,8 @@ func _on_song_select_button_pressed():
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_song_select"):
 			transitions.open_song_select()
+
+	queue_free()
 
 func _animate_results():
 	var finished = true

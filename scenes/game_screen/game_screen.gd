@@ -279,12 +279,15 @@ func end_game():
 	if victory_scene:
 		var new_victory_screen = victory_scene.instantiate()
 		
+		var victory_song_info = selected_song_data.duplicate()
+		victory_song_info["instrument"] = current_instrument
+		
 		new_victory_screen.set_victory_data(
 			score_manager.get_score(),
 			score_manager.get_combo(),
 			score_manager.get_max_combo(),
 			score_manager.get_accuracy(),
-			selected_song_data
+			victory_song_info
 		)
 		
 		var parent_node = get_parent()
