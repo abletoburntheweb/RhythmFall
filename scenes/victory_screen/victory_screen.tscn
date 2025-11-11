@@ -1,0 +1,105 @@
+[gd_scene load_steps=2 format=3 uid="uid://wr4xw6kkexww"]
+
+[ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
+
+[node name="VictoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rgl4p")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(400, 550)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 6.0
+offset_right = 1920.0
+offset_bottom = 73.0
+theme_override_font_sizes/font_size = 48
+text = "ПОБЕДА "
+horizontal_alignment = 1
+
+[node name="SongLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 87.0
+offset_right = 1920.0
+offset_bottom = 132.0
+theme_override_font_sizes/font_size = 32
+text = "Название Песни"
+horizontal_alignment = 1
+
+[node name="StatsFrame" type="Panel" parent="."]
+layout_mode = 0
+offset_top = 145.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="ScoreLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 24
+text = "Счёт: 0"
+horizontal_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 1920.0
+offset_bottom = 53.0
+theme_override_font_sizes/font_size = 24
+text = "Комбо: 0"
+horizontal_alignment = 1
+
+[node name="MaxComboLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 1920.0
+offset_bottom = 83.0
+theme_override_font_sizes/font_size = 24
+text = "Макс. комбо: 0"
+horizontal_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 90.0
+offset_right = 1920.0
+offset_bottom = 113.0
+theme_override_font_sizes/font_size = 24
+text = "Точность: 0"
+horizontal_alignment = 1
+
+[node name="CurrencyLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 120.0
+offset_right = 1920.0
+offset_bottom = 143.0
+theme_override_font_sizes/font_size = 24
+text = "Валюта: 0"
+horizontal_alignment = 1
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_top = 304.0
+offset_right = 1920.0
+offset_bottom = 1078.0
+
+[node name="ReplayButton" type="Button" parent="ButtonsContainer"]
+modulate = Color(0, 0.62806845, 0.1154759, 1)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Повторить"
+
+[node name="SongSelectButton" type="Button" parent="ButtonsContainer"]
+modulate = Color(0.40640846, 0.5073241, 1.0039686, 1)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "К списку песен"

@@ -218,6 +218,28 @@ func transition_close_settings(_from_pause=false):
 	
 	transition_open_main_menu()
 
+func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}):
+	var new_screen = _instantiate_if_exists("res://scenes/victory_screen/victory_screen.tscn")
+	if new_screen:
+		if new_screen.has_method("set_victory_data"):
+			new_screen.set_victory_data(score, combo, max_combo, accuracy, song_info)
+		
+		new_screen.song_select_requested.connect(transition_open_song_select)
+		new_screen.replay_requested.connect(_on_replay_requested.bind(song_info))
+		
+		if game_engine.current_screen:
+			game_engine.current_screen.queue_free()
+		game_engine.add_child(new_screen)
+		game_engine.current_screen = new_screen
+	else:
+		print("Transitions: victory_screen.tscn не найден, переход отменён.")
+
+func _on_replay_requested(song_info: Dictionary):
+	transition_open_game(null, song_info, "standard")
+
+func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}):
+	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info)
+
 func transition_exit_to_main_menu():
 	transition_open_main_menu()
 

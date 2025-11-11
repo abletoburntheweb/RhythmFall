@@ -44,6 +44,7 @@ var notes_container: Node2D = null
 
 var game_timer: Timer
 var countdown_timer
+var check_song_end_timer: Timer
 
 var notes_loaded: bool = false
 var skip_used = false
@@ -86,6 +87,11 @@ func _ready():
 	game_timer.wait_time = 0.016 
 	game_timer.timeout.connect(_update_game)
 	add_child(game_timer)
+	
+	check_song_end_timer = Timer.new()
+	check_song_end_timer.wait_time = 0.1
+	check_song_end_timer.timeout.connect(_check_song_end)
+	add_child(check_song_end_timer)
 	
 	set_process_input(true)
 	
@@ -199,6 +205,8 @@ func start_gameplay():
 	
 	if music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(bpm, 0) 
+	
+	check_song_end_timer.start()
 
 func update_speed_from_bpm():
 	var base_bpm = 120.0
@@ -229,6 +237,61 @@ func _update_game():
 		debug_menu.update_debug_info(self)
 	
 	note_manager.update_notes()
+
+func _check_song_end():
+	if is_paused or game_finished:
+		return
+	
+	if selected_song_data and selected_song_data.has("duration"):
+		var duration_value = selected_song_data.get("duration", 0.0)
+		if typeof(duration_value) == TYPE_FLOAT and duration_value > 0:
+			var duration = duration_value
+			if game_time >= duration - 0.1:
+				end_game()
+				return
+	
+	if music_manager and music_manager.has_method("is_game_music_playing"):
+		if not music_manager.is_game_music_playing():
+			end_game()
+
+func end_game():
+	if game_finished:
+		return
+	
+	print("GameScreen: Игра завершена, переход к VictoryScreen...")
+	game_finished = true
+	
+	if not game_timer.is_stopped():
+		game_timer.stop()
+	if not check_song_end_timer.is_stopped():
+		check_song_end_timer.stop()
+	
+	if music_manager:
+		if music_manager.has_method("stop_game_music"):
+			music_manager.stop_game_music()
+		if music_manager.has_method("stop_metronome"):
+			music_manager.stop_metronome()
+	
+	if auto_player:
+		auto_player.reset()
+	
+	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
+	if victory_scene:
+		var new_victory_screen = victory_scene.instantiate()
+		
+		new_victory_screen.set_victory_data(
+			score_manager.get_score(),
+			score_manager.get_combo(),
+			score_manager.get_max_combo(),
+			score_manager.get_accuracy(),
+			selected_song_data
+		)
+		
+		var parent_node = get_parent()
+		if parent_node:
+			parent_node.remove_child(self)
+			parent_node.add_child(new_victory_screen)
+			queue_free()
 
 func update_ui():
 	if score_label:
