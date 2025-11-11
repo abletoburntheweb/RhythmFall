@@ -200,10 +200,14 @@ func _save_notes_locally(song_path: String, instrument: String, notes_data: Arra
 	
 	var notes_path = "%s/%s" % [song_notes_path, notes_filename]
 	
+	var json_obj = JSON.new()
+	var json_string = json_obj.stringify(notes_data, "  ") 
+	
 	var file = FileAccess.open(notes_path, FileAccess.WRITE)
 	if file:
-		file.store_string(JSON.stringify(notes_data))
+		file.store_string(json_string) 
 		file.close()
 		print("NoteGeneratorClient.gd: Ноты сохранены локально: ", notes_path)
+		print("NoteGeneratorClient.gd: Содержимое файла отформатировано.")
 	else:
 		print("NoteGeneratorClient.gd: Ошибка сохранения нот: ", notes_path)
