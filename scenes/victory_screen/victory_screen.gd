@@ -54,46 +54,40 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	song_info = p_song_info
 	
 	earned_currency = _calculate_currency()
-	
-	# === ВСЕ ОБНОВЛЕНИЯ UI ТЕПЕРЬ ЧЕРЕЗ call_deferred ===
+
 	call_deferred("_deferred_update_ui")
-	# ===============================================
 
 func _deferred_update_ui():
-	# Обновляем тексты меток с результатами
 	if is_instance_valid(song_label) and song_info.get("title"):
 		song_label.text = song_info["title"]
 	
 	if is_instance_valid(score_label):
-		score_label.text = "Счёт: %d" % score  # <-- Показываем реальный счёт
-	
+		score_label.text = "Счёт: %d" % score  
+		
 	if is_instance_valid(combo_label):
-		combo_label.text = "Комбо: %d" % combo  # <-- Показываем реальное комбо
+		combo_label.text = "Комбо: %d" % combo  
 	
 	if is_instance_valid(max_combo_label):
-		max_combo_label.text = "Макс. комбо: %d" % max_combo  # <-- Показываем максимальное комбо
+		max_combo_label.text = "Макс. комбо: %d" % max_combo 
 	
 	if is_instance_valid(accuracy_label):
-		accuracy_label.text = "Точность: %.1f%%" % accuracy  # <-- Показываем точность
+		accuracy_label.text = "Точность: %.1f%%" % accuracy  
 	
 	if is_instance_valid(currency_label):
-		currency_label.text = "Валюта: %d" % earned_currency  # <-- Показываем валюту
-
-	# === ДОБАВИТЬ ВАЛЮТУ В PLAYER DATA ===
+		currency_label.text = "Валюта: %d" % earned_currency 
+		
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_player_data_manager"):
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
-			# Обновляем отображение валюты в UI сразу после добавления
 			if is_instance_valid(currency_label):
 				currency_label.text = "Валюта: %d" % player_data_manager.get_currency()
 		else:
 			printerr("VictoryScreen: Не удалось получить player_data_manager")
 	else:
 		printerr("VictoryScreen: Не удалось получить game_engine или метод get_player_data_manager")
-	# =====================================
 
 func _calculate_currency() -> int:
 	var currency = int(score * 0.01 + max_combo * 0.1 + accuracy * 10)
