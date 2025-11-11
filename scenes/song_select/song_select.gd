@@ -298,7 +298,7 @@ func _update_edit_button_style():
 		return
 	if song_edit_manager.is_edit_mode_active():
 		edit_button.self_modulate = Color(0.8, 0.8, 1.0, 1.0)
-		edit_button.text = "Редактировать (ON)"
+		edit_button.text = "Редактировать (ВКЛ)"
 	else:
 		edit_button.self_modulate = Color(1.0, 1.0, 1.0, 1.0)
 		edit_button.text = "Редактировать"

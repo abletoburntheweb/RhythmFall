@@ -35,8 +35,8 @@ var active_snare_sound_path: String = ""
 
 var current_menu_music_file: String = ""
 var current_game_music_file: String = ""
-
-func _ready():
+func _ready
+():
 	music_player = AudioStreamPlayer.new()
 	music_player.name = "MusicPlayer"
 	add_child(music_player)
