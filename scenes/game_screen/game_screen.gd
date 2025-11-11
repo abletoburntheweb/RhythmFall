@@ -261,35 +261,55 @@ func end_game():
 	print("GameScreen: Игра завершена, переход к VictoryScreen...")
 	game_finished = true
 	
+	# Остановка таймеров
 	if not game_timer.is_stopped():
 		game_timer.stop()
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	
+	# Остановка музыки (важно!)
 	if music_manager:
 		if music_manager.has_method("stop_game_music"):
 			music_manager.stop_game_music()
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
 	
+	# Сброс автоплеера
 	if auto_player:
 		auto_player.reset()
 	
+	# Создание и открытие VictoryScreen
 	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
 	if victory_scene:
 		var new_victory_screen = victory_scene.instantiate()
 		
+		# Добавим текущий инструмент в song_info для повтора
 		var victory_song_info = selected_song_data.duplicate()
-		victory_song_info["instrument"] = current_instrument
+		victory_song_info["instrument"] = current_instrument # <-- Сохраняем инструмент
 		
+		# === ДОБАВЬТЕ ЭТУ ОТЛАДКУ ===
+		var debug_score = score_manager.get_score()
+		var debug_combo = score_manager.get_combo()
+		var debug_max_combo = score_manager.get_max_combo()
+		var debug_accuracy = score_manager.get_accuracy()
+		print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%" % [
+			debug_score,
+			debug_combo,
+			debug_max_combo,
+			debug_accuracy
+		])
+		# =========================
+		
+		# Устанавливаем данные победы с реальными значениями
 		new_victory_screen.set_victory_data(
-			score_manager.get_score(),
-			score_manager.get_combo(),
-			score_manager.get_max_combo(),
-			score_manager.get_accuracy(),
-			victory_song_info
+			debug_score,      # <-- Передаём отладочное значение
+			debug_combo,      # <-- Передаём отладочное значение
+			debug_max_combo,  # <-- Передаём отладочное значение
+			debug_accuracy,   # <-- Передаём отладочное значение
+			victory_song_info # <-- Песня
 		)
 		
+		# Заменяем текущий экран
 		var parent_node = get_parent()
 		if parent_node:
 			parent_node.remove_child(self)
