@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://b8a0ltjufbv70"]
+
+[node name="DebugMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(400, 550)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 224.0
+offset_bottom = 33.0
+text = "DEBUG: управление игрой"
+
+[node name="FPSLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 50.0
+offset_right = 62.0
+offset_bottom = 73.0
+text = "FPS: ---"
+
+[node name="ScoreLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 80.0
+offset_right = 72.0
+offset_bottom = 103.0
+text = "Счёт: ---"
+
+[node name="ComboLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 110.0
+offset_right = 87.0
+offset_bottom = 133.0
+text = "Комбо: ---"
+
+[node name="MaxComboLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 140.0
+offset_right = 135.0
+offset_bottom = 163.0
+text = "Макс. комбо: ---"
+
+[node name="ComboMultiplierLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 170.0
+offset_right = 185.0
+offset_bottom = 193.0
+text = "Множитель комбо: ---"
+
+[node name="BPMLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 200.0
+offset_right = 70.0
+offset_bottom = 223.0
+text = "BPM: ---"
+
+[node name="NotesTotalLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 230.0
+offset_right = 112.0
+offset_bottom = 253.0
+text = "Всего нот: ---"
+
+[node name="NotesCurrentLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 260.0
+offset_right = 161.0
+offset_bottom = 283.0
+text = "Активные ноты: ---"
+
+[node name="SongTimeLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 290.0
+offset_right = 139.0
+offset_bottom = 313.0
+text = "Время песни: ---"
+
+[node name="AutoPlayCheckBox" type="CheckButton" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 320.0
+offset_right = 263.0
+offset_bottom = 351.0
+text = "Автопрохождение"
+
+[node name="Plus1000Button" type="Button" parent="."]
+modulate = Color(0.2611848, 0.95418054, 0.27285755, 1)
+clip_contents = true
+custom_minimum_size = Vector2(245, 31)
+layout_mode = 0
+offset_left = 10.0
+offset_top = 360.0
+offset_right = 150.0
+offset_bottom = 391.0
+size_flags_horizontal = 0
+text = "+1000 очков"
+
+[node name="Minus1000Button" type="Button" parent="."]
+modulate = Color(0.89914286, 0.35882202, 0.3434405, 1)
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 0
+offset_left = 10.0
+offset_top = 400.0
+offset_right = 255.0
+offset_bottom = 431.0
+size_flags_horizontal = 0
+text = "- 1000 очков"
+
+[node name="WinButton" type="Button" parent="."]
+modulate = Color(0.2627451, 0.9529412, 0.27450982, 1)
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 0
+offset_left = 10.0
+offset_top = 440.0
+offset_right = 150.0
+offset_bottom = 471.0
+size_flags_horizontal = 0
+text = "Завершить уровень (Победа)"
