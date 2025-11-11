@@ -19,7 +19,8 @@ var data: Dictionary = {
 	"spent_currency": 0,
 	"total_earned_currency": 0,
 	"last_login_date": "",
-	"login_streak": 0
+	"login_streak": 0,
+	"levels_completed": 0 
 }
 
 var achievement_manager = null
@@ -29,7 +30,7 @@ func _init():
 
 	var default_items = [
 		"kick_default",
-		"snare_default",
+		"snare_default", 
 		"covers_default",
 	]
 	var items_changed = false
@@ -47,14 +48,15 @@ func _load():
 		file_access.close()
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
-			var loaded_currency = json_result.get("currency", 0)
+			var loaded_currency = int(json_result.get("currency", 0))
 			var loaded_items = json_result.get("items", {})
 			var loaded_active_items = json_result.get("active_items", {})
 			var loaded_last_login = json_result.get("last_login_date", "")
-			var loaded_login_streak = json_result.get("login_streak", 0)
+			var loaded_login_streak = int(json_result.get("login_streak", 0))
 			var loaded_achievements = json_result.get("achievements", {})
-			var loaded_spent_currency = json_result.get("spent_currency", 0)
-			var loaded_total_earned_currency = json_result.get("total_earned_currency", 0)
+			var loaded_spent_currency = int(json_result.get("spent_currency", 0))
+			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
+			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
 			
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено items: ", loaded_items)
@@ -65,6 +67,7 @@ func _load():
 			data["achievements"] = loaded_achievements.duplicate(true) 
 			data["spent_currency"] = loaded_spent_currency
 			data["total_earned_currency"] = loaded_total_earned_currency
+			data["levels_completed"] = loaded_levels_completed
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -105,20 +108,20 @@ func _save():
 		print("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
 
 func get_currency() -> int:
-	return data.get("currency", 0)
+	return int(data.get("currency", 0))
 
 func add_currency(amount: int):
-	var old_currency = data.get("currency", 0)
+	var old_currency = int(data.get("currency", 0))
 	var new_currency = old_currency + amount
 	data["currency"] = max(0, new_currency) 
 
 	if amount < 0:
 		var spent_amount = abs(amount)
-		data["spent_currency"] = data.get("spent_currency", 0) + spent_amount
+		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
 		if achievement_manager:
-			achievement_manager.check_spent_currency_achievement(data["spent_currency"])
+			achievement_manager.check_spent_currency_achievement(int(data["spent_currency"]))
 	elif amount > 0:
-		data["total_earned_currency"] = data.get("total_earned_currency", 0) + amount
+		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
 		if achievement_manager:
 			achievement_manager.check_currency_achievements(self) 
 
@@ -186,7 +189,7 @@ func get_save_data() -> Dictionary:
 
 func load_save_data(save_dict: Dictionary):
 	if save_dict.has("currency"):
-		data["currency"] = save_dict["currency"]
+		data["currency"] = int(save_dict["currency"])
 	if save_dict.has("items"):
 		if save_dict["items"] is Dictionary:
 			data["items"] = save_dict["items"].duplicate(true)
@@ -207,17 +210,19 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("achievements"):
 		data["achievements"] = save_dict["achievements"].duplicate(true)
 	if save_dict.has("spent_currency"):
-		data["spent_currency"] = save_dict["spent_currency"]
+		data["spent_currency"] = int(save_dict["spent_currency"])
 	if save_dict.has("total_earned_currency"):
-		data["total_earned_currency"] = save_dict["total_earned_currency"]
+		data["total_earned_currency"] = int(save_dict["total_earned_currency"])
 	if save_dict.has("last_login_date"):
 		data["last_login_date"] = save_dict["last_login_date"]
 	if save_dict.has("login_streak"):
-		data["login_streak"] = save_dict["login_streak"]
+		data["login_streak"] = int(save_dict["login_streak"])
+	if save_dict.has("levels_completed"):
+		data["levels_completed"] = int(save_dict["levels_completed"])
 	_save()
 
 func reset_progress():
-	var current_currency = data.get("currency", 0)
+	var current_currency = int(data.get("currency", 0))
 	var current_active_items = data.get("active_items", DEFAULT_ACTIVE_ITEMS.duplicate(true)).duplicate(true)
 
 	data["items"] = {}
@@ -226,6 +231,7 @@ func reset_progress():
 	data["total_earned_currency"] = 0
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
+	data["levels_completed"] = 0
 
 	data["currency"] = current_currency 
 	data["active_items"] = current_active_items
@@ -234,17 +240,17 @@ func reset_progress():
 	print("[PlayerDataManager] Прогресс сброшен.")
 
 func get_login_streak() -> int:
-	return data.get("login_streak", 0)
+	return int(data.get("login_streak", 0))
 
 func set_login_streak(streak: int) -> void:
-	data["login_streak"] = streak
+	data["login_streak"] = int(streak)
 	data["last_login_date"] = Time.get_date_string_from_system()
 	_save()
 	if achievement_manager:
 		achievement_manager.check_daily_login_achievements(self) 
 
 func increment_login_streak() -> void:
-	data["login_streak"] = data.get("login_streak", 0) + 1
+	data["login_streak"] = int(data.get("login_streak", 0)) + 1
 	data["last_login_date"] = Time.get_date_string_from_system() 
 	_save()
 	if achievement_manager:
@@ -262,3 +268,12 @@ func unlock_achievement(achievement_id: int) -> void:
 
 func is_achievement_unlocked(achievement_id: int) -> bool:
 	return data["achievements"].get(str(achievement_id), false)
+
+func add_completed_level():
+	data["levels_completed"] = int(data.get("levels_completed", 0)) + 1
+	_save()
+	if achievement_manager:
+		achievement_manager.check_levels_completed_achievement(int(data["levels_completed"]))
+
+func get_levels_completed() -> int:
+	return int(data.get("levels_completed", 0))

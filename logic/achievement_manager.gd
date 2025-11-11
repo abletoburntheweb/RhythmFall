@@ -312,7 +312,31 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 			if missing_items_count == 0:
 				_perform_unlock(achievement)
 			break
-			
+func check_first_level_achievement():
+	for achievement in achievements:
+		if achievement.id == 24 and not achievement.get("unlocked", false):
+			_perform_unlock(achievement)
+			break
+
+func check_perfect_accuracy_achievement(accuracy: float):
+	if accuracy >= 100.0:
+		for achievement in achievements:
+			if achievement.id == 25 and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+				break
+
+func check_levels_completed_achievement(total_levels_completed: int):
+	var level_achievements = {26: 5, 27: 20}
+
+	for ach_id in level_achievements:
+		var required_count = level_achievements[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = total_levels_completed
+				if total_levels_completed >= required_count and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
+							
 func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
@@ -333,6 +357,8 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["currency"] = current_currency
 	pdm.data["spent_currency"] = 0
 	pdm.data["total_earned_currency"] = 0
+	pdm.data["levels_completed"] = 0
+
 	pdm._save()
 
 	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")
