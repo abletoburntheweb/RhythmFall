@@ -101,7 +101,7 @@
 			"unlocked": false
 		},
 		{
-			"current": 3300,
+			"current": 3800,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -111,7 +111,7 @@
 			"unlocked": true
 		},
 		{
-			"current": 3300,
+			"current": 3800,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -121,7 +121,7 @@
 			"unlocked": true
 		},
 		{
-			"current": 2500.0,
+			"current": 3800,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -251,17 +251,17 @@
 			"unlocked": true
 		},
 		{
-			"current": 3,
+			"current": 6,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
 			"title": "Новичок ритма",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "12 Ноя 2025, 03:48",
+			"unlocked": true
 		},
 		{
-			"current": 3,
+			"current": 6,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",

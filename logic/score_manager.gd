@@ -66,18 +66,3 @@ func add_miss_hit() -> int:
 
 func get_accuracy() -> float:
 	return accuracy
-
-static func calculate_currency(score: int, max_combo: int, combo_multiplier: float, accuracy: float, total_notes: int, missed_notes: int) -> int:
-	var base_currency = float(score) / 100.0
-	var combo_bonus = sqrt(float(max_combo)) * 2
-	var accuracy_bonus = 0.0
-	if accuracy >= 95:
-		accuracy_bonus = (accuracy - 90) * 1.5
-	elif accuracy == 100:
-		accuracy_bonus += 10
-	var full_combo_bonus = 0.0
-	if missed_notes == 0 and total_notes > 0:
-		full_combo_bonus = 20
-	var multiplier_bonus = (combo_multiplier - 1) * 5
-	var total_currency = base_currency + combo_bonus + accuracy_bonus + full_combo_bonus + multiplier_bonus
-	return max(1, int(total_currency))

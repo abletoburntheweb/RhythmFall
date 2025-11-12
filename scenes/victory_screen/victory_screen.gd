@@ -11,6 +11,10 @@ var accuracy: float
 var song_info: Dictionary = {}
 var earned_currency: int = 0
 
+var calculated_combo_multiplier: float = 1.0 
+var calculated_total_notes: int = 0
+var calculated_missed_notes: int = 0
+
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
 @onready var song_label: Label = $SongLabel
@@ -46,16 +50,36 @@ func _on_song_select_button_pressed():
 
 	queue_free()
 
-func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}):
+func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0):
 	score = p_score
 	combo = p_combo
 	max_combo = p_max_combo
 	accuracy = p_accuracy
-	song_info = p_song_info
+	song_info = p_song_info.duplicate() 
 	
-	earned_currency = _calculate_currency()
+	calculated_combo_multiplier = p_combo_multiplier
+	calculated_total_notes = p_total_notes
+	calculated_missed_notes = p_missed_notes
+	
+	earned_currency = _calculate_currency_new()
 
 	call_deferred("_deferred_update_ui")
+
+func _calculate_currency_new() -> int:
+	var base_currency = float(score) / 100.0
+	var combo_bonus = sqrt(float(max_combo)) * 2.0
+	var accuracy_bonus = 0.0
+	if accuracy >= 95.0 and accuracy < 100.0:
+		accuracy_bonus = (accuracy - 90.0) * 1.5
+	elif accuracy >= 100.0:
+		accuracy_bonus = 50.0 
+	var full_combo_bonus = 0.0
+	if calculated_missed_notes == 0 and calculated_total_notes > 0:
+		full_combo_bonus = 20.0
+	var multiplier_bonus = (calculated_combo_multiplier - 1.0) * 5.0
+	var total_currency = base_currency + combo_bonus + accuracy_bonus + full_combo_bonus + multiplier_bonus
+	var final_currency = int(total_currency)
+	return max(1, final_currency)
 
 func _deferred_update_ui():
 	if is_instance_valid(song_label) and song_info.get("title"):
@@ -86,7 +110,3 @@ func _deferred_update_ui():
 			printerr("VictoryScreen: Не удалось получить player_data_manager")
 	else:
 		printerr("VictoryScreen: Не удалось получить game_engine или метод get_player_data_manager")
-
-func _calculate_currency() -> int:
-	var currency = int(score * 0.01 + max_combo * 0.1 + accuracy * 10)
-	return max(0, currency)
