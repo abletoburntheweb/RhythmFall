@@ -134,18 +134,18 @@ func reset_achievements():
 
 func check_first_purchase():
 	for a in achievements:
-		if a.id == 6 and not a.get("unlocked", false): # Проверяет, что ачивка 6 не разблокирована
-			_perform_unlock(a) # Разблокирует и устанавливает current = total
+		if a.id == 6 and not a.get("unlocked", false):
+			_perform_unlock(a) 
 			break
 
-func check_purchase_count(total_purchases: int): # total_purchases передаётся как аргумент
+func check_purchase_count(total_purchases: int):
 	var purchase_achievements = {7: 3, 8: 5, 9: 10, 10: 15}
 
 	for ach_id in purchase_achievements:
 		var required_count = purchase_achievements[ach_id]
 		for achievement in achievements:
 			if achievement.id == ach_id:
-				achievement.current = total_purchases # total_purchases передаётся извне
+				achievement.current = total_purchases
 				if total_purchases >= required_count and not achievement.get("unlocked", false):
 					_perform_unlock(achievement)
 				break
@@ -155,27 +155,26 @@ func check_currency_achievements(player_data_mgr_override = null):
 	var total_earned = 0
 	if pdm:
 		total_earned = pdm.data.get("total_earned_currency", 0)
-		print("[AchievementManager] check_currency_achievements: total_earned = ", total_earned) # Отладка
+		print("[AchievementManager] check_currency_achievements: total_earned = ", total_earned) 
 	else:
-		print("[AchievementManager] check_currency_achievements: pdm is null!") # Отладка
+		print("[AchievementManager] check_currency_achievements: pdm is null!") 
 		return
 
 	var currency_achievements = {11: 500, 12: 1000, 13: 2500} 
 
 	for ach_id in currency_achievements:
 		var required_amount = currency_achievements[ach_id]
-		print("[AchievementManager] Проверяем ачивку ", ach_id, ", требуется: ", required_amount, ", есть: ", total_earned) # Отладка
+		print("[AchievementManager] Проверяем ачивку ", ach_id, ", требуется: ", required_amount, ", есть: ", total_earned) 
 		for achievement in achievements:
 			if achievement.id == ach_id:
-				print("[AchievementManager] Нашли ачивку ", ach_id, ", текущий прогресс: ", achievement.current) # Отладка
+				print("[AchievementManager] Нашли ачивку ", ach_id, ", текущий прогресс: ", achievement.current)
 				achievement.current = total_earned
-				print("[AchievementManager] Установлен прогресс ачивки ", ach_id, " в ", total_earned) # Отладка
+				print("[AchievementManager] Установлен прогресс ачивки ", ach_id, " в ", total_earned) 
 				if total_earned >= required_amount and not achievement.get("unlocked", false):
-					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!") # Отладка
+					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!") 
 					_perform_unlock(achievement)
-				break # Выходим из внутреннего цикла по достижениям, так как нашли нужное
+				break
 
-	# Сохраняем изменения в файл ачивок
 	save_achievements()
 
 func check_spent_currency_achievement(total_spent: int):
@@ -239,7 +238,6 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 				_perform_unlock(achievement)
 			break 
 
-	# Сохраняем изменения в файл ачивок
 	save_achievements()
 
 func _map_category_ru_to_internal(category_ru: String) -> String:
@@ -327,7 +325,6 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 				_perform_unlock(achievement)
 			break
 	
-	# Сохраняем изменения в файл ачивок
 	save_achievements()
 
 func check_first_level_achievement():
@@ -359,9 +356,14 @@ func check_levels_completed_achievement(total_levels_completed: int):
 					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!")
 					_perform_unlock(achievement)
 				break
-	# ДОБАВИТЬ ЭТО:
-	save_achievements() # Сохраняем прогресс ачивок в файл
-							
+	save_achievements() 
+	
+func check_note_researcher_achievement():
+	for achievement in achievements:
+		if achievement.id == 23 and not achievement.get("unlocked", false):
+			_perform_unlock(achievement)
+			break 				
+			
 func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:

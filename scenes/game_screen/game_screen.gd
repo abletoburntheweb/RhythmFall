@@ -275,7 +275,6 @@ func end_game():
 	if auto_player:
 		auto_player.reset()
 	
-	# --- ЦЕНТРАЛИЗОВАННАЯ ПРОВЕРКА АЧИВОК ---
 	var achievement_system = null
 	if game_engine and game_engine.has_method("get_achievement_system"):
 		achievement_system = game_engine.get_achievement_system()
@@ -284,7 +283,6 @@ func end_game():
 		var final_accuracy = score_manager.get_accuracy()
 		achievement_system.on_level_completed(final_accuracy)
 	else:
-		# Резервный вариант - если система ачивок не доступна, используем старую логику
 		var achievement_manager = null
 		var player_data_manager = null
 		
@@ -304,7 +302,6 @@ func end_game():
 				player_data_manager.add_completed_level()
 			else:
 				achievement_manager.check_levels_completed_achievement(1)
-	# ---
 	
 	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
 	if victory_scene:

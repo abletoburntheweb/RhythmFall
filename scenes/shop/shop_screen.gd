@@ -262,18 +262,10 @@ func _on_item_buy_pressed(item_id: String):
 		var current_currency = player_data_manager.get_currency()
 
 		if current_currency >= price:
-			# УБРАНО: var game_engine = get_parent()
-			# УБРАНО: var achievement_system_instance = null
-			# УБРАНО: if game_engine and game_engine.has_method("get_achievement_system"):
-			# УБРАНО:     achievement_system_instance = game_engine.get_achievement_system()
 
-			# ТЕПЕРЬ ПЕРЕДАЁМ ТОЛЬКО amount
 			player_data_manager.add_currency(-price)
-			# Ачивки на валюту проверятся автоматически внутри add_currency через game_engine_reference
 
-			# Для покупки предмета тоже уберите передачу achievement_system_instance
 			player_data_manager.unlock_item(item_id) 
-			# Ачивки на покупку проверятся автоматически внутри unlock_item через game_engine_reference
 
 			_update_currency_label()
 			_update_item_card_state(item_id, true, false)

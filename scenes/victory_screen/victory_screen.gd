@@ -74,7 +74,7 @@ func _deferred_update_ui():
 		accuracy_label.text = "Точность: %.1f%%" % accuracy  
 	
 	if is_instance_valid(currency_label):
-		currency_label.text = "Валюта: %d" % earned_currency 
+		currency_label.text = "Валюта за уровень: %d" % earned_currency 
 		
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_player_data_manager"):
@@ -82,8 +82,6 @@ func _deferred_update_ui():
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
-			if is_instance_valid(currency_label):
-				currency_label.text = "Валюта: %d" % player_data_manager.get_currency()
 		else:
 			printerr("VictoryScreen: Не удалось получить player_data_manager")
 	else:

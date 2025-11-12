@@ -354,9 +354,18 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
 		
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_achievement_system"):
+		var achievement_system = game_engine.get_achievement_system()
+		if achievement_system:
+			achievement_system.on_notes_generated()
+		else:
+			printerr("SongSelect.gd: AchievementSystem не найден через GameEngine!")
+	else:
+		printerr("SongSelect.gd: GameEngine не предоставляет метод get_achievement_system!")
+	
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
-
 func _on_notes_generation_error(error_message: String):
 	print("SongSelect.gd: Ошибка генерации нот: ", error_message)
 	
@@ -364,7 +373,8 @@ func _on_notes_generation_error(error_message: String):
 	if generate_btn:
 		generate_btn.text = "Ошибка генерации"
 		generate_btn.disabled = false
-
+	if song_details_manager:
+		song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
 func _open_instrument_selector():
 	if instrument_selector and is_instance_valid(instrument_selector):
 		instrument_selector.queue_free()
