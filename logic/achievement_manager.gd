@@ -134,38 +134,49 @@ func reset_achievements():
 
 func check_first_purchase():
 	for a in achievements:
-		if a.id == 6 and not a.get("unlocked", false):
-			_perform_unlock(a) 
+		if a.id == 6 and not a.get("unlocked", false): # Проверяет, что ачивка 6 не разблокирована
+			_perform_unlock(a) # Разблокирует и устанавливает current = total
 			break
 
-func check_purchase_count(total_purchases: int):
-	var purchase_achievements = {7: 3, 8: 5, 9: 10, 10: 15} 
+func check_purchase_count(total_purchases: int): # total_purchases передаётся как аргумент
+	var purchase_achievements = {7: 3, 8: 5, 9: 10, 10: 15}
 
 	for ach_id in purchase_achievements:
 		var required_count = purchase_achievements[ach_id]
 		for achievement in achievements:
 			if achievement.id == ach_id:
-				achievement.current = total_purchases
+				achievement.current = total_purchases # total_purchases передаётся извне
 				if total_purchases >= required_count and not achievement.get("unlocked", false):
 					_perform_unlock(achievement)
-				break 
+				break
 
 func check_currency_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	var total_earned = 0
 	if pdm:
 		total_earned = pdm.data.get("total_earned_currency", 0)
+		print("[AchievementManager] check_currency_achievements: total_earned = ", total_earned) # Отладка
+	else:
+		print("[AchievementManager] check_currency_achievements: pdm is null!") # Отладка
+		return
 
 	var currency_achievements = {11: 500, 12: 1000, 13: 2500} 
 
 	for ach_id in currency_achievements:
 		var required_amount = currency_achievements[ach_id]
+		print("[AchievementManager] Проверяем ачивку ", ach_id, ", требуется: ", required_amount, ", есть: ", total_earned) # Отладка
 		for achievement in achievements:
 			if achievement.id == ach_id:
+				print("[AchievementManager] Нашли ачивку ", ach_id, ", текущий прогресс: ", achievement.current) # Отладка
 				achievement.current = total_earned
+				print("[AchievementManager] Установлен прогресс ачивки ", ach_id, " в ", total_earned) # Отладка
 				if total_earned >= required_amount and not achievement.get("unlocked", false):
+					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!") # Отладка
 					_perform_unlock(achievement)
-				break 
+				break # Выходим из внутреннего цикла по достижениям, так как нашли нужное
+
+	# Сохраняем изменения в файл ачивок
+	save_achievements()
 
 func check_spent_currency_achievement(total_spent: int):
 	var spent_achievements = {14: 500, 15: 1000, 16: 2500}
@@ -227,6 +238,9 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 			if categories_with_items == total_categories:
 				_perform_unlock(achievement)
 			break 
+
+	# Сохраняем изменения в файл ачивок
+	save_achievements()
 
 func _map_category_ru_to_internal(category_ru: String) -> String:
 	match category_ru:
@@ -312,6 +326,10 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 			if missing_items_count == 0:
 				_perform_unlock(achievement)
 			break
+	
+	# Сохраняем изменения в файл ачивок
+	save_achievements()
+
 func check_first_level_achievement():
 	for achievement in achievements:
 		if achievement.id == 24 and not achievement.get("unlocked", false):
@@ -326,16 +344,23 @@ func check_perfect_accuracy_achievement(accuracy: float):
 				break
 
 func check_levels_completed_achievement(total_levels_completed: int):
+	print("[AchievementManager] Проверка уровней: total_levels_completed = ", total_levels_completed)
 	var level_achievements = {26: 5, 27: 20}
 
 	for ach_id in level_achievements:
 		var required_count = level_achievements[ach_id]
+		print("[AchievementManager] Проверяем ачивку ", ach_id, ", требуется: ", required_count, ", есть: ", total_levels_completed)
 		for achievement in achievements:
 			if achievement.id == ach_id:
+				print("[AchievementManager] Нашли ачивку ", ach_id, ", текущий прогресс: ", achievement.current)
 				achievement.current = total_levels_completed
+				print("[AchievementManager] Установлен прогресс ачивки ", ach_id, " в ", total_levels_completed)
 				if total_levels_completed >= required_count and not achievement.get("unlocked", false):
+					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!")
 					_perform_unlock(achievement)
 				break
+	# ДОБАВИТЬ ЭТО:
+	save_achievements() # Сохраняем прогресс ачивок в файл
 							
 func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr

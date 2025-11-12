@@ -24,6 +24,7 @@ var data: Dictionary = {
 }
 
 var achievement_manager = null
+var game_engine_reference = null
 
 func _init():
 	_load()
@@ -110,6 +111,9 @@ func _save():
 func get_currency() -> int:
 	return int(data.get("currency", 0))
 
+func set_game_engine_reference(engine):
+	game_engine_reference = engine
+
 func add_currency(amount: int):
 	var old_currency = int(data.get("currency", 0))
 	var new_currency = old_currency + amount
@@ -118,14 +122,21 @@ func add_currency(amount: int):
 	if amount < 0:
 		var spent_amount = abs(amount)
 		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
-		if achievement_manager:
-			achievement_manager.check_spent_currency_achievement(int(data["spent_currency"]))
+		# Вызываем проверку ачивок валюты через game_engine
+		_trigger_currency_achievement_check()
 	elif amount > 0:
 		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
-		if achievement_manager:
-			achievement_manager.check_currency_achievements(self) 
+		# Вызываем проверку ачивок валюты через game_engine
+		_trigger_currency_achievement_check()
 
 	_save()
+
+# Внутренний метод для вызова проверки ачивок валюты
+func _trigger_currency_achievement_check():
+	if game_engine_reference:
+		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+		if achievement_system:
+			achievement_system.on_currency_changed()
 
 func get_items() -> Dictionary:
 	return data.get("items", {}).duplicate(true) 
@@ -135,17 +146,17 @@ func unlock_item(item_name: String):
 	data["items"][item_name] = true
 	var new_count = data["items"].size()
 
-	if achievement_manager:
-		if old_count == 0 and new_count == 1:
-			achievement_manager.check_first_purchase()
-		
-		achievement_manager.check_purchase_count(new_count)
-		
-		achievement_manager.check_style_hunter_achievement(self) 
-	
-		achievement_manager.check_collection_completed_achievement(self) 
+	# Вызываем проверку покупки через game_engine
+	_trigger_purchase_achievement_check()
 
 	_save()
+
+# Внутренний метод для вызова проверки ачивок покупки
+func _trigger_purchase_achievement_check():
+	if game_engine_reference:
+		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+		if achievement_system:
+			achievement_system.on_purchase_made()
 
 func is_item_unlocked(item_name: String) -> bool:
 	return data["items"].get(item_name, false)
@@ -246,20 +257,29 @@ func set_login_streak(streak: int) -> void:
 	data["login_streak"] = int(streak)
 	data["last_login_date"] = Time.get_date_string_from_system()
 	_save()
-	if achievement_manager:
-		achievement_manager.check_daily_login_achievements(self) 
+	# Вызываем проверку ачивок входа через game_engine
+	_trigger_login_achievement_check()
 
 func increment_login_streak() -> void:
 	data["login_streak"] = int(data.get("login_streak", 0)) + 1
 	data["last_login_date"] = Time.get_date_string_from_system() 
 	_save()
-	if achievement_manager:
-		achievement_manager.check_daily_login_achievements(self) 
+	# Вызываем проверку ачивок входа через game_engine
+	_trigger_login_achievement_check()
 
 func reset_login_streak() -> void:
 	data["login_streak"] = 0
 	data["last_login_date"] = Time.get_date_string_from_system()
 	_save()
+	# Вызываем проверку ачивок входа через game_engine
+	_trigger_login_achievement_check()
+
+# Внутренний метод для вызова проверки ачивок входа
+func _trigger_login_achievement_check():
+	if game_engine_reference:
+		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+		if achievement_system:
+			achievement_system.on_daily_login()
 
 func unlock_achievement(achievement_id: int) -> void:
 	data["achievements"][str(achievement_id)] = true
@@ -269,11 +289,26 @@ func unlock_achievement(achievement_id: int) -> void:
 func is_achievement_unlocked(achievement_id: int) -> bool:
 	return data["achievements"].get(str(achievement_id), false)
 
+# --- МЕТОДЫ ДЛЯ УРОВНЕЙ ---
+# Метод теперь только увеличивает счетчик, но НЕ вызывает проверки ачивок напрямую
+# В logic/player_data_manager.gd
 func add_completed_level():
-	data["levels_completed"] = int(data.get("levels_completed", 0)) + 1
+	var current_count = int(data.get("levels_completed", 0))
+	var new_count = current_count + 1
+	data["levels_completed"] = new_count
 	_save()
-	if achievement_manager:
-		achievement_manager.check_levels_completed_achievement(int(data["levels_completed"]))
+	print("[PlayerDataManager] Уровень завершён. Текущий levels_completed: ", new_count)
+	# УБРАНО: _trigger_level_achievement_check() # Чтобы избежать рекурсии
 
+# Внутренний метод для вызова проверки ачивок уровней
+func _trigger_level_achievement_check():
+	if game_engine_reference:
+		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+		if achievement_system:
+			var final_accuracy = 100.0 # или получите реальную точность из game_screen, если нужно для проверки
+			achievement_system.on_level_completed(final_accuracy)
+
+# Метод только возвращает значение
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
+# ---

@@ -10,6 +10,7 @@ var settings_manager: SettingsManager = null
 var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
 var achievement_manager: AchievementManager = null
+var achievement_system: AchievementSystem = null
 
 var song_metadata_manager: SongMetadataManager = null
 
@@ -38,12 +39,14 @@ func initialize_logic():
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
 	achievement_manager = AchievementManager.new()
-	achievement_manager.player_data_mgr = player_data_manager 
-	achievement_manager.music_mgr = music_manager
+	
+	# Создаем систему ачивок
+	achievement_system = AchievementSystem.new(achievement_manager, player_data_manager, music_manager)
 	achievement_manager.notification_mgr = self
 	
-	player_data_manager.achievement_manager = achievement_manager
-
+	# Устанавливаем ссылку на game_engine в player_data_manager
+	player_data_manager.set_game_engine_reference(self)
+	
 	transitions = preload("res://logic/transitions.gd").new(self)
 
 	_handle_player_login()
@@ -104,6 +107,10 @@ func _handle_player_login():
 		print("[GameEngine] Первый вход или нет данных о входах. Streak: ", new_streak)
 
 	player_data_manager.set_login_streak(new_streak)
+	
+	# --- ВЫЗОВ ACHIEVEMENT SYSTEM для проверки входа ---
+	if achievement_system:
+		achievement_system.on_daily_login()
 	
 func initialize_screens():
 	main_menu_instance = preload("res://scenes/main_menu/main_menu.tscn").instantiate()
@@ -182,3 +189,6 @@ func get_music_manager() -> MusicManager:
 
 func get_achievement_manager() -> AchievementManager:
 	return achievement_manager
+
+func get_achievement_system() -> AchievementSystem:
+	return achievement_system

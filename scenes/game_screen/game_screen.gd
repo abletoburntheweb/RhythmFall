@@ -275,25 +275,36 @@ func end_game():
 	if auto_player:
 		auto_player.reset()
 	
-	var achievement_manager = null
-	var player_data_manager = null
+	# --- ЦЕНТРАЛИЗОВАННАЯ ПРОВЕРКА АЧИВОК ---
+	var achievement_system = null
+	if game_engine and game_engine.has_method("get_achievement_system"):
+		achievement_system = game_engine.get_achievement_system()
 	
-	if game_engine and game_engine.has_method("get_achievement_manager"):
-		achievement_manager = game_engine.get_achievement_manager()
-	
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		player_data_manager = game_engine.get_player_data_manager()
-	
-	if achievement_manager:
-		achievement_manager.check_first_level_achievement()
-		
+	if achievement_system:
 		var final_accuracy = score_manager.get_accuracy()
-		achievement_manager.check_perfect_accuracy_achievement(final_accuracy)
+		achievement_system.on_level_completed(final_accuracy)
+	else:
+		# Резервный вариант - если система ачивок не доступна, используем старую логику
+		var achievement_manager = null
+		var player_data_manager = null
 		
-		if player_data_manager:
-			player_data_manager.add_completed_level()
-		else:
-			achievement_manager.check_levels_completed_achievement(1)
+		if game_engine and game_engine.has_method("get_achievement_manager"):
+			achievement_manager = game_engine.get_achievement_manager()
+		
+		if game_engine and game_engine.has_method("get_player_data_manager"):
+			player_data_manager = game_engine.get_player_data_manager()
+		
+		if achievement_manager:
+			achievement_manager.check_first_level_achievement()
+			
+			var final_accuracy = score_manager.get_accuracy()
+			achievement_manager.check_perfect_accuracy_achievement(final_accuracy)
+			
+			if player_data_manager:
+				player_data_manager.add_completed_level()
+			else:
+				achievement_manager.check_levels_completed_achievement(1)
+	# ---
 	
 	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
 	if victory_scene:
