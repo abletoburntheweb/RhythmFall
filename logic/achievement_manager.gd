@@ -11,7 +11,6 @@ const MONTHS_RU_SHORT = [
 	"Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
 ]
 
-
 var player_data_mgr = null 
 var music_mgr = null
 var notification_mgr = null
@@ -127,7 +126,7 @@ func reset_achievements():
 	save_achievements()
 
 	if player_data_mgr:
-		player_data_mgr.data.achievements = {}
+		player_data_mgr.data["unlocked_achievement_ids"] = PackedInt32Array() 
 		player_data_mgr._save() 
 
 	print("[AchievementManager] Все достижения сброшены.")
@@ -200,7 +199,7 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 	}
 
 	if pdm:
-		var unlocked_items = pdm.get_items()
+		var unlocked_items = pdm.get_items() 
 
 		var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
 		if shop_file:
@@ -214,7 +213,7 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 					var category_ru = item.get("category", "")
 					var category = _map_category_ru_to_internal(category_ru)
 
-					if unlocked_items.has(item_id) and category:
+					if unlocked_items.has(item_id) and category: 
 						if categories.has(category):
 							categories[category].append(item_id)
 			else:
@@ -305,7 +304,7 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 	var unlocked_item_ids = []
 
 	if pdm:
-		unlocked_item_ids = pdm.get_items().keys()
+		unlocked_item_ids = pdm.get_items()  
 		total_unlocked_items = unlocked_item_ids.size()
 
 		for item in purchasable_items:
@@ -313,7 +312,7 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 
 	var missing_items_count = 0
 	for shop_id in shop_item_ids:
-		if not unlocked_item_ids.has(shop_id):
+		if not unlocked_item_ids.has(shop_id): 
 			missing_items_count += 1
 
 	for achievement in achievements:
@@ -367,14 +366,14 @@ func check_note_researcher_achievement():
 func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
-		printerr("[AchievementManager] reset_all_achievements_and_player_data: player_data_mgr не передан!")
+		printerr("[AchievementManager] reset_all_achievements_and_player_ player_data_mgr не передан!")
 		return
 
 	reset_achievements()
 
 	var current_currency = pdm.get_currency()
 
-	pdm.data["items"] = {}
+	pdm.data["unlocked_item_ids"] = PackedStringArray()
 
 	pdm.data["active_items"] = pdm.DEFAULT_ACTIVE_ITEMS.duplicate(true)
 
@@ -385,6 +384,13 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["spent_currency"] = 0
 	pdm.data["total_earned_currency"] = 0
 	pdm.data["levels_completed"] = 0
+
+	# Добавляем сброс всех счётчиков
+	pdm.data["total_perfect_hits"] = 0
+	pdm.data["drum_levels_completed"] = 0
+	pdm.data["drum_perfect_hits_in_level"] = 0
+	pdm.data["current_snare_streak"] = 0
+	pdm.data["total_drum_perfect_hits"] = 0
 
 	pdm._save()
 

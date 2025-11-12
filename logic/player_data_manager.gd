@@ -13,9 +13,9 @@ const DEFAULT_ACTIVE_ITEMS = {
 
 var data: Dictionary = {
 	"currency": 0,
-	"items": {},
+	"unlocked_item_ids": PackedStringArray(),  
 	"active_items": DEFAULT_ACTIVE_ITEMS.duplicate(true), 
-	"achievements": {},
+	"unlocked_achievement_ids": PackedInt32Array(),  
 	"spent_currency": 0,
 	"total_earned_currency": 0,
 	"last_login_date": "",
@@ -24,10 +24,8 @@ var data: Dictionary = {
 	"total_perfect_hits": 0,
 	"drum_levels_completed": 0,      
 	"drum_perfect_hits_in_level": 0,
-	"max_snare_streak": 0,           
 	"current_snare_streak": 0,
 	"total_drum_perfect_hits": 0,   
-	"total_snare_hits": 0           
 }
 
 var achievement_manager = null
@@ -43,8 +41,8 @@ func _init():
 	]
 	var items_changed = false
 	for item_id in default_items:
-		if not data["items"].has(item_id): 
-			data["items"][item_id] = true  
+		if not data["unlocked_item_ids"].has(item_id):   
+			data["unlocked_item_ids"].append(item_id)
 			items_changed = true
 	if items_changed:
 		_save() 
@@ -57,39 +55,39 @@ func _load():
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
 			var loaded_currency = int(json_result.get("currency", 0))
-			var loaded_items = json_result.get("items", {})
+			var loaded_unlocked_item_ids = json_result.get("unlocked_item_ids", PackedStringArray())
+			if loaded_unlocked_item_ids is Array:
+				loaded_unlocked_item_ids = PackedStringArray(loaded_unlocked_item_ids)
 			var loaded_active_items = json_result.get("active_items", {})
 			var loaded_last_login = json_result.get("last_login_date", "")
 			var loaded_login_streak = int(json_result.get("login_streak", 0))
-			var loaded_achievements = json_result.get("achievements", {})
+			var loaded_unlocked_achievement_ids = json_result.get("unlocked_achievement_ids", PackedInt32Array())
+			if loaded_unlocked_achievement_ids is Array:
+				loaded_unlocked_achievement_ids = PackedInt32Array(loaded_unlocked_achievement_ids)
 			var loaded_spent_currency = int(json_result.get("spent_currency", 0))
 			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
 			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
 			var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
 			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
 			var loaded_drum_perfect_hits_in_level = int(json_result.get("drum_perfect_hits_in_level", 0))
-			var loaded_max_snare_streak = int(json_result.get("max_snare_streak", 0))
 			var loaded_current_snare_streak = int(json_result.get("current_snare_streak", 0))
 			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
-			var loaded_total_snare_hits = int(json_result.get("total_snare_hits", 0))
 			
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
-			print("PlayerDataManager.gd: Загружено items: ", loaded_items)
+			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
 			print("PlayerDataManager.gd: Загружено active_items: ", loaded_active_items)
 			
 			data["currency"] = loaded_currency
-			data["items"] = loaded_items.duplicate(true) 
-			data["achievements"] = loaded_achievements.duplicate(true) 
+			data["unlocked_item_ids"] = loaded_unlocked_item_ids 
+			data["unlocked_achievement_ids"] = loaded_unlocked_achievement_ids 
 			data["spent_currency"] = loaded_spent_currency
 			data["total_earned_currency"] = loaded_total_earned_currency
 			data["levels_completed"] = loaded_levels_completed
 			data["total_perfect_hits"] = loaded_total_perfect_hits
 			data["drum_levels_completed"] = loaded_drum_levels_completed
 			data["drum_perfect_hits_in_level"] = loaded_drum_perfect_hits_in_level
-			data["max_snare_streak"] = loaded_max_snare_streak
-			data["current_snare_streak"] = loaded_current_snare_streak
+			data["current_snare_streak"] = loaded_current_snare_streak 
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
-			data["total_snare_hits"] = loaded_total_snare_hits
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -110,7 +108,7 @@ func _load():
 	else:
 		print("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
 		_save() 
-		
+
 func _save():
 	var active_items_clean = {}
 	for category in DEFAULT_ACTIVE_ITEMS:
@@ -170,17 +168,14 @@ func _trigger_perfect_hit_achievement_check():
 		if achievement_system:
 			achievement_system.on_perfect_hit_made()
 
-func get_items() -> Dictionary:
-	return data.get("items", {}).duplicate(true) 
+func get_items() -> PackedStringArray:
+	return data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
 
 func unlock_item(item_name: String):
-	var old_count = data["items"].size()
-	data["items"][item_name] = true
-	var new_count = data["items"].size()
-
-	_trigger_purchase_achievement_check()
-
-	_save()
+	if not data["unlocked_item_ids"].has(item_name):
+		data["unlocked_item_ids"].append(item_name)  
+		_trigger_purchase_achievement_check()
+		_save()
 
 func _trigger_purchase_achievement_check():
 	if game_engine_reference:
@@ -189,7 +184,7 @@ func _trigger_purchase_achievement_check():
 			achievement_system.on_purchase_made()
 
 func is_item_unlocked(item_name: String) -> bool:
-	return data["items"].get(item_name, false)
+	return data["unlocked_item_ids"].has(item_name) 
 
 func set_active_item(category: String, item_id: String):
 	if data["active_items"].has(category):
@@ -205,14 +200,7 @@ func get_active_item(category: String) -> String:
 	return active_item_id 
 
 func get_all_unlocked_items() -> PackedStringArray:
-	var unlocked = PackedStringArray()
-	for item_id in data.get("items", {}):
-		if data["items"][item_id]:
-			if item_id is String:
-				unlocked.append(item_id)
-			else:
-				print("PlayerDataManager.gd: get_all_unlocked_items: Найден нестроковый ключ в items: ", item_id, " (тип: ", typeof(item_id), ")")
-	return unlocked
+	return data.get("unlocked_item_ids", PackedStringArray()).duplicate() 
 
 func get_active_items() -> Dictionary:
 	var active_items_copy = {}
@@ -231,11 +219,11 @@ func get_save_data() -> Dictionary:
 func load_save_data(save_dict: Dictionary):
 	if save_dict.has("currency"):
 		data["currency"] = int(save_dict["currency"])
-	if save_dict.has("items"):
-		if save_dict["items"] is Dictionary:
-			data["items"] = save_dict["items"].duplicate(true)
+	if save_dict.has("unlocked_item_ids"):
+		if save_dict["unlocked_item_ids"] is Array:
+			data["unlocked_item_ids"] = PackedStringArray(save_dict["unlocked_item_ids"]) 
 		else:
-			print("PlayerDataManager.gd: load_save_data: Поле 'items' не является словарём, пропускаем.")
+			print("PlayerDataManager.gd: load_save_data: Поле 'unlocked_item_ids' не является массивом, пропускаем.")
 	if save_dict.has("active_items"):
 		if save_dict["active_items"] is Dictionary:
 			data["active_items"].clear()
@@ -248,8 +236,11 @@ func load_save_data(save_dict: Dictionary):
 				data["active_items"][category] = loaded_value
 		else:
 			print("PlayerDataManager.gd: load_save_data: Поле 'active_items' не является словарём, пропускаем.")
-	if save_dict.has("achievements"):
-		data["achievements"] = save_dict["achievements"].duplicate(true)
+	if save_dict.has("unlocked_achievement_ids"): 
+		if save_dict["unlocked_achievement_ids"] is Array:
+			data["unlocked_achievement_ids"] = PackedInt32Array(save_dict["unlocked_achievement_ids"]) 
+		else:
+			print("PlayerDataManager.gd: load_save_data: Поле 'unlocked_achievement_ids' не является массивом, пропускаем.")
 	if save_dict.has("spent_currency"):
 		data["spent_currency"] = int(save_dict["spent_currency"])
 	if save_dict.has("total_earned_currency"):
@@ -260,14 +251,10 @@ func load_save_data(save_dict: Dictionary):
 		data["drum_levels_completed"] = int(save_dict["drum_levels_completed"])
 	if save_dict.has("drum_perfect_hits_in_level"):
 		data["drum_perfect_hits_in_level"] = int(save_dict["drum_perfect_hits_in_level"])
-	if save_dict.has("max_snare_streak"):
-		data["max_snare_streak"] = int(save_dict["max_snare_streak"])
 	if save_dict.has("current_snare_streak"):
 		data["current_snare_streak"] = int(save_dict["current_snare_streak"])
 	if save_dict.has("total_drum_perfect_hits"):
 		data["total_drum_perfect_hits"] = int(save_dict["total_drum_perfect_hits"])
-	if save_dict.has("total_snare_hits"):
-		data["total_snare_hits"] = int(save_dict["total_snare_hits"])
 	if save_dict.has("last_login_date"):
 		data["last_login_date"] = save_dict["last_login_date"]
 	if save_dict.has("login_streak"):
@@ -280,17 +267,16 @@ func reset_progress():
 	var current_currency = int(data.get("currency", 0))
 	var current_active_items = data.get("active_items", DEFAULT_ACTIVE_ITEMS.duplicate(true)).duplicate(true)
 
-	data["items"] = {}
-	data["achievements"] = {}
+	data["unlocked_item_ids"] = PackedStringArray() 
+	data["unlocked_achievement_ids"] = PackedInt32Array() 
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["total_perfect_hits"] = 0
 	data["drum_levels_completed"] = 0
 	data["drum_perfect_hits_in_level"] = 0
-	data["max_snare_streak"] = 0
-	data["current_snare_streak"] = 0
+	data["current_snare_streak"] = 0  
 	data["total_drum_perfect_hits"] = 0
-	data["total_snare_hits"] = 0
+
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
 	data["levels_completed"] = 0
@@ -329,12 +315,13 @@ func _trigger_login_achievement_check():
 			achievement_system.on_daily_login()
 
 func unlock_achievement(achievement_id: int) -> void:
-	data["achievements"][str(achievement_id)] = true
-	_save()
-	print("[PlayerDataManager] Достижение с ID %d разблокировано для игрока." % achievement_id)
+	if not data["unlocked_achievement_ids"].has(achievement_id):  
+		data["unlocked_achievement_ids"].append(achievement_id) 
+		_save()
+		print("[PlayerDataManager] Достижение с ID %d разблокировано для игрока." % achievement_id)
 
 func is_achievement_unlocked(achievement_id: int) -> bool:
-	return data["achievements"].get(str(achievement_id), false)
+	return data["unlocked_achievement_ids"].has(achievement_id)
 
 func add_completed_level():
 	var current_count = int(data.get("levels_completed", 0))
@@ -386,10 +373,7 @@ func update_snare_streak(hit_was_snare: bool):
 	if hit_was_snare:
 		var new_streak = current_streak + 1
 		data["current_snare_streak"] = new_streak
-		var max_streak = int(data.get("max_snare_streak", 0))
-		if new_streak > max_streak:
-			data["max_snare_streak"] = new_streak
-		print("[PlayerDataManager] Серия снейров увеличена: ", new_streak, ". Максимальная: ", data["max_snare_streak"])
+		print("[PlayerDataManager] Серия снейров увеличена: ", new_streak)
 	else:
 		if current_streak > 0: 
 			print("[PlayerDataManager] Серия снейров сброшена с ", current_streak, " до 0")
@@ -397,9 +381,6 @@ func update_snare_streak(hit_was_snare: bool):
 
 func get_current_snare_streak() -> int:
 	return int(data.get("current_snare_streak", 0))
-
-func get_max_snare_streak() -> int:
-	return int(data.get("max_snare_streak", 0))
 
 func reset_level_based_counters():
 	data["drum_perfect_hits_in_level"] = 0
@@ -409,10 +390,4 @@ func add_total_drum_perfect_hit():
 	var current_total = int(data.get("total_drum_perfect_hits", 0))
 	var new_total = current_total + 1
 	data["total_drum_perfect_hits"] = new_total
-	_save()
-
-func add_total_snare_hit():
-	var current_total = int(data.get("total_snare_hits", 0))
-	var new_total = current_total + 1
-	data["total_snare_hits"] = new_total
 	_save()
