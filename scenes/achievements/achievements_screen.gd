@@ -94,17 +94,29 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 		child.queue_free() 
 
 	for ach in achievements_to_display:
+		if not (ach is Dictionary):
+			printerr("AchievementsScreen.gd: Найден элемент не типа Dictionary в списке для отображения: ", ach)
+			continue 
+		
+		if not ach.has("title"):
+			printerr("AchievementsScreen.gd: У элемента ачивки отсутствует ключ 'title': ", ach)
+			continue 
+		
+		if ach.title == null:
+			printerr("AchievementsScreen.gd: Ключ 'title' для ачивки равен null: ", ach)
+			continue 
+		
 		var card = ACHIEVEMENT_CARD_SCENE.instantiate()
-		card.title = ach.title
-		card.description = ach.description
+		card.title = ach.title 
+		card.description = ach.get("description", "") if ach.has("description") else "Нет описания"
 		card.progress_text = _get_progress_text(ach)
-		card.is_unlocked = ach.unlocked
+		card.is_unlocked = ach.get("unlocked", false) if ach.has("unlocked") else false
 
 		var icon_texture: ImageTexture = null
 		var used_default = false
 		
-		if ach.image and ach.image != "":
-			var image_path = ach.image
+		var image_path = ach.get("image", "") if ach.has("image") else ""
+		if image_path and image_path != "":
 			if FileAccess.file_exists(image_path):
 				var loaded_resource = ResourceLoader.load(image_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
 				if loaded_resource and loaded_resource is ImageTexture:
@@ -148,7 +160,11 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 
 		card.icon_texture = icon_texture 
 
-		card.unlock_date_text = ach.unlock_date if ach.unlock_date else ""
+		var unlock_date_val = ach.get("unlock_date", null)
+		if unlock_date_val == null:
+			card.unlock_date_text = ""
+		else:
+			card.unlock_date_text = str(unlock_date_val) 
 
 		achievements_list.add_child(card)
 
@@ -199,20 +215,31 @@ func _filter_achievements_internal(query: String):
 	if query_lower != "":
 		results = []
 		for ach in base_list:
+			if not (ach is Dictionary) or not ach.has("title") or not ach.has("description"):
+				continue
 			if ach.title.to_lower().contains(query_lower) or ach.description.to_lower().contains(query_lower):
 				results.append(ach)
 	else:
 		results = base_list
 	_update_display(results)
 
-
 func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type: String) -> Array[Dictionary]:
 	if filter_type == "Все":
 		return achievements_to_filter
 	elif filter_type == "Открытые":
-		return achievements_to_filter.filter(func(ach): return ach.get("unlocked", false))
+		return achievements_to_filter.filter(func(ach): 
+			if ach is Dictionary and ach.has("unlocked"):
+				return ach.get("unlocked", false)
+			else:
+				return false 
+		)
 	elif filter_type == "Закрытые":
-		return achievements_to_filter.filter(func(ach): return not ach.get("unlocked", false))
+		return achievements_to_filter.filter(func(ach): 
+			if ach is Dictionary and ach.has("unlocked"):
+				return not ach.get("unlocked", false)
+			else:
+				return true  
+		)
 	else:
 		return achievements_to_filter
 

@@ -46,3 +46,25 @@ func on_daily_login():
 func on_notes_generated():
 	achievement_manager.check_note_researcher_achievement() 
 	achievement_manager.save_achievements() 
+
+func on_perfect_hit_made():
+	var total_perfect_hits = player_data_manager.get_total_perfect_hits()
+	achievement_manager.check_rhythm_master_achievement(total_perfect_hits) 
+	achievement_manager.save_achievements()
+
+func on_level_completed_extended(accuracy: float, instrument_type: String, drum_streak: int, snare_streak: int):
+	on_level_completed(accuracy)
+	
+	if instrument_type == "drums":
+		player_data_manager.add_drum_level_completed()
+		var total_drum_levels = player_data_manager.get_drum_levels_completed()
+		
+		achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+		
+		achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
+	
+	achievement_manager.save_achievements() 
+
+func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
+	achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+	achievement_manager.save_achievements()

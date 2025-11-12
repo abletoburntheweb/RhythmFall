@@ -389,3 +389,50 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm._save()
 
 	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")
+
+func check_rhythm_master_achievement(total_perfect_hits: int):
+	var rhythm_master_id = 28
+	for achievement in achievements:
+		if achievement.id == rhythm_master_id and not achievement.get("unlocked", false):
+			achievement.current = total_perfect_hits 
+			if total_perfect_hits >= 1000:
+				_perform_unlock(achievement)
+			break 
+			
+func check_drum_level_achievements(player_data_mgr_override = null, accuracy: float = 0.0, total_drum_levels: int = 0):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		print("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
+		return
+
+	if total_drum_levels == 1: 
+		for achievement in achievements:
+			if achievement.id == 29 and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+				break
+
+	if accuracy >= 100.0:
+		for achievement in achievements:
+			if achievement.id == 30 and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+				break
+
+	for achievement in achievements:
+		if achievement.id == 31 and not achievement.get("unlocked", false):
+			achievement.current = total_drum_levels
+			if total_drum_levels >= 10:
+				_perform_unlock(achievement)
+			break
+
+func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_streak: int = 0):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		print("[AchievementManager] check_drum_storm_achievement: player_data_mgr не передан.")
+		return
+
+	for achievement in achievements:
+		if achievement.id == 32 and not achievement.get("unlocked", false):
+			achievement.current = current_drum_streak
+			if current_drum_streak >= 100:
+				_perform_unlock(achievement)
+			break

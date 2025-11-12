@@ -14,6 +14,7 @@ var earned_currency: int = 0
 var calculated_combo_multiplier: float = 1.0 
 var calculated_total_notes: int = 0
 var calculated_missed_notes: int = 0
+var perfect_hits_this_level: int = 0
 
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
@@ -50,7 +51,7 @@ func _on_song_select_button_pressed():
 
 	queue_free()
 
-func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0):
+func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0):
 	score = p_score
 	combo = p_combo
 	max_combo = p_max_combo
@@ -60,6 +61,7 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	calculated_combo_multiplier = p_combo_multiplier
 	calculated_total_notes = p_total_notes
 	calculated_missed_notes = p_missed_notes
+	perfect_hits_this_level = p_perfect_hits
 	
 	earned_currency = _calculate_currency_new()
 
@@ -105,6 +107,34 @@ func _deferred_update_ui():
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
+			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
+			
+			var achievement_system = null
+			if game_engine.has_method("get_achievement_system"):
+				achievement_system = game_engine.get_achievement_system()
+			
+			var current_drum_streak = 0
+			var current_snare_streak = 0
+			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
+				current_drum_streak = player_data_manager.get_current_drum_perfect_hits_streak()
+			if player_data_manager.has_method("get_current_snare_streak"):
+				current_snare_streak = player_data_manager.get_current_snare_streak()
+			
+			if achievement_system:
+				var instrument_used = song_info.get("instrument", "standard")
+				
+				achievement_system.on_level_completed_extended(accuracy, instrument_used, current_drum_streak, current_snare_streak)
+			else:
+				var achievement_manager = null
+				if game_engine.has_method("get_achievement_manager"):
+					achievement_manager = game_engine.get_achievement_manager()
+				
+				if achievement_manager:
+					var total_drum_levels = player_data_manager.get_drum_levels_completed()
+					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+					
+					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
 		else:
 			printerr("VictoryScreen: Не удалось получить player_data_manager")
