@@ -14,6 +14,7 @@ var song_time_label: Label = null
 var auto_play_check_box: CheckButton = null
 var plus_1000_button: Button = null
 var minus_1000_button: Button = null
+var plus_10_combo_button: Button = null
 var win_button: Button = null
 
 func _ready():
@@ -30,9 +31,10 @@ func _ready():
 	plus_1000_button = get_node_or_null("Plus1000Button") as Button
 	minus_1000_button = get_node_or_null("Minus1000Button") as Button
 	win_button = get_node_or_null("WinButton") as Button
+	plus_10_combo_button = get_node_or_null("Plus10ComboButton") as Button 
 	
 	var missing_nodes = []
-	for property_name in ["fps_label", "score_label", "combo_label", "max_combo_label", "combo_multiplier_label", "bpm_label", "notes_total_label", "notes_current_label", "song_time_label", "auto_play_check_box", "plus_1000_button", "minus_1000_button", "win_button"]:
+	for property_name in ["fps_label", "score_label", "combo_label", "max_combo_label", "combo_multiplier_label", "bpm_label", "notes_total_label", "notes_current_label", "song_time_label", "auto_play_check_box", "plus_1000_button", "minus_1000_button", "win_button", "plus_10_combo_button"]:
 		if not get(property_name):
 			missing_nodes.append(property_name)
 	
@@ -45,6 +47,8 @@ func _ready():
 		minus_1000_button.pressed.connect(_on_minus_1000_button_pressed)
 	if win_button:
 		win_button.pressed.connect(_on_win_button_pressed)
+	if plus_10_combo_button:
+		plus_10_combo_button.pressed.connect(_on_plus_10_combo_button_pressed)
 	if auto_play_check_box:
 		auto_play_check_box.toggled.connect(_on_auto_play_check_box_toggled)
 
@@ -101,6 +105,29 @@ func _on_minus_1000_button_pressed():
 	if game_screen and game_screen.score_manager:
 		game_screen.score_manager.score = max(0, game_screen.score_manager.score - 1000)
 		print("DebugMenu: Вычтено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
+		if game_screen.has_method("update_ui"):
+			game_screen.update_ui()
+	else:
+		if not game_screen:
+			printerr("DebugMenu: get_parent() вернул null!")
+		elif not game_screen.score_manager:
+			printerr("DebugMenu: score_manager родителя равен null! (Возможно, GameScreen ещё не инициализировал его или произошла ошибка.)")
+		else:
+			printerr("DebugMenu: Неизвестная ошибка при доступе к score_manager.")
+
+func _on_plus_10_combo_button_pressed():
+	var game_screen = get_parent()
+	if game_screen and game_screen.score_manager:
+		var current_combo = game_screen.score_manager.combo
+		var new_combo = current_combo + 10
+
+		game_screen.score_manager.combo = new_combo
+		if new_combo > game_screen.score_manager.max_combo:
+			game_screen.score_manager.max_combo = new_combo
+		
+		game_screen.score_manager.combo_multiplier = min(4, 1 + (int(new_combo / 10)))
+			
+		print("DebugMenu: Добавлено 10 к комбо. Новое комбо: %d, Макс. комбо: %d, Множитель: x%.1f" % [game_screen.score_manager.combo, game_screen.score_manager.max_combo, game_screen.score_manager.combo_multiplier])
 		if game_screen.has_method("update_ui"):
 			game_screen.update_ui()
 	else:

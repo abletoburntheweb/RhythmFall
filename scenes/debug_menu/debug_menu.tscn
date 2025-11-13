@@ -130,14 +130,26 @@ offset_bottom = 431.0
 size_flags_horizontal = 0
 text = "- 1000 очков"
 
+[node name="Plus10ComboButton" type="Button" parent="."]
+modulate = Color(0.2611848, 0.95418054, 0.27285755, 1)
+clip_contents = true
+custom_minimum_size = Vector2(245, 31)
+layout_mode = 0
+offset_left = 10.0
+offset_top = 440.0
+offset_right = 255.0
+offset_bottom = 471.0
+size_flags_horizontal = 0
+text = "+10 комбо"
+
 [node name="WinButton" type="Button" parent="."]
 modulate = Color(0.2627451, 0.9529412, 0.27450982, 1)
 clip_contents = true
 custom_minimum_size = Vector2(140, 31)
 layout_mode = 0
 offset_left = 10.0
-offset_top = 440.0
-offset_right = 150.0
-offset_bottom = 471.0
+offset_top = 480.0
+offset_right = 255.0
+offset_bottom = 511.0
 size_flags_horizontal = 0
 text = "Завершить уровень (Победа)"

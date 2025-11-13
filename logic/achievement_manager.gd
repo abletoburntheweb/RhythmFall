@@ -385,7 +385,6 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["total_earned_currency"] = 0
 	pdm.data["levels_completed"] = 0
 
-	# Добавляем сброс всех счётчиков
 	pdm.data["total_perfect_hits"] = 0
 	pdm.data["drum_levels_completed"] = 0
 	pdm.data["drum_perfect_hits_in_level"] = 0
