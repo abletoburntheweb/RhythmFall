@@ -66,3 +66,6 @@ func add_miss_hit() -> int:
 
 func get_accuracy() -> float:
 	return accuracy
+	
+func get_missed_notes_count() -> int:
+	return missed_notes

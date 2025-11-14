@@ -88,8 +88,11 @@ func update_debug_info(game_screen):
 func _on_plus_1000_button_pressed():
 	var game_screen = get_parent()
 	if game_screen and game_screen.score_manager:
-		game_screen.score_manager.score += 1000
-		print("DebugMenu: Добавлено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
+		var multiplier = game_screen.score_manager.get_combo_multiplier()
+		var actual_points = int(1000 * multiplier)
+		
+		game_screen.score_manager.score += actual_points
+		print("DebugMenu: Добавлено %d очков (с множителем x%.1f). Новый счёт: %d" % [actual_points, multiplier, game_screen.score_manager.get_score()])
 		if game_screen.has_method("update_ui"):
 			game_screen.update_ui()
 	else:
@@ -103,7 +106,7 @@ func _on_plus_1000_button_pressed():
 func _on_minus_1000_button_pressed():
 	var game_screen = get_parent()
 	if game_screen and game_screen.score_manager:
-		game_screen.score_manager.score = max(0, game_screen.score_manager.score - 1000)
+		game_screen.score_manager.score = max(0, game_screen.score_manager.score - 1000) 
 		print("DebugMenu: Вычтено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
 		if game_screen.has_method("update_ui"):
 			game_screen.update_ui()

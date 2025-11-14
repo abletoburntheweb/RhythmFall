@@ -1,0 +1,103 @@
+[gd_scene load_steps=3 format=3 uid="uid://c2p87b8j3164d"]
+
+[ext_resource type="Script" uid="uid://yqvuau56ualj" path="res://scenes/victory_screen/victory_currency_details.gd" id="1_8e8ra"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hvsej"]
+bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+
+[node name="VictoryCurrencyDetails" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8e8ra")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(400, 550)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.84705883)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 6.0
+offset_right = 1920.0
+offset_bottom = 73.0
+theme_override_font_sizes/font_size = 48
+text = "Детализация валюты"
+horizontal_alignment = 1
+
+[node name="StatsFrame" type="Panel" parent="."]
+layout_mode = 0
+offset_top = 70.0
+offset_right = 1920.0
+offset_bottom = 1005.0
+
+[node name="ScoreLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 24
+text = "Счёт: 0"
+horizontal_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 1920.0
+offset_bottom = 53.0
+theme_override_font_sizes/font_size = 24
+text = "Макс. комбо: 0"
+horizontal_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 1920.0
+offset_bottom = 83.0
+theme_override_font_sizes/font_size = 24
+text = "Точность: 0"
+horizontal_alignment = 1
+
+[node name="FullComboLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 90.0
+offset_right = 1920.0
+offset_bottom = 113.0
+theme_override_font_sizes/font_size = 24
+text = "Полное комбо: 0"
+horizontal_alignment = 1
+
+[node name="MultiplierLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 120.0
+offset_right = 1920.0
+offset_bottom = 143.0
+theme_override_font_sizes/font_size = 24
+text = "Бонус за множитель: 0"
+horizontal_alignment = 1
+
+[node name="TotalLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 150.0
+offset_right = 1920.0
+offset_bottom = 184.0
+theme_override_font_sizes/font_size = 24
+text = "Валюта: 0"
+horizontal_alignment = 1
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="BackButton" type="Button" parent="ButtonsContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_hvsej")
+text = "Назад"

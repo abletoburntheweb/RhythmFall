@@ -330,9 +330,9 @@ func end_game():
 			debug_max_combo,  
 			debug_accuracy,  
 			victory_song_info,
-			1.0, 
-			0, 
-			0, 
+			score_manager.get_combo_multiplier(), 
+			note_manager.get_spawn_queue_size(), 
+			score_manager.get_missed_notes_count(), 
 			debug_perfect_hits 
 		)
 		

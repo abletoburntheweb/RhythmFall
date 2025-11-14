@@ -2,8 +2,8 @@
 extends BaseScreen
 
 const SongManager = preload("res://logic/song_manager.gd")
-const BPMAnalyzerClient = preload("res://logic/bpm_analyzer_client.gd")
-const NoteGeneratorClient = preload("res://logic/note_generator_client.gd") 
+const BPMAnalyzerClient = preload("res://server/bpm_analyzer_client.gd")
+const NoteGeneratorClient = preload("res://server/note_generator_client.gd") 
 const InstrumentSelector = preload("res://scenes/song_select/instrument_selector.gd")
 
 var song_manager: SongManager = null

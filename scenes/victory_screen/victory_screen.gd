@@ -16,6 +16,8 @@ var calculated_total_notes: int = 0
 var calculated_missed_notes: int = 0
 var perfect_hits_this_level: int = 0
 
+var music_manager = null
+
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
 @onready var song_label: Label = $SongLabel
@@ -29,10 +31,21 @@ var perfect_hits_this_level: int = 0
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
 
 func _ready():
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_music_manager"):
+		music_manager = game_engine.get_music_manager()
+	
 	replay_button.pressed.connect(_on_replay_button_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
+	
+	if currency_label:
+		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		currency_label.gui_input.connect(_on_currency_label_clicked)
 
 func _on_replay_button_pressed():
+	if music_manager and music_manager.has_method("play_select_sound"):
+		music_manager.play_select_sound()
+	
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
@@ -43,6 +56,9 @@ func _on_replay_button_pressed():
 	queue_free()
 
 func _on_song_select_button_pressed():
+	if music_manager and music_manager.has_method("play_select_sound"):
+		music_manager.play_select_sound()
+	
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
@@ -51,6 +67,31 @@ func _on_song_select_button_pressed():
 
 	queue_free()
 
+func _on_currency_label_clicked(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_show_currency_details()
+
+func _show_currency_details():
+	var currency_details_scene = load("res://scenes/victory_screen/victory_currency_details.tscn")
+	var currency_details = currency_details_scene.instantiate()
+	
+	currency_details.details_closed.connect(_on_currency_details_closed)
+	
+	add_child(currency_details)
+	
+	currency_details.show_details(
+		score, 
+		max_combo, 
+		accuracy, 
+		calculated_total_notes, 
+		calculated_missed_notes, 
+		calculated_combo_multiplier, 
+		earned_currency
+	)
+
+func _on_currency_details_closed():
+	pass
+
 func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0):
 	score = p_score
 	combo = p_combo
@@ -58,7 +99,12 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	accuracy = p_accuracy
 	song_info = p_song_info.duplicate() 
 	
-	calculated_combo_multiplier = p_combo_multiplier
+	var game_screen = get_parent()
+	if game_screen and game_screen.score_manager:
+		calculated_combo_multiplier = game_screen.score_manager.get_combo_multiplier()
+	else:
+		calculated_combo_multiplier = p_combo_multiplier 
+	
 	calculated_total_notes = p_total_notes
 	calculated_missed_notes = p_missed_notes
 	perfect_hits_this_level = p_perfect_hits
@@ -110,7 +156,7 @@ func _deferred_update_ui():
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
 			
 			var achievement_system = null
-			if game_engine.has_method("get_achievement_system"):
+			if game_engine and game_engine.has_method("get_achievement_system"):
 				achievement_system = game_engine.get_achievement_system()
 			
 			var current_drum_streak = 0
