@@ -32,6 +32,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="CurrencyLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer"]
+modulate = Color(1, 0.8392157, 0, 1)
 custom_minimum_size = Vector2(1000, 0)
 layout_mode = 2
 size_flags_vertical = 3

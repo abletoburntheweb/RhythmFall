@@ -438,6 +438,6 @@ func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_
 	for achievement in achievements:
 		if achievement.id == 32 and not achievement.get("unlocked", false):
 			achievement.current = current_drum_streak
-			if current_drum_streak >= 100:
+			if current_drum_streak >= 10:
 				_perform_unlock(achievement)
 			break

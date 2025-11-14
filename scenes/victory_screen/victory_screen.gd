@@ -155,10 +155,17 @@ func _deferred_update_ui():
 			player_data_manager.add_currency(earned_currency)
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
 			
+			# Получаем системы ачивок
 			var achievement_system = null
+			var achievement_manager = null
+			
 			if game_engine and game_engine.has_method("get_achievement_system"):
 				achievement_system = game_engine.get_achievement_system()
 			
+			if game_engine and game_engine.has_method("get_achievement_manager"):
+				achievement_manager = game_engine.get_achievement_manager()
+			
+			# Получаем данные для ачивок
 			var current_drum_streak = 0
 			var current_snare_streak = 0
 			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
@@ -166,20 +173,40 @@ func _deferred_update_ui():
 			if player_data_manager.has_method("get_current_snare_streak"):
 				current_snare_streak = player_data_manager.get_current_snare_streak()
 			
+			# Обрабатываем отложенные геймплейные ачивки
+			if achievement_system and achievement_system.has_method("process_delayed_achievements"):
+				print("🎯 Обрабатываем отложенные геймплейные ачивки...")
+				achievement_system.process_delayed_achievements()
+			elif achievement_manager and player_data_manager.has_method("get_and_clear_delayed_achievements"):
+				print("🎯 Обрабатываем отложенные геймплейные ачивки (fallback)...")
+				var delayed_data = player_data_manager.get_and_clear_delayed_achievements()
+				for data in delayed_data:
+					if data.get("type") == "drum_streak":
+						var drum_streak = data.get("current_drum_streak", 0)
+						achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
+			
+			# Вызываем основные ачивки за уровень
 			if achievement_system:
 				var instrument_used = song_info.get("instrument", "standard")
+				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 				
-				achievement_system.on_level_completed_extended(accuracy, instrument_used, current_drum_streak, current_snare_streak)
-			else:
-				var achievement_manager = null
-				if game_engine.has_method("get_achievement_manager"):
-					achievement_manager = game_engine.get_achievement_manager()
+				# Используем существующие методы вместо on_level_completed_extended
+				achievement_system.on_level_completed(accuracy)
+				if instrument_used == "drums":
+					achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
 				
-				if achievement_manager:
-					var total_drum_levels = player_data_manager.get_drum_levels_completed()
-					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
-					
-					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+			elif achievement_manager:
+				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
+				# Fallback на старую систему
+				achievement_manager.check_first_level_achievement()
+				achievement_manager.check_perfect_accuracy_achievement(accuracy)
+				player_data_manager.add_completed_level()
+				var total_levels_completed = player_data_manager.get_levels_completed()
+				achievement_manager.check_levels_completed_achievement(total_levels_completed)
+				
+				var total_drum_levels = player_data_manager.get_drum_levels_completed()
+				achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+				achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
 		else:

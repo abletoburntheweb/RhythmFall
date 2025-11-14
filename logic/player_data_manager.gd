@@ -30,6 +30,7 @@ var data: Dictionary = {
 
 var achievement_manager = null
 var game_engine_reference = null
+var delayed_achievements: Array[Dictionary] = []
 
 func _init():
 	_load()
@@ -132,7 +133,15 @@ func get_currency() -> int:
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
+	
+func add_delayed_achievement(achievement_data: Dictionary):
+	delayed_achievements.append(achievement_data)
 
+func get_and_clear_delayed_achievements() -> Array[Dictionary]:
+	var achievements = delayed_achievements.duplicate()
+	delayed_achievements.clear()
+	
+	return achievements
 func add_currency(amount: int):
 	var old_currency = int(data.get("currency", 0))
 	var new_currency = old_currency + amount

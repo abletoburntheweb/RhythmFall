@@ -90,8 +90,6 @@ func _update_currency_label():
 			var currency_label = v_box_container.get_node("CurrencyLabel")
 			if currency_label:
 				currency_label.text = "💰 Валюта: %d" % player_data_manager.get_currency()
-				currency_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.0))
-				currency_label.add_theme_font_size_override("font_size", 32)
 			else:
 				print("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
 		else:
@@ -122,6 +120,7 @@ func _connect_category_buttons():
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
 		_set_category_button_style(misc_btn, false)
+		
 func _connect_back_button():
 	var back_button = $MainContent/MainVBox/BackButton
 	if back_button:
