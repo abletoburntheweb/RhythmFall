@@ -52,7 +52,7 @@ func on_perfect_hit_made():
 	achievement_manager.check_rhythm_master_achievement(total_perfect_hits) 
 	achievement_manager.save_achievements()
 
-func on_level_completed_extended(accuracy: float, instrument_type: String, drum_streak: int):
+func on_level_completed_extended(accuracy: float, instrument_type: String, drum_streak: int, snare_streak: int):
 	on_level_completed(accuracy)
 	
 	if instrument_type == "drums":
@@ -63,8 +63,8 @@ func on_level_completed_extended(accuracy: float, instrument_type: String, drum_
 		
 		achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
 	
-	achievement_manager.save_achievements()
+	achievement_manager.save_achievements() 
 
-func on_perfect_hit_in_drum_mode(current_drum_streak: int):
+func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
 	achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
 	achievement_manager.save_achievements()

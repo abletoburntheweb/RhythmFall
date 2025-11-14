@@ -11,6 +11,7 @@ var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
 var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
+var achievement_queue_manager: AchievementQueueManager = null
 
 var song_metadata_manager: SongMetadataManager = null
 
@@ -43,11 +44,14 @@ func initialize_logic():
 	achievement_system = AchievementSystem.new(achievement_manager, player_data_manager, music_manager)
 	achievement_manager.notification_mgr = self
 	
+	achievement_queue_manager = preload("res://logic/achievement_queue_manager.gd").new()
+	add_child(achievement_queue_manager)
+	
 	player_data_manager.set_game_engine_reference(self)
 	
 	transitions = preload("res://logic/transitions.gd").new(self)
 
-	_handle_player_login()
+	call_deferred("_handle_player_login")
 
 func _date_dict_to_string(date_dict: Dictionary) -> String:
 	if date_dict.has("year") and date_dict.has("month") and date_dict.has("day"):
@@ -77,7 +81,6 @@ func _is_yesterday(date_dict: Dictionary, today_str: String) -> bool:
 	return false
 
 func _handle_player_login():
-
 	var today_dict = Time.get_date_dict_from_system()
 	var today_str = _date_dict_to_string(today_dict) 
 	
@@ -159,15 +162,16 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 		settings_manager.save_settings()
 
 	return true
+
 func show_achievement_popup(achievement: Dictionary):
-	print("Achievement data: ", achievement)
-	var popup = preload("res://scenes/achievements/achievement_pop_up.tscn").instantiate()
-	
-	popup.set_achievement_data(achievement)
-
-	add_child(popup)
-
-	popup.show_popup()
+	print("GameEngine: Запрос на показ ачивки: ", achievement.get("title", "Unknown"))
+	if achievement_queue_manager and achievement_queue_manager.is_inside_tree():
+		achievement_queue_manager.add_achievement_to_queue(achievement)
+	else:
+		print("GameEngine: AchievementQueueManager не готов, откладываем показ ачивки")
+		if not achievement_queue_manager.has_method("_delayed_achievements"):
+			achievement_queue_manager._delayed_achievements = []
+		achievement_queue_manager._delayed_achievements.append(achievement)
 	
 func get_main_menu_instance():
 	return main_menu_instance
@@ -189,3 +193,6 @@ func get_achievement_manager() -> AchievementManager:
 
 func get_achievement_system() -> AchievementSystem:
 	return achievement_system
+
+func get_achievement_queue_manager() -> AchievementQueueManager:
+	return achievement_queue_manager
