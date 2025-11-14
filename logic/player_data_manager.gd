@@ -24,7 +24,6 @@ var data: Dictionary = {
 	"total_perfect_hits": 0,
 	"drum_levels_completed": 0,      
 	"drum_perfect_hits_in_level": 0,
-	"current_snare_streak": 0,
 	"total_drum_perfect_hits": 0,   
 }
 
@@ -70,7 +69,6 @@ func _load():
 			var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
 			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
 			var loaded_drum_perfect_hits_in_level = int(json_result.get("drum_perfect_hits_in_level", 0))
-			var loaded_current_snare_streak = int(json_result.get("current_snare_streak", 0))
 			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
 			
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
@@ -86,7 +84,6 @@ func _load():
 			data["total_perfect_hits"] = loaded_total_perfect_hits
 			data["drum_levels_completed"] = loaded_drum_levels_completed
 			data["drum_perfect_hits_in_level"] = loaded_drum_perfect_hits_in_level
-			data["current_snare_streak"] = loaded_current_snare_streak 
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
 
 			data["last_login_date"] = loaded_last_login
@@ -251,8 +248,6 @@ func load_save_data(save_dict: Dictionary):
 		data["drum_levels_completed"] = int(save_dict["drum_levels_completed"])
 	if save_dict.has("drum_perfect_hits_in_level"):
 		data["drum_perfect_hits_in_level"] = int(save_dict["drum_perfect_hits_in_level"])
-	if save_dict.has("current_snare_streak"):
-		data["current_snare_streak"] = int(save_dict["current_snare_streak"])
 	if save_dict.has("total_drum_perfect_hits"):
 		data["total_drum_perfect_hits"] = int(save_dict["total_drum_perfect_hits"])
 	if save_dict.has("last_login_date"):
@@ -274,7 +269,6 @@ func reset_progress():
 	data["total_perfect_hits"] = 0
 	data["drum_levels_completed"] = 0
 	data["drum_perfect_hits_in_level"] = 0
-	data["current_snare_streak"] = 0  
 	data["total_drum_perfect_hits"] = 0
 
 	data["last_login_date"] = ""
@@ -368,23 +362,8 @@ func update_drum_perfect_hits_streak(increment: bool):
 func get_current_drum_perfect_hits_streak() -> int:
 	return int(data.get("drum_perfect_hits_in_level", 0))
 
-func update_snare_streak(hit_was_snare: bool):
-	var current_streak = int(data.get("current_snare_streak", 0))
-	if hit_was_snare:
-		var new_streak = current_streak + 1
-		data["current_snare_streak"] = new_streak
-		print("[PlayerDataManager] Серия снейров увеличена: ", new_streak)
-	else:
-		if current_streak > 0: 
-			print("[PlayerDataManager] Серия снейров сброшена с ", current_streak, " до 0")
-		data["current_snare_streak"] = 0
-
-func get_current_snare_streak() -> int:
-	return int(data.get("current_snare_streak", 0))
-
 func reset_level_based_counters():
 	data["drum_perfect_hits_in_level"] = 0
-	data["current_snare_streak"] = 0
 
 func add_total_drum_perfect_hit():
 	var current_total = int(data.get("total_drum_perfect_hits", 0))

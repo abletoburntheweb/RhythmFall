@@ -388,7 +388,6 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["total_perfect_hits"] = 0
 	pdm.data["drum_levels_completed"] = 0
 	pdm.data["drum_perfect_hits_in_level"] = 0
-	pdm.data["current_snare_streak"] = 0
 	pdm.data["total_drum_perfect_hits"] = 0
 
 	pdm._save()
@@ -438,6 +437,6 @@ func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_
 	for achievement in achievements:
 		if achievement.id == 32 and not achievement.get("unlocked", false):
 			achievement.current = current_drum_streak
-			if current_drum_streak >= 100:
+			if current_drum_streak >= 10:
 				_perform_unlock(achievement)
 			break

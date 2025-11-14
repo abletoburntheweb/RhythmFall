@@ -1,4 +1,3 @@
-# victory_screen/victory_screen.gd
 extends Control
 
 signal song_select_requested
@@ -160,16 +159,12 @@ func _deferred_update_ui():
 				achievement_system = game_engine.get_achievement_system()
 			
 			var current_drum_streak = 0
-			var current_snare_streak = 0
 			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
 				current_drum_streak = player_data_manager.get_current_drum_perfect_hits_streak()
-			if player_data_manager.has_method("get_current_snare_streak"):
-				current_snare_streak = player_data_manager.get_current_snare_streak()
 			
 			if achievement_system:
 				var instrument_used = song_info.get("instrument", "standard")
-				
-				achievement_system.on_level_completed_extended(accuracy, instrument_used, current_drum_streak, current_snare_streak)
+				achievement_system.on_level_completed_extended(accuracy, instrument_used, current_drum_streak)
 			else:
 				var achievement_manager = null
 				if game_engine.has_method("get_achievement_manager"):
@@ -178,7 +173,6 @@ func _deferred_update_ui():
 				if achievement_manager:
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
-					
 					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)

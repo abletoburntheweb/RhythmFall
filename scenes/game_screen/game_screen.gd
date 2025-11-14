@@ -447,10 +447,6 @@ func check_hit(lane: int):
 					
 					if player_data_manager:
 						player_data_manager.update_drum_perfect_hits_streak(true)
-						var is_snare_note = (note.note_type == "SnareNote") 
-						player_data_manager.update_snare_streak(is_snare_note)
-						if is_snare_note:
-							player_data_manager.add_total_snare_hit()
 						player_data_manager.add_total_drum_perfect_hit()
 						
 						var achievement_system = null
@@ -459,8 +455,7 @@ func check_hit(lane: int):
 						
 						if achievement_system:
 							var current_drum_streak = player_data_manager.get_current_drum_perfect_hits_streak()
-							var current_snare_streak = player_data_manager.get_current_snare_streak()
-							achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
+							achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak)
 				
 				if sound_factory and music_manager:
 					var note_type = note.note_type 
@@ -482,7 +477,6 @@ func check_hit(lane: int):
 				
 				if player_data_manager:
 					player_data_manager.update_drum_perfect_hits_streak(false)
-					player_data_manager.update_snare_streak(false)
 					
 					var achievement_system = null
 					if game_engine and game_engine.has_method("get_achievement_system"):
@@ -490,8 +484,7 @@ func check_hit(lane: int):
 					
 					if achievement_system:
 						var current_drum_streak = player_data_manager.get_current_drum_perfect_hits_streak()
-						var current_snare_streak = player_data_manager.get_current_snare_streak()
-						achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
+						achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak)
 	else:
 		score_manager.add_perfect_hit()
 		perfect_hits_this_level += 1
