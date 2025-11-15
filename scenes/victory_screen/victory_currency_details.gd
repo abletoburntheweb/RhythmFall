@@ -17,7 +17,6 @@ var music_manager = null
 func _ready():
 	visible = false
 	
-	# Получить music_manager из родителя
 	var parent = get_parent()
 	if parent and parent.get_parent() and parent.get_parent().has_method("get_music_manager"):
 		music_manager = parent.get_parent().get_music_manager()

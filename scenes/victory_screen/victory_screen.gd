@@ -155,7 +155,6 @@ func _deferred_update_ui():
 			player_data_manager.add_currency(earned_currency)
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
 			
-			# Получаем системы ачивок
 			var achievement_system = null
 			var achievement_manager = null
 			
@@ -165,7 +164,6 @@ func _deferred_update_ui():
 			if game_engine and game_engine.has_method("get_achievement_manager"):
 				achievement_manager = game_engine.get_achievement_manager()
 			
-			# Получаем данные для ачивок
 			var current_drum_streak = 0
 			var current_snare_streak = 0
 			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
@@ -173,7 +171,6 @@ func _deferred_update_ui():
 			if player_data_manager.has_method("get_current_snare_streak"):
 				current_snare_streak = player_data_manager.get_current_snare_streak()
 			
-			# Обрабатываем отложенные геймплейные ачивки
 			if achievement_system and achievement_system.has_method("process_delayed_achievements"):
 				print("🎯 Обрабатываем отложенные геймплейные ачивки...")
 				achievement_system.process_delayed_achievements()
@@ -185,19 +182,16 @@ func _deferred_update_ui():
 						var drum_streak = data.get("current_drum_streak", 0)
 						achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
 			
-			# Вызываем основные ачивки за уровень
 			if achievement_system:
 				var instrument_used = song_info.get("instrument", "standard")
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 				
-				# Используем существующие методы вместо on_level_completed_extended
 				achievement_system.on_level_completed(accuracy)
 				if instrument_used == "drums":
 					achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
 				
 			elif achievement_manager:
 				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
-				# Fallback на старую систему
 				achievement_manager.check_first_level_achievement()
 				achievement_manager.check_perfect_accuracy_achievement(accuracy)
 				player_data_manager.add_completed_level()

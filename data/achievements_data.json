@@ -1,6 +1,7 @@
 {
 	"achievements": [
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Описание для достижения 1",
 			"id": 1.0,
@@ -11,6 +12,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Описание для достижения 2",
 			"id": 2.0,
@@ -21,6 +23,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Описание для достижения 3",
 			"id": 3.0,
@@ -31,6 +34,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Описание для достижения 4",
 			"id": 4.0,
@@ -41,6 +45,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Описание для достижения 5",
 			"id": 5.0,
@@ -51,6 +56,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Совершить первую покупку в магазине",
 			"id": 6.0,
@@ -61,6 +67,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
@@ -71,6 +78,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
@@ -81,6 +89,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
@@ -91,6 +100,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
@@ -101,7 +111,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 198,
+			"category": "economy",
+			"current": 198.0,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -111,7 +122,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 198,
+			"category": "economy",
+			"current": 198.0,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -121,7 +133,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 198,
+			"category": "economy",
+			"current": 198.0,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -131,7 +144,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 0,
+			"category": "economy",
+			"current": 0.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -141,7 +155,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 0,
+			"category": "economy",
+			"current": 0.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -151,7 +166,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 0,
+			"category": "economy",
+			"current": 0.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -161,6 +177,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
@@ -171,6 +188,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "shop",
 			"current": 0.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
@@ -181,6 +199,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "daily",
 			"current": 1,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
@@ -191,6 +210,7 @@
 			"unlocked": true
 		},
 		{
+			"category": "daily",
 			"current": 1,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
@@ -201,6 +221,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "daily",
 			"current": 1,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
@@ -211,6 +232,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "daily",
 			"current": 1,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
@@ -221,6 +243,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "system",
 			"current": 0.0,
 			"description": "Сгенерировать свой первый уровень с помощью системы анализа",
 			"id": 23.0,
@@ -231,6 +254,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 1.0,
 			"description": "Пройти первый уровень",
 			"id": 24.0,
@@ -241,6 +265,7 @@
 			"unlocked": true
 		},
 		{
+			"category": "gameplay",
 			"current": 1.0,
 			"description": "Пройти уровень с 100% точностью",
 			"id": 25.0,
@@ -251,7 +276,8 @@
 			"unlocked": true
 		},
 		{
-			"current": 1,
+			"category": "gameplay",
+			"current": 1.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -261,7 +287,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 1,
+			"category": "gameplay",
+			"current": 1.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -271,7 +298,8 @@
 			"unlocked": false
 		},
 		{
-			"current": 27,
+			"category": "gameplay",
+			"current": 27.0,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -281,6 +309,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Пройти первый уровень в режиме перкуссии",
 			"id": 29.0,
@@ -291,6 +320,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Пройти уровень в режиме перкуссии с 100% точностью",
 			"id": 30.0,
@@ -301,6 +331,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 0.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
@@ -311,6 +342,7 @@
 			"unlocked": false
 		},
 		{
+			"category": "gameplay",
 			"current": 10.0,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,

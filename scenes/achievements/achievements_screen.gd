@@ -52,6 +52,11 @@ func _init_filter_box():
 	filter_box.add_item("Все")
 	filter_box.add_item("Открытые")
 	filter_box.add_item("Закрытые")
+	filter_box.add_item("Геймплей")
+	filter_box.add_item("Системные")
+	filter_box.add_item("Магазин")
+	filter_box.add_item("Экономика")
+	filter_box.add_item("Ежедневные")
 	filter_box.select(0)
 
 
@@ -204,6 +209,11 @@ func _on_filter_selected(index: int):
 		0: current_filter = "Все"
 		1: current_filter = "Открытые"
 		2: current_filter = "Закрытые"
+		3: current_filter = "Геймплей"
+		4: current_filter = "Системные"
+		5: current_filter = "Магазин"
+		6: current_filter = "Экономика"
+		7: current_filter = "Ежедневные"
 	_filter_achievements_internal(search_bar.text)
 
 
@@ -217,7 +227,19 @@ func _filter_achievements_internal(query: String):
 		for ach in base_list:
 			if not (ach is Dictionary) or not ach.has("title") or not ach.has("description"):
 				continue
-			if ach.title.to_lower().contains(query_lower) or ach.description.to_lower().contains(query_lower):
+			var matches_search = ach.title.to_lower().contains(query_lower) or ach.description.to_lower().contains(query_lower)
+			var matches_category = true
+			if current_filter != "Все" and current_filter != "Открытые" and current_filter != "Закрытые":
+				var category_map = {
+					"Геймплей": "gameplay",
+					"Системные": "system", 
+					"Магазин": "shop",
+					"Экономика": "economy",
+					"Ежедневные": "daily"
+				}
+				if category_map.has(current_filter):
+					matches_category = ach.get("category", "").to_lower() == category_map[current_filter].to_lower()
+			if matches_search and matches_category:
 				results.append(ach)
 	else:
 		results = base_list
@@ -241,7 +263,24 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 				return true  
 		)
 	else:
-		return achievements_to_filter
+		# Фильтрация по категории
+		var category_map = {
+			"Геймплей": "gameplay",
+			"Системные": "system", 
+			"Магазин": "shop",
+			"Экономика": "economy",
+			"Ежедневные": "daily"
+		}
+		if category_map.has(filter_type):
+			var target_category = category_map[filter_type].to_lower()
+			return achievements_to_filter.filter(func(ach): 
+				if ach is Dictionary and ach.has("category"):
+					return ach.get("category", "").to_lower() == target_category
+				else:
+					return false
+			)
+		else:
+			return achievements_to_filter
 
 func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"): 
