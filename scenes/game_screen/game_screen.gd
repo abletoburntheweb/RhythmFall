@@ -353,6 +353,13 @@ func _input(event):
 				debug_menu.toggle_visibility()
 			return 
 	
+	# Обрабатываем пробел для пропуска обратного отсчета даже когда input_enabled = false
+	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
+		if countdown_active:
+			skip_countdown()
+			return
+	
+	# Остальная обработка ввода только если input_enabled = true
 	if not input_enabled: 
 		return
 	
@@ -371,6 +378,15 @@ func _input(event):
 	elif event is InputEventKey and not event.pressed: 
 		var keycode = event.keycode
 		player.handle_key_release(keycode)
+		
+func skip_countdown():
+	if countdown_active:
+		# Останавливаем текущий таймер обратного отсчета
+		if countdown_timer:
+			# Для SceneTreeTimer мы не можем остановить, но можем пропустить сразу
+			countdown_remaining = 0
+			_update_countdown()  # Это запустит gameplay
+		print("Обратный отсчет пропущен")
 
 func skip_intro() -> bool:
 	if is_paused or game_finished or countdown_active:
