@@ -263,7 +263,6 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 				return true  
 		)
 	else:
-		# Фильтрация по категории
 		var category_map = {
 			"Геймплей": "gameplay",
 			"Системные": "system", 

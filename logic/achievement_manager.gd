@@ -114,10 +114,21 @@ func _perform_unlock(achievement: Dictionary):
 	if music_mgr:
 		music_mgr.play_achievement_sound()
 
-	if notification_mgr:
+	var category = achievement.get("category", "")
+	if notification_mgr and category != "gameplay":
 		print("Unlocking achievement: ", achievement)
 		notification_mgr.show_achievement_popup(achievement)
+	else:
+		print("🎮 Геймплейная ачивка отложена: ", achievement.title)
+func show_all_delayed_gameplay_achievements():
+	print("🎯 Показываем все отложенные геймплейные ачивки...")
 
+	for achievement in achievements:
+		if achievement.get("unlocked", false) and achievement.get("category", "") == "gameplay":
+			print("🏆 Показываем геймплейную ачивку: ", achievement.title)
+			if notification_mgr:
+				notification_mgr.show_achievement_popup(achievement)
+				
 func reset_achievements():
 	for a in achievements:
 		a.unlocked = false

@@ -171,6 +171,17 @@ func _deferred_update_ui():
 			if player_data_manager.has_method("get_current_snare_streak"):
 				current_snare_streak = player_data_manager.get_current_snare_streak()
 			
+			# Проверяем режим перкуссии
+			var instrument_used = song_info.get("instrument", "standard")
+			var is_drum_mode = (instrument_used == "drums")
+			
+			if is_drum_mode:
+				print("🥁 Режим перкуссии - проверяем drum-ачивки...")
+				# Добавляем пройденный drum-уровень
+				player_data_manager.add_drum_level_completed()
+				var total_drum_levels = player_data_manager.get_drum_levels_completed()
+				print("🥁 Пройдено drum-уровней: ", total_drum_levels)
+			
 			if achievement_system and achievement_system.has_method("process_delayed_achievements"):
 				print("🎯 Обрабатываем отложенные геймплейные ачивки...")
 				achievement_system.process_delayed_achievements()
@@ -183,11 +194,10 @@ func _deferred_update_ui():
 						achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
 			
 			if achievement_system:
-				var instrument_used = song_info.get("instrument", "standard")
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 				
 				achievement_system.on_level_completed(accuracy)
-				if instrument_used == "drums":
+				if is_drum_mode:
 					achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
 				
 			elif achievement_manager:
@@ -198,9 +208,17 @@ func _deferred_update_ui():
 				var total_levels_completed = player_data_manager.get_levels_completed()
 				achievement_manager.check_levels_completed_achievement(total_levels_completed)
 				
-				var total_drum_levels = player_data_manager.get_drum_levels_completed()
-				achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
-				achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+				# ВАЖНО: Проверяем drum-ачивки
+				if is_drum_mode:
+					print("🥁 Проверяем drum-ачивки через AchievementManager...")
+					var total_drum_levels = player_data_manager.get_drum_levels_completed()
+					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+			
+			# ВЫЗЫВАЕМ ПОКАЗ ВСЕХ ОТЛОЖЕННЫХ ГЕЙМПЛЕЙНЫХ АЧИВОК
+			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
+				print("🎯 Показываем накопленные геймплейные ачивки...")
+				achievement_manager.show_all_delayed_gameplay_achievements()
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
 		else:
