@@ -112,29 +112,29 @@
 		},
 		{
 			"category": "economy",
-			"current": 98.0,
+			"current": 140.0,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
 			"title": "Собиратель I",
 			"total": 500.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "16 Ноя 2025, 03:08",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 98.0,
+			"current": 140.0,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
 			"title": "Собиратель II",
 			"total": 1000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "16 Ноя 2025, 03:11",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 98.0,
+			"current": 140.0,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -277,18 +277,18 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 3.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
 			"title": "Новичок ритма",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "16 Ноя 2025, 03:11",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 3.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -299,7 +299,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 13.0,
+			"current": 0.0,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",

@@ -69,3 +69,7 @@ func get_accuracy() -> float:
 	
 func get_missed_notes_count() -> int:
 	return missed_notes
+	
+func set_accuracy(new_accuracy: float):
+	accuracy = clampf(new_accuracy, 0.0, 100.0)
+	print("ScoreManager: Точность установлена вручную: %.1f%%" % accuracy)

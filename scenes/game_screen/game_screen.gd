@@ -350,16 +350,19 @@ func _input(event):
 
 		if keycode == KEY_QUOTELEFT and shift_pressed:
 			if debug_menu:
-				debug_menu.toggle_visibility()
-			return 
+				var settings_manager = game_engine.get_settings_manager() if game_engine else null
+				if settings_manager and settings_manager.get_enable_debug_menu():
+					debug_menu.toggle_visibility()
+				else:
+					print("DebugMenu: Отключено в настройках")
+			return		
+			
 	
-	# Обрабатываем пробел для пропуска обратного отсчета даже когда input_enabled = false
 	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
 		if countdown_active:
 			skip_countdown()
 			return
 	
-	# Остальная обработка ввода только если input_enabled = true
 	if not input_enabled: 
 		return
 	
@@ -381,11 +384,9 @@ func _input(event):
 		
 func skip_countdown():
 	if countdown_active:
-		# Останавливаем текущий таймер обратного отсчета
 		if countdown_timer:
-			# Для SceneTreeTimer мы не можем остановить, но можем пропустить сразу
 			countdown_remaining = 0
-			_update_countdown()  # Это запустит gameplay
+			_update_countdown()
 		print("Обратный отсчет пропущен")
 
 func skip_intro() -> bool:

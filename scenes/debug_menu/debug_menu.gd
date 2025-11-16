@@ -8,6 +8,7 @@ var combo_label: Label = null
 var max_combo_label: Label = null
 var combo_multiplier_label: Label = null
 var bpm_label: Label = null
+var accuracy_label: Label = null  
 var notes_total_label: Label = null
 var notes_current_label: Label = null
 var song_time_label: Label = null
@@ -15,8 +16,9 @@ var auto_play_check_box: CheckButton = null
 var plus_1000_button: Button = null
 var minus_1000_button: Button = null
 var plus_10_combo_button: Button = null
+var accuracy_edit: LineEdit = null 
 var win_button: Button = null
-
+ 
 func _ready():
 	fps_label = get_node_or_null("FPSLabel") as Label
 	score_label = get_node_or_null("ScoreLabel") as Label
@@ -32,9 +34,11 @@ func _ready():
 	minus_1000_button = get_node_or_null("Minus1000Button") as Button
 	win_button = get_node_or_null("WinButton") as Button
 	plus_10_combo_button = get_node_or_null("Plus10ComboButton") as Button 
+	accuracy_edit = get_node_or_null("AccuracyEdit") as LineEdit
+	accuracy_label = get_node_or_null("AccuracyLabel") as Label   
 	
 	var missing_nodes = []
-	for property_name in ["fps_label", "score_label", "combo_label", "max_combo_label", "combo_multiplier_label", "bpm_label", "notes_total_label", "notes_current_label", "song_time_label", "auto_play_check_box", "plus_1000_button", "minus_1000_button", "win_button", "plus_10_combo_button"]:
+	for property_name in ["fps_label", "score_label", "combo_label", "max_combo_label", "combo_multiplier_label", "bpm_label", "notes_total_label", "notes_current_label", "song_time_label", "auto_play_check_box", "plus_1000_button", "minus_1000_button", "win_button", "plus_10_combo_button", "accuracy_edit", "accuracy_label"]:
 		if not get(property_name):
 			missing_nodes.append(property_name)
 	
@@ -51,8 +55,51 @@ func _ready():
 		plus_10_combo_button.pressed.connect(_on_plus_10_combo_button_pressed)
 	if auto_play_check_box:
 		auto_play_check_box.toggled.connect(_on_auto_play_check_box_toggled)
+	if accuracy_edit:
+		accuracy_edit.placeholder_text = "0-100"
+		accuracy_edit.text_submitted.connect(_on_accuracy_text_submitted)
+	if accuracy_label:
+		accuracy_label.text = "Точность:"
 
 	hide()
+
+func _input(event):
+	if not visible:
+		return
+
+	if accuracy_edit and accuracy_edit.has_focus():
+		return
+	
+	if event is InputEventKey and event.pressed:
+		var viewport = get_viewport()
+		var handled = false
+		
+		match event.keycode:
+			KEY_1:
+				_on_plus_1000_button_pressed()
+				handled = true
+			KEY_2:
+				_on_minus_1000_button_pressed()
+				handled = true
+			KEY_3:
+				_on_plus_10_combo_button_pressed()
+				handled = true
+			KEY_4:
+				if auto_play_check_box:
+					auto_play_check_box.button_pressed = not auto_play_check_box.button_pressed
+					_on_auto_play_check_box_toggled(auto_play_check_box.button_pressed)
+				handled = true
+			KEY_5:
+				if accuracy_edit:
+					accuracy_edit.grab_focus()
+					print("DebugMenu: Ввод точности - введите значение 0-100 и нажмите Enter")
+				handled = true
+			KEY_6:
+				_on_win_button_pressed()
+				handled = true
+		
+		if handled and viewport:
+			viewport.set_input_as_handled()
 
 func toggle_visibility():
 	visible = not visible
@@ -72,6 +119,8 @@ func update_debug_info(game_screen):
 			max_combo_label.text = "Макс. комбо: %d" % game_screen.score_manager.get_max_combo()
 		if combo_multiplier_label:
 			combo_multiplier_label.text = "Множитель комбо: x%.1f" % game_screen.score_manager.get_combo_multiplier()
+		if accuracy_label:
+			accuracy_label.text = "Точность: %.1f%%" % game_screen.score_manager.get_accuracy()
 
 	if game_screen and game_screen.note_manager:
 		if notes_current_label:
@@ -84,6 +133,27 @@ func update_debug_info(game_screen):
 
 	if game_screen and song_time_label:
 		song_time_label.text = "Время песни: %.1fс" % game_screen.game_time
+
+func _on_accuracy_text_submitted(new_text: String):
+	if new_text.is_valid_float():
+		var accuracy_value = new_text.to_float()
+		accuracy_value = clampf(accuracy_value, 0.0, 100.0)
+		
+		var game_screen = get_parent()
+		if game_screen and game_screen.score_manager:
+			game_screen.score_manager.set_accuracy(accuracy_value)
+			print("DebugMenu: Установлена точность: %.1f%%" % accuracy_value)
+			
+			if game_screen.has_method("update_ui"):
+				game_screen.update_ui()
+			
+			accuracy_edit.text = ""
+			accuracy_edit.release_focus()
+		else:
+			printerr("DebugMenu: Не удалось получить доступ к score_manager")
+	else:
+		print("DebugMenu: Введено некорректное значение точности: ", new_text)
+		accuracy_edit.text = ""
 
 func _on_plus_1000_button_pressed():
 	var game_screen = get_parent()
@@ -156,4 +226,4 @@ func is_auto_play_enabled() -> bool:
 	if auto_play_check_box:
 		return auto_play_check_box.button_pressed
 	else:
-		return false 
+		return false

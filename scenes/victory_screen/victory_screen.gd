@@ -26,6 +26,7 @@ var music_manager = null
 @onready var combo_label: Label = $StatsFrame/ComboLabel
 @onready var max_combo_label: Label = $StatsFrame/MaxComboLabel
 @onready var accuracy_label: Label = $StatsFrame/AccuracyLabel
+@onready var grade_label: Label = $StatsFrame/GradeLabel
 @onready var currency_label: Label = $StatsFrame/CurrencyLabel
 @onready var replay_button: Button = $ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
@@ -41,6 +42,33 @@ func _ready():
 	if currency_label:
 		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		currency_label.gui_input.connect(_on_currency_label_clicked)
+
+func _calculate_grade() -> String:
+	if accuracy >= 100.0:
+		return "SS" 
+	elif accuracy >= 95.0:
+		return "S" 
+	elif accuracy >= 90.0:
+		return "A"  
+	elif accuracy >= 80.0:
+		return "B" 
+	elif accuracy >= 70.0:
+		return "C"  
+	elif accuracy >= 60.0:
+		return "D" 
+	else:
+		return "F"
+		
+func _get_grade_color(grade: String) -> Color:
+	match grade:
+		"SS": return Color.GOLD
+		"S": return Color.GOLD
+		"A": return Color.SILVER
+		"B": return Color.ORANGE
+		"C": return Color.YELLOW_GREEN
+		"D": return Color.ROYAL_BLUE
+		"F": return Color.RED
+		_: return Color.WHITE
 
 func _on_replay_button_pressed():
 	if music_manager and music_manager.has_method("play_select_sound"):
@@ -144,6 +172,12 @@ func _deferred_update_ui():
 	
 	if is_instance_valid(accuracy_label):
 		accuracy_label.text = "Точность: %.1f%%" % accuracy  
+
+	if is_instance_valid(grade_label):
+		var grade = _calculate_grade()
+		var grade_color = _get_grade_color(grade)
+		grade_label.text = "Оценка: %s" % grade
+		grade_label.modulate = grade_color
 	
 	if is_instance_valid(currency_label):
 		currency_label.text = "Валюта за уровень: %d" % earned_currency 
@@ -154,6 +188,8 @@ func _deferred_update_ui():
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
+
+			var grade = _calculate_grade()
 			
 			var achievement_system = null
 			var achievement_manager = null
@@ -217,6 +253,7 @@ func _deferred_update_ui():
 				achievement_manager.show_all_delayed_gameplay_achievements()
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
+			print("🎯 Получена оценка: %s (%.1f%%)" % [grade, accuracy])
 		else:
 			printerr("VictoryScreen: Не удалось получить player_data_manager")
 	else:

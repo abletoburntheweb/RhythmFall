@@ -88,8 +88,10 @@ layout_mode = 2
 expand_mode = 1
 
 [node name="TitleLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+custom_minimum_size = Vector2(400, 23)
 layout_mode = 2
 text = "Название"
+autowrap_mode = 2
 
 [node name="ArtistLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
