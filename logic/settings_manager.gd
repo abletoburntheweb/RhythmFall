@@ -263,3 +263,26 @@ func _get_key_string_from_scancode(scancode: int) -> String:
 		printerr("SettingsManager: _get_key_string_from_scancode: Неизвестный scancode ", scancode)
 		return "Key" + str(scancode)
 	return key_string
+func reset_all_settings():
+	var current_controls = settings.get("controls_keymap", {}).duplicate(true)
+	
+	settings = default_settings.duplicate(true)
+	
+	if not current_controls.is_empty():
+		settings["controls_keymap"] = current_controls
+	
+	_apply_reset_settings()
+	_save_settings()
+	print("SettingsManager: Все настройки сброшены к значениям по умолчанию")
+
+func _apply_reset_settings():
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", false) else DisplayServer.WINDOW_MODE_WINDOWED)
+	
+	if not settings.get("fullscreen", false):
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+		var screen_size = DisplayServer.screen_get_size()
+		var window_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_position((screen_size - window_size) / 2)
+	
+	print("SettingsManager: Сброшенные настройки применены к системе")

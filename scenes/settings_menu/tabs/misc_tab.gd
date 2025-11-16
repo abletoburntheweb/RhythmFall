@@ -8,10 +8,12 @@ var song_metadata_manager = null
 var player_data_manager = null 
 var achievement_manager = null
 
-@onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
+
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
 @onready var clear_all_cache_button: Button = $ContentVBox/ClearAllCacheButton
+@onready var reset_all_settings_button: Button = $ContentVBox/ResetAllSettingsButton
+@onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 
 func _ready():
 	print("MiscTab.gd: _ready вызван.")
@@ -25,14 +27,16 @@ func setup_ui_and_manager(manager: SettingsManager, music, screen = null, metada
 	_apply_initial_settings()
 
 func _connect_signals():
-	if debug_menu_checkbox:
-		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 	if clear_achievements_button:
 		clear_achievements_button.pressed.connect(_on_clear_achievements_pressed)
 	if reset_bpm_batch_button:
 		reset_bpm_batch_button.pressed.connect(_on_reset_bpm_batch_pressed)
 	if clear_all_cache_button:
 		clear_all_cache_button.pressed.connect(_on_clear_all_cache_pressed)
+	if reset_all_settings_button:
+		reset_all_settings_button.pressed.connect(_on_reset_all_settings_pressed)
+	if debug_menu_checkbox:
+		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 
 func _apply_initial_settings():
 	if settings_manager:
@@ -84,3 +88,13 @@ func _on_clear_all_cache_pressed():
 		emit_signal("settings_changed")
 	else:
 		printerr("MiscTab.gd: song_metadata_manager не установлен, невозможно очистить кэш.")
+		
+func _on_reset_all_settings_pressed():
+	print("MiscTab.gd: Запрос на сброс всех настроек.")
+	if settings_manager:
+		settings_manager.reset_all_settings()
+		_apply_initial_settings()
+		emit_signal("settings_changed")
+		print("MiscTab.gd: Все настройки сброшены к значениям по умолчанию.")
+	else:
+		printerr("MiscTab.gd: settings_manager не установлен, невозможно сбросить настройки!")
