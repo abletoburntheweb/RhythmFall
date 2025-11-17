@@ -61,12 +61,15 @@ func _check_thread_status():
 
 		if _thread_result.has("error"):
 			_set_is_generating(false)
+			print("NoteGeneratorClient.gd: Ошибка от сервера: ", _thread_result.error)
 			emit_signal("notes_generation_error", _thread_result.error)
 		elif _thread_result.has("notes"):
 			_set_is_generating(false)
+			print("NoteGeneratorClient.gd: Ноты успешно получены: ", _thread_result.notes.size(), " нот")
 			emit_signal("notes_generation_completed", _thread_result.notes, _thread_result.bpm, _thread_result.instrument_type)
 		else:
 			_set_is_generating(false)
+			print("NoteGeneratorClient.gd: Неожиданный формат ответа от сервера: ", _thread_result)
 			emit_signal("notes_generation_error", "Неизвестная ошибка в потоке.")
 
 func _thread_function(data_dict: Dictionary):
@@ -144,22 +147,31 @@ func _thread_function(data_dict: Dictionary):
 						print("NoteGeneratorClient.gd (Thread): Тело ответа от сервера: ", response_text)
 
 						var response_json = JSON.parse_string(response_text)
-						if response_json and response_json.has("notes") and response_json.has("bpm"):
-							var notes = response_json["notes"]
-							var received_bpm = response_json["bpm"]
-							var received_instrument = response_json.get("instrument_type", instrument_type)
-							print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm)
+						if response_json:
+							if response_json.has("notes") and response_json.has("bpm"):
+								var notes = response_json["notes"]
+								var received_bpm = response_json["bpm"]
+								var received_instrument = response_json.get("instrument_type", instrument_type)
+								print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm)
 	
-							_save_notes_locally(song_path, received_instrument, notes)
-							
-							local_result = {
-								"notes": notes, 
-								"bpm": received_bpm, 
-								"instrument_type": received_instrument
-							}
+								_save_notes_locally(song_path, received_instrument, notes)
+								
+								local_result = {
+									"notes": notes, 
+									"bpm": received_bpm, 
+									"instrument_type": received_instrument
+								}
+							elif response_json.has("error"):
+								local_error_msg = response_json["error"]
+								print("NoteGeneratorClient.gd (Thread): Ошибка от сервера: ", local_error_msg)
+								local_error_occurred = true
+							else:
+								local_error_msg = "Ответ не содержит ожидаемые поля: notes и bpm"
+								print("NoteGeneratorClient.gd (Thread): Неполный ответ от сервера: ", response_json)
+								local_error_occurred = true
 						else:
-							local_error_msg = response_json.get("error", "Неизвестная ошибка") if response_json else "Ответ не содержит ожидаемые поля"
-							print("NoteGeneratorClient.gd (Thread): Ошибка от сервера: ", local_error_msg)
+							local_error_msg = "Ответ не является валидным JSON"
+							print("NoteGeneratorClient.gd (Thread): Ответ не является JSON: ", response_text)
 							local_error_occurred = true
 					else:
 						local_error_msg = "Неожиданный статус HTTPClient после успешного ответа: " + str(http_client.get_status())
