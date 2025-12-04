@@ -73,6 +73,10 @@ func _get_grade_color(grade: String) -> Color:
 		_: return Color.WHITE
 
 func _on_replay_button_pressed():
+	if music_manager and music_manager.has_method("stop_game_music"):
+		music_manager.stop_game_music()
+		print("VictoryScreen.gd: Игровая музыка остановлена перед реплеем.")
+	
 	if music_manager and music_manager.has_method("play_select_sound"):
 		music_manager.play_select_sound()
 	
@@ -85,7 +89,12 @@ func _on_replay_button_pressed():
 	
 	queue_free()
 
+
 func _on_song_select_button_pressed():
+	if music_manager and music_manager.has_method("stop_game_music"):
+		music_manager.stop_game_music()
+		print("VictoryScreen.gd: Игровая музыка остановлена перед переходом к выбору песни.")
+	
 	if music_manager and music_manager.has_method("play_select_sound"):
 		music_manager.play_select_sound()
 	

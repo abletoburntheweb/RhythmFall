@@ -274,11 +274,21 @@ func end_game():
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	
+	# <<< ИСПРАВЛЕНО: Остановить ВСЮ музыку (включая игровую) и метроном ПЕРЕД переходом >>>
 	if music_manager:
-		if music_manager.has_method("stop_game_music"):
-			music_manager.stop_game_music()
+		if music_manager.has_method("stop_music"):
+			music_manager.stop_music()            
+			print("GameScreen.gd: ВСЯ музыка (включая игровую) остановлена в end_game через stop_music.")
+		else:
+			# Если stop_music нет (что маловероятно), пробуем stop_game_music
+			if music_manager.has_method("stop_game_music"):
+				music_manager.stop_game_music()
+				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
+			else:
+				printerr("GameScreen.gd: Ни stop_music, ни stop_game_music не найдены в MusicManager!")
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
+			print("GameScreen.gd: Метроном остановлен в end_game.")
 	
 	if auto_player:
 		auto_player.reset()
@@ -313,6 +323,7 @@ func end_game():
 			score_manager.get_missed_notes_count(), 
 			debug_perfect_hits 
 		)
+		
 		if new_victory_screen.has_method("set_results_manager") and results_manager:
 			new_victory_screen.set_results_manager(results_manager)
 			print("GameScreen.gd: ResultsManager передан в VictoryScreen.")
