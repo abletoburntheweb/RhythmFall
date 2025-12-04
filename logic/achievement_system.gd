@@ -15,11 +15,19 @@ func _init(ach_manager: AchievementManager, pd_manager: PlayerDataManager, music
 	achievement_manager.music_mgr = music_mgr
 	player_data_manager.achievement_manager = ach_manager
 
-func on_level_completed(accuracy: float):
-	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy)
+func on_level_completed(accuracy: float, is_drum_mode: bool = false): 
+	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode)
 	achievement_manager.check_first_level_achievement()
 	achievement_manager.check_perfect_accuracy_achievement(accuracy)
-	player_data_manager.add_completed_level() 
+
+	if is_drum_mode:
+		player_data_manager.add_drum_level_completed()
+		var total_drum_levels = player_data_manager.get_drum_levels_completed() 
+		print("[AchievementSystem] Total drum levels now: ", total_drum_levels)
+		achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+	else:
+		player_data_manager.add_completed_level() 
+
 	var total_levels_completed = player_data_manager.get_levels_completed() 
 	achievement_manager.check_levels_completed_achievement(total_levels_completed)
 	achievement_manager.save_achievements() 

@@ -274,13 +274,11 @@ func end_game():
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	
-	# <<< ИСПРАВЛЕНО: Остановить ВСЮ музыку (включая игровую) и метроном ПЕРЕД переходом >>>
 	if music_manager:
 		if music_manager.has_method("stop_music"):
 			music_manager.stop_music()            
 			print("GameScreen.gd: ВСЯ музыка (включая игровую) остановлена в end_game через stop_music.")
 		else:
-			# Если stop_music нет (что маловероятно), пробуем stop_game_music
 			if music_manager.has_method("stop_game_music"):
 				music_manager.stop_game_music()
 				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
@@ -292,6 +290,23 @@ func end_game():
 	
 	if auto_player:
 		auto_player.reset()
+	
+	# --- ВАЖНО: Вызов ачивок ДО перехода к VictoryScreen ---
+	var accuracy = score_manager.get_accuracy()
+	# Определяем, был ли режим перкуссии
+	var is_drum_mode = (current_instrument == "drums")
+	
+	# Получаем AchievementSystem через GameEngine
+	var achievement_system = null
+	if game_engine and game_engine.has_method("get_achievement_system"):
+		achievement_system = game_engine.get_achievement_system()
+	
+	if achievement_system:
+		print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
+		achievement_system.on_level_completed(accuracy, is_drum_mode)
+	else:
+		printerr("GameScreen.gd: AchievementSystem не найден через GameEngine!")
+	# --- Конец добавленного кода ---
 	
 	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
 	if victory_scene:

@@ -421,7 +421,7 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 		print("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
 		return
 
-	if total_drum_levels == 1: 
+	if total_drum_levels >= 1: 
 		for achievement in achievements:
 			if achievement.id == 29 and not achievement.get("unlocked", false):
 				_perform_unlock(achievement)

@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2260,
+			"current": 3210,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2260,
+			"current": 3210,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,14 +134,14 @@
 		},
 		{
 			"category": "economy",
-			"current": 2260,
+			"current": 3210,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
 			"title": "Собиратель III",
 			"total": 2500.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "4 Дек 2025, 21:08",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 19,
+			"current": 27,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,18 +288,18 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 19,
+			"current": 27,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
 			"title": "Ритм-мастер",
 			"total": 20.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "4 Дек 2025, 20:55",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 0,
+			"current": 41,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -310,36 +310,36 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Пройти первый уровень в режиме перкуссии",
 			"id": 29.0,
 			"image": "res://assets/achievements/first_strike.png",
 			"title": "Первый удар",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "4 Дек 2025, 22:55",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Пройти уровень в режиме перкуссии с 100% точностью",
 			"id": 30.0,
 			"image": "res://assets/achievements/clean_rhythm.png",
 			"title": "Чистый ритм",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "4 Дек 2025, 22:52",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 0.0,
+			"current": 10.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_force.png",
 			"title": "Сила грува",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "4 Дек 2025, 22:52",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
@@ -349,7 +349,7 @@
 			"image": "res://assets/achievements/drum_storm.png",
 			"title": "Барабанный шторм",
 			"total": 10.0,
-			"unlock_date": "4 Дек 2025, 18:49",
+			"unlock_date": "4 Дек 2025, 21:14",
 			"unlocked": true
 		}
 	]
