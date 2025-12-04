@@ -46,30 +46,30 @@ func _ready():
 		currency_label.gui_input.connect(_on_currency_label_clicked)
 
 func _calculate_grade() -> String:
-	if accuracy >= 100.0:
-		return "SS" 
-	elif accuracy >= 95.0:
-		return "S" 
+	if accuracy == 100.0: 
+		return "SS"
+	elif accuracy >= 95.0: 
+		return "S"
 	elif accuracy >= 90.0:
-		return "A"  
-	elif accuracy >= 80.0:
-		return "B" 
+		return "A"
+	elif accuracy >= 80.0: 
+		return "B"
 	elif accuracy >= 70.0:
-		return "C"  
+		return "C"
 	elif accuracy >= 60.0:
-		return "D" 
-	else:
+		return "D"
+	else: 
 		return "F"
 		
 func _get_grade_color(grade: String) -> Color:
 	match grade:
 		"SS": return Color.GOLD
-		"S": return Color.GOLD
-		"A": return Color.SILVER
-		"B": return Color.ORANGE
-		"C": return Color.YELLOW_GREEN
-		"D": return Color.ROYAL_BLUE
-		"F": return Color.RED
+		"S": return Color.SILVER 
+		"A": return Color.GREEN 
+		"B": return Color.BLUE 
+		"C": return Color.HOT_PINK # Color.PURPLE
+		"D": return Color.RED
+		"F": return Color.DARK_RED
 		_: return Color.WHITE
 
 func _on_replay_button_pressed():

@@ -1,3 +1,4 @@
+# logic/results_manager.gd
 class_name ResultsManager
 extends Node
 
@@ -14,7 +15,12 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	var results = load_results_for_song(song_data.get("path", ""))
 	
 	if results is Array:
-		results.sort_custom(func(a, b): return a.get("score", 0) > b.get("score", 0))
+		results.sort_custom(func(a, b): 
+			if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
+				return a.get("accuracy", 0.0) > b.get("accuracy", 0.0) 
+			else:
+				return a.get("score", 0) > b.get("score", 0) 
+		)
 	
 	for result in results:
 		var original_datetime_str = result.get("result_datetime", "N/A")
@@ -121,9 +127,15 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 	}
 	results.append(new_result)
 	
-	results.sort_custom(func(a, b): return a.get("score", 0) > b.get("score", 0))
-	if results.size() > 10:
-		results.resize(10)
+	results.sort_custom(func(a, b): 
+		if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
+			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
+		else:
+			return a.get("score", 0) > b.get("score", 0) 
+	)
+	
+	if results.size() > 25: 
+		results.resize(25) 
 	
 	var song_file_name = song_path.get_file().get_basename()
 	var results_file_path = "user://results/%s_results.json" % song_file_name
@@ -151,6 +163,11 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 func get_top_result_for_song(song_path: String) -> Dictionary:
 	var results = load_results_for_song(song_path)
 	if results.size() > 0:
-		results.sort_custom(func(a, b): return a.get("score", 0) > b.get("score", 0))
+		results.sort_custom(func(a, b): 
+			if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
+				return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
+			else:
+				return a.get("score", 0) > b.get("score", 0)
+		)
 		return results[0]
 	return {}
