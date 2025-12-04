@@ -59,6 +59,8 @@ var auto_player = null
 
 var perfect_hits_this_level: int = 0
 
+var results_manager = null
+
 func _ready():
 	game_engine = get_parent()
 	
@@ -135,7 +137,11 @@ func _on_player_hit(lane: int):
 	if is_paused:
 		return
 	check_hit(lane)
-
+	
+func set_results_manager(results_mgr):
+	results_manager = results_mgr
+	print("GameScreen.gd: ResultsManager установлен.")
+	
 func _on_lane_pressed_changed():
 	for i in range(lanes):
 		if i < lane_highlight_nodes.size() and i < player.lanes_state.size():
@@ -260,7 +266,7 @@ func end_game():
 	if game_finished:
 		return
 	
-	print("GameScreen: Игра завершена, переход к VictoryScreen...")
+	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
 	
 	if not game_timer.is_stopped():
@@ -307,6 +313,11 @@ func end_game():
 			score_manager.get_missed_notes_count(), 
 			debug_perfect_hits 
 		)
+		if new_victory_screen.has_method("set_results_manager") and results_manager:
+			new_victory_screen.set_results_manager(results_manager)
+			print("GameScreen.gd: ResultsManager передан в VictoryScreen.")
+		elif results_manager:
+			printerr("GameScreen.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
 		
 		var parent_node = get_parent()
 		if parent_node:

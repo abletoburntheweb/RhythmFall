@@ -1,4 +1,4 @@
-# victory_screen/victory_screen.gd
+# scenes/victory_screen/victory_screen.gd
 extends Control
 
 signal song_select_requested
@@ -15,6 +15,8 @@ var calculated_combo_multiplier: float = 1.0
 var calculated_total_notes: int = 0
 var calculated_missed_notes: int = 0
 var perfect_hits_this_level: int = 0
+
+var results_manager = null
 
 var music_manager = null
 
@@ -120,6 +122,11 @@ func _show_currency_details():
 func _on_currency_details_closed():
 	pass
 
+func set_results_manager(results_mgr):
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_results_manager вызван с: ", results_mgr)
+	results_manager = results_mgr
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_manager)
+
 func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0):
 	score = p_score
 	combo = p_combo
@@ -188,6 +195,26 @@ func _deferred_update_ui():
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
+
+			if results_manager and song_info and song_info.get("path"):
+				var instrument_used = song_info.get("instrument", "standard")
+				if instrument_used == "drums":
+					instrument_used = "Перкуссия"
+				var grade = _calculate_grade()
+				var grade_color = _get_grade_color(grade)
+				var result_datetime = Time.get_datetime_string_from_system(true, true) 
+				results_manager.save_result_for_song(
+					song_info.get("path", ""), 
+					instrument_used,          
+					score,                    
+					accuracy,                  
+					grade,                   
+					grade_color,              
+					result_datetime           
+				)
+				print("VictoryScreen.gd: Результат отправлен в ResultsManager для сохранения.")
+			else:
+				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
 
 			var grade = _calculate_grade()
 			

@@ -19,7 +19,7 @@ func _instantiate_if_exists(scene_path):
 		printerr("Transitions: Сцена не найдена: ", scene_path)
 		return null
 
-func transition_open_game(start_level=null, selected_song=null, instrument="standard"):
+func transition_open_game(start_level=null, selected_song=null, instrument="standard", results_mgr = null):
 	if main_menu_instance and main_menu_instance.is_game_open:
 		transition_close_game()
 		return
@@ -33,6 +33,13 @@ func transition_open_game(start_level=null, selected_song=null, instrument="stan
 			new_game_screen._set_start_level(start_level)
 		if new_game_screen.has_method("_set_selected_song"):
 			new_game_screen._set_selected_song(selected_song)
+
+		if new_game_screen.has_method("set_results_manager") and results_mgr:
+			new_game_screen.set_results_manager(results_mgr)
+			print("Transitions.gd: ResultsManager передан в GameScreen.")
+		elif results_mgr:
+			printerr("Transitions.gd: GameScreen не имеет метода set_results_manager, но ResultsManager передан.")
+
 		if new_game_screen.has_method("start_game"):
 			new_game_screen.start_game()
 
@@ -249,15 +256,42 @@ func transition_exit_game():
 	else:
 		print("Transitions.gd: ОШИБКА! GameEngine не имеет метода request_quit!")
 
-func open_game_with_instrument(instrument="standard"):
+func open_game_with_instrument(song_path_or_instrument: String = "", instrument_if_path_provided: String = "standard", results_mgr = null):
 	var current_screen = game_engine.current_screen
-	if current_screen and current_screen.has_method("get_current_selected_song"):
-		var selected_song = current_screen.get_current_selected_song()
-		print("Transitions.gd: Открываем игру с песней: %s и инструментом: %s" % [selected_song.get("title", "Неизвестна"), instrument])
-		open_game_with_song(selected_song, instrument)
+	var selected_song_data = {}
+	var instrument = instrument_if_path_provided
+	var results_manager = results_mgr
+	
+	var is_instrument_call = (song_path_or_instrument == "standard" or song_path_or_instrument == "drums") and instrument_if_path_provided == "standard"
+	
+	if is_instrument_call:
+		instrument = song_path_or_instrument
+		if current_screen and current_screen.has_method("get_current_selected_song"):
+			selected_song_data = current_screen.get_current_selected_song()
+			var song_path = selected_song_data.get("path", "")
+			print("Transitions.gd: Получен путь к песне из текущего экрана: %s" % song_path)
+			if current_screen.has_method("get_results_manager"):
+				results_manager = current_screen.get_results_manager()
+		else:
+			print("Transitions.gd: Не удалось получить выбранную песню из текущего экрана, запуск игры с инструментом: ", instrument)
+			selected_song_data = {}
+			return 
+	
 	else:
-		print("Transitions.gd: Не удалось получить выбранную песню из текущего экрана, запуск игры с инструментом: ", instrument)
-		open_game_with_song({}, instrument) 
+		var song_path = song_path_or_instrument
+		if song_path.is_empty() and current_screen and current_screen.has_method("get_current_selected_song"):
+			selected_song_data = current_screen.get_current_selected_song()
+			song_path = selected_song_data.get("path", "")
+			print("Transitions.gd: Получен путь к песне из текущего экрана: %s" % song_path)
+		else:
+			selected_song_data = {"path": song_path}
+			print("Transitions.gd: Используем переданный путь к песне: %s" % song_path)
+
+		if song_path.is_empty():
+			printerr("Transitions.gd: Невозможно открыть игру - путь к песне пуст!")
+			return
+
+	open_game_with_song(selected_song_data, instrument, results_manager)
 
 func open_game(start_level=null):
 	transition_open_game(start_level)
@@ -271,8 +305,8 @@ func open_song_select():
 func close_song_select():
 	transition_close_song_select()
 
-func open_game_with_song(selected_song, instrument="standard"):
-	transition_open_game(null, selected_song, instrument)
+func open_game_with_song(selected_song, instrument="standard", results_mgr = null):
+	transition_open_game(null, selected_song, instrument, results_mgr)
 
 func resume_game():
 	pass

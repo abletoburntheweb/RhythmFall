@@ -1,4 +1,3 @@
-# scenes/song_select/song_select.gd
 extends BaseScreen
 
 const SongManager = preload("res://logic/song_manager.gd")
@@ -27,6 +26,9 @@ var instrument_selector: Control = null
 var current_instrument: String = "drums"
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
+
+var results_button: Button = null
+var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
@@ -91,7 +93,7 @@ func _ready():
 		print("SongSelect.gd: PlayerDataManager передан в SongDetailsManager.")
 	else:
 		printerr("SongSelect.gd: player_data_manager (унаследованный из BaseScreen) не установлен! Резервные обложки не будут работать.")
-
+	results_manager.set_player_data_manager(player_data_manager)
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
 	if song_metadata_manager:
@@ -193,6 +195,14 @@ func _connect_ui_signals():
 	else:
 		push_error("SongSelect.gd: Не найден DeleteButton по пути $MainVBox/ContentHBox/DetailsVBox/DeleteButton")
 
+	results_button = $MainVBox/ContentHBox/DetailsVBox/ResultsButton
+	if results_button:
+		results_button.pressed.connect(_on_results_pressed)
+		results_button.disabled = true
+		print("SongSelect.gd: Подключён сигнал pressed кнопки Результаты.")
+	else:
+		push_error("SongSelect.gd: Не найден ResultsButton по пути $MainVBox/ContentHBox/DetailsVBox/ResultsButton")
+
 	var title_label = $MainVBox/ContentHBox/DetailsVBox/TitleLabel
 	if title_label:
 		title_label.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -225,10 +235,14 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		song_details_manager.play_song_preview(song_file_path)
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = false
+		if results_button:
+			results_button.disabled = false
 	else:
 		print("SongSelect.gd: Нет пути к файлу для воспроизведения.")
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = true
+		if results_button:
+			results_button.disabled = true
 
 	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
 	if generate_btn:
@@ -461,6 +475,25 @@ func _on_delete_pressed():
 	else:
 		printerr("SongSelect.gd: Не удалось открыть директорию res:// для удаления файла.")
 
+func _on_results_pressed():
+	print("SongSelect.gd: Нажата кнопка Результаты для песни: %s" % current_selected_song_data.get("title", "Неизвестная"))
+	
+	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList
+	var results_list = $MainVBox/ContentHBox/SongListVBox/ResultsItemList
+	
+	if song_item_list and results_list:
+		if song_item_list.visible:
+			song_item_list.visible = false
+			results_list.visible = true
+			results_manager.show_results_for_song(current_selected_song_data, results_list)
+			print("SongSelect.gd: Переключено на результаты")
+		else:
+			results_list.visible = false
+			song_item_list.visible = true
+			print("SongSelect.gd: Переключено на список песен")
+	else:
+		printerr("SongSelect.gd: Не найден SongItemList или ResultsItemList по пути $MainVBox/ContentHBox/SongListVBox/")
+
 func _on_analyze_bpm_pressed():
 	print("SongSelect.gd: Нажата кнопка AnalyzeBPM.")
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -592,3 +625,6 @@ func _on_song_metadata_updated(song_file_path: String):
 				
 func get_current_selected_song() -> Dictionary:
 	return current_selected_song_data.duplicate()
+	
+func get_results_manager():
+	return results_manager

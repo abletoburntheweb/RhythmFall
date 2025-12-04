@@ -139,7 +139,6 @@ func _edit_bpm():
 	dialog.dialog_text = "Введите новый BPM (60-200):"
 
 	var spin_box = SpinBox.new()
-	# Используем методы set_min, set_max, set_step вместо прямого присваивания
 	spin_box.set_min(60)
 	spin_box.set_max(200)
 	spin_box.set_step(1)
