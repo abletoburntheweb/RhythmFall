@@ -43,13 +43,20 @@ func get_max_combo() -> int:
 
 func set_total_notes(total: int):
 	total_notes = total
+	print("ScoreManager: Установлено total_notes: %d" % total_notes)
 	update_accuracy()
 
 func update_accuracy():
+	print("[ScoreManager] update_accuracy вызван: missed_notes=%d (%s), total_notes=%d (%s)" % [missed_notes, typeof(missed_notes), total_notes, typeof(total_notes)])
 	if total_notes == 0:
 		accuracy = 100.0
 	else:
-		accuracy = max(0, 100 - (missed_notes / total_notes) * 100)
+		var intermediate_calc = (float(missed_notes) / total_notes) * 100
+		print("[ScoreManager] Промежуточный расчёт (missed_notes / total_notes) * 100 = (%d / %d) * 100 = %.6f" % [missed_notes, total_notes, intermediate_calc])
+		accuracy = max(0, 100 - intermediate_calc)
+		print("[ScoreManager] Рассчитанная точность (до max): %.6f" % (100 - intermediate_calc))
+	print("[ScoreManager] Установленная точность (accuracy): %.6f" % accuracy)
+	print("[ScoreManager] Рассчитанная точность: %.2f%% (из %d промахов из %d)" % [accuracy, missed_notes, total_notes])
 
 func add_perfect_hit() -> int:
 	return add_score("perfect")

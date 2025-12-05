@@ -217,7 +217,9 @@ func start_gameplay():
 	
 	if note_manager.get_spawn_queue_size() > 0:
 		notes_loaded = true
-		score_manager.set_total_notes(note_manager.get_spawn_queue_size())
+		var total_note_count = note_manager.get_spawn_queue_size()
+		score_manager.set_total_notes(total_note_count)
+		print("GameScreen.gd: Установлено total_notes: %d" % total_note_count)
 	
 	if music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(bpm, 0) 
@@ -479,8 +481,12 @@ func check_hit(lane: int):
 
 		for note in note_manager.get_notes():
 			if note.lane == lane and abs(note.y - hit_zone_y) < 30:
+				# ВАЖНО: Вызываем метод ноты для пометки как пойманной
+				var points = note.on_hit() # Помечает was_hit = true и is_missed = false
+				# Теперь можно обновить счёт, используя возвращаемые очки или просто добавить стандартный
 				score_manager.add_perfect_hit()
 				
+				# ... остальная логика (звук, данные игрока и т.д.)
 				if current_instrument == "drums":
 					var player_data_manager = null
 					if game_engine and game_engine.has_method("get_player_data_manager"):
@@ -497,22 +503,9 @@ func check_hit(lane: int):
 					var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
 					
 					music_manager.play_custom_hit_sound(sound_path) 
-				
-				note.active = false 
 				hit_occurred = true
 				perfect_hits_this_level += 1
 				break 
-
-		if not hit_occurred:
-			score_manager.reset_combo() 
-			if current_instrument == "drums":
-				var player_data_manager = null
-				if game_engine and game_engine.has_method("get_player_data_manager"):
-					player_data_manager = game_engine.get_player_data_manager()
-				
-				if player_data_manager:
-					player_data_manager.update_drum_perfect_hits_streak(false)
-					player_data_manager.update_snare_streak(false)
 	else:
 		score_manager.add_perfect_hit()
 		perfect_hits_this_level += 1
