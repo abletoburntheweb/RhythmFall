@@ -36,9 +36,7 @@ var active_snare_sound_path: String = ""
 var current_menu_music_file: String = ""
 var current_game_music_file: String = ""
 
-# --- НОВАЯ ПЕРЕМЕННАЯ ---
 var original_game_music_volume: float = 1.0
-# --- /НОВАЯ ПЕРЕМЕННАЯ ---
 
 func _ready():
 	music_player = AudioStreamPlayer.new()
@@ -63,7 +61,6 @@ func _ready():
 
 	_metronome_players = [metronome_player1, metronome_player2]
 
-# --- НОВЫЕ МЕТОДЫ ---
 func get_volume_multiplier() -> float:
 	if music_player:
 		return db_to_linear(music_player.volume_db)
@@ -90,19 +87,11 @@ func stop_game_music():
 		if music_player.playing:
 			menu_music_position_before_shop = music_player.get_playback_position()
 			music_player.stop()
-			# Упрощённый print
-			var msg = "MusicManager.gd: Игровая музыка остановлена, позиция: " + str(menu_music_position_before_shop)
-			print(msg)
 			return
 		else:
-			# Упрощённый print
-			var msg = "MusicManager.gd: Игровая музыка не играла, но была загружена."
-			print(msg)
 			menu_music_position_before_shop = 0.0
 	else:
-		# Упрощённый print
-		var msg = "MusicManager.gd: Нет загруженной игровой музыки для остановки или music_player недоступен."
-		print(msg)
+		pass # Или push_error, если нужно логгировать
 
 func play_game_music_at_position(song_path: String, position: float):
 	if FileAccess.file_exists(song_path):
@@ -114,20 +103,12 @@ func play_game_music_at_position(song_path: String, position: float):
 				if music_player.playing:
 					music_player.stop()
 				music_player.play(position)
-				# Упрощённый print
-				var msg = "MusicManager.gd: Игровая музыка запущена с позиции " + str(position) + " из файла " + song_path
-				print(msg)
 			else:
-				printerr("MusicManager.gd: music_player не установлен!")
+				push_error("MusicManager.gd: music_player не установлен!")
 		else:
-			# Упрощённый printerr
-			var msg = "MusicManager.gd: Не удалось загрузить аудио для игры: " + song_path
-			printerr(msg)
+			push_error("MusicManager.gd: Не удалось загрузить аудио для игры: " + song_path)
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager.gd: Файл игровой музыки не найден: " + song_path
-		printerr(msg)
-# --- /НОВЫЕ МЕТОДЫ ---
+		push_error("MusicManager.gd: Файл игровой музыки не найден: " + song_path)
 
 func pause_menu_music():
 	if music_player and current_menu_music_file != "":
@@ -135,46 +116,26 @@ func pause_menu_music():
 			was_menu_music_playing_before_shop = true
 			menu_music_position_before_shop = music_player.get_playback_position() 
 			music_player.stop() 
-			# Упрощённый print
-			var msg = "MusicManager.gd: Музыка меню остановлена, позиция: " + str(menu_music_position_before_shop)
-			print(msg)
 		else:
 			was_menu_music_playing_before_shop = true
 			menu_music_position_before_shop = 0.0
-			# Упрощённый print
-			var msg = "MusicManager.gd: Музыка меню была загружена, но не играла. Запоминаем для возобновления с начала."
-			print(msg)
 	else:
-		# Упрощённый print
-		var msg = "MusicManager.gd: Музыка меню не была загружена или music_player недоступен."
-		print(msg)
+		pass # Или push_error, если нужно логгировать
 
 func resume_menu_music():
 	if current_menu_music_file != "":
 		if was_menu_music_playing_before_shop:
 			if not music_player.playing: 
 				music_player.play(menu_music_position_before_shop)
-				# Упрощённый print
-				var msg = "MusicManager.gd: Музыка меню возобновлена с позиции: " + str(menu_music_position_before_shop)
-				print(msg)
 			else:
-				# Упрощённый print
-				var msg = "MusicManager.gd: Музыка меню уже играет."
-				print(msg)
+				pass # Или push_error, если нужно логгировать
 		else:
 			if not music_player.playing:
 				music_player.play(0.0) 
-				# Упрощённый print
-				var msg = "MusicManager.gd: Музыка меню запущена с начала (не играла до магазина)."
-				print(msg)
 			else:
-				# Упрощённый print
-				var msg = "MusicManager.gd: Музыка меню уже играет (не играла до магазина)."
-				print(msg)
+				pass # Или push_error, если нужно логгировать
 	else:
-		# Упрощённый print
-		var msg = "MusicManager.gd: Нет загруженной музыки меню для возобновления."
-		print(msg)
+		pass # Или push_error, если нужно логгировать
 	was_menu_music_playing_before_shop = false
 	menu_music_position_before_shop = 0.0
 
@@ -232,9 +193,7 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 	var full_path = MUSIC_DIR + music_file
 	var stream = load(full_path) as AudioStream
 	if not stream:
-		# Упрощённый printerr
-		var msg = "MusicManager: Не удалось загрузить аудио для меню: " + full_path
-		printerr(msg)
+		push_error("MusicManager: Не удалось загрузить аудио для меню: " + full_path)
 		return
 
 	if stream is AudioStreamMP3:
@@ -258,42 +217,25 @@ func play_game_music(music_file: String):
 	if FileAccess.file_exists(music_file):
 		var stream = load(music_file) as AudioStream
 		if not stream:
-			# Упрощённый printerr
-			var msg = "MusicManager: Не удалось загрузить аудио для игры: " + music_file
-			printerr(msg)
+			push_error("MusicManager: Не удалось загрузить аудио для игры: " + music_file)
 			return
 
 		if music_player:
 			current_game_music_file = music_file 
 			music_player.stream = stream
 			music_player.play()
-			# --- СОХРАНЯЕМ ОРИГИНАЛЬНУЮ ГРОМКОСТЬ ---
 			original_game_music_volume = db_to_linear(music_player.volume_db)
-			# --- /СОХРАНЯЕМ ОРИГИНАЛЬНУЮ ГРОМКОСТЬ ---
-			# Упрощённый print
-			var msg = "MusicManager.gd: Игровая музыка запущена: " + music_file
-			print(msg)
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Файл игровой музыки не найден: " + music_file
-		printerr(msg)
+		push_error("MusicManager: Файл игровой музыки не найден: " + music_file)
 
 func set_music_position(position: float):
 	if music_player and music_player.stream:
 		if music_player.playing:
 			music_player.seek(position)
-			# Упрощённый print
-			var msg = "MusicManager: Музыка перемотана на %.2fс (seek)" % position
-			print(msg)
 		else:
 			music_player.play(position)
-			# Упрощённый print
-			var msg = "MusicManager: Музыка запущена с позиции %.2fс (play)" % position
-			print(msg)
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Невозможно перемотать музыку. AudioStreamPlayer не установлен или нет аудио потока."
-		printerr(msg)
+		push_error("MusicManager: Невозможно перемотать музыку. AudioStreamPlayer не установлен или нет аудио потока.")
 
 func get_current_music_position() -> float:
 	if music_player and music_player.playing:
@@ -312,17 +254,11 @@ func pause_music():
 	if music_player and music_player.playing:
 		menu_music_position_before_shop = music_player.get_playback_position()
 		music_player.stop()
-		# Упрощённый print
-		var msg = "MusicManager.gd: Музыка остановлена (pause_music). Позиция: " + str(menu_music_position_before_shop)
-		print(msg)
 
 func resume_music():
 	if music_player and not music_player.playing and music_player.stream: 
 		var resume_pos = menu_music_position_before_shop if menu_music_position_before_shop > 0 else 0.0
 		music_player.play(resume_pos)
-		# Упрощённый print
-		var msg = "MusicManager.gd: Музыка возобновлена (resume_music) с позиции: " + str(resume_pos)
-		print(msg)
 
 func is_music_playing() -> bool:
 	if music_player:
@@ -345,9 +281,7 @@ func play_sfx(sound_path: String):
 		
 		new_player.play()
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Не удалось загрузить SFX: " + full_path
-		printerr(msg)
+		push_error("MusicManager: Не удалось загрузить SFX: " + full_path)
 
 func _on_sfx_player_finished(player: AudioStreamPlayer):
 	if player and is_instance_valid(player):
@@ -381,9 +315,7 @@ func play_hit_sound(is_kick: bool = true):
 			hit_sound_player.stream = stream
 			hit_sound_player.play()
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Не удалось загрузить звук удара: " + sound_path
-		printerr(msg)
+		push_error("MusicManager: Не удалось загрузить звук удара: " + sound_path)
 
 func play_custom_hit_sound(sound_path: String):
 	var full_path = sound_path
@@ -395,13 +327,9 @@ func play_custom_hit_sound(sound_path: String):
 			hit_sound_player.stream = stream
 			hit_sound_player.play()
 		else:
-			# Упрощённый printerr
-			var msg = "MusicManager: hit_sound_player не установлен!"
-			printerr(msg)
+			push_error("MusicManager: hit_sound_player не установлен!")
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Не удалось загрузить кастомный звук удара: " + full_path
-		printerr(msg)
+		push_error("MusicManager: Не удалось загрузить кастомный звук удара: " + full_path)
 
 func play_metronome_sound(is_strong_beat: bool = true):
 	var sound_file = DEFAULT_METRONOME_STRONG_SOUND if is_strong_beat else DEFAULT_METRONOME_WEAK_SOUND
@@ -415,9 +343,7 @@ func play_metronome_sound(is_strong_beat: bool = true):
 			player.stream = stream
 			player.play()
 	else:
-		# Упрощённый printerr
-		var msg = "MusicManager: Не удалось загрузить звук метронома: " + full_path
-		printerr(msg)
+		push_error("MusicManager: Не удалось загрузить звук метронома: " + full_path)
 
 func start_metronome(bpm: float, start_delay_ms: float = 0.0):
 	stop_metronome()
