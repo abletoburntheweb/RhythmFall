@@ -481,12 +481,9 @@ func check_hit(lane: int):
 
 		for note in note_manager.get_notes():
 			if note.lane == lane and abs(note.y - hit_zone_y) < 30:
-				# ВАЖНО: Вызываем метод ноты для пометки как пойманной
-				var points = note.on_hit() # Помечает was_hit = true и is_missed = false
-				# Теперь можно обновить счёт, используя возвращаемые очки или просто добавить стандартный
+				var points = note.on_hit()
 				score_manager.add_perfect_hit()
 				
-				# ... остальная логика (звук, данные игрока и т.д.)
 				if current_instrument == "drums":
 					var player_data_manager = null
 					if game_engine and game_engine.has_method("get_player_data_manager"):

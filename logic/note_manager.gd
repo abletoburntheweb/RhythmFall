@@ -122,10 +122,9 @@ func update_notes():
 		note.update(speed)
 
 		# Проверяем промах: нота прошла hit_zone_y и не была поймана
-		# Проверим, что нота *не была* поймана и её y *теперь* больше hit_zone_y
-		# Также проверим, что она ещё не помечена как пропущенная (чтобы не вызывать add_miss_hit дважды)
+		# Проверим, что нота *не была* поймана, *не была* отмечена как пропущенная ранее, и её y *теперь* больше hit_zone_y
 		if note.y > hit_zone_y and not note.was_hit and not note.is_missed:
-			note.is_missed = true # Помечаем как пропущенную, чтобы не вызывать дважды
+			note.is_missed = true # Помечаем как пропущенную, чтобы не вызывать add_miss_hit дважды
 			# Это промах!
 			if game_screen.score_manager:
 				# Сначала вызываем add_miss_hit, чтобы обновить missed_notes и accuracy
@@ -133,14 +132,15 @@ func update_notes():
 				# Затем получаем обновлённую точность для печати
 				var current_accuracy = game_screen.score_manager.get_accuracy()
 				print("[NoteManager] Нота в линии %d пропущена, вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, current_accuracy])
-			# Помечаем ноту как неактивную, чтобы она удалилась
-			note.active = false
+			# Не устанавливаем note.active = false здесь! Нота продолжает двигаться.
+			# Удаление произойдёт в BaseNote.update, когда y > 1080
 
 		if not note.active and note.visual_node and note.visual_node.get_parent():
 			note.visual_node.queue_free()
 
 		if not note.active:
 			notes.remove_at(i)
+
 
 func get_notes():
 	return notes
