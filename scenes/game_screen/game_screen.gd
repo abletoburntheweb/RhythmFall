@@ -7,10 +7,11 @@ const Player = preload("res://logic/player.gd")
 const SoundInstrumentFactory = preload("res://logic/sound_instrument_factory.gd")
 const AutoPlayer = preload("res://scenes/debug_menu/bot.gd")
 
+var pauser: GameScreenPauser = null
+
 var game_time: float = 0.0
 var countdown_remaining: int = 5
 var countdown_active: bool = true
-var is_paused: bool = false
 var game_finished: bool = false
 var input_enabled: bool = false
 
@@ -97,6 +98,13 @@ func _ready():
 	check_song_end_timer.timeout.connect(_check_song_end)
 	add_child(check_song_end_timer)
 	
+	pauser = GameScreenPauser.new()
+	pauser.initialize(self, game_timer, music_manager)
+	add_child(pauser)
+	pauser.song_select_requested.connect(_exit_to_song_select)
+	pauser.settings_requested.connect(_open_settings_from_pause)
+	pauser.exit_to_menu_requested.connect(_exit_to_main_menu)
+	
 	set_process_input(true)
 	
 	start_countdown()
@@ -134,7 +142,7 @@ func _find_ui_elements():
 		]
 
 func _on_player_hit(lane: int):
-	if is_paused:
+	if pauser.is_paused:
 		return
 	check_hit(lane)
 	
@@ -223,12 +231,12 @@ func update_speed_from_bpm():
 	speed = clamp(speed, 2.0, 12.0)
 
 func _update_game():
-	if is_paused or game_finished or countdown_active:
-		if is_paused and music_manager and music_manager.has_method("stop_metronome"):
+	if pauser.is_paused or game_finished or countdown_active:
+		if pauser.is_paused and music_manager and music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
 		return
 	
-	if not is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
+	if not pauser.is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(bpm, 0)
 	
 	game_time += 0.016  
@@ -247,7 +255,7 @@ func _update_game():
 	note_manager.update_notes()
 
 func _check_song_end():
-	if is_paused or game_finished:
+	if pauser.is_paused or game_finished:
 		return
 	
 	if selected_song_data and selected_song_data.has("duration"):
@@ -264,6 +272,11 @@ func _check_song_end():
 
 func end_game():
 	if game_finished:
+		return
+	
+	if pauser.is_paused:
+		print("GameScreen.gd: end_game вызвано во время паузы, вызываем cleanup.")
+		pauser.cleanup_on_game_end()
 		return
 	
 	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
@@ -403,7 +416,12 @@ func _input(event):
 		var keycode = event.keycode
 		
 		if keycode == KEY_ESCAPE and not countdown_active:
-			return
+			if pauser.is_paused:
+				pauser.handle_resume_request()
+			else:
+				pauser.handle_pause_request()
+			return 
+		
 		elif keycode == KEY_SPACE and not countdown_active:
 			if skip_intro():
 				return
@@ -423,9 +441,8 @@ func skip_countdown():
 		print("Обратный отсчет пропущен")
 
 func skip_intro() -> bool:
-	if is_paused or game_finished or countdown_active:
+	if pauser.is_paused or game_finished or countdown_active:
 		return false
-
 	if skip_used:
 		return false
 
@@ -454,6 +471,8 @@ func skip_intro() -> bool:
 	return true
 
 func check_hit(lane: int):
+	if pauser.is_paused:
+		return
 	if notes_loaded:
 		var hit_occurred = false
 		var current_time = game_time
@@ -501,3 +520,27 @@ func check_hit(lane: int):
 func _process(delta):
 	if not countdown_active:
 		update_ui()
+
+func _exit_to_song_select():
+	pauser.cleanup_on_game_end()
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_transitions"):
+		var transitions = game_engine.get_transitions()
+		if transitions:
+			transitions.open_song_select()
+
+func _open_settings_from_pause():
+	pauser.cleanup_on_game_end()
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_transitions"):
+		var transitions = game_engine.get_transitions()
+		if transitions:
+			transitions.open_settings(true) 
+
+func _exit_to_main_menu():
+	pauser.cleanup_on_game_end()
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_transitions"):
+		var transitions = game_engine.get_transitions()
+		if transitions:
+			transitions.exit_to_main_menu()

@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://hbupjp838y2b"]
+
+[ext_resource type="Script" uid="uid://dcjmvp0dga6d2" path="res://scenes/pause_menu/pause_menu.gd" id="1_5bgjm"]
+
+[node name="PauseMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5bgjm")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="MenuContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TitleLabel" type="Label" parent="MenuContainer"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "ПАУЗА"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="MenuContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ПРОДОЛЖИТЬ"
+
+[node name="SongSelectButton" type="Button" parent="MenuContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ВЫБОР ПЕСНИ"
+
+[node name="SettingsButton" type="Button" parent="MenuContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "НАСТРОЙКИ"
+
+[node name="ExitToMenuButton" type="Button" parent="MenuContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ВЫЙТИ В МЕНЮ"
