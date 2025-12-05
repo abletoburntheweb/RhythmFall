@@ -91,7 +91,7 @@ func stop_game_music():
 		else:
 			menu_music_position_before_shop = 0.0
 	else:
-		pass # Или push_error, если нужно логгировать
+		pass 
 
 func play_game_music_at_position(song_path: String, position: float):
 	if FileAccess.file_exists(song_path):
@@ -120,7 +120,7 @@ func pause_menu_music():
 			was_menu_music_playing_before_shop = true
 			menu_music_position_before_shop = 0.0
 	else:
-		pass # Или push_error, если нужно логгировать
+		pass 
 
 func resume_menu_music():
 	if current_menu_music_file != "":
@@ -128,14 +128,14 @@ func resume_menu_music():
 			if not music_player.playing: 
 				music_player.play(menu_music_position_before_shop)
 			else:
-				pass # Или push_error, если нужно логгировать
+				pass 
 		else:
 			if not music_player.playing:
 				music_player.play(0.0) 
 			else:
-				pass # Или push_error, если нужно логгировать
+				pass 
 	else:
-		pass # Или push_error, если нужно логгировать
+		pass 
 	was_menu_music_playing_before_shop = false
 	menu_music_position_before_shop = 0.0
 
@@ -213,7 +213,6 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 		music_player.stream = stream
 		music_player.play()
 
-# --- ИСПРАВЛЕННАЯ ФУНКЦИЯ С ПРОВЕРКОЙ И ТОЛЬКО ТАБЫ ---
 func play_game_music(music_file: String):
 	if FileAccess.file_exists(music_file):
 		var stream = load(music_file) as AudioStream
@@ -222,23 +221,17 @@ func play_game_music(music_file: String):
 			return
 
 		if music_player:
-			# --- ПРОВЕРКА: Если тот же файл уже играет, не запускаем снова ---
 			if music_player.stream == stream and music_player.playing:
-				# print("MusicManager.gd: Музыка ", music_file, " уже играет. Повторный запуск пропущен.")
 				return
-			# --- /ПРОВЕРКА ---
 
 			current_game_music_file = music_file 
 			music_player.stream = stream
-			# ВАЖНО: Если музыка уже играет, останавливаем перед запуском новой
 			if music_player.playing:
 				music_player.stop()
 			music_player.play()
 			original_game_music_volume = db_to_linear(music_player.volume_db)
-			# print("MusicManager.gd: Игровая музыка запущена: " + music_file)
 	else:
 		push_error("MusicManager: Файл игровой музыки не найден: " + music_file)
-# --- /ИСПРАВЛЕННАЯ ФУНКЦИЯ ---
 
 func set_music_position(position: float):
 	if music_player and music_player.stream:

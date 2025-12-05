@@ -11,6 +11,14 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_j78aw")
 
+[node name="Background" type="ColorRect" parent="."]
+visible = false
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.7058824)
+
 [node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 0
 theme_override_constants/separation = 20

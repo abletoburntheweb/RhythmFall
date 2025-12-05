@@ -199,9 +199,12 @@ func transition_open_settings(_from_pause=false):
 			var settings_mgr = game_engine.get_settings_manager()
 			var music_mgr = game_engine.get_music_manager()
 			var game_scr = null
+			var target_transitions = self
 			if settings_mgr and music_mgr:
 				if new_screen.has_method("set_managers"):
-					new_screen.set_managers(settings_mgr, music_mgr, game_scr, self) 
+					if _from_pause and game_engine.current_screen:
+						game_scr = game_engine.current_screen
+					new_screen.set_managers(settings_mgr, music_mgr, game_scr, target_transitions) 
 				else:
 					printerr("Transitions.gd: SettingsMenu instance не имеет метода set_managers!")
 			else:
@@ -209,21 +212,32 @@ func transition_open_settings(_from_pause=false):
 		else:
 			printerr("Transitions.gd: game_engine не имеет методов get_settings_manager или get_music_manager!")
 
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		if _from_pause:
+			if game_engine.current_screen:
+				game_engine.current_screen.add_child(new_screen)
+			else:
+				printerr("Transitions.gd: Не удалось найти активный экран для добавления настроек поверх паузы")
+		else:
+			if game_engine.current_screen:
+				game_engine.current_screen.queue_free()
+			game_engine.add_child(new_screen)
+			game_engine.current_screen = new_screen
 	else:
 		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
 
 func transition_close_settings(_from_pause=false):
-	if game_engine.current_screen:
-		game_engine.current_screen.queue_free()
-		game_engine.current_screen = null
+	if _from_pause:
+		if game_engine.current_screen:
+			for child in game_engine.current_screen.get_children():
+				if child is Control and child.has_method("cleanup_before_exit"):
+					child.cleanup_before_exit()
+					child.queue_free()
+					break
 	else:
-		print("Transitions.gd: Текущий экран уже null.")
-	
-	transition_open_main_menu()
+		if game_engine.current_screen:
+			game_engine.current_screen.queue_free()
+			game_engine.current_screen = null
+		transition_open_main_menu()
 
 func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}):
 	var new_screen = _instantiate_if_exists("res://scenes/victory_screen/victory_screen.tscn")

@@ -2,7 +2,7 @@
 extends BaseScreen
 
 var settings_manager: SettingsManager = null
-var game_screen = null
+var game_screen = null 
 var achievement_manager = null
 
 @onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound
@@ -25,29 +25,36 @@ func _ready():
 		print("SettingsMenu.gd: settings_manager не передан, создаю новый экземпляр.")
 		settings_manager = SettingsManager.new()
 	
-	var game_engine = get_parent() 
-	if game_engine:
-		if game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
-			var music_mgr = game_engine.get_music_manager()
-			var trans = game_engine.get_transitions()
-			setup_managers(trans, music_mgr, null)
-			print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
-		else:
-			printerr("SettingsMenu.gd: Не удалось получить MusicManager или Transitions через GameEngine.")
-
-		if game_engine.has_method("get_player_data_manager"):
-			player_data_manager = game_engine.get_player_data_manager()
-			print("SettingsMenu.gd: PlayerDataManager получен через GameEngine.")
-		else:
-			printerr("SettingsMenu.gd: Не удалось получить PlayerDataManager через GameEngine.")
-
-		if game_engine.has_method("get_achievement_manager"):
-			self.achievement_manager = game_engine.get_achievement_manager() 
-			print("SettingsMenu.gd: AchievementManager получен через GameEngine.")
-		else:
-			printerr("SettingsMenu.gd: Не удалось получить AchievementManager через GameEngine.")
+	var parent_node = get_parent()
+	if parent_node and parent_node.has_method("get_music_manager") and parent_node.has_method("get_transitions"):
+		var music_mgr = parent_node.get_music_manager()
+		var trans = parent_node.get_transitions()
+		setup_managers(trans, music_mgr, null)
+		print("SettingsMenu.gd: MusicManager и Transitions получены через родительский узел (пауза).")
 	else:
-		printerr("SettingsMenu.gd: GameEngine (get_parent()) не найден!")
+		var game_engine = get_parent() 
+		if game_engine:
+			if game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
+				var music_mgr = game_engine.get_music_manager()
+				var trans = game_engine.get_transitions()
+				setup_managers(trans, music_mgr, null)
+				print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
+			else:
+				printerr("SettingsMenu.gd: Не удалось получить MusicManager или Transitions через GameEngine.")
+
+			if game_engine.has_method("get_player_data_manager"):
+				player_data_manager = game_engine.get_player_data_manager()
+				print("SettingsMenu.gd: PlayerDataManager получен через GameEngine.")
+			else:
+				printerr("SettingsMenu.gd: Не удалось получить PlayerDataManager через GameEngine.")
+
+			if game_engine.has_method("get_achievement_manager"):
+				self.achievement_manager = game_engine.get_achievement_manager() 
+				print("SettingsMenu.gd: AchievementManager получен через GameEngine.")
+			else:
+				printerr("SettingsMenu.gd: Не удалось получить AchievementManager через GameEngine.")
+		else:
+			printerr("SettingsMenu.gd: GameEngine (get_parent()) не найден!")
 
 	_setup_tabs()
 	_connect_signals()
@@ -179,9 +186,14 @@ func _on_misc_tab_pressed():
 
 func _execute_close_transition():
 	if transitions:
-		var from_pause = game_screen != null
-		print("SettingsMenu.gd: Закрываю настройки, from_pause: %s" % from_pause)
-		transitions.close_settings(from_pause)
+		var from_pause = get_parent() != get_parent().get_parent() 
+		var is_child_of_pause = false
+		var current_parent = get_parent()
+		if current_parent and (current_parent.has_signal("resume_requested") or current_parent.has_method("handle_resume_request")):
+			is_child_of_pause = true
+		
+		print("SettingsMenu.gd: Закрываю настройки, from_pause: %s" % is_child_of_pause)
+		transitions.close_settings(is_child_of_pause)
 		print("SettingsMenu.gd: Закрываю настройки через Transitions.")
 	else:
 		printerr("SettingsMenu.gd: transitions не установлен, невозможно закрыть настройки.")
