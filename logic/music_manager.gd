@@ -213,6 +213,7 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 		music_player.stream = stream
 		music_player.play()
 
+# --- ИСПРАВЛЕННАЯ ФУНКЦИЯ С ПРОВЕРКОЙ И ТОЛЬКО ТАБЫ ---
 func play_game_music(music_file: String):
 	if FileAccess.file_exists(music_file):
 		var stream = load(music_file) as AudioStream
@@ -221,12 +222,23 @@ func play_game_music(music_file: String):
 			return
 
 		if music_player:
+			# --- ПРОВЕРКА: Если тот же файл уже играет, не запускаем снова ---
+			if music_player.stream == stream and music_player.playing:
+				# print("MusicManager.gd: Музыка ", music_file, " уже играет. Повторный запуск пропущен.")
+				return
+			# --- /ПРОВЕРКА ---
+
 			current_game_music_file = music_file 
 			music_player.stream = stream
+			# ВАЖНО: Если музыка уже играет, останавливаем перед запуском новой
+			if music_player.playing:
+				music_player.stop()
 			music_player.play()
 			original_game_music_volume = db_to_linear(music_player.volume_db)
+			# print("MusicManager.gd: Игровая музыка запущена: " + music_file)
 	else:
 		push_error("MusicManager: Файл игровой музыки не найден: " + music_file)
+# --- /ИСПРАВЛЕННАЯ ФУНКЦИЯ ---
 
 func set_music_position(position: float):
 	if music_player and music_player.stream:
