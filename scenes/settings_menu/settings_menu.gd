@@ -2,7 +2,7 @@
 extends BaseScreen
 
 var settings_manager: SettingsManager = null
-var game_screen = null 
+var game_screen = null
 var achievement_manager = null
 
 @onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound

@@ -23,11 +23,3 @@ text = "Показывать FPS"
 [node name="FullscreenCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
 text = "Полноэкранный режим"
-
-[node name="FPSLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 1780.0
-offset_right = 1820.0
-offset_bottom = 23.0
-text = "FPS:"
-horizontal_alignment = 2

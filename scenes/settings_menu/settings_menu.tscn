@@ -12,7 +12,6 @@ grow_vertical = 2
 script = ExtResource("1_j78aw")
 
 [node name="Background" type="ColorRect" parent="."]
-visible = false
 custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 0
 offset_right = 1920.0
