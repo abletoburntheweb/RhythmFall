@@ -1,3 +1,4 @@
+# scenes/song_select/song_select.gd
 extends BaseScreen
 
 const SongManager = preload("res://logic/song_manager.gd")
@@ -110,7 +111,7 @@ func _ready():
 
 		song_list_manager.song_selected.connect(_on_song_item_selected_from_manager) 
 		song_list_manager.song_list_changed.connect(_on_song_list_changed) 
-		song_list_manager.populate_items() 
+		song_list_manager.populate_items_grouped() 
 		
 		song_edit_manager.set_item_list(song_item_list_ref) 
 	else:
@@ -278,6 +279,7 @@ func _on_file_selected_internal(path):
 		_cleanup_file_dialog()
 		return
 	song_list_manager.add_song_from_path(path)
+	song_list_manager.populate_items_grouped() 
 	_cleanup_file_dialog()
 
 func _cleanup_file_dialog():
@@ -461,7 +463,7 @@ func _on_delete_pressed():
 				printerr("SongSelect.gd: SongMetadataManager недоступен, метаданные не удалены.")
 
 			song_manager.load_songs() 
-			song_list_manager.populate_items() 
+			song_list_manager.populate_items_grouped()
 			_on_song_list_changed()
 
 			var current_selected_items = song_item_list_ref.get_selected_items()
