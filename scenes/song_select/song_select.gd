@@ -328,21 +328,11 @@ func _on_generate_pressed():
 	_generate_notes_for_current_song()
 
 func _generate_notes_for_current_song():
-	var selected_items = song_item_list_ref.get_selected_items()
-	if selected_items.size() == 0:
-		print("SongSelect.gd: Нет выбранной песни для генерации нот.")
-		return
-
-	var selected_index = selected_items[0]
-	var songs_list = song_manager.get_songs_list()
-	if selected_index < 0 or selected_index >= songs_list.size():
-		print("SongSelect.gd: Индекс выбранной песни вне диапазона.")
-		return
-
-	var selected_song_data = songs_list[selected_index]
+	# Используем уже сохранённые данные о выбранной песне
+	var selected_song_data = current_selected_song_data.duplicate() # Создаём копию, чтобы быть уверенным
 	var song_path = selected_song_data.get("path", "")
 	if song_path == "":
-		print("SongSelect.gd: Путь к файлу выбранной песни пуст.")
+		print("SongSelect.gd: Путь к файлу выбранной песни пуст (из current_selected_song_data).")
 		return
 
 	var song_bpm = selected_song_data.get("bpm", -1)
@@ -350,6 +340,7 @@ func _generate_notes_for_current_song():
 		print("SongSelect.gd: BPM не указан для песни. Сначала проанализируйте BPM.")
 		return
 
+	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path) # <-- Добавим лог для проверки
 	note_generator_client.generate_notes(song_path, current_instrument, float(song_bpm))
 
 func _on_notes_generation_started():
