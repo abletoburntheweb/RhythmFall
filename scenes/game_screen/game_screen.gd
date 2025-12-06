@@ -62,11 +62,11 @@ var perfect_hits_this_level: int = 0
 
 var results_manager = null
 
-# --- Добавленные переменные для задержки ---
-const VICTORY_DELAY_AFTER_NOTES: float = 5.0 # 1 секунда задержки, измените по вкусу
+const VICTORY_DELAY_AFTER_NOTES: float = 5.0 
 var notes_ended: bool = false
 var victory_delay_timer: Timer = null
-# ------------------------------------------
+
+var gameplay_started: bool = false
 
 
 func _ready():
@@ -105,11 +105,9 @@ func _ready():
 	check_song_end_timer.timeout.connect(_check_song_end)
 	add_child(check_song_end_timer)
 
-	# --- Инициализация таймера задержки ---
 	victory_delay_timer = Timer.new()
 	victory_delay_timer.timeout.connect(_on_victory_delay_timeout)
 	add_child(victory_delay_timer)
-	# --------------------------------------
 
 
 	pauser = GameScreenPauser.new()
@@ -185,6 +183,10 @@ func start_countdown():
 	game_timer.start()
 
 func _update_countdown():
+	if not countdown_active:
+		print("GameScreen.gd: _update_countdown вызван, но отсчёт уже завершён, игнорируем.")
+		return
+	
 	countdown_remaining -= 1
 	update_countdown_display()
 	
@@ -208,6 +210,12 @@ func _set_instrument(instrument_type: String):
 		instrument_label.text = "Инструмент: " + ("Перкуссия" if instrument_type == "drums" else "Стандартный")
 
 func start_gameplay():
+	if gameplay_started:
+		print("GameScreen.gd: start_gameplay вызван повторно, игнорируем.")
+		return
+	
+	gameplay_started = true 
+	
 	game_time = 0.0
 	
 	if music_manager and selected_song_data and selected_song_data.get("path"):
@@ -247,7 +255,7 @@ func update_speed_from_bpm():
 	speed = clamp(speed, 2.0, 12.0)
 
 func _update_game():
-	if pauser.is_paused or game_finished or countdown_active:
+	if pauser.is_paused or game_finished or countdown_active:  
 		if pauser.is_paused and music_manager and music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
 		return
@@ -257,7 +265,7 @@ func _update_game():
 	
 	game_time += 0.016  
 	
-	if not countdown_active:
+	if not countdown_active: 
 		note_manager.spawn_notes()
 	
 	update_ui()
@@ -271,23 +279,18 @@ func _update_game():
 	note_manager.update_notes()
 
 func _check_song_end():
-	if pauser.is_paused or game_finished or notes_ended: # Добавлено условие notes_ended
+	if pauser.is_paused or game_finished or notes_ended:
 		return
 
-	# Проверка: закончились ли ноты?
 	var spawn_queue_empty = note_manager.get_spawn_queue_size() == 0
 	var active_notes_empty = note_manager.get_notes().size() == 0
 
 	if spawn_queue_empty and active_notes_empty:
 		print("GameScreen.gd: Все ноты завершены (очередь спауна и активные ноты пусты). Устанавливаем задержку %.2f сек." % VICTORY_DELAY_AFTER_NOTES)
-		notes_ended = true # Устанавливаем флаг
-		victory_delay_timer.start(VICTORY_DELAY_AFTER_NOTES) # Запускаем таймер
-		# Не вызываем end_game() здесь, а ждём таймер
-		return # Выйти, чтобы не проверять другие условия
+		notes_ended = true 
+		victory_delay_timer.start(VICTORY_DELAY_AFTER_NOTES) 
+		return
 
-	# Проверка по времени и музыке только если ноты ЕЩЁ не закончились
-	# (Это может быть полезно, если ноты закончились, но музыка играет дольше, например)
-	# Но если ноты уже закончились, мы ждём таймер.
 	if selected_song_data and selected_song_data.has("duration"):
 		var duration_value = selected_song_data.get("duration", 0.0)
 		if typeof(duration_value) == TYPE_FLOAT and duration_value > 0:
@@ -299,19 +302,11 @@ func _check_song_end():
 
 	if music_manager and music_manager.has_method("is_game_music_playing"):
 		if not music_manager.is_game_music_playing():
-			# Если музыка остановлена и ноты ЕЩЁ не закончились, можно рассмотреть это как конец.
-			# Но если notes_ended уже true, мы игнорируем это.
-			# Проверка выше на spawn_queue_empty и active_notes_empty приоритетнее.
-			# Если ноты закончились, музыка может быть остановлена позже.
-			# Мы просто выходим, если notes_ended = true.
-			# Или можно добавить проверку на notes_ended и duration.
-			# Пока оставим как есть, если duration не достигнуто.
 			pass
 
-# Новый метод, который вызывается по таймеру
 func _on_victory_delay_timeout():
 	print("GameScreen.gd: Таймер задержки истёк. Вызываем end_game().")
-	end_game() # Вызываем окончание игры
+	end_game() 
 
 func end_game():
 	if game_finished:
@@ -322,14 +317,12 @@ func end_game():
 		pauser.cleanup_on_game_end()
 		return
 
-	# --- Сбросить флаг и таймер при вызове end_game ---
 	if notes_ended:
 		print("GameScreen.gd: end_game вызвано после окончания нот (с задержкой).")
 		notes_ended = false
 	if not victory_delay_timer.is_stopped():
 		victory_delay_timer.stop()
 		print("GameScreen.gd: Таймер задержки VictoryScreen остановлен.")
-	# ----------------------------------------------------
 
 	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
@@ -487,10 +480,17 @@ func _input(event):
 		
 func skip_countdown():
 	if countdown_active:
+		countdown_remaining = 0
+		countdown_active = false
+		if countdown_label: 
+			countdown_label.visible = false
+		input_enabled = true
 		if countdown_timer:
-			countdown_remaining = 0
-			_update_countdown()
+			pass
+		start_gameplay()
 		print("Обратный отсчет пропущен")
+	else:
+		print("GameScreen.gd: Попытка пропустить отсчёт, но он уже завершён.")
 
 func skip_intro() -> bool:
 	if pauser.is_paused or game_finished or countdown_active:
@@ -578,7 +578,7 @@ func _open_settings_from_pause():
 			transitions.open_settings(true) 
 
 func _exit_to_main_menu():
-	pauser.cleanup_on_game_end()
+	pauser.cleanup_on_game_end() 
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
