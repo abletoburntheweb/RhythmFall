@@ -73,7 +73,7 @@ func populate_items_grouped():
 		for song_data in songs_in_group:
 			current_grouped_data.append({
 				"type": "song",
-				"data": song_data.duplicate(true) # <-- Добавить .duplicate(true)
+				"data": song_data.duplicate(true)
 			})
 
 	for item_data in current_grouped_data:
@@ -158,7 +158,7 @@ func filter_items(filter_text: String):
 		for song_data in songs_in_group:
 			current_grouped_data.append({
 				"type": "song",
-				"data": song_data.duplicate(true) # <-- Добавить .duplicate(true)
+				"data": song_data.duplicate(true)
 			})
 
 	for item_data in current_grouped_data:
@@ -180,14 +180,12 @@ func get_first_letter(text: String) -> String:
 	var first_char = text.substr(0, 1)
 	return first_char
 
-# --- Новый метод для получения данных песни по индексу в ItemList ---
 func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
-	# Проверяем, что индекс валиден и указывает на элемент типа "song"
 	if item_list_index >= 0 and item_list_index < current_grouped_data.size():
 		var item_data = current_grouped_data[item_list_index]
 		if item_data.type == "song":
-			print("SongListManager.gd: Возвращаем данные песни по индексу %d: %s (путь: %s)" % [item_list_index, item_data.data.get("title", "N/A"), item_data.data.get("path", "N/A")]) # <-- Добавить
-			return item_data.data.duplicate() # Возвращаем копию данных
+			print("SongListManager.gd: Возвращаем данные песни по индексу %d: %s (путь: %s)" % [item_list_index, item_data.data.get("title", "N/A"), item_data.data.get("path", "N/A")]) 
+			return item_data.data.duplicate() 
 		else:
 			print("SongListManager.gd: Индекс %d указывает на заголовок, а не на песню." % item_list_index)
 			return {}

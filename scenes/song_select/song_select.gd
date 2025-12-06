@@ -100,7 +100,6 @@ func _ready():
 	if song_metadata_manager:
 		song_edit_manager.set_metadata_manager(song_metadata_manager)
 		print("SongSelect.gd: SongMetadataManager передан в SongEditManager.")
-		# --- НОВОЕ: Подключаем сигнал song_edited от SongEditManager ---
 		song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен для передачи в SongEditManager.")
@@ -137,13 +136,7 @@ func _ready():
 		instrument_btn.text = "Инструмент: Перкуссия"
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 	print("SongSelect.gd: Песня отредактирована (через сигнал от SongEditManager): ", song_data.get("title", "N/A"))
-	# Обновляем список через SongListManager, чтобы отразить изменения и исправить возможные сдвиги индексов
-	# populate_items_grouped() перезагрузит всё, что может быть ресурсоёмко, но корректно обновит группировку
 	song_list_manager.populate_items_grouped()
-	# Альтернатива: если SongListManager реализует обновление по индексу (SongListManager.update_item_at_index),
-	# можно было бы вызвать: song_list_manager.update_item_at_index(item_list_index, song_data)
-	# и затем song_list_manager.update_song_count_label($MainVBox/TopBarHBox/SongCountLabel)
-	# Но для простоты и гарантии корректности, пока используем полное обновление.
 func _connect_ui_signals():
 	
 	var back_btn = $MainVBox/BackButton
@@ -304,14 +297,11 @@ func _on_gui_input_for_label(event: InputEvent, field_type: String):
 			if song_item_list_ref:
 				selected_indices = song_item_list_ref.get_selected_items()
 			if selected_indices.size() > 0:
-				var selected_item_list_index = selected_indices[0] # Индекс в ItemList
-				print("SongSelect.gd: Индекс в ItemList: ", selected_item_list_index) # <-- Добавить
-				# --- ИЗМЕНЕНО: Получаем song_data через SongListManager ---
+				var selected_item_list_index = selected_indices[0] 
+				print("SongSelect.gd: Индекс в ItemList: ", selected_item_list_index)
 				var song_data = song_list_manager.get_song_data_by_item_list_index(selected_item_list_index)
-				print("SongSelect.gd: Полученные данные песни для редактирования: ", song_data.get("title", "N/A"), " (путь: ", song_data.get("path", "N/A"), ")") # <-- Добавить
-				# Проверяем, что получили корректные данные (не пустой словарь)
+				print("SongSelect.gd: Полученные данные песни для редактирования: ", song_data.get("title", "N/A"), " (путь: ", song_data.get("path", "N/A"), ")")
 				if not song_data.is_empty():
-					# Передаём song_data и индекс в ItemList в SongEditManager
 					song_edit_manager.start_editing(field_type, song_data, selected_item_list_index) 
 				else:
 					print("SongSelect.gd: Не удалось получить данные песни по индексу %d из ItemList." % selected_item_list_index)
@@ -507,11 +497,7 @@ func _on_analyze_bpm_pressed():
 		return
 
 	var selected_index = selected_items[0]
-	# ВАЖНО: Используем SongListManager для получения данных, как при редактировании
 	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_index)
-	# var songs_list = song_manager.get_songs_list() // Старый способ
-	# if selected_index >= 0 and selected_index < songs_list.size():
-	# 	var selected_song_data = songs_list[selected_index] // Старый способ
 
 	if selected_song_data.is_empty():
 		print("SongSelect.gd: Не удалось получить данные песни для анализа BPM по индексу ItemList.")
@@ -576,11 +562,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	var selected_items = song_item_list_ref.get_selected_items()
 	if selected_items.size() > 0:
 		var selected_index = selected_items[0]
-		# ИСПОЛЬЗУЕМ ТОТ ЖЕ ПОДХОД, ЧТО И В _on_analyze_bpm_pressed
 		var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_index)
-		# var songs_list = song_manager.get_songs_list() // Старый способ
-		# if selected_index >= 0 and selected_index < songs_list.size():
-		# 	var selected_song_data = songs_list[selected_index] // Старый способ
 
 		if selected_song_data.is_empty():
 			print("SongSelect.gd: Не удалось получить данные песни для обновления BPM после анализа.")

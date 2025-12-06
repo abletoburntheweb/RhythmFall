@@ -62,6 +62,13 @@ var perfect_hits_this_level: int = 0
 
 var results_manager = null
 
+# --- Добавленные переменные для задержки ---
+const VICTORY_DELAY_AFTER_NOTES: float = 5.0 # 1 секунда задержки, измените по вкусу
+var notes_ended: bool = false
+var victory_delay_timer: Timer = null
+# ------------------------------------------
+
+
 func _ready():
 	game_engine = get_parent()
 	
@@ -97,7 +104,14 @@ func _ready():
 	check_song_end_timer.wait_time = 0.1
 	check_song_end_timer.timeout.connect(_check_song_end)
 	add_child(check_song_end_timer)
-	
+
+	# --- Инициализация таймера задержки ---
+	victory_delay_timer = Timer.new()
+	victory_delay_timer.timeout.connect(_on_victory_delay_timeout)
+	add_child(victory_delay_timer)
+	# --------------------------------------
+
+
 	pauser = GameScreenPauser.new()
 	pauser.initialize(self, game_timer, music_manager)
 	add_child(pauser)
@@ -257,20 +271,47 @@ func _update_game():
 	note_manager.update_notes()
 
 func _check_song_end():
-	if pauser.is_paused or game_finished:
+	if pauser.is_paused or game_finished or notes_ended: # Добавлено условие notes_ended
 		return
-	
+
+	# Проверка: закончились ли ноты?
+	var spawn_queue_empty = note_manager.get_spawn_queue_size() == 0
+	var active_notes_empty = note_manager.get_notes().size() == 0
+
+	if spawn_queue_empty and active_notes_empty:
+		print("GameScreen.gd: Все ноты завершены (очередь спауна и активные ноты пусты). Устанавливаем задержку %.2f сек." % VICTORY_DELAY_AFTER_NOTES)
+		notes_ended = true # Устанавливаем флаг
+		victory_delay_timer.start(VICTORY_DELAY_AFTER_NOTES) # Запускаем таймер
+		# Не вызываем end_game() здесь, а ждём таймер
+		return # Выйти, чтобы не проверять другие условия
+
+	# Проверка по времени и музыке только если ноты ЕЩЁ не закончились
+	# (Это может быть полезно, если ноты закончились, но музыка играет дольше, например)
+	# Но если ноты уже закончились, мы ждём таймер.
 	if selected_song_data and selected_song_data.has("duration"):
 		var duration_value = selected_song_data.get("duration", 0.0)
 		if typeof(duration_value) == TYPE_FLOAT and duration_value > 0:
 			var duration = duration_value
 			if game_time >= duration - 0.1:
+				print("GameScreen.gd: Время песни истекло. Вызываем end_game().")
 				end_game()
 				return
-	
+
 	if music_manager and music_manager.has_method("is_game_music_playing"):
 		if not music_manager.is_game_music_playing():
-			end_game()
+			# Если музыка остановлена и ноты ЕЩЁ не закончились, можно рассмотреть это как конец.
+			# Но если notes_ended уже true, мы игнорируем это.
+			# Проверка выше на spawn_queue_empty и active_notes_empty приоритетнее.
+			# Если ноты закончились, музыка может быть остановлена позже.
+			# Мы просто выходим, если notes_ended = true.
+			# Или можно добавить проверку на notes_ended и duration.
+			# Пока оставим как есть, если duration не достигнуто.
+			pass
+
+# Новый метод, который вызывается по таймеру
+func _on_victory_delay_timeout():
+	print("GameScreen.gd: Таймер задержки истёк. Вызываем end_game().")
+	end_game() # Вызываем окончание игры
 
 func end_game():
 	if game_finished:
@@ -280,7 +321,16 @@ func end_game():
 		print("GameScreen.gd: end_game вызвано во время паузы, вызываем cleanup.")
 		pauser.cleanup_on_game_end()
 		return
-	
+
+	# --- Сбросить флаг и таймер при вызове end_game ---
+	if notes_ended:
+		print("GameScreen.gd: end_game вызвано после окончания нот (с задержкой).")
+		notes_ended = false
+	if not victory_delay_timer.is_stopped():
+		victory_delay_timer.stop()
+		print("GameScreen.gd: Таймер задержки VictoryScreen остановлен.")
+	# ----------------------------------------------------
+
 	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
 	

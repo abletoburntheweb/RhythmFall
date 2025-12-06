@@ -2,7 +2,7 @@
 class_name SongEditManager
 extends Node
 
-signal song_edited(song_data: Dictionary, item_list_index: int) # Изменили сигнатуру сигнала
+signal song_edited(song_data: Dictionary, item_list_index: int) 
 
 var song_manager = null
 var item_list: ItemList = null 
@@ -15,9 +15,9 @@ var _edit_context = {
 	"dialog": null,
 	"line_edit": null,
 	"spin_box": null,
-	"song_data": null, # Хранит оригинальные данные, полученные из SongListManager
+	"song_data": null, 
 	"field_name": null,
-	"selected_index": -1, # Хранит индекс *в ItemList*, переданный из SongSelect
+	"selected_index": -1, 
 	"type": ""
 }
 
@@ -41,7 +41,7 @@ func set_edit_mode(enabled: bool):
 func is_edit_mode_active() -> bool:
 	return edit_mode
 
-func start_editing(field_type: String, song_data: Dictionary, selected_item_list_index: int): # Переименовали параметр
+func start_editing(field_type: String, song_data: Dictionary, selected_item_list_index: int): 
 	if not edit_mode:
 		print("SongEditManager.gd: Редактирование отключено.")
 		return
@@ -50,8 +50,8 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 		printerr("SongEditManager.gd: SongManager не установлен!")
 		return
 
-	_edit_context["song_data"] = song_data.duplicate(true) # Копируем полученные данные
-	_edit_context["selected_index"] = selected_item_list_index # Сохраняем индекс из ItemList
+	_edit_context["song_data"] = song_data.duplicate(true) 
+	_edit_context["selected_index"] = selected_item_list_index 
 	_edit_context["field_name"] = field_type
 	_edit_context["type"] = "field"  
 
@@ -164,18 +164,15 @@ func _edit_cover_stub():
 func _on_edit_title_confirmed():
 	var dialog = _edit_context["dialog"]
 	var line_edit = _edit_context["line_edit"]
-	var song_data = _edit_context["song_data"] # Берём из контекста
-	var selected_item_list_index = _edit_context["selected_index"] # Берём индекс из контекста
+	var song_data = _edit_context["song_data"]
+	var selected_item_list_index = _edit_context["selected_index"] 
 	var old_title = song_data.get("title", "")
 
 	if dialog and line_edit:
 		var new_title = line_edit.text.strip_edges()
 		if new_title != "" and new_title != old_title:
-			# Обновляем копию данных
 			song_data["title"] = new_title 
-			# print("SongEditManager.gd: Название обновлено: '", old_title, "' -> '", new_title, "'")
-			# Не обновляем ItemList напрямую, передаём индекс в сигнале
-			emit_signal("song_edited", song_data, selected_item_list_index) # Передаём обновлённые данные и индекс в ItemList
+			emit_signal("song_edited", song_data, selected_item_list_index) 
 			
 			if song_metadata_manager:
 				var song_file_path = song_data["path"]
@@ -190,19 +187,16 @@ func _on_edit_title_confirmed():
 func _on_edit_field_confirmed():
 	var dialog = _edit_context["dialog"]
 	var line_edit = _edit_context["line_edit"]
-	var song_data = _edit_context["song_data"] # Берём из контекста
-	var selected_item_list_index = _edit_context["selected_index"] # Берём индекс из контекста
+	var song_data = _edit_context["song_data"] 
+	var selected_item_list_index = _edit_context["selected_index"] 
 	var field_name = _edit_context["field_name"]
 	var old_value = str(song_data.get(field_name, ""))
 
 	if dialog and line_edit and song_data and field_name:
 		var new_value = line_edit.text.strip_edges()
 		if new_value != old_value:
-			# Обновляем копию данных
 			song_data[field_name] = new_value 
-			# print("SongEditManager.gd: Поле '", field_name, "' обновлено: '", old_value, "' -> '", new_value, "'")
-			# Не обновляем ItemList напрямую, передаём индекс в сигнале
-			emit_signal("song_edited", song_data, selected_item_list_index) # Передаём обновлённые данные и индекс в ItemList
+			emit_signal("song_edited", song_data, selected_item_list_index) 
 
 			if song_metadata_manager:
 				var song_file_path = song_data["path"]
@@ -217,8 +211,8 @@ func _on_edit_field_confirmed():
 func _on_edit_bpm_confirmed():
 	var dialog = _edit_context["dialog"]
 	var spin_box = _edit_context["spin_box"]
-	var song_data = _edit_context["song_data"] # Берём из контекста
-	var selected_item_list_index = _edit_context["selected_index"] # Берём индекс из контекста
+	var song_data = _edit_context["song_data"]
+	var selected_item_list_index = _edit_context["selected_index"] 
 	var old_bpm = song_data.get("bpm", "Н/Д")
 	var old_bpm_int = -1
 	if old_bpm is int:
@@ -230,11 +224,8 @@ func _on_edit_bpm_confirmed():
 		var new_bpm_int = int(spin_box.value)
 		if new_bpm_int != old_bpm_int:
 			var new_bpm_str = str(new_bpm_int)
-			# Обновляем копию данных
 			song_data["bpm"] = new_bpm_str 
-			# print("SongEditManager.gd: BPM обновлен: '", old_bpm, "' -> '", new_bpm_str, "'")
-			# Не обновляем ItemList напрямую, передаём индекс в сигнале
-			emit_signal("song_edited", song_data, selected_item_list_index) # Передаём обновлённые данные и индекс в ItemList
+			emit_signal("song_edited", song_data, selected_item_list_index) 
 			
 			if song_metadata_manager:
 				var song_file_path = song_data["path"]
@@ -255,7 +246,7 @@ func _cleanup_edit_context():
 	_edit_context["spin_box"] = null
 	_edit_context["song_data"] = null
 	_edit_context["field_name"] = null
-	_edit_context["selected_index"] = -1 # Сброс индекса
+	_edit_context["selected_index"] = -1
 	_edit_context["type"] = ""
 
 func _on_dialog_closed():
