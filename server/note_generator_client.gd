@@ -12,15 +12,12 @@ var _thread_request_data: Dictionary = {}
 var _thread_result: Dictionary = {}
 var _thread_finished: bool = false
 
-# --- НОВОЕ: Параметры по умолчанию ---
 var default_lanes: int = 4
-var default_sync_tolerance: float = 0.2 # 200ms
-# --- КОНЕЦ НОВОГО ---
+var default_sync_tolerance: float = 0.2 
 
 func _set_is_generating(value: bool):
 	is_generating = value
 
-# --- ИЗМЕНЕНО: Добавлены параметры lanes и sync_tolerance ---
 func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int = -1, sync_tolerance: float = -1.0):
 	if is_generating:
 		print("NoteGeneratorClient.gd: Генерация уже выполняется, игнорируем новый запрос.")
@@ -29,7 +26,6 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 	_set_is_generating(true)
 	emit_signal("notes_generation_started")
 
-	# Используем переданные значения или значения по умолчанию
 	var effective_lanes = lanes if lanes > 0 else default_lanes
 	var effective_sync_tolerance = sync_tolerance if sync_tolerance > 0.0 else default_sync_tolerance
 
@@ -37,8 +33,8 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		"song_path": song_path,
 		"instrument_type": instrument_type,
 		"bpm": bpm,
-		"lanes": effective_lanes, # --- НОВОЕ ---
-		"sync_tolerance": effective_sync_tolerance # --- НОВОЕ ---
+		"lanes": effective_lanes, 
+		"sync_tolerance": effective_sync_tolerance 
 	}
 	_thread_result = {}
 	_thread_finished = false
@@ -92,10 +88,8 @@ func _thread_function(data_dict: Dictionary):
 	var song_path = data_dict.get("song_path", "")
 	var instrument_type = data_dict.get("instrument_type", "standard")
 	var bpm = data_dict.get("bpm", -1.0)
-	# --- НОВОЕ: Получение параметров ---
 	var lanes = data_dict.get("lanes", default_lanes)
 	var sync_tolerance = data_dict.get("sync_tolerance", default_sync_tolerance)
-	# --- КОНЕЦ НОВОГО ---
 
 	if song_path == "":
 		local_error_occurred = true
@@ -127,7 +121,6 @@ func _thread_function(data_dict: Dictionary):
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
 
-				# --- ИЗМЕНЕНО: Добавлены X-Lanes и X-Sync-Tolerance в заголовки ---
 				var headers = PackedStringArray([
 					"Host: localhost:5000",
 					"Content-Type: application/octet-stream",
@@ -170,9 +163,7 @@ func _thread_function(data_dict: Dictionary):
 							if response_json.has("notes") and response_json.has("bpm"):
 								var notes = response_json["notes"]
 								var received_bpm = response_json["bpm"]
-								# --- НОВОЕ: Получаем lanes из ответа сервера ---
 								var received_lanes = response_json.get("lanes", lanes)
-								# --- КОНЕЦ НОВОГО ---
 								var received_instrument = response_json.get("instrument_type", instrument_type)
 								print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm, ", Lanes: ", received_lanes)
 	
@@ -181,7 +172,7 @@ func _thread_function(data_dict: Dictionary):
 								local_result = {
 									"notes": notes, 
 									"bpm": received_bpm, 
-									"lanes": received_lanes, # --- НОВОЕ: Можно сохранить в результат, если нужно ---
+									"lanes": received_lanes,
 									"instrument_type": received_instrument
 								}
 							elif response_json.has("error"):

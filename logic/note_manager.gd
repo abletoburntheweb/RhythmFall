@@ -1,6 +1,10 @@
 # logic/note_manager.gd
 extends RefCounted
 
+# --- Добавляем новую переменную ---
+var total_loaded_notes_count: int = 0
+# -------------------------------
+
 var game_screen
 var notes = [] 
 var note_spawn_queue = []
@@ -15,6 +19,8 @@ func _init(screen):
 	game_screen = screen
 
 func load_notes_from_file(song_data):
+	clear_notes() # <-- Очищаем предыдущие ноты перед загрузкой новых
+
 	if not song_data or not "path" in song_data:
 		printerr("NoteManager: Нет данных о песне или пути к файлу.")
 		return
@@ -49,6 +55,11 @@ func load_notes_from_file(song_data):
 		var lane = note_data.get("lane", 0)
 		var time = note_data.get("time", 0.0)
 		note_spawn_queue.append(note_data)
+
+	# --- Обновляем счётчик после загрузки ---
+	total_loaded_notes_count = note_spawn_queue.size()
+	print("NoteManager: Загружено %d нот в очередь (total_loaded_notes_count)." % total_loaded_notes_count)
+	# -----------------------------------------
 
 func spawn_notes():
 	var game_time = game_screen.game_time
@@ -156,6 +167,15 @@ func clear_notes():
 			note.visual_node.queue_free()
 	notes.clear()
 	note_spawn_queue.clear()
+	# --- Обнуляем счётчик при очистке ---
+	total_loaded_notes_count = 0
+	# -------------------------------------
+
 
 func get_spawn_queue_size() -> int:
 	return note_spawn_queue.size()
+
+# --- Добавляем геттер для общего количества ---
+func get_total_loaded_count() -> int:
+	return total_loaded_notes_count
+# -----------------------------------------------

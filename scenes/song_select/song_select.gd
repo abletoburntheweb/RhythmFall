@@ -100,7 +100,8 @@ func _ready():
 	if song_metadata_manager:
 		song_edit_manager.set_metadata_manager(song_metadata_manager)
 		print("SongSelect.gd: SongMetadataManager передан в SongEditManager.")
-		song_edit_manager.song_edited.connect(_on_song_edited)
+		# --- НОВОЕ: Подключаем сигнал song_edited от SongEditManager ---
+		song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
 	else:
 		printerr("SongSelect.gd: SongMetadataManager не получен для передачи в SongEditManager.")
 
@@ -134,7 +135,15 @@ func _ready():
 	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
 	if instrument_btn:
 		instrument_btn.text = "Инструмент: Перкуссия"
-
+func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
+	print("SongSelect.gd: Песня отредактирована (через сигнал от SongEditManager): ", song_data.get("title", "N/A"))
+	# Обновляем список через SongListManager, чтобы отразить изменения и исправить возможные сдвиги индексов
+	# populate_items_grouped() перезагрузит всё, что может быть ресурсоёмко, но корректно обновит группировку
+	song_list_manager.populate_items_grouped()
+	# Альтернатива: если SongListManager реализует обновление по индексу (SongListManager.update_item_at_index),
+	# можно было бы вызвать: song_list_manager.update_item_at_index(item_list_index, song_data)
+	# и затем song_list_manager.update_song_count_label($MainVBox/TopBarHBox/SongCountLabel)
+	# Но для простоты и гарантии корректности, пока используем полное обновление.
 func _connect_ui_signals():
 	
 	var back_btn = $MainVBox/BackButton
@@ -295,13 +304,17 @@ func _on_gui_input_for_label(event: InputEvent, field_type: String):
 			if song_item_list_ref:
 				selected_indices = song_item_list_ref.get_selected_items()
 			if selected_indices.size() > 0:
-				var selected_index = selected_indices[0]
-				var songs_list = song_manager.get_songs_list()
-				if selected_index >= 0 and selected_index < songs_list.size():
-					var song_data = songs_list[selected_index]
-					song_edit_manager.start_editing(field_type, song_data, selected_index)
+				var selected_item_list_index = selected_indices[0] # Индекс в ItemList
+				print("SongSelect.gd: Индекс в ItemList: ", selected_item_list_index) # <-- Добавить
+				# --- ИЗМЕНЕНО: Получаем song_data через SongListManager ---
+				var song_data = song_list_manager.get_song_data_by_item_list_index(selected_item_list_index)
+				print("SongSelect.gd: Полученные данные песни для редактирования: ", song_data.get("title", "N/A"), " (путь: ", song_data.get("path", "N/A"), ")") # <-- Добавить
+				# Проверяем, что получили корректные данные (не пустой словарь)
+				if not song_data.is_empty():
+					# Передаём song_data и индекс в ItemList в SongEditManager
+					song_edit_manager.start_editing(field_type, song_data, selected_item_list_index) 
 				else:
-					print("SongSelect.gd: Индекс песни за пределами списка.")
+					print("SongSelect.gd: Не удалось получить данные песни по индексу %d из ItemList." % selected_item_list_index)
 			else:
 				print("SongSelect.gd: Нет выбранной песни для редактирования.")
 
@@ -328,8 +341,7 @@ func _on_generate_pressed():
 	_generate_notes_for_current_song()
 
 func _generate_notes_for_current_song():
-	# Используем уже сохранённые данные о выбранной песне
-	var selected_song_data = current_selected_song_data.duplicate() # Создаём копию, чтобы быть уверенным
+	var selected_song_data = current_selected_song_data.duplicate() 
 	var song_path = selected_song_data.get("path", "")
 	if song_path == "":
 		print("SongSelect.gd: Путь к файлу выбранной песни пуст (из current_selected_song_data).")
@@ -340,7 +352,7 @@ func _generate_notes_for_current_song():
 		print("SongSelect.gd: BPM не указан для песни. Сначала проанализируйте BPM.")
 		return
 
-	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path) # <-- Добавим лог для проверки
+	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path) 
 	note_generator_client.generate_notes(song_path, current_instrument, float(song_bpm))
 
 func _on_notes_generation_started():
@@ -495,16 +507,22 @@ func _on_analyze_bpm_pressed():
 		return
 
 	var selected_index = selected_items[0]
-	var songs_list = song_manager.get_songs_list()
-	if selected_index < 0 or selected_index >= songs_list.size():
-		print("SongSelect.gd: Индекс выбранной песни вне диапазона.")
+	# ВАЖНО: Используем SongListManager для получения данных, как при редактировании
+	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_index)
+	# var songs_list = song_manager.get_songs_list() // Старый способ
+	# if selected_index >= 0 and selected_index < songs_list.size():
+	# 	var selected_song_data = songs_list[selected_index] // Старый способ
+
+	if selected_song_data.is_empty():
+		print("SongSelect.gd: Не удалось получить данные песни для анализа BPM по индексу ItemList.")
 		return
 
-	var selected_song_data = songs_list[selected_index]
 	var song_path = selected_song_data.get("path", "")
 	if song_path == "":
 		print("SongSelect.gd: Путь к файлу выбранной песни пуст.")
 		return
+
+	print("SongSelect.gd: Отправка на анализ BPM файла: ", song_path)
 
 	var bpm_label = $MainVBox/ContentHBox/DetailsVBox/BpmLabel
 	if bpm_label:
@@ -558,31 +576,38 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	var selected_items = song_item_list_ref.get_selected_items()
 	if selected_items.size() > 0:
 		var selected_index = selected_items[0]
-		var songs_list = song_manager.get_songs_list()
-		if selected_index >= 0 and selected_index < songs_list.size():
-			var selected_song_data = songs_list[selected_index]
-			var song_path = selected_song_data.get("path", "")
+		# ИСПОЛЬЗУЕМ ТОТ ЖЕ ПОДХОД, ЧТО И В _on_analyze_bpm_pressed
+		var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_index)
+		# var songs_list = song_manager.get_songs_list() // Старый способ
+		# if selected_index >= 0 and selected_index < songs_list.size():
+		# 	var selected_song_data = songs_list[selected_index] // Старый способ
 
-			if song_path != "" and song_metadata_manager: 
-				var current_metadata = song_metadata_manager.get_metadata_for_song(song_path)
-				if current_metadata.is_empty():
-					current_metadata = {
-						"title": selected_song_data.get("title", "Без названия"),
-						"artist": selected_song_data.get("artist", "Неизвестен"),
-						"bpm": str(bpm_value),
-						"year": selected_song_data.get("year", "Н/Д"),
-						"duration": selected_song_data.get("duration", "00:00"),
-						"cover": selected_song_data.get("cover", null)
-					}
-				else:
-					current_metadata["bpm"] = str(bpm_value)
+		if selected_song_data.is_empty():
+			print("SongSelect.gd: Не удалось получить данные песни для обновления BPM после анализа.")
+			return
 
-				song_metadata_manager.update_metadata(song_path, current_metadata)
-				print("SongSelect.gd: BPM обновлён в SongMetadataManager для: ", song_path)
+		var song_path = selected_song_data.get("path", "")
 
+		if song_path != "" and song_metadata_manager: 
+			var current_metadata = song_metadata_manager.get_metadata_for_song(song_path)
+			if current_metadata.is_empty():
+				current_metadata = {
+					"title": selected_song_data.get("title", "Без названия"),
+					"artist": selected_song_data.get("artist", "Неизвестен"),
+					"bpm": str(bpm_value),
+					"year": selected_song_data.get("year", "Н/Д"),
+					"duration": selected_song_data.get("duration", "00:00"),
+					"cover": selected_song_data.get("cover", null)
+				}
+			else:
+				current_metadata["bpm"] = str(bpm_value)
 
-			elif song_path != "":
-				printerr("SongSelect.gd: SongMetadataManager недоступен, BPM не сохранён в пользовательские метаданные.")
+			song_metadata_manager.update_metadata(song_path, current_metadata)
+			print("SongSelect.gd: BPM обновлён в SongMetadataManager для: ", song_path) 
+		else:
+			printerr("SongSelect.gd: SongMetadataManager недоступен или путь к песне пуст, BPM не сохранён в пользовательские метаданные.")
+	else:
+		print("SongSelect.gd: Нет выбранной песни при завершении анализа BPM, невозможно обновить метаданные.")
 
 	print("SongSelect.gd: BPM анализ завершён. BPM: ", bpm_value)
 	if analyze_bpm_button:
