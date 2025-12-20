@@ -57,6 +57,13 @@ func load_notes_from_file(song_data):
 	total_loaded_notes_count = note_spawn_queue.size()
 	print("NoteManager: Загружено %d нот в очередь (total_loaded_notes_count)." % total_loaded_notes_count)
 
+func get_earliest_note_time() -> float:
+	if note_spawn_queue.is_empty():
+		return -1.0 
+	if note_spawn_queue.size() > 0:
+		return note_spawn_queue[0].get("time", 0.0)
+	return -1.0
+	
 func spawn_notes():
 	var game_time = game_screen.game_time
 	var speed = game_screen.speed
@@ -70,13 +77,13 @@ func spawn_notes():
 	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
-
+	print("SpawnNotes: game_time=%.3f, pixels_per_sec=%.2f, dist_to_travel=%.1f, time_to_reach=%.3f, spawn_threshold=%.3f" % [game_time, pixels_per_sec, distance_to_travel, time_to_reach_hit_zone, spawn_threshold_time])
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
 		var note_time = note_info.get("time", 0.0)
 		var note_type = note_info.get("type", "DefaultNote")
-
+		print("SpawnNotes: Spawning note at time=%.3f, lane=%d, type=%s" % [note_time, lane, note_type])
 		var time_diff = note_time - game_time
 		var y_spawn = hit_zone_y - time_diff * pixels_per_sec
 		if y_spawn > game_screen.get_viewport_rect().size.y + 20:

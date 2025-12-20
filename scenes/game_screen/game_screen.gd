@@ -62,7 +62,9 @@ var perfect_hits_this_level: int = 0
 
 var results_manager = null
 
-const VICTORY_DELAY_AFTER_NOTES: float = 5.0 
+const VICTORY_DELAY_AFTER_NOTES: float = 5.0
+const EARLY_NOTE_THRESHOLD: float = 1.0
+const MUSIC_START_DELAY_IF_EARLY_NOTES: float = 5.0 
 var notes_ended: bool = false
 var victory_delay_timer: Timer = null
 
@@ -93,7 +95,6 @@ func _ready():
 	_instantiate_debug_menu()
 
 	auto_player = AutoPlayer.new(self)
-	print("GameScreen: AutoPlayer создан.")
 
 	game_timer = Timer.new()
 	game_timer.wait_time = 0.016 
@@ -160,7 +161,6 @@ func _on_player_hit(lane: int):
 	
 func set_results_manager(results_mgr):
 	results_manager = results_mgr
-	print("GameScreen.gd: ResultsManager установлен.")
 	
 func _on_lane_pressed_changed():
 	for i in range(lanes):
@@ -184,7 +184,6 @@ func start_countdown():
 
 func _update_countdown():
 	if not countdown_active:
-		print("GameScreen.gd: _update_countdown вызван, но отсчёт уже завершён, игнорируем.")
 		return
 	
 	countdown_remaining -= 1
@@ -211,17 +210,9 @@ func _set_instrument(instrument_type: String):
 
 func start_gameplay():
 	if gameplay_started:
-		print("GameScreen.gd: start_gameplay вызван повторно, игнорируем.")
 		return
-	
+
 	gameplay_started = true 
-	
-	game_time = 0.0
-	
-	if music_manager and selected_song_data and selected_song_data.get("path"):
-		var song_path = selected_song_data.get("path")
-		if music_manager.has_method("play_game_music"):
-			music_manager.play_game_music(song_path)
 
 	var song_to_load = selected_song_data
 	if not song_to_load or not song_to_load.get("path"):
@@ -236,17 +227,50 @@ func start_gameplay():
 			if new_bpm > 0:
 				bpm = new_bpm
 				update_speed_from_bpm() 
-	
+
 	if note_manager.get_spawn_queue_size() > 0:
 		notes_loaded = true
 		var total_note_count = note_manager.get_spawn_queue_size()
 		score_manager.set_total_notes(total_note_count)
-		print("GameScreen.gd: Установлено total_notes: %d" % total_note_count)
-	
+
+	var should_delay_music = false
+	var earliest_note_time = note_manager.get_earliest_note_time() 
+	if earliest_note_time > 0 and earliest_note_time <= EARLY_NOTE_THRESHOLD:
+		should_delay_music = true
+
+	if should_delay_music:
+		game_time = -MUSIC_START_DELAY_IF_EARLY_NOTES
+	else:
+		game_time = 0.0 
+
 	if music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(bpm, 0) 
-	
+
+	if music_manager and selected_song_data and selected_song_data.get("path"):
+		var song_path = selected_song_data.get("path")
+		if music_manager.has_method("play_game_music"):
+			if should_delay_music:
+				var existing_timer = get_node_or_null("DelayedMusicTimer")
+				if existing_timer:
+					existing_timer.queue_free()
+
+				var delayed_music_timer = Timer.new()
+				delayed_music_timer.name = "DelayedMusicTimer"
+				delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
+				delayed_music_timer.timeout.connect(
+					func():
+						game_time = 0.0 
+						music_manager.play_game_music(song_path)
+						if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
+							delayed_music_timer.queue_free()
+				)
+				add_child(delayed_music_timer)
+				delayed_music_timer.start()
+			else:
+				music_manager.play_game_music(song_path)
+
 	check_song_end_timer.start()
+
 
 func update_speed_from_bpm():
 	var base_bpm = 120.0
@@ -260,13 +284,13 @@ func _update_game():
 			music_manager.stop_metronome()
 		return
 	
-	if not pauser.is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
-		music_manager.start_metronome(bpm, 0)
+	game_time += 0.016
 	
-	game_time += 0.016  
+	if not pauser.is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
+		music_manager.start_metronome(bpm, 0) 
 	
 	if not countdown_active: 
-		note_manager.spawn_notes()
+		note_manager.spawn_notes() 
 	
 	update_ui()
 	
@@ -286,7 +310,6 @@ func _check_song_end():
 	var active_notes_empty = note_manager.get_notes().size() == 0
 
 	if spawn_queue_empty and active_notes_empty:
-		print("GameScreen.gd: Все ноты завершены (очередь спауна и активные ноты пусты). Устанавливаем задержку %.2f сек." % VICTORY_DELAY_AFTER_NOTES)
 		notes_ended = true 
 		victory_delay_timer.start(VICTORY_DELAY_AFTER_NOTES) 
 		return
@@ -296,7 +319,6 @@ func _check_song_end():
 		if typeof(duration_value) == TYPE_FLOAT and duration_value > 0:
 			var duration = duration_value
 			if game_time >= duration - 0.1:
-				print("GameScreen.gd: Время песни истекло. Вызываем end_game().")
 				end_game()
 				return
 
@@ -305,7 +327,6 @@ func _check_song_end():
 			pass
 
 func _on_victory_delay_timeout():
-	print("GameScreen.gd: Таймер задержки истёк. Вызываем end_game().")
 	end_game() 
 
 func end_game():
@@ -313,18 +334,14 @@ func end_game():
 		return
 	
 	if pauser.is_paused:
-		print("GameScreen.gd: end_game вызвано во время паузы, вызываем cleanup.")
 		pauser.cleanup_on_game_end()
 		return
 
 	if notes_ended:
-		print("GameScreen.gd: end_game вызвано после окончания нот (с задержкой).")
 		notes_ended = false
 	if not victory_delay_timer.is_stopped():
 		victory_delay_timer.stop()
-		print("GameScreen.gd: Таймер задержки VictoryScreen остановлен.")
 
-	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
 	
 	if not game_timer.is_stopped():
@@ -335,16 +352,13 @@ func end_game():
 	if music_manager:
 		if music_manager.has_method("stop_music"):
 			music_manager.stop_music()            
-			print("GameScreen.gd: ВСЯ музыка (включая игровую) остановлена в end_game через stop_music.")
 		else:
 			if music_manager.has_method("stop_game_music"):
 				music_manager.stop_game_music()
-				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
 			else:
 				printerr("GameScreen.gd: Ни stop_music, ни stop_game_music не найдены в MusicManager!")
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
-			print("GameScreen.gd: Метроном остановлен в end_game.")
 	
 	if auto_player:
 		auto_player.reset()
@@ -357,7 +371,6 @@ func end_game():
 		achievement_system = game_engine.get_achievement_system()
 	
 	if achievement_system:
-		print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 		achievement_system.on_level_completed(accuracy, is_drum_mode)
 	else:
 		printerr("GameScreen.gd: AchievementSystem не найден через GameEngine!")
@@ -373,13 +386,6 @@ func end_game():
 		var debug_max_combo = score_manager.get_max_combo()
 		var debug_accuracy = score_manager.get_accuracy()
 		var debug_perfect_hits = perfect_hits_this_level
-		print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d" % [
-			debug_score,
-			debug_combo,
-			debug_max_combo,
-			debug_accuracy,
-			debug_perfect_hits
-		])
 		
 		new_victory_screen.set_victory_data(
 			debug_score,      
@@ -395,7 +401,6 @@ func end_game():
 		
 		if new_victory_screen.has_method("set_results_manager") and results_manager:
 			new_victory_screen.set_results_manager(results_manager)
-			print("GameScreen.gd: ResultsManager передан в VictoryScreen.")
 		elif results_manager:
 			printerr("GameScreen.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
 		
@@ -444,8 +449,6 @@ func _input(event):
 				var settings_manager = game_engine.get_settings_manager() if game_engine else null
 				if settings_manager and settings_manager.get_enable_debug_menu():
 					debug_menu.toggle_visibility()
-				else:
-					print("DebugMenu: Отключено в настройках")
 			return		
 			
 	
@@ -488,11 +491,14 @@ func skip_countdown():
 		if countdown_timer:
 			pass
 		start_gameplay()
-		print("Обратный отсчет пропущен")
 	else:
 		print("GameScreen.gd: Попытка пропустить отсчёт, но он уже завершён.")
 
 func skip_intro() -> bool:
+	if game_time < 0: 
+		return false
+
+	
 	if pauser.is_paused or game_finished or countdown_active:
 		return false
 	if skip_used:
