@@ -342,6 +342,7 @@ func end_game():
 	if not victory_delay_timer.is_stopped():
 		victory_delay_timer.stop()
 
+	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
 	
 	if not game_timer.is_stopped():
@@ -352,13 +353,16 @@ func end_game():
 	if music_manager:
 		if music_manager.has_method("stop_music"):
 			music_manager.stop_music()            
+			print("GameScreen.gd: ВСЯ музыка (включая игровую) остановлена в end_game через stop_music.")
 		else:
 			if music_manager.has_method("stop_game_music"):
 				music_manager.stop_game_music()
+				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
 			else:
 				printerr("GameScreen.gd: Ни stop_music, ни stop_game_music не найдены в MusicManager!")
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
+			print("GameScreen.gd: Метроном остановлен в end_game.")
 	
 	if auto_player:
 		auto_player.reset()
@@ -369,8 +373,12 @@ func end_game():
 	var achievement_system = null
 	if game_engine and game_engine.has_method("get_achievement_system"):
 		achievement_system = game_engine.get_achievement_system()
+		print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem получен от GameEngine.")
+	else:
+		print("GameScreen.gd: [ДИАГНОСТИКА] Не удалось получить AchievementSystem от GameEngine.")
 	
 	if achievement_system:
+		print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 		achievement_system.on_level_completed(accuracy, is_drum_mode)
 	else:
 		printerr("GameScreen.gd: AchievementSystem не найден через GameEngine!")
@@ -386,6 +394,10 @@ func end_game():
 		var debug_max_combo = score_manager.get_max_combo()
 		var debug_accuracy = score_manager.get_accuracy()
 		var debug_perfect_hits = perfect_hits_this_level
+		var debug_missed_notes = score_manager.get_missed_notes_count()
+		print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d, Пропущено=%d" % [
+			debug_score, debug_combo, debug_max_combo, debug_accuracy, debug_perfect_hits, debug_missed_notes
+		])
 		
 		new_victory_screen.set_victory_data(
 			debug_score,      
@@ -395,14 +407,21 @@ func end_game():
 			victory_song_info,
 			score_manager.get_combo_multiplier(), 
 			note_manager.get_spawn_queue_size(), 
-			score_manager.get_missed_notes_count(), 
+			debug_missed_notes,
 			debug_perfect_hits 
 		)
 		
 		if new_victory_screen.has_method("set_results_manager") and results_manager:
 			new_victory_screen.set_results_manager(results_manager)
+			print("GameScreen.gd: ResultsManager передан в VictoryScreen.")
 		elif results_manager:
 			printerr("GameScreen.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
+		
+		if new_victory_screen.has_method("set_achievement_system") and achievement_system:
+			new_victory_screen.set_achievement_system(achievement_system)
+			print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem передан в VictoryScreen.")
+		else:
+			print("GameScreen.gd: [ДИАГНОСТИКА] Не удалось передать AchievementSystem в VictoryScreen.")
 		
 		var parent_node = get_parent()
 		if parent_node:

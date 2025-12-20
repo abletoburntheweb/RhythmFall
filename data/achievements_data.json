@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2060.0,
+			"current": 3148,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2060.0,
+			"current": 3148,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2060.0,
+			"current": 3148,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 14.0,
+			"current": 30,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 14.0,
+			"current": 30,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -299,7 +299,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 278.0,
+			"current": 352,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -333,23 +333,23 @@
 		{
 			"category": "gameplay",
 			"current": 10.0,
-			"description": "Пройти 10 уровней в режиме перкуссии",
-			"id": 31.0,
-			"image": "res://assets/achievements/groove_force.png",
-			"title": "Сила грува",
-			"total": 10.0,
-			"unlock_date": "4 Дек 2025, 22:52",
-			"unlocked": true
-		},
-		{
-			"category": "gameplay",
-			"current": 10.0,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,
 			"image": "res://assets/achievements/drum_storm.png",
 			"title": "Барабанный шторм",
 			"total": 10.0,
 			"unlock_date": "4 Дек 2025, 21:14",
+			"unlocked": true
+		},
+		{
+			"category": "gameplay",
+			"current": 1.0,
+			"description": "Пройти один и тот же уровень дважды",
+			"id": 33.0,
+			"image": "res://assets/achievements/default.png",
+			"title": "Музыкальная память",
+			"total": 1.0,
+			"unlock_date": "20 Дек 2025, 21:06",
 			"unlocked": true
 		}
 	]

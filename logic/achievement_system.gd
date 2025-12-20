@@ -15,6 +15,9 @@ func _init(ach_manager: AchievementManager, pd_manager: PlayerDataManager, music
 	achievement_manager.music_mgr = music_mgr
 	player_data_manager.achievement_manager = ach_manager
 
+func on_song_replayed(song_path: String):
+	achievement_manager.check_replay_level_achievement(song_path) 
+
 func on_level_completed(accuracy: float, is_drum_mode: bool = false): 
 	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode)
 	achievement_manager.check_first_level_achievement()

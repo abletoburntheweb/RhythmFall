@@ -136,6 +136,14 @@ func set_results_manager(results_mgr):
 	results_manager = results_mgr
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_manager)
 
+func set_achievement_system(ach_sys):
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_achievement_system вызван с: ", ach_sys)
+	if results_manager and results_manager.has_method("set_achievement_system"):
+		results_manager.set_achievement_system(ach_sys)
+		print("VictoryScreen.gd: [ДИАГНОСТИКА] AchievementSystem передан в ResultsManager из VictoryScreen.")
+	else:
+		print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager не имеет метода set_achievement_system или не установлен.")
+
 func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0):
 	score = p_score
 	combo = p_combo
@@ -205,25 +213,7 @@ func _deferred_update_ui():
 			player_data_manager.add_currency(earned_currency)
 			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
 
-			if results_manager and song_info and song_info.get("path"):
-				var instrument_used = song_info.get("instrument", "standard")
-				if instrument_used == "drums":
-					instrument_used = "Перкуссия"
-				var grade = _calculate_grade()
-				var grade_color = _get_grade_color(grade)
-				var result_datetime = Time.get_datetime_string_from_system(true, true) 
-				results_manager.save_result_for_song(
-					song_info.get("path", ""), 
-					instrument_used,          
-					score,                    
-					accuracy,                  
-					grade,                   
-					grade_color,              
-					result_datetime           
-				)
-				print("VictoryScreen.gd: Результат отправлен в ResultsManager для сохранения.")
-			else:
-				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
+			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
 
 			var grade = _calculate_grade()
 			
@@ -287,6 +277,26 @@ func _deferred_update_ui():
 			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
 				print("🎯 Показываем накопленные геймплейные ачивки...")
 				achievement_manager.show_all_delayed_gameplay_achievements()
+			
+			if should_save_result_later:
+				var instrument_for_result = song_info.get("instrument", "standard")
+				if instrument_for_result == "drums":
+					instrument_for_result = "Перкуссия"
+				var grade_for_result = _calculate_grade()
+				var grade_color_for_result = _get_grade_color(grade_for_result)
+				var result_datetime_for_result = Time.get_datetime_string_from_system(true, true)
+				results_manager.save_result_for_song(
+					song_info.get("path", ""), 
+					instrument_for_result,          
+					score,                    
+					accuracy,                  
+					grade_for_result,                   
+					grade_color_for_result,              
+					result_datetime_for_result           
+				)
+				print("VictoryScreen.gd: Результат отправлен в ResultsManager для сохранения (после ачивок).")
+			else:
+				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
 			print("🎯 Получена оценка: %s (%.1f%%)" % [grade, accuracy])

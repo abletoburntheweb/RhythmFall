@@ -1,11 +1,17 @@
-# scenes/song_select/results_manager.gd
 class_name ResultsManager
 extends Node
 
 var player_data_manager = null
+var achievement_system = null
+var replay_achievement_sent_for_song: Dictionary = {}
+
 
 func set_player_data_manager(player_data_mgr):
 	player_data_manager = player_data_mgr
+
+func set_achievement_system(ach_sys):
+	achievement_system = ach_sys
+
 
 func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	print("ResultsManager.gd: Показ результатов для песни: %s" % song_data.get("title", "Неизвестная"))
@@ -149,6 +155,7 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 			return
 	
 	var results = load_results_for_song(song_path)
+	var results_count_before = results.size()
 	
 	var new_result = {
 		"score": score,
@@ -171,6 +178,8 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 	if results.size() > 25: 
 		results.resize(25) 
 	
+	var results_count_after = results.size()
+	
 	var song_file_name = song_path.get_file().get_basename()
 	var results_file_path = "user://results/%s_results.json" % song_file_name
 	
@@ -178,11 +187,10 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 	
 	var file = FileAccess.open(results_file_path, FileAccess.WRITE)
 	if file:
-		var json_string = JSON.stringify(results)
+		var json_string = JSON.stringify(results, "\t")
 		file.store_string(json_string)
 		file.close()
 		print("ResultsManager.gd: Результат успешно сохранен для песни %s: %d очков, %.2f%%, инструмент: %s, оценка: %s, дата: %s" % [song_path, score, accuracy, instrument_type, grade, result_datetime])
-		print("ResultsManager.gd: JSON содержимое: %s" % json_string)
 	else:
 		printerr("ResultsManager.gd: Не удалось создать/открыть файл для записи: ", results_file_path)
 		var file_create = FileAccess.open(results_file_path, FileAccess.WRITE)
@@ -193,6 +201,21 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 			save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime)
 		else:
 			printerr("ResultsManager.gd: Критическая ошибка - невозможно создать файл: ", results_file_path)
+	
+	var song_key = song_path 
+	if results_count_after >= 2 and not replay_achievement_sent_for_song.has(song_key):
+		print("ResultsManager.gd: Количество результатов для песни %s достигло 2 или более (%d). Проверяем ачивку 'Музыкальная память'." % [song_path, results_count_after])
+		replay_achievement_sent_for_song[song_key] = true 
+		if achievement_system:
+			achievement_system.on_song_replayed(song_path) 
+		else:
+			print("ResultsManager.gd: achievement_system не установлен, невозможно проверить ачивку.")
+	else:
+		if results_count_after >= 2:
+			print("ResultsManager.gd: Ачивка 'Музыкальная память' для песни %s уже была отправлена в этой сессии или ещё не достигнут порог." % song_path)
+		else:
+			print("ResultsManager.gd: Результатов для песни %s (%d) недостаточно для ачивки." % [song_path, results_count_after])
+
 
 func get_top_result_for_song(song_path: String) -> Dictionary:
 	var results = load_results_for_song(song_path)

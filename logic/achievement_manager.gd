@@ -452,3 +452,21 @@ func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_
 			if current_drum_streak >= 10:
 				_perform_unlock(achievement)
 			break
+
+func check_replay_level_achievement(song_path: String):
+	var achievement_id = 33
+	var achievement_to_check = null
+	for a in achievements:
+		if a.id == achievement_id:
+			achievement_to_check = a
+			break
+	
+	if not achievement_to_check:
+		print("[AchievementManager] Ачивка с id=%d не найдена для проверки 'Музыкальная память'." % achievement_id)
+		return
+	
+	if achievement_to_check.get("unlocked", false):
+		return 
+	
+	unlock_achievement_by_id(achievement_id)
+	print("AchievementManager: Ачивка 'Музыкальная память' разблокирована для песни %s." % song_path)
