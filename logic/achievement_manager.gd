@@ -17,6 +17,8 @@ var notification_mgr = null
 
 var achievements: Array[Dictionary] = []
 
+var new_gameplay_achievements: Array[Dictionary] = []
+
 func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	load_achievements(json_path)
 
@@ -41,6 +43,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 					else:
 						printerr("[AchievementManager] Найден элемент не типа Dictionary в списке достижений: ", item)
 				achievements = loaded_achievements
+				new_gameplay_achievements.clear()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")
 				achievements = []
@@ -89,8 +92,9 @@ func unlock_achievement(achievement_dict: Dictionary):
 		_perform_unlock(achievement_dict)
 
 func _perform_unlock(achievement: Dictionary):
-	if achievement.get("unlocked", false):
-		return 
+	var was_unlocked = achievement.get("unlocked", false)
+	if was_unlocked:
+		return
 
 	achievement.unlocked = true
 	achievement.current = achievement.get("total", 1)
@@ -115,25 +119,37 @@ func _perform_unlock(achievement: Dictionary):
 		music_mgr.play_achievement_sound()
 
 	var category = achievement.get("category", "")
-	if notification_mgr and category != "gameplay":
+	if category == "gameplay":
+		if not new_gameplay_achievements.has(achievement):
+			new_gameplay_achievements.append(achievement)
+		print("🎮 Геймплейная ачивка отложена (новая): ", achievement.title)
+	elif notification_mgr: 
 		print("Unlocking achievement: ", achievement)
 		notification_mgr.show_achievement_popup(achievement)
 	else:
-		print("🎮 Геймплейная ачивка отложена: ", achievement.title)
-func show_all_delayed_gameplay_achievements():
-	print("🎯 Показываем все отложенные геймплейные ачивки...")
+		print("⚠️ Нет notification_mgr для немедленного показа ачивки: ", achievement.title)
 
-	for achievement in achievements:
-		if achievement.get("unlocked", false) and achievement.get("category", "") == "gameplay":
-			print("🏆 Показываем геймплейную ачивку: ", achievement.title)
-			if notification_mgr:
-				notification_mgr.show_achievement_popup(achievement)
-				
+
+func show_all_delayed_gameplay_achievements():
+	print("🎯 Показываем все *новые* отложенные геймплейные ачивки...")
+
+	for achievement in new_gameplay_achievements:
+		print("🏆 Показываем новую геймплейную ачивку: ", achievement.title)
+		if notification_mgr:
+			notification_mgr.show_achievement_popup(achievement)
+		else:
+			print("⚠️ notification_mgr не установлен для показа: ", achievement.title)
+
+func clear_new_gameplay_achievements():
+	new_gameplay_achievements.clear()
+	print("🎯 Список новых геймплейных ачивок очищен.")
+
 func reset_achievements():
 	for a in achievements:
 		a.unlocked = false
 		a.current = 0
 		a.unlock_date = null
+	new_gameplay_achievements.clear()
 	save_achievements()
 
 	if player_data_mgr:
@@ -449,7 +465,7 @@ func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_
 	for achievement in achievements:
 		if achievement.id == 32 and not achievement.get("unlocked", false):
 			achievement.current = current_drum_streak
-			if current_drum_streak >= 10:
+			if current_drum_streak >= 100:
 				_perform_unlock(achievement)
 			break
 

@@ -134,7 +134,7 @@ func _on_currency_details_closed():
 func set_results_manager(results_mgr):
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_results_manager вызван с: ", results_mgr)
 	results_manager = results_mgr
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_manager)
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_mgr)
 
 func set_achievement_system(ach_sys):
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_achievement_system вызван с: ", ach_sys)
@@ -226,6 +226,10 @@ func _deferred_update_ui():
 			if game_engine and game_engine.has_method("get_achievement_manager"):
 				achievement_manager = game_engine.get_achievement_manager()
 			
+			if achievement_manager and game_engine:
+				achievement_manager.notification_mgr = game_engine
+				print("VictoryScreen.gd: [ДИАГНОСТИКА] GameEngine передан в AchievementManager как notification_mgr.")
+
 			var current_drum_streak = 0
 			var current_snare_streak = 0
 			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
@@ -274,10 +278,6 @@ func _deferred_update_ui():
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
 					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
 			
-			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
-				print("🎯 Показываем накопленные геймплейные ачивки...")
-				achievement_manager.show_all_delayed_gameplay_achievements()
-			
 			if should_save_result_later:
 				var instrument_for_result = song_info.get("instrument", "standard")
 				if instrument_for_result == "drums":
@@ -297,6 +297,14 @@ func _deferred_update_ui():
 				print("VictoryScreen.gd: Результат отправлен в ResultsManager для сохранения (после ачивок).")
 			else:
 				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
+			
+			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
+				print("🎯 Показываем *новые* накопленные геймплейные ачивки...")
+				achievement_manager.show_all_delayed_gameplay_achievements()
+				
+				achievement_manager.clear_new_gameplay_achievements()
+			else:
+				print("⚠️ AchievementManager не имеет метода show_all_delayed_gameplay_achievements или clear_new_gameplay_achievements.")
 			
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
 			print("🎯 Получена оценка: %s (%.1f%%)" % [grade, accuracy])
