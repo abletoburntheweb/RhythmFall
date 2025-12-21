@@ -15,6 +15,11 @@ const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
 
+# --- НОВАЯ КОНСТАНТА ---
+const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" # Или .mp3, в зависимости от вашего файла
+const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav" # Или .mp3
+# --- КОНЕЦ НОВОЙ КОНСТАНТЫ ---
+
 var was_menu_music_playing_before_shop: bool = false
 var menu_music_position_before_shop: float = 0.0
 
@@ -385,3 +390,24 @@ func update_volumes_from_settings(settings_manager: SettingsManager):
 		set_sfx_volume(settings_manager.get_effects_volume())
 		set_hit_sounds_volume(settings_manager.get_hit_sounds_volume())
 		set_metronome_volume(settings_manager.get_metronome_volume())
+
+# --- НОВАЯ ФУНКЦИЯ ---
+func play_instrument_select_sound(instrument_type: String):
+	var sound_file_name = ""
+	match instrument_type:
+		"drums":
+			sound_file_name = DEFAULT_DRUMS_SELECT_SOUND
+		"standard": # Уточните, как именно называется другой инструмент в song_select.gd (например, "default", "melody", "normal")
+			sound_file_name = DEFAULT_STANDARD_SELECT_SOUND
+		_:
+			printerr("MusicManager: Неизвестный тип инструмента для звука: ", instrument_type)
+			return # Выходим, если тип неизвестен
+
+	var full_path = MUSIC_DIR + sound_file_name
+	if FileAccess.file_exists(full_path):
+		play_sfx(sound_file_name) # Вызываем существующий метод play_sfx
+	else:
+		print("MusicManager: Файл звука инструмента не найден: ", full_path)
+		# Можно добавить воспроизведение звука по умолчанию, если файл отсутствует
+		# play_sfx(DEFAULT_SELECT_SOUND) # Или другой звук по умолчанию
+# --- КОНЕЦ НОВОЙ ФУНКЦИИ ---

@@ -420,6 +420,11 @@ func _on_instrument_selected(instrument_type: String):
 		instrument_btn.text = "Инструмент: " + instrument_name
 	print("SongSelect.gd: Выбран инструмент: ", instrument_type)
 	
+	# --- НОВАЯ СТРОКА ---
+	if music_manager:
+		music_manager.play_instrument_select_sound(instrument_type)
+	# --- КОНЕЦ НОВОЙ СТРОКИ ---
+	
 	if song_details_manager:
 		song_details_manager.set_current_instrument(current_instrument)
 		song_details_manager._update_play_button_state()

@@ -38,9 +38,10 @@ func _ready():
 
 func _on_percussion_pressed():
 	print("InstrumentSelector.gd: Нажата кнопка Перкуссия!")
-	if music_manager and music_manager.has_method("play_select_sound"):
-		music_manager.play_select_sound()
-		print("InstrumentSelector.gd: Воспроизведен звук select")
+	# Убираем вызов music_manager.play_select_sound()
+	# if music_manager and music_manager.has_method("play_select_sound"):
+	#	music_manager.play_select_sound()
+	#	print("InstrumentSelector.gd: Воспроизведен звук select")
 	
 	emit_signal("instrument_selected", "drums")
 	emit_signal("selector_closed")
