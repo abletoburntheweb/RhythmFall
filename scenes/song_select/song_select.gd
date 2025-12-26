@@ -420,10 +420,8 @@ func _on_instrument_selected(instrument_type: String):
 		instrument_btn.text = "Инструмент: " + instrument_name
 	print("SongSelect.gd: Выбран инструмент: ", instrument_type)
 	
-	# --- НОВАЯ СТРОКА ---
 	if music_manager:
 		music_manager.play_instrument_select_sound(instrument_type)
-	# --- КОНЕЦ НОВОЙ СТРОКИ ---
 	
 	if song_details_manager:
 		song_details_manager.set_current_instrument(current_instrument)
@@ -556,6 +554,7 @@ func cleanup_before_exit():
 
 func _on_bpm_analysis_started():
 	if analyze_bpm_button:
+		analyze_bpm_button.text = "Вычисление..."
 		analyze_bpm_button.disabled = true
 	print("SongSelect.gd: BPM анализ начат.")
 
@@ -598,6 +597,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 
 	print("SongSelect.gd: BPM анализ завершён. BPM: ", bpm_value)
 	if analyze_bpm_button:
+		analyze_bpm_button.text = "Готово"
 		analyze_bpm_button.disabled = false
 
 func _on_bpm_analysis_error(error_message: String):
@@ -607,7 +607,8 @@ func _on_bpm_analysis_error(error_message: String):
 
 	print("SongSelect.gd: Ошибка BPM анализа: ", error_message)
 	if analyze_bpm_button:
-		analyze_bpm_button.disabled = false
+		analyze_bpm_button.text = "Ошибка вычисления" 
+		analyze_bpm_button.disabled = false 
 
 
 func _on_song_edited(song_data: Dictionary):

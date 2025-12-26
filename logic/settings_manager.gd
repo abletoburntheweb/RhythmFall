@@ -177,14 +177,17 @@ func get_fullscreen() -> bool:
 
 func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
+	print("SettingsManager: set_fullscreen вызван с enabled = ", enabled)
 	_save_settings()
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED)
-	if not enabled:
-		DisplayServer.window_set_size(Vector2i(1920, 1080))
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-		var screen_size = DisplayServer.screen_get_size()
-		var window_size = Vector2i(1920, 1080)
-		DisplayServer.window_set_position((screen_size - window_size) / 2)
+
+	var mode = DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED
+	DisplayServer.window_set_mode(mode)
+
+	if enabled:
+		print("SettingsManager: Установлен полноэкранный режим.")
+	else:
+		print("SettingsManager: Установлен оконный режим. Размер и возможность изменения размера остаются как были.")
+
 
 func get_enable_debug_menu() -> bool:
 	return settings.get("enable_debug_menu", default_settings["enable_debug_menu"])
