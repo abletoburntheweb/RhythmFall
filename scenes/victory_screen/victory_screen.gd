@@ -15,6 +15,7 @@ var calculated_combo_multiplier: float = 1.0
 var calculated_total_notes: int = 0
 var calculated_missed_notes: int = 0
 var perfect_hits_this_level: int = 0
+var hit_notes_this_level: int = 0
 
 var results_manager = null
 
@@ -30,6 +31,8 @@ var music_manager = null
 @onready var accuracy_label: Label = $StatsFrame/AccuracyLabel
 @onready var grade_label: Label = $StatsFrame/GradeLabel
 @onready var currency_label: Label = $StatsFrame/CurrencyLabel
+@onready var hit_notes_label: Label = $StatsFrame/HitNotesLabel 
+@onready var missed_notes_label: Label = $StatsFrame/MissedNotesLabel 
 @onready var replay_button: Button = $ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
 
@@ -144,7 +147,7 @@ func set_achievement_system(ach_sys):
 	else:
 		print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager не имеет метода set_achievement_system или не установлен.")
 
-func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0):
+func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0, p_hit_notes: int = 0):
 	score = p_score
 	combo = p_combo
 	max_combo = p_max_combo
@@ -160,6 +163,7 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	calculated_total_notes = p_total_notes
 	calculated_missed_notes = p_missed_notes
 	perfect_hits_this_level = p_perfect_hits
+	hit_notes_this_level = p_hit_notes 
 	
 	earned_currency = _calculate_currency_new()
 
@@ -205,8 +209,24 @@ func _deferred_update_ui():
 	
 	if is_instance_valid(currency_label):
 		currency_label.text = "Валюта за уровень: %d" % earned_currency 
-		
+
+	if is_instance_valid(hit_notes_label):
+		hit_notes_label.text = "Попаданий: %d" % hit_notes_this_level 
+	if is_instance_valid(missed_notes_label):
+		missed_notes_label.text = "Промахов: %d" % calculated_missed_notes
+
 	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_player_data_manager"):
+		var player_data_manager = game_engine.get_player_data_manager()
+		if player_data_manager:
+			player_data_manager.add_hit_notes(hit_notes_this_level)
+			player_data_manager.add_missed_notes(calculated_missed_notes)
+			print("VictoryScreen.gd: Обновлены глобальные счётчики: Попаданий +%d, Промахов +%d" % [hit_notes_this_level, calculated_missed_notes])
+		else:
+			printerr("VictoryScreen.gd: Не удалось получить player_data_manager для обновления статистики.")
+	else:
+		printerr("VictoryScreen.gd: Не удалось получить game_engine или метод get_player_data_manager для обновления статистики.")
+
 	if game_engine and game_engine.has_method("get_player_data_manager"):
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:

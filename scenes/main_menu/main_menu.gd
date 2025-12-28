@@ -2,137 +2,98 @@
 extends Control
 
 var transitions = null
-
+var music_manager = null
 
 var is_game_open = false
+
+var button_configs = {
+	"PlayButton": _on_play_pressed,
+	"SongSelectButton": _on_song_select_pressed,
+	"AchievementsButton": _on_achievements_pressed,
+	"ShopButton": _on_shop_pressed,
+	"ProfileButton": _on_profile_pressed,
+	"SettingsButton": _on_settings_pressed,
+	"ExitButton": _on_exit_pressed,
+}
 
 func _ready():
 	print("MainMenu.gd: _ready вызван")
 
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
+		music_manager = game_engine.get_music_manager()
 		if music_manager:
 			print("MainMenu.gd: MusicManager получен через GameEngine.get_music_manager().")
-			music_manager.play_menu_music() 
+			music_manager.play_menu_music()
 		else:
 			printerr("MainMenu.gd: MusicManager не найден через GameEngine.get_music_manager()!")
 	else:
 		printerr("MainMenu.gd: Не удалось получить GameEngine или метод get_music_manager()!")
+		
+	var all_buttons_connected = true
+	for button_name in button_configs:
+		var button = get_node_or_null(button_name)
+		if button:
+			button.pressed.connect(button_configs[button_name])
+			print("MainMenu.gd: Подключён %s" % button_name)
+		else:
+			push_error("MainMenu.gd: ОШИБКА! Узел $%s не найден!" % button_name)
+			all_buttons_connected = false
 
-	var play_btn = $PlayButton
-	if play_btn:
-		play_btn.pressed.connect(_on_play_pressed)
-		print("MainMenu.gd: Подключён PlayButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $PlayButton не найден!")
-
-	var song_select_btn = $SongSelectButton
-	if song_select_btn:
-		song_select_btn.pressed.connect(_on_song_select_pressed)
-		print("MainMenu.gd: Подключён SongSelectButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $SongSelectButton не найден!")
-
-	var achievements_btn = $AchievementsButton
-	if achievements_btn:
-		achievements_btn.pressed.connect(_on_achievements_pressed)
-		print("MainMenu.gd: Подключён AchievementsButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $AchievementsButton не найден!")
-
-	var shop_btn = $ShopButton
-	if shop_btn:
-		shop_btn.pressed.connect(_on_shop_pressed)
-		print("MainMenu.gd: Подключён ShopButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $ShopButton не найден!")
-
-	var settings_btn = $SettingsButton
-	if settings_btn:
-		settings_btn.pressed.connect(_on_settings_pressed)
-		print("MainMenu.gd: Подключён SettingsButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $SettingsButton не найден!")
-
-	var exit_btn = $ExitButton
-	if exit_btn:
-		exit_btn.pressed.connect(_on_exit_pressed)
-		print("MainMenu.gd: Подключён ExitButton")
-	else:
-		push_error("MainMenu.gd: ОШИБКА! Узел $ExitButton не найден!")
-
-	if play_btn and song_select_btn and achievements_btn and shop_btn and settings_btn and exit_btn:
+	if all_buttons_connected:
 		print("MainMenu загружен")
 
 func set_transitions(transitions_instance):
 	transitions = transitions_instance
-	print("MainMenu.gd: Transitions инстанс получен")
+
+func _play_select_sound():
+	if music_manager:
+		music_manager.play_select_sound()
+
+func _stop_music():
+	if music_manager:
+		music_manager.stop_music()
+
+func _play_menu_music():
+	if music_manager:
+		music_manager.play_menu_music()
 
 func _on_play_pressed():
-	print("Кнопка ИГРАТЬ нажата")
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.stop_music()
+	_stop_music()
 	if transitions:
 		transitions.open_game()
 
 func _on_song_select_pressed():
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.stop_music()
+	_stop_music()
 	if transitions:
 		transitions.open_song_select()
 
 func _on_achievements_pressed():
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.play_select_sound()
+	_play_select_sound()
 	if transitions:
 		transitions.open_achievements()
 
 func _on_shop_pressed():
-	var game_engine = get_parent() 
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.play_select_sound()
+	_play_select_sound()
 	if transitions:
 		transitions.open_shop()
 
+func _on_profile_pressed(): 
+	_play_select_sound()
+	if transitions:
+		transitions.open_profile()
+
 func _on_settings_pressed():
-	var game_engine = get_parent() 
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.play_select_sound()
+	_play_select_sound()
 	if transitions:
 		transitions.open_settings()
 
 func _on_exit_pressed():
-	print("MainMenu.gd: Кнопка ВЫХОД нажата") 
-	var game_engine = get_parent() 
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.stop_music()
+	_stop_music()
 	if transitions:
-		print("MainMenu.gd: Вызываю transitions.exit_game()")
 		transitions.exit_game()
-	else:
-		print("MainMenu.gd: ОШИБКА! Переменная transitions не установлена!")
 
 func exit_to_main_menu():
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager:
-			music_manager.play_menu_music()
+	_play_menu_music()
 	if transitions:
 		transitions.exit_to_main_menu()

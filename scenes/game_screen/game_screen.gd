@@ -395,10 +395,11 @@ func end_game():
 		var debug_accuracy = score_manager.get_accuracy()
 		var debug_perfect_hits = perfect_hits_this_level
 		var debug_missed_notes = score_manager.get_missed_notes_count()
+		var debug_hit_notes = score_manager.get_hit_notes_count()
 		print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d, Пропущено=%d" % [
 			debug_score, debug_combo, debug_max_combo, debug_accuracy, debug_perfect_hits, debug_missed_notes
 		])
-		
+
 		new_victory_screen.set_victory_data(
 			debug_score,      
 			debug_combo,    
@@ -408,7 +409,8 @@ func end_game():
 			score_manager.get_combo_multiplier(), 
 			note_manager.get_spawn_queue_size(), 
 			debug_missed_notes,
-			debug_perfect_hits 
+			debug_perfect_hits,
+			debug_hit_notes 
 		)
 		
 		if new_victory_screen.has_method("set_results_manager") and results_manager:

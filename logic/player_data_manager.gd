@@ -26,6 +26,8 @@ var data: Dictionary = {
 	"drum_perfect_hits_in_level": 0,
 	"current_snare_streak": 0,
 	"total_drum_perfect_hits": 0,   
+	"total_notes_hit": 0,
+	"total_notes_missed": 0,
 }
 
 var achievement_manager = null
@@ -73,6 +75,8 @@ func _load():
 			var loaded_drum_perfect_hits_in_level = int(json_result.get("drum_perfect_hits_in_level", 0))
 			var loaded_current_snare_streak = int(json_result.get("current_snare_streak", 0))
 			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
+			var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
+			var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0)) 
 			
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
@@ -89,6 +93,8 @@ func _load():
 			data["drum_perfect_hits_in_level"] = loaded_drum_perfect_hits_in_level
 			data["current_snare_streak"] = loaded_current_snare_streak 
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
+			data["total_notes_hit"] = loaded_total_notes_hit
+			data["total_notes_missed"] = loaded_total_notes_missed
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -264,6 +270,10 @@ func load_save_data(save_dict: Dictionary):
 		data["current_snare_streak"] = int(save_dict["current_snare_streak"])
 	if save_dict.has("total_drum_perfect_hits"):
 		data["total_drum_perfect_hits"] = int(save_dict["total_drum_perfect_hits"])
+	if save_dict.has("total_notes_hit"):
+		data["total_notes_hit"] = int(save_dict["total_notes_hit"])
+	if save_dict.has("total_notes_missed"):
+		data["total_notes_missed"] = int(save_dict["total_notes_missed"])
 	if save_dict.has("last_login_date"):
 		data["last_login_date"] = save_dict["last_login_date"]
 	if save_dict.has("login_streak"):
@@ -285,6 +295,8 @@ func reset_progress():
 	data["drum_perfect_hits_in_level"] = 0
 	data["current_snare_streak"] = 0  
 	data["total_drum_perfect_hits"] = 0
+	data["total_notes_hit"] = 0
+	data["total_notes_missed"] = 0
 
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
@@ -400,3 +412,22 @@ func add_total_drum_perfect_hit():
 	var new_total = current_total + 1
 	data["total_drum_perfect_hits"] = new_total
 	_save()
+
+func add_hit_notes(count: int):
+	var current_hits = int(data.get("total_notes_hit", 0))
+	data["total_notes_hit"] = current_hits + count
+	_save() 
+
+func add_missed_notes(count: int):
+	var current_misses = int(data.get("total_notes_missed", 0))
+	data["total_notes_missed"] = current_misses + count
+	_save() 
+
+func get_total_notes_hit() -> int:
+	return int(data.get("total_notes_hit", 0))
+
+func get_total_notes_missed() -> int:
+	return int(data.get("total_notes_missed", 0))
+
+func get_total_notes_played() -> int: 
+	return get_total_notes_hit() + get_total_notes_missed()

@@ -49,29 +49,38 @@ offset_right = 1085.0
 offset_bottom = 380.0
 text = "ДОСТИЖЕНИЯ"
 
-[node name="ShopButton" type="Button" parent="."]
+[node name="ProfileButton" type="Button" parent="."]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 0
 offset_left = 835.0
 offset_top = 400.0
 offset_right = 1085.0
 offset_bottom = 460.0
-text = "МАГАЗИН"
+text = "ПРОФИЛЬ"
 
-[node name="SettingsButton" type="Button" parent="."]
+[node name="ShopButton" type="Button" parent="."]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 0
 offset_left = 835.0
 offset_top = 480.0
 offset_right = 1085.0
 offset_bottom = 540.0
-text = "НАСТРОЙКИ"
+text = "МАГАЗИН"
 
-[node name="ExitButton" type="Button" parent="."]
+[node name="SettingsButton" type="Button" parent="."]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 0
 offset_left = 835.0
 offset_top = 560.0
 offset_right = 1085.0
 offset_bottom = 620.0
+text = "НАСТРОЙКИ"
+
+[node name="ExitButton" type="Button" parent="."]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 0
+offset_left = 835.0
+offset_top = 640.0
+offset_right = 1085.0
+offset_bottom = 700.0
 text = "ВЫЙТИ"

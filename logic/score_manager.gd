@@ -8,6 +8,7 @@ var combo_multiplier: float = 1.0
 var base_hit_points: int = 100
 var total_notes: int = 0
 var missed_notes: int = 0
+var hit_notes: int = 0
 var accuracy: float = 100.0
 var game_screen
 
@@ -20,6 +21,7 @@ func add_score(hit_type: String = "perfect") -> int:
 	max_combo = max(max_combo, combo)
 	var final_points = int(base_hit_points * combo_multiplier)
 	score += final_points
+	hit_notes += 1
 	print("[ScoreManager] %s hit! +%d -> %d (x%.1f) | Combo: %d | Total: %d" % [hit_type, base_hit_points, final_points, combo_multiplier, combo, score])
 	return final_points
 
@@ -76,6 +78,9 @@ func get_accuracy() -> float:
 	
 func get_missed_notes_count() -> int:
 	return missed_notes
+
+func get_hit_notes_count() -> int:
+	return hit_notes
 	
 func set_accuracy(new_accuracy: float):
 	accuracy = clampf(new_accuracy, 0.0, 100.0)

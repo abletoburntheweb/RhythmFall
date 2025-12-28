@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4tpd08i2ypaq"]
+
+[ext_resource type="Script" uid="uid://bqa01mcntirud" path="res://scenes/profile/profile_screen.gd" id="1_1k4fv"]
+
+[node name="ProfileScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1k4fv")
+
+[node name="MainContent" type="MarginContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MainVBox" type="VBoxContainer" parent="MainContent"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MainContent/MainVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Назад	"
+
+[node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Профиль"
+horizontal_alignment = 1
+
+[node name="StatsVBox" type="VBoxContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+
+[node name="LevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Завершено уровней: 0"
+
+[node name="DrumLevelsContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+
+[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/DrumLevelsContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="DrumLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/DrumLevelsContainer"]
+layout_mode = 2
+text = "Перкуссия: 0"
+
+[node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Точных попаданий: 0"
+
+[node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Промахов: 0"
+
+[node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Заработано всего: 0"
+
+[node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Потрачено: 0"
