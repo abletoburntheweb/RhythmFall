@@ -51,13 +51,62 @@ layout_mode = 2
 layout_mode = 2
 text = "Перкуссия: 0"
 
+[node name="FavoriteGenreLabel2" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Любимый жанр: Н/Д"
+
+[node name="FavoriteTrackLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Любимый трек: Н/Д"
+
+[node name="OverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Общая точность: 0.00%"
+
+[node name="DrumOverallAccuracyContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+
+[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/DrumOverallAccuracyContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="DrumOverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/DrumOverallAccuracyContainer"]
+layout_mode = 2
+text = "Перкуссия: 0"
+
+[node name="PlayTimeLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Времени в игре: 00:00"
+
 [node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 text = "Точных попаданий: 0"
 
+[node name="TotalDrumHitsContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+
+[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumHitsContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TotalDrumHitsLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumHitsContainer"]
+layout_mode = 2
+text = "Перкуссия: 0"
+
 [node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 text = "Промахов: 0"
+
+[node name="TotalDrumMissesContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+
+[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumMissesContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumMissesContainer"]
+layout_mode = 2
+text = "Перкуссия: 0"
 
 [node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
@@ -66,3 +115,7 @@ text = "Заработано всего: 0"
 [node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 text = "Потрачено: 0"
+
+[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Любимый жанр: Н/Д"
