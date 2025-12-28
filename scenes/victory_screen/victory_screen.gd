@@ -231,7 +231,34 @@ func _deferred_update_ui():
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
-			player_data_manager.add_perfect_hits_this_level(perfect_hits_this_level)
+			player_data_manager.add_perfect_hits(perfect_hits_this_level)
+
+			var current_max_combo = player_data_manager.data.get("max_combo_ever", 0)
+			if max_combo > current_max_combo:
+				player_data_manager.data["max_combo_ever"] = max_combo
+				player_data_manager._save()
+				print("VictoryScreen.gd: Обновлен рекордный комбо: ", max_combo)
+				
+			var current_max_drum_combo = player_data_manager.data.get("max_drum_combo_ever", 0)
+			var instrument_used_for_combo_check = song_info.get("instrument", "standard")
+			if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
+				player_data_manager.data["max_drum_combo_ever"] = max_combo
+				player_data_manager._save()
+				print("VictoryScreen.gd: Обновлен рекордный комбо на барабанах: ", max_combo)
+
+			var instrument_used_for_drums = song_info.get("instrument", "standard")
+			if instrument_used_for_drums == "drums":
+				var current_drum_hits = player_data_manager.data.get("total_drum_hits", 0)
+				var new_drum_hits = current_drum_hits + hit_notes_this_level
+				player_data_manager.data["total_drum_hits"] = new_drum_hits
+				print("VictoryScreen.gd: Обновлены барабанные попадания: +%d, всего: %d" % [hit_notes_this_level, new_drum_hits])
+				
+				var current_drum_misses = player_data_manager.data.get("total_drum_misses", 0)
+				var new_drum_misses = current_drum_misses + calculated_missed_notes
+				player_data_manager.data["total_drum_misses"] = new_drum_misses
+				print("VictoryScreen.gd: Обновлены барабанные промахи: +%d, всего: %d" % [calculated_missed_notes, new_drum_misses])
+				
+				player_data_manager._save()
 
 			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
 

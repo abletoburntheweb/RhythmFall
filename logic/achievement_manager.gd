@@ -412,7 +412,6 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["total_earned_currency"] = 0
 	pdm.data["levels_completed"] = 0
 
-	pdm.data["total_perfect_hits"] = 0
 	pdm.data["drum_levels_completed"] = 0
 	pdm.data["drum_perfect_hits_in_level"] = 0
 	pdm.data["current_snare_streak"] = 0
@@ -422,12 +421,12 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 
 	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")
 
-func check_rhythm_master_achievement(total_perfect_hits: int):
+func check_rhythm_master_achievement(total_notes_hit: int):
 	var rhythm_master_id = 28
 	for achievement in achievements:
 		if achievement.id == rhythm_master_id and not achievement.get("unlocked", false):
-			achievement.current = total_perfect_hits 
-			if total_perfect_hits >= 1000:
+			achievement.current = total_notes_hit 
+			if total_notes_hit >= 1000:  
 				_perform_unlock(achievement)
 			break 
 			

@@ -1,4 +1,3 @@
-# logic/player_data_manager.gd
 class_name PlayerDataManager 
 extends RefCounted
 
@@ -21,7 +20,6 @@ var data: Dictionary = {
 	"last_login_date": "",
 	"login_streak": 0,
 	"levels_completed": 0,
-	"total_perfect_hits": 0,
 	"drum_levels_completed": 0,      
 	"drum_perfect_hits_in_level": 0,
 	"current_snare_streak": 0,
@@ -70,7 +68,6 @@ func _load():
 			var loaded_spent_currency = int(json_result.get("spent_currency", 0))
 			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
 			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
-			var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
 			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
 			var loaded_drum_perfect_hits_in_level = int(json_result.get("drum_perfect_hits_in_level", 0))
 			var loaded_current_snare_streak = int(json_result.get("current_snare_streak", 0))
@@ -88,7 +85,6 @@ func _load():
 			data["spent_currency"] = loaded_spent_currency
 			data["total_earned_currency"] = loaded_total_earned_currency
 			data["levels_completed"] = loaded_levels_completed
-			data["total_perfect_hits"] = loaded_total_perfect_hits
 			data["drum_levels_completed"] = loaded_drum_levels_completed
 			data["drum_perfect_hits_in_level"] = loaded_drum_perfect_hits_in_level
 			data["current_snare_streak"] = loaded_current_snare_streak 
@@ -125,9 +121,12 @@ func _save():
 		active_items_clean["Misc"] = data["active_items"]["Misc"]
 	data["active_items"] = active_items_clean
 
+	var data_to_save = data.duplicate(true)
+	data_to_save.erase("total_perfect_hits")
+
 	var file_access = FileAccess.open(PLAYER_DATA_PATH, FileAccess.WRITE)
 	if file_access:
-		var json_text = JSON.stringify(data, "\t") 
+		var json_text = JSON.stringify(data_to_save, "\t") 
 		file_access.store_string(json_text)
 		file_access.close()
 		print("PlayerDataManager.gd: Данные игрока сохранены в ", PLAYER_DATA_PATH)
@@ -169,12 +168,12 @@ func _trigger_currency_achievement_check():
 		if achievement_system:
 			achievement_system.on_currency_changed()
 
-func add_perfect_hits_this_level(count: int):
-	var current_hits = int(data.get("total_perfect_hits", 0))
+func add_perfect_hits(count: int):
+	var current_hits = int(data.get("total_notes_hit", 0))
 	var new_total = current_hits + count
-	data["total_perfect_hits"] = new_total
+	data["total_notes_hit"] = new_total
 	_save()
-	print("[PlayerDataManager] Совершенных попаданий за уровень добавлено: %d. Общий счёт: %d" % [count, new_total])
+	print("[PlayerDataManager] Совершенных попаданий добавлено: %d. Общий счёт: %d" % [count, new_total])
 	_trigger_perfect_hit_achievement_check()
 
 func _trigger_perfect_hit_achievement_check():
@@ -260,8 +259,6 @@ func load_save_data(save_dict: Dictionary):
 		data["spent_currency"] = int(save_dict["spent_currency"])
 	if save_dict.has("total_earned_currency"):
 		data["total_earned_currency"] = int(save_dict["total_earned_currency"])
-	if save_dict.has("total_perfect_hits"):
-		data["total_perfect_hits"] = int(save_dict["total_perfect_hits"])
 	if save_dict.has("drum_levels_completed"):
 		data["drum_levels_completed"] = int(save_dict["drum_levels_completed"])
 	if save_dict.has("drum_perfect_hits_in_level"):
@@ -290,7 +287,6 @@ func reset_progress():
 	data["unlocked_achievement_ids"] = PackedInt32Array() 
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
-	data["total_perfect_hits"] = 0
 	data["drum_levels_completed"] = 0
 	data["drum_perfect_hits_in_level"] = 0
 	data["current_snare_streak"] = 0  
@@ -361,8 +357,6 @@ func _trigger_level_achievement_check():
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
 
-func get_total_perfect_hits() -> int:
-	return int(data.get("total_perfect_hits", 0))
 
 func add_drum_level_completed():
 	var current_count = int(data.get("drum_levels_completed", 0))

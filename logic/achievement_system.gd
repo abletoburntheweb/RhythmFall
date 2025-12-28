@@ -59,8 +59,8 @@ func on_notes_generated():
 	achievement_manager.save_achievements() 
 
 func on_perfect_hit_made():
-	var total_perfect_hits = player_data_manager.get_total_perfect_hits()
-	achievement_manager.check_rhythm_master_achievement(total_perfect_hits) 
+	var total_notes_hit = player_data_manager.get_total_notes_hit()
+	achievement_manager.check_rhythm_master_achievement(total_notes_hit) 
 	achievement_manager.save_achievements()
 
 func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
