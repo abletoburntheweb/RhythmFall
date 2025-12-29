@@ -362,6 +362,61 @@
 			"total": 1.0,
 			"unlock_date": "29 Дек 2025, 03:48",
 			"unlocked": true
+		},
+		{
+			"category": "playtime",
+			"current": 3244,
+			"description": "Провести в игре 1 час",
+			"id": 34.0,
+			"image": "res://assets/achievements/music_lover_beginner.png",
+			"title": "Начинающий меломан",
+			"total": 3600.0,
+			"unlock_date": null,
+			"unlocked": false
+		},
+		{
+			"category": "playtime",
+			"current": 3244,
+			"description": "Провести в игре 5 часов",
+			"id": 35.0,
+			"image": "res://assets/achievements/passionate_listener.png",
+			"title": "Страстный слушатель",
+			"total": 18000.0,
+			"unlock_date": null,
+			"unlocked": false
+		},
+		{
+			"category": "playtime",
+			"current": 3244,
+			"description": "Провести в игре 10 часов",
+			"id": 36.0,
+			"image": "res://assets/achievements/rhythm_fan.png",
+			"title": "Поклонник ритма",
+			"total": 36000.0,
+			"unlock_date": null,
+			"unlocked": false
+		},
+		{
+			"category": "playtime",
+			"current": 3244,
+			"description": "Провести в игре 50 часов",
+			"id": 37.0,
+			"image": "res://assets/achievements/syncopation_master.png",
+			"title": "Мастер синкоп",
+			"total": 180000.0,
+			"unlock_date": null,
+			"unlocked": false
+		},
+		{
+			"category": "playtime",
+			"current": 3244,
+			"description": "Провести в игре 200 часов",
+			"id": 38.0,
+			"image": "res://assets/achievements/stage_legend.png",
+			"title": "Легенда сцены",
+			"total": 720000.0,
+			"unlock_date": null,
+			"unlocked": false
 		}
 	]
 }

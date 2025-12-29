@@ -44,7 +44,6 @@ func _init():
 	_load()
 	_total_play_time_seconds = _play_time_string_to_seconds(data.get("total_play_time", "00:00"))
 
-
 	var default_items = [
 		"kick_default",
 		"snare_default", 
@@ -154,6 +153,12 @@ func get_currency() -> int:
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
+	if game_engine_reference:
+		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+		if achievement_system and achievement_system.has_method("on_playtime_changed"):
+			self.total_play_time_changed.connect(achievement_system.on_playtime_changed)
+		else:
+			printerr("[PlayerDataManager] Не удалось подключить сигнал total_play_time_changed к AchievementSystem!")
 	
 func add_delayed_achievement(achievement_data: Dictionary):
 	delayed_achievements.append(achievement_data)
@@ -478,3 +483,6 @@ func add_play_time_seconds(seconds_to_add: int):
 
 func get_total_play_time_formatted() -> String:
 	return data.get("total_play_time", "00:00")
+
+func get_total_play_time_seconds() -> int:
+	return _total_play_time_seconds

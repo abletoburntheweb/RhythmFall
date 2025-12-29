@@ -325,7 +325,7 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 		if item.get("price", 0) > 0: 
 			purchasable_items.append(item)
 
-	var total_purchasable_items = purchasable_items.size()
+	var total_purchasable_items = purchasable_items.size() 
 	var total_unlocked_items = 0
 	var shop_item_ids = []
 	var unlocked_item_ids = []
@@ -334,7 +334,7 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 		unlocked_item_ids = pdm.get_items()  
 		total_unlocked_items = unlocked_item_ids.size()
 
-		for item in purchasable_items:
+		for item in purchasable_items: 
 			shop_item_ids.append(item.get("item_id", ""))
 
 	var missing_items_count = 0
@@ -496,3 +496,30 @@ func check_replay_level_achievement(song_path: String):
 	
 	unlock_achievement_by_id(achievement_id)
 	print("AchievementManager: Ачивка 'Музыкальная память' разблокирована для песни %s." % song_path)
+
+func check_playtime_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		print("[AchievementManager] check_playtime_achievements: player_data_mgr не передан.")
+		return
+
+	var total_play_time_seconds = pdm.get_total_play_time_seconds() 
+	print("[AchievementManager] Проверка ачивок времени. Всего секунд: ", total_play_time_seconds)
+
+	for achievement in achievements:
+		if achievement.get("category", "") == "playtime":
+			var achievement_id = achievement.id
+			var required_seconds = achievement.get("total", 0.0)
+			var current_progress = achievement.get("current", 0.0)
+
+			achievement.current = total_play_time_seconds
+			print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, "). Требуется: ", required_seconds, " сек. Текущий прогресс: ", total_play_time_seconds, " сек.")
+
+			if not achievement.get("unlocked", false):
+				if total_play_time_seconds >= required_seconds:
+					_perform_unlock(achievement)
+					print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") разблокирована!")
+				else:
+					print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") пока не разблокирована.")
+			else:
+				print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") уже разблокирована.")

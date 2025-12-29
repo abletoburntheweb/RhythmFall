@@ -74,3 +74,8 @@ func process_delayed_achievements():
 
 func check_drum_storm_achievement():
 	achievement_manager.check_drum_storm_achievement(player_data_manager)
+
+func on_playtime_changed(new_time_formatted: String):
+	print("[AchievementSystem] on_playtime_changed вызван. Новое время: ", new_time_formatted)
+	achievement_manager.check_playtime_achievements(player_data_manager)
+	achievement_manager.save_achievements()
