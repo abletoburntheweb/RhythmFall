@@ -63,7 +63,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 		results_list.set_item_selectable(header_item_index, false) 
 
 		for result in group_info.results:
-			var original_datetime_str = result.get("result_datetime", "N/A")
+			var original_datetime_str = result.get("date", "N/A")
 			var formatted_date_str = "N/A"
 			if original_datetime_str != "N/A":
 				if original_datetime_str.length() >= 19 and original_datetime_str[4] == '-' and original_datetime_str[7] == '-' and original_datetime_str[10] == ' ' and original_datetime_str[13] == ':' and original_datetime_str[16] == ':':
@@ -163,7 +163,6 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		"date": result_datetime if result_datetime != "" else Time.get_datetime_string_from_system(true, true),
 		"grade": grade,
 		"grade_color": { "r": grade_color.r, "g": grade_color.g, "b": grade_color.b, "a": grade_color.a },
-		"result_datetime": result_datetime
 	}
 	results.append(new_result)
 	
