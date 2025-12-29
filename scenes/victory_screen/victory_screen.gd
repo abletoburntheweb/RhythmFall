@@ -238,13 +238,19 @@ func _deferred_update_ui():
 				player_data_manager.data["max_combo_ever"] = max_combo
 				player_data_manager._save()
 				print("VictoryScreen.gd: Обновлен рекордный комбо: ", max_combo)
-				
+			else:
+				print("VictoryScreen.gd: max_combo (", max_combo, ") не превышает текущий max_combo_ever (", current_max_combo, ")")
+
 			var current_max_drum_combo = player_data_manager.data.get("max_drum_combo_ever", 0)
 			var instrument_used_for_combo_check = song_info.get("instrument", "standard")
+			print("VictoryScreen.gd: [ДИАГНОСТИКА] instrument для проверки max_combo: ", instrument_used_for_combo_check, ", max_combo: ", max_combo, ", current_max_drum_combo: ", current_max_drum_combo)
+
 			if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
 				player_data_manager.data["max_drum_combo_ever"] = max_combo
 				player_data_manager._save()
 				print("VictoryScreen.gd: Обновлен рекордный комбо на барабанах: ", max_combo)
+			else:
+				print("VictoryScreen.gd: Условие для обновления max_drum_combo_ever не выполнено.")
 
 			var instrument_used_for_drums = song_info.get("instrument", "standard")
 			if instrument_used_for_drums == "drums":
@@ -277,13 +283,6 @@ func _deferred_update_ui():
 				achievement_manager.notification_mgr = game_engine
 				print("VictoryScreen.gd: [ДИАГНОСТИКА] GameEngine передан в AchievementManager как notification_mgr.")
 
-			var current_drum_streak = 0
-			var current_snare_streak = 0
-			if player_data_manager.has_method("get_current_drum_perfect_hits_streak"):
-				current_drum_streak = player_data_manager.get_current_drum_perfect_hits_streak()
-			if player_data_manager.has_method("get_current_snare_streak"):
-				current_snare_streak = player_data_manager.get_current_snare_streak()
-			
 			var instrument_used = song_info.get("instrument", "standard")
 			var is_drum_mode = (instrument_used == "drums")
 			
@@ -293,23 +292,9 @@ func _deferred_update_ui():
 				var total_drum_levels = player_data_manager.get_drum_levels_completed()
 				print("🥁 Пройдено drum-уровней: ", total_drum_levels)
 			
-			if achievement_system and achievement_system.has_method("process_delayed_achievements"):
-				print("🎯 Обрабатываем отложенные геймплейные ачивки...")
-				achievement_system.process_delayed_achievements()
-			elif achievement_manager and player_data_manager.has_method("get_and_clear_delayed_achievements"):
-				print("🎯 Обрабатываем отложенные геймплейные ачивки (fallback)...")
-				var delayed_data = player_data_manager.get_and_clear_delayed_achievements()
-				for data in delayed_data:
-					if data.get("type") == "drum_streak":
-						var drum_streak = data.get("current_drum_streak", 0)
-						achievement_manager.check_drum_storm_achievement(player_data_manager, drum_streak)
-			
 			if achievement_system:
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
-				
-				achievement_system.on_level_completed(accuracy)
-				if is_drum_mode:
-					achievement_system.on_perfect_hit_in_drum_mode(current_drum_streak, current_snare_streak)
+				achievement_system.on_level_completed(accuracy, is_drum_mode)
 				
 			elif achievement_manager:
 				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
@@ -320,11 +305,10 @@ func _deferred_update_ui():
 				achievement_manager.check_levels_completed_achievement(total_levels_completed)
 				
 				if is_drum_mode:
-					print("🥁 Проверяем drum-ачивки через AchievementManager...")
+					print(" dru Проверяем drum-ачивки через AchievementManager...")
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
-					achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
-			
+
 			if should_save_result_later:
 				var instrument_for_result = song_info.get("instrument", "standard")
 				if instrument_for_result == "drums":

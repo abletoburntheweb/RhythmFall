@@ -21,11 +21,13 @@ var data: Dictionary = {
 	"login_streak": 0,
 	"levels_completed": 0,
 	"drum_levels_completed": 0,      
-	"drum_perfect_hits_in_level": 0,
-	"current_snare_streak": 0,
 	"total_drum_perfect_hits": 0,   
 	"total_notes_hit": 0,
 	"total_notes_missed": 0,
+	"max_combo_ever": 0,             
+	"max_drum_combo_ever": 0,       
+	"total_drum_hits": 0,           
+	"total_drum_misses": 0,         
 }
 
 var achievement_manager = null
@@ -69,11 +71,13 @@ func _load():
 			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
 			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
 			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
-			var loaded_drum_perfect_hits_in_level = int(json_result.get("drum_perfect_hits_in_level", 0))
-			var loaded_current_snare_streak = int(json_result.get("current_snare_streak", 0))
 			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
 			var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
-			var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0)) 
+			var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0))
+			var loaded_max_combo_ever = int(json_result.get("max_combo_ever", 0))
+			var loaded_max_drum_combo_ever = int(json_result.get("max_drum_combo_ever", 0))
+			var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
+			var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
 			
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
@@ -86,11 +90,13 @@ func _load():
 			data["total_earned_currency"] = loaded_total_earned_currency
 			data["levels_completed"] = loaded_levels_completed
 			data["drum_levels_completed"] = loaded_drum_levels_completed
-			data["drum_perfect_hits_in_level"] = loaded_drum_perfect_hits_in_level
-			data["current_snare_streak"] = loaded_current_snare_streak 
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
 			data["total_notes_hit"] = loaded_total_notes_hit
 			data["total_notes_missed"] = loaded_total_notes_missed
+			data["max_combo_ever"] = loaded_max_combo_ever
+			data["max_drum_combo_ever"] = loaded_max_drum_combo_ever
+			data["total_drum_hits"] = loaded_total_drum_hits
+			data["total_drum_misses"] = loaded_total_drum_misses
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -261,16 +267,20 @@ func load_save_data(save_dict: Dictionary):
 		data["total_earned_currency"] = int(save_dict["total_earned_currency"])
 	if save_dict.has("drum_levels_completed"):
 		data["drum_levels_completed"] = int(save_dict["drum_levels_completed"])
-	if save_dict.has("drum_perfect_hits_in_level"):
-		data["drum_perfect_hits_in_level"] = int(save_dict["drum_perfect_hits_in_level"])
-	if save_dict.has("current_snare_streak"):
-		data["current_snare_streak"] = int(save_dict["current_snare_streak"])
 	if save_dict.has("total_drum_perfect_hits"):
 		data["total_drum_perfect_hits"] = int(save_dict["total_drum_perfect_hits"])
 	if save_dict.has("total_notes_hit"):
 		data["total_notes_hit"] = int(save_dict["total_notes_hit"])
 	if save_dict.has("total_notes_missed"):
 		data["total_notes_missed"] = int(save_dict["total_notes_missed"])
+	if save_dict.has("max_combo_ever"):
+		data["max_combo_ever"] = int(save_dict["max_combo_ever"])
+	if save_dict.has("max_drum_combo_ever"):
+		data["max_drum_combo_ever"] = int(save_dict["max_drum_combo_ever"])
+	if save_dict.has("total_drum_hits"):
+		data["total_drum_hits"] = int(save_dict["total_drum_hits"])
+	if save_dict.has("total_drum_misses"):
+		data["total_drum_misses"] = int(save_dict["total_drum_misses"])
 	if save_dict.has("last_login_date"):
 		data["last_login_date"] = save_dict["last_login_date"]
 	if save_dict.has("login_streak"):
@@ -288,11 +298,13 @@ func reset_progress():
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["drum_levels_completed"] = 0
-	data["drum_perfect_hits_in_level"] = 0
-	data["current_snare_streak"] = 0  
 	data["total_drum_perfect_hits"] = 0
 	data["total_notes_hit"] = 0
 	data["total_notes_missed"] = 0
+	data["max_combo_ever"] = 0
+	data["max_drum_combo_ever"] = 0
+	data["total_drum_hits"] = 0
+	data["total_drum_misses"] = 0
 
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
@@ -367,39 +379,6 @@ func add_drum_level_completed():
 
 func get_drum_levels_completed() -> int:
 	return int(data.get("drum_levels_completed", 0))
-
-func update_drum_perfect_hits_streak(increment: bool):
-	if increment:
-		var current_streak = int(data.get("drum_perfect_hits_in_level", 0))
-		var new_streak = current_streak + 1
-		data["drum_perfect_hits_in_level"] = new_streak
-		print("[PlayerDataManager] Барабанная серия увеличена: ", new_streak)
-	else:
-		var current_streak = int(data.get("drum_perfect_hits_in_level", 0))
-		if current_streak > 0: 
-			print("[PlayerDataManager] Барабанная серия сброшена с ", current_streak, " до 0")
-		data["drum_perfect_hits_in_level"] = 0
-
-func get_current_drum_perfect_hits_streak() -> int:
-	return int(data.get("drum_perfect_hits_in_level", 0))
-
-func update_snare_streak(hit_was_snare: bool):
-	var current_streak = int(data.get("current_snare_streak", 0))
-	if hit_was_snare:
-		var new_streak = current_streak + 1
-		data["current_snare_streak"] = new_streak
-		print("[PlayerDataManager] Серия снейров увеличена: ", new_streak)
-	else:
-		if current_streak > 0: 
-			print("[PlayerDataManager] Серия снейров сброшена с ", current_streak, " до 0")
-		data["current_snare_streak"] = 0
-
-func get_current_snare_streak() -> int:
-	return int(data.get("current_snare_streak", 0))
-
-func reset_level_based_counters():
-	data["drum_perfect_hits_in_level"] = 0
-	data["current_snare_streak"] = 0
 
 func add_total_drum_perfect_hit():
 	var current_total = int(data.get("total_drum_perfect_hits", 0))

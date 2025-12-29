@@ -567,9 +567,7 @@ func check_hit(lane: int):
 						player_data_manager = game_engine.get_player_data_manager()
 					
 					if player_data_manager:
-						player_data_manager.update_drum_perfect_hits_streak(true)
 						var is_snare_note = (note.note_type == "SnareNote") 
-						player_data_manager.update_snare_streak(is_snare_note)
 						player_data_manager.add_total_drum_perfect_hit()
 						
 				if sound_factory and music_manager:

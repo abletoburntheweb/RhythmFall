@@ -1,3 +1,4 @@
+# scenes/victory_screen/victory_currency_details.gd
 extends Control
 
 @onready var background: ColorRect = $Background

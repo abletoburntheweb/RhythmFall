@@ -64,17 +64,13 @@ func on_perfect_hit_made():
 	achievement_manager.save_achievements()
 
 func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
-	var player_data = {
-		"current_drum_streak": current_drum_streak,
-		"current_snare_streak": current_snare_streak,
-		"type": "drum_streak"
-	}
-	player_data_manager.add_delayed_achievement(player_data)
+	pass 
 
 func process_delayed_achievements():
 	var delayed_data = player_data_manager.get_and_clear_delayed_achievements()
 	
 	for data in delayed_data:
-		if data.get("type") == "drum_streak":
-			var current_drum_streak = data.get("current_drum_streak", 0)
-			achievement_manager.check_drum_storm_achievement(player_data_manager, current_drum_streak)
+		pass 
+
+func check_drum_storm_achievement():
+	achievement_manager.check_drum_storm_achievement(player_data_manager)

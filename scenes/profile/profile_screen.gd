@@ -50,7 +50,6 @@ func refresh_stats():
 	levels_completed_label.text = "Завершено уровней: %d" % player_data_manager.get_levels_completed()
 	drum_levels_completed_label.text = "Перкуссия: %d" % player_data_manager.get_drum_levels_completed()
 	
-	# Обновляем значения для новых лейблов
 	favorite_genre_label.text = "Любимый жанр: %s" % str(player_data_manager.data.get("favorite_genre", "Н/Д"))
 	favorite_track_label.text = "Любимый трек: %s" % str(player_data_manager.data.get("favorite_track", "Н/Д"))
 	
@@ -62,7 +61,6 @@ func refresh_stats():
 		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
 	overall_accuracy_label.text = "Общая точность: %.2f%%" % overall_accuracy
 	
-	# Точность для барабанов (если есть данные)
 	var total_drum_hits = player_data_manager.data.get("total_drum_hits", 0)
 	var total_drum_misses = player_data_manager.data.get("total_drum_misses", 0)
 	var total_drum_notes = total_drum_hits + total_drum_misses
@@ -71,7 +69,6 @@ func refresh_stats():
 		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
 	drum_overall_accuracy_label.text = "Перкуссия: %.2f%%" % drum_accuracy
 	
-	# Время в игре (пока всегда 00:00, т.к. не отслеживается)
 	var play_time_seconds = player_data_manager.data.get("total_play_time_seconds", 0.0)
 	var play_time_hours = int(play_time_seconds) / 3600
 	var play_time_minutes = (int(play_time_seconds) % 3600) / 60
@@ -83,7 +80,6 @@ func refresh_stats():
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
 	total_drum_misses_label.text = "Перкуссия: %d" % total_drum_misses
 	
-	# Рекордные серии
 	var max_streak = player_data_manager.data.get("max_combo_ever", 0)
 	var max_drum_streak = player_data_manager.data.get("max_drum_combo_ever", 0)
 	max_hit_streak_label.text = "Рекордная серия попаданий подряд: %d" % max_streak

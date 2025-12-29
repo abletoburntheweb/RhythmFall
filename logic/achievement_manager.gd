@@ -436,6 +436,8 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 		print("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
 		return
 
+	print("[AchievementManager] [ДИАГНОСТИКА] check_drum_level_achievements вызван. max_drum_combo_ever: ", pdm.data.get("max_drum_combo_ever", 0), ", total_drum_levels: ", total_drum_levels)
+
 	if total_drum_levels >= 1: 
 		for achievement in achievements:
 			if achievement.id == 29 and not achievement.get("unlocked", false):
@@ -455,18 +457,27 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 				_perform_unlock(achievement)
 			break
 
-func check_drum_storm_achievement(player_data_mgr_override = null, current_drum_streak: int = 0):
+	check_drum_storm_achievement(pdm)
+
+func check_drum_storm_achievement(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
 		print("[AchievementManager] check_drum_storm_achievement: player_data_mgr не передан.")
 		return
 
+	print("[AchievementManager] [ДИАГНОСТИКА] Проверка ачивки 'Барабанный шторм'. Текущее max_drum_combo_ever: ", pdm.data.get("max_drum_combo_ever", 0))
 	for achievement in achievements:
 		if achievement.id == 32 and not achievement.get("unlocked", false):
-			achievement.current = current_drum_streak
-			if current_drum_streak >= 100:
+			var max_drum_combo = pdm.data.get("max_drum_combo_ever", 0)
+			achievement.current = max_drum_combo
+			print("[AchievementManager] [ДИАГНОСТИКА] Ачивка 32 найдена. Установлен current: ", max_drum_combo, ", порог: ", achievement.get("total", 100))
+			if max_drum_combo >= 100: 
+				print("[AchievementManager] [ДИАГНОСТИКА] Порог ачивки 32 достигнут! Разблокировка.")
 				_perform_unlock(achievement)
+			else:
+				print("[AchievementManager] [ДИАГНОСТИКА] Порог ачивки 32 НЕ достигнут.")
 			break
+	print("[AchievementManager] [ДИАГНОСТИКА] Проверка ачивки 'Барабанный шторм' завершена.")
 
 func check_replay_level_achievement(song_path: String):
 	var achievement_id = 33
