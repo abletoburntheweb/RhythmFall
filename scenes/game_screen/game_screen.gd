@@ -367,22 +367,6 @@ func end_game():
 	if auto_player:
 		auto_player.reset()
 	
-	var accuracy = score_manager.get_accuracy()
-	var is_drum_mode = (current_instrument == "drums")
-	
-	var achievement_system = null
-	if game_engine and game_engine.has_method("get_achievement_system"):
-		achievement_system = game_engine.get_achievement_system()
-		print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem получен от GameEngine.")
-	else:
-		print("GameScreen.gd: [ДИАГНОСТИКА] Не удалось получить AchievementSystem от GameEngine.")
-	
-	if achievement_system:
-		print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
-		achievement_system.on_level_completed(accuracy, is_drum_mode)
-	else:
-		printerr("GameScreen.gd: AchievementSystem не найден через GameEngine!")
-	
 	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
 	if victory_scene:
 		var new_victory_screen = victory_scene.instantiate()
@@ -412,6 +396,11 @@ func end_game():
 			debug_perfect_hits,
 			debug_hit_notes 
 		)
+		
+		var achievement_system = null 
+		if game_engine and game_engine.has_method("get_achievement_system"):
+			achievement_system = game_engine.get_achievement_system()
+			print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem получен от GameEngine для VictoryScreen.")
 		
 		if new_victory_screen.has_method("set_results_manager") and results_manager:
 			new_victory_screen.set_results_manager(results_manager)

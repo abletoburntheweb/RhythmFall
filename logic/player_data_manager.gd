@@ -3,6 +3,7 @@ class_name PlayerDataManager
 extends RefCounted
 
 const PLAYER_DATA_PATH = "user://player_data.json" 
+const BEST_GRADES_PATH = "user://best_grades.json" 
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
 	"Snare": "snare_default",
@@ -30,6 +31,15 @@ var data: Dictionary = {
 	"total_drum_hits": 0,           
 	"total_drum_misses": 0,
 	"total_play_time": "00:00", 
+	"grades": {
+		"SS": 0,
+		"S": 0,
+		"A": 0,
+		"B": 0,
+		"C": 0,
+		"D": 0,
+		"F": 0
+	}
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -87,6 +97,16 @@ func _load():
 			var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
 			var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
 
+			var loaded_grades = json_result.get("grades", {
+				"SS": 0,
+				"S": 0,
+				"A": 0,
+				"B": 0,
+				"C": 0,
+				"D": 0,
+				"F": 0
+			})
+
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
 			print("PlayerDataManager.gd: Загружено active_items: ", loaded_active_items)
@@ -106,6 +126,7 @@ func _load():
 			data["total_drum_hits"] = loaded_total_drum_hits
 			data["total_drum_misses"] = loaded_total_drum_misses
 			data["total_play_time"] = loaded_total_play_time 
+			data["grades"] = loaded_grades
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -127,6 +148,8 @@ func _load():
 		print("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
 		_save() 
 
+	_load_best_grades()
+
 func _save():
 	var active_items_clean = {}
 	for category in DEFAULT_ACTIVE_ITEMS:
@@ -138,6 +161,7 @@ func _save():
 
 	var data_to_save = data.duplicate(true)
 	data_to_save.erase("total_perfect_hits")
+	data_to_save.erase("best_grades_per_track")
 
 	var file_access = FileAccess.open(PLAYER_DATA_PATH, FileAccess.WRITE)
 	if file_access:
@@ -147,6 +171,32 @@ func _save():
 		print("PlayerDataManager.gd: Данные игрока сохранены в ", PLAYER_DATA_PATH)
 	else:
 		print("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
+
+func _load_best_grades():
+	var file_access = FileAccess.open(BEST_GRADES_PATH, FileAccess.READ)
+	if file_access:
+		var json_text = file_access.get_as_text()
+		file_access.close()
+		var json_result = JSON.parse_string(json_text)
+		if json_result is Dictionary:
+			data["best_grades_per_track"] = json_result
+			print("PlayerDataManager.gd: Загружены лучшие оценки из ", BEST_GRADES_PATH)
+		else:
+			print("PlayerDataManager.gd: best_grades.json повреждён или не является словарём")
+			data["best_grades_per_track"] = {}
+	else:
+		print("PlayerDataManager.gd: best_grades.json не найден, создаём пустой")
+		data["best_grades_per_track"] = {}
+
+func _save_best_grades():
+	var file_access = FileAccess.open(BEST_GRADES_PATH, FileAccess.WRITE)
+	if file_access:
+		var json_text = JSON.stringify(data["best_grades_per_track"], "\t")
+		file_access.store_string(json_text)
+		file_access.close()
+		print("PlayerDataManager.gd: Лучшие оценки сохранены в ", BEST_GRADES_PATH)
+	else:
+		print("PlayerDataManager.gd: Ошибка при открытии best_grades.json для записи")
 
 func get_currency() -> int:
 	return int(data.get("currency", 0))
@@ -305,6 +355,13 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("total_play_time"): 
 		data["total_play_time"] = str(save_dict["total_play_time"])
 		_total_play_time_seconds = _play_time_string_to_seconds(data["total_play_time"])
+	
+	if save_dict.has("grades"):
+		var loaded_grades = save_dict["grades"]
+		if loaded_grades is Dictionary:
+			data["grades"] = loaded_grades
+		else:
+			print("PlayerDataManager.gd: load_save_data: Поле 'grades' не является словарём, пропускаем.")
 	_save()
 
 func reset_progress():
@@ -324,6 +381,16 @@ func reset_progress():
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
 	data["total_play_time"] = "00:00" 
+	data["grades"] = {
+		"SS": 0,
+		"S": 0,
+		"A": 0,
+		"B": 0,
+		"C": 0,
+		"D": 0,
+		"F": 0
+	}
+
 	_total_play_time_seconds = 0
 
 	data["last_login_date"] = ""
@@ -334,6 +401,8 @@ func reset_progress():
 	data["active_items"] = current_active_items
 
 	_save()
+	data["best_grades_per_track"] = {}
+	_save_best_grades()
 	print("[PlayerDataManager] Прогресс сброшен.")
 
 func reset_profile_statistics():
@@ -356,6 +425,15 @@ func reset_profile_statistics():
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["total_play_time"] = "00:00" 
+	data["grades"] = {
+		"SS": 0,
+		"S": 0,
+		"A": 0,
+		"B": 0,
+		"C": 0,
+		"D": 0,
+		"F": 0
+	}
 
 	_total_play_time_seconds = 0
 
@@ -368,6 +446,8 @@ func reset_profile_statistics():
 	data["last_login_date"] = current_last_login_date
 
 	_save()
+	data["best_grades_per_track"] = {}
+	_save_best_grades()
 	print("[PlayerDataManager] Статистика профиля (включая валюту, время, но не предметы/ачивки/данные аккаунта) сброшена.")
 
 
@@ -390,7 +470,7 @@ func reset_login_streak() -> void:
 	data["login_streak"] = 0
 	data["last_login_date"] = Time.get_date_string_from_system()
 	_save()
-	_trigger_login_achievement_check()
+	_trigger_login_achievement_check()  
 
 func _trigger_login_achievement_check():
 	if game_engine_reference:
@@ -486,3 +566,26 @@ func get_total_play_time_formatted() -> String:
 
 func get_total_play_time_seconds() -> int:
 	return _total_play_time_seconds
+
+func update_best_grade_for_track(song_path: String, new_grade: String):
+	if song_path.is_empty():
+		return
+
+	var grade_order = {"SS": 0, "S": 1, "A": 2, "B": 3, "C": 4, "D": 5, "F": 6}
+	var current_best_grade = data["best_grades_per_track"].get(song_path, "")
+	var new_grade_order = grade_order.get(new_grade, 99)
+	var current_best_order = grade_order.get(current_best_grade, 99)
+
+	if new_grade_order < current_best_order:
+		if current_best_grade != "":
+			var current_count = data["grades"].get(current_best_grade, 0)
+			data["grades"][current_best_grade] = max(0, current_count - 1)
+
+		var new_count = data["grades"].get(new_grade, 0)
+		data["grades"][new_grade] = new_count + 1
+
+		data["best_grades_per_track"][song_path] = new_grade
+
+		_save()  
+		_save_best_grades()  
+		print("PlayerDataManager: Обновлена лучшая оценка для '%s': %s" % [song_path, new_grade])

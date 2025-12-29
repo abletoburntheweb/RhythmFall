@@ -1,4 +1,3 @@
-# scenes/profile/profile_screen.gd
 class_name ProfileScreen
 extends BaseScreen
 
@@ -18,6 +17,11 @@ extends BaseScreen
 @onready var max_drum_hit_streak_label: Label = $MainContent/MainVBox/StatsVBox/MaxDrumHitStreakContainer/MaxDrumHitStreakLabel
 @onready var total_earned_currency_label: Label = $MainContent/MainVBox/StatsVBox/TotalEarnedCurrencyLabel
 @onready var spent_currency_label: Label = $MainContent/MainVBox/StatsVBox/SpentCurrencyLabel
+
+@onready var ss_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SSLabel
+@onready var s_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SLabel
+@onready var a_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/ALabel
+@onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
 
 func _play_time_string_to_seconds(time_str: String) -> int:
 	var parts = time_str.split(":")
@@ -99,6 +103,22 @@ func refresh_stats():
 
 	total_earned_currency_label.text = "Заработано всего: %d" % player_data_manager.data.get("total_earned_currency", 0)
 	spent_currency_label.text = "Потрачено: %d" % player_data_manager.data.get("spent_currency", 0)
+
+	var grades = player_data_manager.data.get("grades", {})
+	var ss_count = grades.get("SS", 0)
+	var s_count = grades.get("S", 0)
+	var a_count = grades.get("A", 0)
+	var b_count = grades.get("B", 0)
+
+	ss_label.text = "SS: %d" % ss_count
+	s_label.text = "S: %d" % s_count
+	a_label.text = "A: %d" % a_count
+	b_label.text = "B: %d" % b_count
+
+	ss_label.modulate = Color.GOLD
+	s_label.modulate = Color.SILVER
+	a_label.modulate = Color.GREEN
+	b_label.modulate = Color.CYAN
 
 func _execute_close_transition():
 	if music_manager:

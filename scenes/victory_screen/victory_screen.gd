@@ -69,8 +69,8 @@ func _get_grade_color(grade: String) -> Color:
 		"SS": return Color.GOLD
 		"S": return Color.SILVER 
 		"A": return Color.GREEN 
-		"B": return Color.BLUE 
-		"C": return Color.HOT_PINK # Color.PURPLE
+		"B": return Color.CYAN 
+		"C": return Color.HOT_PINK
 		"D": return Color.RED
 		"F": return Color.DARK_RED
 		_: return Color.WHITE
@@ -219,9 +219,8 @@ func _deferred_update_ui():
 	if game_engine and game_engine.has_method("get_player_data_manager"):
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
-			player_data_manager.add_hit_notes(hit_notes_this_level)
 			player_data_manager.add_missed_notes(calculated_missed_notes)
-			print("VictoryScreen.gd: Обновлены глобальные счётчики: Попаданий +%d, Промахов +%d" % [hit_notes_this_level, calculated_missed_notes])
+			print("VictoryScreen.gd: Обновлены глобальные счётчики: Промахов +%d" % [calculated_missed_notes])
 		else:
 			printerr("VictoryScreen.gd: Не удалось получить player_data_manager для обновления статистики.")
 	else:
@@ -231,7 +230,7 @@ func _deferred_update_ui():
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
 			player_data_manager.add_currency(earned_currency)
-			player_data_manager.add_perfect_hits(perfect_hits_this_level)
+			player_data_manager.add_perfect_hits(perfect_hits_this_level) 
 
 			var current_max_combo = player_data_manager.data.get("max_combo_ever", 0)
 			if max_combo > current_max_combo:
@@ -287,10 +286,7 @@ func _deferred_update_ui():
 			var is_drum_mode = (instrument_used == "drums")
 			
 			if is_drum_mode:
-				print("🥁 Режим перкуссии - проверяем drum-ачивки...")
-				player_data_manager.add_drum_level_completed()
-				var total_drum_levels = player_data_manager.get_drum_levels_completed()
-				print("🥁 Пройдено drum-уровней: ", total_drum_levels)
+				print(" drums Режим перкуссии - проверяем drum-ачивки...")
 			
 			if achievement_system:
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
@@ -300,10 +296,7 @@ func _deferred_update_ui():
 				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
 				achievement_manager.check_first_level_achievement()
 				achievement_manager.check_perfect_accuracy_achievement(accuracy)
-				player_data_manager.add_completed_level()
-				var total_levels_completed = player_data_manager.get_levels_completed()
-				achievement_manager.check_levels_completed_achievement(total_levels_completed)
-				
+
 				if is_drum_mode:
 					print(" dru Проверяем drum-ачивки через AchievementManager...")
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
@@ -329,6 +322,10 @@ func _deferred_update_ui():
 			else:
 				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
 			
+			var song_path = song_info.get("path", "")
+			if song_path != "":
+				player_data_manager.update_best_grade_for_track(song_path, grade)
+
 			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
 				print("🎯 Показываем *новые* накопленные геймплейные ачивки...")
 				achievement_manager.show_all_delayed_gameplay_achievements()
