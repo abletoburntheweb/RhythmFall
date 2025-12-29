@@ -14,23 +14,32 @@ const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default2.png"
 var achievements: Array[Dictionary] = []
 var filtered_achievements: Array[Dictionary] = []
 var current_filter: String = "Все"
+var achievement_manager: AchievementManager = null
 
 func _ready():
 	var game_engine = get_parent()
 	if game_engine:
 		var trans = null
 		var music_mgr = null
+		var ach_mgr = null
+
 		if game_engine.has_method("get_transitions"):
 			trans = game_engine.get_transitions()
 		if game_engine.has_method("get_music_manager"):
 			music_mgr = game_engine.get_music_manager()
+		if game_engine.has_method("get_achievement_manager"):
+			ach_mgr = game_engine.get_achievement_manager()
 
-		setup_managers(trans, music_mgr, null)
-		
+		setup_managers(trans, music_mgr, null) 
+
+		achievement_manager = ach_mgr
+
 		if not trans:
 			printerr("AchievementsScreen: Не удалось получить Transitions через GameEngine!")
 		if not music_mgr:
 			printerr("AchievementsScreen: Не удалось получить MusicManager через GameEngine!")
+		if not ach_mgr:
+			printerr("AchievementsScreen: Не удалось получить AchievementManager через GameEngine!")
 	else:
 		printerr("AchievementsScreen: GameEngine (get_parent()) не найден!")
 
@@ -180,15 +189,37 @@ func _get_progress_text(achievement: Dictionary) -> String:
 	var current = achievement.get("current", 0)
 	var total = achievement.get("total", 1)
 	var unlocked = achievement.get("unlocked", false)
+	var category = achievement.get("category", "")
+
+	if category == "playtime" and achievement_manager:
+		var formatted_progress = achievement_manager.get_formatted_achievement_progress(achievement.get("id", -1))
+		if formatted_progress:
+			var display_current = formatted_progress.current
+			var raw_total = achievement.get("total", 1.0) 
+
+			var display_total: String
+			if raw_total == floor(raw_total):
+				display_total = str(int(raw_total)) 
+			else:
+				display_total = "%0.2f" % [raw_total] 
+
+			if unlocked:
+				return "%s / %s" % [display_total, display_total]
+			else:
+				return "%s / %s" % [display_current, display_total]
 
 	var display_current = current
-	if unlocked:
+	if unlocked and typeof(current) != TYPE_FLOAT:
 		display_current = min(current, total)
 
 	if typeof(current) == TYPE_BOOL:
 		return "%d / %d" % [int(current), 1]
 	else:
-		return "%d / %d" % [display_current, total]
+		if typeof(display_current) == TYPE_FLOAT:
+			return "%d / %d" % [int(display_current), int(total)]
+		else:
+			return "%d / %d" % [int(display_current), int(total)]
+
 
 
 func _update_counter():
@@ -287,10 +318,10 @@ func _unhandled_input(event):
 		get_viewport().set_input_as_handled()
 
 func _execute_close_transition():
-	if music_manager:
+	if is_instance_valid(music_manager): 
 		music_manager.play_cancel_sound()
 
-	if transitions:
+	if is_instance_valid(transitions):
 		transitions.close_achievements() 
 	else:
 		printerr("AchievementsScreen: transitions (из BaseScreen) не установлен, невозможно закрыть экран достижений.")

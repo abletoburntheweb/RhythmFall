@@ -500,26 +500,43 @@ func check_replay_level_achievement(song_path: String):
 func check_playtime_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
-		print("[AchievementManager] check_playtime_achievements: player_data_mgr не передан.")
 		return
 
-	var total_play_time_seconds = pdm.get_total_play_time_seconds() 
-	print("[AchievementManager] Проверка ачивок времени. Всего секунд: ", total_play_time_seconds)
+	var total_play_time_formatted = pdm.data.get("total_play_time", "00:00")
+
+	var time_parts = total_play_time_formatted.split(":")
+	var total_play_time_seconds = 0
+
+	if time_parts.size() == 2: 
+		var hours = int(time_parts[0])
+		var minutes = int(time_parts[1])
+		total_play_time_seconds = (hours * 3600) + (minutes * 60)
+	else:
+		printerr("[AchievementManager] Неизвестный формат времени: ", total_play_time_formatted)
+		return
+
+	var total_play_time_hours = total_play_time_seconds / 3600.0
+	var total_play_time_hours_rounded = roundf(total_play_time_hours * 100.0) / 100.0
 
 	for achievement in achievements:
 		if achievement.get("category", "") == "playtime":
 			var achievement_id = achievement.id
-			var required_seconds = achievement.get("total", 0.0)
-			var current_progress = achievement.get("current", 0.0)
+			var required_hours = achievement.get("total", 0.0)
 
-			achievement.current = total_play_time_seconds
-			print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, "). Требуется: ", required_seconds, " сек. Текущий прогресс: ", total_play_time_seconds, " сек.")
+			achievement.current = total_play_time_hours_rounded
 
 			if not achievement.get("unlocked", false):
-				if total_play_time_seconds >= required_seconds:
+				if total_play_time_hours_rounded >= required_hours:
 					_perform_unlock(achievement)
-					print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") разблокирована!")
-				else:
-					print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") пока не разблокирована.")
-			else:
-				print("[AchievementManager] Ачивка ", achievement_id, " (", achievement.title, ") уже разблокирована.")
+				
+func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
+	for a in achievements:
+		if a.id == achievement_id:
+			var current_val = a.get("current", 0.0)
+			var total_val = a.get("total", 1.0)
+			var current_str = "%0.2f" % [current_val]
+			var total_str = "%0.2f" % [total_val]
+			return {"current": current_str, "total": total_str, "unlocked": a.get("unlocked", false)}
+
+	print("[AchievementManager] Достижение с id=%d не найдено" % achievement_id)
+	return {"current": "0.00", "total": "1.00", "unlocked": false}
