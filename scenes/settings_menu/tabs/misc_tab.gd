@@ -8,12 +8,12 @@ var song_metadata_manager = null
 var player_data_manager = null 
 var achievement_manager = null
 
-
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
 @onready var clear_all_cache_button: Button = $ContentVBox/ClearAllCacheButton
 @onready var reset_all_settings_button: Button = $ContentVBox/ResetAllSettingsButton
 @onready var reset_profile_stats_button: Button = $ContentVBox/ResetProfileStatsButton
+@onready var clear_all_results_button: Button = $ContentVBox/ClearAllResultsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 
 func _ready():
@@ -43,6 +43,10 @@ func _connect_signals():
 		reset_profile_stats_button.pressed.connect(_on_reset_profile_stats_pressed) 
 	else:
 		print("MiscTab.gd: ОШИБКА: reset_profile_stats_button НЕ найдена в _connect_signals!")
+	if clear_all_results_button:
+		clear_all_results_button.pressed.connect(_on_clear_all_results_pressed)
+	else:
+		print("MiscTab.gd: ОШИБКА: clear_all_results_button НЕ найдена в _connect_signals!")
 	if debug_menu_checkbox:
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 
@@ -96,6 +100,7 @@ func _on_clear_all_cache_pressed():
 		emit_signal("settings_changed")
 	else:
 		printerr("MiscTab.gd: song_metadata_manager не установлен, невозможно очистить кэш.")
+
 func _on_reset_profile_stats_pressed():
 	print("MiscTab.gd: Запрос на сброс статистики профиля.")
 	if player_data_manager:
@@ -115,3 +120,43 @@ func _on_reset_all_settings_pressed():
 		print("MiscTab.gd: Все настройки сброшены к значениям по умолчанию.")
 	else:
 		printerr("MiscTab.gd: settings_manager не установлен, невозможно сбросить настройки!")
+
+func _on_clear_all_results_pressed():
+	print("MiscTab.gd: Запрос на очистку ВСЕХ результатов из папки user://results/.")
+
+	var results_dir_path = "user://results"
+	var dir_access = DirAccess.open(results_dir_path)
+
+	var results_dir_exists = DirAccess.open("user://").dir_exists("results")
+
+	if not dir_access:
+		if not results_dir_exists:
+			print("MiscTab.gd: _on_clear_all_results_pressed: Директория результатов не существует, нечего очищать: ", results_dir_path)
+		else:
+			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть директорию: ", results_dir_path)
+		return
+
+	dir_access.list_dir_begin()
+	var file_name = dir_access.get_next()
+	var all_deleted = true
+
+	while file_name != "":
+		if file_name != "." and file_name != "..":
+			if not dir_access.current_is_dir():
+				var file_path = results_dir_path.path_join(file_name) 
+				var err = dir_access.remove(file_name)
+				if err != OK:
+					printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
+					all_deleted = false
+				else:
+					print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+			else:
+				print("MiscTab.gd: _on_clear_all_results_pressed: Пропущена поддиректория: ", file_name)
+		file_name = dir_access.get_next()
+
+	dir_access.list_dir_end()
+
+	if all_deleted:
+		print("MiscTab.gd: _on_clear_all_results_pressed: Все файлы из папки ", results_dir_path, " успешно удалены.")
+	else:
+		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы из папки ", results_dir_path, " были удалены.")

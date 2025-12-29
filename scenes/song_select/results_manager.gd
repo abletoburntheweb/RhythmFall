@@ -1,3 +1,4 @@
+# scenes/song_select/results_manager.gd
 class_name ResultsManager
 extends Node
 
@@ -5,13 +6,11 @@ var player_data_manager = null
 var achievement_system = null
 var replay_achievement_sent_for_song: Dictionary = {}
 
-
 func set_player_data_manager(player_data_mgr):
 	player_data_manager = player_data_mgr
 
 func set_achievement_system(ach_sys):
 	achievement_system = ach_sys
-
 
 func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	print("ResultsManager.gd: Показ результатов для песни: %s" % song_data.get("title", "Неизвестная"))
@@ -216,7 +215,6 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		else:
 			print("ResultsManager.gd: Результатов для песни %s (%d) недостаточно для ачивки." % [song_path, results_count_after])
 
-
 func get_top_result_for_song(song_path: String) -> Dictionary:
 	var results = load_results_for_song(song_path)
 	if results.size() > 0:
@@ -228,3 +226,31 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 		)
 		return results[0]
 	return {}
+
+func clear_results_for_song(song_path: String) -> bool: 
+	if song_path.is_empty():
+		printerr("ResultsManager.gd: clear_results_for_song: Пустой путь к песне.")
+		return false
+
+	var song_file_name = song_path.get_file().get_basename()
+	var results_file_path = "user://results/%s_results.json" % song_file_name
+
+	var dir_access_instance = DirAccess.open("user://")
+	var results_dir_path = "results" 
+	var file_exists = FileAccess.file_exists(results_file_path)
+
+	if dir_access_instance and dir_access_instance.dir_exists(results_dir_path) and file_exists:
+		var err = dir_access_instance.remove(results_file_path) 
+		if err == OK:
+			print("ResultsManager.gd: Файл результатов очищен для песни: ", results_file_path)
+			var song_key = song_path
+			if replay_achievement_sent_for_song.has(song_key):
+				replay_achievement_sent_for_song.erase(song_key)
+				print("ResultsManager.gd: Сброшен кэш ачивки для песни: ", song_path)
+			return true
+		else:
+			printerr("ResultsManager.gd: Ошибка удаления файла результатов: ", results_file_path, " Код ошибки: ", err)
+			return false
+	else:
+		print("ResultsManager.gd: Файл результатов не существует, очищать нечего: ", results_file_path)
+		return true

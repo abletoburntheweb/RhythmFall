@@ -164,3 +164,15 @@ synth3.mp3 - 100 bpm
 Kayzo - WASTE AWAY.mp3 - 150 bpm
 Stray Kids - We Go.mp3 - 87 bpm
 Ouse - Why Did You Tell Me.mp3 - 80 bpm"
+
+[node name="ClearResultsButton" type="Button" parent="."]
+visible = false
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 0
+offset_left = 2014.0
+offset_top = 693.0
+offset_right = 2199.0
+offset_bottom = 724.0
+size_flags_horizontal = 0
+text = "Очистить результаты"

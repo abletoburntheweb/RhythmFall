@@ -37,6 +37,13 @@ layout_mode = 2
 size_flags_horizontal = 0
 text = "Очистить весь кэш"
 
+[node name="ClearAllResultsButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Очистить результаты"
+
 [node name="ResetProfileStatsButton" type="Button" parent="ContentVBox"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2

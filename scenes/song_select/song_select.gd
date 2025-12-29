@@ -29,6 +29,7 @@ var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
 
 var results_button: Button = null
+var clear_results_button: Button = null 
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
 
 func _ready():
@@ -134,9 +135,11 @@ func _ready():
 	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
 	if instrument_btn:
 		instrument_btn.text = "Инструмент: Перкуссия"
+
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 	print("SongSelect.gd: Песня отредактирована (через сигнал от SongEditManager): ", song_data.get("title", "N/A"))
 	song_list_manager.populate_items_grouped()
+
 func _connect_ui_signals():
 	
 	var back_btn = $MainVBox/BackButton
@@ -206,6 +209,14 @@ func _connect_ui_signals():
 	else:
 		push_error("SongSelect.gd: Не найден ResultsButton по пути $MainVBox/ContentHBox/DetailsVBox/ResultsButton")
 
+	clear_results_button = $ClearResultsButton 
+	if clear_results_button:
+		clear_results_button.pressed.connect(_on_clear_results_pressed)
+		clear_results_button.disabled = true
+		print("SongSelect.gd: Подключён сигнал pressed кнопки Очистить результаты.")
+	else:
+		push_error("SongSelect.gd: Не найден ClearResultsButton по пути $MainVBox/ContentHBox/DetailsVBox/ClearResultsButton")
+
 	var title_label = $MainVBox/ContentHBox/DetailsVBox/TitleLabel
 	if title_label:
 		title_label.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -240,12 +251,16 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 			analyze_bpm_button.disabled = false
 		if results_button:
 			results_button.disabled = false
+		if clear_results_button:
+			clear_results_button.disabled = false
 	else:
 		print("SongSelect.gd: Нет пути к файлу для воспроизведения.")
 		if analyze_bpm_button:
 			analyze_bpm_button.disabled = true
 		if results_button:
 			results_button.disabled = true
+		if clear_results_button:
+			clear_results_button.disabled = true
 
 	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
 	if generate_btn:
@@ -375,6 +390,7 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	
 	if song_details_manager:
 		song_details_manager._update_play_button_state()
+
 func _on_notes_generation_error(error_message: String):
 	print("SongSelect.gd: Ошибка генерации нот: ", error_message)
 	
@@ -384,6 +400,7 @@ func _on_notes_generation_error(error_message: String):
 		generate_btn.disabled = false
 	if song_details_manager:
 		song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
+
 func _open_instrument_selector():
 	if instrument_selector and is_instance_valid(instrument_selector):
 		instrument_selector.queue_free()
@@ -427,7 +444,6 @@ func _on_instrument_selected(instrument_type: String):
 		song_details_manager.set_current_instrument(current_instrument)
 		song_details_manager._update_play_button_state()
 
-
 func _on_delete_pressed():
 	print("SongSelect.gd: Запрос на удаление песни.")
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -458,6 +474,12 @@ func _on_delete_pressed():
 			else:
 				printerr("SongSelect.gd: SongMetadataManager недоступен, метаданные не удалены.")
 
+			var success = results_manager.clear_results_for_song(song_path)
+			if success:
+				print("SongSelect.gd: Файл результатов для удалённой песни также очищен: ", song_path)
+			else:
+				printerr("SongSelect.gd: Ошибка очистки файла результатов для удалённой песни через ResultsManager: ", song_path)
+
 			song_manager.load_songs() 
 			song_list_manager.populate_items_grouped()
 			_on_song_list_changed()
@@ -483,14 +505,34 @@ func _on_results_pressed():
 		if song_item_list.visible:
 			song_item_list.visible = false
 			results_list.visible = true
+			if clear_results_button:
+				clear_results_button.visible = true
 			results_manager.show_results_for_song(current_selected_song_data, results_list)
 			print("SongSelect.gd: Переключено на результаты")
 		else:
 			results_list.visible = false
 			song_item_list.visible = true
+			if clear_results_button:
+				clear_results_button.visible = false
 			print("SongSelect.gd: Переключено на список песен")
 	else:
 		printerr("SongSelect.gd: Не найден SongItemList или ResultsItemList по пути $MainVBox/ContentHBox/SongListVBox/")
+
+func _on_clear_results_pressed():
+	print("SongSelect.gd: Нажата кнопка Очистить результаты для песни: %s" % current_selected_song_data.get("title", "Неизвестная"))
+	var song_path = current_selected_song_data.get("path", "")
+	if song_path.is_empty():
+		printerr("SongSelect.gd: Путь к песне пуст, невозможно очистить результаты.")
+		return
+
+	var success = results_manager.clear_results_for_song(song_path)
+	if success:
+		var results_list = $MainVBox/ContentHBox/SongListVBox/ResultsItemList
+		if results_list:
+			results_manager.show_results_for_song(current_selected_song_data, results_list)
+		print("SongSelect.gd: Результаты для песни '%s' очищены." % current_selected_song_data.get("title", "Неизвестная"))
+	else:
+		printerr("SongSelect.gd: Не удалось очистить результаты для песни '%s'." % current_selected_song_data.get("title", "Неизвестная"))
 
 func _on_analyze_bpm_pressed():
 	print("SongSelect.gd: Нажата кнопка AnalyzeBPM.")
@@ -609,7 +651,6 @@ func _on_bpm_analysis_error(error_message: String):
 	if analyze_bpm_button:
 		analyze_bpm_button.text = "Ошибка вычисления" 
 		analyze_bpm_button.disabled = false 
-
 
 func _on_song_edited(song_data: Dictionary):
 	print("SongSelect.gd: Песня отредактирована: ", song_data)
