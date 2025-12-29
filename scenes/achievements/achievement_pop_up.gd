@@ -55,21 +55,42 @@ func _load_achievement_icon(ach_data: Dictionary):
 		printerr("[AchievementPopUp] ERROR: icon_texture is NULL!")
 		return
 	
-	var icon_path = ach_data.get("image", "")
-	print("🖼️ Загрузка иконки из: ", icon_path)
+	var image_path = ach_data.get("image", "")
+	var category = ach_data.get("category", "")
 	
-	if icon_path and icon_path != "" and ResourceLoader.exists(icon_path):
-		var texture = ResourceLoader.load(icon_path)
+	print("🖼️ Загрузка иконки: путь='", image_path, "', категория='", category, "'")
+
+	if image_path and image_path != "" and ResourceLoader.exists(image_path):
+		var texture = ResourceLoader.load(image_path)
 		if texture:
 			icon_texture.texture = texture
-			print("✅ Иконка загружена успешно: ", icon_path)
+			print("✅ Иконка загружена успешно: ", image_path)
 			return
 		else:
-			print("❌ Не удалось загрузить текстуру из: ", icon_path)
-	else:
-		print("❌ Путь к иконке не существует или пустой: ", icon_path)
+			print("❌ Не удалось загрузить текстуру из: ", image_path)
+
+	var fallback_path = ""
 	
-	_load_default_icon()
+	match category:
+		"gameplay": fallback_path = "res://assets/achievements/gameplay.png"
+		"system": fallback_path = "res://assets/achievements/system.png"
+		"shop": fallback_path = "res://assets/achievements/shop.png"
+		"economy": fallback_path = "res://assets/achievements/economy.png"
+		"daily": fallback_path = "res://assets/achievements/daily.png"
+		"playtime": fallback_path = "res://assets/achievements/playtime.png"
+		_: fallback_path = "res://assets/achievements/default.png"
+	
+	if ResourceLoader.exists(fallback_path):
+		var texture = ResourceLoader.load(fallback_path)
+		if texture:
+			icon_texture.texture = texture
+			print("✅ Дефолтная иконка по категории загружена: ", fallback_path)
+			return
+		else:
+			print("❌ Не удалось загрузить fallback текстуру: ", fallback_path)
+	
+	print("⚠️ Все пути к иконкам недоступны, создаем пустую текстуру")
+	icon_texture.texture = null
 
 func _load_default_icon():
 	var icon_texture = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
@@ -77,7 +98,6 @@ func _load_default_icon():
 		return
 	
 	var default_paths = [
-		"res://assets/achievements/default2.png",
 		"res://assets/achievements/default.png",
 		"res://assets/achievements/login_1_day.png" 
 	]

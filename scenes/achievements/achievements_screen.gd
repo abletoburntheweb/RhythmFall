@@ -3,7 +3,7 @@ extends BaseScreen
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
-const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default2.png"
+const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
 
 @onready var back_button: Button = $MainVBox/BackButton
 @onready var counter_label: Label = $MainVBox/CounterLabel
@@ -66,6 +66,7 @@ func _init_filter_box():
 	filter_box.add_item("Магазин")
 	filter_box.add_item("Экономика")
 	filter_box.add_item("Ежедневные")
+	filter_box.add_item("Время в игре") 
 	filter_box.select(0)
 
 
@@ -149,24 +150,35 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 			used_default = true
 
 		if not icon_texture or used_default:
-			var default_path = "res://assets/achievements/default2.png"
-			if FileAccess.file_exists(default_path):
-				var loaded_default_resource = ResourceLoader.load(default_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
+			var fallback_path = ""
+			var category = ach.get("category", "")
+			
+			match category:
+				"gameplay": fallback_path = "res://assets/achievements/gameplay.png"
+				"system": fallback_path = "res://assets/achievements/system.png"
+				"shop": fallback_path = "res://assets/achievements/shop.png"
+				"economy": fallback_path = "res://assets/achievements/economy.png"
+				"daily": fallback_path = "res://assets/achievements/daily.png"
+				"playtime": fallback_path = "res://assets/achievements/playtime.png"
+				_: fallback_path = "res://assets/achievements/default.png"
+			
+			if FileAccess.file_exists(fallback_path):
+				var loaded_default_resource = ResourceLoader.load(fallback_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
 				if loaded_default_resource and loaded_default_resource is ImageTexture:
 					icon_texture = loaded_default_resource
 				else:
 					var image = Image.new()
-					var err = image.load(default_path)
+					var err = image.load(fallback_path)
 					if err == OK:
 						icon_texture = ImageTexture.create_from_image(image)
 					else:
-						printerr("AchievementsScreen: Ошибка загрузки дефолтной иконки через Image: ", default_path, ", ошибка: ", err)
+						printerr("AchievementsScreen: Ошибка загрузки fallback иконки через Image: ", fallback_path, ", ошибка: ", err)
 						var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
 						dummy_image.set_pixel(0, 0, Color.WHITE)
 						var dummy_texture = ImageTexture.create_from_image(dummy_image)
 						icon_texture = dummy_texture
 			else:
-				printerr("AchievementsScreen: Дефолтная иконка не найдена (FileAccess): ", default_path)
+				printerr("AchievementsScreen: Fallback иконка не найдена (FileAccess): ", fallback_path)
 				var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
 				dummy_image.set_pixel(0, 0, Color.WHITE)
 				var dummy_texture = ImageTexture.create_from_image(dummy_image)
@@ -245,6 +257,7 @@ func _on_filter_selected(index: int):
 		5: current_filter = "Магазин"
 		6: current_filter = "Экономика"
 		7: current_filter = "Ежедневные"
+		8: current_filter = "Время в игре"
 	_filter_achievements_internal(search_bar.text)
 
 
@@ -266,7 +279,8 @@ func _filter_achievements_internal(query: String):
 					"Системные": "system", 
 					"Магазин": "shop",
 					"Экономика": "economy",
-					"Ежедневные": "daily"
+					"Ежедневные": "daily",
+					"Время в игре": "playtime"
 				}
 				if category_map.has(current_filter):
 					matches_category = ach.get("category", "").to_lower() == category_map[current_filter].to_lower()
@@ -299,7 +313,8 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 			"Системные": "system", 
 			"Магазин": "shop",
 			"Экономика": "economy",
-			"Ежедневные": "daily"
+			"Ежедневные": "daily",
+			"Время в игре": "playtime"
 		}
 		if category_map.has(filter_type):
 			var target_category = category_map[filter_type].to_lower()

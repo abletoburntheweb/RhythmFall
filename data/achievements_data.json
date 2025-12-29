@@ -12,7 +12,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "",
 			"current": 0.0,
 			"description": "Описание для достижения 2",
 			"id": 2.0,
@@ -23,7 +23,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "system",
 			"current": 0.0,
 			"description": "Описание для достижения 3",
 			"id": 3.0,
@@ -34,7 +34,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "daily",
 			"current": 0.0,
 			"description": "Описание для достижения 4",
 			"id": 4.0,
@@ -45,7 +45,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "none",
 			"current": 0.0,
 			"description": "Описание для достижения 5",
 			"id": 5.0,
@@ -206,7 +206,7 @@
 			"image": "res://assets/achievements/login_1_day.png",
 			"title": "Первый день",
 			"total": 1.0,
-			"unlock_date": "29 Дек 2025, 03:45",
+			"unlock_date": "29 Дек 2025, 17:51",
 			"unlocked": true
 		},
 		{
