@@ -19,6 +19,14 @@ extends BaseScreen
 @onready var total_earned_currency_label: Label = $MainContent/MainVBox/StatsVBox/TotalEarnedCurrencyLabel
 @onready var spent_currency_label: Label = $MainContent/MainVBox/StatsVBox/SpentCurrencyLabel
 
+func _play_time_string_to_seconds(time_str: String) -> int:
+	var parts = time_str.split(":")
+	if parts.size() == 2:
+		var hours = parts[0].to_int()
+		var minutes = parts[1].to_int()
+		return (hours * 3600) + (minutes * 60)
+	return 0
+
 func _ready():
 	var game_engine = get_parent()
 	if game_engine and \
@@ -32,6 +40,9 @@ func _ready():
 
 		setup_managers(trans, music_mgr, player_data_mgr)
 		print("ProfileScreen.gd: setup_managers вызван из _ready().")
+		
+		if player_data_manager:
+			player_data_manager.total_play_time_changed.connect(_on_total_play_time_changed)
 	else:
 		printerr("ProfileScreen.gd: Не удалось получить один из менеджеров (music_manager, transitions, player_data_manager) через GameEngine.")
 
@@ -41,6 +52,10 @@ func _ready():
 		back_button.pressed.connect(_on_back_pressed)
 	else:
 		printerr("ProfileScreen: Кнопка back_button не найдена!")
+
+func _on_total_play_time_changed(new_time: String):
+	if play_time_label:
+		play_time_label.text = "Времени в игре: %s" % new_time
 
 func refresh_stats():
 	if player_data_manager == null:
@@ -69,11 +84,8 @@ func refresh_stats():
 		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
 	drum_overall_accuracy_label.text = "Перкуссия: %.2f%%" % drum_accuracy
 	
-	var play_time_seconds = player_data_manager.data.get("total_play_time_seconds", 0.0)
-	var play_time_hours = int(play_time_seconds) / 3600
-	var play_time_minutes = (int(play_time_seconds) % 3600) / 60
-	var play_time_formatted = str(play_time_hours).pad_zeros(2) + ":" + str(play_time_minutes).pad_zeros(2)
-	play_time_label.text = "Времени в игре: %s" % play_time_formatted
+	var play_time_formatted = player_data_manager.get_total_play_time_formatted() 
+	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
 
 	total_notes_hit_label.text = "Попаданий: %d" % total_notes_hit
 	total_drum_hits_label.text = "Перкуссия: %d" % total_drum_hits
@@ -96,4 +108,6 @@ func _execute_close_transition():
 		transitions.close_profile()
 		
 	if is_instance_valid(self):
+		if player_data_manager and player_data_manager.is_connected("total_play_time_changed", _on_total_play_time_changed):
+			player_data_manager.total_play_time_changed.disconnect(_on_total_play_time_changed)
 		queue_free()

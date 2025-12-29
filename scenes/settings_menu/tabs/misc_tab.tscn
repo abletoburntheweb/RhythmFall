@@ -37,9 +37,18 @@ layout_mode = 2
 size_flags_horizontal = 0
 text = "Очистить весь кэш"
 
-[node name="ResetAllSettingsButton" type="Button" parent="ContentVBox"]
+[node name="ResetProfileStatsButton" type="Button" parent="ContentVBox"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
+text = "Сбросить статистику профиля"
+
+[node name="ResetAllSettingsButton" type="Button" parent="ContentVBox"]
+layout_mode = 2
+text = "Сбросить все настройки"
+
+[node name="ResetAllSettingsButton" type="Button" parent="ContentVBox/ResetAllSettingsButton"]
+custom_minimum_size = Vector2(0, 31)
+layout_mode = 0
 text = "Сбросить все настройки"
 
 [node name="DebugMenuCheckBox" type="CheckBox" parent="ContentVBox"]

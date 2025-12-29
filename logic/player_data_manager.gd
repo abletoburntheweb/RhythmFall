@@ -1,3 +1,4 @@
+# logic/player_data_manager.gd
 class_name PlayerDataManager 
 extends RefCounted
 
@@ -27,8 +28,13 @@ var data: Dictionary = {
 	"max_combo_ever": 0,             
 	"max_drum_combo_ever": 0,       
 	"total_drum_hits": 0,           
-	"total_drum_misses": 0,         
+	"total_drum_misses": 0,
+	"total_play_time": "00:00", 
 }
+
+signal total_play_time_changed(new_time_formatted: String)
+
+var _total_play_time_seconds: int = 0
 
 var achievement_manager = null
 var game_engine_reference = null
@@ -36,6 +42,8 @@ var delayed_achievements: Array[Dictionary] = []
 
 func _init():
 	_load()
+	_total_play_time_seconds = _play_time_string_to_seconds(data.get("total_play_time", "00:00"))
+
 
 	var default_items = [
 		"kick_default",
@@ -78,7 +86,8 @@ func _load():
 			var loaded_max_drum_combo_ever = int(json_result.get("max_drum_combo_ever", 0))
 			var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
 			var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
-			
+			var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
+
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
 			print("PlayerDataManager.gd: Загружено active_items: ", loaded_active_items)
@@ -97,6 +106,7 @@ func _load():
 			data["max_drum_combo_ever"] = loaded_max_drum_combo_ever
 			data["total_drum_hits"] = loaded_total_drum_hits
 			data["total_drum_misses"] = loaded_total_drum_misses
+			data["total_play_time"] = loaded_total_play_time 
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -287,6 +297,9 @@ func load_save_data(save_dict: Dictionary):
 		data["login_streak"] = int(save_dict["login_streak"])
 	if save_dict.has("levels_completed"):
 		data["levels_completed"] = int(save_dict["levels_completed"])
+	if save_dict.has("total_play_time"): 
+		data["total_play_time"] = str(save_dict["total_play_time"])
+		_total_play_time_seconds = _play_time_string_to_seconds(data["total_play_time"])
 	_save()
 
 func reset_progress():
@@ -305,6 +318,8 @@ func reset_progress():
 	data["max_drum_combo_ever"] = 0
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
+	data["total_play_time"] = "00:00" 
+	_total_play_time_seconds = 0
 
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
@@ -315,6 +330,41 @@ func reset_progress():
 
 	_save()
 	print("[PlayerDataManager] Прогресс сброшен.")
+
+func reset_profile_statistics():
+	var current_currency = int(data.get("currency", 0))
+	var current_unlocked_items = data.get("unlocked_item_ids", PackedStringArray()).duplicate()
+	var current_active_items = data.get("active_items", DEFAULT_ACTIVE_ITEMS.duplicate(true)).duplicate(true)
+	var current_unlocked_achievements = data.get("unlocked_achievement_ids", PackedInt32Array()).duplicate()
+	var current_login_streak = int(data.get("login_streak", 0))
+	var current_last_login_date = data.get("last_login_date", "")
+
+	data["levels_completed"] = 0
+	data["drum_levels_completed"] = 0
+	data["total_drum_perfect_hits"] = 0
+	data["total_notes_hit"] = 0
+	data["total_notes_missed"] = 0
+	data["max_combo_ever"] = 0
+	data["max_drum_combo_ever"] = 0
+	data["total_drum_hits"] = 0
+	data["total_drum_misses"] = 0
+	data["spent_currency"] = 0
+	data["total_earned_currency"] = 0
+	data["total_play_time"] = "00:00" 
+
+	_total_play_time_seconds = 0
+
+
+	data["currency"] = current_currency
+	data["unlocked_item_ids"] = current_unlocked_items
+	data["active_items"] = current_active_items
+	data["unlocked_achievement_ids"] = current_unlocked_achievements
+	data["login_streak"] = current_login_streak
+	data["last_login_date"] = current_last_login_date
+
+	_save()
+	print("[PlayerDataManager] Статистика профиля (включая валюту, время, но не предметы/ачивки/данные аккаунта) сброшена.")
+
 
 func get_login_streak() -> int:
 	return int(data.get("login_streak", 0))
@@ -404,3 +454,27 @@ func get_total_notes_missed() -> int:
 
 func get_total_notes_played() -> int: 
 	return get_total_notes_hit() + get_total_notes_missed()
+
+func _play_time_string_to_seconds(time_str: String) -> int:
+	var parts = time_str.split(":")
+	if parts.size() == 2:
+		var hours = parts[0].to_int()
+		var minutes = parts[1].to_int()
+		return (hours * 3600) + (minutes * 60)
+	return 0
+
+func _play_time_seconds_to_string(total_seconds: int) -> String:
+	var hours = total_seconds / 3600
+	var minutes = (total_seconds % 3600) / 60
+	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
+
+func add_play_time_seconds(seconds_to_add: int):
+	_total_play_time_seconds += seconds_to_add
+	var new_time_string = _play_time_seconds_to_string(_total_play_time_seconds)
+	print("PlayerDataManager.gd (DEBUG add_play_time): Добавляем: ", seconds_to_add, ", Новое общее время (сек): ", _total_play_time_seconds, ", Новое время (строка): ", new_time_string)
+	data["total_play_time"] = new_time_string
+	emit_signal("total_play_time_changed", new_time_string)
+	_save()
+
+func get_total_play_time_formatted() -> String:
+	return data.get("total_play_time", "00:00")

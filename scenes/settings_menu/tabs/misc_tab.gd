@@ -13,6 +13,7 @@ var achievement_manager = null
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
 @onready var clear_all_cache_button: Button = $ContentVBox/ClearAllCacheButton
 @onready var reset_all_settings_button: Button = $ContentVBox/ResetAllSettingsButton
+@onready var reset_profile_stats_button: Button = $ContentVBox/ResetProfileStatsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 
 func _ready():
@@ -25,8 +26,10 @@ func setup_ui_and_manager(manager: SettingsManager, music, screen = null, metada
 	player_data_manager = player_data_mgr 
 	achievement_manager = achievement_mgr
 	_apply_initial_settings()
-
+	print("MiscTab.gd: setup_ui_and_manager вызван. PlayerDataManager: ", player_data_manager, ", AchievementManager: ", achievement_manager)
+	
 func _connect_signals():
+	print("MiscTab.gd: _connect_signals вызван.")
 	if clear_achievements_button:
 		clear_achievements_button.pressed.connect(_on_clear_achievements_pressed)
 	if reset_bpm_batch_button:
@@ -35,6 +38,11 @@ func _connect_signals():
 		clear_all_cache_button.pressed.connect(_on_clear_all_cache_pressed)
 	if reset_all_settings_button:
 		reset_all_settings_button.pressed.connect(_on_reset_all_settings_pressed)
+	if reset_profile_stats_button: 
+		print("MiscTab.gd: reset_profile_stats_button найдена, подключаю сигнал.")
+		reset_profile_stats_button.pressed.connect(_on_reset_profile_stats_pressed) 
+	else:
+		print("MiscTab.gd: ОШИБКА: reset_profile_stats_button НЕ найдена в _connect_signals!")
 	if debug_menu_checkbox:
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 
@@ -88,7 +96,16 @@ func _on_clear_all_cache_pressed():
 		emit_signal("settings_changed")
 	else:
 		printerr("MiscTab.gd: song_metadata_manager не установлен, невозможно очистить кэш.")
-		
+func _on_reset_profile_stats_pressed():
+	print("MiscTab.gd: Запрос на сброс статистики профиля.")
+	if player_data_manager:
+		player_data_manager.reset_profile_statistics() 
+		print("MiscTab.gd: Статистика профиля сброшена.")
+		if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
+			get_parent().get_parent().get_parent().refresh_stats() 
+	else:
+		printerr("MiscTab.gd: player_data_manager не установлен, невозможно сбросить статистику профиля!")
+			
 func _on_reset_all_settings_pressed():
 	print("MiscTab.gd: Запрос на сброс всех настроек.")
 	if settings_manager:

@@ -15,10 +15,60 @@ var achievement_queue_manager: AchievementQueueManager = null
 
 var song_metadata_manager: SongMetadataManager = null
 
+var _session_start_time_ticks: int = 0
+var _play_time_timer: SceneTreeTimer = null
+const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
+
+
 func _ready():
 	initialize_logic()
 	initialize_screens()
 	show_intro()
+	_session_start_time_ticks = Time.get_ticks_msec() 
+	_start_play_time_timer()
+
+func _start_play_time_timer():
+	print("GameEngine.gd (DEBUG): _start_play_time_timer вызван. Интервал: ", PLAY_TIME_UPDATE_INTERVAL)
+	if _play_time_timer:
+		_play_time_timer.timeout.disconnect(_on_play_time_update_timeout) 
+		print("GameEngine.gd (DEBUG): Старый таймер отключен.")
+
+	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)
+	print("GameEngine.gd (DEBUG): Создан таймер: ", _play_time_timer)
+	if _play_time_timer:
+		var connect_result = _play_time_timer.timeout.connect(_on_play_time_update_timeout)
+		print("GameEngine.gd (DEBUG): Результат подключения таймера: ", connect_result)
+		if connect_result != 0:
+			printerr("GameEngine.gd (DEBUG): Ошибка подключения таймера! Код: ", connect_result)
+	else:
+		printerr("GameEngine.gd (DEBUG): Ошибка: create_timer вернул null!")	
+
+func _on_play_time_update_timeout():
+	if player_data_manager:
+		var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
+		var elapsed_seconds = int(elapsed_ms / 1000.0)
+		print("GameEngine.gd (DEBUG): Прошло секунд с последнего таймера: %d (таймер сработал)" % elapsed_seconds)
+		player_data_manager.add_play_time_seconds(elapsed_seconds)
+		_session_start_time_ticks = Time.get_ticks_msec()
+		_start_play_time_timer()
+
+func _exit_tree():
+	_finalize_session_time()
+	if _play_time_timer and _play_time_timer.is_connected("timeout", _on_play_time_update_timeout):
+		_play_time_timer.timeout.disconnect(_on_play_time_update_timeout)
+
+func _finalize_session_time():
+	if player_data_manager:
+		var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
+		var elapsed_seconds = int(elapsed_ms / 1000.0)
+		player_data_manager.add_play_time_seconds(elapsed_seconds)
+		print("GameEngine.gd: Сессия завершена, добавлено времени: %d сек (%s)" % [elapsed_seconds, _play_time_seconds_to_string(elapsed_seconds)])
+		_session_start_time_ticks = 0
+
+func _play_time_seconds_to_string(total_seconds: int) -> String:
+	var hours = total_seconds / 3600
+	var minutes = (total_seconds % 3600) / 60
+	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
 
 func initialize_logic():
 	player_data_manager = PlayerDataManager.new()
@@ -146,6 +196,11 @@ func _switch_to_screen(new_screen_instance):
 		current_screen = new_screen_instance
 
 func request_quit():
+	_finalize_session_time()
+	if player_data_manager:
+		player_data_manager._save()
+	if settings_manager:
+		settings_manager.save_settings()
 	get_tree().quit()
 
 func prepare_screen_exit(screen_to_exit: Node) -> bool:

@@ -68,18 +68,18 @@
 		},
 		{
 			"category": "shop",
-			"current": 4.0,
+			"current": 0.0,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
 			"title": "Коллекционер I",
 			"total": 3.0,
-			"unlock_date": "4 Дек 2025, 18:51",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "shop",
-			"current": 4.0,
+			"current": 0.0,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
@@ -90,7 +90,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 4.0,
+			"current": 0.0,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
@@ -101,7 +101,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 4.0,
+			"current": 0.0,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -112,40 +112,40 @@
 		},
 		{
 			"category": "economy",
-			"current": 9876.0,
+			"current": 28.0,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
 			"title": "Собиратель I",
 			"total": 500.0,
-			"unlock_date": "4 Дек 2025, 19:15",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "economy",
-			"current": 9876.0,
+			"current": 28.0,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
 			"title": "Собиратель II",
 			"total": 1000.0,
-			"unlock_date": "4 Дек 2025, 19:46",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "economy",
-			"current": 9876.0,
+			"current": 28.0,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
 			"title": "Собиратель III",
 			"total": 2500.0,
-			"unlock_date": "4 Дек 2025, 21:08",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "economy",
-			"current": 200.0,
+			"current": 0.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 200.0,
+			"current": 0.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 200.0,
+			"current": 0.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -178,7 +178,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 3.0,
+			"current": 0.0,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
@@ -189,7 +189,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 4.0,
+			"current": 0.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
@@ -200,29 +200,29 @@
 		},
 		{
 			"category": "daily",
-			"current": 10,
+			"current": 1,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
 			"title": "Первый день",
 			"total": 1.0,
-			"unlock_date": "17 Ноя 2025, 00:04",
+			"unlock_date": "29 Дек 2025, 03:45",
 			"unlocked": true
 		},
 		{
 			"category": "daily",
-			"current": 10,
+			"current": 1,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
 			"title": "В ритме недели",
 			"total": 7.0,
-			"unlock_date": "26 Дек 2025, 00:47",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "daily",
-			"current": 10,
+			"current": 1,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 10,
+			"current": 1,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -244,14 +244,14 @@
 		},
 		{
 			"category": "system",
-			"current": 1.0,
+			"current": 0.0,
 			"description": "Сгенерировать свой первый уровень с помощью системы анализа",
 			"id": 23.0,
 			"image": "res://assets/achievements/note_researcher.png",
 			"title": "Нотный исследователь",
 			"total": 1.0,
-			"unlock_date": "17 Ноя 2025, 00:58",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
@@ -261,41 +261,41 @@
 			"image": "res://assets/achievements/first_chord.png",
 			"title": "Первый аккорд",
 			"total": 1.0,
-			"unlock_date": "4 Дек 2025, 18:47",
+			"unlock_date": "29 Дек 2025, 03:48",
 			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 0.0,
 			"description": "Пройти уровень с 100% точностью",
 			"id": 25.0,
 			"image": "res://assets/achievements/flawless_hearing.png",
 			"title": "Безупречный слух",
 			"total": 1.0,
-			"unlock_date": "4 Дек 2025, 18:47",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
-			"current": 62.0,
+			"current": 0.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
 			"title": "Новичок ритма",
 			"total": 5.0,
-			"unlock_date": "4 Дек 2025, 19:15",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
-			"current": 62.0,
+			"current": 0.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
 			"title": "Ритм-мастер",
 			"total": 20.0,
-			"unlock_date": "4 Дек 2025, 20:55",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
@@ -305,7 +305,7 @@
 			"image": "res://assets/achievements/rhythm_master.png",
 			"title": "В ритме",
 			"total": 1000.0,
-			"unlock_date": "29 Дек 2025, 01:08",
+			"unlock_date": "29 Дек 2025, 03:48",
 			"unlocked": true
 		},
 		{
@@ -316,30 +316,30 @@
 			"image": "res://assets/achievements/first_strike.png",
 			"title": "Первый удар",
 			"total": 1.0,
-			"unlock_date": "4 Дек 2025, 22:55",
+			"unlock_date": "29 Дек 2025, 03:48",
 			"unlocked": true
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 0.0,
 			"description": "Пройти уровень в режиме перкуссии с 100% точностью",
 			"id": 30.0,
 			"image": "res://assets/achievements/clean_rhythm.png",
 			"title": "Чистый ритм",
 			"total": 1.0,
-			"unlock_date": "4 Дек 2025, 22:52",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
-			"current": 10.0,
+			"current": 3.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
 			"title": "Сила грува",
 			"total": 10.0,
-			"unlock_date": "21 Дек 2025, 13:42",
-			"unlocked": true
+			"unlock_date": null,
+			"unlocked": false
 		},
 		{
 			"category": "gameplay",
@@ -349,7 +349,7 @@
 			"image": "res://assets/achievements/drum_storm.png",
 			"title": "Барабанный шторм",
 			"total": 100.0,
-			"unlock_date": "",
+			"unlock_date": null,
 			"unlocked": false
 		},
 		{
@@ -360,7 +360,7 @@
 			"image": "res://assets/achievements/musical_memory.png",
 			"title": "Музыкальная память",
 			"total": 1.0,
-			"unlock_date": "21 Дек 2025, 13:24",
+			"unlock_date": "29 Дек 2025, 03:48",
 			"unlocked": true
 		}
 	]

@@ -20,52 +20,57 @@ const TAB_PATHS = {
 }
 
 func _ready():
-	print("SettingsMenu.gd: _ready вызван.")
 	if not settings_manager:
-		print("SettingsMenu.gd: settings_manager не передан, создаю новый экземпляр.")
 		settings_manager = SettingsManager.new()
 	
 	var parent_node = get_parent()
-	if parent_node and parent_node.has_method("get_music_manager") and parent_node.has_method("get_transitions"):
-		var music_mgr = parent_node.get_music_manager()
-		var trans = parent_node.get_transitions()
-		setup_managers(trans, music_mgr, null)
-		print("SettingsMenu.gd: MusicManager и Transitions получены через родительский узел (пауза).")
-	else:
-		var game_engine = get_parent() 
-		if game_engine:
-			if game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
-				var music_mgr = game_engine.get_music_manager()
-				var trans = game_engine.get_transitions()
-				setup_managers(trans, music_mgr, null)
-				print("SettingsMenu.gd: MusicManager и Transitions получены через GameEngine.")
-			else:
-				printerr("SettingsMenu.gd: Не удалось получить MusicManager или Transitions через GameEngine.")
+	var music_mgr = null
+	var trans = null
+	var game_engine_node = null
 
-			if game_engine.has_method("get_player_data_manager"):
-				player_data_manager = game_engine.get_player_data_manager()
-				print("SettingsMenu.gd: PlayerDataManager получен через GameEngine.")
-			else:
-				printerr("SettingsMenu.gd: Не удалось получить PlayerDataManager через GameEngine.")
-
-			if game_engine.has_method("get_achievement_manager"):
-				self.achievement_manager = game_engine.get_achievement_manager() 
-				print("SettingsMenu.gd: AchievementManager получен через GameEngine.")
-			else:
-				printerr("SettingsMenu.gd: Не удалось получить AchievementManager через GameEngine.")
+	if parent_node:
+		if parent_node.has_method("get_music_manager") and parent_node.has_method("get_transitions"):
+			music_mgr = parent_node.get_music_manager()
+			trans = parent_node.get_transitions()
 		else:
-			printerr("SettingsMenu.gd: GameEngine (get_parent()) не найден!")
+			music_mgr = null
+			trans = null
+		
+		if parent_node.has_method("get_player_data_manager"):
+			game_engine_node = parent_node
+		else:
+			game_engine_node = get_tree().root.get_node("GameEngine") if get_tree().root.has_node("GameEngine") else null
+			if not game_engine_node:
+				var root_children = get_tree().root.get_children()
+				for child in root_children:
+					if child.has_method("get_player_data_manager"):
+						game_engine_node = child
+						break
+	else:
+		game_engine_node = null
 
+	if game_engine_node:
+		if game_engine_node.has_method("get_player_data_manager"):
+			player_data_manager = game_engine_node.get_player_data_manager()
+		else:
+			player_data_manager = null
+
+		if game_engine_node.has_method("get_achievement_manager"):
+			self.achievement_manager = game_engine_node.get_achievement_manager()
+		else:
+			self.achievement_manager = null
+	else:
+		player_data_manager = null
+		self.achievement_manager = null
+
+	setup_managers(trans, music_mgr, player_data_manager)
 	_setup_tabs()
 	_connect_signals()
 
 	if tab_container.get_tab_count() > 0:
 		tab_container.current_tab = 0
-		print("SettingsMenu.gd: Установлена первая вкладка по умолчанию.")
 
 func _setup_tabs():
-	print("SettingsMenu.gd: _setup_tabs вызван.")
-	
 	var song_metadata_mgr = null
 	if get_parent() and get_parent().has_method("get_song_metadata_manager"):
 		song_metadata_mgr = get_parent().get_song_metadata_manager()
@@ -77,27 +82,21 @@ func _setup_tabs():
 		var scene_resource = load(scene_path)
 
 		if not scene_resource:
-			printerr("SettingsMenu.gd: Не удалось загрузить ресурс сцены для %s по пути: %s" % [tab_name, scene_path])
 			continue
 
 		if not scene_resource is PackedScene:
-			printerr("SettingsMenu.gd: Загруженный ресурс для %s не является PackedScene: %s" % [tab_name, scene_path])
 			continue
 
 		var tab_instance = scene_resource.instantiate()
 		if not tab_instance:
-			printerr("SettingsMenu.gd: instantiate вернул null для %s!" % tab_name)
 			continue
 
 		tab_container.add_child(tab_instance)
-		print("SettingsMenu.gd: Экземпляр вкладки %s добавлен в TabContainer." % tab_name)
 
 		var tab_title = tab_name.replace("Tab", "")
 		tab_container.set_tab_title(tab_container.get_tab_count() - 1, tab_title)
-		print("SettingsMenu.gd: Заголовок вкладки %s установлен на '%s'." % [tab_name, tab_title])
 
 		if tab_instance.has_method("setup_ui_and_manager"):
-			print("SettingsMenu.gd: Вызываю setup_ui_and_manager для %s." % tab_name)
 			if tab_name == "MiscTab":
 				tab_instance.setup_ui_and_manager(
 					settings_manager,
@@ -113,107 +112,67 @@ func _setup_tabs():
 					music_manager,
 					game_screen
 				)
-			print("SettingsMenu.gd: Менеджеры переданы в %s." % tab_name)
-		else:
-			print("SettingsMenu.gd: Вкладка %s не имеет метода setup_ui_and_manager." % tab_name)
-			
+
 		if tab_name == "SoundTab":
 			if tab_instance.has_signal("settings_changed"):
 				tab_instance.connect("settings_changed", Callable(self, "save_settings"))
-				print("SettingsMenu.gd: Подключён сигнал settings_changed от %s." % tab_name)
-			else:
-				print("SettingsMenu.gd: Вкладка SoundTab не имеет сигнала settings_changed.")
 
 		if tab_name == "ControlsTab":
 			if tab_instance.has_signal("settings_changed"):
 				tab_instance.connect("settings_changed", Callable(self, "save_settings"))
-				print("SettingsMenu.gd: Подключён сигнал settings_changed от %s." % tab_name)
-			else:
-				print("SettingsMenu.gd: Вкладка ControlsTab не имеет сигнала settings_changed.")
 
 		loaded_tabs_count += 1
 
-	print("SettingsMenu.gd: Загружено вкладок: %d из %d." % [loaded_tabs_count, TAB_PATHS.size()])
-
 func _connect_signals():
-	print("SettingsMenu.gd: _connect_signals вызван.")
-
 	if btn_sound:
 		btn_sound.pressed.connect(_on_sound_tab_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Звук.")
-	else:
-		printerr("SettingsMenu.gd: Кнопка btn_sound не найдена!")
 
 	if btn_graphics:
 		btn_graphics.pressed.connect(_on_graphics_tab_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Графика.")
-	else:
-		printerr("SettingsMenu.gd: Кнопка btn_graphics не найдена!")
 
 	if btn_controls:
 		btn_controls.pressed.connect(_on_controls_tab_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Управление.")
-	else:
-		printerr("SettingsMenu.gd: Кнопка btn_controls не найдена!")
 
 	if btn_misc:
 		btn_misc.pressed.connect(_on_misc_tab_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Прочее.")
-	else:
-		printerr("SettingsMenu.gd: Кнопка btn_misc не найдена!")
 
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
-		print("SettingsMenu.gd: Подключён сигнал pressed кнопки Назад (вызов _on_back_pressed из BaseScreen).")
-	else:
-		printerr("SettingsMenu.gd: Кнопка back_button не найдена!")
 
 func _on_sound_tab_pressed():
-	print("SettingsMenu.gd: Нажата вкладка Звук.")
 	tab_container.current_tab = 0
 
 func _on_graphics_tab_pressed():
-	print("SettingsMenu.gd: Нажата вкладка Графика.")
 	tab_container.current_tab = 1
 
 func _on_controls_tab_pressed():
-	print("SettingsMenu.gd: Нажата вкладка Управление.")
 	tab_container.current_tab = 2
 
 func _on_misc_tab_pressed():
-	print("SettingsMenu.gd: Нажата вкладка Прочее.")
 	tab_container.current_tab = 3
 
 func _execute_close_transition():
 	if transitions:
-		var from_pause = get_parent() != get_parent().get_parent() 
+		var from_pause = get_parent() != get_parent().get_parent()
 		var is_child_of_pause = false
 		var current_parent = get_parent()
 		if current_parent and (current_parent.has_signal("resume_requested") or current_parent.has_method("handle_resume_request")):
 			is_child_of_pause = true
-		
-		print("SettingsMenu.gd: Закрываю настройки, from_pause: %s" % is_child_of_pause)
+
 		transitions.close_settings(is_child_of_pause)
-		print("SettingsMenu.gd: Закрываю настройки через Transitions.")
 	else:
-		printerr("SettingsMenu.gd: transitions не установлен, невозможно закрыть настройки.")
+		pass
 
 func cleanup_before_exit():
-	print("SettingsMenu.gd: cleanup_before_exit вызван. Сохраняем настройки.")
 	save_settings()
 
 func save_settings():
 	if settings_manager:
 		settings_manager.save_settings()
-		print("SettingsMenu.gd: Настройки сохранены через SettingsManager.")
-	else:
-		printerr("SettingsMenu.gd: settings_manager не установлен, невозможно сохранить настройки.")
 
 func set_managers(settings, music, game_scr, trans, player_data_mgr = null, achievement_mgr = null):
-	print("SettingsMenu.gd: set_managers вызван.")
 	settings_manager = settings
 	setup_managers(trans, music, null)
 	game_screen = game_scr
 	player_data_manager = player_data_mgr
 	self.achievement_manager = achievement_mgr
-	print("SettingsMenu.gd: Менеджеры установлены через set_managers и setup_managers.")
