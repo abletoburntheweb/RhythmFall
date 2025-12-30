@@ -169,7 +169,8 @@ default_color = Color(1, 1, 1, 0.5019608)
 round_precision = 32
 antialiased = true
 
-[node name="AccuracyChartPoints" type="Node2D" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+anchors_preset = 0
 
 [node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
 layout_mode = 2

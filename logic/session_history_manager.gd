@@ -40,7 +40,7 @@ func _save():
 	else:
 		printerr("SessionHistoryManager: Ошибка при сохранении в %s" % SESSION_HISTORY_PATH)
 
-func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int):
+func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int, artist: String = "N/A", title: String = "N/A"):
 	var new_result = {
 		"accuracy": accuracy,
 		"date": date_str, 
@@ -52,7 +52,9 @@ func add_session_result(accuracy: float, date_str: String, grade: String, grade_
 			"a": grade_color.a
 		},
 		"instrument": instrument,
-		"score": score
+		"score": score,
+		"artist": artist,
+		"title": title
 	}
 	
 	history.push_front(new_result)

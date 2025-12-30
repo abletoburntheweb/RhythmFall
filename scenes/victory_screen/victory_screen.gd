@@ -341,13 +341,18 @@ func _deferred_update_ui():
 				var grade_color_for_history = _get_grade_color(grade_for_history)
 				var current_time_string = Time.get_datetime_string_from_system(true, true)
 				
+				var artist = song_info.get("artist", "N/A")
+				var title = song_info.get("title", "N/A")
+				
 				session_history_manager.add_session_result(
 					accuracy,                    
 					current_time_string,        
 					grade_for_history,          
 					grade_color_for_history,    
 					instrument_type_for_history,
-					score                        
+					score,
+					artist,
+					title
 				)
 				print("VictoryScreen.gd: Результат добавлен в SessionHistoryManager.")
 			else:

@@ -25,7 +25,7 @@ extends BaseScreen
 @onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
 
 @onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartLine
-@onready var accuracy_chart_points: Node2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartPoints
+@onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartPoints
 @onready var chart_background: ColorRect = $MainContent/MainVBox/ChartContainer/ChartBackground
 
 var session_history_manager = null
@@ -183,6 +183,10 @@ func _update_accuracy_chart():
 		points.append(Vector2(x, y))
 	accuracy_chart_line.points = points
 
+	print("=== Координаты линии ===")
+	for i in range(points.size()):
+		print("Точка %d: (%.2f, %.2f)" % [i, points[i].x, points[i].y])
+
 	for i in range(20):
 		var session = null
 		if i < reversed_history.size():
@@ -204,15 +208,32 @@ func _update_accuracy_chart():
 
 		var point_position = Vector2(x, y)
 
-		var point_control = ColorRect.new()
-		point_control.color = color
-		point_control.size = Vector2(8, 8)
-		point_control.pivot_offset = point_control.size / 2
+		var point_control = preload("res://scenes/profile/chart_point.gd").new()
+		point_control.point_color = color
+		point_control.point_radius = 6.0
+		point_control.border_width = 1.5
+		point_control.border_color = Color.BLACK
+		
+		point_control._ready()
+
+		print("Точка %d: point_position = (%.2f, %.2f)" % [i, point_position.x, point_position.y])
+		print("Точка %d: point_control.size ПОСЛЕ _ready() = (%.2f, %.2f)" % [i, point_control.size.x, point_control.size.y])
+
 		point_control.position = point_position - point_control.size / 2
+		print("Точка %d: point_control.position после сдвига = (%.2f, %.2f)" % [i, point_control.position.x, point_control.position.y])
+
 		point_control.name = "Point%d" % i
 		point_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		accuracy_chart_points.add_child(point_control)
+
+		print("Точка %d: позиция узла = (%.2f, %.2f), центр = (%.2f, %.2f)" % [
+			i,
+			point_control.position.x,
+			point_control.position.y,
+			point_control.position.x + point_control.size.x / 2,
+			point_control.position.y + point_control.size.y / 2
+		])
 
 func _execute_close_transition():
 	if music_manager:
