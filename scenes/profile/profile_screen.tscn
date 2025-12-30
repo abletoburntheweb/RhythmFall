@@ -156,13 +156,20 @@ layout_mode = 2
 [node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
 layout_mode = 2
 text = "Точность за последние 20 сессий"
+horizontal_alignment = 1
 
 [node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/ChartContainer"]
-custom_minimum_size = Vector2(400, 550)
+custom_minimum_size = Vector2(1920, 300)
 layout_mode = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+width = 4.0
+default_color = Color(1, 1, 1, 0.5019608)
+round_precision = 32
+antialiased = true
+
+[node name="AccuracyChartPoints" type="Node2D" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
 
 [node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
 layout_mode = 2

@@ -25,6 +25,7 @@ extends BaseScreen
 @onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
 
 @onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartLine
+@onready var accuracy_chart_points: Node2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartPoints
 @onready var chart_background: ColorRect = $MainContent/MainVBox/ChartContainer/ChartBackground
 
 var session_history_manager = null
@@ -143,29 +144,75 @@ func refresh_stats():
 func _update_accuracy_chart():
 	if session_history_manager == null:
 		printerr("ProfileScreen: SessionHistoryManager не установлен!")
+		accuracy_chart_line.points = []
+		for child in accuracy_chart_points.get_children():
+			child.queue_free()
 		return
 
 	var history = session_history_manager.get_history()
 	if history.size() == 0:
 		print("ProfileScreen: Нет истории сессий для отображения.")
 		accuracy_chart_line.points = []
+		for child in accuracy_chart_points.get_children():
+			child.queue_free()
 		return
+
+	for child in accuracy_chart_points.get_children():
+		child.queue_free()
 
 	var reversed_history = []
 	for i in range(history.size() - 1, -1, -1):
 		reversed_history.append(history[i])
 
 	var points = []
-	var max_points = min(reversed_history.size(), 20)
+	for i in range(20): 
+		var session = null
+		if i < reversed_history.size():
+			session = reversed_history[i]
+		else:
+			session = {
+				"accuracy": 0.0,
+				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0} 
+			}
 
-	for i in range(max_points):
-		var session = reversed_history[i]
-		var accuracy = session.accuracy
-		var x = i * (chart_background.size.x / (max_points - 1)) if max_points > 1 else 0
-		var y = chart_background.size.y - (accuracy / 100.0) * chart_background.size.y
+		var accuracy = session.get("accuracy", 0.0)
+		var bg_width = chart_background.size.x
+		var bg_height = chart_background.size.y
+		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
+		var y = bg_height - (accuracy / 100.0) * bg_height
 		points.append(Vector2(x, y))
-
 	accuracy_chart_line.points = points
+
+	for i in range(20):
+		var session = null
+		if i < reversed_history.size():
+			session = reversed_history[i]
+		else:
+			session = {
+				"accuracy": 0.0,
+				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
+			}
+
+		var accuracy = session.get("accuracy", 0.0)
+		var grade_color_dict = session.get("grade_color", {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0})
+		var color = Color(grade_color_dict["r"], grade_color_dict["g"], grade_color_dict["b"], grade_color_dict["a"])
+
+		var bg_width = chart_background.size.x
+		var bg_height = chart_background.size.y
+		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
+		var y = bg_height - (accuracy / 100.0) * bg_height
+
+		var point_position = Vector2(x, y)
+
+		var point_control = ColorRect.new()
+		point_control.color = color
+		point_control.size = Vector2(8, 8)
+		point_control.pivot_offset = point_control.size / 2
+		point_control.position = point_position - point_control.size / 2
+		point_control.name = "Point%d" % i
+		point_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		accuracy_chart_points.add_child(point_control)
 
 func _execute_close_transition():
 	if music_manager:
