@@ -45,7 +45,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	var sorted_group_keys = grouped_results.keys()
 	sorted_group_keys.sort_custom(func(a, b):
 		var grade_a = a.split(" (")[0]
-		var grade_b = b.split(" (")[0]
+		var grade_b = a.split(" (")[0]
 		var instr_a = a.split(" (")[1].split(")")[0] 
 		var instr_b = b.split(" (")[1].split(")")[0]
 
@@ -173,8 +173,8 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 			return a.get("score", 0) > b.get("score", 0) 
 	)
 	
-	if results.size() > 25: 
-		results.resize(25) 
+	if results.size() > 20: 
+		results.resize(20) 
 	
 	var results_count_after = results.size()
 	

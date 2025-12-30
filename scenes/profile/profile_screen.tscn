@@ -149,3 +149,21 @@ text = "Заработано всего: 0"
 [node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 text = "Потрачено: 0"
+
+[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+
+[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
+layout_mode = 2
+text = "Точность за последние 20 сессий"
+
+[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/ChartContainer"]
+custom_minimum_size = Vector2(400, 550)
+layout_mode = 2
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+
+[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
+layout_mode = 2
+text = "Сессии (1 → 20)"

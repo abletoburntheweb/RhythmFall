@@ -2,11 +2,19 @@
 var game_engine = null
 var parent = null
 
+var session_history_manager = null
+
 var main_menu_instance = null
 
 func _init(p_game_engine):
 	game_engine = p_game_engine
 	parent = p_game_engine
+	if game_engine and game_engine.has_method("get_session_history_manager"):
+		session_history_manager = game_engine.get_session_history_manager()
+		print("Transitions.gd: SessionHistoryManager получен из GameEngine: ", session_history_manager)
+	else:
+		printerr("Transitions.gd: GameEngine не имеет метода get_session_history_manager!")
+		session_history_manager = null 
 
 func set_main_menu_instance(instance):
 	main_menu_instance = instance
@@ -267,11 +275,25 @@ func transition_close_settings(_from_pause=false):
 			game_engine.current_screen = null
 		transition_open_main_menu()
 
-func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}):
+func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null):
 	var new_screen = _instantiate_if_exists("res://scenes/victory_screen/victory_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("set_victory_data"):
 			new_screen.set_victory_data(score, combo, max_combo, accuracy, song_info)
+		
+		if new_screen.has_method("set_results_manager") and results_mgr:
+			new_screen.set_results_manager(results_mgr)
+			print("Transitions.gd: ResultsManager передан в VictoryScreen.")
+		elif results_mgr:
+			printerr("Transitions.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
+		
+		if new_screen.has_method("set_session_history_manager"):
+			if session_history_manager: 
+				new_screen.set_session_history_manager(session_history_manager)
+			else:
+				printerr("Transitions.gd: session_history_manager в Transitions равен null!")
+		else:
+			printerr("Transitions.gd: VictoryScreen не имеет метода set_session_history_manager.")
 		
 		new_screen.song_select_requested.connect(transition_open_song_select)
 		new_screen.replay_requested.connect(_on_replay_requested.bind(song_info))
@@ -286,8 +308,8 @@ func transition_open_victory_screen(score: int, combo: int, max_combo: int, accu
 func _on_replay_requested(song_info: Dictionary):
 	transition_open_game(null, song_info, "standard")
 
-func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}):
-	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info)
+func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null):
+	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info, results_mgr)
 
 func transition_exit_to_main_menu():
 	transition_open_main_menu()

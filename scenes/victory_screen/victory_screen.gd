@@ -19,6 +19,8 @@ var hit_notes_this_level: int = 0
 
 var results_manager = null
 
+var session_history_manager = null
+
 var music_manager = null
 
 @onready var background: ColorRect = $Background
@@ -88,7 +90,7 @@ func _on_replay_button_pressed():
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_game_with_song"):
 			var instrument_to_use = song_info.get("instrument", "standard")
-			transitions.open_game_with_song(song_info, instrument_to_use)
+			transitions.open_game_with_song(song_info, instrument_to_use, results_manager)
 	
 	queue_free()
 
@@ -138,6 +140,11 @@ func set_results_manager(results_mgr):
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_results_manager вызван с: ", results_mgr)
 	results_manager = results_mgr
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_mgr)
+
+func set_session_history_manager(session_hist_mgr):
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_session_history_manager вызван с: ", session_hist_mgr)
+	session_history_manager = session_hist_mgr
+	print("VictoryScreen.gd: [ДИАГНОСТИКА] SessionHistoryManager установлен в: ", session_hist_mgr)
 
 func set_achievement_system(ach_sys):
 	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_achievement_system вызван с: ", ach_sys)
@@ -325,6 +332,26 @@ func _deferred_update_ui():
 			var song_path = song_info.get("path", "")
 			if song_path != "":
 				player_data_manager.update_best_grade_for_track(song_path, grade)
+
+			if session_history_manager:
+				var instrument_type_for_history = song_info.get("instrument", "standard")
+				if instrument_type_for_history == "drums":
+					instrument_type_for_history = "Перкуссия"
+				var grade_for_history = _calculate_grade()
+				var grade_color_for_history = _get_grade_color(grade_for_history)
+				var current_time_string = Time.get_datetime_string_from_system(true, true)
+				
+				session_history_manager.add_session_result(
+					accuracy,                    
+					current_time_string,        
+					grade_for_history,          
+					grade_color_for_history,    
+					instrument_type_for_history,
+					score                        
+				)
+				print("VictoryScreen.gd: Результат добавлен в SessionHistoryManager.")
+			else:
+				print("VictoryScreen.gd: SessionHistoryManager не установлен, результат не добавлен в общую историю.")
 
 			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
 				print("🎯 Показываем *новые* накопленные геймплейные ачивки...")

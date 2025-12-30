@@ -1,3 +1,4 @@
+# scenes/profile/profile_screen.gd
 class_name ProfileScreen
 extends BaseScreen
 
@@ -23,6 +24,11 @@ extends BaseScreen
 @onready var a_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/ALabel
 @onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
 
+@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartLine
+@onready var chart_background: ColorRect = $MainContent/MainVBox/ChartContainer/ChartBackground
+
+var session_history_manager = null
+
 func _play_time_string_to_seconds(time_str: String) -> int:
 	var parts = time_str.split(":")
 	if parts.size() == 2:
@@ -41,10 +47,19 @@ func _ready():
 		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
 		var player_data_mgr = game_engine.get_player_data_manager()
-
+		
 		setup_managers(trans, music_mgr, player_data_mgr)
 		print("ProfileScreen.gd: setup_managers вызван из _ready().")
 		
+		var session_hist_mgr = null
+		if game_engine.has_method("get_session_history_manager"):
+			session_hist_mgr = game_engine.get_session_history_manager()
+
+		if session_hist_mgr:
+			setup_session_history_manager(session_hist_mgr)
+		else:
+			printerr("ProfileScreen.gd: SessionHistoryManager не получен из GameEngine.")
+
 		if player_data_manager:
 			player_data_manager.total_play_time_changed.connect(_on_total_play_time_changed)
 	else:
@@ -60,6 +75,9 @@ func _ready():
 func _on_total_play_time_changed(new_time: String):
 	if play_time_label:
 		play_time_label.text = "Времени в игре: %s" % new_time
+
+func setup_session_history_manager(session_history_mgr):
+	session_history_manager = session_history_mgr
 
 func refresh_stats():
 	if player_data_manager == null:
@@ -119,6 +137,35 @@ func refresh_stats():
 	s_label.modulate = Color.SILVER
 	a_label.modulate = Color.GREEN
 	b_label.modulate = Color.CYAN
+
+	_update_accuracy_chart()
+
+func _update_accuracy_chart():
+	if session_history_manager == null:
+		printerr("ProfileScreen: SessionHistoryManager не установлен!")
+		return
+
+	var history = session_history_manager.get_history()
+	if history.size() == 0:
+		print("ProfileScreen: Нет истории сессий для отображения.")
+		accuracy_chart_line.points = []
+		return
+
+	var reversed_history = []
+	for i in range(history.size() - 1, -1, -1):
+		reversed_history.append(history[i])
+
+	var points = []
+	var max_points = min(reversed_history.size(), 20)
+
+	for i in range(max_points):
+		var session = reversed_history[i]
+		var accuracy = session.accuracy
+		var x = i * (chart_background.size.x / (max_points - 1)) if max_points > 1 else 0
+		var y = chart_background.size.y - (accuracy / 100.0) * chart_background.size.y
+		points.append(Vector2(x, y))
+
+	accuracy_chart_line.points = points
 
 func _execute_close_transition():
 	if music_manager:

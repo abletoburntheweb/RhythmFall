@@ -74,6 +74,13 @@ var gameplay_started: bool = false
 func _ready():
 	game_engine = get_parent()
 	
+	var transitions = null
+	if game_engine and game_engine.has_method("get_transitions"):
+		transitions = game_engine.get_transitions()
+		print("GameScreen.gd: Transitions получен: ", transitions)
+	else:
+		printerr("GameScreen.gd: GameEngine не имеет метода get_transitions!")
+	
 	if game_engine and game_engine.has_method("get_music_manager"):
 		music_manager = game_engine.get_music_manager()
 	
@@ -367,58 +374,40 @@ func end_game():
 	if auto_player:
 		auto_player.reset()
 	
-	var victory_scene = preload("res://scenes/victory_screen/victory_screen.tscn")
-	if victory_scene:
-		var new_victory_screen = victory_scene.instantiate()
-		
-		var victory_song_info = selected_song_data.duplicate()
-		victory_song_info["instrument"] = current_instrument 
-		var debug_score = score_manager.get_score()
-		var debug_combo = score_manager.get_combo()
-		var debug_max_combo = score_manager.get_max_combo()
-		var debug_accuracy = score_manager.get_accuracy()
-		var debug_perfect_hits = perfect_hits_this_level
-		var debug_missed_notes = score_manager.get_missed_notes_count()
-		var debug_hit_notes = score_manager.get_hit_notes_count()
-		print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d, Пропущено=%d" % [
-			debug_score, debug_combo, debug_max_combo, debug_accuracy, debug_perfect_hits, debug_missed_notes
-		])
+	var victory_song_info = selected_song_data.duplicate()
+	victory_song_info["instrument"] = current_instrument 
+	var debug_score = score_manager.get_score()
+	var debug_combo = score_manager.get_combo()
+	var debug_max_combo = score_manager.get_max_combo()
+	var debug_accuracy = score_manager.get_accuracy()
+	var debug_perfect_hits = perfect_hits_this_level
+	var debug_missed_notes = score_manager.get_missed_notes_count()
+	var debug_hit_notes = score_manager.get_hit_notes_count()
+	print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d, Пропущено=%d" % [
+		debug_score, debug_combo, debug_max_combo, debug_accuracy, debug_perfect_hits, debug_missed_notes
+	])
 
-		new_victory_screen.set_victory_data(
-			debug_score,      
-			debug_combo,    
-			debug_max_combo,  
-			debug_accuracy,  
-			victory_song_info,
-			score_manager.get_combo_multiplier(), 
-			note_manager.get_spawn_queue_size(), 
-			debug_missed_notes,
-			debug_perfect_hits,
-			debug_hit_notes 
-		)
-		
-		var achievement_system = null 
-		if game_engine and game_engine.has_method("get_achievement_system"):
-			achievement_system = game_engine.get_achievement_system()
-			print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem получен от GameEngine для VictoryScreen.")
-		
-		if new_victory_screen.has_method("set_results_manager") and results_manager:
-			new_victory_screen.set_results_manager(results_manager)
-			print("GameScreen.gd: ResultsManager передан в VictoryScreen.")
-		elif results_manager:
-			printerr("GameScreen.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
-		
-		if new_victory_screen.has_method("set_achievement_system") and achievement_system:
-			new_victory_screen.set_achievement_system(achievement_system)
-			print("GameScreen.gd: [ДИАГНОСТИКА] AchievementSystem передан в VictoryScreen.")
-		else:
-			print("GameScreen.gd: [ДИАГНОСТИКА] Не удалось передать AchievementSystem в VictoryScreen.")
-		
-		var parent_node = get_parent()
-		if parent_node:
-			parent_node.remove_child(self)
-			parent_node.add_child(new_victory_screen)
-			queue_free()
+	var transitions = null
+	if game_engine and game_engine.has_method("get_transitions"):
+		transitions = game_engine.get_transitions()
+		print("GameScreen.gd: Transitions получен для открытия VictoryScreen: ", transitions)
+	else:
+		printerr("GameScreen.gd: GameEngine не имеет метода get_transitions!")
+		return 
+
+	transitions.open_victory_screen(
+		debug_score,      
+		debug_combo,    
+		debug_max_combo,  
+		debug_accuracy,  
+		victory_song_info,
+		results_manager  
+	)
+
+	var parent_node = get_parent()
+	if parent_node:
+		parent_node.remove_child(self)
+		queue_free()
 
 func update_ui():
 	if score_label:

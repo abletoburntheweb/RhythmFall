@@ -17,7 +17,7 @@ func _load():
 		file_access.close()
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Array:
-			var valid_history = []
+			var valid_history: Array[Dictionary] = [] 
 			for item in json_result:
 				if item is Dictionary and item.has("accuracy") and item.has("date"):
 					valid_history.append(item)

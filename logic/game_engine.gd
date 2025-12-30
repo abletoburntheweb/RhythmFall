@@ -15,6 +15,8 @@ var achievement_queue_manager: AchievementQueueManager = null
 
 var song_metadata_manager: SongMetadataManager = null
 
+var session_history_manager: SessionHistoryManager = null
+
 var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
 const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
@@ -98,7 +100,10 @@ func initialize_logic():
 	add_child(achievement_queue_manager)
 	
 	player_data_manager.set_game_engine_reference(self)
-	
+
+	session_history_manager = SessionHistoryManager.new() 
+	print("GameEngine.gd: SessionHistoryManager инициализирован.")
+
 	transitions = preload("res://logic/transitions.gd").new(self)
 
 	call_deferred("_handle_player_login")
@@ -251,3 +256,6 @@ func get_achievement_system() -> AchievementSystem:
 
 func get_achievement_queue_manager() -> AchievementQueueManager:
 	return achievement_queue_manager
+
+func get_session_history_manager() -> SessionHistoryManager:
+	return session_history_manager
