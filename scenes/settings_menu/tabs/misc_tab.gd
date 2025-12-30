@@ -123,40 +123,71 @@ func _on_reset_all_settings_pressed():
 
 func _on_clear_all_results_pressed():
 	print("MiscTab.gd: Запрос на очистку ВСЕХ результатов из папки user://results/.")
+	print("MiscTab.gd: Также очищаются best_grades.json и session_history.json.")
 
 	var results_dir_path = "user://results"
 	var dir_access = DirAccess.open(results_dir_path)
 
 	var results_dir_exists = DirAccess.open("user://").dir_exists("results")
 
+	var all_deleted_in_results = true
+
 	if not dir_access:
 		if not results_dir_exists:
-			print("MiscTab.gd: _on_clear_all_results_pressed: Директория результатов не существует, нечего очищать: ", results_dir_path)
+			print("MiscTab.gd: _on_clear_all_results_pressed: Директория результатов не существует, нечего очищать в results/: ", results_dir_path)
 		else:
 			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть директорию: ", results_dir_path)
+	else:
+		dir_access.list_dir_begin()
+		var file_name = dir_access.get_next()
+
+		while file_name != "":
+			if file_name != "." and file_name != "..":
+				if not dir_access.current_is_dir():
+					var file_path = results_dir_path.path_join(file_name) 
+					var err = dir_access.remove(file_name)
+					if err != OK:
+						printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
+						all_deleted_in_results = false
+					else:
+						print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+				else:
+					print("MiscTab.gd: _on_clear_all_results_pressed: Пропущена поддиректория: ", file_name)
+			file_name = dir_access.get_next()
+
+		dir_access.list_dir_end()
+
+		if all_deleted_in_results:
+			print("MiscTab.gd: _on_clear_all_results_pressed: Все файлы из папки ", results_dir_path, " успешно удалены.")
+		else:
+			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы из папки ", results_dir_path, " были удалены.")
+
+	var user_dir_access = DirAccess.open("user://")
+	if not user_dir_access:
+		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть корневую директорию user://")
 		return
 
-	dir_access.list_dir_begin()
-	var file_name = dir_access.get_next()
-	var all_deleted = true
+	var files_to_delete = ["best_grades.json", "session_history.json"]
+	var all_deleted_elsewhere = true
 
-	while file_name != "":
-		if file_name != "." and file_name != "..":
-			if not dir_access.current_is_dir():
-				var file_path = results_dir_path.path_join(file_name) 
-				var err = dir_access.remove(file_name)
-				if err != OK:
-					printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
-					all_deleted = false
-				else:
-					print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+	for file_name in files_to_delete:
+		if user_dir_access.file_exists(file_name):
+			var file_path = "user://".path_join(file_name)
+			var err = user_dir_access.remove(file_name)
+			if err != OK:
+				printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
+				all_deleted_elsewhere = false
 			else:
-				print("MiscTab.gd: _on_clear_all_results_pressed: Пропущена поддиректория: ", file_name)
-		file_name = dir_access.get_next()
+				print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+		else:
+			print("MiscTab.gd: _on_clear_all_results_pressed: Файл не найден, пропущен: ", file_name)
 
-	dir_access.list_dir_end()
-
-	if all_deleted:
-		print("MiscTab.gd: _on_clear_all_results_pressed: Все файлы из папки ", results_dir_path, " успешно удалены.")
+	if all_deleted_elsewhere:
+		print("MiscTab.gd: _on_clear_all_results_pressed: Файлы best_grades.json и session_history.json успешно удалены (или не существовали).")
 	else:
-		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы из папки ", results_dir_path, " были удалены.")
+		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы (best_grades.json, session_history.json) были удалены.")
+
+	if (results_dir_exists and all_deleted_in_results) or (not results_dir_exists) and all_deleted_elsewhere:
+		print("MiscTab.gd: _on_clear_all_results_pressed: Все запрошенные файлы успешно удалены.")
+	else:
+		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы были успешно удалены.")

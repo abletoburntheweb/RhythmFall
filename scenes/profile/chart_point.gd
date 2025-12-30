@@ -26,10 +26,10 @@ func _draw():
 	
 	if is_hovered:
 		var inner_radius = point_radius
-		var outer_radius = point_radius + 3.0 # Толщина кольца
+		var outer_radius = point_radius + 3.0
 		for i in range(1, 4):
 			var radius = point_radius + float(i)
-			draw_circle(size / 2, radius, Color.YELLOW.lerp(point_color, 0.5)) # Цвет кольца - промежуточный или просто Color.YELLOW
+			draw_circle(size / 2, radius, Color.YELLOW.lerp(point_color, 0.5)) 
 
 func _gui_input(event):
 	if event is InputEventMouseMotion:
