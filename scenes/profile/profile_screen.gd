@@ -27,6 +27,7 @@ extends BaseScreen
 @onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartLine
 @onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartPoints
 @onready var chart_background: ColorRect = $MainContent/MainVBox/ChartContainer/ChartBackground
+@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/ChartContainer/TooltipLabel")) as RichTextLabel
 
 var session_history_manager = null
 
@@ -147,6 +148,8 @@ func _update_accuracy_chart():
 		accuracy_chart_line.points = []
 		for child in accuracy_chart_points.get_children():
 			child.queue_free()
+		if tooltip_label:
+			tooltip_label.visible = false
 		return
 
 	var history = session_history_manager.get_history()
@@ -155,20 +158,25 @@ func _update_accuracy_chart():
 		accuracy_chart_line.points = []
 		for child in accuracy_chart_points.get_children():
 			child.queue_free()
+		if tooltip_label:
+			tooltip_label.visible = false
 		return
 
 	for child in accuracy_chart_points.get_children():
+		if child.has_signal("point_hovered"):
+			child.point_hovered.disconnect(_on_point_hovered)
+		if child.has_signal("point_unhovered"):
+			child.point_unhovered.disconnect(_on_point_unhovered)
 		child.queue_free()
 
-	var reversed_history = []
-	for i in range(history.size() - 1, -1, -1):
-		reversed_history.append(history[i])
+	var start_index = max(0, history.size() - 20)
+	var relevant_history = history.slice(start_index, history.size())
 
 	var points = []
-	for i in range(20): 
+	for i in range(20):
 		var session = null
-		if i < reversed_history.size():
-			session = reversed_history[i]
+		if i < relevant_history.size():
+			session = relevant_history[i]
 		else:
 			session = {
 				"accuracy": 0.0,
@@ -183,32 +191,34 @@ func _update_accuracy_chart():
 		points.append(Vector2(x, y))
 	accuracy_chart_line.points = points
 
-	print("=== Координаты линии ===")
-	for i in range(points.size()):
-		print("Точка %d: (%.2f, %.2f)" % [i, points[i].x, points[i].y])
-
 	for i in range(20):
 		var session = null
-		if i < reversed_history.size():
-			session = reversed_history[i]
+		var tooltip_text = "Н/Д - Н/Д (0.00%)"
+		if i < relevant_history.size():
+			session = relevant_history[i]
+			var accuracy = session.get("accuracy", 0.0)
+			var artist = session.get("artist", "Unknown")
+			var title = session.get("title", "Unknown Track")
+			tooltip_text = "%s - %s\n(%.2f%%)" % [artist, title, accuracy]
 		else:
-			session = {
-				"accuracy": 0.0,
-				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
-			}
+			var accuracy = session.get("accuracy", 0.0) if session else 0.0
+			tooltip_text = "Н/Д - Н/Д\n(%.2f%%)" % accuracy
 
-		var accuracy = session.get("accuracy", 0.0)
-		var grade_color_dict = session.get("grade_color", {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0})
+		var grade_color_dict = session.get("grade_color", {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}) if session else {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
 		var color = Color(grade_color_dict["r"], grade_color_dict["g"], grade_color_dict["b"], grade_color_dict["a"])
 
 		var bg_width = chart_background.size.x
 		var bg_height = chart_background.size.y
 		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
-		var y = bg_height - (accuracy / 100.0) * bg_height
+		var y = bg_height - (session.get("accuracy", 0.0) / 100.0) * bg_height if session else bg_height
 
 		var point_position = Vector2(x, y)
 
-		var point_control = preload("res://scenes/profile/chart_point.gd").new()
+		var point_control_script = load("res://scenes/profile/chart_point.gd")
+		var point_control = point_control_script.new()
+
+		point_control.set_tooltip_text(tooltip_text)
+
 		point_control.point_color = color
 		point_control.point_radius = 6.0
 		point_control.border_width = 1.5
@@ -216,24 +226,24 @@ func _update_accuracy_chart():
 		
 		point_control._ready()
 
-		print("Точка %d: point_position = (%.2f, %.2f)" % [i, point_position.x, point_position.y])
-		print("Точка %d: point_control.size ПОСЛЕ _ready() = (%.2f, %.2f)" % [i, point_control.size.x, point_control.size.y])
-
 		point_control.position = point_position - point_control.size / 2
-		print("Точка %d: point_control.position после сдвига = (%.2f, %.2f)" % [i, point_control.position.x, point_control.position.y])
-
 		point_control.name = "Point%d" % i
-		point_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		point_control.point_hovered.connect(_on_point_hovered.bind(i))
+		point_control.point_unhovered.connect(_on_point_unhovered)
 
 		accuracy_chart_points.add_child(point_control)
 
-		print("Точка %d: позиция узла = (%.2f, %.2f), центр = (%.2f, %.2f)" % [
-			i,
-			point_control.position.x,
-			point_control.position.y,
-			point_control.position.x + point_control.size.x / 2,
-			point_control.position.y + point_control.size.y / 2
-		])
+func _on_point_hovered(global_pos: Vector2, tooltip_text: String, index: int):
+	if tooltip_label:
+		tooltip_label.text = tooltip_text
+		tooltip_label.visible = true
+		var local_pos = accuracy_chart_points.to_local(global_pos)
+		tooltip_label.position = local_pos + Vector2(-tooltip_label.size.x / 2, -tooltip_label.size.y - 15) 
+
+func _on_point_unhovered():
+	if tooltip_label:
+		tooltip_label.visible = false
 
 func _execute_close_transition():
 	if music_manager:
