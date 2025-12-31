@@ -18,8 +18,8 @@ func _init(ach_manager: AchievementManager, pd_manager: PlayerDataManager, music
 func on_song_replayed(song_path: String):
 	achievement_manager.check_replay_level_achievement(song_path) 
 
-func on_level_completed(accuracy: float, is_drum_mode: bool = false):
-	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode)
+func on_level_completed(accuracy: float, is_drum_mode: bool = false, grade: String = ""):
+	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode, ", grade: ", grade)
 	achievement_manager.check_first_level_achievement()
 	achievement_manager.check_perfect_accuracy_achievement(accuracy)
 
@@ -33,6 +33,11 @@ func on_level_completed(accuracy: float, is_drum_mode: bool = false):
 
 	var total_levels_completed = player_data_manager.get_levels_completed()
 	achievement_manager.check_levels_completed_achievement(total_levels_completed)
+	
+	achievement_manager.check_score_achievements(player_data_manager)
+	if grade == "SS":
+		achievement_manager.check_ss_achievements(player_data_manager)
+
 	achievement_manager.save_achievements()
 
 func on_purchase_made():
@@ -78,4 +83,13 @@ func check_drum_storm_achievement():
 func on_playtime_changed(new_time_formatted: String):
 	print("[AchievementSystem] on_playtime_changed вызван. Новое время: ", new_time_formatted)
 	achievement_manager.check_playtime_achievements(player_data_manager)
+	achievement_manager.save_achievements()
+
+func on_score_earned():
+	achievement_manager.check_score_achievements(player_data_manager)
+	achievement_manager.save_achievements()
+
+func on_grade_earned(grade: String):
+	if grade == "SS":
+		achievement_manager.check_ss_achievements(player_data_manager)
 	achievement_manager.save_achievements()

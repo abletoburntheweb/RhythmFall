@@ -275,7 +275,7 @@ func _deferred_update_ui():
 			var instrument_used = song_info.get("instrument", "standard")
 			var is_drum_mode = (instrument_used == "drums")
 			player_data_manager.add_score_to_total(score, is_drum_mode)
-			print("VictoryScreen.gd: Добавлены очки за уровень: %d. Режим барабанов: %s" % [score, is_drum_mode])
+			print("VictoryScreen.gd: Добавлены очков за уровень: %d. Режим барабанов: %s" % [score, is_drum_mode])
 
 			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
 
@@ -299,7 +299,8 @@ func _deferred_update_ui():
 			
 			if achievement_system:
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
-				achievement_system.on_level_completed(accuracy, is_drum_mode)
+				# ПЕРЕДАЁМ grade
+				achievement_system.on_level_completed(accuracy, is_drum_mode, grade)
 				
 			elif achievement_manager:
 				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
@@ -310,6 +311,11 @@ func _deferred_update_ui():
 					print(" dru Проверяем drum-ачивки через AchievementManager...")
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+
+				# НОВОЕ: Добавляем проверку SS и очков в fallback
+				achievement_manager.check_score_achievements(player_data_manager)
+				if grade == "SS":
+					achievement_manager.check_ss_achievements(player_data_manager)
 
 			if should_save_result_later:
 				var instrument_for_result = song_info.get("instrument", "standard")

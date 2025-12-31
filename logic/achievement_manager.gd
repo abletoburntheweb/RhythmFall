@@ -429,7 +429,7 @@ func check_rhythm_master_achievement(total_notes_hit: int):
 			if total_notes_hit >= 1000:  
 				_perform_unlock(achievement)
 			break 
-			
+
 func check_drum_level_achievements(player_data_mgr_override = null, accuracy: float = 0.0, total_drum_levels: int = 0):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
@@ -540,3 +540,41 @@ func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
 
 	print("[AchievementManager] Достижение с id=%d не найдено" % achievement_id)
 	return {"current": "0.00", "total": "1.00", "unlocked": false}
+
+func check_score_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+
+	var total_score = pdm.get_total_score()
+	var score_achievements = {39: 5000, 40: 25000, 41: 100000, 42: 250000}
+
+	for ach_id in score_achievements:
+		var required_score = score_achievements[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = total_score
+				if total_score >= required_score and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
+
+	save_achievements()
+
+func check_ss_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+
+	var ss_count = pdm.data.get("grades", {}).get("SS", 0)
+	var ss_achievements = {43: 5, 44: 10, 45: 25, 46: 50}
+
+	for ach_id in ss_achievements:
+		var required_ss = ss_achievements[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = ss_count
+				if ss_count >= required_ss and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
+
+	save_achievements()
