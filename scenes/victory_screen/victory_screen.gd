@@ -10,6 +10,7 @@ var max_combo: int
 var accuracy: float
 var song_info: Dictionary = {}
 var earned_currency: int = 0
+var earned_xp: int = 0 
 
 var calculated_combo_multiplier: float = 1.0 
 var calculated_total_notes: int = 0
@@ -33,6 +34,7 @@ var music_manager = null
 @onready var accuracy_label: Label = $StatsFrame/AccuracyLabel
 @onready var grade_label: Label = $StatsFrame/GradeLabel
 @onready var currency_label: Label = $StatsFrame/CurrencyLabel
+@onready var xp_label: Label = $StatsFrame/XPLabel 
 @onready var hit_notes_label: Label = $StatsFrame/HitNotesLabel 
 @onready var missed_notes_label: Label = $StatsFrame/MissedNotesLabel 
 @onready var replay_button: Button = $ButtonsContainer/ReplayButton
@@ -76,6 +78,40 @@ func _get_grade_color(grade: String) -> Color:
 		"D": return Color.RED
 		"F": return Color.DARK_RED
 		_: return Color.WHITE
+
+func _calculate_xp_new() -> int: 
+	var base_xp = score / 200.0  
+
+	var accuracy_bonus = 0.0
+	if accuracy >= 100.0:
+		accuracy_bonus = 50.0 
+	elif accuracy >= 98.0:
+		accuracy_bonus = 30.0
+	elif accuracy >= 95.0:
+		accuracy_bonus = 20.0
+	elif accuracy >= 90.0:
+		accuracy_bonus = 10.0
+
+	var combo_bonus = max_combo / 10.0  
+
+	var grade_bonus = 0.0
+	var grade = _calculate_grade()
+	match grade:
+		"SS": grade_bonus = 100.0
+		"S": grade_bonus = 50.0
+		"A": grade_bonus = 25.0
+		"B": grade_bonus = 10.0
+		"C": grade_bonus = 0.0 
+		"D": grade_bonus = -10.0 
+		"F": grade_bonus = -20.0  
+
+	var full_combo_bonus = 0.0
+	if calculated_missed_notes == 0:
+		full_combo_bonus = 50.0  
+
+	var total_xp = int(base_xp + accuracy_bonus + combo_bonus + grade_bonus + full_combo_bonus)
+
+	return max(1, total_xp)
 
 func _on_replay_button_pressed():
 	if music_manager and music_manager.has_method("stop_game_music"):
@@ -173,6 +209,7 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	hit_notes_this_level = p_hit_notes 
 	
 	earned_currency = _calculate_currency_new()
+	earned_xp = _calculate_xp_new() 
 
 	call_deferred("_deferred_update_ui")
 
@@ -215,7 +252,12 @@ func _deferred_update_ui():
 		grade_label.modulate = grade_color
 	
 	if is_instance_valid(currency_label):
-		currency_label.text = "Валюта за уровень: %d" % earned_currency 
+		currency_label.text = "Валюта за уровень: %d" % earned_currency
+		currency_label.modulate = Color.GOLD
+
+	if is_instance_valid(xp_label):
+		xp_label.text = "XP за уровень: %d" % earned_xp
+		xp_label.modulate = Color.CYAN  
 
 	if is_instance_valid(hit_notes_label):
 		hit_notes_label.text = "Попаданий: %d" % hit_notes_this_level 
@@ -372,7 +414,13 @@ func _deferred_update_ui():
 			else:
 				print("⚠️ AchievementManager не имеет метода show_all_delayed_gameplay_achievements или clear_new_gameplay_achievements.")
 			
+			if player_data_manager.has_method("add_xp"):
+				player_data_manager.add_xp(earned_xp)
+			else:
+				print("⚠️ PlayerDataManager не имеет метода add_xp")
+
 			print("💰 Игрок заработал валюту: %d" % earned_currency)
+			print("⭐ Игрок заработал XP: %d" % earned_xp) 
 			print("🎯 Получена оценка: %s (%.1f%%)" % [grade, accuracy])
 		else:
 			printerr("VictoryScreen: Не удалось получить player_data_manager")

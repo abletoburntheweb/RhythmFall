@@ -401,7 +401,10 @@ func end_game():
 		debug_max_combo,  
 		debug_accuracy,  
 		victory_song_info,
-		results_manager  
+		results_manager, 
+		debug_missed_notes, 
+		debug_perfect_hits, 
+		debug_hit_notes    
 	)
 
 	var parent_node = get_parent()

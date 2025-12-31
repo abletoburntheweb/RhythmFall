@@ -275,11 +275,11 @@ func transition_close_settings(_from_pause=false):
 			game_engine.current_screen = null
 		transition_open_main_menu()
 
-func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null):
+func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null, missed_notes: int = 0, perfect_hits: int = 0, hit_notes: int = 0):
 	var new_screen = _instantiate_if_exists("res://scenes/victory_screen/victory_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("set_victory_data"):
-			new_screen.set_victory_data(score, combo, max_combo, accuracy, song_info)
+			new_screen.set_victory_data(score, combo, max_combo, accuracy, song_info, 1.0, 0, missed_notes, perfect_hits, hit_notes)
 		
 		if new_screen.has_method("set_results_manager") and results_mgr:
 			new_screen.set_results_manager(results_mgr)
@@ -308,8 +308,8 @@ func transition_open_victory_screen(score: int, combo: int, max_combo: int, accu
 func _on_replay_requested(song_info: Dictionary):
 	transition_open_game(null, song_info, "standard")
 
-func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null):
-	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info, results_mgr)
+func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null, missed_notes: int = 0, perfect_hits: int = 0, hit_notes: int = 0):
+	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info, results_mgr, missed_notes, perfect_hits, hit_notes)
 
 func transition_exit_to_main_menu():
 	transition_open_main_menu()

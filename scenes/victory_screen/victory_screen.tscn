@@ -104,20 +104,29 @@ theme_override_font_sizes/font_size = 24
 text = "Валюта: 0"
 horizontal_alignment = 1
 
-[node name="GradeLabel" type="Label" parent="StatsFrame"]
+[node name="XPLabel" type="Label" parent="StatsFrame"]
 layout_mode = 0
 offset_top = 210.0
 offset_right = 1920.0
 offset_bottom = 244.0
+theme_override_font_sizes/font_size = 24
+text = "Опыт: 0"
+horizontal_alignment = 1
+
+[node name="GradeLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 240.0
+offset_right = 1920.0
+offset_bottom = 274.0
 theme_override_font_sizes/font_size = 24
 text = "Оценка: S"
 horizontal_alignment = 1
 
 [node name="ButtonsContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
-offset_top = 388.0
+offset_top = 419.0
 offset_right = 1920.0
-offset_bottom = 1162.0
+offset_bottom = 1193.0
 
 [node name="ReplayButton" type="Button" parent="ButtonsContainer"]
 modulate = Color(0, 0.62806845, 0.1154759, 1)

@@ -41,10 +41,14 @@ var data: Dictionary = {
 		"C": 0,
 		"D": 0,
 		"F": 0
-	}
+	},
+	"total_xp": 0,
+	"current_level": 1,
+	"xp_for_next_level": 100
 }
 
 signal total_play_time_changed(new_time_formatted: String)
+signal level_changed(new_level: int, new_xp: int, xp_for_next_level: int)  
 
 var _total_play_time_seconds: int = 0
 
@@ -100,6 +104,9 @@ func _load():
 			var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
 			var loaded_total_score_ever = int(json_result.get("total_score_ever", 0))
 			var loaded_total_drum_score_ever = int(json_result.get("total_drum_score_ever", 0))
+			var loaded_total_xp = int(json_result.get("total_xp", 0))
+			var loaded_current_level = int(json_result.get("current_level", 1))
+			var loaded_xp_for_next_level = int(json_result.get("xp_for_next_level", 100))
 
 			var loaded_grades = json_result.get("grades", {
 				"SS": 0,
@@ -133,6 +140,9 @@ func _load():
 			data["total_score_ever"] = loaded_total_score_ever
 			data["total_drum_score_ever"] = loaded_total_drum_score_ever
 			data["grades"] = loaded_grades
+			data["total_xp"] = loaded_total_xp
+			data["current_level"] = loaded_current_level
+			data["xp_for_next_level"] = loaded_xp_for_next_level
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -259,6 +269,42 @@ func _trigger_perfect_hit_achievement_check():
 		if achievement_system:
 			achievement_system.on_perfect_hit_made()
 
+func xp_for_level(level: int) -> int:
+	return int(100 * pow(1.5, level - 1))
+
+func _calculate_xp_for_next_level():
+	data["xp_for_next_level"] = xp_for_level(data["current_level"] + 1)
+
+func add_xp(amount: int):
+	data["total_xp"] += amount
+	print("PlayerDataManager: Добавлено XP: %d, всего: %d" % [amount, data["total_xp"]])
+	check_level_up()
+
+func check_level_up():
+	while data["total_xp"] >= data["xp_for_next_level"]:
+		data["current_level"] += 1
+		print("PlayerDataManager: Уровень повышен! Новый уровень: %d" % data["current_level"])
+		_calculate_xp_for_next_level()
+		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
+		_save() 
+
+func get_xp_progress() -> float:
+	if data["xp_for_next_level"] == 0:
+		return 0.0
+	return float(data["total_xp"]) / float(data["xp_for_next_level"])
+
+func get_xp_progress_text() -> String:
+	return "%d / %d" % [data["total_xp"], data["xp_for_next_level"]]
+
+func get_total_xp() -> int:
+	return data["total_xp"]
+
+func get_current_level() -> int:
+	return data["current_level"]
+
+func get_xp_for_next_level() -> int:
+	return data["xp_for_next_level"]
+
 func get_items() -> PackedStringArray:
 	return data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
 
@@ -366,6 +412,13 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("total_drum_score_ever"):
 		data["total_drum_score_ever"] = int(save_dict["total_drum_score_ever"])
 	
+	if save_dict.has("total_xp"):
+		data["total_xp"] = int(save_dict["total_xp"])
+	if save_dict.has("current_level"):
+		data["current_level"] = int(save_dict["current_level"])
+	if save_dict.has("xp_for_next_level"):
+		data["xp_for_next_level"] = int(save_dict["xp_for_next_level"])
+	
 	if save_dict.has("grades"):
 		var loaded_grades = save_dict["grades"]
 		if loaded_grades is Dictionary:
@@ -402,6 +455,10 @@ func reset_progress():
 		"D": 0,
 		"F": 0
 	}
+
+	data["total_xp"] = 0
+	data["current_level"] = 1
+	data["xp_for_next_level"] = 100
 
 	_total_play_time_seconds = 0
 
@@ -448,6 +505,10 @@ func reset_profile_statistics():
 		"D": 0,
 		"F": 0
 	}
+
+	data["total_xp"] = 0
+	data["current_level"] = 1
+	data["xp_for_next_level"] = 100
 
 	_total_play_time_seconds = 0
 
