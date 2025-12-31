@@ -31,6 +31,8 @@ var data: Dictionary = {
 	"total_drum_hits": 0,           
 	"total_drum_misses": 0,
 	"total_play_time": "00:00", 
+	"total_score_ever": 0,           
+	"total_drum_score_ever": 0,     
 	"grades": {
 		"SS": 0,
 		"S": 0,
@@ -96,6 +98,8 @@ func _load():
 			var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
 			var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
 			var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
+			var loaded_total_score_ever = int(json_result.get("total_score_ever", 0))
+			var loaded_total_drum_score_ever = int(json_result.get("total_drum_score_ever", 0))
 
 			var loaded_grades = json_result.get("grades", {
 				"SS": 0,
@@ -126,6 +130,8 @@ func _load():
 			data["total_drum_hits"] = loaded_total_drum_hits
 			data["total_drum_misses"] = loaded_total_drum_misses
 			data["total_play_time"] = loaded_total_play_time 
+			data["total_score_ever"] = loaded_total_score_ever
+			data["total_drum_score_ever"] = loaded_total_drum_score_ever
 			data["grades"] = loaded_grades
 
 			data["last_login_date"] = loaded_last_login
@@ -355,6 +361,10 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("total_play_time"): 
 		data["total_play_time"] = str(save_dict["total_play_time"])
 		_total_play_time_seconds = _play_time_string_to_seconds(data["total_play_time"])
+	if save_dict.has("total_score_ever"):
+		data["total_score_ever"] = int(save_dict["total_score_ever"])
+	if save_dict.has("total_drum_score_ever"):
+		data["total_drum_score_ever"] = int(save_dict["total_drum_score_ever"])
 	
 	if save_dict.has("grades"):
 		var loaded_grades = save_dict["grades"]
@@ -380,6 +390,8 @@ func reset_progress():
 	data["max_drum_combo_ever"] = 0
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
+	data["total_score_ever"] = 0
+	data["total_drum_score_ever"] = 0
 	data["total_play_time"] = "00:00" 
 	data["grades"] = {
 		"SS": 0,
@@ -422,6 +434,8 @@ func reset_profile_statistics():
 	data["max_drum_combo_ever"] = 0
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
+	data["total_score_ever"] = 0
+	data["total_drum_score_ever"] = 0
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["total_play_time"] = "00:00" 
@@ -539,6 +553,26 @@ func get_total_notes_missed() -> int:
 
 func get_total_notes_played() -> int: 
 	return get_total_notes_hit() + get_total_notes_missed()
+
+func add_score_to_total(score: int, is_drum_mode: bool = false):
+	var current_total = int(data.get("total_score_ever", 0))
+	var new_total = current_total + score
+	data["total_score_ever"] = new_total
+	print("[PlayerDataManager] Добавлено очков к общему счёту: %d. Общий счёт: %d" % [score, new_total])
+	
+	if is_drum_mode:
+		var current_drum_total = int(data.get("total_drum_score_ever", 0))
+		var new_drum_total = current_drum_total + score
+		data["total_drum_score_ever"] = new_drum_total
+		print("[PlayerDataManager] Добавлено очков к барабанному счёту: %d. Общий барабанный счёт: %d" % [score, new_drum_total])
+	
+	_save()
+
+func get_total_score() -> int:
+	return int(data.get("total_score_ever", 0))
+
+func get_total_drum_score() -> int:
+	return int(data.get("total_drum_score_ever", 0))
 
 func _play_time_string_to_seconds(time_str: String) -> int:
 	var parts = time_str.split(":")

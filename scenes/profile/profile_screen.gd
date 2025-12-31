@@ -18,16 +18,18 @@ extends BaseScreen
 @onready var max_drum_hit_streak_label: Label = $MainContent/MainVBox/StatsVBox/MaxDrumHitStreakContainer/MaxDrumHitStreakLabel
 @onready var total_earned_currency_label: Label = $MainContent/MainVBox/StatsVBox/TotalEarnedCurrencyLabel
 @onready var spent_currency_label: Label = $MainContent/MainVBox/StatsVBox/SpentCurrencyLabel
+@onready var total_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalScoreLabel
+@onready var total_drum_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer/TotalDrumScoreLabel
 
 @onready var ss_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SSLabel
 @onready var s_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SLabel
 @onready var a_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/ALabel
 @onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
 
-@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartLine
-@onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartContainer/ChartBackground/AccuracyChartPoints
-@onready var chart_background: ColorRect = $MainContent/MainVBox/ChartContainer/ChartBackground
-@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/ChartContainer/TooltipLabel")) as RichTextLabel
+@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground/AccuracyChartLine
+@onready var accuracy_chart_points: Control = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground/AccuracyChartPoints
+@onready var chart_background: ColorRect = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground
+@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/StatsVBox/ChartContainer/TooltipLabel")) as RichTextLabel
 
 var session_history_manager = null
 
@@ -80,6 +82,7 @@ func _on_total_play_time_changed(new_time: String):
 
 func setup_session_history_manager(session_history_mgr):
 	session_history_manager = session_history_mgr
+	refresh_stats()
 
 func refresh_stats():
 	if player_data_manager == null:
@@ -111,7 +114,7 @@ func refresh_stats():
 	var play_time_formatted = player_data_manager.get_total_play_time_formatted() 
 	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
 
-	total_notes_hit_label.text = "Попаданий: %d" % total_notes_hit
+	total_notes_hit_label.text = "Точных попаданий: %d" % total_notes_hit
 	total_drum_hits_label.text = "Перкуссия: %d" % total_drum_hits
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
 	total_drum_misses_label.text = "Перкуссия: %d" % total_drum_misses
@@ -123,6 +126,13 @@ func refresh_stats():
 
 	total_earned_currency_label.text = "Заработано всего: %d" % player_data_manager.data.get("total_earned_currency", 0)
 	spent_currency_label.text = "Потрачено: %d" % player_data_manager.data.get("spent_currency", 0)
+
+	var total_score = player_data_manager.data.get("total_score_ever", 0)
+	var total_drum_score = player_data_manager.data.get("total_drum_score_ever", 0)
+	if total_score_label:
+		total_score_label.text = "Всего очков: %d" % total_score
+	if total_drum_score_label:
+		total_drum_score_label.text = "Перкуссия: %d" % total_drum_score
 
 	var grades = player_data_manager.data.get("grades", {})
 	var ss_count = grades.get("SS", 0)
@@ -140,7 +150,8 @@ func refresh_stats():
 	a_label.modulate = Color.GREEN
 	b_label.modulate = Color.CYAN
 
-	_update_accuracy_chart()
+	if session_history_manager:
+		_update_accuracy_chart()
 
 func _update_accuracy_chart():
 	if session_history_manager == null:

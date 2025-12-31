@@ -272,6 +272,11 @@ func _deferred_update_ui():
 				
 				player_data_manager._save()
 
+			var instrument_used = song_info.get("instrument", "standard")
+			var is_drum_mode = (instrument_used == "drums")
+			player_data_manager.add_score_to_total(score, is_drum_mode)
+			print("VictoryScreen.gd: Добавлены очки за уровень: %d. Режим барабанов: %s" % [score, is_drum_mode])
+
 			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
 
 			var grade = _calculate_grade()
@@ -289,9 +294,6 @@ func _deferred_update_ui():
 				achievement_manager.notification_mgr = game_engine
 				print("VictoryScreen.gd: [ДИАГНОСТИКА] GameEngine передан в AchievementManager как notification_mgr.")
 
-			var instrument_used = song_info.get("instrument", "standard")
-			var is_drum_mode = (instrument_used == "drums")
-			
 			if is_drum_mode:
 				print(" drums Режим перкуссии - проверяем drum-ачивки...")
 			

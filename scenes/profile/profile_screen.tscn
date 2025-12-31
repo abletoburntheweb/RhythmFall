@@ -97,6 +97,21 @@ text = "Перкуссия: 0"
 layout_mode = 2
 text = "Времени в игре: 00:00"
 
+[node name="TotalScoreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Всего очков: 0"
+
+[node name="TotalDrumScoreContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+
+[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TotalDrumScoreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer"]
+layout_mode = 2
+text = "Перкуссия: 0"
+
 [node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 text = "Точных попаданий: 0"
@@ -150,28 +165,28 @@ text = "Заработано всего: 0"
 layout_mode = 2
 text = "Потрачено: 0"
 
-[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox"]
+[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 
-[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
+[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
 layout_mode = 2
 text = "Точность за последние 20 сессий"
 horizontal_alignment = 1
 
-[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/ChartContainer"]
+[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
 custom_minimum_size = Vector2(1920, 300)
 layout_mode = 2
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground"]
 width = 4.0
 default_color = Color(1, 1, 1, 0.5019608)
 round_precision = 32
 antialiased = true
 
-[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/ChartContainer/ChartBackground"]
+[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground"]
 anchors_preset = 0
 
-[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartContainer"]
+[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
 layout_mode = 2
 text = "Сессии (1 → 20)"

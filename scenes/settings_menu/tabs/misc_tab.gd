@@ -167,27 +167,16 @@ func _on_clear_all_results_pressed():
 		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть корневую директорию user://")
 		return
 
-	var files_to_delete = ["best_grades.json", "session_history.json"]
-	var all_deleted_elsewhere = true
+	var files_to_clear = ["best_grades.json", "session_history.json"]
 
-	for file_name in files_to_delete:
-		if user_dir_access.file_exists(file_name):
-			var file_path = "user://".path_join(file_name)
-			var err = user_dir_access.remove(file_name)
-			if err != OK:
-				printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
-				all_deleted_elsewhere = false
-			else:
-				print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+	for file_name in files_to_clear:
+		var file_path = "user://".path_join(file_name)
+		var file_access = FileAccess.open(file_path, FileAccess.WRITE)
+		if file_access:
+			file_access.store_string("{}")  
+			file_access.close()
+			print("MiscTab.gd: _on_clear_all_results_pressed: Файл очищен (записан пустой JSON): ", file_path)
 		else:
-			print("MiscTab.gd: _on_clear_all_results_pressed: Файл не найден, пропущен: ", file_name)
+			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть файл для записи: ", file_path)
 
-	if all_deleted_elsewhere:
-		print("MiscTab.gd: _on_clear_all_results_pressed: Файлы best_grades.json и session_history.json успешно удалены (или не существовали).")
-	else:
-		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы (best_grades.json, session_history.json) были удалены.")
-
-	if (results_dir_exists and all_deleted_in_results) or (not results_dir_exists) and all_deleted_elsewhere:
-		print("MiscTab.gd: _on_clear_all_results_pressed: Все запрошенные файлы успешно удалены.")
-	else:
-		printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы были успешно удалены.")
+	print("MiscTab.gd: _on_clear_all_results_pressed: best_grades.json и session_history.json успешно очищены.")
