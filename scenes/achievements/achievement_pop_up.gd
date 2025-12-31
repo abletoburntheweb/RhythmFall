@@ -60,14 +60,16 @@ func _load_achievement_icon(ach_data: Dictionary):
 	
 	print("🖼️ Загрузка иконки: путь='", image_path, "', категория='", category, "'")
 
-	if image_path and image_path != "" and ResourceLoader.exists(image_path):
+	if image_path and image_path != "" and FileAccess.file_exists(image_path):
 		var texture = ResourceLoader.load(image_path)
-		if texture:
+		if texture and texture is Texture2D:
 			icon_texture.texture = texture
-			print("✅ Иконка загружена успешно: ", image_path)
+			print("✅ Иконка загружена успешно по указанному пути: ", image_path)
 			return
 		else:
-			print("❌ Не удалось загрузить текстуру из: ", image_path)
+			print("❌ Не удалось загрузить текстуру из указанного пути: ", image_path, " Тип: ", typeof(texture), " Успешно загружено: ", texture != null)
+	else:
+		print("🖼️ Файл иконки по указанному пути не найден: ", image_path)
 
 	var fallback_path = ""
 	
@@ -78,18 +80,23 @@ func _load_achievement_icon(ach_data: Dictionary):
 		"economy": fallback_path = "res://assets/achievements/economy.png"
 		"daily": fallback_path = "res://assets/achievements/daily.png"
 		"playtime": fallback_path = "res://assets/achievements/playtime.png"
-		_: fallback_path = "res://assets/achievements/default.png"
+		"events": fallback_path = "res://assets/achievements/events.png" 
+		_: fallback_path = "res://assets/achievements/default.png" 
 	
-	if ResourceLoader.exists(fallback_path):
+	print("🖼️ Пробуем загрузить fallback иконку по категории: ", fallback_path)
+	
+	if FileAccess.file_exists(fallback_path):
 		var texture = ResourceLoader.load(fallback_path)
-		if texture:
+		if texture and texture is Texture2D:
 			icon_texture.texture = texture
-			print("✅ Дефолтная иконка по категории загружена: ", fallback_path)
+			print("✅ Fallback иконка по категории загружена: ", fallback_path)
 			return
 		else:
-			print("❌ Не удалось загрузить fallback текстуру: ", fallback_path)
+			print("❌ Не удалось загрузить fallback текстуру: ", fallback_path, " Тип: ", typeof(texture), " Успешно загружено: ", texture != null)
+	else:
+		print("❌ Fallback файл не существует: ", fallback_path)
 	
-	print("⚠️ Все пути к иконкам недоступны, создаем пустую текстуру")
+	print("⚠️ Все пути к иконкам недоступны, устанавливаем null")
 	icon_texture.texture = null
 
 func _load_default_icon():
@@ -104,18 +111,18 @@ func _load_default_icon():
 	
 	for path in default_paths:
 		print("🖼️ Пробуем загрузить дефолтную иконку: ", path)
-		if ResourceLoader.exists(path):
+		if FileAccess.file_exists(path):
 			var texture = ResourceLoader.load(path)
-			if texture:
+			if texture and texture is Texture2D:
 				icon_texture.texture = texture
 				print("✅ Дефолтная иконка загружена: ", path)
 				return
 			else:
-				print("❌ Не удалось загрузить текстуру: ", path)
+				print("❌ Не удалось загрузить текстуру: ", path, " Тип: ", typeof(texture), " Успешно загружено: ", texture != null)
 		else:
-			print("❌ Путь не существует: ", path)
+			print("❌ Путь не существует (FileAccess): ", path)
 	
-	print("⚠️ Все пути к иконкам недоступны, создаем пустую текстуру")
+	print("⚠️ Все пути к иконкам недоступны, устанавливаем null")
 	icon_texture.texture = null
 
 func show_popup():

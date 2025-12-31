@@ -299,7 +299,6 @@ func _deferred_update_ui():
 			
 			if achievement_system:
 				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
-				# ПЕРЕДАЁМ grade
 				achievement_system.on_level_completed(accuracy, is_drum_mode, grade)
 				
 			elif achievement_manager:
@@ -312,7 +311,6 @@ func _deferred_update_ui():
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
 
-				# НОВОЕ: Добавляем проверку SS и очков в fallback
 				achievement_manager.check_score_achievements(player_data_manager)
 				if grade == "SS":
 					achievement_manager.check_ss_achievements(player_data_manager)

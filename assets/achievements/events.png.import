@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dgvcdhg8s6qdu"
-path="res://.godot/imported/event.png-11870f7d16579e7f2cfb9770cb0a47b4.ctex"
+uid="uid://i4sce3t1kte6"
+path="res://.godot/imported/events.png-5e2e9859f7580a68d8d8b9a9bc853990.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/achievements/event.png"
-dest_files=["res://.godot/imported/event.png-11870f7d16579e7f2cfb9770cb0a47b4.ctex"]
+source_file="res://assets/achievements/events.png"
+dest_files=["res://.godot/imported/events.png-5e2e9859f7580a68d8d8b9a9bc853990.ctex"]
 
 [params]
 

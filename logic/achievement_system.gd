@@ -57,6 +57,7 @@ func on_currency_changed():
 func on_daily_login():
 	var login_streak = player_data_manager.get_login_streak()
 	achievement_manager.check_daily_login_achievements(player_data_manager)
+	achievement_manager.check_event_achievements()
 	achievement_manager.save_achievements()
 	
 func on_notes_generated():

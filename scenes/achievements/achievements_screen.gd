@@ -67,6 +67,7 @@ func _init_filter_box():
 	filter_box.add_item("Экономика")
 	filter_box.add_item("Ежедневные")
 	filter_box.add_item("Время в игре") 
+	filter_box.add_item("Событийные")
 	filter_box.select(0)
 
 
@@ -160,6 +161,7 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 				"economy": fallback_path = "res://assets/achievements/economy.png"
 				"daily": fallback_path = "res://assets/achievements/daily.png"
 				"playtime": fallback_path = "res://assets/achievements/playtime.png"
+				"events": fallback_path = "res://assets/achievements/events.png"
 				_: fallback_path = "res://assets/achievements/default.png"
 			
 			if FileAccess.file_exists(fallback_path):
@@ -258,6 +260,7 @@ func _on_filter_selected(index: int):
 		6: current_filter = "Экономика"
 		7: current_filter = "Ежедневные"
 		8: current_filter = "Время в игре"
+		9: current_filter = "Событийные" 
 	_filter_achievements_internal(search_bar.text)
 
 
@@ -280,7 +283,8 @@ func _filter_achievements_internal(query: String):
 					"Магазин": "shop",
 					"Экономика": "economy",
 					"Ежедневные": "daily",
-					"Время в игре": "playtime"
+					"Время в игре": "playtime",
+					"Событийные": "events"
 				}
 				if category_map.has(current_filter):
 					matches_category = ach.get("category", "").to_lower() == category_map[current_filter].to_lower()
@@ -314,7 +318,8 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 			"Магазин": "shop",
 			"Экономика": "economy",
 			"Ежедневные": "daily",
-			"Время в игре": "playtime"
+			"Время в игре": "playtime",
+			"Событийные": "events"
 		}
 		if category_map.has(filter_type):
 			var target_category = category_map[filter_type].to_lower()

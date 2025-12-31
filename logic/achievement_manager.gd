@@ -305,6 +305,27 @@ func check_daily_login_achievements(player_data_mgr_override = null):
 	if progress_updated_but_not_unlocked:
 		save_achievements()
 
+func check_event_achievements():
+	var date = Time.get_date_dict_from_system()
+	var day = date.day
+	var month = date.month 
+
+	if day == 30 and month == 9: 
+		for achievement in achievements:
+			if achievement.id == 47 and not achievement.get("unlocked", false): 
+				achievement.current = 1
+				_perform_unlock(achievement)
+				break
+
+	if (month == 1 and day >= 1 and day <= 10): 
+		for achievement in achievements:
+			if achievement.id == 48 and not achievement.get("unlocked", false):
+				achievement.current = 1
+				_perform_unlock(achievement)
+				break
+
+	save_achievements()
+
 func check_collection_completed_achievement(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
