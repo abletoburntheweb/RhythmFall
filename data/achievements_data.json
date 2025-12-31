@@ -68,29 +68,29 @@
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 3.0,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
 			"title": "Коллекционер I",
 			"total": 3.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "31 Дек 2025, 16:10",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 5.0,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
 			"title": "Коллекционер II",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "31 Дек 2025, 16:10",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 5.0,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
@@ -101,7 +101,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 5.0,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 200.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 200.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 200.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -178,7 +178,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 3.0,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
@@ -189,7 +189,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 1.0,
+			"current": 5.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",

@@ -1,0 +1,66 @@
+[gd_scene load_steps=6 format=3 uid="uid://bvvwoxclx50nw"]
+
+[ext_resource type="Script" uid="uid://b05xkgeneqsl0" path="res://scenes/intro/intro_screen.gd" id="1_42bcu"]
+[ext_resource type="Texture2D" uid="uid://c4k61dka4niw1" path="res://assets/textures/logo.png" id="1_ric2g"]
+
+[sub_resource type="Animation" id="Animation_42bcu"]
+resource_name = "fade_in_out"
+length = 4.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("LogoTextureRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1.5, 3.5, 4.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_ob7ak"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("LogoTextureRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ob7ak"]
+_data = {
+&"RESET": SubResource("Animation_ob7ak"),
+&"fade_in_out": SubResource("Animation_42bcu")
+}
+
+[node name="IntroScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_42bcu")
+
+[node name="LogoTextureRect" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("1_ric2g")
+stretch_mode = 5
+
+[node name="IntroAnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_ob7ak")
+}
+
+[node name="IntroTimer" type="Timer" parent="."]
+wait_time = 4.5
+one_shot = true

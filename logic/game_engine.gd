@@ -168,6 +168,11 @@ func _handle_player_login():
 		achievement_system.on_daily_login()
 	
 func initialize_screens():
+	intro_instance = preload("res://scenes/intro/intro_screen.tscn").instantiate()
+	if intro_instance:
+		if intro_instance.has_method("set_game_engine_reference"):
+			intro_instance.set_game_engine_reference(self)
+
 	main_menu_instance = preload("res://scenes/main_menu/main_menu.tscn").instantiate()
 	if main_menu_instance:
 		if main_menu_instance.has_method("set_transitions"):
@@ -179,7 +184,6 @@ func initialize_screens():
 func show_intro():
 	if intro_instance:
 		_switch_to_screen(intro_instance)
-		show_main_menu()
 	else:
 		show_main_menu() 
 
