@@ -1,0 +1,103 @@
+[gd_scene load_steps=3 format=3 uid="uid://0fnrlssj82vx"]
+
+[ext_resource type="Script" uid="uid://bi3rewfm8epra" path="res://scenes/victory_screen/victory_xp_details.gd" id="1_n4qaw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kpwkb"]
+bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+
+[node name="VictoryXPDetails" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_n4qaw")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(400, 550)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.84705883)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 6.0
+offset_right = 1920.0
+offset_bottom = 73.0
+theme_override_font_sizes/font_size = 48
+text = "Детализация XP"
+horizontal_alignment = 1
+
+[node name="StatsFrame" type="Panel" parent="."]
+layout_mode = 0
+offset_top = 70.0
+offset_right = 1920.0
+offset_bottom = 1005.0
+
+[node name="BaseXPLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 24
+text = "Базовый XP (от счёта): 0"
+horizontal_alignment = 1
+
+[node name="AccuracyBonusLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 1920.0
+offset_bottom = 53.0
+theme_override_font_sizes/font_size = 24
+text = "Бонус за точность: 0"
+horizontal_alignment = 1
+
+[node name="ComboBonusLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 1920.0
+offset_bottom = 83.0
+theme_override_font_sizes/font_size = 24
+text = "Бонус за комбо: 0"
+horizontal_alignment = 1
+
+[node name="GradeBonusLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 90.0
+offset_right = 1920.0
+offset_bottom = 113.0
+theme_override_font_sizes/font_size = 24
+text = "Бонус за оценку: 0"
+horizontal_alignment = 1
+
+[node name="FullComboBonusLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 120.0
+offset_right = 1920.0
+offset_bottom = 143.0
+theme_override_font_sizes/font_size = 24
+text = "Бонус за полное комбо: 0"
+horizontal_alignment = 1
+
+[node name="TotalXPLabel" type="Label" parent="StatsFrame"]
+layout_mode = 0
+offset_top = 150.0
+offset_right = 1920.0
+offset_bottom = 184.0
+theme_override_font_sizes/font_size = 24
+text = "Итого XP: 0"
+horizontal_alignment = 1
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="BackButton" type="Button" parent="ButtonsContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_kpwkb")
+text = "Назад"

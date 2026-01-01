@@ -51,6 +51,10 @@ func _ready():
 	if currency_label:
 		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		currency_label.gui_input.connect(_on_currency_label_clicked)
+	
+	if xp_label:
+		xp_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		xp_label.gui_input.connect(_on_xp_label_clicked)
 
 func _calculate_grade() -> String:
 	if accuracy == 100.0: 
@@ -116,7 +120,6 @@ func _calculate_xp_new() -> int:
 func _on_replay_button_pressed():
 	if music_manager and music_manager.has_method("stop_game_music"):
 		music_manager.stop_game_music()
-		print("VictoryScreen.gd: Игровая музыка остановлена перед реплеем.")
 	
 	if music_manager and music_manager.has_method("play_select_sound"):
 		music_manager.play_select_sound()
@@ -134,7 +137,6 @@ func _on_replay_button_pressed():
 func _on_song_select_button_pressed():
 	if music_manager and music_manager.has_method("stop_game_music"):
 		music_manager.stop_game_music()
-		print("VictoryScreen.gd: Игровая музыка остановлена перед переходом к выбору песни.")
 	
 	if music_manager and music_manager.has_method("play_select_sound"):
 		music_manager.play_select_sound()
@@ -172,23 +174,35 @@ func _show_currency_details():
 func _on_currency_details_closed():
 	pass
 
+func _on_xp_label_clicked(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_show_xp_details()
+
+func _show_xp_details():
+	var xp_details_scene = load("res://scenes/victory_screen/victory_xp_details.tscn")
+	var xp_details = xp_details_scene.instantiate()
+	
+	add_child(xp_details)
+	
+	var grade = _calculate_grade()
+	xp_details.show_details(
+		score,
+		max_combo,
+		accuracy,
+		calculated_missed_notes,
+		grade,
+		earned_xp
+	)
+
 func set_results_manager(results_mgr):
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_results_manager вызван с: ", results_mgr)
 	results_manager = results_mgr
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager установлен в: ", results_mgr)
 
 func set_session_history_manager(session_hist_mgr):
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_session_history_manager вызван с: ", session_hist_mgr)
 	session_history_manager = session_hist_mgr
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] SessionHistoryManager установлен в: ", session_hist_mgr)
 
 func set_achievement_system(ach_sys):
-	print("VictoryScreen.gd: [ДИАГНОСТИКА] set_achievement_system вызван с: ", ach_sys)
 	if results_manager and results_manager.has_method("set_achievement_system"):
 		results_manager.set_achievement_system(ach_sys)
-		print("VictoryScreen.gd: [ДИАГНОСТИКА] AchievementSystem передан в ResultsManager из VictoryScreen.")
-	else:
-		print("VictoryScreen.gd: [ДИАГНОСТИКА] ResultsManager не имеет метода set_achievement_system или не установлен.")
 
 func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0, p_hit_notes: int = 0):
 	score = p_score
@@ -269,11 +283,6 @@ func _deferred_update_ui():
 		var player_data_manager = game_engine.get_player_data_manager()
 		if player_data_manager:
 			player_data_manager.add_missed_notes(calculated_missed_notes)
-			print("VictoryScreen.gd: Обновлены глобальные счётчики: Промахов +%d" % [calculated_missed_notes])
-		else:
-			printerr("VictoryScreen.gd: Не удалось получить player_data_manager для обновления статистики.")
-	else:
-		printerr("VictoryScreen.gd: Не удалось получить game_engine или метод get_player_data_manager для обновления статистики.")
 
 	if game_engine and game_engine.has_method("get_player_data_manager"):
 		var player_data_manager = game_engine.get_player_data_manager()
@@ -285,39 +294,29 @@ func _deferred_update_ui():
 			if max_combo > current_max_combo:
 				player_data_manager.data["max_combo_ever"] = max_combo
 				player_data_manager._save()
-				print("VictoryScreen.gd: Обновлен рекордный комбо: ", max_combo)
-			else:
-				print("VictoryScreen.gd: max_combo (", max_combo, ") не превышает текущий max_combo_ever (", current_max_combo, ")")
 
 			var current_max_drum_combo = player_data_manager.data.get("max_drum_combo_ever", 0)
 			var instrument_used_for_combo_check = song_info.get("instrument", "standard")
-			print("VictoryScreen.gd: [ДИАГНОСТИКА] instrument для проверки max_combo: ", instrument_used_for_combo_check, ", max_combo: ", max_combo, ", current_max_drum_combo: ", current_max_drum_combo)
 
 			if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
 				player_data_manager.data["max_drum_combo_ever"] = max_combo
 				player_data_manager._save()
-				print("VictoryScreen.gd: Обновлен рекордный комбо на барабанах: ", max_combo)
-			else:
-				print("VictoryScreen.gd: Условие для обновления max_drum_combo_ever не выполнено.")
 
 			var instrument_used_for_drums = song_info.get("instrument", "standard")
 			if instrument_used_for_drums == "drums":
 				var current_drum_hits = player_data_manager.data.get("total_drum_hits", 0)
 				var new_drum_hits = current_drum_hits + hit_notes_this_level
 				player_data_manager.data["total_drum_hits"] = new_drum_hits
-				print("VictoryScreen.gd: Обновлены барабанные попадания: +%d, всего: %d" % [hit_notes_this_level, new_drum_hits])
 				
 				var current_drum_misses = player_data_manager.data.get("total_drum_misses", 0)
 				var new_drum_misses = current_drum_misses + calculated_missed_notes
 				player_data_manager.data["total_drum_misses"] = new_drum_misses
-				print("VictoryScreen.gd: Обновлены барабанные промахи: +%d, всего: %d" % [calculated_missed_notes, new_drum_misses])
 				
 				player_data_manager._save()
 
 			var instrument_used = song_info.get("instrument", "standard")
 			var is_drum_mode = (instrument_used == "drums")
 			player_data_manager.add_score_to_total(score, is_drum_mode)
-			print("VictoryScreen.gd: Добавлены очков за уровень: %d. Режим барабанов: %s" % [score, is_drum_mode])
 
 			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
 
@@ -334,22 +333,18 @@ func _deferred_update_ui():
 			
 			if achievement_manager and game_engine:
 				achievement_manager.notification_mgr = game_engine
-				print("VictoryScreen.gd: [ДИАГНОСТИКА] GameEngine передан в AchievementManager как notification_mgr.")
 
 			if is_drum_mode:
-				print(" drums Режим перкуссии - проверяем drum-ачивки...")
+				pass
 			
 			if achievement_system:
-				print("🎯 Вызываем ачивки за уровень через AchievementSystem...")
 				achievement_system.on_level_completed(accuracy, is_drum_mode, grade)
 				
 			elif achievement_manager:
-				print("🎯 Вызываем ачивки за уровень через AchievementManager (fallback)...")
 				achievement_manager.check_first_level_achievement()
 				achievement_manager.check_perfect_accuracy_achievement(accuracy)
 
 				if is_drum_mode:
-					print(" dru Проверяем drum-ачивки через AchievementManager...")
 					var total_drum_levels = player_data_manager.get_drum_levels_completed()
 					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
 
@@ -373,9 +368,8 @@ func _deferred_update_ui():
 					grade_color_for_result,              
 					result_datetime_for_result           
 				)
-				print("VictoryScreen.gd: Результат отправлен в ResultsManager для сохранения (после ачивок).")
 			else:
-				print("VictoryScreen.gd: ResultsManager не установлен или путь к песне отсутствует.")
+				pass
 			
 			var song_path = song_info.get("path", "")
 			if song_path != "":
@@ -402,27 +396,13 @@ func _deferred_update_ui():
 					artist,
 					title
 				)
-				print("VictoryScreen.gd: Результат добавлен в SessionHistoryManager.")
 			else:
-				print("VictoryScreen.gd: SessionHistoryManager не установлен, результат не добавлен в общую историю.")
+				pass
 
 			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
-				print("🎯 Показываем *новые* накопленные геймплейные ачивки...")
 				achievement_manager.show_all_delayed_gameplay_achievements()
 				
 				achievement_manager.clear_new_gameplay_achievements()
-			else:
-				print("⚠️ AchievementManager не имеет метода show_all_delayed_gameplay_achievements или clear_new_gameplay_achievements.")
 			
 			if player_data_manager.has_method("add_xp"):
 				player_data_manager.add_xp(earned_xp)
-			else:
-				print("⚠️ PlayerDataManager не имеет метода add_xp")
-
-			print("💰 Игрок заработал валюту: %d" % earned_currency)
-			print("⭐ Игрок заработал XP: %d" % earned_xp) 
-			print("🎯 Получена оценка: %s (%.1f%%)" % [grade, accuracy])
-		else:
-			printerr("VictoryScreen: Не удалось получить player_data_manager")
-	else:
-		printerr("VictoryScreen: Не удалось получить game_engine или метод get_player_data_manager")
