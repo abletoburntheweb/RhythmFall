@@ -9,6 +9,7 @@ signal song_list_changed()
 var song_manager = null
 var item_list: ItemList = null
 var current_grouped_data = [] 
+var current_filter_mode = "title"  
 
 func set_song_manager(manager):
 	song_manager = manager
@@ -17,6 +18,9 @@ func set_item_list(list_control: ItemList):
 	item_list = list_control
 	if item_list:
 		item_list.item_selected.connect(_on_item_selected)
+
+func set_filter_mode(mode: String):
+	current_filter_mode = mode
 
 func populate_items():
 	if not item_list or not song_manager:
@@ -44,15 +48,22 @@ func populate_items_grouped():
 		emit_signal("song_list_changed")
 		return
 
-	songs_list.sort_custom(func(a, b):
-		var title_a = a.get("title", "").to_lower()
-		var title_b = b.get("title", "").to_lower()
-		return title_a < title_b
-	)
+	if current_filter_mode == "title":
+		songs_list.sort_custom(func(a, b):
+			var title_a = a.get("title", "").to_lower()
+			var title_b = b.get("title", "").to_lower()
+			return title_a < title_b
+		)
+	else: 
+		songs_list.sort_custom(func(a, b):
+			var artist_a = a.get("artist", "").to_lower()
+			var artist_b = b.get("artist", "").to_lower()
+			return artist_a < artist_b
+		)
 
 	var groups = {}
 	for song_data in songs_list:
-		var first_char = get_first_letter(song_data.get("title", ""))
+		var first_char = get_first_letter(get_filter_field_value(song_data).to_lower())
 		if first_char == "":
 			first_char = "?" 
 		if not groups.has(first_char):
@@ -60,7 +71,7 @@ func populate_items_grouped():
 		groups[first_char].append(song_data)
 
 	var sorted_letters = groups.keys()
-	sorted_letters.sort() 
+	sorted_letters.sort()  
 	for letter in sorted_letters:
 		var songs_in_group = groups[letter]
 		var header_text = "%d %s" % [songs_in_group.size(), letter.to_upper()]
@@ -135,9 +146,22 @@ func filter_items(filter_text: String):
 		if filter_text.to_lower() in display_text.to_lower():
 			filtered_songs.append(song_data)
 
+	if current_filter_mode == "title":
+		filtered_songs.sort_custom(func(a, b):
+			var title_a = a.get("title", "").to_lower()
+			var title_b = b.get("title", "").to_lower()
+			return title_a < title_b
+		)
+	else: 
+		filtered_songs.sort_custom(func(a, b):
+			var artist_a = a.get("artist", "").to_lower()
+			var artist_b = b.get("artist", "").to_lower()
+			return artist_a < artist_b
+		)
+
 	var groups = {}
 	for song_data in filtered_songs:
-		var first_char = get_first_letter(song_data.get("title", ""))
+		var first_char = get_first_letter(get_filter_field_value(song_data).to_lower())
 		if first_char == "":
 			first_char = "?"
 		if not groups.has(first_char):
@@ -177,8 +201,14 @@ func filter_items(filter_text: String):
 func get_first_letter(text: String) -> String:
 	if text.is_empty():
 		return ""
-	var first_char = text.substr(0, 1)
+	var first_char = text.substr(0, 1).to_lower() 
 	return first_char
+
+func get_filter_field_value(song_data: Dictionary) -> String:
+	if current_filter_mode == "title":
+		return song_data.get("title", "")
+	else:  
+		return song_data.get("artist", "")
 
 func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
 	if item_list_index >= 0 and item_list_index < current_grouped_data.size():

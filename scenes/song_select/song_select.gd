@@ -9,6 +9,7 @@ const InstrumentSelector = preload("res://scenes/song_select/instrument_selector
 var song_manager: SongManager = null
 
 var edit_button: Button = null 
+var filter_by_letter: OptionButton = null
 
 var song_item_list_ref: ItemList = null
 var file_dialog: FileDialog = null
@@ -135,6 +136,36 @@ func _ready():
 	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
 	if instrument_btn:
 		instrument_btn.text = "Инструмент: Перкуссия"
+
+	filter_by_letter = $MainVBox/TopBarHBox/FilterByLetter
+	if filter_by_letter:
+		_init_filter_by_letter()
+		filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
+
+func _init_filter_by_letter():
+	filter_by_letter.clear()
+	filter_by_letter.add_item("Название")
+	filter_by_letter.add_item("Артист")
+	filter_by_letter.select(0)  
+
+func _on_filter_by_letter_selected(index: int):
+	if song_edit_manager and song_edit_manager.is_edit_mode_active():
+		return
+	
+	if song_list_manager:
+		var mode = "title" if index == 0 else "artist"
+		song_list_manager.set_filter_mode(mode)
+		song_list_manager.populate_items_grouped()
+		print("SongSelect.gd: Режим фильтра изменён на: %s" % mode)
+
+func _update_filters_visibility():
+	if song_edit_manager and filter_by_letter:
+		var is_edit_mode = song_edit_manager.is_edit_mode_active()
+		filter_by_letter.visible = !is_edit_mode
+		if is_edit_mode and song_list_manager:
+			song_list_manager.set_filter_mode("title")
+			filter_by_letter.select(0)
+			song_list_manager.populate_items_grouped()
 
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 	print("SongSelect.gd: Песня отредактирована (через сигнал от SongEditManager): ", song_data.get("title", "N/A"))
@@ -269,6 +300,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 
 func _on_song_list_changed():
 	_update_song_count_label()
+	_update_filters_visibility()
 
 func _on_add_pressed():
 	print("SongSelect.gd: Открыт диалог для добавления песни.")
@@ -326,6 +358,7 @@ func _on_gui_input_for_label(event: InputEvent, field_type: String):
 func _toggle_edit_mode():
 	song_edit_manager.set_edit_mode(!song_edit_manager.is_edit_mode_active())
 	_update_edit_button_style()
+	_update_filters_visibility()
 
 func _update_edit_button_style():
 	if not edit_button:

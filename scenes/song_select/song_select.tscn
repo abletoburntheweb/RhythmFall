@@ -60,6 +60,10 @@ custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Инструмент:"
 
+[node name="FilterByLetter" type="OptionButton" parent="MainVBox/TopBarHBox"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+
 [node name="SongCountLabel" type="Label" parent="MainVBox/TopBarHBox"]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
