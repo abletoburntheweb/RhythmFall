@@ -538,7 +538,7 @@ func check_hit(lane: int):
 		var current_time = game_time
 
 		for note in note_manager.get_notes():
-			if note.lane == lane and abs(note.y - hit_zone_y) < 30:
+			if note.lane == lane and abs(note.y - hit_zone_y) < 30:  
 				var points = note.on_hit()
 				score_manager.add_perfect_hit()
 				
@@ -558,10 +558,7 @@ func check_hit(lane: int):
 					music_manager.play_custom_hit_sound(sound_path) 
 				hit_occurred = true
 				perfect_hits_this_level += 1
-				break 
-	else:
-		score_manager.add_perfect_hit()
-		perfect_hits_this_level += 1
+				break  
 
 func _process(delta):
 	if not countdown_active:

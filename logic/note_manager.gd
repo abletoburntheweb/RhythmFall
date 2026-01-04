@@ -128,17 +128,18 @@ func spawn_notes():
 func update_notes():
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.hit_zone_y
+	var miss_threshold: float = 30 
 
 	for i in range(notes.size() - 1, -1, -1): 
 		var note = notes[i]
 		note.update(speed)
 
-		if note.y > hit_zone_y and not note.was_hit and not note.is_missed:
+		if note.y > hit_zone_y + miss_threshold and not note.was_hit and not note.is_missed:
 			note.is_missed = true 
 			if game_screen.score_manager:
 				game_screen.score_manager.add_miss_hit()
 				var current_accuracy = game_screen.score_manager.get_accuracy()
-				print("[NoteManager] Нота в линии %d пропущена, вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, current_accuracy])
+				print("[NoteManager] Нота в линии %d пропущена (y=%.2f), вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, note.y, current_accuracy])
 
 		if not note.active and note.visual_node and note.visual_node.get_parent():
 			note.visual_node.queue_free()
