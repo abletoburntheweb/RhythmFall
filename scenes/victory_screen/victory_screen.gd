@@ -374,6 +374,7 @@ func _deferred_update_ui():
 			var song_path = song_info.get("path", "")
 			if song_path != "":
 				player_data_manager.update_best_grade_for_track(song_path, grade)
+				player_data_manager.on_track_completed(song_path)
 
 			if session_history_manager:
 				var instrument_type_for_history = song_info.get("instrument", "standard")

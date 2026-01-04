@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2796.0,
+			"current": 442997,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2796.0,
+			"current": 442997,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2796.0,
+			"current": 442997,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0.0,
+			"current": 0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 8.0,
+			"current": 13,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 8.0,
+			"current": 13,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -299,7 +299,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 33.0,
+			"current": 33,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -332,14 +332,14 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 8.0,
+			"current": 10.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
 			"title": "Сила грува",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "5 Янв 2026, 01:43",
+			"unlocked": true
 		},
 		{
 			"category": "gameplay",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.4,
+			"current": 3.42,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.4,
+			"current": 3.42,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.4,
+			"current": 3.42,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.4,
+			"current": 3.42,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.4,
+			"current": 3.42,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 5 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 25 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 100 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 250 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -464,7 +464,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 2.0,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
 			"image": "res://assets/achievements/rising_star.png",
@@ -475,7 +475,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 2.0,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
 			"image": "res://assets/achievements/star_path.png",
@@ -486,7 +486,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 2.0,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
 			"image": "res://assets/achievements/genius_accuracy.png",
@@ -497,7 +497,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 1.0,
+			"current": 2.0,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,
 			"image": "res://assets/achievements/master_perfection.png",

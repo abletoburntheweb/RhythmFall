@@ -96,7 +96,14 @@ func refresh_stats():
 	drum_levels_completed_label.text = "Перкуссия: %d" % player_data_manager.get_drum_levels_completed()
 	
 	favorite_genre_label.text = "Любимый жанр: %s" % str(player_data_manager.data.get("favorite_genre", "Н/Д"))
-	favorite_track_label.text = "Любимый трек: %s" % str(player_data_manager.data.get("favorite_track", "Н/Д"))
+	
+	var favorite_track_path = player_data_manager.data.get("favorite_track", "")
+	var favorite_track_count = player_data_manager.data.get("favorite_track_play_count", 0)
+	var favorite_track_display = "Н/Д"
+	if favorite_track_path != "":
+		var file_name = favorite_track_path.get_file().get_basename()
+		favorite_track_display = "%s (%d раз(а))" % [file_name, favorite_track_count]
+	favorite_track_label.text = "Любимый трек: %s" % favorite_track_display
 	
 	var total_notes_hit = player_data_manager.get_total_notes_hit()
 	var total_notes_missed = player_data_manager.get_total_notes_missed()

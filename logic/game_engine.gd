@@ -17,6 +17,8 @@ var song_metadata_manager: SongMetadataManager = null
 
 var session_history_manager: SessionHistoryManager = null
 
+var track_stats_manager: TrackStatsManager = null
+
 var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
 const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
@@ -74,6 +76,11 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 
 func initialize_logic():
 	player_data_manager = PlayerDataManager.new()
+
+	track_stats_manager = TrackStatsManager.new(player_data_manager)
+
+	player_data_manager.set_track_stats_manager(track_stats_manager)
+	
 	settings_manager = SettingsManager.new()
 	
 	song_metadata_manager = SongMetadataManager.new()
@@ -263,3 +270,6 @@ func get_achievement_queue_manager() -> AchievementQueueManager:
 
 func get_session_history_manager() -> SessionHistoryManager:
 	return session_history_manager
+
+func get_track_stats_manager() -> TrackStatsManager:
+	return track_stats_manager

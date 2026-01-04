@@ -4,6 +4,8 @@ extends RefCounted
 
 const PLAYER_DATA_PATH = "user://player_data.json" 
 const BEST_GRADES_PATH = "user://best_grades.json" 
+const TRACK_STATS_PATH = "user://track_stats.json"
+
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
 	"Snare": "snare_default",
@@ -44,7 +46,9 @@ var data: Dictionary = {
 	},
 	"total_xp": 0,
 	"current_level": 1,
-	"xp_for_next_level": 100
+	"xp_for_next_level": 100,
+	"favorite_track": "",
+	"favorite_track_play_count": 0
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -56,9 +60,22 @@ var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
 
+var track_stats_manager = null
+
 func _init():
 	_load()
 	_total_play_time_seconds = _play_time_string_to_seconds(data.get("total_play_time", "00:00"))
+
+	var track_counts = data.get("track_completion_counts", {})
+	var max_count = 0
+	var max_track = ""
+	for track_path in track_counts:
+		var count = track_counts[track_path]
+		if count > max_count:
+			max_count = count
+			max_track = track_path
+	data["favorite_track"] = max_track
+	data["favorite_track_play_count"] = max_count
 
 	var default_items = [
 		"kick_default",
@@ -108,6 +125,9 @@ func _load():
 			var loaded_current_level = int(json_result.get("current_level", 1))
 			var loaded_xp_for_next_level = int(json_result.get("xp_for_next_level", 100))
 
+			var loaded_favorite_track = json_result.get("favorite_track", "")
+			var loaded_favorite_track_play_count = int(json_result.get("favorite_track_play_count", 0))
+
 			var loaded_grades = json_result.get("grades", {
 				"SS": 0,
 				"S": 0,
@@ -143,6 +163,9 @@ func _load():
 			data["total_xp"] = loaded_total_xp
 			data["current_level"] = loaded_current_level
 			data["xp_for_next_level"] = loaded_xp_for_next_level
+
+			data["favorite_track"] = loaded_favorite_track
+			data["favorite_track_play_count"] = loaded_favorite_track_play_count
 
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -217,6 +240,18 @@ func _save_best_grades():
 func get_currency() -> int:
 	return int(data.get("currency", 0))
 
+func set_track_stats_manager(tsm):
+	track_stats_manager = tsm
+	if track_stats_manager:
+		data["favorite_track"] = track_stats_manager.get_favorite_track()
+		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
+
+func on_track_completed(track_path: String):
+	if track_stats_manager:
+		track_stats_manager.on_track_completed(track_path)
+		data["favorite_track"] = track_stats_manager.get_favorite_track()
+		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
+
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
 	if game_engine_reference:
@@ -234,6 +269,7 @@ func get_and_clear_delayed_achievements() -> Array[Dictionary]:
 	delayed_achievements.clear()
 	
 	return achievements
+
 func add_currency(amount: int):
 	var old_currency = int(data.get("currency", 0))
 	var new_currency = old_currency + amount
@@ -418,7 +454,12 @@ func load_save_data(save_dict: Dictionary):
 		data["current_level"] = int(save_dict["current_level"])
 	if save_dict.has("xp_for_next_level"):
 		data["xp_for_next_level"] = int(save_dict["xp_for_next_level"])
-	
+
+	if save_dict.has("favorite_track"):
+		data["favorite_track"] = save_dict["favorite_track"]
+	if save_dict.has("favorite_track_play_count"):
+		data["favorite_track_play_count"] = int(save_dict["favorite_track_play_count"])
+
 	if save_dict.has("grades"):
 		var loaded_grades = save_dict["grades"]
 		if loaded_grades is Dictionary:
@@ -455,6 +496,9 @@ func reset_progress():
 		"D": 0,
 		"F": 0
 	}
+
+	data["favorite_track"] = ""
+	data["favorite_track_play_count"] = 0
 
 	data["total_xp"] = 0
 	data["current_level"] = 1
@@ -506,12 +550,14 @@ func reset_profile_statistics():
 		"F": 0
 	}
 
+	data["favorite_track"] = ""
+	data["favorite_track_play_count"] = 0
+
 	data["total_xp"] = 0
 	data["current_level"] = 1
 	data["xp_for_next_level"] = 100
 
 	_total_play_time_seconds = 0
-
 
 	data["currency"] = current_currency
 	data["unlocked_item_ids"] = current_unlocked_items
@@ -520,11 +566,13 @@ func reset_profile_statistics():
 	data["login_streak"] = current_login_streak
 	data["last_login_date"] = current_last_login_date
 
+	if track_stats_manager:
+		track_stats_manager.reset_stats()
+
 	_save()
 	data["best_grades_per_track"] = {}
 	_save_best_grades()
 	print("[PlayerDataManager] Статистика профиля (включая валюту, время, но не предметы/ачивки/данные аккаунта) сброшена.")
-
 
 func get_login_streak() -> int:
 	return int(data.get("login_streak", 0))
@@ -578,7 +626,6 @@ func _trigger_level_achievement_check():
 
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
-
 
 func add_drum_level_completed():
 	var current_count = int(data.get("drum_levels_completed", 0))
