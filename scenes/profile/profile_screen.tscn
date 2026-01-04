@@ -165,6 +165,18 @@ text = "Заработано всего: 0"
 layout_mode = 2
 text = "Потрачено: 0"
 
+[node name="LevelLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Уровень: 1"
+
+[node name="XPLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "XP: 0 / 100"
+
+[node name="XPProgressLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+layout_mode = 2
+text = "Прогресс: 0.0%"
+
 [node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
 layout_mode = 2
 

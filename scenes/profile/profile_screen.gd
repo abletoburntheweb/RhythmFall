@@ -20,6 +20,9 @@ extends BaseScreen
 @onready var spent_currency_label: Label = $MainContent/MainVBox/StatsVBox/SpentCurrencyLabel
 @onready var total_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalScoreLabel
 @onready var total_drum_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer/TotalDrumScoreLabel
+@onready var level_label: Label = $MainContent/MainVBox/StatsVBox/LevelLabel
+@onready var xp_label: Label = $MainContent/MainVBox/StatsVBox/XPLabel
+@onready var xp_progress_label: Label = $MainContent/MainVBox/StatsVBox/XPProgressLabel
 
 @onready var ss_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SSLabel
 @onready var s_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SLabel
@@ -149,6 +152,14 @@ func refresh_stats():
 	s_label.modulate = Color.SILVER
 	a_label.modulate = Color.GREEN
 	b_label.modulate = Color.CYAN
+
+	if level_label:
+		level_label.text = "Уровень: %d" % player_data_manager.get_current_level()
+	if xp_label:
+		xp_label.text = "XP: %s" % player_data_manager.get_xp_progress_text()
+	if xp_progress_label:
+		var progress_percent = player_data_manager.get_xp_progress() * 100.0
+		xp_progress_label.text = "Прогресс: %.1f%%" % progress_percent
 
 	if session_history_manager:
 		_update_accuracy_chart()
