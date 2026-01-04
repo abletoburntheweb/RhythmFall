@@ -42,6 +42,7 @@ var accuracy_label: Label = null
 var instrument_label: Label = null
 var countdown_label: Label = null
 var notes_container: Node2D = null
+var judgement_label: Label = null
 
 var game_timer: Timer
 var countdown_timer
@@ -69,6 +70,9 @@ var notes_ended: bool = false
 var victory_delay_timer: Timer = null
 
 var gameplay_started: bool = false
+
+const HIT_WINDOW_PERFECT: float = 0.03
+const HIT_WINDOW_GOOD: float = 0.10
 
 
 func _ready():
@@ -148,6 +152,7 @@ func _find_ui_elements():
 		time_label = ui_container_node.get_node_or_null("TimeLabel") as Label
 		accuracy_label = ui_container_node.get_node_or_null("AccuracyLabel") as Label
 		instrument_label = ui_container_node.get_node_or_null("InstrumentLabel") as Label
+		judgement_label = ui_container_node.get_node_or_null("JudgementLabel") as Label
 
 	countdown_label = get_node_or_null("CountdownLabel") as Label
 	notes_container = get_node_or_null("NotesContainer") as Node2D
@@ -533,32 +538,74 @@ func skip_intro() -> bool:
 func check_hit(lane: int):
 	if pauser.is_paused:
 		return
-	if notes_loaded:
-		var hit_occurred = false
-		var current_time = game_time
+	if not notes_loaded:
+		return
 
-		for note in note_manager.get_notes():
-			if note.lane == lane and abs(note.y - hit_zone_y) < 30:  
-				var points = note.on_hit()
-				score_manager.add_perfect_hit()
-				
-				if current_instrument == "drums":
-					var player_data_manager = null
-					if game_engine and game_engine.has_method("get_player_data_manager"):
-						player_data_manager = game_engine.get_player_data_manager()
-					
-					if player_data_manager:
-						var is_snare_note = (note.note_type == "SnareNote") 
-						player_data_manager.add_total_drum_perfect_hit()
-						
-				if sound_factory and music_manager:
-					var note_type = note.note_type 
-					var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
-					
-					music_manager.play_custom_hit_sound(sound_path) 
-				hit_occurred = true
-				perfect_hits_this_level += 1
-				break  
+	var current_time = game_time
+	var hit_zone_y_float = float(hit_zone_y)
+	var candidates = []
+
+	for note in note_manager.get_notes():
+		if note.lane == lane and abs(note.y - hit_zone_y_float) < 40:
+			candidates.append(note)
+
+	if candidates.size() == 0:
+		return
+
+	var closest_note = candidates[0]
+	var closest_distance = abs(closest_note.y - hit_zone_y_float)
+	for note in candidates:
+		var dist = abs(note.y - hit_zone_y_float)
+		if dist < closest_distance:
+			closest_note = note
+			closest_distance = dist
+
+	var pixels_per_sec = speed * (1000.0 / 16.0)
+	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
+	var time_diff = abs(current_time - note_time)
+
+	var hit_type = "miss"
+	var judgement_successful = false
+
+	if time_diff <= HIT_WINDOW_PERFECT:
+		score_manager.add_perfect_hit()
+		hit_type = "PERFECT"
+		judgement_successful = true
+		perfect_hits_this_level += 1
+	elif time_diff <= HIT_WINDOW_GOOD:
+		score_manager.add_good_hit()
+		hit_type = "GOOD"
+		judgement_successful = true
+
+	if judgement_successful:
+		var points = closest_note.on_hit()
+
+		if current_instrument == "drums":
+			var player_data_manager = null
+			if game_engine and game_engine.has_method("get_player_data_manager"):
+				player_data_manager = game_engine.get_player_data_manager()
+
+			if player_data_manager:
+				player_data_manager.add_total_drum_perfect_hit()
+
+		if sound_factory and music_manager:
+			var note_type = closest_note.note_type
+			var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
+			music_manager.play_custom_hit_sound(sound_path)
+
+		if judgement_label:
+			judgement_label.text = hit_type
+			if hit_type == "PERFECT":
+				judgement_label.modulate = Color.YELLOW
+			elif hit_type == "GOOD":
+				judgement_label.modulate = Color.CYAN
+			else:
+				judgement_label.modulate = Color.GRAY
+
+		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
+	else:
+		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs)" % [lane, time_diff])
+
 
 func _process(delta):
 	if not countdown_active:

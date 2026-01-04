@@ -91,18 +91,18 @@ func spawn_notes():
 		var visual_rect = ColorRect.new()
 
 		if note_type == "DefaultNote":
-			note_object = DefaultNote.new(lane, y_spawn)
+			note_object = DefaultNote.new(lane, y_spawn, game_time)
 			visual_rect.color = note_object.color
 		elif note_type == "HoldNote":
 			var duration = note_info.get("duration", 1.0)
 			var height = int(duration * pixels_per_sec)
-			note_object = HoldNote.new(lane, y_spawn, height, duration * 1000)
+			note_object = HoldNote.new(lane, y_spawn, game_time, height, duration * 1000)
 			visual_rect.color = note_object.color
 		elif note_type == "KickNote":
-			note_object = KickNote.new(lane, y_spawn)
+			note_object = KickNote.new(lane, y_spawn, game_time)
 			visual_rect.color = note_object.color
 		elif note_type == "SnareNote":
-			note_object = SnareNote.new(lane, y_spawn)
+			note_object = SnareNote.new(lane, y_spawn, game_time)
 			visual_rect.color = note_object.color
 		else:
 			continue

@@ -12,8 +12,8 @@ var is_being_held: bool = false
 var captured: bool = false
 var fall_speed: float = 6.0
 
-func _init(p_lane: int, p_y: float, p_height: float, p_hold_time_ms: float):
-	super._init(p_lane, p_y) 
+func _init(p_lane: int, p_y: float, p_spawn_time: float, p_height: float, p_hold_time_ms: float):
+	super._init(p_lane, p_y, p_spawn_time) 
 	height = p_height
 	duration = p_hold_time_ms / 1000.0
 	hold_time_ms = p_hold_time_ms

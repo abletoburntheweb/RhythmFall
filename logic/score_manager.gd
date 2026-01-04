@@ -5,7 +5,8 @@ var score: int = 0
 var combo: int = 0
 var max_combo: int = 0
 var combo_multiplier: float = 1.0
-var base_hit_points: int = 100
+var base_perfect_points: int = 100  
+var base_good_points: int = 50     
 var total_notes: int = 0
 var missed_notes: int = 0
 var hit_notes: int = 0
@@ -15,15 +16,33 @@ var game_screen
 func _init(screen):
 	game_screen = screen
 
-func add_score(hit_type: String = "perfect") -> int:
-	combo_multiplier = min(4, 1 + (int(combo / 10)))
+func add_perfect_hit() -> int:
+	combo_multiplier = min(4.0, 1.0 + float(int(combo / 10))) 
 	combo += 1
 	max_combo = max(max_combo, combo)
-	var final_points = int(base_hit_points * combo_multiplier)
+	var final_points = int(base_perfect_points * combo_multiplier)
 	score += final_points
 	hit_notes += 1
-	print("[ScoreManager] %s hit! +%d -> %d (x%.1f) | Combo: %d | Total: %d" % [hit_type, base_hit_points, final_points, combo_multiplier, combo, score])
+	update_accuracy() 
+	print("[ScoreManager] PERFECT hit! +%d -> %d (x%.1f) | Combo: %d | Total: %d" % [base_perfect_points, final_points, combo_multiplier, combo, score])
 	return final_points
+
+func add_good_hit() -> int:
+	combo += 1
+	max_combo = max(max_combo, combo)
+	var final_points = int(base_good_points * combo_multiplier) 
+	score += final_points
+	hit_notes += 1
+	update_accuracy() 
+	print("[ScoreManager] GOOD hit! +%d -> %d (x%.1f) | Combo: %d | Total: %d" % [base_good_points, final_points, combo_multiplier, combo, score])
+	return final_points
+
+func add_miss_hit() -> int:
+	missed_notes += 1
+	reset_combo()
+	update_accuracy()
+	print("[ScoreManager] Miss! Combo reset, accuracy: %.2f%%" % accuracy)
+	return 0
 
 func reset_combo():
 	if combo > 0:
@@ -55,33 +74,21 @@ func update_accuracy():
 	else:
 		var intermediate_calc = (float(missed_notes) / total_notes) * 100
 		print("[ScoreManager] Промежуточный расчёт (missed_notes / total_notes) * 100 = (%d / %d) * 100 = %.6f" % [missed_notes, total_notes, intermediate_calc])
-		accuracy = max(0, 100 - intermediate_calc)
-		print("[ScoreManager] Рассчитанная точность (до max): %.6f" % (100 - intermediate_calc))
+		accuracy = max(0.0, 100.0 - intermediate_calc)
+		print("[ScoreManager] Рассчитанная точность (до max): %.6f" % (100.0 - intermediate_calc))
+	accuracy = clamp(accuracy, 0.0, 100.0)
 	print("[ScoreManager] Установленная точность (accuracy): %.6f" % accuracy)
 	print("[ScoreManager] Рассчитанная точность: %.2f%% (из %d промахов из %d)" % [accuracy, missed_notes, total_notes])
 
-func add_perfect_hit() -> int:
-	return add_score("perfect")
-
-func add_good_hit() -> int:
-	return add_score("good")
-
-func add_miss_hit() -> int:
-	missed_notes += 1
-	reset_combo()
-	update_accuracy()
-	print("[ScoreManager] Miss! Combo reset, accuracy: %.2f%%" % accuracy)
-	return 0
-
 func get_accuracy() -> float:
 	return accuracy
-	
+
 func get_missed_notes_count() -> int:
 	return missed_notes
 
 func get_hit_notes_count() -> int:
 	return hit_notes
-	
+
 func set_accuracy(new_accuracy: float):
 	accuracy = clampf(new_accuracy, 0.0, 100.0)
 	print("ScoreManager: Точность установлена вручную: %.1f%%" % accuracy)

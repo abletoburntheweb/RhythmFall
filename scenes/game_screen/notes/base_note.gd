@@ -5,15 +5,19 @@ extends RefCounted
 var lane: int
 var y: float
 var active: bool = true
-var time: float = 0.0
+var spawn_time: float = 0.0 
+var spawn_y: float = 0.0    
+var time: float = 0.0 
 var visual_node: Variant 
 var note_type: String = "BaseNote" 
 var was_hit: bool = false 
 var is_missed: bool = false 
 
-func _init(p_lane: int, p_y: float):
+func _init(p_lane: int, p_y: float, p_spawn_time: float = 0.0):
 	lane = p_lane
 	y = p_y
+	spawn_time = p_spawn_time
+	spawn_y = p_y
 	visual_node = null
 
 func update(speed: float):
