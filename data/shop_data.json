@@ -54,6 +54,28 @@
 	  "image": "res://assets/textures/kick_icon.png"
 	},
 	{
+	  "item_id": "kick_achievement_1",
+	  "name": "Штормовой кик",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick3.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_achievement_reward": true,
+	  "achievement_required": "32"
+	},
+	{
+	  "item_id": "kick_achievement_2",
+	  "name": "Памятный кик",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick4.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_achievement_reward": true,
+	  "achievement_required": "33"
+	},
+	{
 	  "item_id": "snare_1",
 	  "name": "Снейр 1",
 	  "price": 200,
@@ -70,6 +92,28 @@
 	  "type": "snare",
 	  "audio": "res://assets/shop/sounds/snare/snare2.wav",
 	  "image": "res://assets/textures/snare_icon.png"
+	},
+	{
+	  "item_id": "snare_achievement_1",
+	  "name": "Грувовый снейр",
+	  "price": 0,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare3.wav",
+	  "image": "res://assets/textures/snare_icon.png",
+	  "is_achievement_reward": true,
+	  "achievement_required": "31"
+	},
+	{
+	  "item_id": "snare_achievement_2",
+	  "name": "Восходящий снейр",
+	  "price": 0,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare4.wav",
+	  "image": "res://assets/textures/snare_icon.png",
+	  "is_achievement_reward": true,
+	  "achievement_required": "43"
 	},
 	{
 	  "item_id": "covers_geometric",
@@ -150,6 +194,16 @@
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/brush",
 	  "images_count": 7
+	},
+	{
+	  "item_id": "pixel_amp",
+	  "name": "Пиксельный усилитель",
+	  "price": 0,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/pixel_amp",
+	  "images_count": 7,
+	  "is_achievement_reward": true,
+	  "achievement_required": "50"
 	},
 	{
 	  "item_id": "misc_1",

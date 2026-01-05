@@ -4,6 +4,7 @@ extends BaseScreen
 var currency: int = 0
 var shop_data: Dictionary = {}
 var item_cards: Array[Node] = []
+var achievements_data: Dictionary = {} 
 
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
@@ -32,6 +33,19 @@ func _ready():
 			print("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
 	else:
 		print("ShopScreen.gd: Файл shop_data.json не найден: ", file_path)
+
+	var achievements_file_path = "res://data/achievements_data.json"
+	var achievements_file_access = FileAccess.open(achievements_file_path, FileAccess.READ)
+	if achievements_file_access:
+		var json_text = achievements_file_access.get_as_text()
+		achievements_file_access.close()
+		var json_result = JSON.parse_string(json_text)
+		if json_result is Dictionary:
+			achievements_data = json_result
+		else:
+			print("ShopScreen.gd: Ошибка парсинга achievements_data.json или данные не являются словарём.")
+	else:
+		print("ShopScreen.gd: Файл achievements_data.json не найден: ", achievements_file_path)
 
 	currency = player_data_manager.get_currency()
 	_update_currency_label()
@@ -179,7 +193,17 @@ func _create_item_cards():
 										if internal_category:
 											is_active = (player_data_manager.get_active_item(internal_category) == item_data.item_id)
 
-										new_card.update_state(is_purchased, is_active)
+										var achievement_name = ""
+										var achievement_unlocked = false
+										if item_data.get("is_achievement_reward", false):
+											var achievement_id = item_data.get("achievement_required", "")
+											achievement_name = _get_achievement_name_by_id(achievement_id)
+											if achievement_id != "":
+												achievement_unlocked = player_data_manager.is_achievement_unlocked(int(achievement_id) if achievement_id.is_valid_int() else 0)
+											else:
+												achievement_name = "Неизвестная ачивка" 
+
+										new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
 
 										new_card.buy_pressed.connect(_on_item_buy_pressed)
 										new_card.use_pressed.connect(_on_item_use_pressed)
@@ -241,7 +265,17 @@ func _on_category_selected(category: String):
 			if internal_category:
 				is_active = (player_data_manager.get_active_item(internal_category) == item_data.item_id)
 
-			new_card.update_state(is_purchased, is_active)
+			var achievement_name = ""
+			var achievement_unlocked = false
+			if item_data.get("is_achievement_reward", false):
+				var achievement_id = item_data.get("achievement_required", "")
+				achievement_name = _get_achievement_name_by_id(achievement_id)
+				if achievement_id != "":
+					achievement_unlocked = player_data_manager.is_achievement_unlocked(int(achievement_id) if achievement_id.is_valid_int() else 0)
+				else:
+					achievement_name = "Неизвестная ачивка" 
+
+			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
 
 			new_card.buy_pressed.connect(_on_item_buy_pressed)
 			new_card.use_pressed.connect(_on_item_use_pressed)
@@ -252,6 +286,19 @@ func _on_category_selected(category: String):
 			item_cards.append(new_card)
 	else:
 		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected по новому пути")
+
+func _get_achievement_name_by_id(achievement_id: String) -> String:
+	if not achievement_id.is_valid_int():
+		return "Неизвестная ачивка"
+	var target_id = float(achievement_id)
+
+	var achievements_list = achievements_data.get("achievements", [])
+	for achievement in achievements_list:
+		var ach_id_float = achievement.get("id", -1.0)
+		if ach_id_float == target_id:
+			var title = achievement.get("title", "Неизвестная ачивка")
+			return title
+	return "Неизвестная ачивка"
 
 
 func _on_item_buy_pressed(item_id: String):
@@ -284,11 +331,9 @@ func _is_item_file_available(item_data: Dictionary) -> bool:
 		if not full_audio_path.begins_with("res://"):
 			pass
 		if not FileAccess.file_exists(full_audio_path):
-			print("ShopScreen.gd: Аудио файл не найден для ", item_data.get("name", "Без названия"), ": ", full_audio_path)
 			return false
 	if image_path != "":
 		if not FileAccess.file_exists(image_path):
-			print("ShopScreen.gd: Изображение не найдено для ", item_data.get("name", "Без названия"), ": ", image_path)
 			return false
 	if images_folder != "" and images_count > 0:
 		var cover_exists = false
@@ -298,7 +343,6 @@ func _is_item_file_available(item_data: Dictionary) -> bool:
 				cover_exists = true
 				break
 		if not cover_exists:
-			print("ShopScreen.gd: Ни одной обложки не найдено для ", item_data.get("name", "Без названия"), " в папке: ", images_folder)
 			return false
 	return true
 
@@ -333,17 +377,14 @@ func _preview_sound(item: Dictionary):
 		if FileAccess.file_exists(audio_path):
 			music_manager.play_custom_hit_sound(path_for_manager)
 		else:
-			print("ShopScreen.gd: Звук не найден по абсолютному пути: %s, используем стандартный" % audio_path)
 			music_manager.play_default_shop_sound()
 	else:
-		print("ShopScreen.gd: Нет аудио у %s или MusicManager не установлен" % item.get("item_id", "Без ID"))
 		if music_manager:
 			music_manager.play_default_shop_sound()
 
 func _on_cover_click_pressed(item_data: Dictionary):
 	if music_manager and music_manager.has_method("play_cover_click_sound"):
 		music_manager.play_cover_click_sound()
-		print("ShopScreen.gd: Воспроизведен звук cover_click при клике на карточку обложки.")
 	_open_cover_gallery(item_data)
 
 func _open_cover_gallery(item_data: Dictionary):
@@ -426,7 +467,17 @@ func _find_item_by_id(item_id: String) -> Dictionary:
 func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 	for card in item_cards:
 		if card.item_data.get("item_id", "") == item_id:
-			card.update_state(purchased, active)
+			var achievement_unlocked = false
+			var achievement_name = ""
+			var item_data = card.item_data 
+			if item_data.get("is_achievement_reward", false):
+				var achievement_id_str = item_data.get("achievement_required", "")
+				if achievement_id_str != "" and achievement_id_str.is_valid_int():
+					var achievement_id = int(achievement_id_str)
+					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
+					achievement_name = _get_achievement_name_by_id(achievement_id_str)
+			
+			card.update_state(purchased, active, true, achievement_unlocked, achievement_name)
 			break
 
 func _update_all_item_cards_in_category(category: String, active_item_id: String):
@@ -436,7 +487,18 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 		if internal_category == category:
 			var is_purchased = player_data_manager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
-			card.update_state(is_purchased, is_active)
+			
+			var achievement_unlocked = false
+			var achievement_name = ""
+			var item_data = card.item_data
+			if item_data.get("is_achievement_reward", false):
+				var achievement_id_str = item_data.get("achievement_required", "")
+				if achievement_id_str != "" and achievement_id_str.is_valid_int():
+					var achievement_id = int(achievement_id_str)
+					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
+					achievement_name = _get_achievement_name_by_id(achievement_id_str)
+			
+			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
 
 func _cleanup_gallery_internal():
 	if current_cover_gallery:

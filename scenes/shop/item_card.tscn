@@ -51,3 +51,7 @@ text = "🔊 Прослушать"
 [node name="BuyButton" type="Button" parent="MarginContainer/ContentContainer"]
 layout_mode = 2
 text = "Купить за 200 💰"
+
+[node name="AchievementRewardButton" type="Button" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+text = "Достижение 🔒"
