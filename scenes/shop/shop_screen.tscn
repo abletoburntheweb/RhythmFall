@@ -58,7 +58,7 @@ text = "Обложки"
 
 [node name="CategoryButtonLaneHighlight" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
-text = "Полосы"
+text = "Подсветка линий"
 
 [node name="CategoryButtonMisc" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2

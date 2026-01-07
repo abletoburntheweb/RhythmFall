@@ -133,7 +133,7 @@ func _connect_category_buttons():
 		cover_btn.pressed.connect(_on_category_selected.bind("Обложки"))
 		_set_category_button_style(cover_btn, false)
 	if lane_highlight_btn:  
-		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Полосы"))
+		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Подсветка линий"))
 		_set_category_button_style(lane_highlight_btn, false)  
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
@@ -242,7 +242,7 @@ func _get_category_map() -> Dictionary:
 		"Кик": "Kick",
 		"Снейр": "Snare",
 		"Обложки": "Covers",
-		"Полосы": "LaneHighlight",
+		"Подсветка линий": "LaneHighlight",
 		"Прочее": "Misc"
 	}
 

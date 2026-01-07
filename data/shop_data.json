@@ -27,10 +27,10 @@
 	  "images_count": 7
 	},
 	{
-	  "item_id": "lanes_default",
+	  "item_id": "lanes_highlight_default",
 	  "name": "Стандартные полосы",
 	  "price": 0,
-	  "category": "Полосы",
+	  "category": "Подсветка линий",
 	  "color_hex": "#fec6e580",
 	  "is_default": true
 	},
@@ -214,25 +214,74 @@
 	  "achievement_required": "50"
 	},
 	{
-	  "item_id": "lanes_red",
-	  "name": "Красные полосы",
+	  "item_id": "lanes_highlight_1",
+	  "name": "Бледно-розовые полосы",
 	  "price": 150,
-	  "category": "Полосы", 
-	  "color_hex": "#FF000080"
+	  "category": "Подсветка линий",
+	  "color_hex": "#f8d7e880"
 	},
 	{
-	  "item_id": "lanes_blue",
-	  "name": "Синие полосы",
+	  "item_id": "lanes_highlight_2",
+	  "name": "Туманная роза",
 	  "price": 150,
-	  "category": "Полосы",
-	  "color_hex": "#0000FF80"
+	  "category": "Подсветка линий",
+	  "color_hex": "#f5e0e980"
 	},
 	{
-	  "item_id": "lanes_green",
-	  "name": "Зеленые полосы", 
+	  "item_id": "lanes_highlight_3",
+	  "name": "Нежный лавандовый",
 	  "price": 150,
-	  "category": "Полосы",
-	  "color_hex": "#00FF0080"
+	  "category": "Подсветка линий",
+	  "color_hex": "#e6e0f080"
+	},
+	{
+	  "item_id": "lanes_highlight_4",
+	  "name": "Пыльная шалфей",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e0e8e080"
+	},
+	{
+	  "item_id": "lanes_highlight_5",
+	  "name": "Тёплый тауп",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e8dfd780"
+	},
+	{
+	  "item_id": "lanes_highlight_6",
+	  "name": "Приглушённый персик",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#f0e0d880"
+	},
+	{
+	  "item_id": "lanes_highlight_7",
+	  "name": "Спокойная аква",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#d8e8e880"
+	},
+	{
+	  "item_id": "lanes_highlight_8",
+	  "name": "Тонкий лиловый",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e8e0f080"
+	},
+	{
+	  "item_id": "lanes_highlight_9",
+	  "name": "Нежная мята",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#d8f0e880"
+	},
+	{
+	  "item_id": "lanes_highlight_10",
+	  "name": "Выцветшее небо",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#d8e8f080"
 	},
 	{
 	  "item_id": "misc_1",

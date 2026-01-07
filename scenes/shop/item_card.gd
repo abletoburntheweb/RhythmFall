@@ -54,7 +54,7 @@ func _setup_item():
 		return
 
 	var item_id_str = item_data.get("item_id", "") 
-	is_default = item_id_str.ends_with("_default")
+	is_default = item_data.get("is_default", false)
 
 	is_achievement_reward = item_data.get("is_achievement_reward", false)
 	achievement_required = item_data.get("achievement_required", "")
@@ -78,9 +78,9 @@ func _setup_item():
 				image_rect.texture = texture
 				image_loaded_successfully = true
 			else:
-				pass
+				print("ItemCard: Не удалось загрузить текстуру: ", image_path)
 		else:
-			pass
+			print("ItemCard: Файл текстуры не существует: ", image_path)
 	elif images_folder != "":
 		var cover_path = images_folder + "/cover1.png"
 
@@ -92,11 +92,11 @@ func _setup_item():
 				image_rect.texture = texture
 				image_loaded_successfully = true
 			else:
-				pass
+				print("ItemCard: Не удалось создать ImageTexture из: ", cover_path)
 		else:
-			pass
+			print("ItemCard: Не удалось загрузить изображение обложки: ", cover_path)
 	else:
-		pass
+		print("ItemCard: Ни image, ни images_folder не заданы для ", item_data.get("item_id", "unknown"))
 
 	if image_rect:
 		if image_loaded_successfully:
@@ -122,7 +122,7 @@ func _create_placeholder_with_text():
 		var placeholder_height = 180 
 
 		var placeholder_image = Image.create(placeholder_width, placeholder_height, false, Image.FORMAT_RGBA8)
-		placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0))
+		placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0)) 
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 
 		image_rect.texture = placeholder_texture
@@ -167,7 +167,8 @@ func _update_buttons_and_status():
 			var price = item_data.get("price", 0)
 			buy_button.text = "Купить за %d 💰" % price
 
-		use_button.visible = is_purchased and not is_active
+		var show_use_button = (is_purchased and not is_active) or (is_default and not is_active)
+		use_button.visible = show_use_button
 		if use_button.visible:
 			use_button.text = "✅ Использовать"
 
@@ -204,5 +205,5 @@ func update_state(purchased: bool, active: bool, file_available: bool = true, ac
 	self.achievement_name = achievement_name_param
 	self.is_achievement_reward = item_data.get("is_achievement_reward", false)
 	if is_achievement_reward and achievement_unlocked_param:
-		is_purchased = true
+		is_purchased = true 
 	_setup_item() 
