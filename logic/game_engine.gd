@@ -38,14 +38,11 @@ func _start_play_time_timer():
 		print("GameEngine.gd (DEBUG): Старый таймер отключен.")
 
 	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)
-	print("GameEngine.gd (DEBUG): Создан таймер: ", _play_time_timer)
 	if _play_time_timer:
 		var connect_result = _play_time_timer.timeout.connect(_on_play_time_update_timeout)
 		print("GameEngine.gd (DEBUG): Результат подключения таймера: ", connect_result)
 		if connect_result != 0:
 			printerr("GameEngine.gd (DEBUG): Ошибка подключения таймера! Код: ", connect_result)
-	else:
-		printerr("GameEngine.gd (DEBUG): Ошибка: create_timer вернул null!")	
 
 func _on_play_time_update_timeout():
 	if player_data_manager:

@@ -82,9 +82,6 @@ func _ready():
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
-		print("GameScreen.gd: Transitions получен: ", transitions)
-	else:
-		printerr("GameScreen.gd: GameEngine не имеет метода get_transitions!")
 	
 	if game_engine and game_engine.has_method("get_music_manager"):
 		music_manager = game_engine.get_music_manager()
@@ -106,6 +103,13 @@ func _ready():
 	_find_ui_elements()
 	_instantiate_debug_menu()
 	_load_lane_colors()
+	
+	var player_data_manager = null
+	if game_engine and game_engine.has_method("get_player_data_manager"):
+		player_data_manager = game_engine.get_player_data_manager()
+		if player_data_manager:
+			_update_active_sounds_from_player_data(player_data_manager)
+			player_data_manager.active_item_changed.connect(_on_active_item_changed)
 
 	auto_player = AutoPlayer.new(self)
 
@@ -134,6 +138,46 @@ func _ready():
 	set_process_input(true)
 	
 	start_countdown()
+
+func _on_active_item_changed(category: String, item_id: String):
+	if category == "Kick" or category == "Snare":
+		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+		if shop_data_file:
+			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
+			shop_data_file.close()
+			
+			for item in shop_data.get("items", []):
+				if item.get("item_id", "") == item_id:
+					var audio_path = item.get("audio", "")
+					if audio_path:
+						if category == "Kick":
+							music_manager.set_active_kick_sound(audio_path)
+						elif category == "Snare":
+							music_manager.set_active_snare_sound(audio_path)
+					break
+
+func _update_active_sounds_from_player_data(player_data_mgr):
+	var active_kick_id = player_data_mgr.get_active_item("Kick")
+	var active_snare_id = player_data_mgr.get_active_item("Snare")
+
+	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	if shop_data_file:
+		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
+		shop_data_file.close()
+		
+		for item in shop_data.get("items", []):
+			if item.get("item_id", "") == active_kick_id:
+				var audio_path = item.get("audio", "")
+				if audio_path:
+					music_manager.set_active_kick_sound(audio_path)
+				break
+		
+		for item in shop_data.get("items", []):
+			if item.get("item_id", "") == active_snare_id:
+				var audio_path = item.get("audio", "")
+				if audio_path:
+					music_manager.set_active_snare_sound(audio_path)
+				break
 
 func _instantiate_debug_menu():
 	var debug_menu_scene = preload("res://scenes/debug_menu/debug_menu.tscn")
@@ -405,8 +449,6 @@ func end_game():
 			if music_manager.has_method("stop_game_music"):
 				music_manager.stop_game_music()
 				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
-			else:
-				printerr("GameScreen.gd: Ни stop_music, ни stop_game_music не найдены в MusicManager!")
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
 			print("GameScreen.gd: Метроном остановлен в end_game.")
@@ -431,8 +473,6 @@ func end_game():
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
 		print("GameScreen.gd: Transitions получен для открытия VictoryScreen: ", transitions)
-	else:
-		printerr("GameScreen.gd: GameEngine не имеет метода get_transitions!")
 		return 
 
 	transitions.open_victory_screen(
@@ -533,8 +573,6 @@ func skip_countdown():
 		if countdown_timer:
 			pass
 		start_gameplay()
-	else:
-		print("GameScreen.gd: Попытка пропустить отсчёт, но он уже завершён.")
 
 func skip_intro() -> bool:
 	if game_time < 0: 

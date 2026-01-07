@@ -2,6 +2,8 @@
 class_name PlayerDataManager 
 extends RefCounted
 
+signal active_item_changed(category: String, item_id: String)
+
 const PLAYER_DATA_PATH = "user://player_data.json" 
 const BEST_GRADES_PATH = "user://best_grades.json" 
 const TRACK_STATS_PATH = "user://track_stats.json"
@@ -363,8 +365,11 @@ func is_item_unlocked(item_name: String) -> bool:
 
 func set_active_item(category: String, item_id: String):
 	if data["active_items"].has(category):
+		var old_item_id = data["active_items"][category]
 		data["active_items"][category] = item_id
 		_save()
+		print("PlayerDataManager: активный предмет изменён - категория: ", category, ", старый ID: ", old_item_id, ", новый ID: ", item_id)
+		emit_signal("active_item_changed", category, item_id)
 
 func get_active_item(category: String) -> String:
 	var active_item_id = data["active_items"].get(category)

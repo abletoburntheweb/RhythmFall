@@ -175,6 +175,14 @@ func _get_sound_path_from_shop_data(item_id: String, category: String) -> String
 						return audio_path
 	return ""
 
+func set_active_kick_sound(path: String):
+	active_kick_sound_path = path
+	print("MusicManager: установлен активный кик-звук: ", path)
+
+func set_active_snare_sound(path: String):
+	active_snare_sound_path = path
+	print("MusicManager: установлен активный снейр-звук: ", path)
+
 func set_music_volume(volume: float):
 	if music_player: 
 		music_player.volume_db = linear_to_db(volume / 100.0)
