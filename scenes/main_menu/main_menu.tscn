@@ -100,9 +100,9 @@ show_percentage = false
 
 [node name="LevelLabel" type="Label" parent="XPContainer"]
 layout_mode = 0
-offset_left = 197.0
+offset_left = -7.0
 offset_top = 4.0
-offset_right = 320.0
+offset_right = 317.0
 offset_bottom = 38.0
 theme_override_font_sizes/font_size = 24
 text = "Уровень 1"

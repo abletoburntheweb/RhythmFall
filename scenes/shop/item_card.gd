@@ -21,15 +21,15 @@ func _ready():
 	if not item_data.has("item_id"):
 		return
 
-	var buy_button = $MarginContainer/ContentContainer/BuyButton
+	var buy_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton
 	if buy_button:
 		buy_button.pressed.connect(_on_buy_pressed)
 
-	var use_button = $MarginContainer/ContentContainer/UseButton
+	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
 	if use_button:
 		use_button.pressed.connect(_on_use_pressed)
 
-	var preview_button = $MarginContainer/ContentContainer/PreviewButton
+	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
 	if preview_button:
 		preview_button.pressed.connect(_on_preview_pressed)
 
@@ -129,10 +129,10 @@ func _create_placeholder_with_text():
 
 
 func _update_buttons_and_status():
-	var buy_button = $MarginContainer/ContentContainer/BuyButton
-	var achievement_button = $MarginContainer/ContentContainer/AchievementRewardButton 
-	var use_button = $MarginContainer/ContentContainer/UseButton
-	var preview_button = $MarginContainer/ContentContainer/PreviewButton
+	var buy_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton
+	var achievement_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/AchievementRewardButton 
+	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
+	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
 	var status_label = $MarginContainer/ContentContainer/StatusLabel
 
 	if is_achievement_reward:
