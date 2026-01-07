@@ -334,23 +334,21 @@ func _deferred_update_ui():
 			if achievement_manager and game_engine:
 				achievement_manager.notification_mgr = game_engine
 
-			if is_drum_mode:
-				pass
-			
 			if achievement_system:
-				achievement_system.on_level_completed(accuracy, is_drum_mode, grade)
-				
-			elif achievement_manager:
-				achievement_manager.check_first_level_achievement()
-				achievement_manager.check_perfect_accuracy_achievement(accuracy)
+				var song_path = song_info.get("path", "") 
+				achievement_system.on_level_completed(accuracy, song_path, is_drum_mode, grade)
+			else:
+				if achievement_manager:
+					achievement_manager.check_first_level_achievement()
+					achievement_manager.check_perfect_accuracy_achievement(accuracy)
 
-				if is_drum_mode:
-					var total_drum_levels = player_data_manager.get_drum_levels_completed()
-					achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+					if is_drum_mode:
+						var total_drum_levels = player_data_manager.get_drum_levels_completed()
+						achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
 
-				achievement_manager.check_score_achievements(player_data_manager)
-				if grade == "SS":
-					achievement_manager.check_ss_achievements(player_data_manager)
+					achievement_manager.check_score_achievements(player_data_manager)
+					if grade == "SS":
+						achievement_manager.check_ss_achievements(player_data_manager)
 
 			if should_save_result_later:
 				var instrument_for_result = song_info.get("instrument", "standard")
@@ -371,7 +369,7 @@ func _deferred_update_ui():
 			else:
 				pass
 			
-			var song_path = song_info.get("path", "")
+			var song_path = song_info.get("path", "") 
 			if song_path != "":
 				player_data_manager.update_best_grade_for_track(song_path, grade)
 				player_data_manager.on_track_completed(song_path)

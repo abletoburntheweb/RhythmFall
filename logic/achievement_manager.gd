@@ -127,7 +127,7 @@ func _perform_unlock(achievement: Dictionary):
 		print("Unlocking achievement: ", achievement)
 		notification_mgr.show_achievement_popup(achievement)
 	else:
-		print("⚠️ Нет notification_mgr для немедленного показа ачивки: ", achievement.title)
+		print("⚠️ Нет notification_mgr для показа ачивки: ", achievement.title)
 
 
 func show_all_delayed_gameplay_achievements():
@@ -500,7 +500,7 @@ func check_drum_storm_achievement(player_data_mgr_override = null):
 			break
 	print("[AchievementManager] [ДИАГНОСТИКА] Проверка ачивки 'Барабанный шторм' завершена.")
 
-func check_replay_level_achievement(song_path: String):
+func check_replay_level_achievement(track_completion_counts: Dictionary):
 	var achievement_id = 33
 	var achievement_to_check = null
 	for a in achievements:
@@ -508,15 +508,21 @@ func check_replay_level_achievement(song_path: String):
 			achievement_to_check = a
 			break
 	
-	if not achievement_to_check:
-		print("[AchievementManager] Ачивка с id=%d не найдена для проверки 'Музыкальная память'." % achievement_id)
+	if not achievement_to_check or achievement_to_check.get("unlocked", false):
 		return
-	
-	if achievement_to_check.get("unlocked", false):
-		return 
-	
-	unlock_achievement_by_id(achievement_id)
-	print("AchievementManager: Ачивка 'Музыкальная память' разблокирована для песни %s." % song_path)
+
+	var replay_found = false
+	for track_path in track_completion_counts:
+		var count = track_completion_counts[track_path]
+		if count > 1.0: 
+			replay_found = true
+			break 
+
+	if replay_found:
+		achievement_to_check.current = 1.0
+		_perform_unlock(achievement_to_check)
+		print("AchievementManager: Ачивка 'Музыкальная память' разблокирована, так как найдена песня, сыгранная более 1 раза.")
+		save_achievements() 
 
 func check_playtime_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr

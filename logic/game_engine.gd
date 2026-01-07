@@ -77,7 +77,7 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 func initialize_logic():
 	player_data_manager = PlayerDataManager.new()
 
-	track_stats_manager = TrackStatsManager.new(player_data_manager)
+	track_stats_manager = TrackStatsManager.new(player_data_manager) 
 
 	player_data_manager.set_track_stats_manager(track_stats_manager)
 	
@@ -100,7 +100,7 @@ func initialize_logic():
 
 	achievement_manager = AchievementManager.new()
 	
-	achievement_system = AchievementSystem.new(achievement_manager, player_data_manager, music_manager)
+	achievement_system = AchievementSystem.new(achievement_manager, player_data_manager, music_manager, track_stats_manager)
 	achievement_manager.notification_mgr = self
 	
 	achievement_queue_manager = preload("res://logic/achievement_queue_manager.gd").new()

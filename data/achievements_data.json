@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 442997.0,
+			"current": 443147,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 442997.0,
+			"current": 443147,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 442997.0,
+			"current": 443147,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 400.0,
+			"current": 400,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 400.0,
+			"current": 400,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 400.0,
+			"current": 400,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 1,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,7 +211,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 1,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -222,7 +222,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 1,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 1,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 13.0,
+			"current": 15,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 13.0,
+			"current": 15,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -299,7 +299,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 33.0,
+			"current": 33,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -354,18 +354,18 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Пройти один и тот же уровень дважды",
 			"id": 33.0,
 			"image": "res://assets/achievements/musical_memory.png",
 			"title": "Музыкальная память",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "7 Янв 2026, 15:53",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 3.62,
+			"current": 3.65,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.62,
+			"current": 3.65,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.62,
+			"current": 3.65,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.62,
+			"current": 3.65,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 3.62,
+			"current": 3.65,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 5 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 25 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 100 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 240300.0,
+			"current": 240300,
 			"description": "Набрать 250 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",

@@ -5,23 +5,27 @@ extends RefCounted
 var achievement_manager: AchievementManager = null
 var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
+var track_stats_manager: TrackStatsManager = null
 
-func _init(ach_manager: AchievementManager, pd_manager: PlayerDataManager, music_mgr: MusicManager):
+func _init(ach_manager: AchievementManager, pd_manager: PlayerDataManager, music_mgr: MusicManager, track_stats_mgr: TrackStatsManager):
 	achievement_manager = ach_manager
 	player_data_manager = pd_manager
 	music_manager = music_mgr
+	track_stats_manager = track_stats_mgr
 	
 	achievement_manager.player_data_mgr = pd_manager
 	achievement_manager.music_mgr = music_mgr
 	player_data_manager.achievement_manager = ach_manager
 
-func on_song_replayed(song_path: String):
-	achievement_manager.check_replay_level_achievement(song_path) 
 
-func on_level_completed(accuracy: float, is_drum_mode: bool = false, grade: String = ""):
-	print("[AchievementSystem] on_level_completed вызван с accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode, ", grade: ", grade)
+func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
+	print("[AchievementSystem] on_level_completed вызван с song_path: ", song_path, ", accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode, ", grade: ", grade)
 	achievement_manager.check_first_level_achievement()
 	achievement_manager.check_perfect_accuracy_achievement(accuracy)
+
+	if track_stats_manager: 
+		track_stats_manager.on_track_completed(song_path)
+		achievement_manager.check_replay_level_achievement(track_stats_manager.track_completion_counts)
 
 	player_data_manager.add_completed_level() 
 
