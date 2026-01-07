@@ -11,6 +11,7 @@ const DEFAULT_ACTIVE_ITEMS = {
 	"Snare": "snare_default",
 	"Backgrounds": "background_default",
 	"Covers": "covers_default",
+	"LaneHighlight": "lane_highlight_default",
 	"Misc": null 
 }
 
@@ -81,6 +82,7 @@ func _init():
 		"kick_default",
 		"snare_default", 
 		"covers_default",
+		"lane_highlight_default"
 	]
 	var items_changed = false
 	for item_id in default_items:

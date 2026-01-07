@@ -27,6 +27,14 @@
 	  "images_count": 7
 	},
 	{
+	  "item_id": "lanes_default",
+	  "name": "Стандартные полосы",
+	  "price": 0,
+	  "category": "Полосы",
+	  "color_hex": "#fec6e580",
+	  "is_default": true
+	},
+	{
 	  "item_id": "kick_1",
 	  "name": "Кик 1",
 	  "price": 200,
@@ -204,6 +212,27 @@
 	  "images_count": 7,
 	  "is_achievement_reward": true,
 	  "achievement_required": "50"
+	},
+	{
+	  "item_id": "lanes_red",
+	  "name": "Красные полосы",
+	  "price": 150,
+	  "category": "Полосы", 
+	  "color_hex": "#FF000080"
+	},
+	{
+	  "item_id": "lanes_blue",
+	  "name": "Синие полосы",
+	  "price": 150,
+	  "category": "Полосы",
+	  "color_hex": "#0000FF80"
+	},
+	{
+	  "item_id": "lanes_green",
+	  "name": "Зеленые полосы", 
+	  "price": 150,
+	  "category": "Полосы",
+	  "color_hex": "#00FF0080"
 	},
 	{
 	  "item_id": "misc_1",

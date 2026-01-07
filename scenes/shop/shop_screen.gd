@@ -117,6 +117,7 @@ func _connect_category_buttons():
 	var kick_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick
 	var snare_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonSnare
 	var cover_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover
+	var lane_highlight_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight  
 	var misc_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonMisc
 
 	if all_btn:
@@ -131,6 +132,9 @@ func _connect_category_buttons():
 	if cover_btn:
 		cover_btn.pressed.connect(_on_category_selected.bind("Обложки"))
 		_set_category_button_style(cover_btn, false)
+	if lane_highlight_btn:  
+		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Полосы"))
+		_set_category_button_style(lane_highlight_btn, false)  
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
 		_set_category_button_style(misc_btn, false)
@@ -238,6 +242,7 @@ func _get_category_map() -> Dictionary:
 		"Кик": "Kick",
 		"Снейр": "Snare",
 		"Обложки": "Covers",
+		"Полосы": "LaneHighlight",
 		"Прочее": "Misc"
 	}
 

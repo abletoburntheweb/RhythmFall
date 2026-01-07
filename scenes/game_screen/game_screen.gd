@@ -54,6 +54,7 @@ var skip_time_threshold = 10.0
 var skip_rewind_seconds = 5.0
 
 var lane_highlight_nodes: Array[ColorRect] = []
+var lane_nodes: Array[ColorRect] = []
 
 var debug_menu: DebugMenu = null
 
@@ -104,6 +105,7 @@ func _ready():
 
 	_find_ui_elements()
 	_instantiate_debug_menu()
+	_load_lane_colors()
 
 	auto_player = AutoPlayer.new(self)
 
@@ -165,6 +167,39 @@ func _find_ui_elements():
 			lanes_container_node.get_node_or_null("Lane2Highlight") as ColorRect,
 			lanes_container_node.get_node_or_null("Lane3Highlight") as ColorRect
 		]
+		lane_nodes = [
+			lanes_container_node.get_node_or_null("Lane0") as ColorRect,
+			lanes_container_node.get_node_or_null("Lane1") as ColorRect,
+			lanes_container_node.get_node_or_null("Lane2") as ColorRect,
+			lanes_container_node.get_node_or_null("Lane3") as ColorRect
+		]
+
+func _load_lane_colors():
+	var player_data_manager = null
+	if game_engine and game_engine.has_method("get_player_data_manager"):
+		player_data_manager = game_engine.get_player_data_manager()
+	
+	if player_data_manager:
+		var active_lane_highlight_id = player_data_manager.get_active_item("LaneHighlight") 
+		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+		if shop_data_file:
+			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
+			shop_data_file.close()
+			
+			for item in shop_data.get("items", []):
+				if item.get("item_id", "") == active_lane_highlight_id:
+					var color_hex = item.get("color_hex", "#fec6e580")
+					var lane_highlight_color = Color(color_hex)
+					_set_lane_highlight_colors(lane_highlight_color)
+					break
+		else:
+			var default_color = Color("#fec6e580")
+			_set_lane_highlight_colors(default_color)
+
+func _set_lane_highlight_colors(color: Color):
+	for lane_node in lane_highlight_nodes:
+		if lane_node and lane_node is ColorRect:
+			lane_node.color = color
 
 func _on_player_hit(lane: int):
 	if pauser.is_paused:
