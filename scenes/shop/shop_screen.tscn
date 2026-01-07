@@ -48,6 +48,10 @@ alignment = 1
 layout_mode = 2
 text = "Все"
 
+[node name="CategoryButtonKick" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Кик"
+
 [node name="CategoryButtonSnare" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
 text = "Снейр"

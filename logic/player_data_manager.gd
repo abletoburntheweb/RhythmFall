@@ -370,7 +370,6 @@ func get_active_item(category: String) -> String:
 	var active_item_id = data["active_items"].get(category)
 	if active_item_id == null:
 		var default_item = DEFAULT_ACTIVE_ITEMS.get(category, "")
-		print("PlayerDataManager.gd: get_active_item: Активный предмет для категории '", category, "' равен null, возвращаем дефолтное значение: '", default_item, "'")
 		return default_item if default_item != null else ""
 	return active_item_id 
 
@@ -383,8 +382,6 @@ func get_active_items() -> Dictionary:
 		var value = data["active_items"][category]
 		if value is String or value == null:
 			active_items_copy[category] = value
-		else:
-			print("PlayerDataManager.gd: get_active_items: Найдено некорректное значение для категории '", category, "': ", value, " (тип: ", typeof(value), ")")
 	return active_items_copy
 
 func get_save_data() -> Dictionary:
@@ -397,8 +394,6 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("unlocked_item_ids"):
 		if save_dict["unlocked_item_ids"] is Array:
 			data["unlocked_item_ids"] = PackedStringArray(save_dict["unlocked_item_ids"]) 
-		else:
-			print("PlayerDataManager.gd: load_save_data: Поле 'unlocked_item_ids' не является массивом, пропускаем.")
 	if save_dict.has("active_items"):
 		if save_dict["active_items"] is Dictionary:
 			data["active_items"].clear()

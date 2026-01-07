@@ -215,118 +215,113 @@
 	},
 	{
 	  "item_id": "lanes_highlight_1",
-	  "name": "Бледно-розовые полосы",
+	  "name": "Огненный закат",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#f8d7e880"
+	  "color_hex": "#ff6b3580"
 	},
 	{
 	  "item_id": "lanes_highlight_2",
-	  "name": "Туманная роза",
+	  "name": "Океанская волна",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#f5e0e980"
+	  "color_hex": "#176b8780"
 	},
 	{
 	  "item_id": "lanes_highlight_3",
-	  "name": "Нежный лавандовый",
+	  "name": "Лайм-базальт",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#e6e0f080"
+	  "color_hex": "#6a994e80"
 	},
 	{
 	  "item_id": "lanes_highlight_4",
-	  "name": "Пыльная шалфей",
+	  "name": "Фиолетовая тьма",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#e0e8e080"
+	  "color_hex": "#5e548e80"
 	},
 	{
 	  "item_id": "lanes_highlight_5",
-	  "name": "Тёплый тауп",
+	  "name": "Солнечный блик",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#e8dfd780"
+	  "color_hex": "#f1c40f80"
 	},
 	{
 	  "item_id": "lanes_highlight_6",
-	  "name": "Приглушённый персик",
+	  "name": "Морская пена",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#f0e0d880"
+	  "color_hex": "#d6e4e580"
 	},
 	{
 	  "item_id": "lanes_highlight_7",
-	  "name": "Спокойная аква",
+	  "name": "Багровый рассвет",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#d8e8e880"
+	  "color_hex": "#b5347180"
 	},
 	{
 	  "item_id": "lanes_highlight_8",
-	  "name": "Тонкий лиловый",
+	  "name": "Изумрудный лес",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#e8e0f080"
+	  "color_hex": "#0b6e4f80"
 	},
 	{
 	  "item_id": "lanes_highlight_9",
-	  "name": "Нежная мята",
+	  "name": "Сиреневая дымка",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#d8f0e880"
+	  "color_hex": "#8a5a9b80"
 	},
 	{
 	  "item_id": "lanes_highlight_10",
-	  "name": "Выцветшее небо",
+	  "name": "Карамельная вуаль",
 	  "price": 150,
 	  "category": "Подсветка линий",
-	  "color_hex": "#d8e8f080"
+	  "color_hex": "#d8a78280"
+	},
+	{
+	  "item_id": "lanes_highlight_11",
+	  "name": "Электрический синий",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#2a9d8f80"
+	},
+	{
+	  "item_id": "lanes_highlight_12",
+	  "name": "Розовый кварц",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e76f5180"
+	},
+	{
+	  "item_id": "lanes_highlight_13",
+	  "name": "Темный графит",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#3d405b80"
+	},
+	{
+	  "item_id": "lanes_highlight_14",
+	  "name": "Золотой песок",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e9c46a80"
+	},
+	{
+	  "item_id": "lanes_highlight_15",
+	  "name": "Алый шарм",
+	  "price": 150,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e6394680"
 	},
 	{
 	  "item_id": "misc_1",
 	  "name": "Бонус 1",
 	  "price": 300,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	},
-	{
-	  "item_id": "misc_2",
-	  "name": "Бонус 2",
-	  "price": 200,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	},
-	{
-	  "item_id": "misc_3",
-	  "name": "Бонус 3",
-	  "price": 250,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	},
-	{
-	  "item_id": "misc_4",
-	  "name": "Бонус 4",
-	  "price": 300,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	},
-	{
-	  "item_id": "misc_5",
-	  "name": "Бонус 5",
-	  "price": 200,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	},
-	{
-	  "item_id": "misc_6",
-	  "name": "Бонус 6",
-	  "price": 250,
 	  "image": "res://assets/textures/placeholder.png",
 	  "category": "Прочее",
 	  "is_equippable": false

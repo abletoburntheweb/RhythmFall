@@ -68,19 +68,23 @@ func _setup_item():
 
 	var image_path = item_data.get("image", "") 
 	var images_folder = item_data.get("images_folder", "")
+	var category = item_data.get("category", "")
+	var color_hex = item_data.get("color_hex", "")
 	var texture = null
 	var image_loaded_successfully = false
 
-	if image_path != "":
+	if category == "Подсветка линий" and color_hex != "":
+		var hex_color = Color(color_hex)
+		texture = _create_color_texture(hex_color)
+		if texture:
+			image_rect.texture = texture
+			image_loaded_successfully = true
+	elif image_path != "":
 		if FileAccess.file_exists(image_path):
 			texture = ResourceLoader.load(image_path, "ImageTexture")
 			if texture and texture is ImageTexture:
 				image_rect.texture = texture
 				image_loaded_successfully = true
-			else:
-				print("ItemCard: Не удалось загрузить текстуру: ", image_path)
-		else:
-			print("ItemCard: Файл текстуры не существует: ", image_path)
 	elif images_folder != "":
 		var cover_path = images_folder + "/cover1.png"
 
@@ -91,12 +95,8 @@ func _setup_item():
 			if texture:
 				image_rect.texture = texture
 				image_loaded_successfully = true
-			else:
-				print("ItemCard: Не удалось создать ImageTexture из: ", cover_path)
-		else:
-			print("ItemCard: Не удалось загрузить изображение обложки: ", cover_path)
 	else:
-		print("ItemCard: Ни image, ни images_folder не заданы для ", item_data.get("item_id", "unknown"))
+		pass
 
 	if image_rect:
 		if image_loaded_successfully:
@@ -115,17 +115,31 @@ func _setup_item():
 	_update_buttons_and_status()
 
 
+func _create_color_texture(color: Color) -> Texture2D:
+	var image = Image.create(240, 180, false, Image.FORMAT_RGBA8)
+	image.fill(color)
+	return ImageTexture.create_from_image(image)
+
+
 func _create_placeholder_with_text():
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	if image_rect:
-		var placeholder_width = 240 
-		var placeholder_height = 180 
+		var category = item_data.get("category", "")
+		var color_hex = item_data.get("color_hex", "")
+		
+		if category == "Подсветка линий" and color_hex != "":
+			var hex_color = Color(color_hex)
+			var color_texture = _create_color_texture(hex_color)
+			image_rect.texture = color_texture
+		else:
+			var placeholder_width = 240 
+			var placeholder_height = 180 
 
-		var placeholder_image = Image.create(placeholder_width, placeholder_height, false, Image.FORMAT_RGBA8)
-		placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0)) 
-		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
+			var placeholder_image = Image.create(placeholder_width, placeholder_height, false, Image.FORMAT_RGBA8)
+			placeholder_image.fill(Color(0.5, 0.5, 0.5, 1.0)) 
+			var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 
-		image_rect.texture = placeholder_texture
+			image_rect.texture = placeholder_texture
 
 
 func _update_buttons_and_status():
