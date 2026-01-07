@@ -199,7 +199,13 @@ func _create_item_cards():
 
 										var achievement_name = ""
 										var achievement_unlocked = false
-										if item_data.get("is_achievement_reward", false):
+										
+										var level_unlocked = false
+										if item_data.get("is_level_reward", false):
+											var required_level = item_data.get("required_level", 0)
+											var current_level = player_data_manager.get_current_level()
+											level_unlocked = current_level >= required_level
+										elif item_data.get("is_achievement_reward", false):
 											var achievement_id = item_data.get("achievement_required", "")
 											achievement_name = _get_achievement_name_by_id(achievement_id)
 											if achievement_id != "":
@@ -207,7 +213,7 @@ func _create_item_cards():
 											else:
 												achievement_name = "Неизвестная ачивка" 
 
-										new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
+										new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
 
 										new_card.buy_pressed.connect(_on_item_buy_pressed)
 										new_card.use_pressed.connect(_on_item_use_pressed)
@@ -272,7 +278,13 @@ func _on_category_selected(category: String):
 
 			var achievement_name = ""
 			var achievement_unlocked = false
-			if item_data.get("is_achievement_reward", false):
+			
+			var level_unlocked = false
+			if item_data.get("is_level_reward", false):
+				var required_level = item_data.get("required_level", 0)
+				var current_level = player_data_manager.get_current_level()
+				level_unlocked = current_level >= required_level
+			elif item_data.get("is_achievement_reward", false):
 				var achievement_id = item_data.get("achievement_required", "")
 				achievement_name = _get_achievement_name_by_id(achievement_id)
 				if achievement_id != "":
@@ -280,7 +292,7 @@ func _on_category_selected(category: String):
 				else:
 					achievement_name = "Неизвестная ачивка" 
 
-			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
+			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
 
 			new_card.buy_pressed.connect(_on_item_buy_pressed)
 			new_card.use_pressed.connect(_on_item_use_pressed)
@@ -474,15 +486,21 @@ func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 		if card.item_data.get("item_id", "") == item_id:
 			var achievement_unlocked = false
 			var achievement_name = ""
+			var level_unlocked = false
 			var item_data = card.item_data 
-			if item_data.get("is_achievement_reward", false):
+			
+			if item_data.get("is_level_reward", false):
+				var required_level = item_data.get("required_level", 0)
+				var current_level = player_data_manager.get_current_level()
+				level_unlocked = current_level >= required_level
+			elif item_data.get("is_achievement_reward", false):
 				var achievement_id_str = item_data.get("achievement_required", "")
 				if achievement_id_str != "" and achievement_id_str.is_valid_int():
 					var achievement_id = int(achievement_id_str)
 					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
 			
-			card.update_state(purchased, active, true, achievement_unlocked, achievement_name)
+			card.update_state(purchased, active, true, achievement_unlocked, achievement_name, level_unlocked)
 			break
 
 func _update_all_item_cards_in_category(category: String, active_item_id: String):
@@ -495,15 +513,21 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			
 			var achievement_unlocked = false
 			var achievement_name = ""
+			var level_unlocked = false
 			var item_data = card.item_data
-			if item_data.get("is_achievement_reward", false):
+			
+			if item_data.get("is_level_reward", false):
+				var required_level = item_data.get("required_level", 0)
+				var current_level = player_data_manager.get_current_level()
+				level_unlocked = current_level >= required_level
+			elif item_data.get("is_achievement_reward", false):
 				var achievement_id_str = item_data.get("achievement_required", "")
 				if achievement_id_str != "" and achievement_id_str.is_valid_int():
 					var achievement_id = int(achievement_id_str)
 					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
 			
-			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name)
+			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
 
 func _cleanup_gallery_internal():
 	if current_cover_gallery:

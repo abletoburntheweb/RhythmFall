@@ -337,6 +337,9 @@ func start_gameplay():
 	if music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(bpm, 0) 
 
+	if music_manager and music_manager.has_method("play_level_start_sound"):
+		music_manager.play_level_start_sound()
+
 	if music_manager and selected_song_data and selected_song_data.get("path"):
 		var song_path = selected_song_data.get("path")
 		if music_manager.has_method("play_game_music"):

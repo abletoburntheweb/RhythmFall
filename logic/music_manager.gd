@@ -14,6 +14,7 @@ const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
+const DEFAULT_LEVEL_START_SOUND = "level_start_ripple.wav"
 
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
 const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav"
@@ -318,6 +319,9 @@ func play_default_shop_sound():
 func play_cover_click_sound():
 	play_sfx(DEFAULT_COVER_CLICK_SOUND)
 	
+func play_level_start_sound():
+	play_sfx(DEFAULT_LEVEL_START_SOUND)
+
 func play_hit_sound(is_kick: bool = true):
 	var sound_path = ""
 	if is_kick:

@@ -17,6 +17,10 @@ var achievement_required: String = ""
 var achievement_name: String = "" 
 var achievement_unlocked: bool = false
 
+var is_level_reward: bool = false
+var required_level: int = 0
+var level_unlocked: bool = false
+
 func _ready():
 	if not item_data.has("item_id"):
 		return
@@ -58,6 +62,9 @@ func _setup_item():
 
 	is_achievement_reward = item_data.get("is_achievement_reward", false)
 	achievement_required = item_data.get("achievement_required", "")
+	
+	is_level_reward = item_data.get("is_level_reward", false)
+	required_level = item_data.get("required_level", 0)
 
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
@@ -145,12 +152,38 @@ func _create_placeholder_with_text():
 func _update_buttons_and_status():
 	var buy_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton
 	var achievement_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/AchievementRewardButton 
+	var level_reward_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/LevelRewardButton 
 	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
 	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
 	var status_label = $MarginContainer/ContentContainer/StatusLabel
 
-	if is_achievement_reward:
+	if is_level_reward:
 		buy_button.visible = false
+		achievement_button.visible = false
+		
+		var audio_path = item_data.get("audio", "")
+		preview_button.visible = audio_path != ""
+		if preview_button.visible:
+			preview_button.text = "🔊 Прослушать"
+
+		if level_unlocked:
+			level_reward_button.visible = false
+			use_button.visible = not is_active
+			if use_button.visible:
+				use_button.text = "✅ Использовать"
+			status_label.visible = is_active
+			if is_active:
+				status_label.text = "✅ Используется"
+		else:
+			level_reward_button.visible = true
+			level_reward_button.text = "Уровень %d 🔒" % required_level
+			level_reward_button.disabled = true 
+			use_button.visible = false
+			status_label.visible = false
+
+	elif is_achievement_reward:
+		buy_button.visible = false
+		level_reward_button.visible = false  
 		
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
@@ -175,6 +208,7 @@ func _update_buttons_and_status():
 
 	else:
 		achievement_button.visible = false
+		level_reward_button.visible = false
 		
 		buy_button.visible = not is_purchased and not is_default
 		if buy_button.visible:
@@ -212,12 +246,18 @@ func _on_preview_pressed():
 	var item_id_str = item_data.get("item_id", "") 
 	emit_signal("preview_pressed", item_id_str)
 
-func update_state(purchased: bool, active: bool, file_available: bool = true, achievement_unlocked_param: bool = false, achievement_name_param: String = ""):
+func update_state(purchased: bool, active: bool, file_available: bool = true, achievement_unlocked_param: bool = false, achievement_name_param: String = "", level_unlocked_param: bool = false):
 	is_purchased = purchased
 	is_active = active
 	self.achievement_unlocked = achievement_unlocked_param
 	self.achievement_name = achievement_name_param
 	self.is_achievement_reward = item_data.get("is_achievement_reward", false)
-	if is_achievement_reward and achievement_unlocked_param:
+	self.level_unlocked = level_unlocked_param
+	self.is_level_reward = item_data.get("is_level_reward", false)
+	
+	if is_level_reward and level_unlocked_param:
 		is_purchased = true 
+	elif is_achievement_reward and achievement_unlocked_param:
+		is_purchased = true 
+	
 	_setup_item() 

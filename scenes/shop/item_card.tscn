@@ -61,6 +61,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Достижение 🔒"
 
+[node name="LevelRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Награда за уровень 🔒"
+
 [node name="PreviewButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer"]
 layout_mode = 2
 text = "🔊 Прослушать"

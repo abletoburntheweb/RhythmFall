@@ -84,6 +84,28 @@
 	  "achievement_required": "33"
 	},
 	{
+	  "item_id": "kick_level_1",
+	  "name": "Кик уровень 1",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick5.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_level_reward": true,
+	  "required_level": 10
+	},
+	{
+	  "item_id": "kick_level_2",
+	  "name": "Кик уровень 2",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick6.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_level_reward": true,
+	  "required_level": 20
+	},
+	{
 	  "item_id": "snare_1",
 	  "name": "Снейр 1",
 	  "price": 200,
@@ -122,6 +144,28 @@
 	  "image": "res://assets/textures/snare_icon.png",
 	  "is_achievement_reward": true,
 	  "achievement_required": "43"
+	},
+	{
+	  "item_id": "snare_level_1",
+	  "name": "Снейр уровень 1",
+	  "price": 0,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare5.wav",
+	  "image": "res://assets/textures/snare_icon.png",
+	  "is_level_reward": true,
+	  "required_level": 7
+	},
+	{
+	  "item_id": "snare_level_2",
+	  "name": "Снейр уровень 2",
+	  "price": 0,
+	  "category": "Снейр",
+	  "type": "snare",
+	  "audio": "res://assets/shop/sounds/snare/snare6.wav",
+	  "image": "res://assets/textures/snare_icon.png",
+	  "is_level_reward": true,
+	  "required_level": 50
 	},
 	{
 	  "item_id": "covers_geometric",
