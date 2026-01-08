@@ -15,12 +15,20 @@ func simulate():
 		return
 
 	var current_time = game_screen.game_time
+	var hit_tolerance_px = 50.0
+	var hit_tolerance_time = 0.04
 
 	var lanes_to_keep_pressed = []
 	for note in game_screen.note_manager.get_notes():
-		var in_hit_zone = abs(note.y - game_screen.hit_zone_y) < hit_tolerance
+		var y_in_zone = abs(note.y - game_screen.hit_zone_y) < hit_tolerance_px
+		
+		var pixels_per_sec = game_screen.speed * (1000.0 / 16.0)
+		var note_time = note.spawn_time + (game_screen.hit_zone_y - note.spawn_y) / pixels_per_sec
+		var time_diff = abs(current_time - note_time)
+		
+		var in_timing_window = time_diff <= hit_tolerance_time
 
-		if in_hit_zone:
+		if y_in_zone and in_timing_window:
 			lanes_to_keep_pressed.append(note.lane)
 
 			if not pressed_lanes.has(note.lane):

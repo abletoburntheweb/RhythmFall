@@ -49,25 +49,25 @@ color = Color(0.99726194, 0.7774682, 0.899526, 1)
 [node name="Lane0" type="ColorRect" parent="LanesContainer"]
 offset_top = 900.0
 offset_right = 480.0
-offset_bottom = 920.0
+offset_bottom = 930.0
 
 [node name="Lane1" type="ColorRect" parent="LanesContainer"]
 offset_left = 480.0
 offset_top = 900.0
 offset_right = 960.0
-offset_bottom = 920.0
+offset_bottom = 930.0
 
 [node name="Lane2" type="ColorRect" parent="LanesContainer"]
 offset_left = 960.0
 offset_top = 900.0
 offset_right = 1440.0
-offset_bottom = 920.0
+offset_bottom = 930.0
 
 [node name="Lane3" type="ColorRect" parent="LanesContainer"]
 offset_left = 1440.0
 offset_top = 900.0
 offset_right = 1920.0
-offset_bottom = 920.0
+offset_bottom = 930.0
 
 [node name="NotesContainer" type="Node2D" parent="."]
 

@@ -72,8 +72,8 @@ var victory_delay_timer: Timer = null
 
 var gameplay_started: bool = false
 
-const HIT_WINDOW_PERFECT: float = 0.03
-const HIT_WINDOW_GOOD: float = 0.10
+const HIT_WINDOW_PERFECT: float = 0.05
+const HIT_WINDOW_GOOD: float = 0.15
 
 
 func _ready():
@@ -476,7 +476,6 @@ func end_game():
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
 		print("GameScreen.gd: Transitions получен для открытия VictoryScreen: ", transitions)
-		return 
 
 	transitions.open_victory_screen(
 		debug_score,      
@@ -622,7 +621,7 @@ func check_hit(lane: int):
 	var candidates = []
 
 	for note in note_manager.get_notes():
-		if note.lane == lane and abs(note.y - hit_zone_y_float) < 40:
+		if note.lane == lane and abs(note.y - hit_zone_y_float) < 50:
 			candidates.append(note)
 
 	if candidates.size() == 0:

@@ -128,7 +128,7 @@ func spawn_notes():
 func update_notes():
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.hit_zone_y
-	var miss_threshold: float = 30 
+	var miss_threshold: float = 40 
 
 	for i in range(notes.size() - 1, -1, -1): 
 		var note = notes[i]
