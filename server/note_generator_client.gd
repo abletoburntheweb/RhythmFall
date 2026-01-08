@@ -24,7 +24,7 @@ func set_track_identification(needed: bool):
 func _set_is_generating(value: bool):
 	is_generating = value
 
-func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int = -1, sync_tolerance: float = -1.0, auto_identify_track: bool = true):
+func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int = -1, sync_tolerance: float = -1.0, auto_identify_track: bool = true, manual_artist: String = "", manual_title: String = ""):
 	if is_generating:
 		print("NoteGeneratorClient.gd: Генерация уже выполняется, игнорируем новый запрос.")
 		return
@@ -41,7 +41,9 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		"bpm": bpm,
 		"lanes": effective_lanes, 
 		"sync_tolerance": effective_sync_tolerance,
-		"auto_identify_track": auto_identify_track 
+		"auto_identify_track": auto_identify_track,
+		"manual_artist": manual_artist,
+		"manual_title": manual_title 
 	}
 	_thread_result = {}
 	_thread_finished = false
@@ -111,6 +113,8 @@ func _thread_function(data_dict: Dictionary):
 	var lanes = data_dict.get("lanes", default_lanes)
 	var sync_tolerance = data_dict.get("sync_tolerance", default_sync_tolerance)
 	var auto_identify_track = data_dict.get("auto_identify_track", true) 
+	var manual_artist = data_dict.get("manual_artist", "") 
+	var manual_title = data_dict.get("manual_title", "") 
 
 	if song_path == "":
 		local_error_occurred = true
@@ -119,32 +123,6 @@ func _thread_function(data_dict: Dictionary):
 		_thread_result = local_result
 		_thread_finished = true
 		return
-
-	var track_info = null
-	if auto_identify_track:
-		var identification_result = _identify_track(song_path)
-		if identification_result.success:
-			track_info = identification_result.track_info
-			print("NoteGeneratorClient.gd (Thread): Идентификация успешна: ", track_info.artist, " - ", track_info.title)
-			if track_info.artist == "Unknown" or track_info.title == "Unknown":
-				print("NoteGeneratorClient.gd (Thread): Идентификация вернула 'Unknown', требуется ручной ввод.")
-				local_result = {
-					"manual_identification_required": true,
-					"song_path": song_path
-				}
-				_thread_result = local_result
-				_thread_finished = true
-				return
-		else:
-			print("NoteGeneratorClient.gd (Thread): Идентификация не удалась, требуется ручной ввод.")
-			local_result = {
-				"manual_identification_required": true,
-				"song_path": song_path
-			}
-			_thread_result = local_result
-			_thread_finished = true
-			return
-
 
 	var http_client = HTTPClient.new()
 	var error = http_client.connect_to_host("localhost", 5000)
@@ -176,10 +154,14 @@ func _thread_function(data_dict: Dictionary):
 					"X-Instrument: " + instrument_type,
 					"X-Filename: " + song_path.get_file(),
 					"X-Lanes: " + str(lanes),
-					"X-Sync-Tolerance: " + str(sync_tolerance)
-					, "X-Identify-Track: " + str(auto_identify_track).to_lower()
+					"X-Sync-Tolerance: " + str(sync_tolerance),
+					"X-Identify-Track: " + str(auto_identify_track).to_lower()
 				])
-
+				
+				if manual_artist != "" and manual_title != "":
+					headers.append("X-Artist-Manual: " + manual_artist)
+					headers.append("X-Title-Manual: " + manual_title)
+				
 				var request_method = HTTPClient.METHOD_POST
 				var request_url = "/generate_drums" if instrument_type == "drums" else "/generate_notes"
 				
@@ -208,7 +190,14 @@ func _thread_function(data_dict: Dictionary):
 
 						var response_json = JSON.parse_string(response_text)
 						if response_json:
-							if response_json.has("notes") and response_json.has("bpm"):
+							if response_json.has("status") and response_json.get("status") == "requires_manual_input":
+								var fallback_artist = response_json.get("fallback_artist", "Unknown")
+								var fallback_title = response_json.get("fallback_title", "Unknown")
+								local_result = {
+									"manual_identification_required": true,
+									"song_path": song_path 
+								}
+							elif response_json.has("notes") and response_json.has("bpm"):
 								var notes = response_json["notes"]
 								var received_bpm = response_json["bpm"]
 								var received_lanes = response_json.get("lanes", lanes)
@@ -226,7 +215,7 @@ func _thread_function(data_dict: Dictionary):
 								print("NoteGeneratorClient.gd (Thread): Ошибка от сервера: ", local_error_msg)
 								local_error_occurred = true
 							else:
-								local_error_msg = "Ответ не содержит ожидаемые поля: notes и bpm"
+								local_error_msg = "Ответ не содержит ожидаемые поля: notes/bpm или status"
 								print("NoteGeneratorClient.gd (Thread): Неполный ответ от сервера: ", response_json)
 								local_error_occurred = true
 						else:
@@ -235,6 +224,22 @@ func _thread_function(data_dict: Dictionary):
 							local_error_occurred = true
 					else:
 						local_error_msg = "Неожиданный статус HTTPClient после успешного ответа: " + str(http_client.get_status())
+						local_error_occurred = true
+				elif response_code == 404:
+					var error_body = PackedByteArray()
+					while http_client.get_status() == HTTPClient.STATUS_BODY:
+						var chunk = http_client.read_response_body_chunk()
+						if chunk.size() == 0:
+							break
+						error_body.append_array(chunk)
+						http_client.poll()
+					var error_text = error_body.get_string_from_utf8()
+					if "Could not identify track from audio" in error_text:
+						local_error_msg = "Сервер вернул 404: " + error_text
+						print("NoteGeneratorClient.gd (Thread): Получен 404 от сервера: ", local_error_msg)
+						local_error_occurred = true
+					else:
+						local_error_msg = "Сервер вернул 404: " + error_text
 						local_error_occurred = true
 				else:
 					var error_body = PackedByteArray()

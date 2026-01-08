@@ -295,14 +295,8 @@ func _on_manual_identification_needed(song_path: String):
 	pending_manual_identification_bpm = float(song_bpm)
 	pending_manual_identification_lanes = -1
 	pending_manual_identification_sync_tolerance = -1.0
-
-	var base_name = song_path.get_file().get_basename()
-	var parts = base_name.split(" - ", false, 1)
 	var expected_artist = "Неизвестен"
-	var expected_title = base_name
-	if parts.size() == 2:
-		expected_artist = parts[0]
-		expected_title = parts[1]
+	var expected_title = "Н/Д"
 	
 	_show_manual_track_input(expected_artist, expected_title)
 
@@ -310,23 +304,39 @@ func _show_manual_track_input(artist: String, title: String):
 	if manual_track_input_dialog and is_instance_valid(manual_track_input_dialog):
 		manual_track_input_dialog.queue_free()
 
+	var corrected_artist = artist
+	var corrected_title = title
+	
+	var song_filename = pending_manual_identification_song_path.get_file().get_basename()
+	if artist == "Неизвестен" and title == "Н/Д":
+		var parts = song_filename.split(" - ", false, 1)
+		if parts.size() == 2:
+			corrected_artist = parts[0]
+			corrected_title = parts[1]
+		else:
+			corrected_artist = song_filename
+			corrected_title = "Н/Д"
+	
 	manual_track_input_dialog = ManualTrackInputScene.instantiate()
-	manual_track_input_dialog.set_expected_track(artist, title)
+	manual_track_input_dialog.set_expected_track(corrected_artist, corrected_title)
 	manual_track_input_dialog.confirmed.connect(_on_manual_track_confirmed)
 	manual_track_input_dialog.cancelled.connect(_on_manual_track_cancelled)
 	manual_track_input_dialog.manual_entry_confirmed.connect(_on_manual_entry_confirmed)
 	add_child(manual_track_input_dialog)
-	manual_track_input_dialog.show_modal_for_track(artist, title)
+	manual_track_input_dialog.show_modal_for_track(corrected_artist, corrected_title)
 
 func _on_manual_track_confirmed():
 	print("SongSelect.gd: Пользователь подтвердил трек.")
-	_on_manual_track_cancelled()
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Сгенерировать ноты"
+		generate_btn.disabled = false
 
 func _on_manual_track_cancelled():
 	print("SongSelect.gd: Пользователь отменил идентификацию.")
 	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
 	if generate_btn:
-		generate_btn.text = "Сгенерировать ноты"
+		generate_btn.text = "Ручной ввод"
 		generate_btn.disabled = false
 
 func _on_manual_entry_confirmed(artist: String, title: String):
@@ -343,27 +353,15 @@ func _on_genres_detection_completed(received_artist: String, received_title: Str
 		print("SongSelect.gd: Ошибка: нет пути к песне для обновления метаданных после получения жанров.")
 		return
 
-	var updated_metadata = {
-		"title": received_title,
-		"artist": received_artist,
-		"genres": genres,
-		"year": "Н/Д", 
-		"bpm": str(pending_manual_identification_bpm), 
-		"duration": current_selected_song_data.get("duration", "00:00"), 
-		"cover": current_selected_song_data.get("cover", null)
-	}
-
-	song_metadata_manager.update_metadata(pending_manual_identification_song_path, updated_metadata)
-	print("SongSelect.gd: Метаданные обновлены для: ", pending_manual_identification_song_path)
-
-	
 	note_generator_client.generate_notes(
 		pending_manual_identification_song_path,
 		current_instrument,
 		pending_manual_identification_bpm,
 		pending_manual_identification_lanes,
 		pending_manual_identification_sync_tolerance,
-		false 
+		false, 
+		received_artist, 
+		received_title  
 	)
 	
 	pending_manual_identification_song_path = ""
@@ -371,13 +369,6 @@ func _on_genres_detection_completed(received_artist: String, received_title: Str
 	pending_manual_identification_lanes = -1
 	pending_manual_identification_sync_tolerance = -1.0
 
-	if current_displayed_song_path == pending_manual_identification_song_path:
-		var songs_list = song_manager.get_songs_list()
-		for song in songs_list:
-			if song.path == pending_manual_identification_song_path:
-				song_details_manager.update_details(song)
-				print("SongSelect.gd: Отображение обновлено после ручного ввода.")
-				break
 
 func _on_genres_detection_error(error_message: String):
 	print("SongSelect.gd: Ошибка получения жанров: ", error_message)
