@@ -334,8 +334,11 @@ func start_gameplay():
 	else:
 		game_time = 0.0 
 
-	if music_manager and music_manager.has_method("start_metronome"):
-		music_manager.start_metronome(bpm, 0) 
+	if music_manager and music_manager.has_method("set_external_metronome_control"):
+		music_manager.set_external_metronome_control(true)
+
+	if music_manager and music_manager.has_method("start_metronome_external"):
+		music_manager.start_metronome_external(bpm)
 
 	if music_manager and music_manager.has_method("play_level_start_sound"):
 		music_manager.play_level_start_sound()
@@ -379,9 +382,6 @@ func _update_game():
 		return
 	
 	game_time += 0.016
-	
-	if not pauser.is_paused and not music_manager.is_metronome_active() and music_manager and music_manager.has_method("start_metronome"):
-		music_manager.start_metronome(bpm, 0) 
 	
 	if not countdown_active: 
 		note_manager.spawn_notes() 

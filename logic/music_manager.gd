@@ -42,6 +42,10 @@ var current_game_music_file: String = ""
 
 var original_game_music_volume: float = 1.0
 
+var _external_metronome_controlled: bool = false
+var _metronome_bpm: float = 120.0
+var _metronome_interval: float = 0.5
+
 func _ready():
 	music_player = AudioStreamPlayer.new()
 	music_player.name = "MusicPlayer"
@@ -64,6 +68,37 @@ func _ready():
 	add_child(metronome_player2)
 
 	_metronome_players = [metronome_player1, metronome_player2]
+
+func set_external_metronome_control(enabled: bool):
+	_external_metronome_controlled = enabled
+
+func start_metronome_external(bpm: float):
+	stop_metronome()
+	_metronome_bpm = bpm
+	_metronome_interval = 60.0 / bpm
+	metronome_active = true
+	
+	if not metronome_timer:
+		metronome_timer = Timer.new()
+		metronome_timer.one_shot = false
+		metronome_timer.autostart = false
+		metronome_timer.timeout.connect(_on_metronome_timeout)
+		add_child(metronome_timer)
+
+	metronome_timer.wait_time = _metronome_interval
+	metronome_timer.start()
+
+func _on_metronome_timeout():
+	var is_strong_beat = (int(Time.get_ticks_msec() / (_metronome_interval * 1000)) % 4) == 0
+	play_metronome_sound(is_strong_beat)
+
+func stop_metronome():
+	if metronome_timer:
+		metronome_timer.stop()
+		metronome_active = false
+
+func is_metronome_active() -> bool:
+	return metronome_active
 
 func get_volume_multiplier() -> float:
 	if music_player:
@@ -364,35 +399,6 @@ func play_metronome_sound(is_strong_beat: bool = true):
 			player.play()
 	else:
 		push_error("MusicManager: Не удалось загрузить звук метронома: " + full_path)
-
-func start_metronome(bpm: float, start_delay_ms: float = 0.0):
-	stop_metronome()
-
-	metronome_active = true
-	var interval_ms = 60000.0 / bpm
-	var interval_sec = interval_ms / 1000.0
-
-	if not metronome_timer:
-		metronome_timer = Timer.new()
-		metronome_timer.one_shot = false
-		metronome_timer.autostart = false
-		metronome_timer.timeout.connect(_on_metronome_timeout)
-		add_child(metronome_timer)
-
-	metronome_timer.wait_time = interval_sec
-	metronome_timer.start()
-
-func _on_metronome_timeout():
-	var is_strong_beat = (int(Time.get_ticks_msec() / (metronome_timer.wait_time * 1000)) % 4) == 0
-	play_metronome_sound(is_strong_beat)
-
-func stop_metronome():
-	if metronome_timer:
-		metronome_timer.stop()
-		metronome_active = false
-
-func is_metronome_active() -> bool:
-	return metronome_active
 
 func update_volumes_from_settings(settings_manager: SettingsManager):
 	if settings_manager:
