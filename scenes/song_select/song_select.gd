@@ -6,6 +6,9 @@ const BPMAnalyzerClient = preload("res://server/bpm_analyzer_client.gd")
 const NoteGeneratorClient = preload("res://server/note_generator_client.gd") 
 const InstrumentSelector = preload("res://scenes/song_select/instrument_selector.gd")
 
+const GenreDetectionClient = preload("res://server/genre_detector_client.gd")
+const ManualTrackInputScene = preload("res://scenes/song_select/manual_track_input.tscn")
+
 var song_manager: SongManager = null
 
 var edit_button: Button = null 
@@ -23,6 +26,7 @@ var settings_manager: SettingsManager = null
 var analyze_bpm_button: Button = null
 var bpm_analyzer_client: BPMAnalyzerClient = null
 var note_generator_client: NoteGeneratorClient = null  
+var genre_detection_client: GenreDetectionClient = null
 var song_metadata_manager = null
 var instrument_selector: Control = null
 var current_instrument: String = "drums"
@@ -32,6 +36,12 @@ var current_displayed_song_path: String = ""
 var results_button: Button = null
 var clear_results_button: Button = null 
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
+
+var manual_track_input_dialog: Control = null
+var pending_manual_identification_song_path: String = ""
+var pending_manual_identification_bpm: float = -1.0
+var pending_manual_identification_lanes: int = -1
+var pending_manual_identification_sync_tolerance: float = -1.0
 
 func _ready():
 	print("SongSelect.gd: _ready вызван")
@@ -125,10 +135,16 @@ func _ready():
 	bpm_analyzer_client.bpm_analysis_error.connect(_on_bpm_analysis_error)
 	add_child(bpm_analyzer_client)
 
+	genre_detection_client = GenreDetectionClient.new()
+	genre_detection_client.genres_detection_completed.connect(_on_genres_detection_completed)
+	genre_detection_client.genres_detection_error.connect(_on_genres_detection_error)
+	add_child(genre_detection_client)
+
 	note_generator_client = NoteGeneratorClient.new()
 	note_generator_client.notes_generation_started.connect(_on_notes_generation_started)
 	note_generator_client.notes_generation_completed.connect(_on_notes_generation_completed)
 	note_generator_client.notes_generation_error.connect(_on_notes_generation_error)
+	note_generator_client.manual_identification_needed.connect(_on_manual_identification_needed)
 	add_child(note_generator_client)
 
 	_connect_ui_signals() 
@@ -268,6 +284,111 @@ func _connect_ui_signals():
 	if cover_rect:
 		cover_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 		cover_rect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
+
+func _on_manual_identification_needed(song_path: String):
+	print("SongSelect.gd: Получен сигнал manual_identification_needed для: ", song_path)
+	pending_manual_identification_song_path = song_path
+	var song_bpm = current_selected_song_data.get("bpm", -1)
+	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
+		print("SongSelect.gd: Ошибка: BPM неизвестен при ожидании ручной идентификации.")
+		return
+	pending_manual_identification_bpm = float(song_bpm)
+	pending_manual_identification_lanes = -1
+	pending_manual_identification_sync_tolerance = -1.0
+
+	var base_name = song_path.get_file().get_basename()
+	var parts = base_name.split(" - ", false, 1)
+	var expected_artist = "Неизвестен"
+	var expected_title = base_name
+	if parts.size() == 2:
+		expected_artist = parts[0]
+		expected_title = parts[1]
+	
+	_show_manual_track_input(expected_artist, expected_title)
+
+func _show_manual_track_input(artist: String, title: String):
+	if manual_track_input_dialog and is_instance_valid(manual_track_input_dialog):
+		manual_track_input_dialog.queue_free()
+
+	manual_track_input_dialog = ManualTrackInputScene.instantiate()
+	manual_track_input_dialog.set_expected_track(artist, title)
+	manual_track_input_dialog.confirmed.connect(_on_manual_track_confirmed)
+	manual_track_input_dialog.cancelled.connect(_on_manual_track_cancelled)
+	manual_track_input_dialog.manual_entry_confirmed.connect(_on_manual_entry_confirmed)
+	add_child(manual_track_input_dialog)
+	manual_track_input_dialog.show_modal_for_track(artist, title)
+
+func _on_manual_track_confirmed():
+	print("SongSelect.gd: Пользователь подтвердил трек.")
+	_on_manual_track_cancelled()
+
+func _on_manual_track_cancelled():
+	print("SongSelect.gd: Пользователь отменил идентификацию.")
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Сгенерировать ноты"
+		generate_btn.disabled = false
+
+func _on_manual_entry_confirmed(artist: String, title: String):
+	print("SongSelect.gd: Пользователь ввёл артиста: '%s', название: '%s'" % [artist, title])
+	if pending_manual_identification_song_path == "":
+		print("SongSelect.gd: Ошибка: нет пути к песне для ручного ввода.")
+		return
+
+	genre_detection_client.get_genres_for_manual_entry(artist, title)
+
+func _on_genres_detection_completed(received_artist: String, received_title: String, genres: Array):
+	print("SongSelect.gd: Жанры получены для '%s - %s': %s" % [received_artist, received_title, genres])
+	if pending_manual_identification_song_path == "":
+		print("SongSelect.gd: Ошибка: нет пути к песне для обновления метаданных после получения жанров.")
+		return
+
+	var updated_metadata = {
+		"title": received_title,
+		"artist": received_artist,
+		"genres": genres,
+		"year": "Н/Д", 
+		"bpm": str(pending_manual_identification_bpm), 
+		"duration": current_selected_song_data.get("duration", "00:00"), 
+		"cover": current_selected_song_data.get("cover", null)
+	}
+
+	song_metadata_manager.update_metadata(pending_manual_identification_song_path, updated_metadata)
+	print("SongSelect.gd: Метаданные обновлены для: ", pending_manual_identification_song_path)
+
+	
+	note_generator_client.generate_notes(
+		pending_manual_identification_song_path,
+		current_instrument,
+		pending_manual_identification_bpm,
+		pending_manual_identification_lanes,
+		pending_manual_identification_sync_tolerance,
+		false 
+	)
+	
+	pending_manual_identification_song_path = ""
+	pending_manual_identification_bpm = -1.0
+	pending_manual_identification_lanes = -1
+	pending_manual_identification_sync_tolerance = -1.0
+
+	if current_displayed_song_path == pending_manual_identification_song_path:
+		var songs_list = song_manager.get_songs_list()
+		for song in songs_list:
+			if song.path == pending_manual_identification_song_path:
+				song_details_manager.update_details(song)
+				print("SongSelect.gd: Отображение обновлено после ручного ввода.")
+				break
+
+func _on_genres_detection_error(error_message: String):
+	print("SongSelect.gd: Ошибка получения жанров: ", error_message)
+	var generate_btn = $MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton
+	if generate_btn:
+		generate_btn.text = "Ошибка жанров"
+		generate_btn.disabled = false
+	pending_manual_identification_song_path = ""
+	pending_manual_identification_bpm = -1.0
+	pending_manual_identification_lanes = -1
+	pending_manual_identification_sync_tolerance = -1.0
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	print("SongSelect.gd: Получен сигнал song_selected от SongListManager для: %s" % song_data.get("title"))
@@ -614,6 +735,11 @@ func cleanup_before_exit():
 	print("SongSelect.gd: cleanup_before_exit вызван. Очищаем ресурсы SongSelect.")
 	if song_details_manager:
 		song_details_manager.stop_preview()
+
+	if manual_track_input_dialog and is_instance_valid(manual_track_input_dialog):
+		manual_track_input_dialog.queue_free()
+		manual_track_input_dialog = null
+		print("SongSelect.gd: ManualTrackInputDialog очищен в cleanup_before_exit.")
 
 	if instrument_selector and is_instance_valid(instrument_selector):
 		instrument_selector.queue_free()
