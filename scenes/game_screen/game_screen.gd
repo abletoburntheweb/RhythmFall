@@ -625,6 +625,9 @@ func check_hit(lane: int):
 			candidates.append(note)
 
 	if candidates.size() == 0:
+		# ← НОВОЕ: Нажал, но нет нот в зоне → сброс комбо
+		score_manager.add_miss_hit()
+		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо" % lane)
 		return
 
 	var closest_note = candidates[0]
@@ -679,7 +682,8 @@ func check_hit(lane: int):
 
 		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
 	else:
-		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs)" % [lane, time_diff])
+		score_manager.add_miss_hit()
+		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
 
 
 func _process(delta):
