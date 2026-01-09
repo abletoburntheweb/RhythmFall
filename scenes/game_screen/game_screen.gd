@@ -626,6 +626,8 @@ func check_hit(lane: int):
 
 	if candidates.size() == 0:
 		score_manager.add_miss_hit()
+		if music_manager:
+			music_manager.play_miss_hit_sound()
 		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо" % lane)
 		return
 
@@ -682,6 +684,8 @@ func check_hit(lane: int):
 		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
 	else:
 		score_manager.add_miss_hit()
+		if music_manager:
+			music_manager.play_miss_hit_sound()
 		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
 
 

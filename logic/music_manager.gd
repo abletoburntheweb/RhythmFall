@@ -15,6 +15,11 @@ const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
 const DEFAULT_LEVEL_START_SOUND = "level_start_ripple.wav"
+const DEFAULT_MISS_HIT_SOUND_1 = "miss_hit1.wav"
+const DEFAULT_MISS_HIT_SOUND_2 = "miss_hit2.wav"
+const DEFAULT_MISS_HIT_SOUND_3 = "miss_hit3.wav"
+const DEFAULT_MISS_HIT_SOUND_4 = "miss_hit4.wav"
+const DEFAULT_MISS_HIT_SOUND_5 = "miss_hit5.wav"
 
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
 const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav"
@@ -356,6 +361,17 @@ func play_cover_click_sound():
 	
 func play_level_start_sound():
 	play_sfx(DEFAULT_LEVEL_START_SOUND)
+
+func play_miss_hit_sound():
+	var random_index = randi() % 5
+	var sound_path = ""
+	match random_index:
+		0: sound_path = DEFAULT_MISS_HIT_SOUND_1
+		1: sound_path = DEFAULT_MISS_HIT_SOUND_2
+		2: sound_path = DEFAULT_MISS_HIT_SOUND_3
+		3: sound_path = DEFAULT_MISS_HIT_SOUND_4
+		4: sound_path = DEFAULT_MISS_HIT_SOUND_5
+	play_sfx(sound_path)
 
 func play_hit_sound(is_kick: bool = true):
 	var sound_path = ""
