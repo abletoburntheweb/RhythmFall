@@ -625,7 +625,6 @@ func check_hit(lane: int):
 			candidates.append(note)
 
 	if candidates.size() == 0:
-		# ← НОВОЕ: Нажал, но нет нот в зоне → сброс комбо
 		score_manager.add_miss_hit()
 		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо" % lane)
 		return
