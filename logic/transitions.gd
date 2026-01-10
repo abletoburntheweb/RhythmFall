@@ -248,38 +248,29 @@ func transition_close_shop():
 	transition_open_main_menu()
 
 func transition_open_settings(_from_pause=false):
-	
 	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
-	if new_screen:
-		if game_engine and game_engine.has_method("get_settings_manager") and game_engine.has_method("get_music_manager"):
-			var settings_mgr = game_engine.get_settings_manager()
-			var music_mgr = game_engine.get_music_manager()
-			var game_scr = null
-			var target_transitions = self
-			if settings_mgr and music_mgr:
-				if new_screen.has_method("set_managers"):
-					if _from_pause and game_engine.current_screen:
-						game_scr = game_engine.current_screen
-					new_screen.set_managers(settings_mgr, music_mgr, game_scr, target_transitions) 
-				else:
-					printerr("Transitions.gd: SettingsMenu instance не имеет метода set_managers!")
-			else:
-				printerr("Transitions.gd: Не удалось получить settings_manager или music_manager из game_engine!")
-		else:
-			printerr("Transitions.gd: game_engine не имеет методов get_settings_manager или get_music_manager!")
-
-		if _from_pause:
-			if game_engine.current_screen:
-				game_engine.current_screen.add_child(new_screen)
-			else:
-				printerr("Transitions.gd: Не удалось найти активный экран для добавления настроек поверх паузы")
-		else:
-			if game_engine.current_screen:
-				game_engine.current_screen.queue_free()
-			game_engine.add_child(new_screen)
-			game_engine.current_screen = new_screen
-	else:
+	if not new_screen:
 		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
+		return
+
+	if game_engine and game_engine.has_method("get_settings_manager") and game_engine.has_method("get_music_manager"):
+		var settings_mgr = game_engine.get_settings_manager()
+		var music_mgr = game_engine.get_music_manager()
+		if settings_mgr and music_mgr and new_screen.has_method("set_managers"):
+			var game_scr = null
+			if _from_pause and game_engine.current_screen:
+				game_scr = game_engine.current_screen
+			new_screen.set_managers(settings_mgr, music_mgr, game_scr, self)
+		else:
+			printerr("Transitions.gd: Не удалось передать менеджеры в SettingsMenu.")
+
+	if _from_pause:
+		if game_engine.current_screen:
+			game_engine.current_screen.add_child(new_screen)
+		else:
+			printerr("Transitions.gd: Нет активного экрана для паузы!")
+	else:
+		game_engine.add_child(new_screen)
 
 func transition_close_settings(_from_pause=false):
 	if _from_pause:
@@ -290,10 +281,11 @@ func transition_close_settings(_from_pause=false):
 					child.queue_free()
 					break
 	else:
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-			game_engine.current_screen = null
-		transition_open_main_menu()
+		for child in game_engine.get_children():
+			if child is Control and child.has_method("cleanup_before_exit"):
+				child.cleanup_before_exit()
+				child.queue_free()
+				break
 
 func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null, missed_notes: int = 0, perfect_hits: int = 0, hit_notes: int = 0):
 	hide_level_ui()
