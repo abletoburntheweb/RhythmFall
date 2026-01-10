@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8e1wfq8466sn"]
+[gd_scene load_steps=3 format=3 uid="uid://c8e1wfq8466sn"]
 
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
+[ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -84,3 +85,12 @@ offset_top = 640.0
 offset_right = 1085.0
 offset_bottom = 700.0
 text = "ВЫЙТИ"
+
+[node name="GitHubButton" type="TextureButton" parent="."]
+layout_mode = 0
+offset_left = 1851.0
+offset_top = 1012.0
+offset_right = 2081.0
+offset_bottom = 1237.0
+scale = Vector2(0.3, 0.3)
+texture_normal = ExtResource("2_0ebjn")

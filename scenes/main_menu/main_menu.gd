@@ -8,6 +8,8 @@ var is_game_open = false
 
 var player_data_manager: PlayerDataManager = null
 
+var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
+
 var button_configs = {
 	"PlayButton": _on_play_pressed,
 	"SongSelectButton": _on_song_select_pressed,
@@ -47,6 +49,12 @@ func _ready():
 			push_error("MainMenu.gd: ОШИБКА! Узел $%s не найден!" % button_name)
 			all_buttons_connected = false
 
+	var github_button = get_node_or_null("GitHubButton")
+	if github_button:
+		github_button.pressed.connect(_on_github_pressed)
+	else:
+		push_error("MainMenu.gd: ОШИБКА! Узел $GitHubButton не найден!")
+
 func set_transitions(transitions_instance):
 	transitions = transitions_instance
 
@@ -61,6 +69,9 @@ func _stop_music():
 func _play_menu_music():
 	if music_manager:
 		music_manager.play_menu_music()
+
+func _on_github_pressed():
+	OS.shell_open(github_url)
 
 func _on_play_pressed():
 	_stop_music()
