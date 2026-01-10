@@ -186,14 +186,10 @@ func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
 	print("SettingsManager: set_fullscreen вызван с enabled = ", enabled)
 	_save_settings()
-
-	var mode = DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED
-	DisplayServer.window_set_mode(mode)
-
 	if enabled:
-		print("SettingsManager: Установлен полноэкранный режим.")
+		print("SettingsManager: Значение полноэкранного режима установлено в true.")
 	else:
-		print("SettingsManager: Установлен оконный режим. Размер и возможность изменения размера остаются как были.")
+		print("SettingsManager: Значение полноэкранного режима установлено в false.")
 
 
 func get_enable_debug_menu() -> bool:

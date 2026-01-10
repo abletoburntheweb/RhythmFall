@@ -13,14 +13,15 @@ config_version=5
 config/name="RhythmFall"
 run/main_scene="uid://5vghv31ksise"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/windows_native_icon="res://assets/icons/icon.ico"
+config/icon="uid://bqgatwl4553b5"
+config/windows_native_icon="uid://bqgatwl4553b5"
 run/icon=""
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/mode=3
+window/size/mode=1
 
 [editor_plugins]
 
