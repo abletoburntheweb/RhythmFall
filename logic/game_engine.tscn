@@ -6,3 +6,12 @@
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_w1ht0")
+
+[node name="FPSLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="FPSLabel" type="Label" parent="FPSLayer"]
+offset_right = 41.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 12
+text = "FPS 0"

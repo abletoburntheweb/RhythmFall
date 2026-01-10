@@ -4,9 +4,8 @@ extends Control
 signal settings_changed
 
 var music_manager = null 
-
 var settings_manager: SettingsManager = null
-var game_screen = null 
+var game_engine = null 
 
 @onready var show_fps_checkbox: CheckBox = $ContentVBox/ShowFPSCheckBox
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
@@ -14,10 +13,10 @@ var game_screen = null
 func _ready():
 	print("GraphicsTab.gd: _ready вызван.")
 
-func setup_ui_and_manager(manager: SettingsManager, _music_manager, screen = null):
+func setup_ui_and_manager(manager: SettingsManager, _music_manager, game_engine_node = null):
 	settings_manager = manager
 	self.music_manager = _music_manager
-	game_screen = screen
+	game_engine = game_engine_node 
 	_setup_ui()
 	_connect_signals()
 
@@ -40,15 +39,15 @@ func _on_show_fps_toggled(enabled: bool):
 	if settings_manager:
 		settings_manager.set_show_fps(enabled)
 		emit_signal("settings_changed")
-	else:
-		printerr("GraphicsTab.gd: _on_show_fps_toggled: settings_manager не установлен!")
+		if game_engine and game_engine.has_method("update_display_settings"):
+			game_engine.update_display_settings()
 
 func _on_fullscreen_toggled(enabled: bool):
 	if settings_manager:
 		settings_manager.set_fullscreen(enabled)
 		emit_signal("settings_changed")
-	else:
-		printerr("GraphicsTab.gd: _on_fullscreen_toggled: settings_manager не установлен!")
+		if game_engine and game_engine.has_method("update_display_settings"):
+			game_engine.update_display_settings()
 
 func refresh_ui():
 	_setup_ui()

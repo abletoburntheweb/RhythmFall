@@ -23,6 +23,7 @@ var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
 const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
 
+@onready var fps_label: Label = $FPSLayer/FPSLabel
 
 func _ready():
 	initialize_logic()
@@ -30,11 +31,49 @@ func _ready():
 	show_intro()
 	_session_start_time_ticks = Time.get_ticks_msec() 
 	_start_play_time_timer()
+	
+	_initialize_display_settings()
+
+func _initialize_display_settings():
+	if settings_manager:
+		fps_label.visible = settings_manager.get_show_fps()
+	
+	if settings_manager:
+		if settings_manager.get_fullscreen():
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		else:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			if not settings_manager.get_fullscreen():
+				DisplayServer.window_set_size(Vector2i(1920, 1080))
+				DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+				var screen_size = DisplayServer.screen_get_size()
+				var window_size = Vector2i(1920, 1080)
+				DisplayServer.window_set_position((screen_size - window_size) / 2)
+
+func _process(delta):
+	if fps_label.visible:
+		if Engine.get_process_frames() % 30 == 0: 
+			fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+
+func update_display_settings():
+	if settings_manager:
+		if settings_manager.get_fullscreen():
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		else:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_size(Vector2i(1920, 1080))
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+			var screen_size = DisplayServer.screen_get_size()
+			var window_size = Vector2i(1920, 1080)
+			DisplayServer.window_set_position((screen_size - window_size) / 2)
+		
+		fps_label.visible = settings_manager.get_show_fps()
 
 func _start_play_time_timer():
 	print("GameEngine.gd (DEBUG): _start_play_time_timer вызван. Интервал: ", PLAY_TIME_UPDATE_INTERVAL)
 	if _play_time_timer:
-		_play_time_timer.timeout.disconnect(_on_play_time_update_timeout) 
+		if _play_time_timer.time_left > 0:
+			_play_time_timer.timeout.disconnect(_on_play_time_update_timeout) 
 		print("GameEngine.gd (DEBUG): Старый таймер отключен.")
 
 	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)

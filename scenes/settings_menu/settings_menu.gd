@@ -65,7 +65,6 @@ func _ready():
 
 	setup_managers(trans, music_mgr, player_data_manager)
 	
-	# Скрываем встроенные табы TabContainer
 	tab_container.tabs_visible = false
 	
 	_setup_tabs()
@@ -109,6 +108,15 @@ func _setup_tabs():
 					song_metadata_mgr,
 					player_data_manager,
 					self.achievement_manager
+				)
+			elif tab_name == "GraphicsTab":
+				var game_engine = get_parent() if get_parent() and get_parent().has_method("get_settings_manager") else null
+				if not game_engine:
+					game_engine = get_tree().root.get_node("GameEngine") if get_tree().root.has_node("GameEngine") else null
+				tab_instance.setup_ui_and_manager(
+					settings_manager,
+					music_manager,
+					game_engine  
 				)
 			else:
 				tab_instance.setup_ui_and_manager(
