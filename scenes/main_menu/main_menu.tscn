@@ -84,38 +84,3 @@ offset_top = 640.0
 offset_right = 1085.0
 offset_bottom = 700.0
 text = "ВЫЙТИ"
-
-[node name="XPContainer" type="Control" parent="."]
-anchors_preset = 0
-offset_left = 1600.0
-offset_right = 1600.0
-
-[node name="XPProgressBar" type="ProgressBar" parent="XPContainer"]
-layout_mode = 0
-offset_left = -9.0
-offset_top = 31.0
-offset_right = 320.0
-offset_bottom = 84.0
-show_percentage = false
-
-[node name="LevelLabel" type="Label" parent="XPContainer"]
-layout_mode = 0
-offset_left = -7.0
-offset_top = 4.0
-offset_right = 317.0
-offset_bottom = 38.0
-theme_override_font_sizes/font_size = 24
-text = "Уровень 1"
-horizontal_alignment = 2
-vertical_alignment = 2
-
-[node name="XPAmountLabel" type="Label" parent="XPContainer"]
-layout_mode = 0
-offset_left = -9.0
-offset_top = 31.0
-offset_right = 320.0
-offset_bottom = 83.0
-theme_override_font_sizes/font_size = 24
-text = "0/200"
-horizontal_alignment = 1
-vertical_alignment = 1

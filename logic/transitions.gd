@@ -27,7 +27,21 @@ func _instantiate_if_exists(scene_path):
 		printerr("Transitions: Сцена не найдена: ", scene_path)
 		return null
 
+func hide_level_ui():
+	if game_engine and game_engine.has_method("get_level_layer"):
+		var level_layer = game_engine.get_level_layer()
+		if level_layer:
+			level_layer.visible = false
+
+func show_level_ui():
+	if game_engine and game_engine.has_method("get_level_layer"):
+		var level_layer = game_engine.get_level_layer()
+		if level_layer:
+			level_layer.visible = true
+
 func transition_open_game(start_level=null, selected_song=null, instrument="standard", results_mgr = null):
+	hide_level_ui() 
+	
 	if main_menu_instance and main_menu_instance.is_game_open:
 		transition_close_game()
 		return
@@ -106,6 +120,7 @@ func transition_close_song_select():
 	transition_open_main_menu()
 
 func transition_open_main_menu():
+	show_level_ui()  
 	if main_menu_instance and is_instance_valid(main_menu_instance):
 		if main_menu_instance.is_inside_tree():
 			print("Transitions.gd: main_menu_instance уже внутри дерева сцен, не добавляем заново.")
@@ -153,6 +168,7 @@ func transition_open_main_menu():
 			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
 
 func transition_open_achievements():
+	
 	var new_screen = _instantiate_if_exists("res://scenes/achievements/achievements_screen.tscn")
 	if new_screen:
 		if game_engine.current_screen:
@@ -167,6 +183,8 @@ func transition_close_achievements():
 	transition_open_main_menu()
 
 func transition_open_profile():
+
+	
 	var new_screen = _instantiate_if_exists("res://scenes/profile/profile_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("setup_managers"):
@@ -193,8 +211,9 @@ func transition_open_profile():
 func transition_close_profile():
 	game_engine.current_screen = null 
 	transition_open_main_menu()
-	
+
 func transition_open_shop():
+	
 	var new_screen = _instantiate_if_exists("res://scenes/shop/shop_screen.tscn")
 	if new_screen:
 		if game_engine.current_screen:
@@ -229,6 +248,7 @@ func transition_close_shop():
 	transition_open_main_menu()
 
 func transition_open_settings(_from_pause=false):
+	
 	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
 	if new_screen:
 		if game_engine and game_engine.has_method("get_settings_manager") and game_engine.has_method("get_music_manager"):
@@ -276,6 +296,7 @@ func transition_close_settings(_from_pause=false):
 		transition_open_main_menu()
 
 func transition_open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float, song_info: Dictionary = {}, results_mgr = null, missed_notes: int = 0, perfect_hits: int = 0, hit_notes: int = 0):
+	hide_level_ui()
 	var new_screen = _instantiate_if_exists("res://scenes/victory_screen/victory_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("set_victory_data"):
@@ -312,7 +333,7 @@ func open_victory_screen(score: int, combo: int, max_combo: int, accuracy: float
 	transition_open_victory_screen(score, combo, max_combo, accuracy, song_info, results_mgr, missed_notes, perfect_hits, hit_notes)
 
 func transition_exit_to_main_menu():
-	transition_open_main_menu()
+	transition_open_main_menu() 
 
 func transition_exit_game():
 	if game_engine.has_method("request_quit"):

@@ -26,6 +26,10 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var fps_label: Label = $FPSLayer/FPSLabel
 @onready var fps_background: ColorRect = $FPSLayer/FPSBackground
 
+@onready var level_label: Label = $XPContainer/LevelLabel
+@onready var xp_progress_bar: ProgressBar = $XPContainer/XPProgressBar
+@onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
+
 func _ready():
 	initialize_logic()
 	initialize_screens()
@@ -34,6 +38,32 @@ func _ready():
 	_start_play_time_timer()
 	
 	_initialize_display_settings()
+	_connect_level_signals()
+
+func _connect_level_signals():
+	if player_data_manager:
+		if player_data_manager.has_signal("level_changed"):
+			player_data_manager.level_changed.connect(_on_level_changed)
+		_update_level_ui()
+
+func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
+	level_label.text = "Уровень %d" % new_level
+	xp_progress_bar.max_value = xp_for_next_level
+	xp_progress_bar.value = new_xp
+	xp_amount_label.text = "%d / %d" % [new_xp, xp_for_next_level]
+
+func _update_level_ui():
+	if player_data_manager:
+		var level = player_data_manager.get_current_level()
+		var total_xp = player_data_manager.get_total_xp()
+		var xp_for_next = player_data_manager.get_xp_for_next_level()
+
+		level_label.text = "Уровень %d" % level
+		xp_progress_bar.max_value = xp_for_next
+		xp_progress_bar.value = total_xp
+		xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
+	else:
+		print("❌ PlayerDataManager не установлен")
 
 func _initialize_display_settings():
 	if settings_manager:
@@ -327,3 +357,6 @@ func get_session_history_manager() -> SessionHistoryManager:
 
 func get_track_stats_manager() -> TrackStatsManager:
 	return track_stats_manager
+
+func get_level_layer() -> Control:
+	return $XPContainer 

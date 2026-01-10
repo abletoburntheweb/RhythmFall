@@ -10,6 +10,8 @@ var game_engine: Node = null
 var music_manager: MusicManager = null
 
 func _ready():
+	_setup_overlay_visibility()
+	
 	if game_engine and game_engine.has_method("get_music_manager"):
 		music_manager = game_engine.get_music_manager()
 	if not music_manager:
@@ -24,6 +26,13 @@ func _ready():
 
 	if music_manager:
 		music_manager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+
+func _setup_overlay_visibility():
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_level_layer"):
+		var level_layer = game_engine.get_level_layer()
+		if level_layer:
+			level_layer.visible = false
 
 func set_game_engine_reference(ge: Node):
 	game_engine = ge
