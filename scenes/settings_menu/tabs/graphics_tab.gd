@@ -7,11 +7,18 @@ var music_manager = null
 var settings_manager: SettingsManager = null
 var game_engine = null 
 
-@onready var show_fps_checkbox: CheckBox = $ContentVBox/ShowFPSCheckBox
+@onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
 
 func _ready():
 	print("GraphicsTab.gd: _ready вызван.")
+	_setup_fps_options()
+
+func _setup_fps_options():
+	fps_option_button.clear()
+	fps_option_button.add_item("Нет", 0)
+	fps_option_button.add_item("Обычный", 1) 
+	fps_option_button.add_item("Контрастный", 2)
 
 func setup_ui_and_manager(manager: SettingsManager, _music_manager, game_engine_node = null):
 	settings_manager = manager
@@ -26,18 +33,21 @@ func _setup_ui():
 		return
 
 	print("GraphicsTab.gd: _setup_ui вызван.")
-	show_fps_checkbox.set_pressed_no_signal(settings_manager.get_show_fps())
+	
+	var current_fps_mode = settings_manager.get_fps_mode()
+	fps_option_button.select(current_fps_mode)
+	
 	fullscreen_checkbox.set_pressed_no_signal(settings_manager.get_fullscreen())
 
 func _connect_signals():
-	if show_fps_checkbox:
-		show_fps_checkbox.toggled.connect(_on_show_fps_toggled)
+	if fps_option_button:
+		fps_option_button.item_selected.connect(_on_fps_mode_selected)
 	if fullscreen_checkbox:
 		fullscreen_checkbox.toggled.connect(_on_fullscreen_toggled)
 
-func _on_show_fps_toggled(enabled: bool):
+func _on_fps_mode_selected(index: int):
 	if settings_manager:
-		settings_manager.set_show_fps(enabled)
+		settings_manager.set_fps_mode(index)
 		emit_signal("settings_changed")
 		if game_engine and game_engine.has_method("update_display_settings"):
 			game_engine.update_display_settings()

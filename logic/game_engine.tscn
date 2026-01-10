@@ -10,8 +10,13 @@ script = ExtResource("1_w1ht0")
 [node name="FPSLayer" type="CanvasLayer" parent="."]
 layer = 100
 
+[node name="FPSBackground" type="ColorRect" parent="FPSLayer"]
+offset_right = 45.0
+offset_bottom = 17.0
+color = Color(0, 0, 0, 0.7058824)
+
 [node name="FPSLabel" type="Label" parent="FPSLayer"]
-offset_right = 41.0
-offset_bottom = 23.0
+offset_right = 35.0
+offset_bottom = 17.0
 theme_override_font_sizes/font_size = 12
-text = "FPS 0"
+text = "FPS 140"

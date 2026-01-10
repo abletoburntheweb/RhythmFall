@@ -10,7 +10,7 @@ var default_settings = {
 	"hit_sounds_volume": 70.0,
 	"metronome_volume": 30.0, 
 	"preview_volume": 70.0,
-	"show_fps": false,
+	"fps_mode": 0, 
 	"fullscreen": false,
 	"enable_debug_menu": false,
 	"controls_keymap": {
@@ -165,11 +165,18 @@ func set_metronome_volume(volume: float):
 func set_preview_volume(volume: float):
 	settings["preview_volume"] = clampf(volume, 0.0, 100.0) 
 
+func get_fps_mode() -> int:
+	return settings.get("fps_mode", default_settings["fps_mode"])
+
+func set_fps_mode(mode: int):
+	settings["fps_mode"] = mode
+	_save_settings() 
+
 func get_show_fps() -> bool:
-	return settings.get("show_fps", default_settings["show_fps"])
+	return settings.get("fps_mode", default_settings["fps_mode"]) != 0
 
 func set_show_fps(enabled: bool):
-	settings["show_fps"] = enabled
+	settings["fps_mode"] = 1 if enabled else 0
 	_save_settings() 
 
 func get_fullscreen() -> bool:

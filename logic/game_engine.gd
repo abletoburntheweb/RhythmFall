@@ -24,6 +24,7 @@ var _play_time_timer: SceneTreeTimer = null
 const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
 
 @onready var fps_label: Label = $FPSLayer/FPSLabel
+@onready var fps_background: ColorRect = $FPSLayer/FPSBackground
 
 func _ready():
 	initialize_logic()
@@ -36,7 +37,7 @@ func _ready():
 
 func _initialize_display_settings():
 	if settings_manager:
-		fps_label.visible = settings_manager.get_show_fps()
+		_update_fps_visibility()
 	
 	if settings_manager:
 		if settings_manager.get_fullscreen():
@@ -50,10 +51,27 @@ func _initialize_display_settings():
 				var window_size = Vector2i(1920, 1080)
 				DisplayServer.window_set_position((screen_size - window_size) / 2)
 
+func _update_fps_visibility():
+	var fps_mode = settings_manager.get_fps_mode()
+	
+	match fps_mode:
+		0:
+			fps_label.visible = false
+			fps_background.visible = false
+		1: 
+			fps_label.visible = true
+			fps_background.visible = false
+			fps_label.add_theme_color_override("font_color", Color.WHITE)
+		2: 
+			fps_label.visible = true
+			fps_background.visible = true
+			fps_label.add_theme_color_override("font_color", Color.GREEN)
+
 func _process(delta):
-	if fps_label.visible:
+	var fps_mode = settings_manager.get_fps_mode() if settings_manager else 0
+	if fps_mode > 0:
 		if Engine.get_process_frames() % 30 == 0: 
-			fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+			fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 func update_display_settings():
 	if settings_manager:
@@ -67,7 +85,7 @@ func update_display_settings():
 			var window_size = Vector2i(1920, 1080)
 			DisplayServer.window_set_position((screen_size - window_size) / 2)
 		
-		fps_label.visible = settings_manager.get_show_fps()
+		_update_fps_visibility()
 
 func _start_play_time_timer():
 	print("GameEngine.gd (DEBUG): _start_play_time_timer вызван. Интервал: ", PLAY_TIME_UPDATE_INTERVAL)

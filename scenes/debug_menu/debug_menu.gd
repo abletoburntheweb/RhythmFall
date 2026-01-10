@@ -108,7 +108,7 @@ func toggle_visibility():
 
 func update_debug_info(game_screen):
 	if fps_label:
-		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+		fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 	if game_screen and game_screen.score_manager:
 		if score_label:
