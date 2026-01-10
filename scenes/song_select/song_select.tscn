@@ -63,6 +63,12 @@ text = "Инструмент:"
 [node name="FilterByLetter" type="OptionButton" parent="MainVBox/TopBarHBox"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "Название"
+popup/item_0/id = 0
+popup/item_1/text = "Артист"
+popup/item_1/id = 1
 
 [node name="SongCountLabel" type="Label" parent="MainVBox/TopBarHBox"]
 custom_minimum_size = Vector2(140, 0)

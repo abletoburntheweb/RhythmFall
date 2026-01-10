@@ -46,7 +46,6 @@ func _ready():
 	search_bar.text_changed.connect(_on_search_text_changed)
 	filter_box.item_selected.connect(_on_filter_selected)
 
-	_init_filter_box()
 	_load_achievements_data()
 	_filter_achievements_internal(search_bar.text)
 
@@ -54,21 +53,6 @@ func _ready():
 		back_button.pressed.connect(_on_back_pressed)
 	else:
 		printerr("AchievementsScreen: Кнопка back_button не найдена!")
-
-
-func _init_filter_box():
-	filter_box.clear()
-	filter_box.add_item("Все")
-	filter_box.add_item("Открытые")
-	filter_box.add_item("Закрытые")
-	filter_box.add_item("Геймплей")
-	filter_box.add_item("Системные")
-	filter_box.add_item("Магазин")
-	filter_box.add_item("Экономика")
-	filter_box.add_item("Ежедневные")
-	filter_box.add_item("Время в игре") 
-	filter_box.add_item("Событийные")
-	filter_box.select(0)
 
 
 func _load_achievements_data():
@@ -250,17 +234,7 @@ func _on_search_text_changed(new_text: String):
 
 
 func _on_filter_selected(index: int):
-	match index:
-		0: current_filter = "Все"
-		1: current_filter = "Открытые"
-		2: current_filter = "Закрытые"
-		3: current_filter = "Геймплей"
-		4: current_filter = "Системные"
-		5: current_filter = "Магазин"
-		6: current_filter = "Экономика"
-		7: current_filter = "Ежедневные"
-		8: current_filter = "Время в игре"
-		9: current_filter = "Событийные" 
+	current_filter = filter_box.get_item_text(index)
 	_filter_achievements_internal(search_bar.text)
 
 

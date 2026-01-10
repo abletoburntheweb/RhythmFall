@@ -155,21 +155,15 @@ func _ready():
 
 	filter_by_letter = $MainVBox/TopBarHBox/FilterByLetter
 	if filter_by_letter:
-		_init_filter_by_letter()
-		filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
-
-func _init_filter_by_letter():
-	filter_by_letter.clear()
-	filter_by_letter.add_item("Название")
-	filter_by_letter.add_item("Артист")
-	filter_by_letter.select(0)  
+		filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)  
 
 func _on_filter_by_letter_selected(index: int):
 	if song_edit_manager and song_edit_manager.is_edit_mode_active():
 		return
 	
 	if song_list_manager:
-		var mode = "title" if index == 0 else "artist"
+		var selected_text = filter_by_letter.get_item_text(index)
+		var mode = "title" if selected_text == "Название" else "artist"
 		song_list_manager.set_filter_mode(mode)
 		song_list_manager.populate_items_grouped()
 		print("SongSelect.gd: Режим фильтра изменён на: %s" % mode)
