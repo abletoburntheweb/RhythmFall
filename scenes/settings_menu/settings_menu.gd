@@ -64,6 +64,10 @@ func _ready():
 		self.achievement_manager = null
 
 	setup_managers(trans, music_mgr, player_data_manager)
+	
+	# Скрываем встроенные табы TabContainer
+	tab_container.tabs_visible = false
+	
 	_setup_tabs()
 	_connect_signals()
 
