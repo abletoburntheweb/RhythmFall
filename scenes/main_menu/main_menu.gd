@@ -79,7 +79,9 @@ func _on_play_pressed():
 		transitions.open_game()
 
 func _on_song_select_pressed():
-	_stop_music()
+	_play_select_sound()
+	if music_manager:
+		music_manager.pause_menu_music()
 	if transitions:
 		transitions.open_song_select()
 
@@ -90,6 +92,8 @@ func _on_achievements_pressed():
 
 func _on_shop_pressed():
 	_play_select_sound()
+	if music_manager:
+		music_manager.pause_menu_music() 
 	if transitions:
 		transitions.open_shop()
 

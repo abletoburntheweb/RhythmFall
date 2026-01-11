@@ -87,15 +87,6 @@ func transition_close_game():
 		main_menu_instance.is_game_open = false
 
 func transition_open_song_select():
-	if game_engine.has_method("get_music_manager"):
-		var music_manager = game_engine.get_music_manager()
-		if music_manager and music_manager.has_method("play_select_sound"):
-			music_manager.play_select_sound()
-		else:
-			print("Transitions.gd: У MusicManager нет метода play_select_sound. Реализуйте его в MusicManager.")
-	else:
-		print("Transitions.gd: У GameEngine нет метода get_music_manager!")
-
 	var new_screen = _instantiate_if_exists("res://scenes/song_select/song_select.tscn")
 	if new_screen:
 		if new_screen.has_method("set_transitions"):
