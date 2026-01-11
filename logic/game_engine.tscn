@@ -13,6 +13,7 @@ layer = 100
 [node name="FPSBackground" type="ColorRect" parent="FPSLayer"]
 offset_right = 45.0
 offset_bottom = 17.0
+mouse_filter = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="FPSLabel" type="Label" parent="FPSLayer"]
