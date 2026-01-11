@@ -48,8 +48,14 @@ func handle_pause_request():
 	
 	if game_timer and not game_timer.is_stopped():
 		game_timer.stop()
+	
 	if music_manager and music_manager.has_method("stop_metronome"):
 		music_manager.stop_metronome()
+	
+	if game_screen.delayed_music_timer \
+	and is_instance_valid(game_screen.delayed_music_timer) \
+	and not game_screen.delayed_music_timer.is_stopped():
+		game_screen.delayed_music_timer.stop()
 	
 	game_screen.input_enabled = false
 	
@@ -92,19 +98,26 @@ func handle_resume_request():
 	if music_manager and music_manager.has_method("set_volume_multiplier"):
 		music_manager.set_volume_multiplier(original_music_volume)
 	
-	if music_manager and music_manager.has_method("play_game_music_at_position"):
-		var song_path = game_screen.selected_song_data.get("path", "")
-		music_manager.play_game_music_at_position(song_path, paused_music_position)
-	elif music_manager and music_manager.has_method("play_game_music") and music_manager.has_method("set_music_position"):
-		var song_path = game_screen.selected_song_data.get("path", "")
-		music_manager.play_game_music(song_path)
-		await get_tree().process_frame
-		music_manager.set_music_position(paused_music_position)
+	if game_screen.delayed_music_timer \
+	and is_instance_valid(game_screen.delayed_music_timer) \
+	and game_screen.delayed_music_timer.is_stopped():
+		game_screen.delayed_music_timer.start()
 	else:
-		push_error("GameScreenPauser.gd: MusicManager не имеет метода play_game_music_at_position или play_game_music/set_music_position. Музыка не запущена.")
+		if music_manager and music_manager.has_method("play_game_music_at_position"):
+			var song_path = game_screen.selected_song_data.get("path", "")
+			music_manager.play_game_music_at_position(song_path, paused_music_position)
+		elif music_manager and music_manager.has_method("play_game_music") and music_manager.has_method("set_music_position"):
+			var song_path = game_screen.selected_song_data.get("path", "")
+			music_manager.play_game_music(song_path)
+			await get_tree().process_frame
+			music_manager.set_music_position(paused_music_position)
+		else:
+			push_error("GameScreenPauser.gd: MusicManager не имеет нужных методов для музыки.")
+	
 	
 	if game_timer:
 		game_timer.start()
+	
 	if music_manager and music_manager.has_method("start_metronome"):
 		music_manager.start_metronome(game_screen.bpm, game_screen.game_time)
 	
@@ -114,10 +127,16 @@ func handle_resume_request():
 		pause_menu_instance.queue_free()
 		pause_menu_instance = null
 
+
 func cleanup_on_game_end():
 	if is_paused and pause_menu_instance and is_instance_valid(pause_menu_instance):
 		pause_menu_instance.queue_free()
 		pause_menu_instance = null
+	
+	if game_screen.delayed_music_timer and is_instance_valid(game_screen.delayed_music_timer):
+		game_screen.delayed_music_timer.queue_free()
+		game_screen.delayed_music_timer = null
+	
 	is_paused = false
 	original_music_volume = 1.0
 	paused_music_position = 0.0

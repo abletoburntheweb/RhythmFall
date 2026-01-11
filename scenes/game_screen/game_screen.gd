@@ -12,6 +12,7 @@ var pauser: GameScreenPauser = null
 var game_time: float = 0.0
 var countdown_remaining: int = 5
 var countdown_active: bool = true
+var delayed_music_timer: Timer = null
 var game_finished: bool = false
 var input_enabled: bool = false
 
@@ -303,7 +304,7 @@ func start_gameplay():
 	if gameplay_started:
 		return
 
-	gameplay_started = true 
+	gameplay_started = true
 
 	var song_to_load = selected_song_data
 	if not song_to_load or not song_to_load.get("path"):
@@ -317,7 +318,7 @@ func start_gameplay():
 			var new_bpm = float(bpm_str)
 			if new_bpm > 0:
 				bpm = new_bpm
-				update_speed_from_bpm() 
+				update_speed_from_bpm()
 
 	if note_manager.get_spawn_queue_size() > 0:
 		notes_loaded = true
@@ -325,14 +326,14 @@ func start_gameplay():
 		score_manager.set_total_notes(total_note_count)
 
 	var should_delay_music = false
-	var earliest_note_time = note_manager.get_earliest_note_time() 
+	var earliest_note_time = note_manager.get_earliest_note_time()
 	if earliest_note_time > 0 and earliest_note_time <= EARLY_NOTE_THRESHOLD:
 		should_delay_music = true
 
 	if should_delay_music:
 		game_time = -MUSIC_START_DELAY_IF_EARLY_NOTES
 	else:
-		game_time = 0.0 
+		game_time = 0.0
 
 	if music_manager and music_manager.has_method("set_external_metronome_control"):
 		music_manager.set_external_metronome_control(true)
@@ -345,25 +346,30 @@ func start_gameplay():
 
 	if music_manager and selected_song_data and selected_song_data.get("path"):
 		var song_path = selected_song_data.get("path")
-		if music_manager.has_method("play_game_music"):
-			if should_delay_music:
-				var existing_timer = get_node_or_null("DelayedMusicTimer")
-				if existing_timer:
-					existing_timer.queue_free()
 
-				var delayed_music_timer = Timer.new()
-				delayed_music_timer.name = "DelayedMusicTimer"
-				delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
-				delayed_music_timer.timeout.connect(
-					func():
-						game_time = 0.0 
-						music_manager.play_game_music(song_path)
-						if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
-							delayed_music_timer.queue_free()
-				)
-				add_child(delayed_music_timer)
-				delayed_music_timer.start()
-			else:
+		if should_delay_music:
+			if delayed_music_timer and is_instance_valid(delayed_music_timer):
+				delayed_music_timer.queue_free()
+				delayed_music_timer = null
+
+			delayed_music_timer = Timer.new()
+			delayed_music_timer.name = "DelayedMusicTimer"
+			delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
+			delayed_music_timer.one_shot = true
+
+			delayed_music_timer.timeout.connect(func():
+				game_time = 0.0
+				if music_manager and music_manager.has_method("play_game_music"):
+					music_manager.play_game_music(song_path)
+				if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
+					delayed_music_timer.queue_free()
+					delayed_music_timer = null
+			)
+
+			add_child(delayed_music_timer)
+			delayed_music_timer.start()
+		else:
+			if music_manager.has_method("play_game_music"):
 				music_manager.play_game_music(song_path)
 
 	check_song_end_timer.start()
