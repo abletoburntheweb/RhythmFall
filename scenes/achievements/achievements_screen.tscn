@@ -50,7 +50,7 @@ placeholder_text = "Поиск достижений..."
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 selected = 0
-item_count = 10
+item_count = 11
 popup/item_0/text = "Все"
 popup/item_0/id = 0
 popup/item_1/text = "Открытые"
@@ -71,6 +71,8 @@ popup/item_8/text = "Время в игре"
 popup/item_8/id = 8
 popup/item_9/text = "Событийные"
 popup/item_9/id = 9
+popup/item_10/text = "Уровень"
+popup/item_10/id = 10
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
 custom_minimum_size = Vector2(1920, 1080)

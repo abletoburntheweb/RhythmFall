@@ -98,3 +98,7 @@ func on_grade_earned(grade: String):
 	if grade == "SS":
 		achievement_manager.check_ss_achievements(player_data_manager)
 	achievement_manager.save_achievements()
+	
+func on_player_level_changed(new_level: int):
+	achievement_manager.check_level_achievements(new_level)
+	achievement_manager.save_achievements()

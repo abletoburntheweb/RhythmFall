@@ -146,6 +146,7 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 				"daily": fallback_path = "res://assets/achievements/daily.png"
 				"playtime": fallback_path = "res://assets/achievements/playtime.png"
 				"events": fallback_path = "res://assets/achievements/events.png"
+				"level": fallback_path = "res://assets/achievements/level.png"  
 				_: fallback_path = "res://assets/achievements/default.png"
 			
 			if FileAccess.file_exists(fallback_path):
@@ -206,6 +207,13 @@ func _get_progress_text(achievement: Dictionary) -> String:
 			else:
 				return "%s / %s" % [display_current, display_total]
 
+	if category == "level":
+		if unlocked:
+			return "%d / %d" % [int(total), int(total)]
+		else:
+			return "%d / %d" % [int(current), int(total)]
+
+
 	var display_current = current
 	if unlocked and typeof(current) != TYPE_FLOAT:
 		display_current = min(current, total)
@@ -258,7 +266,8 @@ func _filter_achievements_internal(query: String):
 					"Экономика": "economy",
 					"Ежедневные": "daily",
 					"Время в игре": "playtime",
-					"Событийные": "events"
+					"Событийные": "events",
+					"Уровень": "level" 
 				}
 				if category_map.has(current_filter):
 					matches_category = ach.get("category", "").to_lower() == category_map[current_filter].to_lower()
@@ -293,7 +302,8 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 			"Экономика": "economy",
 			"Ежедневные": "daily",
 			"Время в игре": "playtime",
-			"Событийные": "events"
+			"Событийные": "events",
+			"Уровень": "level" 
 		}
 		if category_map.has(filter_type):
 			var target_category = category_map[filter_type].to_lower()

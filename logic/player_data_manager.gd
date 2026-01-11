@@ -322,11 +322,19 @@ func add_xp(amount: int):
 
 func check_level_up():
 	while data["total_xp"] >= data["xp_for_next_level"]:
+		var old_level = data["current_level"]
 		data["current_level"] += 1
-		print("PlayerDataManager: Уровень повышен! Новый уровень: %d" % data["current_level"])
+		var new_level = data["current_level"]
+		print("PlayerDataManager: Уровень повышен! Новый уровень: %d" % new_level)
 		_calculate_xp_for_next_level()
-		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
-		_save() 
+		
+		if game_engine_reference:
+			var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
+			if achievement_system and achievement_system.has_method("on_player_level_changed"):
+				achievement_system.on_player_level_changed(new_level)
+		
+		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
+		_save()
 
 func get_xp_progress() -> float:
 	if data["xp_for_next_level"] == 0:

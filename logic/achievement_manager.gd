@@ -605,3 +605,17 @@ func check_ss_achievements(player_data_mgr_override = null):
 				break
 
 	save_achievements()
+
+func check_level_achievements(player_level: int):
+	var level_achievements = {49: 10, 50: 16, 51: 25, 52: 50, 53: 100}
+
+	for ach_id in level_achievements:
+		var required_level = level_achievements[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = player_level
+				if player_level >= required_level and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
+
+	save_achievements()
