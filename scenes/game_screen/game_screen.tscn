@@ -77,67 +77,58 @@ anchors_preset = 0
 offset_right = 20.0
 offset_bottom = 40.0
 
-[node name="ScoreLabel" type="Label" parent="UIContainer"]
+[node name="SongProgressContainer" type="HBoxContainer" parent="UIContainer"]
 layout_mode = 0
-offset_right = 56.0
-offset_bottom = 23.0
+offset_right = 1920.0
+offset_bottom = 27.0
+
+[node name="SongProgressBar" type="ProgressBar" parent="UIContainer/SongProgressContainer"]
+custom_minimum_size = Vector2(1920, 15)
+layout_mode = 2
+
+[node name="StatsContainer" type="VBoxContainer" parent="UIContainer"]
+layout_mode = 0
+offset_top = 27.0
+offset_right = 180.0
+offset_bottom = 288.0
+
+[node name="ScoreLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Счёт: 0"
 
-[node name="ComboLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 30.0
-offset_right = 70.0
-offset_bottom = 53.0
+[node name="ComboLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Комбо: 0"
 
-[node name="MaxComboLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 60.0
-offset_right = 119.0
-offset_bottom = 83.0
+[node name="MaxComboLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Макс. комбо: 0"
 
-[node name="BpmLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 90.0
-offset_right = 53.0
-offset_bottom = 113.0
+[node name="BpmLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "BPM: 0"
 
-[node name="SpeedLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 120.0
-offset_right = 93.0
-offset_bottom = 143.0
+[node name="SpeedLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Скорость: 0"
 
-[node name="TimeLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 150.0
-offset_right = 140.0
-offset_bottom = 173.0
+[node name="TimeLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Время: 00:00/2:00"
 
-[node name="AccuracyLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 180.0
-offset_right = 121.0
-offset_bottom = 203.0
+[node name="AccuracyLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Точность 100%"
 
-[node name="InstrumentLabel" type="Label" parent="UIContainer"]
-layout_mode = 0
-offset_top = 210.0
-offset_right = 180.0
-offset_bottom = 233.0
+[node name="InstrumentLabel" type="Label" parent="UIContainer/StatsContainer"]
+layout_mode = 2
 text = "Инструмент: стандарт"
 
 [node name="JudgementLabel" type="Label" parent="UIContainer"]
 layout_mode = 0
 offset_left = 1740.0
-offset_top = -1.0
 offset_right = 1920.0
-offset_bottom = 22.0
+offset_bottom = 45.0
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 

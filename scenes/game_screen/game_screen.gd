@@ -44,6 +44,7 @@ var instrument_label: Label = null
 var countdown_label: Label = null
 var notes_container: Node2D = null
 var judgement_label: Label = null
+var progress_bar: ProgressBar = null
 
 var game_timer: Timer
 var countdown_timer
@@ -191,15 +192,19 @@ func _instantiate_debug_menu():
 func _find_ui_elements():
 	var ui_container_node = $UIContainer
 	if ui_container_node:
-		score_label = ui_container_node.get_node_or_null("ScoreLabel") as Label
-		combo_label = ui_container_node.get_node_or_null("ComboLabel") as Label
-		max_combo_label = ui_container_node.get_node_or_null("MaxComboLabel") as Label
-		bpm_label = ui_container_node.get_node_or_null("BpmLabel") as Label
-		speed_label = ui_container_node.get_node_or_null("SpeedLabel") as Label
-		time_label = ui_container_node.get_node_or_null("TimeLabel") as Label
-		accuracy_label = ui_container_node.get_node_or_null("AccuracyLabel") as Label
-		instrument_label = ui_container_node.get_node_or_null("InstrumentLabel") as Label
+		score_label = ui_container_node.get_node_or_null("StatsContainer/ScoreLabel") as Label
+		combo_label = ui_container_node.get_node_or_null("StatsContainer/ComboLabel") as Label
+		max_combo_label = ui_container_node.get_node_or_null("StatsContainer/MaxComboLabel") as Label
+		bpm_label = ui_container_node.get_node_or_null("StatsContainer/BpmLabel") as Label
+		speed_label = ui_container_node.get_node_or_null("StatsContainer/SpeedLabel") as Label
+		time_label = ui_container_node.get_node_or_null("StatsContainer/TimeLabel") as Label
+		accuracy_label = ui_container_node.get_node_or_null("StatsContainer/AccuracyLabel") as Label
+		instrument_label = ui_container_node.get_node_or_null("StatsContainer/InstrumentLabel") as Label
 		judgement_label = ui_container_node.get_node_or_null("JudgementLabel") as Label
+
+		var progress_container = ui_container_node.get_node_or_null("SongProgressContainer")
+		if progress_container:
+			progress_bar = progress_container.get_node_or_null("SongProgressBar") as ProgressBar
 
 	countdown_label = get_node_or_null("CountdownLabel") as Label
 	notes_container = get_node_or_null("NotesContainer") as Node2D
@@ -523,6 +528,22 @@ func update_ui():
 		accuracy_label.text = "Точность: %.2f%%" % score_manager.get_accuracy()
 	if instrument_label:
 		instrument_label.text = "Инструмент: " + ("Перкуссия" if current_instrument == "drums" else "Стандартный")
+	
+	if progress_bar and selected_song_data.has("duration"):
+		var duration_str = selected_song_data.get("duration", "0:00")
+		var duration_seconds = _parse_duration_string(duration_str)  
+		if duration_seconds > 0:
+			var current_progress = clamp(game_time / duration_seconds, 0.0, 1.0)
+			progress_bar.value = current_progress * 100
+
+func _parse_duration_string(time_str: String) -> float:
+	var parts = time_str.split(":")
+	if parts.size() == 2:
+		var minutes = int(parts[0])
+		var seconds = int(parts[1])
+		return float(minutes * 60 + seconds)
+	else:
+		return 0.0
 
 func update_countdown_display():
 	if countdown_label: 
