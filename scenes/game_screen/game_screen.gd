@@ -66,6 +66,9 @@ var perfect_hits_this_level: int = 0
 
 var results_manager = null
 
+var restart_timer: Timer = null
+var is_restart_held: bool = false
+
 const VICTORY_DELAY_AFTER_NOTES: float = 5.0
 const EARLY_NOTE_THRESHOLD: float = 1.0
 const MUSIC_START_DELAY_IF_EARLY_NOTES: float = 5.0 
@@ -140,7 +143,12 @@ func _ready():
 	set_process_input(true)
 	
 	start_countdown()
-
+	restart_timer = Timer.new()
+	restart_timer.one_shot = true
+	restart_timer.wait_time = 1.5  
+	restart_timer.timeout.connect(_on_restart_confirmed)
+	add_child(restart_timer)
+	
 func _on_active_item_changed(category: String, item_id: String):
 	if category == "Kick" or category == "Snare":
 		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
@@ -551,44 +559,62 @@ func update_countdown_display():
 		countdown_label.visible = true
 
 func _input(event):
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and !event.echo:
+		var ctrl_pressed = Input.is_physical_key_pressed(KEY_CTRL)
+		var r_pressed = Input.is_physical_key_pressed(KEY_R)
+
+		if event.pressed and event.physical_keycode == KEY_R and ctrl_pressed:
+			if not is_restart_held and not restart_timer.is_stopped():
+				restart_timer.stop()
+			if not is_restart_held:
+				is_restart_held = true
+				restart_timer.start()
+				print("GameScreen: Начат отсчёт рестарта (удерживайте Ctrl+R)...")
+
+		if event is InputEventKey and not event.pressed:
+			if (event.physical_keycode == KEY_CTRL or event.physical_keycode == KEY_R) and is_restart_held:
+				if not restart_timer.is_stopped():
+					restart_timer.stop()
+					print("GameScreen: Рестарт отменён (клавиша отпущена)")
+				is_restart_held = false
+
 		var keycode = event.keycode
-		var shift_pressed = Input.is_key_pressed(KEY_SHIFT) 
+		var shift_pressed = Input.is_key_pressed(KEY_SHIFT)
 
 		if keycode == KEY_QUOTELEFT and shift_pressed:
 			if debug_menu:
 				var settings_manager = game_engine.get_settings_manager() if game_engine else null
 				if settings_manager and settings_manager.get_enable_debug_menu():
 					debug_menu.toggle_visibility()
-			return		
-			
-	
-	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
-		if countdown_active:
-			skip_countdown()
 			return
-	
-	if not input_enabled: 
+
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_SPACE:
+			if countdown_active:
+				skip_countdown()
+				return
+
+	if not input_enabled:
 		return
-	
+
 	if event is InputEventKey and event.pressed:
 		var keycode = event.keycode
-		
+
 		if keycode == KEY_ESCAPE and not countdown_active:
 			if pauser.is_paused:
 				pauser.handle_resume_request()
 			else:
 				pauser.handle_pause_request()
-			return 
-		
+			return
+
 		elif keycode == KEY_SPACE and not countdown_active:
 			if skip_intro():
 				return
-		
+
 		if not countdown_active:
 			player.handle_key_press(keycode)
-	
-	elif event is InputEventKey and not event.pressed: 
+
+	elif event is InputEventKey and not event.pressed:
 		var keycode = event.keycode
 		player.handle_key_release(keycode)
 		
@@ -719,7 +745,52 @@ func check_hit(lane: int):
 func _process(delta):
 	if not countdown_active:
 		update_ui()
+		
+func restart_level():
+	if game_finished:
+		return
 
+	if not game_timer.is_stopped():
+		game_timer.stop()
+	if not check_song_end_timer.is_stopped():
+		check_song_end_timer.stop()
+	if victory_delay_timer and not victory_delay_timer.is_stopped():
+		victory_delay_timer.stop()
+	if delayed_music_timer and is_instance_valid(delayed_music_timer):
+		delayed_music_timer.queue_free()
+		delayed_music_timer = null
+
+	if music_manager:
+		if music_manager.has_method("stop_music"):
+			music_manager.stop_music()
+		elif music_manager.has_method("stop_game_music"):
+			music_manager.stop_game_music()
+		if music_manager.has_method("stop_metronome"):
+			music_manager.stop_metronome()
+
+	player.reset()
+	score_manager.reset()
+	note_manager.clear_notes()
+	perfect_hits_this_level = 0
+	game_time = 0.0
+	game_finished = false
+	notes_ended = false
+	skip_used = false
+	input_enabled = false
+	countdown_active = true
+	gameplay_started = false
+
+	update_ui()
+	if countdown_label:
+		countdown_label.visible = true
+
+	start_countdown()
+	
+func _on_restart_confirmed():
+	is_restart_held = false
+	print("GameScreen: Рестарт подтверждён!")
+	restart_level()	
+	
 func _exit_to_song_select():
 	pauser.cleanup_on_game_end()
 	var game_engine = get_parent()

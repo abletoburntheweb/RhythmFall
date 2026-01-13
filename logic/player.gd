@@ -73,3 +73,7 @@ func handle_key_release(keycode: int):
 			lanes_state[lane] = false
 			lane_pressed_changed.emit()
 			print("Player: Key released for lane %d" % lane)
+
+func reset():
+	lanes_state = [false, false, false, false]
+	lane_pressed_changed.emit()

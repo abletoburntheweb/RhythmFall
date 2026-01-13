@@ -92,3 +92,13 @@ func get_hit_notes_count() -> int:
 func set_accuracy(new_accuracy: float):
 	accuracy = clampf(new_accuracy, 0.0, 100.0)
 	print("ScoreManager: Точность установлена вручную: %.1f%%" % accuracy)
+
+func reset():
+	score = 0
+	combo = 0
+	max_combo = 0
+	combo_multiplier = 1.0
+	missed_notes = 0
+	hit_notes = 0
+	total_notes = 0
+	accuracy = 100.0
