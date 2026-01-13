@@ -37,6 +37,12 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "ПРОДОЛЖИТЬ"
 
+[node name="RestartButton" type="Button" parent="MenuContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "ПЕРЕЗАПУСТИТЬ"
+
 [node name="SongSelectButton" type="Button" parent="MenuContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2

@@ -3,6 +3,7 @@ class_name GameScreenPauser
 extends Node
 
 signal resume_requested
+signal restart_requested 
 signal song_select_requested
 signal settings_requested
 signal exit_to_menu_requested
@@ -76,6 +77,8 @@ func handle_pause_request():
 			
 			if pause_menu_instance.has_signal("resume_requested"):
 				pause_menu_instance.resume_requested.connect(_on_resume_requested)
+			if pause_menu_instance.has_signal("restart_requested"):
+				pause_menu_instance.restart_requested.connect(_on_restart_requested)
 			if pause_menu_instance.has_signal("song_select_requested"):
 				pause_menu_instance.song_select_requested.connect(_on_song_select_requested)
 			if pause_menu_instance.has_signal("settings_requested"):
@@ -144,7 +147,18 @@ func cleanup_on_game_end():
 func _on_resume_requested():
 	emit_signal("resume_requested")
 	handle_resume_request()
-
+	
+func _on_restart_requested():
+	emit_signal("restart_requested")
+	
+	if is_paused:
+		handle_resume_request() 
+	
+	if game_screen and game_screen.has_method("restart_level"):
+		game_screen.restart_level()
+	else:
+		push_error("GameScreenPauser.gd: game_screen не имеет метода restart_level")
+		
 func _on_song_select_requested():
 	emit_signal("song_select_requested")
 

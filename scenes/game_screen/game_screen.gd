@@ -750,8 +750,11 @@ func restart_level():
 	if game_finished:
 		return
 
-	if not game_timer.is_stopped():
-		game_timer.stop()
+	if pauser and pauser.is_paused:
+		pauser.is_paused = false
+		if game_timer:
+			game_timer.start()
+
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	if victory_delay_timer and not victory_delay_timer.is_stopped():
@@ -783,6 +786,9 @@ func restart_level():
 	update_ui()
 	if countdown_label:
 		countdown_label.visible = true
+
+	if game_timer and game_timer.is_stopped():
+		game_timer.start()
 
 	start_countdown()
 	
