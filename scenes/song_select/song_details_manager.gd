@@ -19,6 +19,7 @@ var settings_manager = null
 var _current_preview_file_path: String = ""
 
 var current_instrument: String = "standard"
+var current_generation_mode: String = "basic"
 
 var generation_status_label: Label = null
 var is_generating_notes: bool = false
@@ -29,7 +30,11 @@ func set_generation_status_label(status_lbl: Label):
 func set_current_instrument(instrument: String):
 	current_instrument = instrument
 	_update_play_button_state()
-
+	
+func set_current_generation_mode(mode: String):
+	current_generation_mode = mode
+	_update_play_button_state()
+	
 func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
@@ -138,11 +143,11 @@ func _get_fallback_cover_texture():
 
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
 	var base_name = song_path.get_file().get_basename()
-	var notes_filename = "%s_%s.json" % [base_name, instrument]
-	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename] 
-
+	var notes_filename = "%s_%s_%s.json" % [base_name, instrument, current_generation_mode]  
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
+	
 	var notes_file_exists = FileAccess.file_exists(notes_path)
-	print("SongDetailsManager.gd: Проверка наличия нот для %s (%s): %s" % [song_path, instrument, notes_file_exists])
+	print("SongDetailsManager.gd: Проверка файла %s: %s" % [notes_filename, notes_file_exists])
 	return notes_file_exists
 
 func _update_play_button_state():

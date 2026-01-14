@@ -16,7 +16,7 @@ var SnareNote = load("res://scenes/game_screen/notes/snare_note.gd")
 func _init(screen):
 	game_screen = screen
 
-func load_notes_from_file(song_data):
+func load_notes_from_file(song_data, generation_mode: String = "basic"): 
 	clear_notes()
 
 	if not song_data or not "path" in song_data:
@@ -30,7 +30,7 @@ func load_notes_from_file(song_data):
 	if game_screen and "current_instrument" in game_screen:
 		current_instrument = game_screen.current_instrument
 
-	var notes_file_path = "user://notes/%s/%s_%s.json" % [base_name, base_name, current_instrument]
+	var notes_file_path = "user://notes/%s/%s_%s_%s.json" % [base_name, base_name, current_instrument, generation_mode.to_lower()]
 
 	var file = FileAccess.open(notes_file_path, FileAccess.READ)
 	if not file:

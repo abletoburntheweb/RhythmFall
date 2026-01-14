@@ -21,6 +21,7 @@ var speed: float = 6.0
 var hit_zone_y: int = 900
 var lanes: int = 4
 var current_instrument: String = "standard"
+var current_generation_mode: String = "basic"
 
 var selected_song_data: Dictionary = {}
 
@@ -313,6 +314,10 @@ func _set_instrument(instrument_type: String):
 	if instrument_label: 
 		instrument_label.text = "Инструмент: " + ("Перкуссия" if instrument_type == "drums" else "Стандартный")
 
+func _set_generation_mode(mode: String): 
+	current_generation_mode = mode
+	print("GameScreen.gd: Режим генерации установлен: ", mode)
+
 func start_gameplay():
 	if gameplay_started:
 		return
@@ -323,7 +328,7 @@ func start_gameplay():
 	if not song_to_load or not song_to_load.get("path"):
 		song_to_load = {"path": "res://songs/sample.mp3"}
 
-	note_manager.load_notes_from_file(song_to_load)
+	note_manager.load_notes_from_file(song_to_load, current_generation_mode)
 
 	if song_to_load and song_to_load.has("bpm"):
 		var bpm_str = str(song_to_load.get("bpm", ""))

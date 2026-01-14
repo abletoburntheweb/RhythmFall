@@ -39,7 +39,7 @@ func show_level_ui():
 		if level_layer:
 			level_layer.visible = true
 
-func transition_open_game(start_level=null, selected_song=null, instrument="standard", results_mgr = null):
+func transition_open_game(start_level=null, selected_song=null, instrument="standard", results_mgr = null, generation_mode: String = "basic"):
 	hide_level_ui() 
 	
 	if main_menu_instance and main_menu_instance.is_game_open:
@@ -61,6 +61,10 @@ func transition_open_game(start_level=null, selected_song=null, instrument="stan
 			print("Transitions.gd: ResultsManager передан в GameScreen.")
 		elif results_mgr:
 			printerr("Transitions.gd: GameScreen не имеет метода set_results_manager, но ResultsManager передан.")
+
+		if new_game_screen.has_method("_set_generation_mode"):
+			new_game_screen._set_generation_mode(generation_mode)
+			print("Transitions.gd: Режим генерации передан в GameScreen: ", generation_mode)
 
 		if new_game_screen.has_method("start_game"):
 			new_game_screen.start_game()
@@ -324,7 +328,12 @@ func transition_exit_game():
 	else:
 		print("Transitions.gd: ОШИБКА! GameEngine не имеет метода request_quit!")
 
-func open_game_with_instrument(song_path_or_instrument: String = "", instrument_if_path_provided: String = "standard", results_mgr = null):
+func open_game_with_instrument(
+	song_path_or_instrument: String = "",
+	instrument_if_path_provided: String = "standard",
+	results_mgr = null,
+	generation_mode: String = "basic"
+):
 	var current_screen = game_engine.current_screen
 	var selected_song_data = {}
 	var instrument = instrument_if_path_provided
@@ -359,7 +368,7 @@ func open_game_with_instrument(song_path_or_instrument: String = "", instrument_
 			printerr("Transitions.gd: Невозможно открыть игру - путь к песне пуст!")
 			return
 
-	open_game_with_song(selected_song_data, instrument, results_manager)
+	open_game_with_song(selected_song_data, instrument, results_manager, generation_mode) 
 
 func open_game(start_level=null):
 	transition_open_game(start_level)
@@ -373,8 +382,8 @@ func open_song_select():
 func close_song_select():
 	transition_close_song_select()
 
-func open_game_with_song(selected_song, instrument="standard", results_mgr = null):
-	transition_open_game(null, selected_song, instrument, results_mgr)
+func open_game_with_song(selected_song, instrument="standard", results_mgr = null, generation_mode: String = "basic"): 
+	transition_open_game(null, selected_song, instrument, results_mgr, generation_mode) 
 
 func resume_game():
 	pass
