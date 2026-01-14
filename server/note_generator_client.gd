@@ -24,7 +24,17 @@ func set_track_identification(needed: bool):
 func _set_is_generating(value: bool):
 	is_generating = value
 
-func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int = -1, sync_tolerance: float = -1.0, auto_identify_track: bool = true, manual_artist: String = "", manual_title: String = ""):
+func generate_notes(
+	song_path: String,
+	instrument_type: String,
+	bpm: float,
+	lanes: int = -1,
+	sync_tolerance: float = -1.0,
+	auto_identify_track: bool = true,
+	manual_artist: String = "",
+	manual_title: String = "",
+	generation_mode: String = "basic"  
+):
 	if is_generating:
 		print("NoteGeneratorClient.gd: Генерация уже выполняется, игнорируем новый запрос.")
 		return
@@ -43,7 +53,8 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		"sync_tolerance": effective_sync_tolerance,
 		"auto_identify_track": auto_identify_track,
 		"manual_artist": manual_artist,
-		"manual_title": manual_title 
+		"manual_title": manual_title,
+		"generation_mode": generation_mode 
 	}
 	_thread_result = {}
 	_thread_finished = false
@@ -93,7 +104,7 @@ func _check_thread_status():
 			var inst_type = _thread_result.instrument_type
 			var lanes_val = _thread_result.lanes
 			
-			_save_notes_locally(_thread_request_data.song_path, inst_type, notes)
+			_save_notes_locally(_thread_request_data.song_path, inst_type, notes, _thread_request_data.generation_mode)
 			
 			print("NoteGeneratorClient.gd: Ноты успешно получены: ", notes.size(), " нот")
 			emit_signal("notes_generation_completed", notes, bpm_val, inst_type)
@@ -115,6 +126,7 @@ func _thread_function(data_dict: Dictionary):
 	var auto_identify_track = data_dict.get("auto_identify_track", true) 
 	var manual_artist = data_dict.get("manual_artist", "") 
 	var manual_title = data_dict.get("manual_title", "") 
+	var generation_mode = data_dict.get("generation_mode", "basic") 
 
 	if song_path == "":
 		local_error_occurred = true
@@ -155,7 +167,8 @@ func _thread_function(data_dict: Dictionary):
 					"X-Filename: " + song_path.get_file(),
 					"X-Lanes: " + str(lanes),
 					"X-Sync-Tolerance: " + str(sync_tolerance),
-					"X-Identify-Track: " + str(auto_identify_track).to_lower()
+					"X-Identify-Track: " + str(auto_identify_track).to_lower(),
+					"X-Drum-Mode: " + generation_mode  
 				])
 				
 				if manual_artist != "" and manual_title != "":
@@ -202,7 +215,8 @@ func _thread_function(data_dict: Dictionary):
 								var received_bpm = response_json["bpm"]
 								var received_lanes = response_json.get("lanes", lanes)
 								var received_instrument = response_json.get("instrument_type", instrument_type)
-								print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm, ", Lanes: ", received_lanes)
+								var received_mode = response_json.get("mode", generation_mode) 
+								print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm, ", Lanes: ", received_lanes, ", Mode: ", received_mode)
 								
 								local_result = {
 									"notes": notes, 
@@ -349,10 +363,10 @@ func _identify_track(song_path: String) -> Dictionary:
 	http_client.close()
 	return result
 
-func _save_notes_locally(song_path: String, instrument: String, notes_data: Array):
+func _save_notes_locally(song_path: String, instrument: String, notes_data: Array, generation_mode: String = "basic"): 
 	var base_name = song_path.get_file().get_basename()
 	var song_folder_name = base_name 
-	var notes_filename = "%s_%s.json" % [base_name, instrument]
+	var notes_filename = "%s_%s_%s.json" % [base_name, instrument, generation_mode.to_lower()]  
 	var song_notes_path = "user://notes/%s" % song_folder_name  
 	
 	var dir = DirAccess.open("user://")

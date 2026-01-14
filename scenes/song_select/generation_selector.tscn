@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=3 uid="uid://ctnvcuyrepxmg"]
+
+[ext_resource type="Script" uid="uid://bdmn023vukyew" path="res://scenes/song_select/generation_selector.gd" id="1_lyc1o"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_87uxh"]
+bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+
+[node name="GenerationSelector" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lyc1o")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 0
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_87uxh")
+text = "Назад	"
+
+[node name="Content" type="VBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="BasicButton" type="Button" parent="Container/Content"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+text = "Базовый"
+
+[node name="EnhancedButton" type="Button" parent="Container/Content"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+text = "Улучшенный"

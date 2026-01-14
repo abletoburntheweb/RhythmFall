@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 6,
+			"current": 7,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,18 +211,18 @@
 		},
 		{
 			"category": "daily",
-			"current": 6,
+			"current": 7,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
 			"title": "В ритме недели",
 			"total": 7.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "14 Янв 2026, 01:13",
+			"unlocked": true
 		},
 		{
 			"category": "daily",
-			"current": 6,
+			"current": 7,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 6,
+			"current": 7,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 4.13,
+			"current": 4.18,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 4.13,
+			"current": 4.18,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 4.13,
+			"current": 4.18,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 4.13,
+			"current": 4.18,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 4.13,
+			"current": 4.18,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",

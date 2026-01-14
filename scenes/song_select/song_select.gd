@@ -21,6 +21,7 @@ var song_list_manager: SongListManager = preload("res://scenes/song_select/song_
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
 var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
 const InstrumentSelectorScene = preload("res://scenes/song_select/instrument_selector.tscn")
+const GenerationSelectorScene = preload("res://scenes/song_select/generation_selector.tscn")
 var settings_manager: SettingsManager = null
 
 var analyze_bpm_button: Button = null
@@ -29,7 +30,9 @@ var note_generator_client: NoteGeneratorClient = null
 var genre_detection_client: GenreDetectionClient = null
 var song_metadata_manager = null
 var instrument_selector: Control = null
+var generation_selector: Control = null 
 var current_instrument: String = "drums"
+var current_generation_mode: String = "basic" 
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
 
@@ -152,7 +155,9 @@ func _ready():
 	var instrument_btn = $MainVBox/TopBarHBox/InstrumentButton
 	if instrument_btn:
 		instrument_btn.text = "Инструмент: Перкуссия"
-
+	var generation_mode_btn = $MainVBox/TopBarHBox/GenerationModeButton
+	if generation_mode_btn:
+		generation_mode_btn.text = "Режим генерации: Базовый" 
 	filter_by_letter = $MainVBox/TopBarHBox/FilterByLetter
 	if filter_by_letter:
 		filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)  
@@ -214,7 +219,11 @@ func _connect_ui_signals():
 		instr_btn.pressed.connect(_on_instrument_pressed)
 	else:
 		push_error("SongSelect.gd: Не найден InstrumentButton по пути $MainVBox/TopBarHBox/InstrumentButton")
-
+	var gen_mode_btn = $MainVBox/TopBarHBox/GenerationModeButton
+	if gen_mode_btn:
+		gen_mode_btn.pressed.connect(_on_generation_mode_pressed)
+	else:
+		push_error("SongSelect.gd: Не найден GenerationModeButton по пути $MainVBox/TopBarHBox/GenerationModeButton")
 	var play_btn = $MainVBox/ContentHBox/DetailsVBox/PlayButton
 	if play_btn:
 		play_btn.pressed.connect(_on_play_pressed)
@@ -354,7 +363,8 @@ func _on_genres_detection_completed(received_artist: String, received_title: Str
 		pending_manual_identification_sync_tolerance,
 		false, 
 		received_artist, 
-		received_title  
+		received_title,
+		current_generation_mode
 	)
 	
 	pending_manual_identification_song_path = ""
@@ -483,7 +493,10 @@ func _update_edit_button_style():
 func _on_instrument_pressed():
 	print("SongSelect.gd: Открыт селектор инструментов.")
 	_open_instrument_selector()
-
+func _on_generation_mode_pressed(): 
+	print("SongSelect.gd: Открыт селектор режима генерации.")
+	_open_generation_selector()
+	
 func _on_generate_pressed():
 	print("SongSelect.gd: Генерация нот для инструмента: ", current_instrument)
 	_generate_notes_for_current_song()
@@ -501,7 +514,17 @@ func _generate_notes_for_current_song():
 		return
 
 	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path) 
-	note_generator_client.generate_notes(song_path, current_instrument, float(song_bpm))
+	note_generator_client.generate_notes(
+	song_path,
+	current_instrument,
+	float(song_bpm),
+	-1,
+	-1.0,
+	true,
+	"",
+	"",
+	current_generation_mode
+)
 
 func _on_notes_generation_started():
 	print("SongSelect.gd: Генерация нот начата.")
@@ -586,7 +609,42 @@ func _on_instrument_selected(instrument_type: String):
 	if song_details_manager:
 		song_details_manager.set_current_instrument(current_instrument)
 		song_details_manager._update_play_button_state()
+func _open_generation_selector(): 
+	
+	if generation_selector and is_instance_valid(generation_selector):
+		generation_selector.queue_free()
 
+	generation_selector = GenerationSelectorScene.instantiate()  
+
+	if generation_selector.has_method("set_managers"):
+		generation_selector.set_managers(music_manager)
+
+	if generation_selector.has_signal("generation_mode_selected"):
+		if not generation_selector.is_connected("generation_mode_selected", _on_generation_mode_selected):
+			generation_selector.connect("generation_mode_selected", _on_generation_mode_selected.bind())
+
+	if generation_selector.has_signal("selector_closed"):
+		if not generation_selector.is_connected("selector_closed", _on_generation_selector_closed):
+			generation_selector.connect("selector_closed", _on_generation_selector_closed.bind())
+
+	get_parent().add_child(generation_selector)
+func _on_generation_mode_selected(mode: String): 
+	current_generation_mode = mode
+	var btn = $MainVBox/TopBarHBox/GenerationModeButton
+	if btn:
+		var display_text = "Улучшенный" if mode == "enhanced" else "Базовый"
+		btn.text = "Режим генерации: " + display_text
+	print("SongSelect.gd: Режим генерации изменён на: ", mode)
+	
+func _on_generation_selector_closed():
+	if generation_selector:
+		if generation_selector.is_connected("generation_mode_selected", _on_generation_mode_selected):
+			generation_selector.disconnect("generation_mode_selected", _on_generation_mode_selected)
+		if generation_selector.is_connected("selector_closed", _on_generation_selector_closed):
+			generation_selector.disconnect("selector_closed", _on_generation_selector_closed)
+		generation_selector.queue_free()
+		generation_selector = null
+	
 func _on_delete_pressed():
 	print("SongSelect.gd: Запрос на удаление песни.")
 	var selected_items = song_item_list_ref.get_selected_items()
