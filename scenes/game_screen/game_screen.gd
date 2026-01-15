@@ -586,12 +586,13 @@ func _input(event):
 		var keycode = event.keycode
 		var shift_pressed = Input.is_key_pressed(KEY_SHIFT)
 
-		if keycode == KEY_QUOTELEFT and shift_pressed:
-			if debug_menu:
-				var settings_manager = game_engine.get_settings_manager() if game_engine else null
-				if settings_manager and settings_manager.get_enable_debug_menu():
-					debug_menu.toggle_visibility()
-			return
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode == KEY_QUOTELEFT and event.shift_pressed:
+				if debug_menu:
+					var settings_manager = game_engine.get_settings_manager() if game_engine else null
+					if settings_manager and settings_manager.get_enable_debug_menu():
+						debug_menu.toggle_visibility()
+				return
 
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_SPACE:
