@@ -1,6 +1,7 @@
 # logic/song_metadata_manager.gd
 class_name SongMetadataManager
 extends Node
+
 signal metadata_updated(song_file_path: String)
 
 const METADATA_FILE_PATH = "user://song_metadata.json"
@@ -25,10 +26,25 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			"bpm": "Н/Д",
 			"year": "Н/Д",
 			"duration": "00:00",
-			"cover": null
+			"cover": null,
+			"genres": "",
+			"primary_genre": "unknown"
 		}
 
 	_metadata_cache[song_file_path]["file_mtime"] = FileAccess.get_modified_time(song_file_path)
+
+	if updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY:
+		var genres_array = updated_fields["genres"]
+		var genres_str = ", ".join(genres_array)
+		_metadata_cache[song_file_path]["genres"] = genres_str
+
+		if !genres_array.is_empty():
+			_metadata_cache[song_file_path]["primary_genre"] = str(genres_array[0])
+		else:
+			_metadata_cache[song_file_path]["primary_genre"] = "unknown"
+
+		updated_fields = updated_fields.duplicate()
+		updated_fields.erase("genres")
 
 	for field_name in updated_fields:
 		if field_name != "cover":
@@ -36,7 +52,6 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 
 	_save_metadata()
 	print("SongMetadataManager.gd: Метаданные для '%s' обновлены и сохранены (cover исключён)." % song_file_path)
-
 	emit_signal("metadata_updated", song_file_path)
 
 func remove_metadata(song_file_path: String):
@@ -70,7 +85,7 @@ func _save_metadata():
 		var cache_to_save = {}
 		for path in _metadata_cache.keys():
 			var song_data_copy = _metadata_cache[path].duplicate(true)
-			song_data_copy.erase("cover") 
+			song_data_copy.erase("cover")
 			cache_to_save[path] = song_data_copy
 		var json_text = JSON.stringify(cache_to_save, "\t")
 		file_access.store_string(json_text)

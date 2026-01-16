@@ -168,6 +168,7 @@ func initialize_logic():
 	settings_manager = SettingsManager.new()
 	
 	song_metadata_manager = SongMetadataManager.new()
+	add_child(song_metadata_manager)  # ← ЭТО ОБЯЗАТЕЛЬНО! 
 	if not song_metadata_manager:
 		printerr("GameEngine.gd: Не удалось инстанцировать SongMetadataManager!")
 

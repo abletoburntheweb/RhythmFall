@@ -86,7 +86,7 @@ func _check_thread_status():
 
 		if http_thread:
 			http_thread.wait_to_finish()
-			http_thread = null
+			http_thread = null  
 
 		if _thread_result.has("error"):
 			_set_is_generating(false)
@@ -106,7 +106,27 @@ func _check_thread_status():
 			
 			_save_notes_locally(_thread_request_data.song_path, inst_type, notes, _thread_request_data.generation_mode)
 			
-			print("NoteGeneratorClient.gd: Ноты успешно получены: ", notes.size(), " нот")
+			var track_info = _thread_result.get("track_info", {})
+			if !track_info.is_empty():
+				var metadata_fields = {
+					"title": track_info.get("title", "Без названия"),
+					"artist": track_info.get("artist", "Неизвестен"),
+					"year": str(track_info.get("year")) if track_info.has("year") and track_info["year"] != null else "Н/Д",
+					"genres": track_info.get("genres", []),
+					"bpm": str(bpm_val)
+				}
+				
+				var metadata_manager = null
+				if Engine.has_singleton("SongMetadataManager"):
+					metadata_manager = SongMetadataManager
+				else:
+					metadata_manager = get_node_or_null("/root/GameEngine/SongMetadataManager")
+				
+				if metadata_manager:
+					metadata_manager.update_metadata(_thread_request_data.song_path, metadata_fields)
+				else:
+					printerr("NoteGeneratorClient.gd: Не найден SongMetadataManager! Метаданные не сохранены.")
+			
 			emit_signal("notes_generation_completed", notes, bpm_val, inst_type)
 		else:
 			_set_is_generating(false)
@@ -215,14 +235,16 @@ func _thread_function(data_dict: Dictionary):
 								var received_bpm = response_json["bpm"]
 								var received_lanes = response_json.get("lanes", lanes)
 								var received_instrument = response_json.get("instrument_type", instrument_type)
-								var received_mode = response_json.get("mode", generation_mode) 
-								print("NoteGeneratorClient.gd (Thread): Получено нот: ", notes.size(), ", BPM: ", received_bpm, ", Lanes: ", received_lanes, ", Mode: ", received_mode)
+								var received_mode = response_json.get("mode", generation_mode)
+								var track_info = response_json.get("track_info", {})
+								
 								
 								local_result = {
 									"notes": notes, 
 									"bpm": received_bpm, 
 									"lanes": received_lanes,
-									"instrument_type": received_instrument
+									"instrument_type": received_instrument,
+									"track_info": track_info
 								}
 							elif response_json.has("error"):
 								local_error_msg = response_json["error"]
@@ -385,7 +407,5 @@ func _save_notes_locally(song_path: String, instrument: String, notes_data: Arra
 	if file:
 		file.store_string(json_string) 
 		file.close()
-		print("NoteGeneratorClient.gd: Ноты сохранены локально: ", notes_path)
-		print("NoteGeneratorClient.gd: Содержимое файла отформатировано.")
 	else:
 		print("NoteGeneratorClient.gd: Ошибка сохранения нот: ", notes_path)
