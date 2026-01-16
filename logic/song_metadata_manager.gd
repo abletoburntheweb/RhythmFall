@@ -1,5 +1,4 @@
 # logic/song_metadata_manager.gd
-class_name SongMetadataManager
 extends Node
 
 signal metadata_updated(song_file_path: String)

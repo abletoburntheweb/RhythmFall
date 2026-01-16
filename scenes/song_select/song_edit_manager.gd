@@ -9,7 +9,7 @@ var item_list: ItemList = null
 
 var edit_mode: bool = false
 
-var song_metadata_manager = null
+var song_metadata_manager = SongMetadataManager
 
 var _edit_context = {
 	"dialog": null,
@@ -21,12 +21,6 @@ var _edit_context = {
 	"type": ""
 }
 
-func set_metadata_manager(sm_manager):
-	song_metadata_manager = sm_manager
-	if song_metadata_manager:
-		print("SongEditManager.gd: SongMetadataManager установлен.")
-	else:
-		print("SongEditManager.gd: SongMetadataManager сброшен.")
 
 func set_song_manager(manager):
 	song_manager = manager
@@ -174,13 +168,10 @@ func _on_edit_title_confirmed():
 			song_data["title"] = new_title 
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 			
-			if song_metadata_manager:
-				var song_file_path = song_data["path"]
-				var fields_to_update = {"title": new_title}
-				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
-				print("SongEditManager.gd: Изменения названия для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
-			else:
-				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения названия не сохранены в файл!")
+			var song_file_path = song_data["path"]
+			var fields_to_update = {"title": new_title}
+			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			print("SongEditManager.gd: Изменения названия для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
 
 	_cleanup_edit_context() 
 	
@@ -198,13 +189,10 @@ func _on_edit_field_confirmed():
 			song_data[field_name] = new_value 
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 
-			if song_metadata_manager:
-				var song_file_path = song_data["path"]
-				var fields_to_update = {field_name: new_value}
-				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
-				print("SongEditManager.gd: Изменения поля '%s' для '%s' переданы в SongMetadataManager для сохранения." % [field_name, song_file_path])
-			else:
-				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения поля '%s' не сохранены в файл!" % field_name)
+			var song_file_path = song_data["path"]
+			var fields_to_update = {field_name: new_value}
+			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			print("SongEditManager.gd: Изменения поля '%s' для '%s' переданы в SongMetadataManager для сохранения." % [field_name, song_file_path])
 
 	_cleanup_edit_context() 
 	
@@ -227,13 +215,10 @@ func _on_edit_bpm_confirmed():
 			song_data["bpm"] = new_bpm_str 
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 			
-			if song_metadata_manager:
-				var song_file_path = song_data["path"]
-				var fields_to_update = {"bpm": new_bpm_str}
-				song_metadata_manager.update_metadata(song_file_path, fields_to_update)
-				print("SongEditManager.gd: Изменения BPM для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
-			else:
-				printerr("SongEditManager.gd: SongMetadataManager не установлен, изменения BPM не сохранены в файл!")
+			var song_file_path = song_data["path"]
+			var fields_to_update = {"bpm": new_bpm_str}
+			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			print("SongEditManager.gd: Изменения BPM для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
 
 	_cleanup_edit_context()
 
@@ -250,4 +235,4 @@ func _cleanup_edit_context():
 	_edit_context["type"] = ""
 
 func _on_dialog_closed():
-	_cleanup_edit_context() 
+	_cleanup_edit_context()

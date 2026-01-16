@@ -15,7 +15,7 @@ var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
 
 var settings_manager: SettingsManager = null
-var song_metadata_manager = null
+var song_metadata_manager = SongMetadataManager 
 
 @onready var edit_button: Button = $MainVBox/TopBarHBox/EditButton
 @onready var filter_by_letter: OptionButton = $MainVBox/TopBarHBox/FilterByLetter
@@ -44,12 +44,13 @@ func _ready():
 	var trans = game_engine.get_transitions()
 	var player_data_mgr = game_engine.get_player_data_manager()
 	settings_manager = game_engine.get_settings_manager()
-	song_metadata_manager = game_engine.get_song_metadata_manager()
+	
+	song_metadata_manager = SongMetadataManager
 	
 	setup_managers(trans, music_mgr, player_data_mgr)
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
-	song_manager.set_metadata_manager(song_metadata_manager)
+		
 	song_manager.load_songs()
 	
 	add_child(song_list_manager)
@@ -76,7 +77,6 @@ func _ready():
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
 	song_edit_manager.set_item_list(song_item_list_ref)
-	song_edit_manager.set_metadata_manager(song_metadata_manager)
 	song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
 	
 	results_manager.set_player_data_manager(player_data_manager)

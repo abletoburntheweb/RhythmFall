@@ -4,7 +4,7 @@ extends Control
 signal settings_changed
 
 var settings_manager: SettingsManager = null
-var song_metadata_manager = null
+var song_metadata_manager = SongMetadataManager 
 var player_data_manager = null 
 var achievement_manager = null
 
@@ -20,9 +20,8 @@ func _ready():
 	print("MiscTab.gd: _ready вызван.")
 	_connect_signals()
 
-func setup_ui_and_manager(manager: SettingsManager, music, screen = null, metadata_manager = null, player_data_mgr = null, achievement_mgr = null):
+func setup_ui_and_manager(manager: SettingsManager, music, screen = null, player_data_mgr = null, achievement_mgr = null):
 	settings_manager = manager
-	song_metadata_manager = metadata_manager
 	player_data_manager = player_data_mgr 
 	achievement_manager = achievement_mgr
 	_apply_initial_settings()
@@ -74,32 +73,26 @@ func _on_clear_achievements_pressed():
 
 func _on_reset_bpm_batch_pressed():
 	print("MiscTab.gd: Запрос на сброс кэша BPM.")
-	if song_metadata_manager:
-		var current_cache = song_metadata_manager._metadata_cache
-		var modified = false
-		for song_path in current_cache:
-			if current_cache[song_path].has("bpm"):
-				current_cache[song_path]["bpm"] = "Н/Д"
-				modified = true
-				print("MiscTab.gd: BPM сброшен для %s" % song_path.get_file())
-		if modified:
-			song_metadata_manager._save_metadata()
-			print("MiscTab.gd: Кэш BPM сброшен для всех песен и сохранён.")
-			emit_signal("settings_changed")
-		else:
-			print("MiscTab.gd: Кэш метаданных пуст или не содержит BPM для сброса.")
+	var current_cache = song_metadata_manager._metadata_cache
+	var modified = false
+	for song_path in current_cache:
+		if current_cache[song_path].has("bpm"):
+			current_cache[song_path]["bpm"] = "Н/Д"
+			modified = true
+			print("MiscTab.gd: BPM сброшен для %s" % song_path.get_file())
+	if modified:
+		song_metadata_manager._save_metadata()
+		print("MiscTab.gd: Кэш BPM сброшен для всех песен и сохранён.")
+		emit_signal("settings_changed")
 	else:
-		printerr("MiscTab.gd: song_metadata_manager не установлен, невозможно сбросить кэш BPM.")
+		print("MiscTab.gd: Кэш метаданных пуст или не содержит BPM для сброса.")
 
 func _on_clear_all_cache_pressed():
 	print("MiscTab.gd: Запрос на очистку всего кэша.")
-	if song_metadata_manager:
-		song_metadata_manager._metadata_cache = {}
-		song_metadata_manager._save_metadata()
-		print("MiscTab.gd: Весь кэш метаданных песен очищен и сохранён.")
-		emit_signal("settings_changed")
-	else:
-		printerr("MiscTab.gd: song_metadata_manager не установлен, невозможно очистить кэш.")
+	song_metadata_manager._metadata_cache = {}
+	song_metadata_manager._save_metadata()
+	print("MiscTab.gd: Весь кэш метаданных песен очищен и сохранён.")
+	emit_signal("settings_changed")
 
 func _on_reset_profile_stats_pressed():
 	print("MiscTab.gd: Запрос на сброс статистики профиля.")

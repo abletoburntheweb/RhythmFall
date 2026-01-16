@@ -13,7 +13,7 @@ var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
 var achievement_queue_manager: AchievementQueueManager = null
 
-var song_metadata_manager: SongMetadataManager = null
+
 
 var session_history_manager: SessionHistoryManager = null
 
@@ -166,11 +166,6 @@ func initialize_logic():
 	player_data_manager.set_track_stats_manager(track_stats_manager)
 	
 	settings_manager = SettingsManager.new()
-	
-	song_metadata_manager = SongMetadataManager.new()
-	add_child(song_metadata_manager)  # ← ЭТО ОБЯЗАТЕЛЬНО! 
-	if not song_metadata_manager:
-		printerr("GameEngine.gd: Не удалось инстанцировать SongMetadataManager!")
 
 	music_manager = MusicManager.new() 
 	if music_manager:
@@ -285,8 +280,6 @@ func show_main_menu():
 	else:
 		print("GameEngine.gd: ОШИБКА! transitions не установлен!")
 
-func get_song_metadata_manager() -> SongMetadataManager:
-	return song_metadata_manager
 
 func _switch_to_screen(new_screen_instance):
 	if current_screen and current_screen != new_screen_instance:

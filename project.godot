@@ -17,6 +17,10 @@ config/icon="uid://bqgatwl4553b5"
 config/windows_native_icon="uid://bqgatwl4553b5"
 run/icon=""
 
+[autoload]
+
+SongMetadataManager="*res://logic/song_metadata_manager.gd"
+
 [display]
 
 window/size/viewport_width=1920

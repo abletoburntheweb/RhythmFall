@@ -108,24 +108,15 @@ func _check_thread_status():
 			
 			var track_info = _thread_result.get("track_info", {})
 			if !track_info.is_empty():
-				var metadata_fields = {
-					"title": track_info.get("title", "Без названия"),
-					"artist": track_info.get("artist", "Неизвестен"),
-					"year": str(track_info.get("year")) if track_info.has("year") and track_info["year"] != null else "Н/Д",
-					"genres": track_info.get("genres", []),
-					"bpm": str(bpm_val)
-				}
+				var current_metadata = SongMetadataManager.get_metadata_for_song(_thread_request_data.song_path)
 				
-				var metadata_manager = null
-				if Engine.has_singleton("SongMetadataManager"):
-					metadata_manager = SongMetadataManager
-				else:
-					metadata_manager = get_node_or_null("/root/GameEngine/SongMetadataManager")
+				var metadata_fields = {}
+								
+				if track_info.has("genres"):
+					metadata_fields["genres"] = track_info["genres"]
 				
-				if metadata_manager:
-					metadata_manager.update_metadata(_thread_request_data.song_path, metadata_fields)
-				else:
-					printerr("NoteGeneratorClient.gd: Не найден SongMetadataManager! Метаданные не сохранены.")
+				if !metadata_fields.is_empty():
+					SongMetadataManager.update_metadata(_thread_request_data.song_path, metadata_fields)
 			
 			emit_signal("notes_generation_completed", notes, bpm_val, inst_type)
 		else:
