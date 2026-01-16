@@ -13,7 +13,6 @@ var play_button: Button = null
 var preview_player: AudioStreamPlayer = null
 
 var music_manager = null
-var player_data_manager = null
 var settings_manager = null
 
 var _current_preview_file_path: String = ""
@@ -55,9 +54,6 @@ func set_settings_manager(settings_mgr):
 	settings_manager = settings_mgr
 	print("SongDetailsManager.gd: SettingsManager передан.")
 
-func set_player_data_manager(player_data_mgr):
-	player_data_manager = player_data_mgr
-
 func update_details(song_data: Dictionary):
 	print("SongDetailsManager.gd: Обновление информации о песне: %s" % song_data)
 
@@ -93,11 +89,7 @@ func update_details(song_data: Dictionary):
 	_update_generation_status() 
 
 func _get_fallback_cover_texture():
-	if not player_data_manager:
-		print("SongDetailsManager.gd: PlayerDataManager не установлен, невозможно получить резервную обложку.")
-		return null
-
-	var active_cover_item_id = player_data_manager.get_active_item("Covers")
+	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
 	print("SongDetailsManager.gd: Попытка получить резервную обложку из пака: ", active_cover_item_id)
 
 	var folder_name_map = {

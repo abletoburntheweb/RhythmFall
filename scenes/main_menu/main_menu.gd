@@ -6,8 +6,6 @@ var music_manager = null
 
 var is_game_open = false
 
-var player_data_manager: PlayerDataManager = null
-
 var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
 
 var button_configs = {
@@ -30,15 +28,6 @@ func _ready():
 			printerr("MainMenu.gd: MusicManager не найден через GameEngine.get_music_manager()!")
 	else:
 		printerr("MainMenu.gd: Не удалось получить GameEngine или метод get_music_manager()!")
-
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		player_data_manager = game_engine.get_player_data_manager()
-		if player_data_manager:
-			pass
-		else:
-			printerr("MainMenu: Не удалось получить PlayerDataManager")
-	else:
-		printerr("MainMenu: Не удалось получить GameEngine или метод get_player_data_manager()")
 
 	var all_buttons_connected = true
 	for button_name in button_configs:

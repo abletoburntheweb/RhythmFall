@@ -11,15 +11,13 @@ var current_cover_item_data: Dictionary = {}
 
 func _ready():
 	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_player_data_manager") and game_engine.has_method("get_transitions"):
+	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
 		var music_mgr = game_engine.get_music_manager()
-		var player_data_mgr = game_engine.get_player_data_manager()
 		var trans = game_engine.get_transitions()
 
-		setup_managers(trans, music_mgr, player_data_mgr)
-
+		setup_managers(trans, music_mgr)  
 	else:
-		printerr("ShopScreen.gd: Не удалось получить один из менеджеров (music_manager, player_data_manager, transitions) через GameEngine.")
+		printerr("ShopScreen.gd: Не удалось получить один из менеджеров (music_manager, transitions) через GameEngine.")
 
 	var file_path = "res://data/shop_data.json"
 	var file_access = FileAccess.open(file_path, FileAccess.READ)
@@ -47,7 +45,7 @@ func _ready():
 	else:
 		print("ShopScreen.gd: Файл achievements_data.json не найден: ", achievements_file_path)
 
-	currency = player_data_manager.get_currency()
+	currency = PlayerDataManager.get_currency()  
 	_update_currency_label()
 
 	_connect_category_buttons()
@@ -59,10 +57,8 @@ func _ready():
 
 		var items_list_container = items_scroll.get_node("ItemsListContainer")
 		if items_list_container:
-
 			var grid_container = items_list_container.get_node("ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
 			if grid_container:
-
 				grid_container.add_theme_constant_override("v_separation", 30)
 				grid_container.add_theme_constant_override("h_separation", 30)
 
@@ -72,21 +68,12 @@ func _ready():
 				var item_list_vbox = items_scroll.get_parent()
 				if item_list_vbox:
 					item_list_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				else:
-					print("ShopScreen.gd: ОШИБКА: ItemListVBox не найден как родитель ItemsScroll.")
-
 				var content_hbox = item_list_vbox.get_parent()
 				if content_hbox:
 					content_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				else:
-					print("ShopScreen.gd: ОШИБКА: ContentHBox не найден как родитель ItemListVBox.")
-
 				var content_margin = content_hbox.get_parent()
 				if content_margin:
 					content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				else:
-					print("ShopScreen.gd: ОШИБКА: ContentMargin не найден как родитель ContentHBox.")
-
 			else:
 				print("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsGridBottomMargin.")
 		else:
@@ -103,14 +90,13 @@ func _update_currency_label():
 		if v_box_container:
 			var currency_label = v_box_container.get_node("CurrencyLabel")
 			if currency_label:
-				currency_label.text = "💰 Валюта: %d" % player_data_manager.get_currency()
+				currency_label.text = "💰 Валюта: %d" % PlayerDataManager.get_currency() 
 			else:
 				print("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
 		else:
 			print("ShopScreen.gd: ОШИБКА: VBoxContainer НЕ найден внутри MainVBox.")
 	else:
 		print("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден по пути $MainContent/MainVBox.")
-
 
 func _connect_category_buttons():
 	var all_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll
@@ -160,88 +146,53 @@ func _create_item_cards():
 	item_cards.clear()
 
 	var items = shop_data.get("items", [])
-
 	var item_card_scene = preload("res://scenes/shop/item_card.tscn")
 
-	var main_content = $MainContent
-	if main_content:
-		var main_vbox = main_content.get_node("MainVBox")
-		if main_vbox:
-			var content_margin = main_vbox.get_node("ContentMargin")
-			if content_margin:
-				var content_hbox = content_margin.get_node("ContentHBox")
-				if content_hbox:
-					var item_list_vbox = content_hbox.get_node("ItemListVBox")
-					if item_list_vbox:
-						var items_scroll = item_list_vbox.get_node("ItemsScroll")
-						if items_scroll:
-							var items_list_container = items_scroll.get_node("ItemsListContainer")
-							if items_list_container:
-								var grid_container = items_list_container.get_node("ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid")
-								if grid_container:
+	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
+	if not grid_container:
+		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
+		return
 
-									grid_container.add_theme_constant_override("v_separation", 30)
-									grid_container.add_theme_constant_override("h_separation", 30)
+	for i in range(items.size()):
+		var item_data = items[i]
+		var new_card = item_card_scene.instantiate()
+		new_card.item_data = item_data
 
-									for i in range(items.size()):
-										var item_data = items[i]
+		var is_purchased = PlayerDataManager.is_item_unlocked(item_data.item_id)  
+		var is_active = false
+		var category_map = _get_category_map()
+		var internal_category = category_map.get(item_data.category, "")
+		if internal_category:
+			is_active = (PlayerDataManager.get_active_item(internal_category) == item_data.item_id)  
 
-										var new_card = item_card_scene.instantiate()
+		var achievement_name = ""
+		var achievement_unlocked = false
+		var level_unlocked = false
 
-										new_card.item_data = item_data
+		if item_data.get("is_level_reward", false):
+			var required_level = item_data.get("required_level", 0)
+			var current_level = PlayerDataManager.get_current_level()  
+			level_unlocked = current_level >= required_level
+		elif item_data.get("is_achievement_reward", false):
+			var achievement_id = item_data.get("achievement_required", "")
+			achievement_name = _get_achievement_name_by_id(achievement_id)
+			if achievement_id != "" and achievement_id.is_valid_int():
+				achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id)) 
 
-										var is_purchased = player_data_manager.is_item_unlocked(item_data.item_id)
-										var is_active = false
-										var category_map = _get_category_map()
-										var internal_category = category_map.get(item_data.category, "")
-										if internal_category:
-											is_active = (player_data_manager.get_active_item(internal_category) == item_data.item_id)
+		new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
 
-										var achievement_name = ""
-										var achievement_unlocked = false
-										
-										var level_unlocked = false
-										if item_data.get("is_level_reward", false):
-											var required_level = item_data.get("required_level", 0)
-											var current_level = player_data_manager.get_current_level()
-											level_unlocked = current_level >= required_level
-										elif item_data.get("is_achievement_reward", false):
-											var achievement_id = item_data.get("achievement_required", "")
-											achievement_name = _get_achievement_name_by_id(achievement_id)
-											if achievement_id != "":
-												achievement_unlocked = player_data_manager.is_achievement_unlocked(int(achievement_id) if achievement_id.is_valid_int() else 0)
-											else:
-												achievement_name = "Неизвестная ачивка" 
+		new_card.buy_pressed.connect(_on_item_buy_pressed)
+		new_card.use_pressed.connect(_on_item_use_pressed)
+		new_card.preview_pressed.connect(_on_item_preview_pressed)
+		new_card.cover_click_pressed.connect(_on_cover_click_pressed)
 
-										new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
+		grid_container.add_child(new_card)
+		item_cards.append(new_card)
 
-										new_card.buy_pressed.connect(_on_item_buy_pressed)
-										new_card.use_pressed.connect(_on_item_use_pressed)
-										new_card.preview_pressed.connect(_on_item_preview_pressed)
-										new_card.cover_click_pressed.connect(_on_cover_click_pressed)
-
-										grid_container.add_child(new_card)
-										item_cards.append(new_card)
-
-									items_scroll.scroll_vertical = 0
-									items_scroll.scroll_horizontal = 0
-								else:
-									print("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsGridBottomMargin.")
-							else:
-								print("ShopScreen.gd: ОШИБКА: ItemsListContainer НЕ найден внутри ItemsScroll.")
-						else:
-							print("ShopScreen.gd: ОШИБКА: ItemsScroll НЕ найден внутри ItemListVBox.")
-					else:
-						print("ShopScreen.gd: ОШИБКА: ItemListVBox НЕ найден внутри ContentHBox.")
-				else:
-					print("ShopScreen.gd: ОШИБКА: ContentHBox НЕ найден внутри ContentMargin.")
-			else:
-				print("ShopScreen.gd: ОШИБКА: ContentMargin НЕ найден внутри MainVBox.")
-		else:
-			print("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден внутри MainContent.")
-	else:
-		print("ShopScreen.gd: ОШИБКА: MainContent НЕ найден по пути $MainContent.")
-
+	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
+	if items_scroll:
+		items_scroll.scroll_vertical = 0
+		items_scroll.scroll_horizontal = 0
 
 func _get_category_map() -> Dictionary:
 	return {
@@ -263,46 +214,50 @@ func _on_category_selected(category: String):
 			filtered_items.append(item)
 
 	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
-	if grid_container:
-		for i in range(filtered_items.size()):
-			var item_data = filtered_items[i]
-			var new_card = preload("res://scenes/shop/item_card.tscn").instantiate()
-			new_card.item_data = item_data
+	if not grid_container:
+		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
+		return
 
-			var is_purchased = player_data_manager.is_item_unlocked(item_data.item_id)
-			var is_active = false
-			var category_map = _get_category_map()
-			var internal_category = category_map.get(item_data.category, "")
-			if internal_category:
-				is_active = (player_data_manager.get_active_item(internal_category) == item_data.item_id)
+	for i in range(filtered_items.size()):
+		var item_data = filtered_items[i]
+		var new_card = preload("res://scenes/shop/item_card.tscn").instantiate()
+		new_card.item_data = item_data
 
-			var achievement_name = ""
-			var achievement_unlocked = false
-			
-			var level_unlocked = false
-			if item_data.get("is_level_reward", false):
-				var required_level = item_data.get("required_level", 0)
-				var current_level = player_data_manager.get_current_level()
-				level_unlocked = current_level >= required_level
-			elif item_data.get("is_achievement_reward", false):
-				var achievement_id = item_data.get("achievement_required", "")
-				achievement_name = _get_achievement_name_by_id(achievement_id)
-				if achievement_id != "":
-					achievement_unlocked = player_data_manager.is_achievement_unlocked(int(achievement_id) if achievement_id.is_valid_int() else 0)
-				else:
-					achievement_name = "Неизвестная ачивка" 
+		var is_purchased = PlayerDataManager.is_item_unlocked(item_data.item_id)
+		var is_active = false
+		var category_map = _get_category_map()
+		var internal_category = category_map.get(item_data.category, "")
+		if internal_category:
+			is_active = (PlayerDataManager.get_active_item(internal_category) == item_data.item_id)
 
-			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
+		var achievement_name = ""
+		var achievement_unlocked = false
+		var level_unlocked = false
 
-			new_card.buy_pressed.connect(_on_item_buy_pressed)
-			new_card.use_pressed.connect(_on_item_use_pressed)
-			new_card.preview_pressed.connect(_on_item_preview_pressed)
-			new_card.cover_click_pressed.connect(_on_cover_click_pressed)
+		if item_data.get("is_level_reward", false):
+			var required_level = item_data.get("required_level", 0)
+			var current_level = PlayerDataManager.get_current_level()
+			level_unlocked = current_level >= required_level
+		elif item_data.get("is_achievement_reward", false):
+			var achievement_id = item_data.get("achievement_required", "")
+			achievement_name = _get_achievement_name_by_id(achievement_id)
+			if achievement_id != "" and achievement_id.is_valid_int():
+				achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id))
 
-			grid_container.add_child(new_card)
-			item_cards.append(new_card)
-	else:
-		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected по новому пути")
+		new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
+
+		new_card.buy_pressed.connect(_on_item_buy_pressed)
+		new_card.use_pressed.connect(_on_item_use_pressed)
+		new_card.preview_pressed.connect(_on_item_preview_pressed)
+		new_card.cover_click_pressed.connect(_on_cover_click_pressed)
+
+		grid_container.add_child(new_card)
+		item_cards.append(new_card)
+
+	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
+	if items_scroll:
+		items_scroll.scroll_vertical = 0
+		items_scroll.scroll_horizontal = 0
 
 func _get_achievement_name_by_id(achievement_id: String) -> String:
 	if not achievement_id.is_valid_int():
@@ -317,27 +272,22 @@ func _get_achievement_name_by_id(achievement_id: String) -> String:
 			return title
 	return "Неизвестная ачивка"
 
-
 func _on_item_buy_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		var price = item_data.get("price", 0)
-		var current_currency = player_data_manager.get_currency()
+		var current_currency = PlayerDataManager.get_currency()
 
 		if current_currency >= price:
-
-			player_data_manager.add_currency(-price)
-
-			player_data_manager.unlock_item(item_id) 
-
+			PlayerDataManager.add_currency(-price)
+			PlayerDataManager.unlock_item(item_id)
 			_update_currency_label()
 			_update_item_card_state(item_id, true, false)
-
 		else:
 			print("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
 	else:
 		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
-		
+
 func _is_item_file_available(item_data: Dictionary) -> bool:
 	var audio_path = item_data.get("audio", "")
 	var image_path = item_data.get("image", "")
@@ -369,18 +319,20 @@ func _on_item_use_pressed(item_id: String):
 		var category_map = _get_category_map()
 		var internal_category = category_map.get(item_data.category, "")
 		if internal_category:
-			player_data_manager.set_active_item(internal_category, item_id)
+			PlayerDataManager.set_active_item(internal_category, item_id)
 			_update_all_item_cards_in_category(internal_category, item_id)
 		else:
 			print("ShopScreen.gd: Неизвестная категория для предмета: ", item_id)
 	else:
 		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
+
 func _on_item_preview_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		_preview_sound(item_data)
 	else:
 		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина для предпросмотра.")
+
 func _preview_sound(item: Dictionary):
 	var audio_path = item.get("audio", "")
 	if audio_path and music_manager:
@@ -426,12 +378,7 @@ func _open_cover_gallery(item_data: Dictionary):
 	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
 	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)
 
-	var self_is_valid = is_instance_valid(self)
-	var self_queued_for_deletion = is_queued_for_deletion()
-	var self_is_inside_tree = is_inside_tree()
-	var gallery_is_valid = is_instance_valid(current_cover_gallery)
-
-	if self_is_valid and not self_queued_for_deletion and self_is_inside_tree and gallery_is_valid:
+	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(current_cover_gallery):
 		call_deferred("_deferred_add_child", current_cover_gallery)
 	else:
 		if is_instance_valid(current_cover_gallery):
@@ -448,7 +395,6 @@ func _deferred_add_child(gallery_node: Node):
 		if current_cover_gallery == gallery_node:
 			current_cover_gallery = null
 		current_cover_item_data = {}
-
 
 func _on_cover_selected_stub(index: int):
 	pass
@@ -474,7 +420,6 @@ func _execute_close_transition():
 	else:
 		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
 
-
 func _find_item_by_id(item_id: String) -> Dictionary:
 	for item in shop_data.get("items", []):
 		if item.get("item_id", "") == item_id:
@@ -491,13 +436,13 @@ func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 			
 			if item_data.get("is_level_reward", false):
 				var required_level = item_data.get("required_level", 0)
-				var current_level = player_data_manager.get_current_level()
+				var current_level = PlayerDataManager.get_current_level()
 				level_unlocked = current_level >= required_level
 			elif item_data.get("is_achievement_reward", false):
 				var achievement_id_str = item_data.get("achievement_required", "")
 				if achievement_id_str != "" and achievement_id_str.is_valid_int():
 					var achievement_id = int(achievement_id_str)
-					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
+					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
 			
 			card.update_state(purchased, active, true, achievement_unlocked, achievement_name, level_unlocked)
@@ -508,7 +453,7 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 		var category_map = _get_category_map()
 		var internal_category = category_map.get(card.item_data.category, "")
 		if internal_category == category:
-			var is_purchased = player_data_manager.is_item_unlocked(card.item_data.item_id)
+			var is_purchased = PlayerDataManager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
 			
 			var achievement_unlocked = false
@@ -518,13 +463,13 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			
 			if item_data.get("is_level_reward", false):
 				var required_level = item_data.get("required_level", 0)
-				var current_level = player_data_manager.get_current_level()
+				var current_level = PlayerDataManager.get_current_level()
 				level_unlocked = current_level >= required_level
 			elif item_data.get("is_achievement_reward", false):
 				var achievement_id_str = item_data.get("achievement_required", "")
 				if achievement_id_str != "" and achievement_id_str.is_valid_int():
 					var achievement_id = int(achievement_id_str)
-					achievement_unlocked = player_data_manager.is_achievement_unlocked(achievement_id)
+					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
 			
 			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
@@ -540,7 +485,6 @@ func _cleanup_gallery_internal():
 			current_cover_gallery.queue_free()
 		current_cover_gallery = null
 		current_cover_item_data = {}
-
 
 func _exit_tree():
 	_cleanup_gallery_internal()

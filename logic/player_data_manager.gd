@@ -1,6 +1,5 @@
 # logic/player_data_manager.gd
-class_name PlayerDataManager 
-extends RefCounted
+extends Node
 
 signal active_item_changed(category: String, item_id: String)
 
@@ -65,7 +64,7 @@ var delayed_achievements: Array[Dictionary] = []
 
 var track_stats_manager = null
 
-func _init():
+func _ready():
 	_load()
 	_total_play_time_seconds = _play_time_string_to_seconds(data.get("total_play_time", "00:00"))
 
@@ -84,7 +83,7 @@ func _init():
 		"kick_default",
 		"snare_default", 
 		"covers_default",
-		"lane_highlight_default"
+        "lane_highlight_default"
 	]
 	var items_changed = false
 	for item_id in default_items:

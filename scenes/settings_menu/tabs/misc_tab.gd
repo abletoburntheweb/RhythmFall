@@ -5,8 +5,6 @@ signal settings_changed
 
 var settings_manager: SettingsManager = null
 var song_metadata_manager = SongMetadataManager 
-var player_data_manager = null 
-var achievement_manager = null
 
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
@@ -20,13 +18,12 @@ func _ready():
 	print("MiscTab.gd: _ready вызван.")
 	_connect_signals()
 
-func setup_ui_and_manager(manager: SettingsManager, music, screen = null, player_data_mgr = null, achievement_mgr = null):
+func setup_ui_and_manager(manager: SettingsManager, music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	settings_manager = manager
-	player_data_manager = player_data_mgr 
-	achievement_manager = achievement_mgr
+	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongMetadataManager
 	_apply_initial_settings()
-	print("MiscTab.gd: setup_ui_and_manager вызван. PlayerDataManager: ", player_data_manager, ", AchievementManager: ", achievement_manager)
-	
+	print("MiscTab.gd: setup_ui_and_manager вызван.")
+
 func _connect_signals():
 	print("MiscTab.gd: _connect_signals вызван.")
 	if clear_achievements_button:
@@ -65,11 +62,13 @@ func _on_debug_menu_toggled(enabled: bool):
 
 func _on_clear_achievements_pressed():
 	print("MiscTab.gd: Запрос на очистку прогресса ачивок.")
-	if achievement_manager:
-		achievement_manager.reset_all_achievements_and_player_data(player_data_manager)
+	var game_engine = get_tree().root.get_node("GameEngine")
+	if game_engine and game_engine.has_method("get_achievement_manager"):
+		var achievement_manager = game_engine.get_achievement_manager()
+		achievement_manager.reset_all_achievements_and_player_data(PlayerDataManager)
 		print("MiscTab.gd: Прогресс ачивок и данных игрока сброшен.")
 	else:
-		printerr("MiscTab.gd: achievement_manager не установлен, невозможно сбросить ачивки!")
+		printerr("MiscTab.gd: achievement_manager не доступен!")
 
 func _on_reset_bpm_batch_pressed():
 	print("MiscTab.gd: Запрос на сброс кэша BPM.")
@@ -96,14 +95,11 @@ func _on_clear_all_cache_pressed():
 
 func _on_reset_profile_stats_pressed():
 	print("MiscTab.gd: Запрос на сброс статистики профиля.")
-	if player_data_manager:
-		player_data_manager.reset_profile_statistics() 
-		print("MiscTab.gd: Статистика профиля сброшена.")
-		if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
-			get_parent().get_parent().get_parent().refresh_stats() 
-	else:
-		printerr("MiscTab.gd: player_data_manager не установлен, невозможно сбросить статистику профиля!")
-			
+	PlayerDataManager.reset_profile_statistics() 
+	print("MiscTab.gd: Статистика профиля сброшена.")
+	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
+		get_parent().get_parent().get_parent().refresh_stats() 
+
 func _on_reset_all_settings_pressed():
 	print("MiscTab.gd: Запрос на сброс всех настроек.")
 	if settings_manager:

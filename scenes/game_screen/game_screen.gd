@@ -110,12 +110,8 @@ func _ready():
 	_instantiate_debug_menu()
 	_load_lane_colors()
 	
-	var player_data_manager = null
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		player_data_manager = game_engine.get_player_data_manager()
-		if player_data_manager:
-			_update_active_sounds_from_player_data(player_data_manager)
-			player_data_manager.active_item_changed.connect(_on_active_item_changed)
+	_update_active_sounds_from_player_data()
+	PlayerDataManager.active_item_changed.connect(_on_active_item_changed)
 
 	auto_player = AutoPlayer.new(self)
 
@@ -167,9 +163,9 @@ func _on_active_item_changed(category: String, item_id: String):
 							music_manager.set_active_snare_sound(audio_path)
 					break
 
-func _update_active_sounds_from_player_data(player_data_mgr):
-	var active_kick_id = player_data_mgr.get_active_item("Kick")
-	var active_snare_id = player_data_mgr.get_active_item("Snare")
+func _update_active_sounds_from_player_data():
+	var active_kick_id = PlayerDataManager.get_active_item("Kick")
+	var active_snare_id = PlayerDataManager.get_active_item("Snare")
 
 	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
 	if shop_data_file:
@@ -234,26 +230,22 @@ func _find_ui_elements():
 		]
 
 func _load_lane_colors():
-	var player_data_manager = null
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		player_data_manager = game_engine.get_player_data_manager()
-	
-	if player_data_manager:
-		var active_lane_highlight_id = player_data_manager.get_active_item("LaneHighlight") 
-		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
-		if shop_data_file:
-			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
-			shop_data_file.close()
-			
-			for item in shop_data.get("items", []):
-				if item.get("item_id", "") == active_lane_highlight_id:
-					var color_hex = item.get("color_hex", "#fec6e580")
-					var lane_highlight_color = Color(color_hex)
-					_set_lane_highlight_colors(lane_highlight_color)
-					break
-		else:
-			var default_color = Color("#fec6e580")
-			_set_lane_highlight_colors(default_color)
+	var active_lane_highlight_id = PlayerDataManager.get_active_item("LaneHighlight")
+	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	if shop_data_file:
+		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
+		shop_data_file.close()
+		
+		for item in shop_data.get("items", []):
+			if item.get("item_id", "") == active_lane_highlight_id:
+				var color_hex = item.get("color_hex", "#fec6e580")
+				var lane_highlight_color = Color(color_hex)
+				_set_lane_highlight_colors(lane_highlight_color)
+				break
+	else:
+		var default_color = Color("#fec6e580")
+		_set_lane_highlight_colors(default_color)
+
 
 func _set_lane_highlight_colors(color: Color):
 	for lane_node in lane_highlight_nodes:
@@ -719,12 +711,7 @@ func check_hit(lane: int):
 		var points = closest_note.on_hit()
 
 		if current_instrument == "drums":
-			var player_data_manager = null
-			if game_engine and game_engine.has_method("get_player_data_manager"):
-				player_data_manager = game_engine.get_player_data_manager()
-
-			if player_data_manager:
-				player_data_manager.add_total_drum_perfect_hit()
+			PlayerDataManager.add_total_drum_perfect_hit()
 
 		if sound_factory and music_manager:
 			var note_type = closest_note.note_type

@@ -278,130 +278,106 @@ func _deferred_update_ui():
 	if is_instance_valid(missed_notes_label):
 		missed_notes_label.text = "Промахов: %d" % calculated_missed_notes
 
+	PlayerDataManager.add_missed_notes(calculated_missed_notes)
+	PlayerDataManager.add_currency(earned_currency)
+	PlayerDataManager.add_perfect_hits(perfect_hits_this_level)
+	
+	var current_max_combo = PlayerDataManager.data.get("max_combo_ever", 0)
+	if max_combo > current_max_combo:
+		PlayerDataManager.data["max_combo_ever"] = max_combo
+		PlayerDataManager._save()
+
+	var instrument_used_for_combo_check = song_info.get("instrument", "standard")
+	var current_max_drum_combo = PlayerDataManager.data.get("max_drum_combo_ever", 0)
+	if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
+		PlayerDataManager.data["max_drum_combo_ever"] = max_combo
+		PlayerDataManager._save()
+
+	if instrument_used_for_combo_check == "drums":
+		var current_drum_hits = PlayerDataManager.data.get("total_drum_hits", 0)
+		var new_drum_hits = current_drum_hits + hit_notes_this_level
+		PlayerDataManager.data["total_drum_hits"] = new_drum_hits
+		
+		var current_drum_misses = PlayerDataManager.data.get("total_drum_misses", 0)
+		var new_drum_misses = current_drum_misses + calculated_missed_notes
+		PlayerDataManager.data["total_drum_misses"] = new_drum_misses
+		
+		PlayerDataManager._save()
+
+	var is_drum_mode = (instrument_used_for_combo_check == "drums")
+	PlayerDataManager.add_score_to_total(score, is_drum_mode)
+
+	var should_save_result_later = (results_manager and song_info and song_info.get("path"))
+	if should_save_result_later:
+		var instrument_for_result = song_info.get("instrument", "standard")
+		if instrument_for_result == "drums":
+			instrument_for_result = "Перкуссия"
+		var grade_for_result = _calculate_grade()
+		var grade_color_for_result = _get_grade_color(grade_for_result)
+		var result_datetime_for_result = Time.get_datetime_string_from_system(true, true)
+		results_manager.save_result_for_song(
+			song_info.get("path", ""), 
+			instrument_for_result,          
+			score,                    
+			accuracy,                  
+			grade_for_result,                   
+			grade_color_for_result,              
+			result_datetime_for_result           
+		)
+
+	var song_path = song_info.get("path", "") 
+
+	if session_history_manager:
+		var instrument_type_for_history = song_info.get("instrument", "standard")
+		if instrument_type_for_history == "drums":
+			instrument_type_for_history = "Перкуссия"
+		var grade_for_history = _calculate_grade()
+		var grade_color_for_history = _get_grade_color(grade_for_history)
+		var current_time_string = Time.get_datetime_string_from_system(true, true)
+		
+		var artist = song_info.get("artist", "N/A")
+		var title = song_info.get("title", "N/A")
+		
+		session_history_manager.add_session_result(
+			accuracy,                    
+			current_time_string,        
+			grade_for_history,          
+			grade_color_for_history,    
+			instrument_type_for_history,
+			score,
+			artist,
+			title
+		)
+
+	var achievement_system = null
+	var achievement_manager = null
+	
 	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		var player_data_manager = game_engine.get_player_data_manager()
-		if player_data_manager:
-			player_data_manager.add_missed_notes(calculated_missed_notes)
-
-	if game_engine and game_engine.has_method("get_player_data_manager"):
-		var player_data_manager = game_engine.get_player_data_manager()
-		if player_data_manager:
-			player_data_manager.add_currency(earned_currency)
-			player_data_manager.add_perfect_hits(perfect_hits_this_level) 
-
-			var current_max_combo = player_data_manager.data.get("max_combo_ever", 0)
-			if max_combo > current_max_combo:
-				player_data_manager.data["max_combo_ever"] = max_combo
-				player_data_manager._save()
-
-			var current_max_drum_combo = player_data_manager.data.get("max_drum_combo_ever", 0)
-			var instrument_used_for_combo_check = song_info.get("instrument", "standard")
-
-			if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
-				player_data_manager.data["max_drum_combo_ever"] = max_combo
-				player_data_manager._save()
-
-			var instrument_used_for_drums = song_info.get("instrument", "standard")
-			if instrument_used_for_drums == "drums":
-				var current_drum_hits = player_data_manager.data.get("total_drum_hits", 0)
-				var new_drum_hits = current_drum_hits + hit_notes_this_level
-				player_data_manager.data["total_drum_hits"] = new_drum_hits
-				
-				var current_drum_misses = player_data_manager.data.get("total_drum_misses", 0)
-				var new_drum_misses = current_drum_misses + calculated_missed_notes
-				player_data_manager.data["total_drum_misses"] = new_drum_misses
-				
-				player_data_manager._save()
-
-			var instrument_used = song_info.get("instrument", "standard")
-			var is_drum_mode = (instrument_used == "drums")
-			player_data_manager.add_score_to_total(score, is_drum_mode)
-
-			var should_save_result_later = (results_manager and song_info and song_info.get("path"))
-
-			var grade = _calculate_grade()
-			
-			var achievement_system = null
-			var achievement_manager = null
-			
-			if game_engine and game_engine.has_method("get_achievement_system"):
-				achievement_system = game_engine.get_achievement_system()
-			
-			if game_engine and game_engine.has_method("get_achievement_manager"):
-				achievement_manager = game_engine.get_achievement_manager()
-			
-			if achievement_manager and game_engine:
+	if game_engine:
+		if game_engine.has_method("get_achievement_system"):
+			achievement_system = game_engine.get_achievement_system()
+		if game_engine.has_method("get_achievement_manager"):
+			achievement_manager = game_engine.get_achievement_manager()
+			if achievement_manager:
 				achievement_manager.notification_mgr = game_engine
 
-			if achievement_system:
-				var song_path = song_info.get("path", "") 
-				achievement_system.on_level_completed(accuracy, song_path, is_drum_mode, grade)
-			else:
-				if achievement_manager:
-					achievement_manager.check_first_level_achievement()
-					achievement_manager.check_perfect_accuracy_achievement(accuracy)
+	if achievement_system:
+		achievement_system.on_level_completed(accuracy, song_path, is_drum_mode, _calculate_grade())
+	else:
+		if achievement_manager:
+			achievement_manager.check_first_level_achievement()
+			achievement_manager.check_perfect_accuracy_achievement(accuracy)
 
-					if is_drum_mode:
-						var total_drum_levels = player_data_manager.get_drum_levels_completed()
-						achievement_manager.check_drum_level_achievements(player_data_manager, accuracy, total_drum_levels)
+			if is_drum_mode:
+				var total_drum_levels = PlayerDataManager.get_drum_levels_completed()
+				achievement_manager.check_drum_level_achievements(PlayerDataManager, accuracy, total_drum_levels)
 
-					achievement_manager.check_score_achievements(player_data_manager)
-					if grade == "SS":
-						achievement_manager.check_ss_achievements(player_data_manager)
+			achievement_manager.check_score_achievements(PlayerDataManager)
+			if _calculate_grade() == "SS":
+				achievement_manager.check_ss_achievements(PlayerDataManager)
 
-			if should_save_result_later:
-				var instrument_for_result = song_info.get("instrument", "standard")
-				if instrument_for_result == "drums":
-					instrument_for_result = "Перкуссия"
-				var grade_for_result = _calculate_grade()
-				var grade_color_for_result = _get_grade_color(grade_for_result)
-				var result_datetime_for_result = Time.get_datetime_string_from_system(true, true)
-				results_manager.save_result_for_song(
-					song_info.get("path", ""), 
-					instrument_for_result,          
-					score,                    
-					accuracy,                  
-					grade_for_result,                   
-					grade_color_for_result,              
-					result_datetime_for_result           
-				)
-			else:
-				pass
-			
-			var song_path = song_info.get("path", "") 
-			if song_path != "":
-				player_data_manager.update_best_grade_for_track(song_path, grade)
-				player_data_manager.on_track_completed(song_path)
+	if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
+		achievement_manager.show_all_delayed_gameplay_achievements()
+		achievement_manager.clear_new_gameplay_achievements()
 
-			if session_history_manager:
-				var instrument_type_for_history = song_info.get("instrument", "standard")
-				if instrument_type_for_history == "drums":
-					instrument_type_for_history = "Перкуссия"
-				var grade_for_history = _calculate_grade()
-				var grade_color_for_history = _get_grade_color(grade_for_history)
-				var current_time_string = Time.get_datetime_string_from_system(true, true)
-				
-				var artist = song_info.get("artist", "N/A")
-				var title = song_info.get("title", "N/A")
-				
-				session_history_manager.add_session_result(
-					accuracy,                    
-					current_time_string,        
-					grade_for_history,          
-					grade_color_for_history,    
-					instrument_type_for_history,
-					score,
-					artist,
-					title
-				)
-			else:
-				pass
-
-			if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
-				achievement_manager.show_all_delayed_gameplay_achievements()
-				
-				achievement_manager.clear_new_gameplay_achievements()
-			
-			if player_data_manager.has_method("add_xp"):
-				player_data_manager.add_xp(earned_xp)
+	PlayerDataManager.add_xp(earned_xp)

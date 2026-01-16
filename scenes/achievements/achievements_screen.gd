@@ -30,7 +30,7 @@ func _ready():
 		if game_engine.has_method("get_achievement_manager"):
 			ach_mgr = game_engine.get_achievement_manager()
 
-		setup_managers(trans, music_mgr, null) 
+		setup_managers(trans, music_mgr)
 
 		achievement_manager = ach_mgr
 

@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 5819.0,
+			"current": 6019,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 5819.0,
+			"current": 6019,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 5819.0,
+			"current": 6019,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550.0,
+			"current": 1550,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550.0,
+			"current": 1550,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550.0,
+			"current": 1550,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 9,
+			"current": 10,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,7 +211,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 9,
+			"current": 10,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -222,7 +222,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 9,
+			"current": 10,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 9,
+			"current": 10,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 6.0,
+			"current": 11,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 6.0,
+			"current": 11,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 558000.0,
+			"current": 558000,
 			"description": "Набрать 5 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 558000.0,
+			"current": 558000,
 			"description": "Набрать 25 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 558000.0,
+			"current": 558000,
 			"description": "Набрать 100 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "gameplay",
-			"current": 250000.0,
+			"current": 558000,
 			"description": "Набрать 250 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -530,18 +530,18 @@
 		},
 		{
 			"category": "level",
-			"current": 9.0,
+			"current": 10.0,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"image": "res://assets/achievements/tact.png",
 			"title": "Такт",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "17 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "level",
-			"current": 9.0,
+			"current": 10.0,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"image": "res://assets/achievements/tempo.png",
@@ -552,7 +552,7 @@
 		},
 		{
 			"category": "level",
-			"current": 9.0,
+			"current": 10.0,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"image": "res://assets/achievements/rhythm.png",
@@ -563,7 +563,7 @@
 		},
 		{
 			"category": "level",
-			"current": 9.0,
+			"current": 10.0,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"image": "res://assets/achievements/arrangement.png",
@@ -574,7 +574,7 @@
 		},
 		{
 			"category": "level",
-			"current": 9.0,
+			"current": 10.0,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"image": "res://assets/achievements/composition.png",

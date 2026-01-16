@@ -178,21 +178,16 @@ func transition_close_achievements():
 	transition_open_main_menu()
 
 func transition_open_profile():
-
-	
 	var new_screen = _instantiate_if_exists("res://scenes/profile/profile_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("setup_managers"):
 			var trans = self
 			var music_mgr = null
-			var player_data_mgr = null
 
 			if game_engine.has_method("get_music_manager"):
 				music_mgr = game_engine.get_music_manager()
-			if game_engine.has_method("get_player_data_manager"):
-				player_data_mgr = game_engine.get_player_data_manager()
 
-			new_screen.setup_managers(trans, music_mgr, player_data_mgr)
+			new_screen.setup_managers(trans, music_mgr)
 		else:
 			printerr("Transitions.gd: Экземпляр ProfileScreen не имеет метода setup_managers!")
 

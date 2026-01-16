@@ -4,13 +4,11 @@ extends Control
 
 var transitions = null 
 var music_manager = null
-var player_data_manager = null
 
-func setup_managers(trans, music: MusicManager, player_data: PlayerDataManager = null) -> void:
+func setup_managers(trans, music: MusicManager) -> void:  
 	print("BaseScreen.gd: setup_managers вызван.")
 	transitions = trans
 	music_manager = music
-	player_data_manager = player_data
 
 func _on_back_pressed():
 	print("BaseScreen.gd: Нажата кнопка Назад или Escape.")
@@ -31,8 +29,6 @@ func _on_back_pressed():
 	else:
 		printerr("BaseScreen.gd: music_manager не установлен!")
 
-	if player_data_manager:
-		print("BaseScreen.gd: Данные игрока сохранены перед выходом из экрана.")
 	_execute_close_transition()
 
 func _execute_close_transition() -> void:

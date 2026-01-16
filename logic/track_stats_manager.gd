@@ -8,10 +8,7 @@ var track_completion_counts: Dictionary = {}
 var favorite_track: String = ""
 var favorite_track_play_count: int = 0
 
-var player_data_manager: PlayerDataManager = null
-
-func _init(pdm: PlayerDataManager):
-	player_data_manager = pdm
+func _init():
 	_load()
 
 func _load():
@@ -57,9 +54,9 @@ func on_track_completed(track_path: String):
 
 	_update_favorite_track()
 
-	if player_data_manager:
-		player_data_manager.data["favorite_track"] = favorite_track
-		player_data_manager.data["favorite_track_play_count"] = favorite_track_play_count
+	PlayerDataManager.data["favorite_track"] = favorite_track
+	PlayerDataManager.data["favorite_track_play_count"] = favorite_track_play_count
+	PlayerDataManager._save() 
 
 func _update_favorite_track():
 	var max_count = 0
@@ -85,4 +82,9 @@ func reset_stats():
 	track_completion_counts = {}
 	_update_favorite_track()
 	_save()
+	
+	PlayerDataManager.data["favorite_track"] = ""
+	PlayerDataManager.data["favorite_track_play_count"] = 0
+	PlayerDataManager._save()
+	
 	print("TrackStatsManager: Статы треков сброшены.")

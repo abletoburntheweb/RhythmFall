@@ -20,6 +20,7 @@ run/icon=""
 [autoload]
 
 SongMetadataManager="*res://logic/song_metadata_manager.gd"
+PlayerDataManager="*res://logic/player_data_manager.gd"
 
 [display]
 

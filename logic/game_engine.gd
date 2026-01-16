@@ -7,7 +7,6 @@ var intro_instance = null
 var current_screen = null
 
 var settings_manager: SettingsManager = null
-var player_data_manager: PlayerDataManager = null
 var music_manager: MusicManager = null
 var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
@@ -41,10 +40,9 @@ func _ready():
 	_connect_level_signals()
 
 func _connect_level_signals():
-	if player_data_manager:
-		if player_data_manager.has_signal("level_changed"):
-			player_data_manager.level_changed.connect(_on_level_changed)
-		_update_level_ui()
+	if PlayerDataManager.has_signal("level_changed"):
+		PlayerDataManager.level_changed.connect(_on_level_changed)
+	_update_level_ui()
 
 func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	level_label.text = "Уровень %d" % new_level
@@ -53,17 +51,14 @@ func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	xp_amount_label.text = "%d / %d" % [new_xp, xp_for_next_level]
 
 func _update_level_ui():
-	if player_data_manager:
-		var level = player_data_manager.get_current_level()
-		var total_xp = player_data_manager.get_total_xp()
-		var xp_for_next = player_data_manager.get_xp_for_next_level()
+	var level = PlayerDataManager.get_current_level()
+	var total_xp = PlayerDataManager.get_total_xp()
+	var xp_for_next = PlayerDataManager.get_xp_for_next_level()
 
-		level_label.text = "Уровень %d" % level
-		xp_progress_bar.max_value = xp_for_next
-		xp_progress_bar.value = total_xp
-		xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
-	else:
-		print("❌ PlayerDataManager не установлен")
+	level_label.text = "Уровень %d" % level
+	xp_progress_bar.max_value = xp_for_next
+	xp_progress_bar.value = total_xp
+	xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
 
 func _initialize_display_settings():
 	if settings_manager:
@@ -132,13 +127,12 @@ func _start_play_time_timer():
 			printerr("GameEngine.gd (DEBUG): Ошибка подключения таймера! Код: ", connect_result)
 
 func _on_play_time_update_timeout():
-	if player_data_manager:
-		var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
-		var elapsed_seconds = int(elapsed_ms / 1000.0)
-		print("GameEngine.gd (DEBUG): Прошло секунд с последнего таймера: %d (таймер сработал)" % elapsed_seconds)
-		player_data_manager.add_play_time_seconds(elapsed_seconds)
-		_session_start_time_ticks = Time.get_ticks_msec()
-		_start_play_time_timer()
+	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
+	var elapsed_seconds = int(elapsed_ms / 1000.0)
+	print("GameEngine.gd (DEBUG): Прошло секунд с последнего таймера: %d (таймер сработал)" % elapsed_seconds)
+	PlayerDataManager.add_play_time_seconds(elapsed_seconds)
+	_session_start_time_ticks = Time.get_ticks_msec()
+	_start_play_time_timer()
 
 func _exit_tree():
 	_finalize_session_time()
@@ -146,12 +140,11 @@ func _exit_tree():
 		_play_time_timer.timeout.disconnect(_on_play_time_update_timeout)
 
 func _finalize_session_time():
-	if player_data_manager:
-		var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
-		var elapsed_seconds = int(elapsed_ms / 1000.0)
-		player_data_manager.add_play_time_seconds(elapsed_seconds)
-		print("GameEngine.gd: Сессия завершена, добавлено времени: %d сек (%s)" % [elapsed_seconds, _play_time_seconds_to_string(elapsed_seconds)])
-		_session_start_time_ticks = 0
+	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
+	var elapsed_seconds = int(elapsed_ms / 1000.0)
+	PlayerDataManager.add_play_time_seconds(elapsed_seconds)
+	print("GameEngine.gd: Сессия завершена, добавлено времени: %d сек (%s)" % [elapsed_seconds, _play_time_seconds_to_string(elapsed_seconds)])
+	_session_start_time_ticks = 0
 
 func _play_time_seconds_to_string(total_seconds: int) -> String:
 	var hours = total_seconds / 3600
@@ -159,17 +152,11 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
 
 func initialize_logic():
-	player_data_manager = PlayerDataManager.new()
 
-	track_stats_manager = TrackStatsManager.new(player_data_manager) 
-
-	player_data_manager.set_track_stats_manager(track_stats_manager)
-	
 	settings_manager = SettingsManager.new()
-
+ 
 	music_manager = MusicManager.new() 
 	if music_manager:
-		music_manager.set_player_data_manager(player_data_manager)
 		add_child(music_manager)
 		if settings_manager:
 			music_manager.update_volumes_from_settings(settings_manager)
@@ -180,13 +167,17 @@ func initialize_logic():
 
 	achievement_manager = AchievementManager.new()
 	
-	achievement_system = AchievementSystem.new(achievement_manager, player_data_manager, music_manager, track_stats_manager)
+	track_stats_manager = TrackStatsManager.new()  
+
+	PlayerDataManager.set_track_stats_manager(track_stats_manager)
+
+	achievement_system = AchievementSystem.new(achievement_manager, music_manager, track_stats_manager)
 	achievement_manager.notification_mgr = self
 	
 	achievement_queue_manager = preload("res://logic/achievement_queue_manager.gd").new()
 	add_child(achievement_queue_manager)
 	
-	player_data_manager.set_game_engine_reference(self)
+	PlayerDataManager.set_game_engine_reference(self)
 
 	session_history_manager = SessionHistoryManager.new() 
 	print("GameEngine.gd: SessionHistoryManager инициализирован.")
@@ -226,13 +217,12 @@ func _handle_player_login():
 	var today_dict = Time.get_date_dict_from_system()
 	var today_str = _date_dict_to_string(today_dict) 
 	
-	var last_login_str = player_data_manager.data.get("last_login_date", "")
-
+	var last_login_str = PlayerDataManager.data.get("last_login_date", "")
 	var last_login_dict = {} 
 	if last_login_str != "":
 		last_login_dict = _string_to_date_dict(last_login_str) 
 	
-	var login_streak = player_data_manager.data.get("login_streak", 0)
+	var login_streak = PlayerDataManager.data.get("login_streak", 0)
 	var new_streak = 1
 
 	if not last_login_dict.is_empty():
@@ -249,7 +239,7 @@ func _handle_player_login():
 		new_streak = 1
 		print("[GameEngine] Первый вход или нет данных о входах. Streak: ", new_streak)
 
-	player_data_manager.set_login_streak(new_streak)
+	PlayerDataManager.set_login_streak(new_streak)
 	
 	if achievement_system:
 		achievement_system.on_daily_login()
@@ -291,8 +281,7 @@ func _switch_to_screen(new_screen_instance):
 
 func request_quit():
 	_finalize_session_time()
-	if player_data_manager:
-		player_data_manager._save()
+	PlayerDataManager._save()
 	if settings_manager:
 		settings_manager.save_settings()
 	get_tree().quit()
@@ -305,8 +294,7 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 	if screen_to_exit.has_method("cleanup_before_exit"):
 		screen_to_exit.cleanup_before_exit()
 
-	if player_data_manager:
-		player_data_manager._save()
+	PlayerDataManager._save()
 	if settings_manager:
 		settings_manager.save_settings()
 
@@ -330,9 +318,6 @@ func get_transitions():
 
 func get_settings_manager() -> SettingsManager:
 	return settings_manager
-
-func get_player_data_manager() -> PlayerDataManager:
-	return player_data_manager
 
 func get_music_manager() -> MusicManager:
 	return music_manager

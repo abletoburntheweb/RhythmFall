@@ -42,12 +42,11 @@ func _ready():
 	var game_engine = get_parent()
 	var music_mgr = game_engine.get_music_manager()
 	var trans = game_engine.get_transitions()
-	var player_data_mgr = game_engine.get_player_data_manager()
 	settings_manager = game_engine.get_settings_manager()
 	
 	song_metadata_manager = SongMetadataManager
 	
-	setup_managers(trans, music_mgr, player_data_mgr)
+	setup_managers(trans, music_mgr)  
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 		
@@ -72,15 +71,12 @@ func _ready():
 	)
 	song_details_manager.setup_audio_player(music_manager)
 	song_details_manager.set_settings_manager(settings_manager)
-	song_details_manager.set_player_data_manager(player_data_manager)
 	
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
 	song_edit_manager.set_item_list(song_item_list_ref)
 	song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
-	
-	results_manager.set_player_data_manager(player_data_manager)
-	
+		
 	add_child(server_clients)
 	server_clients.bpm_analysis_started.connect(_on_bpm_analysis_started)
 	server_clients.bpm_analysis_completed.connect(_on_bpm_analysis_completed)

@@ -48,15 +48,12 @@ func _ready():
 	var game_engine = get_parent()
 	if game_engine and \
 	   game_engine.has_method("get_music_manager") and \
-	   game_engine.has_method("get_transitions") and \
-	   game_engine.has_method("get_player_data_manager"):
+	   game_engine.has_method("get_transitions"):
 		
 		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
-		var player_data_mgr = game_engine.get_player_data_manager()
 		
-		setup_managers(trans, music_mgr, player_data_mgr)
-		print("ProfileScreen.gd: setup_managers вызван из _ready().")
+		setup_managers(trans, music_mgr) 
 		
 		var session_hist_mgr = null
 		if game_engine.has_method("get_session_history_manager"):
@@ -67,10 +64,9 @@ func _ready():
 		else:
 			printerr("ProfileScreen.gd: SessionHistoryManager не получен из GameEngine.")
 
-		if player_data_manager:
-			player_data_manager.total_play_time_changed.connect(_on_total_play_time_changed)
+		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
 	else:
-		printerr("ProfileScreen.gd: Не удалось получить один из менеджеров (music_manager, transitions, player_data_manager) через GameEngine.")
+		printerr("ProfileScreen.gd: Не удалось получить music_manager или transitions через GameEngine.")
 
 	refresh_stats()
 
@@ -88,40 +84,36 @@ func setup_session_history_manager(session_history_mgr):
 	refresh_stats()
 
 func refresh_stats():
-	if player_data_manager == null:
-		printerr("ProfileScreen: PlayerDataManager не установлен через setup_managers!")
-		return
-
-	levels_completed_label.text = "Завершено уровней: %d" % player_data_manager.get_levels_completed()
-	drum_levels_completed_label.text = "Перкуссия: %d" % player_data_manager.get_drum_levels_completed()
+	levels_completed_label.text = "Завершено уровней: %d" % PlayerDataManager.get_levels_completed()
+	drum_levels_completed_label.text = "Перкуссия: %d" % PlayerDataManager.get_drum_levels_completed()
 	
-	favorite_genre_label.text = "Любимый жанр: %s" % str(player_data_manager.data.get("favorite_genre", "Н/Д"))
+	favorite_genre_label.text = "Любимый жанр: %s" % str(PlayerDataManager.data.get("favorite_genre", "Н/Д"))
 	
-	var favorite_track_path = player_data_manager.data.get("favorite_track", "")
-	var favorite_track_count = player_data_manager.data.get("favorite_track_play_count", 0)
+	var favorite_track_path = PlayerDataManager.data.get("favorite_track", "")
+	var favorite_track_count = PlayerDataManager.data.get("favorite_track_play_count", 0)
 	var favorite_track_display = "Н/Д"
 	if favorite_track_path != "":
 		var file_name = favorite_track_path.get_file().get_basename()
 		favorite_track_display = "%s (%d раз(а))" % [file_name, favorite_track_count]
 	favorite_track_label.text = "Любимый трек: %s" % favorite_track_display
 	
-	var total_notes_hit = player_data_manager.get_total_notes_hit()
-	var total_notes_missed = player_data_manager.get_total_notes_missed()
+	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
+	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
 	var total_notes_played = total_notes_hit + total_notes_missed
 	var overall_accuracy = 0.0
 	if total_notes_played > 0:
 		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
 	overall_accuracy_label.text = "Общая точность: %.2f%%" % overall_accuracy
 	
-	var total_drum_hits = player_data_manager.data.get("total_drum_hits", 0)
-	var total_drum_misses = player_data_manager.data.get("total_drum_misses", 0)
+	var total_drum_hits = PlayerDataManager.data.get("total_drum_hits", 0)
+	var total_drum_misses = PlayerDataManager.data.get("total_drum_misses", 0)
 	var total_drum_notes = total_drum_hits + total_drum_misses
 	var drum_accuracy = 0.0
 	if total_drum_notes > 0:
 		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
 	drum_overall_accuracy_label.text = "Перкуссия: %.2f%%" % drum_accuracy
 	
-	var play_time_formatted = player_data_manager.get_total_play_time_formatted() 
+	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted() 
 	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
 
 	total_notes_hit_label.text = "Точных попаданий: %d" % total_notes_hit
@@ -129,22 +121,22 @@ func refresh_stats():
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
 	total_drum_misses_label.text = "Перкуссия: %d" % total_drum_misses
 	
-	var max_streak = player_data_manager.data.get("max_combo_ever", 0)
-	var max_drum_streak = player_data_manager.data.get("max_drum_combo_ever", 0)
+	var max_streak = PlayerDataManager.data.get("max_combo_ever", 0)
+	var max_drum_streak = PlayerDataManager.data.get("max_drum_combo_ever", 0)
 	max_hit_streak_label.text = "Рекордная серия попаданий подряд: %d" % max_streak
 	max_drum_hit_streak_label.text = "Перкуссия: %d" % max_drum_streak
 
-	total_earned_currency_label.text = "Заработано всего: %d" % player_data_manager.data.get("total_earned_currency", 0)
-	spent_currency_label.text = "Потрачено: %d" % player_data_manager.data.get("spent_currency", 0)
+	total_earned_currency_label.text = "Заработано всего: %d" % PlayerDataManager.data.get("total_earned_currency", 0)
+	spent_currency_label.text = "Потрачено: %d" % PlayerDataManager.data.get("spent_currency", 0)
 
-	var total_score = player_data_manager.data.get("total_score_ever", 0)
-	var total_drum_score = player_data_manager.data.get("total_drum_score_ever", 0)
+	var total_score = PlayerDataManager.data.get("total_score_ever", 0)
+	var total_drum_score = PlayerDataManager.data.get("total_drum_score_ever", 0)
 	if total_score_label:
 		total_score_label.text = "Всего очков: %d" % total_score
 	if total_drum_score_label:
 		total_drum_score_label.text = "Перкуссия: %d" % total_drum_score
 
-	var grades = player_data_manager.data.get("grades", {})
+	var grades = PlayerDataManager.data.get("grades", {})
 	var ss_count = grades.get("SS", 0)
 	var s_count = grades.get("S", 0)
 	var a_count = grades.get("A", 0)
@@ -161,11 +153,11 @@ func refresh_stats():
 	b_label.modulate = Color.CYAN
 
 	if level_label:
-		level_label.text = "Уровень: %d" % player_data_manager.get_current_level()
+		level_label.text = "Уровень: %d" % PlayerDataManager.get_current_level()
 	if xp_label:
-		xp_label.text = "XP: %s" % player_data_manager.get_xp_progress_text()
+		xp_label.text = "XP: %s" % PlayerDataManager.get_xp_progress_text()
 	if xp_progress_label:
-		var progress_percent = player_data_manager.get_xp_progress() * 100.0
+		var progress_percent = PlayerDataManager.get_xp_progress() * 100.0
 		xp_progress_label.text = "Прогресс: %.1f%%" % progress_percent
 
 	if session_history_manager:
@@ -282,6 +274,6 @@ func _execute_close_transition():
 		transitions.close_profile()
 		
 	if is_instance_valid(self):
-		if player_data_manager and player_data_manager.is_connected("total_play_time_changed", _on_total_play_time_changed):
-			player_data_manager.total_play_time_changed.disconnect(_on_total_play_time_changed)
+		if PlayerDataManager.is_connected("total_play_time_changed", _on_total_play_time_changed):
+			PlayerDataManager.total_play_time_changed.disconnect(_on_total_play_time_changed)
 		queue_free()
