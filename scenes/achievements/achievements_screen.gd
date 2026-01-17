@@ -72,7 +72,6 @@ func _load_achievements_data():
 						printerr("AchievementsScreen: Найден элемент не типа Dictionary в списке достижений: ", item)
 
 				achievements = loaded_achievements
-				achievements.sort_custom(Callable(self, "_sort_by_id"))
 			else:
 				printerr("AchievementsScreen: Поле 'achievements' в JSON не является массивом.")
 				achievements = []
@@ -84,8 +83,12 @@ func _load_achievements_data():
 		achievements = []
 
 
-func _sort_by_id(a: Dictionary, b: Dictionary) -> bool:
-	return a.id < b.id
+func _sort_by_title(a: Dictionary, b: Dictionary) -> bool:
+	var title_a = str(a.get("title", "")).to_lower()
+	var title_b = str(b.get("title", "")).to_lower()
+	if title_a == title_b:
+		return a.id < b.id 
+	return title_a < title_b
 
 
 func _update_display(achievements_to_display: Array[Dictionary]):
@@ -279,6 +282,9 @@ func _filter_achievements_internal(query: String):
 				results.append(ach)
 	else:
 		results = base_list
+
+	results.sort_custom(Callable(self, "_sort_by_title"))
+
 	_update_display(results)
 
 func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type: String) -> Array[Dictionary]:

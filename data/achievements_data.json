@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6746,
+			"current": 6746.0,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6746,
+			"current": 6746.0,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6746,
+			"current": 6746.0,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 29,
+			"current": 29.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 29,
+			"current": 29.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 564900,
+			"current": 564900.0,
 			"description": "Набрать 5 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 564900,
+			"current": 564900.0,
 			"description": "Набрать 25 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 564900,
+			"current": 564900.0,
 			"description": "Набрать 100 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 564900,
+			"current": 564900.0,
 			"description": "Набрать 250 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -585,7 +585,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в электронных жанрах (electronic, synthwave, techno, house, trance, IDM, glitch, ambient, chillwave)",
 			"id": 54.0,
 			"image": "res://assets/achievements/electronic_foundation.png",
@@ -596,7 +596,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в гитарных жанрах (rock, alternative rock, indie rock, garage rock, punk, post-punk, grunge, math rock, post-rock)",
 			"id": 55.0,
 			"image": "res://assets/achievements/guitar_energy.png",
@@ -618,7 +618,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в независимых и альтернативных жанрах (indie, bedroom pop, lo-fi, art pop, alternative)",
 			"id": 57.0,
 			"image": "res://assets/achievements/off_mainstream.png",
@@ -629,7 +629,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в экспериментальной музыке (experimental, avant-garde, fusion, cross-genre, abstract)",
 			"id": 58.0,
 			"image": "res://assets/achievements/beyond_genres.png",
