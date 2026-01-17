@@ -1,6 +1,5 @@
 # logic/settings_manager.gd
-class_name SettingsManager
-extends RefCounted
+extends Node
 
 const SETTINGS_PATH = "user://settings.json"
 

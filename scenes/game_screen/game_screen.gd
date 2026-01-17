@@ -92,11 +92,7 @@ func _ready():
 	if game_engine and game_engine.has_method("get_music_manager"):
 		music_manager = game_engine.get_music_manager()
 	
-	var settings_for_player = {}
-	if game_engine and game_engine.has_method("get_settings_manager"):
-		var settings_manager = game_engine.get_settings_manager()
-		if settings_manager:
-			settings_for_player = settings_manager.settings.duplicate(true)
+	var settings_for_player = SettingsManager.settings.duplicate(true)
 
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
@@ -579,10 +575,8 @@ func _input(event):
 
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_QUOTELEFT and event.shift_pressed:
-				if debug_menu:
-					var settings_manager = game_engine.get_settings_manager() if game_engine else null
-					if settings_manager and settings_manager.get_enable_debug_menu():
-						debug_menu.toggle_visibility()
+				if debug_menu and SettingsManager.get_enable_debug_menu():
+					debug_menu.toggle_visibility()
 				return
 
 	if event is InputEventKey and event.pressed:

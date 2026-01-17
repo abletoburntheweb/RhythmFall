@@ -13,7 +13,6 @@ var play_button: Button = null
 var preview_player: AudioStreamPlayer = null
 
 var music_manager = null
-var settings_manager = null
 
 var _current_preview_file_path: String = ""
 
@@ -49,10 +48,6 @@ func setup_audio_player(music_mgr):
 	preview_player.name = "PreviewPlayer"
 	preview_player.finished.connect(_on_preview_finished)
 	add_child(preview_player)
-
-func set_settings_manager(settings_mgr):
-	settings_manager = settings_mgr
-	print("SongDetailsManager.gd: SettingsManager передан.")
 
 func update_details(song_data: Dictionary):
 	print("SongDetailsManager.gd: Обновление информации о песне: %s" % song_data)
@@ -202,12 +197,9 @@ func play_song_preview(filepath: String):
 		preview_player.stream = audio_stream
 		_current_preview_file_path = filepath
 
-		if settings_manager:
-			var preview_volume_percent = settings_manager.get_preview_volume()
-			preview_player.volume_db = linear_to_db(preview_volume_percent / 100.0)
-			print("SongDetailsManager.gd: Громкость preview_player установлена из SettingsManager: %.2f dB (%.1f%%)" % [preview_player.volume_db, preview_volume_percent])
-		else:
-			print("SongDetailsManager.gd: SettingsManager не установлен, используем значение по умолчанию для preview_player.")
+		var preview_volume_percent = SettingsManager.get_preview_volume()
+		preview_player.volume_db = linear_to_db(preview_volume_percent / 100.0)
+		print("SongDetailsManager.gd: Громкость preview_player установлена из SettingsManager: %.2f dB (%.1f%%)" % [preview_player.volume_db, preview_volume_percent])
 
 		preview_player.play()
 		print("SongDetailsManager.gd: Воспроизведение предпросмотра запущено.")

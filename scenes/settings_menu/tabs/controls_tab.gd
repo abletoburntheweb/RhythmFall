@@ -10,23 +10,17 @@ var _remap_old_scancode: int = 0
 
 var music_manager = null
 
-var settings_manager: SettingsManager = null
 var game_screen = null
 
 func _ready():
 	print("ControlsTab.gd: _ready вызван.")
 
-func setup_ui_and_manager(manager: SettingsManager, _music_manager, screen = null):
-	settings_manager = manager
+func setup_ui_and_manager(_music_manager, screen = null):
 	self.music_manager = _music_manager
 	game_screen = screen
 	_setup_ui()
 
 func _setup_ui():
-	if not settings_manager:
-		printerr("ControlsTab.gd: settings_manager не установлен, невозможно настроить UI.")
-		return
-
 	print("ControlsTab.gd: _setup_ui вызван.")
 
 	var keys_container = $ContentVBox/KeysContainer
@@ -39,7 +33,7 @@ func _setup_ui():
 
 	var current_keys_text = []
 	for i in range(4):
-		var key_text = settings_manager.get_key_text_for_lane(i)
+		var key_text = SettingsManager.get_key_text_for_lane(i)
 		current_keys_text.append(key_text)
 
 	for i in range(current_keys_text.size()):
@@ -163,14 +157,15 @@ func _wrap_label_in_margin(label: Label) -> MarginContainer:
 
 func _on_key_button_pressed(button: Button):
 	if _remap_active and _remap_target_button:
-		var old_key_text = settings_manager.get_key_text_for_lane(_remap_target_lane)
-		_remap_target_button.text = old_key_text
+		_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
 
 	_remap_target_button = button
 	_remap_target_lane = button.get_meta("lane_index")
-	_remap_old_scancode = settings_manager.get_key_scancode_for_lane(_remap_target_lane)
+	_remap_old_scancode = SettingsManager.get_key_scancode_for_lane(_remap_target_lane) 
+	
+	button.text = "..."  
 	_remap_active = true
-	button.text = "..."
+
 	print("ControlsTab.gd: Ожидание нажатия новой клавиши для линии %d (scancode %d)..." % [_remap_target_lane + 1, _remap_old_scancode])
 
 func _input(event):
@@ -179,7 +174,7 @@ func _input(event):
 		var new_key_text = _get_key_string_from_scancode_for_display(new_scancode)
 
 		if new_scancode == KEY_ESCAPE:
-			_remap_target_button.text = settings_manager.get_key_text_for_lane(_remap_target_lane)
+			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
 			_remap_active = false
 			_remap_target_button = null
 			_remap_target_lane = -1
@@ -205,26 +200,26 @@ func _input(event):
 				var btn = child.get_child(1)
 				if btn is Button and btn != _remap_target_button:
 					var btn_lane = btn.get_meta("lane_index")
-					var btn_scancode = settings_manager.get_key_scancode_for_lane(btn_lane)
+					var btn_scancode = SettingsManager.get_key_scancode_for_lane(btn_lane)
 					if btn_scancode == new_scancode:
 						duplicate_button = btn
 						duplicate_lane = btn_lane
 						break 
 
 		if duplicate_button:
-			settings_manager.set_key_scancode_for_lane(duplicate_lane, _remap_old_scancode)
-			settings_manager.set_key_scancode_for_lane(_remap_target_lane, new_scancode)
+			SettingsManager.set_key_scancode_for_lane(duplicate_lane, _remap_old_scancode)
+			SettingsManager.set_key_scancode_for_lane(_remap_target_lane, new_scancode)
 
-			duplicate_button.text = settings_manager.get_key_text_for_lane(duplicate_lane)
-			_remap_target_button.text = settings_manager.get_key_text_for_lane(_remap_target_lane)
+			duplicate_button.text = SettingsManager.get_key_text_for_lane(duplicate_lane)
+			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
 
 			print("ControlsTab.gd: Клавиши поменяны местами: '%s' (Lane %d) <-> '%s' (Lane %d)" % [
 				_get_key_string_from_scancode_for_display(_remap_old_scancode), duplicate_lane + 1,
 				_get_key_string_from_scancode_for_display(new_scancode), _remap_target_lane + 1
 			])
 		else:
-			settings_manager.set_key_scancode_for_lane(_remap_target_lane, new_scancode)
-			_remap_target_button.text = settings_manager.get_key_text_for_lane(_remap_target_lane)
+			SettingsManager.set_key_scancode_for_lane(_remap_target_lane, new_scancode)
+			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
 
 			print("ControlsTab.gd: Назначена новая клавиша '%s' для линии %d (scancode %d)" % [new_key_text, _remap_target_lane + 1, new_scancode])
 
@@ -240,19 +235,15 @@ func _input(event):
 		get_viewport().set_input_as_handled()
 
 func _get_key_string_from_scancode_for_display(scancode: int) -> String:
-	if settings_manager:
-		return settings_manager._get_key_string_from_scancode(scancode)
-	else:
-		printerr("ControlsTab.gd: _get_key_string_from_scancode_for_display: settings_manager не установлен!")
-		return "Err"
+	return SettingsManager._get_key_string_from_scancode(scancode)
 
 func _update_player_keymap():
-	if not game_screen or not game_screen.player or not settings_manager:
+	if not game_screen or not game_screen.player:
 		return
 
 	var updated_keymap = {}
 	for i in range(4):
-		var scan_code = settings_manager.get_key_scancode_for_lane(i)
+		var scan_code = SettingsManager.get_key_scancode_for_lane(i)
 		if scan_code != 0:
 			updated_keymap[scan_code] = i
 	game_screen.player.set_keymap(updated_keymap)

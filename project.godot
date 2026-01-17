@@ -22,6 +22,7 @@ run/icon=""
 SongMetadataManager="*res://logic/song_metadata_manager.gd"
 PlayerDataManager="*res://logic/player_data_manager.gd"
 TrackStatsManager="*res://logic/track_stats_manager.gd"
+SettingsManager="*res://logic/settings_manager.gd"
 
 [display]
 

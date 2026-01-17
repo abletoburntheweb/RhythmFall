@@ -1,7 +1,6 @@
 # scenes/settings_menu/settings_menu.gd
 extends BaseScreen
 
-var settings_manager: SettingsManager = null
 var game_screen = null
 var achievement_manager = null
 
@@ -20,9 +19,6 @@ const TAB_PATHS = {
 }
 
 func _ready():
-	if not settings_manager:
-		settings_manager = SettingsManager.new()
-	
 	var parent_node = get_parent()
 	var music_mgr = null
 	var trans = null
@@ -82,7 +78,6 @@ func _setup_tabs():
 		if tab_instance.has_method("setup_ui_and_manager"):
 			if tab_name == "MiscTab":
 				tab_instance.setup_ui_and_manager(
-					settings_manager,
 					music_manager,
 					game_screen,
 					song_metadata_mgr,   
@@ -96,13 +91,11 @@ func _setup_tabs():
 					game_engine = get_tree().root.get_node("GameEngine")
 
 				tab_instance.setup_ui_and_manager(
-					settings_manager,
 					music_manager,
 					game_engine
 				)
 			else:
 				tab_instance.setup_ui_and_manager(
-					settings_manager,
 					music_manager,
 					game_screen
 				)
@@ -149,11 +142,4 @@ func cleanup_before_exit():
 	save_settings()
 
 func save_settings():
-	if settings_manager:
-		settings_manager.save_settings()
-
-func set_managers(settings, music, game_scr, trans, achievement_mgr = null):
-	settings_manager = settings
-	setup_managers(trans, music) 
-	game_screen = game_scr
-	self.achievement_manager = achievement_mgr
+	SettingsManager.save_settings()

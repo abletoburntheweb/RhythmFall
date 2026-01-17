@@ -410,12 +410,11 @@ func play_metronome_sound(is_strong_beat: bool = true):
 	else:
 		push_error("MusicManager: Не удалось загрузить звук метронома: " + full_path)
 
-func update_volumes_from_settings(settings_manager: SettingsManager):
-	if settings_manager:
-		set_music_volume(settings_manager.get_music_volume())
-		set_sfx_volume(settings_manager.get_effects_volume())
-		set_hit_sounds_volume(settings_manager.get_hit_sounds_volume())
-		set_metronome_volume(settings_manager.get_metronome_volume())
+func update_volumes_from_settings():
+	set_music_volume(SettingsManager.get_music_volume())
+	set_sfx_volume(SettingsManager.get_effects_volume())
+	set_hit_sounds_volume(SettingsManager.get_hit_sounds_volume())
+	set_metronome_volume(SettingsManager.get_metronome_volume())
 
 func play_instrument_select_sound(instrument_type: String):
 	var sound_file_name = ""

@@ -6,7 +6,6 @@ var main_menu_instance = null
 var intro_instance = null
 var current_screen = null
 
-var settings_manager: SettingsManager = null
 var music_manager: MusicManager = null
 var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
@@ -57,25 +56,20 @@ func _update_level_ui():
 	xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
 
 func _initialize_display_settings():
-	if settings_manager:
-		_update_fps_visibility()
-	
-	if settings_manager:
-		if settings_manager.get_fullscreen():
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-			if not settings_manager.get_fullscreen():
-				DisplayServer.window_set_size(Vector2i(1920, 1080))
-				DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-				var screen_size = DisplayServer.screen_get_size()
-				var window_size = Vector2i(1920, 1080)
-				DisplayServer.window_set_position((screen_size - window_size) / 2)
+	_update_fps_visibility()
+
+	if SettingsManager.get_fullscreen():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+		var screen_size = DisplayServer.screen_get_size()
+		var window_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_position((screen_size - window_size) / 2)
 
 func _update_fps_visibility():
-	var fps_mode = settings_manager.get_fps_mode()
-	
-	match fps_mode:
+	match SettingsManager.get_fps_mode():
 		0:
 			fps_label.visible = false
 			fps_background.visible = false
@@ -89,24 +83,23 @@ func _update_fps_visibility():
 			fps_label.add_theme_color_override("font_color", Color.GREEN)
 
 func _process(delta):
-	var fps_mode = settings_manager.get_fps_mode() if settings_manager else 0
+	var fps_mode = SettingsManager.get_fps_mode()
 	if fps_mode > 0:
 		if Engine.get_process_frames() % 30 == 0: 
 			fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 func update_display_settings():
-	if settings_manager:
-		if settings_manager.get_fullscreen():
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-			DisplayServer.window_set_size(Vector2i(1920, 1080))
-			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-			var screen_size = DisplayServer.screen_get_size()
-			var window_size = Vector2i(1920, 1080)
-			DisplayServer.window_set_position((screen_size - window_size) / 2)
-		
-		_update_fps_visibility()
+	if SettingsManager.get_fullscreen():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+		var screen_size = DisplayServer.screen_get_size()
+		var window_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_position((screen_size - window_size) / 2)
+	
+	_update_fps_visibility()
 
 func _start_play_time_timer():
 	print("GameEngine.gd (DEBUG): _start_play_time_timer вызван. Интервал: ", PLAY_TIME_UPDATE_INTERVAL)
@@ -148,23 +141,15 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
 
 func initialize_logic():
-
-	settings_manager = SettingsManager.new()
- 
 	music_manager = MusicManager.new() 
 	if music_manager:
 		add_child(music_manager)
-		if settings_manager:
-			music_manager.update_volumes_from_settings(settings_manager)
-		else:
-			printerr("GameEngine.gd: SettingsManager не установлен при инициализации MusicManager!")
+		music_manager.update_volumes_from_settings()
 	else:
 		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
 
 	achievement_manager = AchievementManager.new()
 	
-
-
 	achievement_system = AchievementSystem.new(achievement_manager, music_manager, TrackStatsManager)
 	achievement_manager.notification_mgr = self
 	
@@ -276,8 +261,7 @@ func _switch_to_screen(new_screen_instance):
 func request_quit():
 	_finalize_session_time()
 	PlayerDataManager._save()
-	if settings_manager:
-		settings_manager.save_settings()
+	SettingsManager.save_settings()
 	get_tree().quit()
 
 func prepare_screen_exit(screen_to_exit: Node) -> bool:
@@ -289,8 +273,7 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 		screen_to_exit.cleanup_before_exit()
 
 	PlayerDataManager._save()
-	if settings_manager:
-		settings_manager.save_settings()
+	SettingsManager.save_settings()
 
 	return true
 
@@ -309,9 +292,6 @@ func get_main_menu_instance():
 
 func get_transitions():
 	return transitions
-
-func get_settings_manager() -> SettingsManager:
-	return settings_manager
 
 func get_music_manager() -> MusicManager:
 	return music_manager

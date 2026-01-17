@@ -243,17 +243,6 @@ func transition_open_settings(_from_pause=false):
 		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
 		return
 
-	if game_engine and game_engine.has_method("get_settings_manager") and game_engine.has_method("get_music_manager"):
-		var settings_mgr = game_engine.get_settings_manager()
-		var music_mgr = game_engine.get_music_manager()
-		if settings_mgr and music_mgr and new_screen.has_method("set_managers"):
-			var game_scr = null
-			if _from_pause and game_engine.current_screen:
-				game_scr = game_engine.current_screen
-			new_screen.set_managers(settings_mgr, music_mgr, game_scr, self)
-		else:
-			printerr("Transitions.gd: Не удалось передать менеджеры в SettingsMenu.")
-
 	if _from_pause:
 		if game_engine.current_screen:
 			game_engine.current_screen.add_child(new_screen)

@@ -3,7 +3,6 @@ extends Control
 
 signal settings_changed
 
-var settings_manager: SettingsManager = null
 var song_metadata_manager = SongMetadataManager 
 
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
@@ -18,8 +17,7 @@ func _ready():
 	print("MiscTab.gd: _ready вызван.")
 	_connect_signals()
 
-func setup_ui_and_manager(manager: SettingsManager, music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
-	settings_manager = manager
+func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongMetadataManager
 	_apply_initial_settings()
 	print("MiscTab.gd: setup_ui_and_manager вызван.")
@@ -47,18 +45,11 @@ func _connect_signals():
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 
 func _apply_initial_settings():
-	if settings_manager:
-		debug_menu_checkbox.set_pressed_no_signal(settings_manager.get_enable_debug_menu())
-	else:
-		printerr("MiscTab.gd: settings_manager не установлен, невозможно применить начальные настройки.")
+	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
 
 func _on_debug_menu_toggled(enabled: bool):
-	if settings_manager:
-		settings_manager.set_enable_debug_menu(enabled)
+		SettingsManager.set_enable_debug_menu(enabled)
 		emit_signal("settings_changed")
-		print("MiscTab.gd: Дебаг меню %s." % ("включено" if enabled else "выключено"))
-	else:
-		printerr("MiscTab.gd: settings_manager не установлен, невозможно изменить настройку дебаг меню.")
 
 func _on_clear_achievements_pressed():
 	print("MiscTab.gd: Запрос на очистку прогресса ачивок.")
@@ -102,13 +93,10 @@ func _on_reset_profile_stats_pressed():
 
 func _on_reset_all_settings_pressed():
 	print("MiscTab.gd: Запрос на сброс всех настроек.")
-	if settings_manager:
-		settings_manager.reset_all_settings()
-		_apply_initial_settings()
-		emit_signal("settings_changed")
-		print("MiscTab.gd: Все настройки сброшены к значениям по умолчанию.")
-	else:
-		printerr("MiscTab.gd: settings_manager не установлен, невозможно сбросить настройки!")
+	SettingsManager.reset_all_settings()
+	_apply_initial_settings()
+	emit_signal("settings_changed")
+	print("MiscTab.gd: Все настройки сброшены к значениям по умолчанию.")
 
 func _on_clear_all_results_pressed():
 	print("MiscTab.gd: Запрос на очистку ВСЕХ результатов из папки user://results/.")
