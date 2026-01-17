@@ -31,11 +31,12 @@ func handle_pause_request():
 	is_paused = true
 	
 	original_music_volume = MusicManager.get_volume_multiplier()
-	MusicManager.set_volume_multiplier(0.2)
+	
+	MusicManager.set_music_volume_multiplier(0.2)
+	
 	paused_music_position = MusicManager.get_game_music_position()
 	MusicManager.stop_game_music()
-	MusicManager.stop_metronome()
-	
+		
 	if game_timer and not game_timer.is_stopped():
 		game_timer.stop()
 	
@@ -84,7 +85,7 @@ func handle_resume_request():
 	
 	is_paused = false
 	
-	MusicManager.set_volume_multiplier(original_music_volume)
+	MusicManager.set_music_volume_multiplier(original_music_volume)
 
 	if game_screen.delayed_music_timer \
 	and is_instance_valid(game_screen.delayed_music_timer) \
@@ -102,9 +103,9 @@ func handle_resume_request():
 	if game_timer:
 		game_timer.start()
 	
-	MusicManager.start_metronome_external(game_screen.bpm)
 	var metronome_volume = SettingsManager.get_metronome_volume()
 	MusicManager.set_metronome_volume(metronome_volume)
+	
 	game_screen.input_enabled = true
 	
 	if pause_menu_instance and is_instance_valid(pause_menu_instance):

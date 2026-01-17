@@ -339,10 +339,11 @@ func start_gameplay():
 		game_time = 0.0
 
 	MusicManager.set_external_metronome_control(true)
-	MusicManager.start_metronome_external(bpm)
 	MusicManager.play_level_start_sound()
+	
 	var metronome_volume = SettingsManager.get_metronome_volume()
-	MusicManager.set_metronome_volume(metronome_volume)	
+	MusicManager.set_metronome_volume(metronome_volume)
+	
 	var song_path = selected_song_data.get("path", "")
 
 	if should_delay_music:
@@ -357,7 +358,7 @@ func start_gameplay():
 
 		delayed_music_timer.timeout.connect(func():
 			game_time = 0.0
-			MusicManager.play_game_music(song_path)  
+			MusicManager.play_game_music(song_path)
 			if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
 				delayed_music_timer.queue_free()
 				delayed_music_timer = null
@@ -370,7 +371,6 @@ func start_gameplay():
 
 	check_song_end_timer.start()
 
-
 func update_speed_from_bpm():
 	var base_bpm = 120.0
 	var base_speed = 6.0
@@ -379,9 +379,7 @@ func update_speed_from_bpm():
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
-		if pauser.is_paused:
-			MusicManager.stop_metronome()
-		return
+		return  
 	
 	game_time += 0.016
 	
@@ -397,6 +395,9 @@ func _update_game():
 		debug_menu.update_debug_info(self)
 	
 	note_manager.update_notes()
+	
+	if not pauser.is_paused:
+		MusicManager.update_metronome(0.016, game_time, bpm)
 
 func _check_song_end():
 	if pauser.is_paused or game_finished or notes_ended:

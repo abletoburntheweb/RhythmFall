@@ -32,7 +32,6 @@ var hit_sound_player: AudioStreamPlayer = null
 var metronome_player1: AudioStreamPlayer = null
 var metronome_player2: AudioStreamPlayer = null
 
-var metronome_timer: Timer = null
 var metronome_active: bool = false
 var _current_metronome_player_index: int = 0
 var _metronome_players: Array[AudioStreamPlayer] = []
@@ -46,8 +45,8 @@ var current_game_music_file: String = ""
 var original_game_music_volume: float = 1.0
 
 var _external_metronome_controlled: bool = false
-var _metronome_bpm: float = 120.0
-var _metronome_interval: float = 0.5
+
+var _last_beat_index: int = -1
 
 func _ready():
 	music_player = AudioStreamPlayer.new()
@@ -74,47 +73,30 @@ func _ready():
 
 func set_external_metronome_control(enabled: bool):
 	_external_metronome_controlled = enabled
+	if not enabled:
+		_last_beat_index = -1  
 
-func start_metronome_external(bpm: float):
-	stop_metronome()
-	_metronome_bpm = bpm
-	_metronome_interval = 60.0 / bpm
-	metronome_active = true
-	
-	if not metronome_timer:
-		metronome_timer = Timer.new()
-		metronome_timer.one_shot = false
-		metronome_timer.autostart = false
-		metronome_timer.timeout.connect(_on_metronome_timeout)
-		add_child(metronome_timer)
+func update_metronome(delta: float, game_time: float, bpm: float):
+	if not _external_metronome_controlled or bpm <= 0:
+		return
 
-	metronome_timer.wait_time = _metronome_interval
-	metronome_timer.start()
+	var beat_interval = 60.0 / bpm
+	var current_beat_index = int(floor(game_time / beat_interval))
+	var is_strong_beat = (current_beat_index % 4) == 0
 
-func _on_metronome_timeout():
-	var is_strong_beat = (int(Time.get_ticks_msec() / (_metronome_interval * 1000)) % 4) == 0
-	play_metronome_sound(is_strong_beat)
+	if current_beat_index != _last_beat_index:
+		_last_beat_index = current_beat_index
+		play_metronome_sound(is_strong_beat)
 
-func stop_metronome():
-	if metronome_timer:
-		metronome_timer.stop()
-		metronome_active = false
-
-func is_metronome_active() -> bool:
-	return metronome_active
 
 func get_volume_multiplier() -> float:
 	if music_player:
 		return db_to_linear(music_player.volume_db)
 	return 1.0
 
-func set_volume_multiplier(volume: float):
+func set_music_volume_multiplier(volume: float):
 	if music_player:
 		music_player.volume_db = linear_to_db(volume)
-	if metronome_player1:
-		metronome_player1.volume_db = linear_to_db(volume)
-	if metronome_player2:
-		metronome_player2.volume_db = linear_to_db(volume)
 
 func get_game_music_position() -> float:
 	if music_player and music_player.stream and current_game_music_file != "":
