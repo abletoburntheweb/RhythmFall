@@ -8,15 +8,12 @@ var _remap_target_button: Button = null
 var _remap_target_lane: int = -1
 var _remap_old_scancode: int = 0
 
-var music_manager = null
-
 var game_screen = null
 
 func _ready():
 	print("ControlsTab.gd: _ready вызван.")
 
-func setup_ui_and_manager(_music_manager, screen = null):
-	self.music_manager = _music_manager
+func setup_ui_and_manager(screen = null):
 	game_screen = screen
 	_setup_ui()
 

@@ -125,15 +125,7 @@ func transition_open_main_menu():
 				game_engine.current_screen = null 
 			game_engine.add_child(main_menu_instance)
 			game_engine.current_screen = main_menu_instance
-		if game_engine.has_method("get_music_manager"):
-			var music_manager = game_engine.get_music_manager()
-			if music_manager and music_manager.has_method("play_menu_music"):
-				music_manager.play_menu_music()
-			else:
-				print("Transitions.gd: У MusicManager нет метода play_menu_music. Реализуйте его в MusicManager.")
-		else:
-			print("Transitions.gd: У GameEngine нет метода get_music_manager!")
-
+		MusicManager.play_menu_music() 
 	else:
 		var new_main_menu_instance = _instantiate_if_exists("res://scenes/main_menu/main_menu.tscn")
 		if new_main_menu_instance:
@@ -150,15 +142,7 @@ func transition_open_main_menu():
 			
 			game_engine.add_child(main_menu_instance)
 			game_engine.current_screen = main_menu_instance
-			if game_engine.has_method("get_music_manager"):
-				var music_manager = game_engine.get_music_manager()
-				if music_manager and music_manager.has_method("play_menu_music"):
-					music_manager.play_menu_music()
-				else:
-					print("Transitions.gd: У MusicManager нет метода play_menu_music. Реализуйте его в MusicManager.")
-			else:
-				print("Transitions.gd: У GameEngine нет метода get_music_manager!")
-
+			MusicManager.play_menu_music()  
 		else:
 			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
 
@@ -181,13 +165,7 @@ func transition_open_profile():
 	var new_screen = _instantiate_if_exists("res://scenes/profile/profile_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("setup_managers"):
-			var trans = self
-			var music_mgr = null
-
-			if game_engine.has_method("get_music_manager"):
-				music_mgr = game_engine.get_music_manager()
-
-			new_screen.setup_managers(trans, music_mgr)
+			new_screen.setup_managers(self) 
 		else:
 			printerr("Transitions.gd: Экземпляр ProfileScreen не имеет метода setup_managers!")
 
@@ -203,24 +181,13 @@ func transition_close_profile():
 	transition_open_main_menu()
 
 func transition_open_shop():
-	
 	var new_screen = _instantiate_if_exists("res://scenes/shop/shop_screen.tscn")
 	if new_screen:
 		if game_engine.current_screen:
 			game_engine.current_screen.queue_free()
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
-		if game_engine.has_method("get_music_manager"):
-			var music_manager = game_engine.get_music_manager()
-			if music_manager and music_manager.has_method("pause_menu_music"):
-				music_manager.pause_menu_music()
-			elif music_manager and music_manager.has_method("stop"):
-				print("Transitions.gd: У MusicManager нет метода pause_menu_music. Реализуйте его в MusicManager.")
-			else:
-				print("Transitions.gd: У MusicManager нет подходящего метода для остановки музыки меню.")
-		else:
-			print("Transitions.gd: У GameEngine нет метода get_music_manager!")
-
+		MusicManager.pause_menu_music()
 	else:
 		print("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
 		var scene_resource = load("res://scenes/shop/shop_screen.tscn")

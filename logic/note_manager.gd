@@ -138,10 +138,9 @@ func update_notes():
 			note.is_missed = true 
 			if game_screen.score_manager:
 				game_screen.score_manager.add_miss_hit()
-				if game_screen.music_manager:
-					game_screen.music_manager.play_miss_hit_sound()
-				var current_accuracy = game_screen.score_manager.get_accuracy()
-				print("[NoteManager] Нота в линии %d пропущена (y=%.2f), вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, note.y, current_accuracy])
+				MusicManager.play_miss_hit_sound()  
+			var current_accuracy = game_screen.score_manager.get_accuracy()
+			print("[NoteManager] Нота в линии %d пропущена (y=%.2f), вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, note.y, current_accuracy])
 
 		if not note.active and note.visual_node and note.visual_node.get_parent():
 			note.visual_node.queue_free()

@@ -3,7 +3,6 @@ extends Control
 
 signal settings_changed 
 
-var music_manager = null 
 var game_screen = null 
 
 @onready var music_volume_slider: HSlider = $ContentVBox/MusicVolumeSlider
@@ -18,18 +17,13 @@ const TEST_SOUND_COOLDOWN: float = 0.2
 func _ready():
 	print("SoundTab.gd: _ready вызван.")
 
-func setup_ui_and_manager(mm: MusicManager, screen = null): 
-	music_manager = mm
+func setup_ui_and_manager(screen = null): 
 	game_screen = screen
 	_setup_ui()
 	_connect_signals()
 	_apply_initial_volumes()
 
 func _setup_ui():
-	if not music_manager:
-		printerr("SoundTab.gd: music_manager не установлен, невозможно настроить UI.")
-		return
-
 	music_volume_slider.set_value_no_signal(SettingsManager.get_music_volume())
 	sfx_volume_slider.set_value_no_signal(SettingsManager.get_effects_volume())
 	hit_sounds_volume_slider.set_value_no_signal(SettingsManager.get_hit_sounds_volume())
@@ -37,10 +31,6 @@ func _setup_ui():
 	preview_volume_slider.set_value_no_signal(SettingsManager.get_preview_volume())
 
 func _apply_initial_volumes():
-	if not music_manager:
-		printerr("SoundTab.gd: _apply_initial_volumes: settings_manager или music_manager не установлен!")
-		return
-
 	print("SoundTab.gd: _apply_initial_volumes вызван.")
 
 	var music_vol = music_volume_slider.value
@@ -82,66 +72,50 @@ func _can_play_test_sound() -> bool:
 	return false
 
 func _play_test_sfx_sound(_value_unused = null):
-	if music_manager and _can_play_test_sound():
-		music_manager.play_select_sound()
+	if _can_play_test_sound():
+		MusicManager.play_select_sound() 
 		print("SoundTab.gd: Проигран тестовый SFX звук (select_click).")
 
 func _play_test_hit_sound(_value_unused = null):
-	if music_manager and _can_play_test_sound():
-		music_manager.play_hit_sound(true)
+	if _can_play_test_sound():
+		MusicManager.play_hit_sound(true)  
 		print("SoundTab.gd: Проигран тестовый звук удара (kick).")
 
 func _play_test_metronome_sound(_value_unused = null):
-	if music_manager and _can_play_test_sound():
-		music_manager.play_metronome_sound(false) 
+	if _can_play_test_sound():
+		MusicManager.play_metronome_sound(false) 
 		print("SoundTab.gd: Проигран тестовый звук метронома (weak beat).")
 
 func _on_music_volume_changed(value: float):
-	if music_manager:
-		SettingsManager.set_music_volume(int(value))
-		music_manager.set_music_volume(value)
-		emit_signal("settings_changed") 
-		print("SoundTab.gd: Громкость музыки изменена на %.1f%% (DB: %.2f)" % [value, music_manager.music_player.volume_db if music_manager.music_player else -INF]) 
-	else:
-		printerr("SoundTab.gd: _on_music_volume_changed: settings_manager или music_manager не установлен!")
+	SettingsManager.set_music_volume(int(value))
+	MusicManager.set_music_volume(value)  
+	emit_signal("settings_changed") 
+	print("SoundTab.gd: Громкость музыки изменена на %.1f%% (DB: %.2f)" % [value, MusicManager.music_player.volume_db if MusicManager.music_player else -INF]) 
 
 func _on_sfx_volume_changed(value: float):
-	if music_manager:
-		SettingsManager.set_effects_volume(int(value))
-		music_manager.set_sfx_volume(value)
-		emit_signal("settings_changed")
-		print("SoundTab.gd: Громкость звуков изменена на %.1f%% (DB: %.2f)" % [value, music_manager.sfx_player.volume_db if music_manager.sfx_player else -INF])
-	else:
-		printerr("SoundTab.gd: _on_sfx_volume_changed: settings_manager или music_manager не установлен!")
+	SettingsManager.set_effects_volume(int(value))
+	MusicManager.set_sfx_volume(value) 
+	emit_signal("settings_changed")
+	print("SoundTab.gd: Громкость звуков изменена на %.1f%% (DB: %.2f)" % [value, MusicManager.sfx_player.volume_db if MusicManager.sfx_player else -INF])
 
 func _on_hit_sounds_volume_changed(value: float):
-	if music_manager:
-		SettingsManager.set_hit_sounds_volume(int(value))
-		music_manager.set_hit_sounds_volume(value)
-		emit_signal("settings_changed")
-		print("SoundTab.gd: Громкость нажатий изменена на %.1f%% (DB: %.2f)" % [value, music_manager.hit_sound_player.volume_db if music_manager.hit_sound_player else -INF])
-	else:
-		printerr("SoundTab.gd: _on_hit_sounds_volume_changed: settings_manager или music_manager не установлен!")
+	SettingsManager.set_hit_sounds_volume(int(value))
+	MusicManager.set_hit_sounds_volume(value)  
+	emit_signal("settings_changed")
+	print("SoundTab.gd: Громкость нажатий изменена на %.1f%% (DB: %.2f)" % [value, MusicManager.hit_sound_player.volume_db if MusicManager.hit_sound_player else -INF])
 
 func _on_metronome_volume_changed(value: float):
-	if music_manager:
-		SettingsManager.set_metronome_volume(int(value))
-		music_manager.set_metronome_volume(value)
-		emit_signal("settings_changed")
-		print("SoundTab.gd: Громкость метронома изменена на %.1f%%" % value) 
-	else:
-		printerr("SoundTab.gd: _on_metronome_volume_changed: settings_manager или music_manager не установлен!")
+	SettingsManager.set_metronome_volume(int(value))
+	MusicManager.set_metronome_volume(value)  
+	emit_signal("settings_changed")
+	print("SoundTab.gd: Громкость метронома изменена на %.1f%%" % value) 
 
 func _on_preview_volume_changed(value: float):
-	if music_manager:
-		SettingsManager.set_preview_volume(int(value))
-		emit_signal("settings_changed")
-		if game_screen and game_screen.has_method("set_preview_volume"):
-			game_screen.set_preview_volume(value)
-		print("SoundTab.gd: Громкость предпросмотра изменена на %.1f%%" % value) 
-	else:
-		printerr("SoundTab.gd: _on_preview_volume_changed: settings_manager не установлен!")
-
+	SettingsManager.set_preview_volume(int(value))
+	emit_signal("settings_changed")
+	if game_screen and game_screen.has_method("set_preview_volume"):
+		game_screen.set_preview_volume(value)
+	print("SoundTab.gd: Громкость предпросмотра изменена на %.1f%%" % value) 
 
 func refresh_ui():
 	_setup_ui()

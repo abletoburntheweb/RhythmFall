@@ -31,7 +31,6 @@ var player
 
 var game_engine
 
-var music_manager = null
 var sound_factory = null
 
 var score_label: Label = null
@@ -89,15 +88,13 @@ func _ready():
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
 	
-	if game_engine and game_engine.has_method("get_music_manager"):
-		music_manager = game_engine.get_music_manager()
-	
+
 	var settings_for_player = SettingsManager.settings.duplicate(true)
 
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
 	player = Player.new(settings_for_player)  
-	sound_factory = SoundInstrumentFactory.new(music_manager)
+	sound_factory = SoundInstrumentFactory.new()
 	
 	player.note_hit.connect(_on_player_hit)
 	player.lane_pressed_changed.connect(_on_lane_pressed_changed) 
@@ -127,7 +124,7 @@ func _ready():
 
 
 	pauser = GameScreenPauser.new()
-	pauser.initialize(self, game_timer, music_manager)
+	pauser.initialize(self, game_timer)
 	add_child(pauser)
 	pauser.song_select_requested.connect(_exit_to_song_select)
 	pauser.settings_requested.connect(_open_settings_from_pause)
@@ -154,9 +151,9 @@ func _on_active_item_changed(category: String, item_id: String):
 					var audio_path = item.get("audio", "")
 					if audio_path:
 						if category == "Kick":
-							music_manager.set_active_kick_sound(audio_path)
+							MusicManager.set_active_kick_sound(audio_path)
 						elif category == "Snare":
-							music_manager.set_active_snare_sound(audio_path)
+							MusicManager.set_active_snare_sound(audio_path)
 					break
 
 func _update_active_sounds_from_player_data():
@@ -172,14 +169,14 @@ func _update_active_sounds_from_player_data():
 			if item.get("item_id", "") == active_kick_id:
 				var audio_path = item.get("audio", "")
 				if audio_path:
-					music_manager.set_active_kick_sound(audio_path)
+					MusicManager.set_active_kick_sound(audio_path)
 				break
 		
 		for item in shop_data.get("items", []):
 			if item.get("item_id", "") == active_snare_id:
 				var audio_path = item.get("audio", "")
 				if audio_path:
-					music_manager.set_active_snare_sound(audio_path)
+					MusicManager.set_active_snare_sound(audio_path)
 				break
 
 func _instantiate_debug_menu():
@@ -341,42 +338,35 @@ func start_gameplay():
 	else:
 		game_time = 0.0
 
-	if music_manager and music_manager.has_method("set_external_metronome_control"):
-		music_manager.set_external_metronome_control(true)
+	MusicManager.set_external_metronome_control(true)
+	MusicManager.start_metronome_external(bpm)
+	MusicManager.play_level_start_sound()
+	var metronome_volume = SettingsManager.get_metronome_volume()
+	MusicManager.set_metronome_volume(metronome_volume)	
+	var song_path = selected_song_data.get("path", "")
 
-	if music_manager and music_manager.has_method("start_metronome_external"):
-		music_manager.start_metronome_external(bpm)
+	if should_delay_music:
+		if delayed_music_timer and is_instance_valid(delayed_music_timer):
+			delayed_music_timer.queue_free()
+			delayed_music_timer = null
 
-	if music_manager and music_manager.has_method("play_level_start_sound"):
-		music_manager.play_level_start_sound()
+		delayed_music_timer = Timer.new()
+		delayed_music_timer.name = "DelayedMusicTimer"
+		delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
+		delayed_music_timer.one_shot = true
 
-	if music_manager and selected_song_data and selected_song_data.get("path"):
-		var song_path = selected_song_data.get("path")
-
-		if should_delay_music:
-			if delayed_music_timer and is_instance_valid(delayed_music_timer):
+		delayed_music_timer.timeout.connect(func():
+			game_time = 0.0
+			MusicManager.play_game_music(song_path)  
+			if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
 				delayed_music_timer.queue_free()
 				delayed_music_timer = null
+		)
 
-			delayed_music_timer = Timer.new()
-			delayed_music_timer.name = "DelayedMusicTimer"
-			delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
-			delayed_music_timer.one_shot = true
-
-			delayed_music_timer.timeout.connect(func():
-				game_time = 0.0
-				if music_manager and music_manager.has_method("play_game_music"):
-					music_manager.play_game_music(song_path)
-				if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
-					delayed_music_timer.queue_free()
-					delayed_music_timer = null
-			)
-
-			add_child(delayed_music_timer)
-			delayed_music_timer.start()
-		else:
-			if music_manager.has_method("play_game_music"):
-				music_manager.play_game_music(song_path)
+		add_child(delayed_music_timer)
+		delayed_music_timer.start()
+	else:
+		MusicManager.play_game_music(song_path)
 
 	check_song_end_timer.start()
 
@@ -389,8 +379,8 @@ func update_speed_from_bpm():
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
-		if pauser.is_paused and music_manager and music_manager.has_method("stop_metronome"):
-			music_manager.stop_metronome()
+		if pauser.is_paused:
+			MusicManager.stop_metronome()
 		return
 	
 	game_time += 0.016
@@ -428,10 +418,6 @@ func _check_song_end():
 				end_game()
 				return
 
-	if music_manager and music_manager.has_method("is_game_music_playing"):
-		if not music_manager.is_game_music_playing():
-			pass
-
 func _on_victory_delay_timeout():
 	end_game() 
 
@@ -455,14 +441,8 @@ func end_game():
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	
-	if music_manager:
-		if music_manager.has_method("stop_music"):
-			music_manager.stop_music()
-		else:
-			if music_manager.has_method("stop_game_music"):
-				music_manager.stop_game_music()
-		if music_manager.has_method("stop_metronome"):
-			music_manager.stop_metronome()
+	MusicManager.stop_game_music()
+	MusicManager.stop_metronome()
 	
 	if auto_player:
 		auto_player.reset()
@@ -624,7 +604,6 @@ func skip_intro() -> bool:
 	if game_time < 0: 
 		return false
 
-	
 	if pauser.is_paused or game_finished or countdown_active:
 		return false
 	if skip_used:
@@ -647,8 +626,7 @@ func skip_intro() -> bool:
 	var target_time = max(0.0, first_note_time - skip_rewind_seconds)
 	game_time = target_time
 
-	if music_manager and music_manager.has_method("set_music_position"):
-		music_manager.set_music_position(target_time)
+	MusicManager.set_music_position(target_time)
 	note_manager.skip_notes_before_time(target_time) 
 
 	skip_used = true
@@ -670,8 +648,7 @@ func check_hit(lane: int):
 
 	if candidates.size() == 0:
 		score_manager.add_miss_hit()
-		if music_manager:
-			music_manager.play_miss_hit_sound()
+		MusicManager.play_miss_hit_sound()
 		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо" % lane)
 		return
 
@@ -706,10 +683,9 @@ func check_hit(lane: int):
 		if current_instrument == "drums":
 			PlayerDataManager.add_total_drum_perfect_hit()
 
-		if sound_factory and music_manager:
-			var note_type = closest_note.note_type
-			var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
-			music_manager.play_custom_hit_sound(sound_path)
+		var note_type = closest_note.note_type
+		var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
+		MusicManager.play_custom_hit_sound(sound_path)
 
 		if judgement_label:
 			judgement_label.text = hit_type
@@ -723,8 +699,7 @@ func check_hit(lane: int):
 		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
 	else:
 		score_manager.add_miss_hit()
-		if music_manager:
-			music_manager.play_miss_hit_sound()
+		MusicManager.play_miss_hit_sound()
 		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
 
 
@@ -749,13 +724,8 @@ func restart_level():
 		delayed_music_timer.queue_free()
 		delayed_music_timer = null
 
-	if music_manager:
-		if music_manager.has_method("stop_music"):
-			music_manager.stop_music()
-		elif music_manager.has_method("stop_game_music"):
-			music_manager.stop_game_music()
-		if music_manager.has_method("stop_metronome"):
-			music_manager.stop_metronome()
+	MusicManager.stop_game_music()
+	MusicManager.stop_metronome()
 
 	player.reset()
 	score_manager.reset()

@@ -20,15 +20,12 @@ const TAB_PATHS = {
 
 func _ready():
 	var parent_node = get_parent()
-	var music_mgr = null
 	var trans = null
 
-	if parent_node:
-		if parent_node.has_method("get_music_manager") and parent_node.has_method("get_transitions"):
-			music_mgr = parent_node.get_music_manager()
-			trans = parent_node.get_transitions()
+	if parent_node and parent_node.has_method("get_transitions"):
+		trans = parent_node.get_transitions()
 
-	setup_managers(trans, music_mgr)
+	setup_managers(trans)
 
 	var game_engine_node = null
 	if parent_node and parent_node.has_method("get_achievement_manager"):
@@ -78,7 +75,6 @@ func _setup_tabs():
 		if tab_instance.has_method("setup_ui_and_manager"):
 			if tab_name == "MiscTab":
 				tab_instance.setup_ui_and_manager(
-					music_manager,
 					game_screen,
 					song_metadata_mgr,   
 					self.achievement_manager
@@ -90,15 +86,9 @@ func _setup_tabs():
 				elif get_tree().root.has_node("GameEngine"):
 					game_engine = get_tree().root.get_node("GameEngine")
 
-				tab_instance.setup_ui_and_manager(
-					music_manager,
-					game_engine
-				)
+				tab_instance.setup_ui_and_manager(game_engine)
 			else:
-				tab_instance.setup_ui_and_manager(
-					music_manager,
-					game_screen
-				)
+				tab_instance.setup_ui_and_manager(game_screen)
 
 		if tab_name in ["SoundTab", "ControlsTab"] and tab_instance.has_signal("settings_changed"):
 			tab_instance.connect("settings_changed", Callable(self, "save_settings"))

@@ -5,15 +5,6 @@ extends Control
 signal instrument_selected(instrument_type: String)
 signal selector_closed
 
-var music_manager = null
-
-func set_managers(music_mgr):
-	music_manager = music_mgr
-	if music_manager:
-		print("InstrumentSelector.gd: MusicManager установлен.")
-	else:
-		print("InstrumentSelector.gd: MusicManager не установлен (null).")
-
 func _ready():
 	print("InstrumentSelector.gd: _ready вызван")
 	
@@ -43,19 +34,16 @@ func _on_percussion_pressed():
 
 func _on_close_pressed():
 	print("InstrumentSelector.gd: Нажата кнопка Закрыть")
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
 
 func _on_back_button_pressed():
 	print("InstrumentSelector.gd: Нажата кнопка Назад")
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
 
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
 		print("InstrumentSelector.gd: Нажат Escape")
-		if music_manager and music_manager.has_method("play_cancel_sound"):
-			music_manager.play_cancel_sound()
+		MusicManager.play_cancel_sound()
 		_on_back_button_pressed()

@@ -12,7 +12,6 @@ const MONTHS_RU_SHORT = [
 ]
 
 var player_data_mgr = null 
-var music_mgr = null
 var notification_mgr = null
 
 var achievements: Array[Dictionary] = []
@@ -116,8 +115,7 @@ func _perform_unlock(achievement: Dictionary):
 	if player_data_mgr:
 		player_data_mgr.unlock_achievement(achievement.id)
 
-	if music_mgr:
-		music_mgr.play_achievement_sound()
+	MusicManager.play_achievement_sound()  
 
 	var category = achievement.get("category", "")
 	if category == "mastery":

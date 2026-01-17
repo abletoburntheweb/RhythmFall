@@ -3,12 +3,11 @@ class_name BaseScreen
 extends Control
 
 var transitions = null 
-var music_manager = null
 
-func setup_managers(trans, music: MusicManager) -> void:  
+
+func setup_managers(trans) -> void:  
 	print("BaseScreen.gd: setup_managers вызван.")
 	transitions = trans
-	music_manager = music
 
 func _on_back_pressed():
 	print("BaseScreen.gd: Нажата кнопка Назад или Escape.")
@@ -23,11 +22,8 @@ func _on_back_pressed():
 
 	cleanup_before_exit()
 
-	if music_manager:
-		music_manager.play_cancel_sound()
-		print("BaseScreen.gd: play_cancel_sound вызван через music_manager.")
-	else:
-		printerr("BaseScreen.gd: music_manager не установлен!")
+	MusicManager.play_cancel_sound()
+	print("BaseScreen.gd: play_cancel_sound вызван через MusicManager (autoload).")
 
 	_execute_close_transition()
 

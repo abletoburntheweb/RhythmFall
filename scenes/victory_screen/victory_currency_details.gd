@@ -13,15 +13,8 @@ extends Control
 
 signal details_closed
 
-var music_manager = null
-
 func _ready():
 	visible = false
-	
-	var parent = get_parent()
-	if parent and parent.get_parent() and parent.get_parent().has_method("get_music_manager"):
-		music_manager = parent.get_parent().get_music_manager()
-	
 	back_button.pressed.connect(_on_back_pressed)
 
 func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_total_notes: int, p_missed_notes: int, p_combo_multiplier: float, total_currency: int):
@@ -47,11 +40,7 @@ func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_total_not
 	grab_focus()
 
 func _on_back_pressed():
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
-	elif music_manager and music_manager.has_method("play_select_sound"):
-		music_manager.play_select_sound()
-	
+	MusicManager.play_cancel_sound()
 	visible = false
 	emit_signal("details_closed")
 

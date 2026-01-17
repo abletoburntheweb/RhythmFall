@@ -9,16 +9,6 @@ signal cover_selected(index: int)
 
 var cover_image_rects: Array[TextureRect] = []
 
-var music_manager = null
-
-func set_managers(music_mgr):
-	music_manager = music_mgr
-	if music_manager:
-		print("CoverGallery.gd: MusicManager установлен.")
-	else:
-		print("CoverGallery.gd: MusicManager не установлен (null).")
-
-
 func _ready():
 	var background = $Background
 	if background and background is ColorRect:
@@ -49,7 +39,6 @@ func _ready():
 
 	_connect_texture_rect_signals()
 	show()
-
 
 func _load_images():
 	for i in range(cover_image_rects.size()):
@@ -85,35 +74,28 @@ func _load_images():
 			else:
 				pass
 
-
 func _connect_texture_rect_signals():
 	for i in range(images_count):
 		if i < cover_image_rects.size():
 			var image_rect = cover_image_rects[i]
 			image_rect.gui_input.connect(_on_texture_rect_gui_input.bind(i), CONNECT_ONE_SHOT)
 
-
 func _on_texture_rect_gui_input(event: InputEvent, index: int):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		emit_signal("gallery_closed")
 		queue_free()
 
-
 func _on_back_button_pressed():
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
-		print("CoverGallery.gd: Воспроизведен звук cancel при нажатии кнопки Назад.")
+	MusicManager.play_cancel_sound()
+	print("CoverGallery.gd: Воспроизведен звук cancel при нажатии кнопки Назад.")
 	emit_signal("gallery_closed")
 	queue_free()
 
-
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
-		if music_manager and music_manager.has_method("play_cancel_sound"):
-			music_manager.play_cancel_sound()
-			print("CoverGallery.gd: Воспроизведен звук cancel при нажатии Escape.")
+		MusicManager.play_cancel_sound()
+		print("CoverGallery.gd: Воспроизведен звук cancel при нажатии Escape.")
 		_on_back_button_pressed()
-
 
 func close_gallery():
 	emit_signal("gallery_closed")

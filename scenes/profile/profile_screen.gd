@@ -47,13 +47,11 @@ func _play_time_string_to_seconds(time_str: String) -> int:
 func _ready():
 	var game_engine = get_parent()
 	if game_engine and \
-	   game_engine.has_method("get_music_manager") and \
 	   game_engine.has_method("get_transitions"):
 		
-		var music_mgr = game_engine.get_music_manager()
 		var trans = game_engine.get_transitions()
 		
-		setup_managers(trans, music_mgr) 
+		setup_managers(trans)  
 		
 		var session_hist_mgr = null
 		if game_engine.has_method("get_session_history_manager"):
@@ -66,7 +64,7 @@ func _ready():
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
 	else:
-		printerr("ProfileScreen.gd: Не удалось получить music_manager или transitions через GameEngine.")
+		printerr("ProfileScreen.gd: Не удалось получить transitions через GameEngine.")
 
 	refresh_stats()
 
@@ -267,8 +265,7 @@ func _on_point_unhovered():
 		tooltip_label.visible = false
 
 func _execute_close_transition():
-	if music_manager:
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()  
 
 	if transitions:
 		transitions.close_profile()

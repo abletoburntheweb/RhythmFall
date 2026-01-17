@@ -11,13 +11,11 @@ var current_cover_item_data: Dictionary = {}
 
 func _ready():
 	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager") and game_engine.has_method("get_transitions"):
-		var music_mgr = game_engine.get_music_manager()
+	if game_engine and game_engine.has_method("get_transitions"):
 		var trans = game_engine.get_transitions()
-
-		setup_managers(trans, music_mgr)  
+		setup_managers(trans)  
 	else:
-		printerr("ShopScreen.gd: Не удалось получить один из менеджеров (music_manager, transitions) через GameEngine.")
+		printerr("ShopScreen.gd: Не удалось получить transitions через GameEngine.")
 
 	var file_path = "res://data/shop_data.json"
 	var file_access = FileAccess.open(file_path, FileAccess.READ)
@@ -335,25 +333,13 @@ func _on_item_preview_pressed(item_id: String):
 
 func _preview_sound(item: Dictionary):
 	var audio_path = item.get("audio", "")
-	if audio_path and music_manager:
-		if audio_path.begins_with("res://"):
-			music_manager.play_custom_hit_sound(audio_path)
-		else:
-			music_manager.play_custom_hit_sound(audio_path)
-		var path_for_manager = audio_path
-		if audio_path.begins_with("res://assets/shop/sounds/"):
-			path_for_manager = audio_path.replace("res://assets/shop/sounds/", "")
-		if FileAccess.file_exists(audio_path):
-			music_manager.play_custom_hit_sound(path_for_manager)
-		else:
-			music_manager.play_default_shop_sound()
+	if audio_path != "" and FileAccess.file_exists(audio_path):
+		MusicManager.play_custom_hit_sound(audio_path)
 	else:
-		if music_manager:
-			music_manager.play_default_shop_sound()
+		MusicManager.play_default_shop_sound()
 
 func _on_cover_click_pressed(item_data: Dictionary):
-	if music_manager and music_manager.has_method("play_cover_click_sound"):
-		music_manager.play_cover_click_sound()
+	MusicManager.play_cover_click_sound()
 	_open_cover_gallery(item_data)
 
 func _open_cover_gallery(item_data: Dictionary):
@@ -369,11 +355,6 @@ func _open_cover_gallery(item_data: Dictionary):
 
 	current_cover_gallery.images_folder = item_data.get("images_folder", "")
 	current_cover_gallery.images_count = item_data.get("images_count", 0)
-
-	if music_manager:
-		current_cover_gallery.set_managers(music_manager)
-	else:
-		print("ShopScreen.gd: MusicManager недоступен при открытии галереи обложек.")
 
 	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
 	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)

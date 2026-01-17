@@ -3,16 +3,13 @@ class_name AchievementSystem
 extends RefCounted
 
 var achievement_manager: AchievementManager = null
-var music_manager: MusicManager = null
 var track_stats_manager: TrackStatsManager = null
 
-func _init(ach_manager: AchievementManager, music_mgr: MusicManager, track_stats_mgr: TrackStatsManager):
+func _init(ach_manager: AchievementManager, track_stats_mgr: TrackStatsManager):
 	achievement_manager = ach_manager
-	music_manager = music_mgr
 	track_stats_manager = track_stats_mgr
 	
 	achievement_manager.player_data_mgr = PlayerDataManager
-	achievement_manager.music_mgr = music_mgr
 	PlayerDataManager.achievement_manager = ach_manager
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):

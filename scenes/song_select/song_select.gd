@@ -39,12 +39,11 @@ var pending_manual_identification_sync_tolerance: float = -1.0
 
 func _ready():
 	var game_engine = get_parent()
-	var music_mgr = game_engine.get_music_manager()
 	var trans = game_engine.get_transitions()
 	
 	song_metadata_manager = SongMetadataManager
 	
-	setup_managers(trans, music_mgr)  
+	setup_managers(trans)  
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 		
@@ -67,7 +66,7 @@ func _ready():
 		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect,
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton
 	)
-	song_details_manager.setup_audio_player(music_manager)
+	song_details_manager.setup_audio_player()  
 	
 	add_child(song_edit_manager)
 	song_edit_manager.set_song_manager(song_manager)
@@ -348,8 +347,6 @@ func _open_instrument_selector():
 		instrument_selector.queue_free()
 	
 	instrument_selector = InstrumentSelectorScene.instantiate()
-	if instrument_selector.has_method("set_managers"):
-		instrument_selector.set_managers(music_manager)
 	instrument_selector.instrument_selected.connect(_on_instrument_selected)
 	instrument_selector.selector_closed.connect(_on_instrument_selector_closed)
 	get_parent().add_child(instrument_selector)
@@ -363,7 +360,7 @@ func _on_instrument_selected(instrument_type: String):
 	current_instrument = instrument_type
 	var instrument_name = "Перкуссия" if instrument_type == "drums" else "Стандартный"
 	$MainVBox/TopBarHBox/InstrumentButton.text = "Инструмент: " + instrument_name
-	music_manager.play_instrument_select_sound(instrument_type)
+	MusicManager.play_instrument_select_sound(instrument_type)  
 	song_details_manager.set_current_instrument(current_instrument)
 	song_details_manager._update_play_button_state()
 
@@ -372,8 +369,6 @@ func _open_generation_selector():
 		generation_selector.queue_free()
 	
 	generation_selector = GenerationSelectorScene.instantiate()
-	if generation_selector.has_method("set_managers"):
-		generation_selector.set_managers(music_manager)
 	generation_selector.generation_mode_selected.connect(_on_generation_mode_selected)
 	generation_selector.selector_closed.connect(_on_generation_selector_closed)
 	get_parent().add_child(generation_selector)

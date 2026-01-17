@@ -20,24 +20,19 @@ func _ready():
 	var game_engine = get_parent()
 	if game_engine:
 		var trans = null
-		var music_mgr = null
 		var ach_mgr = null
 
 		if game_engine.has_method("get_transitions"):
 			trans = game_engine.get_transitions()
-		if game_engine.has_method("get_music_manager"):
-			music_mgr = game_engine.get_music_manager()
 		if game_engine.has_method("get_achievement_manager"):
 			ach_mgr = game_engine.get_achievement_manager()
 
-		setup_managers(trans, music_mgr)
+		setup_managers(trans)  
 
 		achievement_manager = ach_mgr
 
 		if not trans:
 			printerr("AchievementsScreen: Не удалось получить Transitions через GameEngine!")
-		if not music_mgr:
-			printerr("AchievementsScreen: Не удалось получить MusicManager через GameEngine!")
 		if not ach_mgr:
 			printerr("AchievementsScreen: Не удалось получить AchievementManager через GameEngine!")
 	else:
@@ -334,8 +329,7 @@ func _unhandled_input(event):
 		get_viewport().set_input_as_handled()
 
 func _execute_close_transition():
-	if is_instance_valid(music_manager): 
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()  
 
 	if is_instance_valid(transitions):
 		transitions.close_achievements() 

@@ -22,8 +22,6 @@ var results_manager = null
 
 var session_history_manager = null
 
-var music_manager = null
-
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
 @onready var song_label: Label = $SongLabel
@@ -41,9 +39,8 @@ var music_manager = null
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
 
 func _ready():
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_music_manager"):
-		music_manager = game_engine.get_music_manager()
+	replay_button.pressed.connect(_on_replay_button_pressed)
+	song_select_button.pressed.connect(_on_song_select_button_pressed)
 	
 	replay_button.pressed.connect(_on_replay_button_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
@@ -118,11 +115,8 @@ func _calculate_xp_new() -> int:
 	return max(1, total_xp)
 
 func _on_replay_button_pressed():
-	if music_manager and music_manager.has_method("stop_game_music"):
-		music_manager.stop_game_music()
-	
-	if music_manager and music_manager.has_method("play_select_sound"):
-		music_manager.play_select_sound()
+	MusicManager.stop_game_music()
+	MusicManager.play_select_sound()
 	
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
@@ -135,11 +129,8 @@ func _on_replay_button_pressed():
 
 
 func _on_song_select_button_pressed():
-	if music_manager and music_manager.has_method("stop_game_music"):
-		music_manager.stop_game_music()
-	
-	if music_manager and music_manager.has_method("play_select_sound"):
-		music_manager.play_select_sound()
+	MusicManager.stop_game_music()
+	MusicManager.play_select_sound()
 	
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):

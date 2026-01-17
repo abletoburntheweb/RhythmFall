@@ -1,5 +1,4 @@
 # logic/music_manager.gd
-class_name MusicManager
 extends Node
 
 const MUSIC_DIR = "res://assets/audio/"

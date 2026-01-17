@@ -6,7 +6,6 @@ var main_menu_instance = null
 var intro_instance = null
 var current_screen = null
 
-var music_manager: MusicManager = null
 var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
 var achievement_queue_manager: AchievementQueueManager = null
@@ -141,16 +140,12 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
 
 func initialize_logic():
-	music_manager = MusicManager.new() 
-	if music_manager:
-		add_child(music_manager)
-		music_manager.update_volumes_from_settings()
-	else:
-		printerr("GameEngine.gd: Не удалось инстанцировать MusicManager!")
+	if MusicManager.has_method("update_volumes_from_settings"):
+		MusicManager.update_volumes_from_settings()
 
 	achievement_manager = AchievementManager.new()
 	
-	achievement_system = AchievementSystem.new(achievement_manager, music_manager, TrackStatsManager)
+	achievement_system = AchievementSystem.new(achievement_manager, TrackStatsManager)
 	achievement_manager.notification_mgr = self
 	
 	achievement_queue_manager = preload("res://logic/achievement_queue_manager.gd").new()
@@ -293,8 +288,6 @@ func get_main_menu_instance():
 func get_transitions():
 	return transitions
 
-func get_music_manager() -> MusicManager:
-	return music_manager
 
 func get_achievement_manager() -> AchievementManager:
 	return achievement_manager

@@ -12,8 +12,6 @@ var play_button: Button = null
 
 var preview_player: AudioStreamPlayer = null
 
-var music_manager = null
-
 var _current_preview_file_path: String = ""
 
 var current_instrument: String = "standard"
@@ -42,8 +40,7 @@ func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lb
 	cover_texture_rect = cover_tex_rect
 	play_button = play_btn
 
-func setup_audio_player(music_mgr):
-	music_manager = music_mgr
+func setup_audio_player():
 	preview_player = AudioStreamPlayer.new()
 	preview_player.name = "PreviewPlayer"
 	preview_player.finished.connect(_on_preview_finished)

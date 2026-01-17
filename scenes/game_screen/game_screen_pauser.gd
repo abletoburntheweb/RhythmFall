@@ -10,7 +10,7 @@ signal exit_to_menu_requested
 
 var game_screen: Node2D = null
 var game_timer: Timer = null
-var music_manager = null
+
 var pause_menu_instance = null
 
 var is_paused: bool = false:
@@ -20,10 +20,9 @@ var is_paused: bool = false:
 var original_music_volume: float = 1.0
 var paused_music_position: float = 0.0
 
-func initialize(gs, timer, mm):
+func initialize(gs, timer):
 	game_screen = gs
 	game_timer = timer
-	music_manager = mm
 
 func handle_pause_request():
 	if is_paused or game_screen.game_finished or game_screen.countdown_active:
@@ -31,27 +30,14 @@ func handle_pause_request():
 	
 	is_paused = true
 	
-	if music_manager and music_manager.has_method("get_volume_multiplier"):
-		original_music_volume = music_manager.get_volume_multiplier()
-	else:
-		original_music_volume = 1.0
-	
-	if music_manager and music_manager.has_method("set_volume_multiplier"):
-		music_manager.set_volume_multiplier(0.2)
-	
-	if music_manager and music_manager.has_method("get_game_music_position"):
-		paused_music_position = music_manager.get_game_music_position()
-	else:
-		paused_music_position = 0.0
-	
-	if music_manager and music_manager.has_method("stop_game_music"):
-		music_manager.stop_game_music()
+	original_music_volume = MusicManager.get_volume_multiplier()
+	MusicManager.set_volume_multiplier(0.2)
+	paused_music_position = MusicManager.get_game_music_position()
+	MusicManager.stop_game_music()
+	MusicManager.stop_metronome()
 	
 	if game_timer and not game_timer.is_stopped():
 		game_timer.stop()
-	
-	if music_manager and music_manager.has_method("stop_metronome"):
-		music_manager.stop_metronome()
 	
 	if game_screen.delayed_music_timer \
 	and is_instance_valid(game_screen.delayed_music_timer) \
@@ -98,38 +84,32 @@ func handle_resume_request():
 	
 	is_paused = false
 	
-	if music_manager and music_manager.has_method("set_volume_multiplier"):
-		music_manager.set_volume_multiplier(original_music_volume)
-	
+	MusicManager.set_volume_multiplier(original_music_volume)
+
 	if game_screen.delayed_music_timer \
 	and is_instance_valid(game_screen.delayed_music_timer) \
 	and game_screen.delayed_music_timer.is_stopped():
 		game_screen.delayed_music_timer.start()
 	else:
-		if music_manager and music_manager.has_method("play_game_music_at_position"):
-			var song_path = game_screen.selected_song_data.get("path", "")
-			music_manager.play_game_music_at_position(song_path, paused_music_position)
-		elif music_manager and music_manager.has_method("play_game_music") and music_manager.has_method("set_music_position"):
-			var song_path = game_screen.selected_song_data.get("path", "")
-			music_manager.play_game_music(song_path)
-			await get_tree().process_frame
-			music_manager.set_music_position(paused_music_position)
+		var song_path = game_screen.selected_song_data.get("path", "")
+		if MusicManager.has_method("play_game_music_at_position"):
+			MusicManager.play_game_music_at_position(song_path, paused_music_position)
 		else:
-			push_error("GameScreenPauser.gd: MusicManager не имеет нужных методов для музыки.")
-	
+			MusicManager.play_game_music(song_path)
+			await get_tree().process_frame
+			MusicManager.set_music_position(paused_music_position)
 	
 	if game_timer:
 		game_timer.start()
 	
-	if music_manager and music_manager.has_method("start_metronome"):
-		music_manager.start_metronome(game_screen.bpm, game_screen.game_time)
-	
+	MusicManager.start_metronome_external(game_screen.bpm)
+	var metronome_volume = SettingsManager.get_metronome_volume()
+	MusicManager.set_metronome_volume(metronome_volume)
 	game_screen.input_enabled = true
 	
 	if pause_menu_instance and is_instance_valid(pause_menu_instance):
 		pause_menu_instance.queue_free()
 		pause_menu_instance = null
-
 
 func cleanup_on_game_end():
 	if is_paused and pause_menu_instance and is_instance_valid(pause_menu_instance):

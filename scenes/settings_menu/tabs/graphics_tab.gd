@@ -3,7 +3,6 @@ extends Control
 
 signal settings_changed
 
-var music_manager = null 
 var game_engine = null 
 
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
@@ -19,8 +18,7 @@ func _setup_fps_options():
 	fps_option_button.add_item("Обычный", 1) 
 	fps_option_button.add_item("Контрастный", 2)
 
-func setup_ui_and_manager(_music_manager, game_engine_node = null):
-	self.music_manager = _music_manager
+func setup_ui_and_manager(game_engine_node = null):
 	game_engine = game_engine_node 
 	_setup_ui()
 	_connect_signals()
@@ -40,16 +38,16 @@ func _connect_signals():
 		fullscreen_checkbox.toggled.connect(_on_fullscreen_toggled)
 
 func _on_fps_mode_selected(index: int):
-		SettingsManager.set_fps_mode(index)
-		emit_signal("settings_changed")
-		if game_engine and game_engine.has_method("update_display_settings"):
-			game_engine.update_display_settings()
+	SettingsManager.set_fps_mode(index)
+	emit_signal("settings_changed")
+	if game_engine and game_engine.has_method("update_display_settings"):
+		game_engine.update_display_settings()
 
 func _on_fullscreen_toggled(enabled: bool):
-		SettingsManager.set_fullscreen(enabled)
-		emit_signal("settings_changed")
-		if game_engine and game_engine.has_method("update_display_settings"):
-			game_engine.update_display_settings()
+	SettingsManager.set_fullscreen(enabled)
+	emit_signal("settings_changed")
+	if game_engine and game_engine.has_method("update_display_settings"):
+		game_engine.update_display_settings()
 
 func refresh_ui():
 	_setup_ui()

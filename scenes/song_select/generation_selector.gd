@@ -5,15 +5,6 @@ extends Control
 signal generation_mode_selected(mode: String)
 signal selector_closed
 
-var music_manager = null
-
-func set_managers(music_mgr):
-	music_manager = music_mgr
-	if music_manager:
-		print("GenerationSelector.gd: MusicManager установлен.")
-	else:
-		print("GenerationSelector.gd: MusicManager не установлен (null).")
-
 func _ready():
 	print("GenerationSelector.gd: _ready вызван")
 	
@@ -55,19 +46,16 @@ func _on_enhanced_pressed():
 
 func _on_close_pressed():
 	print("GenerationSelector.gd: Нажата кнопка Закрыть")
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
 
 func _on_back_button_pressed():
 	print("GenerationSelector.gd: Нажата кнопка Назад")
-	if music_manager and music_manager.has_method("play_cancel_sound"):
-		music_manager.play_cancel_sound()
+	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
 
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
 		print("GenerationSelector.gd: Нажат Escape")
-		if music_manager and music_manager.has_method("play_cancel_sound"):
-			music_manager.play_cancel_sound()
+		MusicManager.play_cancel_sound()
 		_on_back_button_pressed()
