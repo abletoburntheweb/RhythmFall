@@ -17,7 +17,7 @@ var notification_mgr = null
 
 var achievements: Array[Dictionary] = []
 
-var new_gameplay_achievements: Array[Dictionary] = []
+var new_mastery_achievements: Array[Dictionary] = []
 
 func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	load_achievements(json_path)
@@ -43,7 +43,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 					else:
 						printerr("[AchievementManager] Найден элемент не типа Dictionary в списке достижений: ", item)
 				achievements = loaded_achievements
-				new_gameplay_achievements.clear()
+				new_mastery_achievements.clear()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")
 				achievements = []
@@ -119,9 +119,9 @@ func _perform_unlock(achievement: Dictionary):
 		music_mgr.play_achievement_sound()
 
 	var category = achievement.get("category", "")
-	if category == "gameplay":
-		if not new_gameplay_achievements.has(achievement):
-			new_gameplay_achievements.append(achievement)
+	if category == "mastery":
+		if not new_mastery_achievements.has(achievement):
+			new_mastery_achievements.append(achievement)
 		print("🎮 Геймплейная ачивка отложена (новая): ", achievement.title)
 	elif notification_mgr: 
 		print("Unlocking achievement: ", achievement)
@@ -130,18 +130,18 @@ func _perform_unlock(achievement: Dictionary):
 		print("⚠️ Нет notification_mgr для показа ачивки: ", achievement.title)
 
 
-func show_all_delayed_gameplay_achievements():
+func show_all_delayed_mastery_achievements():
 	print("🎯 Показываем все *новые* отложенные геймплейные ачивки...")
 
-	for achievement in new_gameplay_achievements:
+	for achievement in new_mastery_achievements:
 		print("🏆 Показываем новую геймплейную ачивку: ", achievement.title)
 		if notification_mgr:
 			notification_mgr.show_achievement_popup(achievement)
 		else:
 			print("⚠️ notification_mgr не установлен для показа: ", achievement.title)
 
-func clear_new_gameplay_achievements():
-	new_gameplay_achievements.clear()
+func clear_new_mastery_achievements():
+	new_mastery_achievements.clear()
 	print("🎯 Список новых геймплейных ачивок очищен.")
 
 func reset_achievements():
@@ -149,7 +149,7 @@ func reset_achievements():
 		a.unlocked = false
 		a.current = 0
 		a.unlock_date = null
-	new_gameplay_achievements.clear()
+	new_mastery_achievements.clear()
 	save_achievements()
 
 	if player_data_mgr:

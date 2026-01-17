@@ -376,8 +376,8 @@ func _deferred_update_ui():
 			if _calculate_grade() == "SS":
 				achievement_manager.check_ss_achievements(PlayerDataManager)
 
-	if achievement_manager and achievement_manager.has_method("show_all_delayed_gameplay_achievements"):
-		achievement_manager.show_all_delayed_gameplay_achievements()
-		achievement_manager.clear_new_gameplay_achievements()
+	if achievement_manager and achievement_manager.has_method("show_all_delayed_mastery_achievements"):
+		achievement_manager.show_all_delayed_mastery_achievements()
+		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)

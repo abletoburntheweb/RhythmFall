@@ -1,7 +1,7 @@
 {
 	"achievements": [
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 0.0,
 			"description": "Описание для достижения 1",
 			"id": 1.0,
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6019,
+			"current": 6069.0,
 			"description": "Собрать 500 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6019,
+			"current": 6069.0,
 			"description": "Собрать 1000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 6019,
+			"current": 6069.0,
 			"description": "Собрать 2500 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 1550,
+			"current": 1550.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -254,7 +254,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Пройти первый уровень",
 			"id": 24.0,
@@ -265,7 +265,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Пройти уровень с 100% точностью",
 			"id": 25.0,
@@ -276,8 +276,8 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
-			"current": 11,
+			"category": "mastery",
+			"current": 12.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -287,8 +287,8 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
-			"current": 11,
+			"category": "mastery",
+			"current": 12.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -298,7 +298,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1000.0,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
@@ -309,7 +309,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "drums",
 			"current": 1.0,
 			"description": "Пройти первый уровень в режиме перкуссии",
 			"id": 29.0,
@@ -320,7 +320,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "drums",
 			"current": 1.0,
 			"description": "Пройти уровень в режиме перкуссии с 100% точностью",
 			"id": 30.0,
@@ -331,7 +331,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "drums",
 			"current": 10.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
@@ -342,7 +342,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "drums",
 			"current": 100.0,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,
@@ -353,7 +353,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Пройти один и тот же уровень дважды",
 			"id": 33.0,
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.75,
+			"current": 8.35,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.75,
+			"current": 8.35,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.75,
+			"current": 8.35,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.75,
+			"current": 8.35,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.75,
+			"current": 8.35,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -419,8 +419,8 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
-			"current": 558000,
+			"category": "mastery",
+			"current": 558000.0,
 			"description": "Набрать 5 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -430,8 +430,8 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
-			"current": 558000,
+			"category": "mastery",
+			"current": 558000.0,
 			"description": "Набрать 25 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -441,8 +441,8 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
-			"current": 558000,
+			"category": "mastery",
+			"current": 558000.0,
 			"description": "Набрать 100 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -452,8 +452,8 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
-			"current": 558000,
+			"category": "mastery",
+			"current": 558000.0,
 			"description": "Набрать 250 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -463,7 +463,7 @@
 			"unlocked": true
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
@@ -474,7 +474,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
@@ -485,7 +485,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
@@ -496,7 +496,7 @@
 			"unlocked": false
 		},
 		{
-			"category": "gameplay",
+			"category": "mastery",
 			"current": 1.0,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,

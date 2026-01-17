@@ -50,7 +50,8 @@ var data: Dictionary = {
 	"current_level": 1,
 	"xp_for_next_level": 100,
 	"favorite_track": "",
-	"favorite_track_play_count": 0
+	"favorite_track_play_count": 0,
+	"favorite_genre": "unknown" 
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -130,7 +131,7 @@ func _load():
 
 			var loaded_favorite_track = json_result.get("favorite_track", "")
 			var loaded_favorite_track_play_count = int(json_result.get("favorite_track_play_count", 0))
-
+			var loaded_favorite_genre = json_result.get("favorite_genre", "unknown")
 			var loaded_grades = json_result.get("grades", {
 				"SS": 0,
 				"S": 0,
@@ -169,7 +170,8 @@ func _load():
 
 			data["favorite_track"] = loaded_favorite_track
 			data["favorite_track_play_count"] = loaded_favorite_track_play_count
-
+			data["favorite_genre"] = loaded_favorite_genre
+			
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
 			
@@ -248,12 +250,14 @@ func set_track_stats_manager(tsm):
 	if track_stats_manager:
 		data["favorite_track"] = track_stats_manager.get_favorite_track()
 		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
+		data["favorite_genre"] = track_stats_manager.get_favorite_genre()
 
 func on_track_completed(track_path: String):
 	if track_stats_manager:
 		track_stats_manager.on_track_completed(track_path)
 		data["favorite_track"] = track_stats_manager.get_favorite_track()
 		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
+		data["favorite_genre"] = track_stats_manager.get_favorite_genre() 
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
@@ -561,7 +565,8 @@ func reset_profile_statistics():
 
 	data["favorite_track"] = ""
 	data["favorite_track_play_count"] = 0
-
+	data["favorite_genre"] = "unknown"
+	
 	data["total_xp"] = 0
 	data["current_level"] = 1
 	data["xp_for_next_level"] = 100

@@ -139,7 +139,8 @@ func _update_display(achievements_to_display: Array[Dictionary]):
 			var category = ach.get("category", "")
 			
 			match category:
-				"gameplay": fallback_path = "res://assets/achievements/gameplay.png"
+				"mastery": fallback_path = "res://assets/achievements/mastery.png"
+				"drums": fallback_path = "res://assets/achievements/drums.png"
 				"system": fallback_path = "res://assets/achievements/system.png"
 				"shop": fallback_path = "res://assets/achievements/shop.png"
 				"economy": fallback_path = "res://assets/achievements/economy.png"
@@ -260,7 +261,8 @@ func _filter_achievements_internal(query: String):
 			var matches_category = true
 			if current_filter != "Все" and current_filter != "Открытые" and current_filter != "Закрытые":
 				var category_map = {
-					"Геймплей": "gameplay",
+					"Мастерство": "mastery",
+					"Перкуссия": "drums",
 					"Системные": "system", 
 					"Магазин": "shop",
 					"Экономика": "economy",
@@ -296,7 +298,8 @@ func _apply_status_filter(achievements_to_filter: Array[Dictionary], filter_type
 		)
 	else:
 		var category_map = {
-			"Геймплей": "gameplay",
+			"Мастерство": "mastery",
+			"Перкуссия": "drums",
 			"Системные": "system", 
 			"Магазин": "shop",
 			"Экономика": "economy",

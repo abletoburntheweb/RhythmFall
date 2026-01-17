@@ -30,7 +30,8 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			"primary_genre": "unknown"
 		}
 
-	_metadata_cache[song_file_path]["file_mtime"] = FileAccess.get_modified_time(song_file_path)
+	if not _metadata_cache.has(song_file_path):
+		_metadata_cache[song_file_path]["file_mtime"] = int(FileAccess.get_modified_time(song_file_path))
 
 	if updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY:
 		var genres_array = updated_fields["genres"]

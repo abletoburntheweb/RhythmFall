@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b2bi63isvfbgb"
-path="res://.godot/imported/gameplay.png-a8319a6925b7c9ace37601b9192888b9.ctex"
+uid="uid://t87rt8bdapm"
+path="res://.godot/imported/drums.png-bd96ef4de7c42ae049d71a89c70a295f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/achievements/gameplay.png"
-dest_files=["res://.godot/imported/gameplay.png-a8319a6925b7c9ace37601b9192888b9.ctex"]
+source_file="res://assets/achievements/drums.png"
+dest_files=["res://.godot/imported/drums.png-bd96ef4de7c42ae049d71a89c70a295f.ctex"]
 
 [params]
 

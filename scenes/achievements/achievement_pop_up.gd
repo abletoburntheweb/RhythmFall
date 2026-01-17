@@ -74,7 +74,8 @@ func _load_achievement_icon(ach_data: Dictionary):
 	var fallback_path = ""
 	
 	match category:
-		"gameplay": fallback_path = "res://assets/achievements/gameplay.png"
+		"mastery": fallback_path = "res://assets/achievements/mastery.png"
+		"drums": fallback_path = "res://assets/achievements/drums.png"
 		"system": fallback_path = "res://assets/achievements/system.png"
 		"shop": fallback_path = "res://assets/achievements/shop.png"
 		"economy": fallback_path = "res://assets/achievements/economy.png"
