@@ -16,11 +16,12 @@ var music_mgr = null
 var notification_mgr = null
 
 var achievements: Array[Dictionary] = []
-
+var genre_group_map: Dictionary = {}
 var new_mastery_achievements: Array[Dictionary] = []
 
 func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	load_achievements(json_path)
+	_load_genre_group_map()
 
 func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	if not FileAccess.file_exists(json_path):
@@ -615,6 +616,83 @@ func check_level_achievements(player_level: int):
 			if achievement.id == ach_id:
 				achievement.current = player_level
 				if player_level >= required_level and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
+
+	save_achievements()
+	
+func _load_genre_group_map():
+	var path = "res://data/genre_groups.json"
+	if not FileAccess.file_exists(path):
+		printerr("[AchievementManager] Файл genre_groups.json не найден!")
+		return
+
+	var file = FileAccess.open(path, FileAccess.READ)
+	var json_text = file.get_as_text()
+	file.close()
+
+	var parsed = JSON.parse_string(json_text)
+	if not (parsed is Dictionary):
+		printerr("[AchievementManager] Ошибка: genre_groups.json должен содержать объект (Dictionary)")
+		return
+
+	genre_group_map.clear()
+	for group_name in parsed:
+		var genres = parsed[group_name]
+		if genres is Array:
+			for g in genres:
+				if g is String:
+					genre_group_map[g.to_lower()] = group_name
+				else:
+					printerr("[AchievementManager] Некорректный жанр в группе %s: %s" % [group_name, g])
+		else:
+			printerr("[AchievementManager] Группа %s должна содержать массив жанров" % group_name)
+
+	print("[AchievementManager] Загружено %d канонических жанров для группировки" % genre_group_map.size())
+	
+func _map_canonical_genre_to_group(canonical_genre: String) -> String:
+	if canonical_genre == "":
+		return ""
+	return genre_group_map.get(canonical_genre.to_lower(), "")
+func check_genre_achievements(track_stats_mgr = null):
+	var tsm = track_stats_mgr if track_stats_mgr != null else TrackStatsManager
+	if not tsm:
+		printerr("[AchievementManager] TrackStatsManager недоступен")
+		return
+
+	var raw_counts = tsm.genre_play_counts  
+
+	var group_counts = {
+		"electronic": 0,
+		"guitar_rock": 0,
+		"rap": 0,
+		"indie_alt": 0,
+		"experimental": 0
+	}
+
+	for canonical_genre in raw_counts:
+		var count = raw_counts[canonical_genre]
+		var group = _map_canonical_genre_to_group(canonical_genre)
+		if group != "" and group_counts.has(group):
+			group_counts[group] += count
+
+	var genre_achievements = {
+		54: ["electronic", 3],
+		55: ["guitar_rock", 3],
+		56: ["rap", 3],
+		57: ["indie_alt", 3],
+		58: ["experimental", 3]
+	}
+
+	for ach_id in genre_achievements:
+		var group = genre_achievements[ach_id][0]
+		var required = genre_achievements[ach_id][1]
+		var current = group_counts[group]
+
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = current
+				if current >= required and not achievement.unlocked:
 					_perform_unlock(achievement)
 				break
 

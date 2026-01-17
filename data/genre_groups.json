@@ -1,0 +1,7 @@
+{
+	"electronic": ["electronic", "techno", "house", "trance", "ambient", "dubstep", "idm", "glitch", "chillout", "downtempo", "synthwave", "electronica"],
+	"guitar_rock": ["rock", "punk", "metal", "post-rock", "math rock", "garage rock", "alternative rock", "indie rock", "grunge", "shoegaze", "dream pop", "funk", "blues rock", "stoner rock", "hardcore", "emo", "screamo"],
+	"rap": ["rap", "hip hop", "trap", "cloud rap", "drill", "grime", "hip-hop", "urban", "melodic rap", "emo rap", "hypertrap"],
+	"indie_alt": ["indie", "lofi", "bedroom pop", "art pop", "chillwave", "synthpop", "neo soul", "r&b", "indie pop", "indie folk", "alternative", "lo-fi", "twee pop", "baroque pop"],
+	"experimental": ["experimental", "avant-garde", "fusion", "abstract", "noise", "free jazz", "progressive", "cross-genre", "genre-bending", "sound art", "musique concrète"]
+}

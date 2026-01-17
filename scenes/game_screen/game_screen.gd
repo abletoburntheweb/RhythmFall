@@ -452,7 +452,6 @@ func end_game():
 	if not victory_delay_timer.is_stopped():
 		victory_delay_timer.stop()
 
-	print("GameScreen: Игра завершена, подготовка к переходу к VictoryScreen...")
 	game_finished = true
 	
 	if not game_timer.is_stopped():
@@ -462,18 +461,22 @@ func end_game():
 	
 	if music_manager:
 		if music_manager.has_method("stop_music"):
-			music_manager.stop_music()            
-			print("GameScreen.gd: ВСЯ музыка (включая игровую) остановлена в end_game через stop_music.")
+			music_manager.stop_music()
 		else:
 			if music_manager.has_method("stop_game_music"):
 				music_manager.stop_game_music()
-				print("GameScreen.gd: Игровая музыка остановлена в end_game через stop_game_music.")
 		if music_manager.has_method("stop_metronome"):
 			music_manager.stop_metronome()
-			print("GameScreen.gd: Метроном остановлен в end_game.")
 	
 	if auto_player:
 		auto_player.reset()
+	
+	var song_path = selected_song_data.get("path", "")
+	TrackStatsManager.on_track_completed(song_path)
+	
+	PlayerDataManager.add_completed_level()
+	if current_instrument == "drums":
+		PlayerDataManager.add_drum_level_completed()
 	
 	var victory_song_info = selected_song_data.duplicate()
 	victory_song_info["instrument"] = current_instrument 
@@ -484,14 +487,10 @@ func end_game():
 	var debug_perfect_hits = perfect_hits_this_level
 	var debug_missed_notes = score_manager.get_missed_notes_count()
 	var debug_hit_notes = score_manager.get_hit_notes_count()
-	print("GameScreen: Отправляем в VictoryScreen - Счёт=%d, Комбо=%d, Макс.комбо=%d, Точность=%.1f%%, Совершенных попаданий=%d, Пропущено=%d" % [
-		debug_score, debug_combo, debug_max_combo, debug_accuracy, debug_perfect_hits, debug_missed_notes
-	])
 
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
-		print("GameScreen.gd: Transitions получен для открытия VictoryScreen: ", transitions)
 
 	transitions.open_victory_screen(
 		debug_score,      

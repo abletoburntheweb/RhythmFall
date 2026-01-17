@@ -12,11 +12,7 @@ var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
 var achievement_queue_manager: AchievementQueueManager = null
 
-
-
 var session_history_manager: SessionHistoryManager = null
-
-var track_stats_manager: TrackStatsManager = null
 
 var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
@@ -167,11 +163,9 @@ func initialize_logic():
 
 	achievement_manager = AchievementManager.new()
 	
-	track_stats_manager = TrackStatsManager.new()  
 
-	PlayerDataManager.set_track_stats_manager(track_stats_manager)
 
-	achievement_system = AchievementSystem.new(achievement_manager, music_manager, track_stats_manager)
+	achievement_system = AchievementSystem.new(achievement_manager, music_manager, TrackStatsManager)
 	achievement_manager.notification_mgr = self
 	
 	achievement_queue_manager = preload("res://logic/achievement_queue_manager.gd").new()
@@ -333,9 +327,6 @@ func get_achievement_queue_manager() -> AchievementQueueManager:
 
 func get_session_history_manager() -> SessionHistoryManager:
 	return session_history_manager
-
-func get_track_stats_manager() -> TrackStatsManager:
-	return track_stats_manager
 
 func get_level_layer() -> Control:
 	return $XPContainer 

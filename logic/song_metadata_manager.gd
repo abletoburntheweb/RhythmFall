@@ -10,9 +10,10 @@ var _metadata_cache: Dictionary = {}
 func _init():
 	_load_metadata()
 
-func get_metadata_for_song(song_file_path: String) -> Dictionary:
+func get_metadata_for_song(song_file_path: String) -> Dictionary:	
 	if _metadata_cache.has(song_file_path):
-		return _metadata_cache[song_file_path].duplicate(true)
+		var result = _metadata_cache[song_file_path].duplicate(true)
+		return result
 	else:
 		return {}
 

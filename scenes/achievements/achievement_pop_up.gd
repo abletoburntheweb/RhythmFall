@@ -76,12 +76,13 @@ func _load_achievement_icon(ach_data: Dictionary):
 	match category:
 		"mastery": fallback_path = "res://assets/achievements/mastery.png"
 		"drums": fallback_path = "res://assets/achievements/drums.png"
+		"genres":  fallback_path = "res://assets/achievements/genres.png"  
 		"system": fallback_path = "res://assets/achievements/system.png"
 		"shop": fallback_path = "res://assets/achievements/shop.png"
 		"economy": fallback_path = "res://assets/achievements/economy.png"
 		"daily": fallback_path = "res://assets/achievements/daily.png"
 		"playtime": fallback_path = "res://assets/achievements/playtime.png"
-		"events": fallback_path = "res://assets/achievements/events.png" 
+		"events": fallback_path = "res://assets/achievements/events.png"
 		_: fallback_path = "res://assets/achievements/default.png" 
 	
 	print("🖼️ Пробуем загрузить fallback иконку по категории: ", fallback_path)

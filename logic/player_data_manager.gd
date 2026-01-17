@@ -63,7 +63,6 @@ var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
 
-var track_stats_manager = null
 
 func _ready():
 	_load()
@@ -244,20 +243,6 @@ func _save_best_grades():
 
 func get_currency() -> int:
 	return int(data.get("currency", 0))
-
-func set_track_stats_manager(tsm):
-	track_stats_manager = tsm
-	if track_stats_manager:
-		data["favorite_track"] = track_stats_manager.get_favorite_track()
-		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
-		data["favorite_genre"] = track_stats_manager.get_favorite_genre()
-
-func on_track_completed(track_path: String):
-	if track_stats_manager:
-		track_stats_manager.on_track_completed(track_path)
-		data["favorite_track"] = track_stats_manager.get_favorite_track()
-		data["favorite_track_play_count"] = track_stats_manager.get_favorite_track_count()
-		data["favorite_genre"] = track_stats_manager.get_favorite_genre() 
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
@@ -579,10 +564,7 @@ func reset_profile_statistics():
 	data["unlocked_achievement_ids"] = current_unlocked_achievements
 	data["login_streak"] = current_login_streak
 	data["last_login_date"] = current_last_login_date
-
-	if track_stats_manager:
-		track_stats_manager.reset_stats()
-
+	
 	_save()
 	data["best_grades_per_track"] = {}
 	_save_best_grades()

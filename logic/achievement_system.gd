@@ -24,6 +24,7 @@ func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool =
 	if track_stats_manager: 
 		track_stats_manager.on_track_completed(song_path)
 		achievement_manager.check_replay_level_achievement(track_stats_manager.track_completion_counts)
+		achievement_manager.check_genre_achievements(track_stats_manager)
 
 	var total_drum_levels = PlayerDataManager.get_drum_levels_completed()
 	achievement_manager.check_drum_level_achievements(PlayerDataManager, accuracy, total_drum_levels)

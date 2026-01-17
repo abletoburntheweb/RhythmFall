@@ -1,6 +1,5 @@
 # logic/track_stats_manager.gd
-class_name TrackStatsManager
-extends RefCounted
+extends Node
 
 const TRACK_STATS_PATH = "user://track_stats.json"
 
@@ -50,28 +49,39 @@ func _save():
 	else:
 		print("TrackStatsManager: Ошибка сохранения")
 
+var _just_completed_level: bool = false  
+
 func on_track_completed(track_path: String):
+	if _just_completed_level:  
+		_just_completed_level = false
+		return
+	
 	if track_path.is_empty():
 		return
 
-	track_completion_counts[track_path] = track_completion_counts.get(track_path, 0) + 1
+	var normalized_path = track_path.replace("\\", "/").trim_suffix("/")
 
-	var metadata = SongMetadataManager.get_metadata_for_song(track_path)
+	track_completion_counts[normalized_path] = track_completion_counts.get(normalized_path, 0) + 1
+
+	var metadata = SongMetadataManager.get_metadata_for_song(normalized_path)
+
 	var genre = "unknown"
-	if not metadata.is_empty():
-		genre = metadata.get("primary_genre", "unknown")
+	if metadata and typeof(metadata) == TYPE_DICTIONARY and metadata.has("primary_genre"):
+		genre = str(metadata["primary_genre"]).to_lower().strip_edges()
 
 	genre_play_counts[genre] = genre_play_counts.get(genre, 0) + 1
 
 	_update_favorite_track()
 	_update_favorite_genre()
-
 	_save()
 
 	PlayerDataManager.data["favorite_track"] = favorite_track
 	PlayerDataManager.data["favorite_track_play_count"] = favorite_track_play_count
 	PlayerDataManager.data["favorite_genre"] = favorite_genre
 	PlayerDataManager._save()
+	
+	_just_completed_level = true  
+
 
 func _update_favorite_track():
 	favorite_track = ""
