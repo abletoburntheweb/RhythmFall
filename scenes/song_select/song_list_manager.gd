@@ -6,13 +6,9 @@ signal song_selected(song_data: Dictionary)
 signal song_added(song_data: Dictionary)
 signal song_list_changed()
 
-var song_manager = null
 var item_list: ItemList = null
 var current_grouped_data = [] 
 var current_filter_mode = "title"  
-
-func set_song_manager(manager):
-	song_manager = manager
 
 func set_item_list(list_control: ItemList):
 	item_list = list_control
@@ -23,12 +19,12 @@ func set_filter_mode(mode: String):
 	current_filter_mode = mode
 
 func populate_items():
-	if not item_list or not song_manager:
-		print("SongListManager: item_list или song_manager не установлены!")
+	if not item_list:
+		print("SongListManager: item_list не установлен!")
 		return
 
 	item_list.clear()
-	var songs_list = song_manager.get_songs_list()
+	var songs_list = SongManager.get_songs_list()
 
 	for song_data in songs_list:
 		var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
@@ -36,14 +32,14 @@ func populate_items():
 	emit_signal("song_list_changed")
 
 func populate_items_grouped():
-	if not item_list or not song_manager:
-		print("SongListManager: item_list или song_manager не установлены!")
+	if not item_list:
+		print("SongListManager: item_list не установлен!")
 		return
 
 	item_list.clear()
 	current_grouped_data.clear()
 
-	var songs_list = song_manager.get_songs_list()
+	var songs_list = SongManager.get_songs_list()
 	if songs_list.is_empty():
 		emit_signal("song_list_changed")
 		return
@@ -113,28 +109,25 @@ func update_song_count_label(count_label: Label):
 		print("SongListManager.gd: Label для счётчика не передан.")
 
 func add_song_from_path(file_path: String):
-	if not song_manager:
-		return
-
-	var metadata_dict = song_manager.add_song(file_path)
+	var metadata_dict = SongManager.add_song(file_path)
 	if not metadata_dict.is_empty():
 		emit_signal("song_added", metadata_dict)
 
 func _on_item_selected(index):
-	if song_manager and index >= 0 and index < current_grouped_data.size():
+	if index >= 0 and index < current_grouped_data.size():
 		var item_data = current_grouped_data[index]
 		if item_data.type == "song": 
 			var selected_song_data = item_data.data
 			emit_signal("song_selected", selected_song_data)
 
 func filter_items(filter_text: String):
-	if not item_list or not song_manager:
+	if not item_list:
 		return
 
 	item_list.clear()
 	current_grouped_data.clear()
 
-	var songs_list = song_manager.get_songs_list()
+	var songs_list = SongManager.get_songs_list()
 
 	if filter_text.is_empty():
 		populate_items_grouped()

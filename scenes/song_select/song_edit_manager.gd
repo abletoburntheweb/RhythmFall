@@ -4,12 +4,8 @@ extends Node
 
 signal song_edited(song_data: Dictionary, item_list_index: int) 
 
-var song_manager = null
 var item_list: ItemList = null 
-
 var edit_mode: bool = false
-
-var song_metadata_manager = SongMetadataManager
 
 var _edit_context = {
 	"dialog": null,
@@ -20,10 +16,6 @@ var _edit_context = {
 	"selected_index": -1, 
 	"type": ""
 }
-
-
-func set_song_manager(manager):
-	song_manager = manager
 
 func set_item_list(list_control: ItemList):
 	item_list = list_control
@@ -38,10 +30,6 @@ func is_edit_mode_active() -> bool:
 func start_editing(field_type: String, song_data: Dictionary, selected_item_list_index: int): 
 	if not edit_mode:
 		print("SongEditManager.gd: Редактирование отключено.")
-		return
-
-	if not song_manager:
-		printerr("SongEditManager.gd: SongManager не установлен!")
 		return
 
 	_edit_context["song_data"] = song_data.duplicate(true) 
@@ -170,7 +158,7 @@ func _on_edit_title_confirmed():
 			
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"title": new_title}
-			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
 			print("SongEditManager.gd: Изменения названия для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
 
 	_cleanup_edit_context() 
@@ -191,7 +179,7 @@ func _on_edit_field_confirmed():
 
 			var song_file_path = song_data["path"]
 			var fields_to_update = {field_name: new_value}
-			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
 			print("SongEditManager.gd: Изменения поля '%s' для '%s' переданы в SongMetadataManager для сохранения." % [field_name, song_file_path])
 
 	_cleanup_edit_context() 
@@ -217,7 +205,7 @@ func _on_edit_bpm_confirmed():
 			
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"bpm": new_bpm_str}
-			song_metadata_manager.update_metadata(song_file_path, fields_to_update)
+			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
 			print("SongEditManager.gd: Изменения BPM для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
 
 	_cleanup_edit_context()

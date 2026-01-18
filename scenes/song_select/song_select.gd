@@ -1,13 +1,11 @@
 # scenes/song_select/song_select.gd
 extends BaseScreen
 
-const SongManager = preload("res://logic/song_manager.gd")
 const ServerClients = preload("res://logic/server_clients.gd")
 const ManualTrackInputScene = preload("res://scenes/song_select/manual_track_input.tscn")
 const InstrumentSelectorScene = preload("res://scenes/song_select/instrument_selector.tscn")
 const GenerationSelectorScene = preload("res://scenes/song_select/generation_selector.tscn")
 
-var song_manager: SongManager = SongManager.new()
 var server_clients: ServerClients = ServerClients.new()
 var song_list_manager: SongListManager = preload("res://scenes/song_select/song_list_manager.gd").new()
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
@@ -47,10 +45,9 @@ func _ready():
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 		
-	song_manager.load_songs()
+	SongManager.load_songs()
 	
 	add_child(song_list_manager)
-	song_list_manager.set_song_manager(song_manager)
 	song_list_manager.set_item_list(song_item_list_ref)
 	song_list_manager.song_selected.connect(_on_song_item_selected_from_manager)
 	song_list_manager.song_list_changed.connect(_on_song_list_changed)
@@ -69,7 +66,6 @@ func _ready():
 	song_details_manager.setup_audio_player()  
 	
 	add_child(song_edit_manager)
-	song_edit_manager.set_song_manager(song_manager)
 	song_edit_manager.set_item_list(song_item_list_ref)
 	song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
 		
@@ -261,7 +257,9 @@ func _on_add_pressed():
 	_open_file_dialog_for_add()
 
 func _open_file_dialog_for_add():
-	if file_dialog and file_dialog.is_inside_tree(): return
+	if file_dialog:
+		file_dialog.queue_free()
+		file_dialog = null
 	
 	file_dialog = FileDialog.new()
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
@@ -269,6 +267,7 @@ func _open_file_dialog_for_add():
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters = ["*.mp3; MP3 Audio", "*.wav; WAV Audio"]
 	file_dialog.file_selected.connect(_on_file_selected_internal)
+	file_dialog.canceled.connect(_cleanup_file_dialog)  
 	add_child(file_dialog)
 	file_dialog.popup_centered()
 
@@ -388,20 +387,25 @@ func _on_generation_selector_closed():
 
 func _on_delete_pressed():
 	var selected_items = song_item_list_ref.get_selected_items()
-	if selected_items.size() == 0: return
-	
-	var selected_index = selected_items[0]
-	var songs_list = song_manager.get_songs_list()
-	if selected_index < 0 or selected_index >= songs_list.size(): return
-	
-	var song_path = songs_list[selected_index].get("path", "")
-	if song_path == "": return
-	
+	if selected_items.size() == 0:
+		return
+
+	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_items[0])
+	if selected_song_data.is_empty():
+		print("SongSelect.gd: Выбран не трек (возможно, заголовок группы).")
+		return
+
+	var song_path = selected_song_data.get("path", "")
+	if song_path == "":
+		return
+
 	var dir = DirAccess.open("res://")
 	if dir and dir.remove(song_path) == OK:
 		song_metadata_manager.remove_metadata(song_path)
 		results_manager.clear_results_for_song(song_path)
-		song_manager.load_songs()
+		
+		SongManager.load_songs()
+		
 		song_list_manager.populate_items_grouped()
 		_on_song_list_changed()
 		
@@ -410,6 +414,10 @@ func _on_delete_pressed():
 			song_details_manager.update_details({})
 			song_details_manager.stop_preview()
 			analyze_bpm_button.disabled = true
+			
+		print("SongSelect.gd: Трек удалён: ", song_path)
+	else:
+		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
 
 func _on_results_pressed():
 	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList
@@ -502,7 +510,7 @@ func _on_manual_entry_confirmed(artist: String, title: String):
 
 func _on_song_metadata_updated(song_file_path: String):
 	if current_displayed_song_path == song_file_path:
-		for song in song_manager.get_songs_list():
+		for song in SongManager.get_songs_list():
 			if song.path == song_file_path:
 				song_details_manager.update_details(song)
 				break

@@ -1,14 +1,17 @@
 # logic/song_manager.gd
-extends RefCounted
+extends Node
 
 const SONG_FOLDER_PATH = "res://songs/"
 
 var songs: Array[Dictionary] = []
 var cached_previews: Dictionary = {}
 
-func _init():
+func _ready():
 	_create_directories_if_missing()
-	SongMetadataManager.metadata_updated.connect(_on_metadata_updated)
+	if SongMetadataManager:
+		SongMetadataManager.metadata_updated.connect(_on_metadata_updated)
+	else:
+		push_error("SongManager: SongMetadataManager не найден как autoload!")
 
 func _create_directories_if_missing():
 	var dir = DirAccess.open("res://")

@@ -24,6 +24,7 @@ PlayerDataManager="*res://logic/player_data_manager.gd"
 TrackStatsManager="*res://logic/track_stats_manager.gd"
 SettingsManager="*res://logic/settings_manager.gd"
 MusicManager="*res://logic/music_manager.gd"
+SongManager="*res://logic/song_manager.gd"
 
 [display]
 
