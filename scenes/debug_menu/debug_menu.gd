@@ -213,11 +213,56 @@ func _on_plus_10_combo_button_pressed():
 
 func _on_win_button_pressed():
 	var game_screen = get_parent()
-	if game_screen and game_screen.has_method("end_game"):
-		game_screen.end_game()
-		print("DebugMenu: Игра завершена через DebugMenu.")
+	if not game_screen or not game_screen.score_manager or not game_screen.note_manager:
+		printerr("DebugMenu: Не удалось получить доступ к GameScreen или его компонентам.")
+		return
+
+	var target_accuracy = 100.0
+	if accuracy_edit and accuracy_edit.text.is_valid_float():
+		target_accuracy = clampf(accuracy_edit.text.to_float(), 0.0, 100.0)
+
+	var total_notes = game_screen.note_manager.get_spawn_queue_size()
+	if total_notes == 0:
+		total_notes = 1  
+
+	var missed_notes = int(round(total_notes * (100.0 - target_accuracy) / 100.0))
+	missed_notes = clamp(missed_notes, 0, total_notes)
+	var hit_notes = total_notes - missed_notes
+
+	game_screen.score_manager.total_notes = total_notes
+	game_screen.score_manager.missed_notes = missed_notes
+	game_screen.score_manager.hit_notes = hit_notes
+
+	game_screen.score_manager.accuracy = target_accuracy
+
+	if target_accuracy >= 100.0:
+		game_screen.score_manager.combo = total_notes
+		game_screen.score_manager.max_combo = total_notes
 	else:
-		printerr("DebugMenu: Не удалось получить доступ к методу end_game родителя.")
+		game_screen.score_manager.combo = 0
+		game_screen.score_manager.max_combo = max(1, int(target_accuracy / 10))  
+
+	var base_score_per_hit = 100
+	var multiplier = 1.0
+	if target_accuracy >= 100.0:
+		multiplier = min(4.0, 1.0 + (total_notes / 10.0)) 
+	elif target_accuracy >= 95.0:
+		multiplier = 2.0
+	elif target_accuracy >= 90.0:
+		multiplier = 1.5
+
+	game_screen.score_manager.score = int(hit_notes * base_score_per_hit * multiplier)
+
+	if game_screen.has_method("update_ui"):
+		game_screen.update_ui()
+
+	game_screen.note_manager.clear_notes()
+
+	if game_screen.has_method("end_game"):
+		game_screen.end_game()
+		print("DebugMenu: Игра завершена с точностью %.1f%% (%d/%d нот)" % [target_accuracy, hit_notes, total_notes])
+	else:
+		printerr("DebugMenu: Метод end_game не найден у GameScreen")
 
 func _on_auto_play_check_box_toggled(button_pressed: bool):
 	print("DebugMenu: Автопрохождение ", "ВКЛ" if button_pressed else "ВЫКЛ")

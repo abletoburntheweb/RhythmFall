@@ -146,6 +146,10 @@ func _on_bpm_analysis_completed(bpm_value: int):
 				metadata["bpm"] = str(bpm_value)
 			song_metadata_manager.update_metadata(song_path, metadata)
 			print("SongSelect.gd: BPM обновлён в SongMetadataManager для: ", song_path)
+			
+			if current_selected_song_data.get("path", "") == song_path:
+				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 
 func _on_bpm_analysis_error(error_message: String):
 	print("SongSelect.gd: Ошибка BPM анализа: ", error_message)
@@ -229,6 +233,15 @@ func _update_filters_visibility():
 
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 	song_list_manager.populate_items_grouped()
+	
+	if current_selected_song_data.get("path") == song_data.get("path"):
+		var new_bpm = song_data.get("bpm", "Н/Д")
+		if str(new_bpm) != "-1" and new_bpm != "Н/Д":
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	current_selected_song_data = song_data
@@ -247,8 +260,13 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		results_button.disabled = true
 		clear_results_button.disabled = true
 	
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	var song_bpm = song_data.get("bpm", "Н/Д")
+	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	else:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 
 func _on_song_list_changed():
 	_update_song_count_label()
@@ -496,8 +514,12 @@ func _show_manual_track_input(artist: String, title: String):
 	manual_track_input_dialog.show_modal_for_track(corrected_artist, corrected_title)
 
 func _on_manual_track_confirmed():
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	if pending_manual_identification_bpm > 0:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	else:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 
 func _on_manual_track_cancelled():
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ручной ввод"

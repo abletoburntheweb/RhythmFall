@@ -80,38 +80,35 @@ func _get_grade_color(grade: String) -> Color:
 		"F": return Color.DARK_RED
 		_: return Color.WHITE
 
-func _calculate_xp_new() -> int: 
-	var base_xp = score / 200.0  
+func _calculate_xp_new() -> int:
+	var base_xp = sqrt(float(score)) * 2.0 
 
 	var accuracy_bonus = 0.0
 	if accuracy >= 100.0:
-		accuracy_bonus = 50.0 
+		accuracy_bonus = 40.0
 	elif accuracy >= 98.0:
-		accuracy_bonus = 30.0
+		accuracy_bonus = 25.0
 	elif accuracy >= 95.0:
-		accuracy_bonus = 20.0
+		accuracy_bonus = 15.0
 	elif accuracy >= 90.0:
-		accuracy_bonus = 10.0
+		accuracy_bonus = 5.0
 
-	var combo_bonus = max_combo / 10.0  
+	var combo_bonus = 0.0
+	if max_combo > 0:
+		combo_bonus = log(float(max_combo) + 1.0) * 10.0 
 
 	var grade_bonus = 0.0
 	var grade = _calculate_grade()
 	match grade:
-		"SS": grade_bonus = 100.0
-		"S": grade_bonus = 50.0
-		"A": grade_bonus = 25.0
-		"B": grade_bonus = 10.0
-		"C": grade_bonus = 0.0 
-		"D": grade_bonus = -10.0 
-		"F": grade_bonus = -20.0  
-
+		"SS": grade_bonus = 80.0
+		"S":  grade_bonus = 40.0
+		"A":  grade_bonus = 20.0
+		"B":  grade_bonus = 5.0
 	var full_combo_bonus = 0.0
-	if calculated_missed_notes == 0:
-		full_combo_bonus = 50.0  
+	if calculated_missed_notes == 0 and calculated_total_notes > 0:
+		full_combo_bonus = 60.0
 
 	var total_xp = int(base_xp + accuracy_bonus + combo_bonus + grade_bonus + full_combo_bonus)
-
 	return max(1, total_xp)
 
 func _on_replay_button_pressed():
@@ -202,13 +199,12 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	accuracy = p_accuracy
 	song_info = p_song_info.duplicate() 
 	
-	var game_screen = get_parent()
-	if game_screen and game_screen.score_manager:
-		calculated_combo_multiplier = game_screen.score_manager.get_combo_multiplier()
-	else:
-		calculated_combo_multiplier = p_combo_multiplier 
+	calculated_combo_multiplier = min(4.0, 1.0 + floor(float(max_combo) / 10.0))
 	
-	calculated_total_notes = p_total_notes
+	if p_total_notes <= 0:
+		calculated_total_notes = p_hit_notes + p_missed_notes
+	else:
+		calculated_total_notes = p_total_notes
 	calculated_missed_notes = p_missed_notes
 	perfect_hits_this_level = p_perfect_hits
 	hit_notes_this_level = p_hit_notes 
@@ -219,20 +215,26 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	call_deferred("_deferred_update_ui")
 
 func _calculate_currency_new() -> int:
-	var base_currency = float(score) / 100.0
-	var combo_bonus = sqrt(float(max_combo)) * 2.0
+	var base_currency = sqrt(float(score)) * 1.5  
+
+	var combo_bonus = 0.0
+	if max_combo > 0:
+		combo_bonus = log(float(max_combo) + 1.0) * 5.0 
+
 	var accuracy_bonus = 0.0
-	if accuracy >= 95.0 and accuracy < 100.0:
-		accuracy_bonus = (accuracy - 90.0) * 1.5
-	elif accuracy >= 100.0:
-		accuracy_bonus = 50.0 
+	if accuracy >= 100.0:
+		accuracy_bonus = 40.0
+	elif accuracy >= 95.0:
+		accuracy_bonus = (accuracy - 90.0) * 1.0 
+
 	var full_combo_bonus = 0.0
 	if calculated_missed_notes == 0 and calculated_total_notes > 0:
-		full_combo_bonus = 20.0
-	var multiplier_bonus = (calculated_combo_multiplier - 1.0) * 5.0
+		full_combo_bonus = 25.0
+
+	var multiplier_bonus = (calculated_combo_multiplier - 1.0) * 4.0 
+
 	var total_currency = base_currency + combo_bonus + accuracy_bonus + full_combo_bonus + multiplier_bonus
-	var final_currency = int(total_currency)
-	return max(1, final_currency)
+	return max(1, int(total_currency))
 
 func _deferred_update_ui():
 	if is_instance_valid(song_label) and song_info.get("title"):

@@ -18,17 +18,24 @@ func _ready():
 	back_button.pressed.connect(_on_back_pressed)
 
 func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_total_notes: int, p_missed_notes: int, p_combo_multiplier: float, total_currency: int):
-	var base_currency = float(p_score) / 100.0
+	var base_currency = sqrt(float(p_score)) * 1.5
+
+	var combo_bonus = 0.0
+	if p_max_combo > 0:
+		combo_bonus = log(float(p_max_combo) + 1.0) * 5.0
+
 	var accuracy_bonus = 0.0
-	if p_accuracy >= 95.0 and p_accuracy < 100.0:
-		accuracy_bonus = (p_accuracy - 90.0) * 1.5
-	elif p_accuracy >= 100.0:
-		accuracy_bonus = 50.0
+	if p_accuracy >= 100.0:
+		accuracy_bonus = 40.0
+	elif p_accuracy >= 95.0:
+		accuracy_bonus = (p_accuracy - 90.0) * 1.0
+
 	var full_combo_bonus = 0.0
 	if p_missed_notes == 0 and p_total_notes > 0:
-		full_combo_bonus = 20.0
-	var multiplier_bonus = (p_combo_multiplier - 1.0) * 5.0
-	
+		full_combo_bonus = 25.0
+
+	var multiplier_bonus = (p_combo_multiplier - 1.0) * 4.0
+
 	score_label.text = "Счёт: %.1f" % base_currency
 	combo_label.text = "Макс. комбо: %d" % p_max_combo
 	accuracy_label.text = "Точность: %.1f" % accuracy_bonus

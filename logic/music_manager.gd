@@ -297,7 +297,12 @@ func is_music_playing() -> bool:
 		return music_player.playing
 	else:
 		return false
-
+		
+func stop_metronome():
+	for player in _metronome_players:
+		if player and player.playing:
+			player.stop()
+			
 func play_sfx(sound_path: String):
 	var full_path = MUSIC_DIR + sound_path
 	var stream = load(full_path) as AudioStream

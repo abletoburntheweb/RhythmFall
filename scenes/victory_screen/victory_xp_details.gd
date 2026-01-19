@@ -18,33 +18,32 @@ func _ready():
 	back_button.pressed.connect(_on_back_pressed)
 
 func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_missed_notes: int, p_grade: String, total_xp: int):
-	var base_xp = float(p_score) / 200.0
-	
+	var base_xp = sqrt(float(p_score)) * 2.0
+
 	var accuracy_bonus = 0.0
 	if p_accuracy >= 100.0:
-		accuracy_bonus = 50.0
+		accuracy_bonus = 40.0
 	elif p_accuracy >= 98.0:
-		accuracy_bonus = 30.0
+		accuracy_bonus = 25.0
 	elif p_accuracy >= 95.0:
-		accuracy_bonus = 20.0
+		accuracy_bonus = 15.0
 	elif p_accuracy >= 90.0:
-		accuracy_bonus = 10.0
+		accuracy_bonus = 5.0
 
-	var combo_bonus = float(p_max_combo) / 10.0
+	var combo_bonus = 0.0
+	if p_max_combo > 0:
+		combo_bonus = log(float(p_max_combo) + 1.0) * 10.0
 
 	var grade_bonus = 0.0
 	match p_grade:
-		"SS": grade_bonus = 100.0
-		"S": grade_bonus = 50.0
-		"A": grade_bonus = 25.0
-		"B": grade_bonus = 10.0
-		"C": grade_bonus = 0.0
-		"D": grade_bonus = -10.0
-		"F": grade_bonus = -20.0
+		"SS": grade_bonus = 80.0
+		"S":  grade_bonus = 40.0
+		"A":  grade_bonus = 20.0
+		"B":  grade_bonus = 5.0
 
 	var full_combo_bonus = 0.0
-	if p_missed_notes == 0:
-		full_combo_bonus = 50.0
+	if p_missed_notes == 0 and p_max_combo > 0:  
+		full_combo_bonus = 60.0
 
 	base_xp_label.text = "Базовый XP (от счёта): %.1f" % base_xp
 	accuracy_bonus_label.text = "Бонус за точность: %.1f" % accuracy_bonus
@@ -58,9 +57,6 @@ func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_missed_no
 
 func _on_back_pressed():
 	MusicManager.play_cancel_sound()
-	visible = false
-	emit_signal("details_closed")
-	
 	visible = false
 	emit_signal("details_closed")
 

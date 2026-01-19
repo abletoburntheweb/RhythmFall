@@ -298,7 +298,9 @@ func _trigger_perfect_hit_achievement_check():
 			achievement_system.on_perfect_hit_made()
 
 func xp_for_level(level: int) -> int:
-	return int(100 * pow(1.5, level - 1))
+	if level <= 1:
+		return 100
+	return int(100 * pow(1.2, level - 1))
 
 func _calculate_xp_for_next_level():
 	data["xp_for_next_level"] = xp_for_level(data["current_level"] + 1)

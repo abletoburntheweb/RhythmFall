@@ -13,9 +13,8 @@ config_version=5
 config/name="RhythmFall"
 run/main_scene="uid://5vghv31ksise"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="uid://bqgatwl4553b5"
-config/windows_native_icon="uid://bqgatwl4553b5"
-run/icon=""
+config/icon="uid://blp686s45hwam"
+config/windows_native_icon="res://RhythmFallicon.ico"
 
 [autoload]
 
