@@ -20,6 +20,8 @@ const DEFAULT_MISS_HIT_SOUND_3 = "miss_hit3.wav"
 const DEFAULT_MISS_HIT_SOUND_4 = "miss_hit4.wav"
 const DEFAULT_MISS_HIT_SOUND_5 = "miss_hit5.wav"
 
+const DEFAULT_RESTART_SOUND = "restart_level.mp3"
+
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
 const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav"
 
@@ -342,6 +344,9 @@ func play_cover_click_sound():
 func play_level_start_sound():
 	play_sfx(DEFAULT_LEVEL_START_SOUND)
 
+func play_restart_sound():
+	play_sfx(DEFAULT_RESTART_SOUND)
+	
 func play_miss_hit_sound():
 	var random_index = randi() % 5
 	var sound_path = ""

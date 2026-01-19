@@ -752,6 +752,7 @@ func restart_level():
 func _on_restart_confirmed():
 	is_restart_held = false
 	print("GameScreen: Рестарт подтверждён!")
+	MusicManager.play_restart_sound()
 	restart_level()	
 	
 func _exit_to_song_select():

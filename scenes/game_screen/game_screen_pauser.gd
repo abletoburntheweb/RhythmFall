@@ -135,6 +135,8 @@ func _on_restart_requested():
 	if is_paused:
 		handle_resume_request() 
 	
+	MusicManager.play_restart_sound()
+	
 	if game_screen and game_screen.has_method("restart_level"):
 		game_screen.restart_level()
 	else:
