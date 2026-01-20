@@ -12,6 +12,7 @@ var default_settings = {
 	"fps_mode": 0, 
 	"fullscreen": false,
 	"enable_debug_menu": false,
+	"show_manual_track_input_on_generation": true,
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,

@@ -179,16 +179,28 @@ func _on_notes_generation_error(error_message: String):
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
 
 func _on_manual_identification_needed(song_path: String):
-	print("SongSelect.gd: Получен сигнал manual_identification_needed для: ", song_path)
-	pending_manual_identification_song_path = song_path
-	var song_bpm = current_selected_song_data.get("bpm", -1)
-	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
-		print("SongSelect.gd: Ошибка: BPM неизвестен при ожидании ручной идентификации.")
-		return
-	pending_manual_identification_bpm = float(song_bpm)
-	pending_manual_identification_lanes = -1
-	pending_manual_identification_sync_tolerance = -1.0
-	_show_manual_track_input("Неизвестен", "Н/Д")
+	if SettingsManager.get_setting("show_manual_track_input_on_generation", true):
+		pending_manual_identification_song_path = song_path
+		var song_bpm = current_selected_song_data.get("bpm", -1)
+		if str(song_bpm) != "-1" and song_bpm != "Н/Д":
+			pending_manual_identification_bpm = float(song_bpm)
+			_show_manual_track_input("Неизвестен", "Н/Д")
+		else:
+			print("BPM неизвестен — невозможно продолжить")
+	else:
+		print("Галка 'Уточнять трек' выключена. Пропускаем идентификацию и жанры.")
+
+		server_clients.generate_notes(
+			song_path,
+			current_instrument,
+			float(current_selected_song_data.get("bpm", 120)),
+			-1,
+			-1.0,
+			false,       
+			"",  
+			"",
+			current_generation_mode
+		)
 
 func _on_genres_detection_completed(artist: String, title: String, genres: Array):
 	print("SongSelect.gd: Жанры получены для '%s - %s': %s" % [artist, title, genres])
