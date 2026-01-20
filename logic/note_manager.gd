@@ -7,11 +7,10 @@ var game_screen
 var notes = [] 
 var note_spawn_queue = []
 
-var BaseNote = load("res://scenes/game_screen/notes/base_note.gd")
-var DefaultNote = load("res://scenes/game_screen/notes/default_note.gd")
-var HoldNote = load("res://scenes/game_screen/notes/hold_note.gd")
-var KickNote = load("res://scenes/game_screen/notes/kick_note.gd")
-var SnareNote = load("res://scenes/game_screen/notes/snare_note.gd")
+var BaseNote = preload("res://scenes/game_screen/notes/base_note.gd")
+var DefaultNote = preload("res://scenes/game_screen/notes/default_note.gd")
+var HoldNote = preload("res://scenes/game_screen/notes/hold_note.gd")
+var DrumNote = preload("res://scenes/game_screen/notes/drum_note.gd")
 
 func _init(screen):
 	game_screen = screen
@@ -77,6 +76,7 @@ func spawn_notes():
 	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
+
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
@@ -84,6 +84,7 @@ func spawn_notes():
 		var note_type = note_info.get("type", "DefaultNote")
 		var time_diff = note_time - game_time
 		var y_spawn = hit_zone_y - time_diff * pixels_per_sec
+
 		if y_spawn > game_screen.get_viewport_rect().size.y + 20:
 			continue
 
@@ -98,11 +99,8 @@ func spawn_notes():
 			var height = int(duration * pixels_per_sec)
 			note_object = HoldNote.new(lane, y_spawn, game_time, height, duration * 1000)
 			visual_rect.color = note_object.color
-		elif note_type == "KickNote":
-			note_object = KickNote.new(lane, y_spawn, game_time)
-			visual_rect.color = note_object.color
-		elif note_type == "SnareNote":
-			note_object = SnareNote.new(lane, y_spawn, game_time)
+		elif note_type == "DrumNote":  
+			note_object = DrumNote.new(lane, y_spawn, game_time)
 			visual_rect.color = note_object.color
 		else:
 			continue
@@ -120,10 +118,8 @@ func spawn_notes():
 				visual_rect.size = Vector2(lane_width, default_note_height)
 
 			visual_rect.position = Vector2(lane * lane_width, y_spawn)
-
 			game_screen.notes_container.add_child(visual_rect)
-
-			notes.append(note_object) 
+			notes.append(note_object)
 
 func update_notes():
 	var speed = game_screen.speed

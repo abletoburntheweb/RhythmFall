@@ -8,7 +8,7 @@ func get_sound_path_for_note(note_type: String, instrument: String) -> String:
 	var sound_path = ""
 
 	if instrument == "drums":
-		if note_type == "KickNote":
+		if note_type == "DrumNote":
 			if MusicManager.active_kick_sound_path:
 				sound_path = MusicManager.active_kick_sound_path
 			else:
