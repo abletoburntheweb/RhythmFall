@@ -6,7 +6,10 @@ const NoteManager = preload("res://logic/note_manager.gd")
 const Player = preload("res://logic/player.gd")
 const SoundInstrumentFactory = preload("res://logic/sound_instrument_factory.gd")
 const AutoPlayer = preload("res://scenes/debug_menu/bot.gd")
+const GAME_UPDATE_DELTA = 1.0 / 60.0
 
+var original_vsync_mode: int = DisplayServer.VSYNC_ADAPTIVE
+var original_max_fps: int = 0
 var pauser: GameScreenPauser = null
 
 var game_time: float = 0.0
@@ -87,7 +90,12 @@ func _ready():
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
-	
+
+	original_max_fps = Engine.max_fps
+	original_vsync_mode = DisplayServer.window_get_vsync_mode()
+
+	Engine.max_fps = 60
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 
 	var settings_for_player = SettingsManager.settings.duplicate(true)
 
@@ -109,7 +117,7 @@ func _ready():
 	auto_player = AutoPlayer.new(self)
 
 	game_timer = Timer.new()
-	game_timer.wait_time = 0.016 
+	game_timer.wait_time = GAME_UPDATE_DELTA  
 	game_timer.timeout.connect(_update_game)
 	add_child(game_timer)
 	
@@ -121,7 +129,6 @@ func _ready():
 	victory_delay_timer = Timer.new()
 	victory_delay_timer.timeout.connect(_on_victory_delay_timeout)
 	add_child(victory_delay_timer)
-
 
 	pauser = GameScreenPauser.new()
 	pauser.initialize(self, game_timer)
@@ -381,7 +388,7 @@ func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
 		return  
 	
-	game_time += 0.016
+	game_time += GAME_UPDATE_DELTA 
 	
 	if not countdown_active: 
 		note_manager.spawn_notes() 
@@ -397,7 +404,7 @@ func _update_game():
 	note_manager.update_notes()
 	
 	if not pauser.is_paused:
-		MusicManager.update_metronome(0.016, game_time, bpm)
+		MusicManager.update_metronome(GAME_UPDATE_DELTA, game_time, bpm)  
 
 func _check_song_end():
 	if pauser.is_paused or game_finished or notes_ended:
@@ -425,6 +432,9 @@ func _on_victory_delay_timeout():
 func end_game():
 	if game_finished:
 		return
+		
+	Engine.max_fps = original_max_fps
+	DisplayServer.window_set_vsync_mode(original_vsync_mode)
 	
 	if pauser.is_paused:
 		pauser.cleanup_on_game_end()
@@ -709,6 +719,12 @@ func _process(delta):
 		update_ui()
 		
 func restart_level():
+	Engine.max_fps = original_max_fps
+	DisplayServer.window_set_vsync_mode(original_vsync_mode)
+	
+	Engine.max_fps = 60
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
+
 	if game_finished:
 		return
 
