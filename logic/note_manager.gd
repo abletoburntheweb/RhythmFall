@@ -15,46 +15,28 @@ var DrumNote = preload("res://scenes/game_screen/notes/drum_note.gd")
 func _init(screen):
 	game_screen = screen
 
-func load_notes_from_file(song_data, generation_mode: String = "basic"): 
-	clear_notes()
-
-	if not song_data or not "path" in song_data:
-		printerr("NoteManager: Нет данных о песне или пути к файлу.")
+func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes: int = 4):
+	var song_path = song_data.get("path", "")
+	if song_path == "":
+		print("NoteManager: Путь к песне пуст, загрузка нот невозможна.")
 		return
 
-	var song_path = song_data["path"]
 	var base_name = song_path.get_file().get_basename()
+	var notes_filename = "%s_drums_%s_lanes%d.json" % [base_name, generation_mode.to_lower(), lanes]
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
 
-	var current_instrument = "standard"
-	if game_screen and "current_instrument" in game_screen:
-		current_instrument = game_screen.current_instrument
-
-	var notes_file_path = "user://notes/%s/%s_%s_%s.json" % [base_name, base_name, current_instrument, generation_mode.to_lower()]
-
-	var file = FileAccess.open(notes_file_path, FileAccess.READ)
-	if not file:
-		printerr("NoteManager: Не удалось открыть файл нот: ", notes_file_path)
-		return
-
-	var json_text = file.get_as_text()
-	file.close()
-	if json_text.is_empty():
-		printerr("NoteManager: Файл нот пуст: ", notes_file_path)
-		return
-
-	var json_result = JSON.parse_string(json_text)
-	if not json_result or typeof(json_result) != TYPE_ARRAY:
-		printerr("NoteManager: Не удалось распарсить JSON или это не массив: ", notes_file_path)
-		return
-
-	for note_data in json_result:
-		var note_type = note_data.get("type", "DefaultNote")
-		var lane = note_data.get("lane", 0)
-		var time = note_data.get("time", 0.0)
-		note_spawn_queue.append(note_data)
-
-	total_loaded_notes_count = note_spawn_queue.size()
-	print("NoteManager: Загружено %d нот в очередь (total_loaded_notes_count)." % total_loaded_notes_count)
+	var file_access = FileAccess.open(notes_path, FileAccess.READ)
+	if file_access:
+		var json_text = file_access.get_as_text()
+		file_access.close()
+		var json_result = JSON.parse_string(json_text)
+		if json_result is Array:
+			note_spawn_queue = json_result.duplicate()
+			print("NoteManager: Загружено %d нот из %s" % [note_spawn_queue.size(), notes_path])
+		else:
+			print("NoteManager: Некорректный формат файла нот: %s" % notes_path)
+	else:
+		print("NoteManager: Не удалось открыть файл нот: %s" % notes_path)
 
 func get_earliest_note_time() -> float:
 	if note_spawn_queue.is_empty():

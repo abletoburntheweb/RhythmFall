@@ -3,10 +3,11 @@ class_name DrumNote
 extends BaseNote
 
 const LANE_COLORS = [
-	Color("#32C832"),  
-	Color("#FF3333"), 
-	Color("#FFD700"), 
-	Color("#33CCFF") 
+	Color("#32C832"), 
+	Color("#FF3333"),  
+	Color("#FFD700"),  
+	Color("#33CCFF"),  
+	Color("#FFA500")  
 ]
 
 var color: Color

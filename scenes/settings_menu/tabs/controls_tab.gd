@@ -22,27 +22,22 @@ func _setup_ui():
 
 	var keys_container = $ContentVBox/KeysContainer
 	if not keys_container:
-		printerr("ControlsTab.gd: Не найден KeysContainer по пути $ContentVBox/KeysContainer!")
+		printerr("ControlsTab.gd: Не найден KeysContainer!")
 		return
 
 	for child in keys_container.get_children():
 		child.queue_free()
 
-	var current_keys_text = []
-	for i in range(4):
-		var key_text = SettingsManager.get_key_text_for_lane(i)
-		current_keys_text.append(key_text)
+	var num_lanes = SettingsManager.MAX_LANES if SettingsManager.has_method("MAX_LANES") else 5
 
-	for i in range(current_keys_text.size()):
-		var lane_index = i
-		var key_text = current_keys_text[i]
+	for i in range(num_lanes):
+		var key_text = SettingsManager.get_key_text_for_lane(i)
 
 		var row_hbox = _create_row_container()
-		row_hbox.name = "Lane%dRow" % (lane_index + 1)
+		row_hbox.name = "Lane%dRow" % (i + 1)
 
-		var line_label = _create_line_label(lane_index + 1)
-
-		var key_button = _create_key_button(key_text, lane_index)
+		var line_label = _create_line_label(i + 1)
+		var key_button = _create_key_button(key_text, i)
 
 		var label_margin_container = _wrap_label_in_margin(line_label)
 		row_hbox.add_child(label_margin_container)
@@ -50,7 +45,7 @@ func _setup_ui():
 
 		keys_container.add_child(row_hbox)
 
-	print("ControlsTab.gd: UI управления создано.")
+	print("ControlsTab.gd: UI управления создано для %d линий." % num_lanes)
 
 	print("ControlsTab.gd: DEBUG: После _setup_ui, количество дочерних элементов в KeysContainer: ", keys_container.get_child_count())
 	for i in range(keys_container.get_child_count()):
@@ -239,9 +234,10 @@ func _update_player_keymap():
 		return
 
 	var updated_keymap = {}
-	for i in range(4):
+	var num_lanes = SettingsManager.MAX_LANES if SettingsManager.has_method("MAX_LANES") else 5
+	for i in range(num_lanes):
 		var scan_code = SettingsManager.get_key_scancode_for_lane(i)
-		if scan_code != 0:
+		if scan_code != 0 and scan_code != KEY_X:
 			updated_keymap[scan_code] = i
 	game_screen.player.set_keymap(updated_keymap)
 	print("ControlsTab.gd: Keymap Player обновлён: ", updated_keymap)

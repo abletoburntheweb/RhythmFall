@@ -26,6 +26,7 @@ var manual_track_input_dialog: Control = null
 
 var current_instrument: String = "drums"
 var current_generation_mode: String = "basic"
+var current_lanes: int = 4
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
 var pending_manual_identification_song_path: String = ""
@@ -160,8 +161,9 @@ func _on_notes_generation_started():
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	print("SongSelect.gd: Генерация нот завершена. Нот: %d, BPM: %f, инструмент: %s" % [notes_data.size(), bpm_value, instrument_type])
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Готово"
+	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	
 	var game_engine = get_parent()
@@ -185,16 +187,17 @@ func _on_manual_identification_needed(song_path: String):
 			print("BPM неизвестен — невозможно продолжить")
 	else:
 		print("Галка 'Уточнять трек' выключена. Пропускаем идентификацию и жанры.")
-
+		var manual_artist = "Unknown"
+		var manual_title = "Unknown"
 		server_clients.generate_notes(
 			song_path,
 			current_instrument,
 			float(current_selected_song_data.get("bpm", 120)),
-			-1,
-			-1.0,
-			false,       
-			"",  
-			"",
+			current_lanes,     
+			-1.0,               
+			false,              
+			manual_artist,      
+			manual_title,       
 			current_generation_mode
 		)
 
@@ -272,9 +275,15 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+		$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 	else:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+		
+		if _check_if_notes_exist_for_current_settings():
+			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 
 func _on_song_list_changed():
 	_update_song_count_label()
@@ -360,16 +369,26 @@ func _generate_notes_for_current_song():
 	var song_bpm = current_selected_song_data.get("bpm", -1)
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д": return
 	
+	var auto_identify = true
+	var manual_artist = ""
+	var manual_title = ""
+	
+	var skip_genre_detection = SettingsManager.get_setting("skip_genre_detection", false)
+	if skip_genre_detection:
+		auto_identify = false
+		manual_artist = "Unknown"
+		manual_title = "Unknown"
+
 	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path)
 	server_clients.generate_notes(
 		song_path,
 		current_instrument,
 		float(song_bpm),
-		-1,
-		-1.0,
-		true,
-		"",
-		"",
+		current_lanes,      
+		-1.0,                
+		auto_identify,      
+		manual_artist,      
+		manual_title,      
 		current_generation_mode
 	)
 
@@ -453,8 +472,10 @@ func _on_play_pressed():
 		current_selected_song_data,  
 		current_instrument,           
 		results_manager,             
-		current_generation_mode       
+		current_generation_mode,
+		current_lanes 
 	)
+	
 func _update_song_count_label():
 	song_list_manager.update_song_count_label($MainVBox/TopBarHBox/SongCountLabel)
 
@@ -503,14 +524,12 @@ func _on_manual_entry_confirmed(artist: String, title: String):
 func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: int):
 	current_instrument = instrument
 	current_generation_mode = mode
+	current_lanes = lanes
 	MusicManager.play_select_sound()
-	
-	var instrument_name = "Перкуссия" if instrument == "drums" else "Стандартный"
-	var mode_name = "Улучшенный" if mode == "enhanced" else "Базовый"
 	
 	song_details_manager.set_current_instrument(current_instrument)
 	song_details_manager.set_current_generation_mode(current_generation_mode)
-	song_details_manager._update_play_button_state()
+	song_details_manager.set_current_lanes(lanes)   
 	
 	MusicManager.play_select_sound()
 	
@@ -540,3 +559,23 @@ func get_current_selected_song() -> Dictionary:
 
 func get_results_manager():
 	return results_manager
+	
+func _check_if_notes_exist_for_current_settings() -> bool:
+	var song_path = current_selected_song_data.get("path", "")
+	if song_path == "":
+		return false
+
+	var base_name = song_path.get_file().get_basename()
+	var notes_filename = "%s_%s_%s_lanes%d.json" % [
+		base_name,
+		current_instrument,
+		current_generation_mode.to_lower(),
+		current_lanes
+	]
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
+
+	var file_access = FileAccess.open(notes_path, FileAccess.READ)
+	if file_access:
+		file_access.close()
+		return true
+	return false

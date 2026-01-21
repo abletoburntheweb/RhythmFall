@@ -16,6 +16,7 @@ var _current_preview_file_path: String = ""
 
 var current_instrument: String = "standard"
 var current_generation_mode: String = "basic"
+var current_lanes: int = 4  
 
 var generation_status_label: Label = null
 var is_generating_notes: bool = false
@@ -30,7 +31,11 @@ func set_current_instrument(instrument: String):
 func set_current_generation_mode(mode: String):
 	current_generation_mode = mode
 	_update_play_button_state()
-	
+
+func set_current_lanes(lanes: int):
+	current_lanes = lanes
+	_update_play_button_state()
+
 func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
@@ -126,8 +131,15 @@ func _get_fallback_cover_texture():
 	return null
 
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
+	if song_path == "":
+		return false
 	var base_name = song_path.get_file().get_basename()
-	var notes_filename = "%s_%s_%s.json" % [base_name, instrument, current_generation_mode]  
+	var notes_filename = "%s_%s_%s_lanes%d.json" % [
+		base_name,
+		instrument,
+		current_generation_mode.to_lower(),
+		current_lanes
+	]
 	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
 	
 	var notes_file_exists = FileAccess.file_exists(notes_path)

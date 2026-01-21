@@ -45,6 +45,12 @@ func generate_notes(
 	var effective_lanes = lanes if lanes > 0 else default_lanes
 	var effective_sync_tolerance = sync_tolerance if sync_tolerance > 0.0 else default_sync_tolerance
 
+	var skip_genre_detection = SettingsManager.get_setting("skip_genre_detection", false)
+	if skip_genre_detection:
+		auto_identify_track = false
+		manual_artist = "Unknown"
+		manual_title = "Unknown"
+
 	_thread_request_data = {
 		"song_path": song_path,
 		"instrument_type": instrument_type,
@@ -104,7 +110,7 @@ func _check_thread_status():
 			var inst_type = _thread_result.instrument_type
 			var lanes_val = _thread_result.lanes
 			
-			_save_notes_locally(_thread_request_data.song_path, inst_type, notes, _thread_request_data.generation_mode)
+			_save_notes_locally(_thread_request_data.song_path, inst_type, notes, _thread_request_data.generation_mode, lanes_val)
 			
 			var track_info = _thread_result.get("track_info", {})
 			if !track_info.is_empty():
@@ -376,11 +382,11 @@ func _identify_track(song_path: String) -> Dictionary:
 	http_client.close()
 	return result
 
-func _save_notes_locally(song_path: String, instrument: String, notes_data: Array, generation_mode: String = "basic"): 
+func _save_notes_locally(song_path: String, instrument: String, notes_data: Array, generation_mode: String = "basic", lanes: int = 4):
 	var base_name = song_path.get_file().get_basename()
-	var song_folder_name = base_name 
-	var notes_filename = "%s_%s_%s.json" % [base_name, instrument, generation_mode.to_lower()]  
-	var song_notes_path = "user://notes/%s" % song_folder_name  
+	var song_folder_name = base_name
+	var notes_filename = "%s_%s_%s_lanes%d.json" % [base_name, instrument, generation_mode.to_lower(), lanes]
+	var song_notes_path = "user://notes/%s" % song_folder_name 
 	
 	var dir = DirAccess.open("user://")
 	if not dir:
