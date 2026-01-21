@@ -1,4 +1,4 @@
-# res://scenes/game_screen/game_screen_pauser.gd
+# scenes/game_screen/game_screen_pauser.gd
 class_name GameScreenPauser
 extends Node
 

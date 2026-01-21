@@ -3,8 +3,7 @@ extends BaseScreen
 
 const ServerClients = preload("res://logic/server_clients.gd")
 const ManualTrackInputScene = preload("res://scenes/song_select/manual_track_input.tscn")
-const InstrumentSelectorScene = preload("res://scenes/song_select/instrument_selector.tscn")
-const GenerationSelectorScene = preload("res://scenes/song_select/generation_selector.tscn")
+const GenerationSettingsSelectorScene = preload("res://scenes/song_select/generation_settings_selector.tscn")
 
 var server_clients: ServerClients = ServerClients.new()
 var song_list_manager: SongListManager = preload("res://scenes/song_select/song_list_manager.gd").new()
@@ -21,8 +20,7 @@ var song_metadata_manager = SongMetadataManager
 @onready var results_button: Button = $MainVBox/ContentHBox/DetailsVBox/ResultsButton
 @onready var clear_results_button: Button = $ClearResultsButton
 
-var instrument_selector: Control = null
-var generation_selector: Control = null
+var generation_settings_selector: Control = null
 var file_dialog: FileDialog = null
 var manual_track_input_dialog: Control = null
 
@@ -82,8 +80,6 @@ func _ready():
 	
 	_connect_ui_signals()
 	
-	$MainVBox/TopBarHBox/InstrumentButton.text = "Инструмент: Перкуссия"
-	$MainVBox/TopBarHBox/GenerationModeButton.text = "Режим генерации: Базовый"
 	filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
 	analyze_bpm_button.disabled = true
 	results_button.disabled = true
@@ -95,13 +91,13 @@ func _connect_ui_signals():
 	$MainVBox/TopBarHBox/AddButton.pressed.connect(_on_add_pressed)
 	edit_button.pressed.connect(_toggle_edit_mode)
 	_update_edit_button_style()
-	$MainVBox/TopBarHBox/InstrumentButton.pressed.connect(_on_instrument_pressed)
-	$MainVBox/TopBarHBox/GenerationModeButton.pressed.connect(_on_generation_mode_pressed)
+
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.pressed.connect(_on_generate_pressed)
 	analyze_bpm_button.pressed.connect(_on_analyze_bpm_pressed)
 	$MainVBox/ContentHBox/DetailsVBox/DeleteButton.pressed.connect(_on_delete_pressed)
 	results_button.pressed.connect(_on_results_pressed)
 	clear_results_button.pressed.connect(_on_clear_results_pressed)
+	$MainVBox/TopBarHBox/GenerationSettingsButton.pressed.connect(_on_generation_settings_pressed)
 	
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.pressed.connect(_on_play_pressed)
 	
@@ -285,7 +281,10 @@ func _on_song_list_changed():
 
 func _on_add_pressed():
 	_open_file_dialog_for_add()
-
+	
+func _on_generation_settings_pressed():
+	_open_generation_settings_selector()
+	
 func _open_file_dialog_for_add():
 	if file_dialog:
 		file_dialog.queue_free()
@@ -300,7 +299,16 @@ func _open_file_dialog_for_add():
 	file_dialog.canceled.connect(_cleanup_file_dialog)  
 	add_child(file_dialog)
 	file_dialog.popup_centered()
-
+	
+func _open_generation_settings_selector():
+	if generation_settings_selector and is_instance_valid(generation_settings_selector):
+		generation_settings_selector.queue_free()
+	
+	generation_settings_selector = GenerationSettingsSelectorScene.instantiate()
+	generation_settings_selector.generation_settings_confirmed.connect(_on_generation_settings_confirmed)
+	generation_settings_selector.selector_closed.connect(_on_generation_settings_closed)
+	get_parent().add_child(generation_settings_selector)
+	
 func _on_file_selected_internal(path):
 	var file_extension = path.get_extension().to_lower()
 	if file_extension != "mp3" and file_extension != "wav":
@@ -342,12 +350,6 @@ func _update_edit_button_style():
 		edit_button.self_modulate = Color(1.0, 1.0, 1.0, 1.0)
 		edit_button.text = "Редактировать"
 
-func _on_instrument_pressed():
-	_open_instrument_selector()
-
-func _on_generation_mode_pressed():
-	_open_generation_selector()
-
 func _on_generate_pressed():
 	_generate_notes_for_current_song()
 
@@ -370,50 +372,6 @@ func _generate_notes_for_current_song():
 		"",
 		current_generation_mode
 	)
-
-func _open_instrument_selector():
-	if instrument_selector and is_instance_valid(instrument_selector):
-		instrument_selector.queue_free()
-	
-	instrument_selector = InstrumentSelectorScene.instantiate()
-	instrument_selector.instrument_selected.connect(_on_instrument_selected)
-	instrument_selector.selector_closed.connect(_on_instrument_selector_closed)
-	get_parent().add_child(instrument_selector)
-
-func _on_instrument_selector_closed():
-	if instrument_selector:
-		instrument_selector.queue_free()
-		instrument_selector = null
-
-func _on_instrument_selected(instrument_type: String):
-	current_instrument = instrument_type
-	var instrument_name = "Перкуссия" if instrument_type == "drums" else "Стандартный"
-	$MainVBox/TopBarHBox/InstrumentButton.text = "Инструмент: " + instrument_name
-	MusicManager.play_instrument_select_sound(instrument_type)  
-	song_details_manager.set_current_instrument(current_instrument)
-	song_details_manager._update_play_button_state()
-
-func _open_generation_selector():
-	if generation_selector and is_instance_valid(generation_selector):
-		generation_selector.queue_free()
-	
-	generation_selector = GenerationSelectorScene.instantiate()
-	generation_selector.generation_mode_selected.connect(_on_generation_mode_selected)
-	generation_selector.selector_closed.connect(_on_generation_selector_closed)
-	get_parent().add_child(generation_selector)
-
-func _on_generation_mode_selected(mode: String):
-	current_generation_mode = mode
-	var display_text = "Улучшенный" if mode == "enhanced" else "Базовый"
-	$MainVBox/TopBarHBox/GenerationModeButton.text = "Режим генерации: " + display_text
-	song_details_manager.set_current_generation_mode(mode)  
-	song_details_manager._update_play_button_state()
-
-
-func _on_generation_selector_closed():
-	if generation_selector:
-		generation_selector.queue_free()
-		generation_selector = null
 
 func _on_delete_pressed():
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -541,7 +499,26 @@ func _on_manual_entry_confirmed(artist: String, title: String):
 	print("SongSelect.gd: Пользователь ввёл артиста: '%s', название: '%s'" % [artist, title])
 	if pending_manual_identification_song_path == "": return
 	server_clients.get_genres_for_manual_entry(artist, title)
-
+	
+func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: int):
+	current_instrument = instrument
+	current_generation_mode = mode
+	MusicManager.play_select_sound()
+	
+	var instrument_name = "Перкуссия" if instrument == "drums" else "Стандартный"
+	var mode_name = "Улучшенный" if mode == "enhanced" else "Базовый"
+	
+	song_details_manager.set_current_instrument(current_instrument)
+	song_details_manager.set_current_generation_mode(current_generation_mode)
+	song_details_manager._update_play_button_state()
+	
+	MusicManager.play_select_sound()
+	
+func _on_generation_settings_closed():
+	if generation_settings_selector and is_instance_valid(generation_settings_selector):
+		generation_settings_selector.queue_free()
+		generation_settings_selector = null
+		
 func _on_song_metadata_updated(song_file_path: String):
 	if current_displayed_song_path == song_file_path:
 		for song in SongManager.get_songs_list():
@@ -554,9 +531,6 @@ func cleanup_before_exit():
 	if manual_track_input_dialog and is_instance_valid(manual_track_input_dialog):
 		manual_track_input_dialog.queue_free()
 		manual_track_input_dialog = null
-	if instrument_selector and is_instance_valid(instrument_selector):
-		instrument_selector.queue_free()
-		instrument_selector = null
 	if file_dialog and is_instance_valid(file_dialog):
 		file_dialog.queue_free()
 		file_dialog = null

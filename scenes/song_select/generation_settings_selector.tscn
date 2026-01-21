@@ -1,0 +1,111 @@
+[gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
+
+[ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4y251"]
+bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+
+[node name="GenerationSettingsSelector" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_3dj4v")
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 0
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_4y251")
+text = "Назад	"
+
+[node name="InstrumentLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Выберите инструмент:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InstrumentButtons" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="PercussionButton" type="Button" parent="Container/InstrumentButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "Перкуссия"
+
+[node name="ModeLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Режим генерации:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ModeButtons" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="BasicButton" type="Button" parent="Container/ModeButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "Базовый"
+
+[node name="EnhancedButton" type="Button" parent="Container/ModeButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "Улучшенный"
+
+[node name="LanesLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Количество линий:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LanesButtons" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+
+[node name="Lanes3Button" type="Button" parent="Container/LanesButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "3"
+
+[node name="Lanes4Button" type="Button" parent="Container/LanesButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "4"
+
+[node name="Lanes5Button" type="Button" parent="Container/LanesButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "5"
+
+[node name="ConfirmButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(400, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_4y251")
+text = "Подтвердить
+"

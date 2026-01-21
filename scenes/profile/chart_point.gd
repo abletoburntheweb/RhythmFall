@@ -1,4 +1,4 @@
-# res://scenes/profile/chart_point.gd
+# scenes/profile/chart_point.gd
 extends Control
 
 signal point_hovered(position: Vector2, tooltip_text: String)
