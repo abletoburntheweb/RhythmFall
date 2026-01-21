@@ -45,8 +45,8 @@ func generate_notes(
 	var effective_lanes = lanes if lanes > 0 else default_lanes
 	var effective_sync_tolerance = sync_tolerance if sync_tolerance > 0.0 else default_sync_tolerance
 
-	var skip_genre_detection = SettingsManager.get_setting("skip_genre_detection", false)
-	if skip_genre_detection:
+	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
+	if enable_genre_detection:
 		auto_identify_track = false
 		manual_artist = "Unknown"
 		manual_title = "Unknown"

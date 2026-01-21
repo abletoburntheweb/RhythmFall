@@ -21,50 +21,63 @@ color = Color(1, 0.88183695, 0.8576006, 1)
 
 [node name="Lane0Highlight" type="ColorRect" parent="LanesContainer"]
 visible = false
-offset_right = 480.0
+offset_right = 384.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
 [node name="Lane1Highlight" type="ColorRect" parent="LanesContainer"]
 visible = false
-offset_left = 480.0
-offset_right = 960.0
+offset_left = 384.0
+offset_right = 768.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
 [node name="Lane2Highlight" type="ColorRect" parent="LanesContainer"]
 visible = false
-offset_left = 960.0
-offset_right = 1440.0
+offset_left = 768.0
+offset_right = 1152.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
 [node name="Lane3Highlight" type="ColorRect" parent="LanesContainer"]
 visible = false
-offset_left = 1440.0
+offset_left = 1152.0
+offset_right = 1536.0
+offset_bottom = 1080.0
+color = Color(0.99726194, 0.7774682, 0.899526, 1)
+
+[node name="Lane4Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+offset_left = 1536.0
 offset_right = 1920.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
 [node name="Lane0" type="ColorRect" parent="LanesContainer"]
 offset_top = 900.0
-offset_right = 480.0
+offset_right = 384.0
 offset_bottom = 930.0
 
 [node name="Lane1" type="ColorRect" parent="LanesContainer"]
-offset_left = 480.0
+offset_left = 384.0
 offset_top = 900.0
-offset_right = 960.0
+offset_right = 768.0
 offset_bottom = 930.0
 
 [node name="Lane2" type="ColorRect" parent="LanesContainer"]
-offset_left = 960.0
+offset_left = 768.0
 offset_top = 900.0
-offset_right = 1440.0
+offset_right = 1152.0
 offset_bottom = 930.0
 
 [node name="Lane3" type="ColorRect" parent="LanesContainer"]
-offset_left = 1440.0
+offset_left = 1152.0
+offset_top = 900.0
+offset_right = 1536.0
+offset_bottom = 930.0
+
+[node name="Lane4" type="ColorRect" parent="LanesContainer"]
+offset_left = 1536.0
 offset_top = 900.0
 offset_right = 1920.0
 offset_bottom = 930.0

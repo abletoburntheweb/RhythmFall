@@ -13,7 +13,7 @@ var default_settings = {
 	"fullscreen": false,
 	"enable_debug_menu": false,
 	"show_manual_track_input_on_generation": true,
-	"skip_genre_detection": false,
+	"enable_genre_detection": true,
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,

@@ -373,8 +373,8 @@ func _generate_notes_for_current_song():
 	var manual_artist = ""
 	var manual_title = ""
 	
-	var skip_genre_detection = SettingsManager.get_setting("skip_genre_detection", false)
-	if skip_genre_detection:
+	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
+	if not enable_genre_detection:
 		auto_identify = false
 		manual_artist = "Unknown"
 		manual_title = "Unknown"
@@ -525,13 +525,10 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 	current_instrument = instrument
 	current_generation_mode = mode
 	current_lanes = lanes
-	MusicManager.play_select_sound()
 	
 	song_details_manager.set_current_instrument(current_instrument)
 	song_details_manager.set_current_generation_mode(current_generation_mode)
-	song_details_manager.set_current_lanes(lanes)   
-	
-	MusicManager.play_select_sound()
+	song_details_manager.set_current_lanes(lanes)
 	
 func _on_generation_settings_closed():
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
