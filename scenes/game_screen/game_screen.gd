@@ -101,7 +101,7 @@ func _ready():
 
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
-	player = Player.new(settings_for_player)  
+	player = Player.new(settings_for_player, lanes)  
 	sound_factory = SoundInstrumentFactory.new()
 	
 	player.note_hit.connect(_on_player_hit)

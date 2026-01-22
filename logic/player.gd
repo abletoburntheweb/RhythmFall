@@ -7,26 +7,17 @@ signal lane_pressed_changed
 var lanes_state: Array[bool] = []
 var keymap: Dictionary = {}
 var _key_to_lane: Dictionary = {}
+var num_active_lanes: int = 5 
 
 const MAX_LANES = 5  
 
-func _init(settings: Dictionary = {}):
+func _init(settings: Dictionary = {}, num_lanes: int = MAX_LANES):
 	keymap = load_keymap_from_settings(settings)
 	_key_to_lane = {}
 	for key in keymap:
 		_key_to_lane[keymap[key]] = key
 	
-	_init_lanes_state()
-
-func _init_lanes_state():
-	var max_lane = 0
-	for lane in keymap.values():
-		if lane > max_lane:
-			max_lane = lane
-	var num_lanes = clamp(max_lane + 1, 3, MAX_LANES)
-	lanes_state.resize(num_lanes)
-	for i in range(num_lanes):
-		lanes_state[i] = false
+	set_num_lanes(num_lanes)
 
 func load_keymap_from_settings(settings: Dictionary) -> Dictionary:
 	var default_keymap = {
@@ -76,13 +67,22 @@ func set_keymap(new_keymap: Dictionary):
 	_key_to_lane = {}
 	for key in keymap:
 		_key_to_lane[keymap[key]] = key
-	_init_lanes_state()
+	set_num_lanes(num_active_lanes)
+	lane_pressed_changed.emit()
+
+func set_num_lanes(new_num_lanes: int):
+	num_active_lanes = clamp(new_num_lanes, 3, MAX_LANES)
+	lanes_state.resize(num_active_lanes)
+	for i in range(num_active_lanes):
+		lanes_state[i] = false
 	lane_pressed_changed.emit()
 
 func handle_key_press(keycode: int):
 	if keycode in keymap:
 		var lane = keymap[keycode]
-		if 0 <= lane and lane < lanes_state.size() and not lanes_state[lane]:
+		if lane >= num_active_lanes:
+			return
+		if not lanes_state[lane]:
 			lanes_state[lane] = true
 			note_hit.emit(lane)
 			lane_pressed_changed.emit()
@@ -90,7 +90,9 @@ func handle_key_press(keycode: int):
 func handle_key_release(keycode: int):
 	if keycode in keymap:
 		var lane = keymap[keycode]
-		if 0 <= lane and lane < lanes_state.size():
+		if lane >= num_active_lanes:
+			return
+		if lanes_state[lane]:
 			lanes_state[lane] = false
 			lane_pressed_changed.emit()
 			print("Player: Key released for lane %d" % lane)
