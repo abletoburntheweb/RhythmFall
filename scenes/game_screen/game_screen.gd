@@ -220,13 +220,15 @@ func _find_ui_elements():
 			lanes_container_node.get_node_or_null("Lane0Highlight") as ColorRect,
 			lanes_container_node.get_node_or_null("Lane1Highlight") as ColorRect,
 			lanes_container_node.get_node_or_null("Lane2Highlight") as ColorRect,
-			lanes_container_node.get_node_or_null("Lane3Highlight") as ColorRect
+			lanes_container_node.get_node_or_null("Lane3Highlight") as ColorRect,
+			lanes_container_node.get_node_or_null("Lane4Highlight") as ColorRect
 		]
 		lane_nodes = [
 			lanes_container_node.get_node_or_null("Lane0") as ColorRect,
 			lanes_container_node.get_node_or_null("Lane1") as ColorRect,
 			lanes_container_node.get_node_or_null("Lane2") as ColorRect,
-			lanes_container_node.get_node_or_null("Lane3") as ColorRect
+			lanes_container_node.get_node_or_null("Lane3") as ColorRect,
+			lanes_container_node.get_node_or_null("Lane4") as ColorRect  
 		]
 
 func _load_lane_colors():
@@ -307,8 +309,36 @@ func _set_instrument(instrument_type: String):
 		instrument_label.text = "Инструмент: " + ("Перкуссия" if instrument_type == "drums" else "Стандартный")
 		
 func _set_lanes(lane_count: int):
-	lanes = lane_count
+	lanes = clamp(lane_count, 3, 5)
 	print("GameScreen.gd: Установлено количество линий: ", lanes)
+	_update_lane_layout()
+
+func _update_lane_layout():
+	var screen_width = DisplayServer.screen_get_size().x  
+	var lane_width = screen_width / lanes
+
+	for i in range(5): 
+		var is_active = (i < lanes)
+
+		if i < lane_nodes.size():
+			var lane_node = lane_nodes[i]
+			if lane_node:
+				lane_node.visible = is_active
+				if is_active:
+					lane_node.position.x = i * lane_width
+					lane_node.size.x = lane_width
+
+		if i < lane_highlight_nodes.size():
+			var highlight_node = lane_highlight_nodes[i]
+			if highlight_node:
+				highlight_node.visible = false
+				if is_active:
+					highlight_node.position.x = i * lane_width
+					highlight_node.size.x = lane_width
+
+	var hit_zone = get_node_or_null("HitZone")
+	if hit_zone:
+		hit_zone.size.x = screen_width
 	
 func _set_generation_mode(mode: String): 
 	current_generation_mode = mode
@@ -325,6 +355,8 @@ func start_gameplay():
 		song_to_load = {"path": "res://songs/sample.mp3"}
 
 	note_manager.load_notes_from_file(song_to_load, current_generation_mode, lanes)
+
+	_update_lane_layout()
 
 	if song_to_load and song_to_load.has("bpm"):
 		var bpm_str = str(song_to_load.get("bpm", ""))

@@ -6,7 +6,7 @@ var total_loaded_notes_count: int = 0
 var game_screen
 var notes = [] 
 var note_spawn_queue = []
-
+var lanes: int = 4
 var BaseNote = preload("res://scenes/game_screen/notes/base_note.gd")
 var DefaultNote = preload("res://scenes/game_screen/notes/default_note.gd")
 var HoldNote = preload("res://scenes/game_screen/notes/hold_note.gd")
@@ -16,13 +16,15 @@ func _init(screen):
 	game_screen = screen
 
 func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes: int = 4):
+	self.lanes = clamp(lanes, 3, 5) 
+	
 	var song_path = song_data.get("path", "")
 	if song_path == "":
 		print("NoteManager: Путь к песне пуст, загрузка нот невозможна.")
 		return
 
 	var base_name = song_path.get_file().get_basename()
-	var notes_filename = "%s_drums_%s_lanes%d.json" % [base_name, generation_mode.to_lower(), lanes]
+	var notes_filename = "%s_drums_%s_lanes%d.json" % [base_name, generation_mode.to_lower(), self.lanes]
 	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
 
 	var file_access = FileAccess.open(notes_path, FileAccess.READ)
@@ -59,6 +61,9 @@ func spawn_notes():
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
 
+	var screen_width = DisplayServer.screen_get_size().x
+	var lane_width = screen_width / lanes
+
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
@@ -91,7 +96,6 @@ func spawn_notes():
 			note_object.time = note_time
 			note_object.visual_node = visual_rect
 
-			var lane_width = 480.0 
 			var default_note_height = 20.0 
 
 			if note_type == "HoldNote":
@@ -100,6 +104,7 @@ func spawn_notes():
 				visual_rect.size = Vector2(lane_width, default_note_height)
 
 			visual_rect.position = Vector2(lane * lane_width, y_spawn)
+			
 			game_screen.notes_container.add_child(visual_rect)
 			notes.append(note_object)
 

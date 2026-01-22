@@ -4,16 +4,29 @@ extends Node
 signal note_hit(lane: int)
 signal lane_pressed_changed
 
-var lanes_state: Array[bool] = [false, false, false, false]
+var lanes_state: Array[bool] = []
 var keymap: Dictionary = {}
-
 var _key_to_lane: Dictionary = {}
+
+const MAX_LANES = 5  
 
 func _init(settings: Dictionary = {}):
 	keymap = load_keymap_from_settings(settings)
 	_key_to_lane = {}
 	for key in keymap:
 		_key_to_lane[keymap[key]] = key
+	
+	_init_lanes_state()
+
+func _init_lanes_state():
+	var max_lane = 0
+	for lane in keymap.values():
+		if lane > max_lane:
+			max_lane = lane
+	var num_lanes = clamp(max_lane + 1, 3, MAX_LANES)
+	lanes_state.resize(num_lanes)
+	for i in range(num_lanes):
+		lanes_state[i] = false
 
 func load_keymap_from_settings(settings: Dictionary) -> Dictionary:
 	var default_keymap = {
@@ -21,6 +34,7 @@ func load_keymap_from_settings(settings: Dictionary) -> Dictionary:
 		KEY_S: 1,
 		KEY_D: 2,
 		KEY_F: 3,
+		KEY_G: 4, 
 	}
 	
 	if settings and "controls_keymap" in settings:
@@ -32,7 +46,13 @@ func load_keymap_from_settings(settings: Dictionary) -> Dictionary:
 				var key_int = int(settings_keymap[lane_str]) 
 				loaded_keymap[key_int] = lane
 			
-			if loaded_keymap.size() == 4 and _has_unique_values(loaded_keymap):
+			var valid = true
+			for lane in loaded_keymap.values():
+				if lane < 0 or lane >= MAX_LANES:
+					valid = false
+					break
+			
+			if valid and _has_unique_values(loaded_keymap):
 				print("[Player] Загружен маппинг клавиш: %s" % loaded_keymap)
 				return loaded_keymap
 			else:
@@ -56,7 +76,8 @@ func set_keymap(new_keymap: Dictionary):
 	_key_to_lane = {}
 	for key in keymap:
 		_key_to_lane[keymap[key]] = key
-	lanes_state = [false, false, false, false]
+	_init_lanes_state()
+	lane_pressed_changed.emit()
 
 func handle_key_press(keycode: int):
 	if keycode in keymap:
@@ -75,5 +96,6 @@ func handle_key_release(keycode: int):
 			print("Player: Key released for lane %d" % lane)
 
 func reset():
-	lanes_state = [false, false, false, false]
+	for i in range(lanes_state.size()):
+		lanes_state[i] = false
 	lane_pressed_changed.emit()
