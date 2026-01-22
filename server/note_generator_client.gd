@@ -33,7 +33,7 @@ func generate_notes(
 	auto_identify_track: bool = true,
 	manual_artist: String = "",
 	manual_title: String = "",
-	generation_mode: String = "basic"  
+	generation_mode: String = "basic"
 ):
 	if is_generating:
 		print("NoteGeneratorClient.gd: Генерация уже выполняется, игнорируем новый запрос.")
@@ -44,23 +44,17 @@ func generate_notes(
 
 	var effective_lanes = lanes if lanes > 0 else default_lanes
 	var effective_sync_tolerance = sync_tolerance if sync_tolerance > 0.0 else default_sync_tolerance
-
-	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
-	if enable_genre_detection:
-		auto_identify_track = false
-		manual_artist = "Unknown"
-		manual_title = "Unknown"
-
+	
 	_thread_request_data = {
 		"song_path": song_path,
 		"instrument_type": instrument_type,
 		"bpm": bpm,
-		"lanes": effective_lanes, 
+		"lanes": effective_lanes,
 		"sync_tolerance": effective_sync_tolerance,
 		"auto_identify_track": auto_identify_track,
 		"manual_artist": manual_artist,
 		"manual_title": manual_title,
-		"generation_mode": generation_mode 
+		"generation_mode": generation_mode
 	}
 	_thread_result = {}
 	_thread_finished = false
@@ -92,43 +86,30 @@ func _check_thread_status():
 
 		if http_thread:
 			http_thread.wait_to_finish()
-			http_thread = null  
 
 		if _thread_result.has("error"):
 			_set_is_generating(false)
-			print("NoteGeneratorClient.gd: Ошибка от сервера: ", _thread_result.error)
-			emit_signal("notes_generation_error", _thread_result.error)
+			emit_signal("notes_generation_error", _thread_result["error"])
 		elif _thread_result.has("manual_identification_required"):
 			_set_is_generating(false)
-			var song_path = _thread_result.song_path
-			print("NoteGeneratorClient.gd: Требуется ручная идентификация для: ", song_path)
-			emit_signal("manual_identification_needed", song_path)
+			emit_signal("manual_identification_needed", _thread_result["song_path"])
 		elif _thread_result.has("notes"):
 			_set_is_generating(false)
-			var notes = _thread_result.notes
-			var bpm_val = _thread_result.bpm
-			var inst_type = _thread_result.instrument_type
-			var lanes_val = _thread_result.lanes
+			var notes = _thread_result["notes"]
+			var bpm_val = _thread_result["bpm"]
+			var inst_type = _thread_result["instrument_type"]
+			var lanes_val = _thread_result["lanes"]
 			
 			_save_notes_locally(_thread_request_data.song_path, inst_type, notes, _thread_request_data.generation_mode, lanes_val)
 			
 			var track_info = _thread_result.get("track_info", {})
-			if !track_info.is_empty():
-				var current_metadata = SongMetadataManager.get_metadata_for_song(_thread_request_data.song_path)
-				
-				var metadata_fields = {}
-								
-				if track_info.has("genres"):
-					metadata_fields["genres"] = track_info["genres"]
-				
-				if !metadata_fields.is_empty():
-					SongMetadataManager.update_metadata(_thread_request_data.song_path, metadata_fields)
+			if !track_info.is_empty() and track_info.has("genres"):
+				SongMetadataManager.update_metadata(_thread_request_data.song_path, {"genres": track_info["genres"]})
 			
 			emit_signal("notes_generation_completed", notes, bpm_val, inst_type)
 		else:
 			_set_is_generating(false)
-			print("NoteGeneratorClient.gd: Неожиданный формат ответа от сервера: ", _thread_result)
-			emit_signal("notes_generation_error", "Неизвестная ошибка в потоке.")
+			emit_signal("notes_generation_error", "Неожиданный формат ответа от сервера")
 
 func _thread_function(data_dict: Dictionary):
 	var local_result = {}
@@ -136,155 +117,102 @@ func _thread_function(data_dict: Dictionary):
 	var local_error_msg = ""
 
 	var song_path = data_dict.get("song_path", "")
-	var instrument_type = data_dict.get("instrument_type", "standard")
-	var bpm = data_dict.get("bpm", -1.0)
+	var instrument_type = data_dict.get("instrument_type", "drums")
+	var bpm = data_dict.get("bpm", 120.0)
 	var lanes = data_dict.get("lanes", default_lanes)
 	var sync_tolerance = data_dict.get("sync_tolerance", default_sync_tolerance)
-	var auto_identify_track = data_dict.get("auto_identify_track", true) 
-	var manual_artist = data_dict.get("manual_artist", "") 
-	var manual_title = data_dict.get("manual_title", "") 
-	var generation_mode = data_dict.get("generation_mode", "basic") 
+	var auto_identify_track = data_dict.get("auto_identify_track", true)
+	var manual_artist = data_dict.get("manual_artist", "")
+	var manual_title = data_dict.get("manual_title", "")
+	var generation_mode = data_dict.get("generation_mode", "basic")
 
 	if song_path == "":
 		local_error_occurred = true
 		local_error_msg = "Пустой путь к файлу."
-		local_result = {"error": local_error_msg}
-		_thread_result = local_result
+		_thread_result = {"error": local_error_msg}
 		_thread_finished = true
 		return
+
+	var file_access = FileAccess.open(song_path, FileAccess.READ)
+	if not file_access:
+		local_error_occurred = true
+		local_error_msg = "Не удалось открыть аудиофайл: %s" % song_path
+		_thread_result = {"error": local_error_msg}
+		_thread_finished = true
+		return
+
+	var audio_data = file_access.get_buffer(file_access.get_length())
+	file_access.close()
+
+	var headers = PackedStringArray()
+	headers.append("Host: localhost:5000")
+	headers.append("Content-Type: application/octet-stream")
+	headers.append("Content-Length: " + str(audio_data.size()))
+	headers.append("X-BPM: " + str(bpm))
+	headers.append("X-Instrument: " + instrument_type)
+	headers.append("X-Filename: " + song_path.get_file())
+	headers.append("X-Lanes: " + str(lanes))
+	headers.append("X-Sync-Tolerance: " + str(sync_tolerance))
+	headers.append("X-Drum-Mode: " + generation_mode)
+	headers.append("X-Identify-Track: " + str(auto_identify_track).to_lower())
+
+	if manual_artist != "" or manual_title != "":
+		headers.append("X-Artist-Manual: " + manual_artist)
+		headers.append("X-Title-Manual: " + manual_title)
 
 	var http_client = HTTPClient.new()
 	var error = http_client.connect_to_host("localhost", 5000)
 	if error != OK:
-		local_error_occurred = true
 		local_error_msg = "Не удалось подключиться к серверу: " + str(error)
+		local_error_occurred = true
 	else:
-		while http_client.get_status() == HTTPClient.STATUS_CONNECTING or http_client.get_status() == HTTPClient.STATUS_RESOLVING:
+		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
 			http_client.poll()
 			OS.delay_msec(100)
 
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
-			local_error_occurred = true
 			local_error_msg = "Не удалось подключиться к серверу. Статус: " + str(http_client.get_status())
+			local_error_occurred = true
 		else:
-			var file_access = FileAccess.open(song_path, FileAccess.READ)
-			if not file_access:
-				local_error_occurred = true
-				local_error_msg = "Не удалось открыть файл для чтения: " + song_path
-			else:
-				var file_data = file_access.get_buffer(file_access.get_length())
-				file_access.close()
+			http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, audio_data)
+			http_client.poll()
 
-				var headers = PackedStringArray([
-					"Host: localhost:5000",
-					"Content-Type: application/octet-stream",
-					"Content-Length: " + str(file_data.size()),
-					"X-BPM: " + str(bpm),
-					"X-Instrument: " + instrument_type,
-					"X-Filename: " + song_path.get_file(),
-					"X-Lanes: " + str(lanes),
-					"X-Sync-Tolerance: " + str(sync_tolerance),
-					"X-Identify-Track: " + str(auto_identify_track).to_lower(),
-					"X-Drum-Mode: " + generation_mode  
-				])
-				
-				if manual_artist != "" and manual_title != "":
-					headers.append("X-Artist-Manual: " + manual_artist)
-					headers.append("X-Title-Manual: " + manual_title)
-				
-				var request_method = HTTPClient.METHOD_POST
-				var request_url = "/generate_drums" if instrument_type == "drums" else "/generate_notes"
-				
-				http_client.request_raw(request_method, request_url, headers, file_data)
+			while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+				http_client.poll()
+				OS.delay_msec(100)
+
+			var response_code = http_client.get_response_code()
+			var response_body_bytes = PackedByteArray()
+			while http_client.get_status() == HTTPClient.STATUS_BODY:
+				var chunk = http_client.read_response_body_chunk()
+				if chunk.size() == 0:
+					break
+				response_body_bytes.append_array(chunk)
 				http_client.poll()
 
-				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
-					http_client.poll()
-					OS.delay_msec(100)
+			var response_text = response_body_bytes.get_string_from_utf8()
+			var response_json = JSON.parse_string(response_text)
 
-				var response_code = http_client.get_response_code()
-				print("NoteGeneratorClient.gd (Thread): Код ответа от сервера: ", response_code)
-
-				if response_code == 200:
-					if http_client.get_status() == HTTPClient.STATUS_BODY or http_client.get_status() == HTTPClient.STATUS_CONNECTED:
-						var response_body_bytes = PackedByteArray()
-						while http_client.get_status() == HTTPClient.STATUS_BODY:
-							var chunk = http_client.read_response_body_chunk()
-							if chunk.size() == 0:
-								break
-							response_body_bytes.append_array(chunk)
-							http_client.poll()
-
-						var response_text = response_body_bytes.get_string_from_utf8()
-						print("NoteGeneratorClient.gd (Thread): Тело ответа от сервера: ", response_text)
-
-						var response_json = JSON.parse_string(response_text)
-						if response_json:
-							if response_json.has("status") and response_json.get("status") == "requires_manual_input":
-								var fallback_artist = response_json.get("fallback_artist", "Unknown")
-								var fallback_title = response_json.get("fallback_title", "Unknown")
-								local_result = {
-									"manual_identification_required": true,
-									"song_path": song_path 
-								}
-							elif response_json.has("notes") and response_json.has("bpm"):
-								var notes = response_json["notes"]
-								var received_bpm = response_json["bpm"]
-								var received_lanes = response_json.get("lanes", lanes)
-								var received_instrument = response_json.get("instrument_type", instrument_type)
-								var received_mode = response_json.get("mode", generation_mode)
-								var track_info = response_json.get("track_info", {})
-								
-								
-								local_result = {
-									"notes": notes, 
-									"bpm": received_bpm, 
-									"lanes": received_lanes,
-									"instrument_type": received_instrument,
-									"track_info": track_info
-								}
-							elif response_json.has("error"):
-								local_error_msg = response_json["error"]
-								print("NoteGeneratorClient.gd (Thread): Ошибка от сервера: ", local_error_msg)
-								local_error_occurred = true
-							else:
-								local_error_msg = "Ответ не содержит ожидаемые поля: notes/bpm или status"
-								print("NoteGeneratorClient.gd (Thread): Неполный ответ от сервера: ", response_json)
-								local_error_occurred = true
-						else:
-							local_error_msg = "Ответ не является валидным JSON"
-							print("NoteGeneratorClient.gd (Thread): Ответ не является JSON: ", response_text)
-							local_error_occurred = true
-					else:
-						local_error_msg = "Неожиданный статус HTTPClient после успешного ответа: " + str(http_client.get_status())
-						local_error_occurred = true
-				elif response_code == 404:
-					var error_body = PackedByteArray()
-					while http_client.get_status() == HTTPClient.STATUS_BODY:
-						var chunk = http_client.read_response_body_chunk()
-						if chunk.size() == 0:
-							break
-						error_body.append_array(chunk)
-						http_client.poll()
-					var error_text = error_body.get_string_from_utf8()
-					if "Could not identify track from audio" in error_text:
-						local_error_msg = "Сервер вернул 404: " + error_text
-						print("NoteGeneratorClient.gd (Thread): Получен 404 от сервера: ", local_error_msg)
-						local_error_occurred = true
-					else:
-						local_error_msg = "Сервер вернул 404: " + error_text
-						local_error_occurred = true
+			if response_code == 200 and response_json is Dictionary:
+				if response_json.has("status") and response_json["status"] == "requires_manual_input":
+					local_result = {
+						"manual_identification_required": true,
+						"song_path": song_path
+					}
+				elif response_json.has("notes"):
+					local_result = {
+						"notes": response_json["notes"],
+						"bpm": response_json.get("bpm", bpm),
+						"lanes": response_json.get("lanes", lanes),
+						"instrument_type": response_json.get("instrument_type", instrument_type),
+						"track_info": response_json.get("track_info", {})
+					}
 				else:
-					var error_body = PackedByteArray()
-					while http_client.get_status() == HTTPClient.STATUS_BODY:
-						var chunk = http_client.read_response_body_chunk()
-						if chunk.size() == 0:
-							break
-						error_body.append_array(chunk)
-						http_client.poll()
-					var error_text = error_body.get_string_from_utf8()
-					local_error_msg = "Сервер вернул ошибку: " + str(response_code) + ". " + error_text
+					local_error_msg = "Ответ не содержит нот и не требует ручного ввода"
 					local_error_occurred = true
+			else:
+				local_error_msg = "Сервер вернул ошибку: %s. Тело: %s" % [str(response_code), response_text]
+				local_error_occurred = true
 
 	http_client.close()
 

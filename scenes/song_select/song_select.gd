@@ -217,6 +217,19 @@ func _on_manual_identification_needed(song_path: String):
 
 func _on_genres_detection_completed(artist: String, title: String, genres: Array):
 	print("SongSelect.gd: Жанры получены для '%s - %s': %s" % [artist, title, genres])
+	
+	if pending_manual_identification_song_path != "":
+		var metadata_update = {}
+		
+		if !genres.is_empty():
+			metadata_update["genres"] = ", ".join(genres)
+			metadata_update["primary_genre"] = genres[0]
+		else:
+			metadata_update["genres"] = ""
+			metadata_update["primary_genre"] = "unknown"
+		
+		song_metadata_manager.update_metadata(pending_manual_identification_song_path, metadata_update)
+	
 	server_clients.generate_notes(
 		pending_manual_identification_song_path,
 		current_instrument,
@@ -224,10 +237,11 @@ func _on_genres_detection_completed(artist: String, title: String, genres: Array
 		pending_manual_identification_lanes,
 		pending_manual_identification_sync_tolerance,
 		false,
-		artist,
-		title,
+		artist,      
+		title,      
 		current_generation_mode
 	)
+	
 	pending_manual_identification_song_path = ""
 	pending_manual_identification_bpm = -1.0
 	pending_manual_identification_lanes = -1
@@ -382,27 +396,48 @@ func _generate_notes_for_current_song():
 	
 	var song_bpm = current_selected_song_data.get("bpm", -1)
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д": return
-	
-	var auto_identify = true
-	var manual_artist = ""
-	var manual_title = ""
-	
-	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
-	if not enable_genre_detection:
-		auto_identify = false
-		manual_artist = "Unknown"
-		manual_title = "Unknown"
 
-	print("SongSelect.gd: Отправка на генерацию нот для: ", song_path)
+	var metadata = song_metadata_manager.get_metadata_for_song(song_path)
+	var has_genres = metadata.has("genres") and metadata["genres"] != ""
+	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
+
+	if has_genres:
+		server_clients.generate_notes(
+			song_path,
+			current_instrument,
+			float(song_bpm),
+			current_lanes,
+			0.2,
+			false,
+			"", 
+			"",  
+			current_generation_mode
+		)
+		return
+
+	if not enable_genre_detection:
+		server_clients.generate_notes(
+			song_path,
+			current_instrument,
+			float(song_bpm),
+			current_lanes,
+			0.2,
+			false,
+			"Unknown",
+			"Unknown",
+			current_generation_mode
+		)
+		return
+
 	server_clients.generate_notes(
 		song_path,
 		current_instrument,
 		float(song_bpm),
-		current_lanes,      
-		-1.0,                
-		auto_identify,      
-		manual_artist,      
-		manual_title,      
+		current_lanes,
+		0.2,
+		true,
+		"",
+		"",
 		current_generation_mode
 	)
 
