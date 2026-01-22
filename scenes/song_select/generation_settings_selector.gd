@@ -17,6 +17,10 @@ func _ready():
 	if background:
 		background.color = Color(0, 0, 0, 180.0 / 255.0)
 		background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		
+	selected_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
+	selected_mode = SettingsManager.get_setting("last_generation_mode", "basic")
+	selected_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
 
 	$Container/InstrumentButtons/PercussionButton.pressed.connect(_on_percussion_selected)
 	$Container/ModeButtons/BasicButton.pressed.connect(_on_basic_selected)
@@ -27,12 +31,31 @@ func _ready():
 	$Container/ConfirmButton.pressed.connect(_on_confirm_pressed)
 	$Container/BackButton.pressed.connect(_on_back_button_pressed)
 
-	_on_percussion_selected()   
-	_on_basic_selected()
-	_on_lanes4_selected()
+	_update_ui_from_selection()
 
 	show()
+	
+func _update_ui_from_selection():
+	for btn in [$Container/InstrumentButtons/PercussionButton]:
+		btn.self_modulate = DEFAULT_COLOR
+	for btn in [$Container/ModeButtons/BasicButton, $Container/ModeButtons/EnhancedButton]:
+		btn.self_modulate = DEFAULT_COLOR
+	for btn in [$Container/LanesButtons/Lanes3Button, $Container/LanesButtons/Lanes4Button, $Container/LanesButtons/Lanes5Button]:
+		btn.self_modulate = DEFAULT_COLOR
 
+	if selected_instrument == "drums":
+		$Container/InstrumentButtons/PercussionButton.self_modulate = ACTIVE_COLOR
+
+	if selected_mode == "basic":
+		$Container/ModeButtons/BasicButton.self_modulate = ACTIVE_COLOR
+	elif selected_mode == "enhanced":
+		$Container/ModeButtons/EnhancedButton.self_modulate = ACTIVE_COLOR
+
+	match selected_lanes:
+		3: $Container/LanesButtons/Lanes3Button.self_modulate = ACTIVE_COLOR
+		4: $Container/LanesButtons/Lanes4Button.self_modulate = ACTIVE_COLOR
+		5: $Container/LanesButtons/Lanes5Button.self_modulate = ACTIVE_COLOR
+		
 func _on_percussion_selected():
 	selected_instrument = "drums"
 	_set_active_button($Container/InstrumentButtons/PercussionButton)
@@ -66,7 +89,10 @@ func _set_active_button(active_btn: Button):
 	active_btn.self_modulate = ACTIVE_COLOR
 
 func _on_confirm_pressed():
-	MusicManager.play_select_sound()
+	SettingsManager.set_setting("last_generation_instrument", selected_instrument)
+	SettingsManager.set_setting("last_generation_mode", selected_mode)
+	SettingsManager.set_setting("last_generation_lanes", selected_lanes)
+	SettingsManager.save_settings()
 	emit_signal("generation_settings_confirmed", selected_instrument, selected_mode, selected_lanes)
 	emit_signal("selector_closed")
 

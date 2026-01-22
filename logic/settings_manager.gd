@@ -20,7 +20,10 @@ var default_settings = {
 		"lane_2_key": KEY_D,
 		"lane_3_key": KEY_F,
 		"lane_4_key": KEY_G
-	}
+	},
+	"last_generation_instrument": "drums",
+	"last_generation_mode": "basic",
+	"last_generation_lanes": 4
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
