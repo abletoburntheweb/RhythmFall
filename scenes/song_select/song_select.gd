@@ -81,6 +81,16 @@ func _ready():
 	
 	_connect_ui_signals()
 	
+	var saved_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
+	var saved_mode = SettingsManager.get_setting("last_generation_mode", "basic")
+	var saved_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
+
+	current_instrument = saved_instrument
+	current_generation_mode = saved_mode
+	current_lanes = saved_lanes
+
+	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(saved_instrument, saved_mode, saved_lanes)
+	
 	filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
 	analyze_bpm_button.disabled = true
 	results_button.disabled = true
@@ -112,7 +122,7 @@ func _connect_ui_signals():
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.gui_input.connect(_on_gui_input_for_label.bind("bpm"))
 	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.mouse_filter = Control.MOUSE_FILTER_STOP
 	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
-
+	
 func _on_bpm_analysis_started():
 	print("SongSelect.gd: BPM анализ начат.")
 	analyze_bpm_button.text = "Вычисление..."
@@ -530,6 +540,12 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 	song_details_manager.set_current_generation_mode(current_generation_mode)
 	song_details_manager.set_current_lanes(lanes)
 	
+	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(instrument, mode, lanes)
+	
+func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
+	var inst_abbr = "П" if instrument == "drums" else "С"
+	var mode_abbr = "Б" if mode == "basic" else "У"
+	return "Настройки генерации: %s %s %d" % [inst_abbr, mode_abbr, lanes]
 func _on_generation_settings_closed():
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
 		generation_settings_selector.queue_free()
