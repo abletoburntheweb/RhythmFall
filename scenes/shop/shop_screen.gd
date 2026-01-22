@@ -279,6 +279,9 @@ func _on_item_buy_pressed(item_id: String):
 		if current_currency >= price:
 			PlayerDataManager.add_currency(-price)
 			PlayerDataManager.unlock_item(item_id)
+			
+			MusicManager.play_shop_purchase()  
+			
 			_update_currency_label()
 			_update_item_card_state(item_id, true, false)
 		else:
@@ -318,6 +321,9 @@ func _on_item_use_pressed(item_id: String):
 		var internal_category = category_map.get(item_data.category, "")
 		if internal_category:
 			PlayerDataManager.set_active_item(internal_category, item_id)
+			
+			MusicManager.play_shop_apply() 
+			
 			_update_all_item_cards_in_category(internal_category, item_id)
 		else:
 			print("ShopScreen.gd: Неизвестная категория для предмета: ", item_id)

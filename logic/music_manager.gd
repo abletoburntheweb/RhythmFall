@@ -8,7 +8,11 @@ const DEFAULT_MENU_MUSIC = "Niamos!.mp3"
 const DEFAULT_INTRO_MUSIC = "intro_music.mp3"
 const DEFAULT_SELECT_SOUND = "select_click.mp3"
 const DEFAULT_CANCEL_SOUND = "cancel_click.mp3"
+const ANALYSIS_SUCCESS_SOUND = "analysis_success.wav"
+const ANALYSIS_ERROR_SOUND = "analysis_error.wav"
 const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.mp3"
+const SHOP_PURCHASE_SOUND = "shop_purchase.wav"
+const SHOP_APPLY_SOUND = "shop_apply.wav"
 const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
@@ -21,6 +25,7 @@ const DEFAULT_MISS_HIT_SOUND_4 = "miss_hit4.wav"
 const DEFAULT_MISS_HIT_SOUND_5 = "miss_hit5.wav"
 
 const DEFAULT_RESTART_SOUND = "restart_level.mp3"
+const MODAL_POPUP_SOUND = "modal_popup.wav"
 
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
 const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav"
@@ -72,7 +77,8 @@ func _ready():
 	add_child(metronome_player2)
 
 	_metronome_players = [metronome_player1, metronome_player2]
-
+	_update_active_sound_paths()
+	
 func set_external_metronome_control(enabled: bool):
 	_external_metronome_controlled = enabled
 	if not enabled:
@@ -331,10 +337,25 @@ func play_select_sound():
 
 func play_cancel_sound():
 	play_sfx(DEFAULT_CANCEL_SOUND)
+	
+func play_analysis_success():
+	play_sfx(ANALYSIS_SUCCESS_SOUND)
+
+func play_analysis_error():
+	play_sfx(ANALYSIS_ERROR_SOUND)
+
+func play_modal_popup():
+	play_sfx(MODAL_POPUP_SOUND)
 
 func play_achievement_sound():
 	play_sfx(DEFAULT_ACHIEVEMENT_SOUND)
 
+func play_shop_purchase():
+	play_sfx(SHOP_PURCHASE_SOUND)
+
+func play_shop_apply():
+	play_sfx(SHOP_APPLY_SOUND)
+	
 func play_default_shop_sound():
 	play_sfx(DEFAULT_DEFAULT_SHOP_SOUND)
 	
@@ -346,7 +367,7 @@ func play_level_start_sound():
 
 func play_restart_sound():
 	play_sfx(DEFAULT_RESTART_SOUND)
-	
+
 func play_miss_hit_sound():
 	var random_index = randi() % 5
 	var sound_path = ""

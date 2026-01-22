@@ -133,6 +133,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + str(bpm_value)
 	analyze_bpm_button.text = "Готово"
 	analyze_bpm_button.disabled = false
+	MusicManager.play_analysis_success()
 	
 	var selected_items = song_item_list_ref.get_selected_items()
 	if selected_items.size() > 0:
@@ -163,7 +164,8 @@ func _on_bpm_analysis_error(error_message: String):
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Ошибка"
 	analyze_bpm_button.text = "Ошибка вычисления"
 	analyze_bpm_button.disabled = false
-
+	MusicManager.play_analysis_error()
+	
 func _on_notes_generation_started():
 	print("SongSelect.gd: Генерация нот начата.")
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
@@ -175,6 +177,7 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
+	MusicManager.play_analysis_success()
 	
 	var game_engine = get_parent()
 	var achievement_system = game_engine.get_achievement_system()
@@ -185,7 +188,8 @@ func _on_notes_generation_error(error_message: String):
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ошибка генерации"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
-
+	MusicManager.play_analysis_error()
+	
 func _on_manual_identification_needed(song_path: String):
 	if SettingsManager.get_setting("show_manual_track_input_on_generation", true):
 		pending_manual_identification_song_path = song_path
@@ -513,7 +517,8 @@ func _show_manual_track_input(artist: String, title: String):
 	manual_track_input_dialog.manual_entry_confirmed.connect(_on_manual_entry_confirmed)
 	add_child(manual_track_input_dialog)
 	manual_track_input_dialog.show_modal_for_track(corrected_artist, corrected_title)
-
+	MusicManager.play_modal_popup()
+	
 func _on_manual_track_confirmed():
 	if pending_manual_identification_bpm > 0:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
