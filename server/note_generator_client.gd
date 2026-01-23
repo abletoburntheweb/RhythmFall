@@ -144,21 +144,34 @@ func _thread_function(data_dict: Dictionary):
 	var audio_data = file_access.get_buffer(file_access.get_length())
 	file_access.close()
 
-	var headers = PackedStringArray()
-	headers.append("Host: localhost:5000")
-	headers.append("Content-Type: application/octet-stream")
-	headers.append("Content-Length: " + str(audio_data.size()))
-	headers.append("X-BPM: " + str(bpm))
-	headers.append("X-Instrument: " + instrument_type)
-	headers.append("X-Filename: " + song_path.get_file())
-	headers.append("X-Lanes: " + str(lanes))
-	headers.append("X-Sync-Tolerance: " + str(sync_tolerance))
-	headers.append("X-Drum-Mode: " + generation_mode)
-	headers.append("X-Identify-Track: " + str(auto_identify_track).to_lower())
+	var boundary = "godot_boundary_" + str(randi())
+	var body = PackedByteArray()
 
-	if manual_artist != "" or manual_title != "":
-		headers.append("X-Artist-Manual: " + manual_artist)
-		headers.append("X-Title-Manual: " + manual_title)
+	var metadata_json = JSON.stringify({
+		"original_filename": song_path.get_file(),
+		"bpm": bpm,
+		"lanes": lanes,
+		"instrument_type": instrument_type,
+		"sync_tolerance": sync_tolerance,
+		"generation_mode": generation_mode,
+		"auto_identify_track": auto_identify_track,
+		"manual_artist": manual_artist,
+		"manual_title": manual_title
+	})
+	var metadata_part = "--" + boundary + "\r\n" + \
+		"Content-Disposition: form-data; name=\"metadata\"\r\n" + \
+		"Content-Type: application/json\r\n\r\n" + \
+		metadata_json + "\r\n"
+	body.append_array(metadata_part.to_utf8_buffer())
+
+	var file_part_header = "--" + boundary + "\r\n" + \
+		"Content-Disposition: form-data; name=\"audio_file\"; filename=\"upload.mp3\"\r\n" + \
+		"Content-Type: audio/mpeg\r\n\r\n"
+	body.append_array(file_part_header.to_utf8_buffer())
+	body.append_array(audio_data)
+
+	var closing_boundary = "\r\n--" + boundary + "--\r\n"
+	body.append_array(closing_boundary.to_utf8_buffer())
 
 	var http_client = HTTPClient.new()
 	var error = http_client.connect_to_host("localhost", 5000)
@@ -174,45 +187,51 @@ func _thread_function(data_dict: Dictionary):
 			local_error_msg = "Не удалось подключиться к серверу. Статус: " + str(http_client.get_status())
 			local_error_occurred = true
 		else:
-			http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, audio_data)
-			http_client.poll()
-
-			while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
-				http_client.poll()
-				OS.delay_msec(100)
-
-			var response_code = http_client.get_response_code()
-			var response_body_bytes = PackedByteArray()
-			while http_client.get_status() == HTTPClient.STATUS_BODY:
-				var chunk = http_client.read_response_body_chunk()
-				if chunk.size() == 0:
-					break
-				response_body_bytes.append_array(chunk)
-				http_client.poll()
-
-			var response_text = response_body_bytes.get_string_from_utf8()
-			var response_json = JSON.parse_string(response_text)
-
-			if response_code == 200 and response_json is Dictionary:
-				if response_json.has("status") and response_json["status"] == "requires_manual_input":
-					local_result = {
-						"manual_identification_required": true,
-						"song_path": song_path
-					}
-				elif response_json.has("notes"):
-					local_result = {
-						"notes": response_json["notes"],
-						"bpm": response_json.get("bpm", bpm),
-						"lanes": response_json.get("lanes", lanes),
-						"instrument_type": response_json.get("instrument_type", instrument_type),
-						"track_info": response_json.get("track_info", {})
-					}
-				else:
-					local_error_msg = "Ответ не содержит нот и не требует ручного ввода"
-					local_error_occurred = true
-			else:
-				local_error_msg = "Сервер вернул ошибку: %s. Тело: %s" % [str(response_code), response_text]
+			var headers = PackedStringArray([
+				"Content-Type: multipart/form-data; boundary=" + boundary
+			])
+			error = http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, body)
+			if error != OK:
+				local_error_msg = "Ошибка отправки запроса: " + str(error)
 				local_error_occurred = true
+			else:
+				http_client.poll()
+				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+					http_client.poll()
+					OS.delay_msec(100)
+
+				var response_code = http_client.get_response_code()
+				var response_body_bytes = PackedByteArray()
+				while http_client.get_status() == HTTPClient.STATUS_BODY:
+					var chunk = http_client.read_response_body_chunk()
+					if chunk.size() == 0:
+						break
+					response_body_bytes.append_array(chunk)
+					http_client.poll()
+
+				var response_text = response_body_bytes.get_string_from_utf8()
+				var response_json = JSON.parse_string(response_text)
+
+				if response_code == 200 and response_json is Dictionary:
+					if response_json.has("status") and response_json["status"] == "requires_manual_input":
+						local_result = {
+							"manual_identification_required": true,
+							"song_path": song_path
+						}
+					elif response_json.has("notes"):
+						local_result = {
+							"notes": response_json["notes"],
+							"bpm": response_json.get("bpm", bpm),
+							"lanes": response_json.get("lanes", lanes),
+							"instrument_type": response_json.get("instrument_type", instrument_type),
+							"track_info": response_json.get("track_info", {})
+						}
+					else:
+						local_error_msg = "Ответ не содержит нот и не требует ручного ввода"
+						local_error_occurred = true
+				else:
+					local_error_msg = "Сервер вернул ошибку: %s. Тело: %s" % [str(response_code), response_text]
+					local_error_occurred = true
 
 	http_client.close()
 
