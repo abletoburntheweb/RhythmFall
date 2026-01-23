@@ -257,7 +257,8 @@ func _on_genres_detection_error(error_message: String):
 	pending_manual_identification_sync_tolerance = -1.0
 
 func _on_filter_by_letter_selected(index: int):
-	if song_edit_manager.is_edit_mode_active(): return
+	if song_edit_manager.is_edit_mode_active():
+		pass
 	var selected_text = filter_by_letter.get_item_text(index)
 	var mode = "title" if selected_text == "Название" else "artist"
 	song_list_manager.set_filter_mode(mode)
@@ -265,22 +266,27 @@ func _on_filter_by_letter_selected(index: int):
 
 func _update_filters_visibility():
 	var is_edit_mode = song_edit_manager.is_edit_mode_active()
-	filter_by_letter.visible = !is_edit_mode
 	if is_edit_mode:
 		song_list_manager.set_filter_mode("title")
 		filter_by_letter.select(0)
 
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
-	song_list_manager.populate_items_grouped()
-	
-	if current_selected_song_data.get("path") == song_data.get("path"):
-		var new_bpm = song_data.get("bpm", "Н/Д")
-		if str(new_bpm) != "-1" and new_bpm != "Н/Д":
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
-		else:
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	var was_selected = false
+	var selected_indices = song_item_list_ref.get_selected_items()
+	if selected_indices.has(item_list_index):
+		was_selected = true
+
+	if song_list_manager.update_song_at_index(item_list_index, song_data):
+		print("SongSelect.gd: Песня обновлена в списке без перезагрузки")
+
+		if was_selected:
+			song_item_list_ref.select(item_list_index, true)
+
+		if current_selected_song_data.get("path") == song_data.get("path"):
+			current_selected_song_data = song_data.duplicate()
+			song_details_manager.update_details(current_selected_song_data)
+	else:
+		song_list_manager.populate_items_grouped()
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	current_selected_song_data = song_data

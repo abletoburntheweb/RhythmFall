@@ -215,3 +215,18 @@ func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
 	else:
 		print("SongListManager.gd: Индекс %d вне диапазона current_grouped_data." % item_list_index)
 		return {}
+
+func update_song_at_index(item_list_index: int, new_song_data: Dictionary) -> bool:
+	if not item_list or item_list_index < 0 or item_list_index >= current_grouped_data.size():
+		return false
+
+	var item_data = current_grouped_data[item_list_index]
+	if item_data.type != "song":
+		return false
+
+	current_grouped_data[item_list_index].data = new_song_data.duplicate(true)
+
+	var display_text = new_song_data.get("artist", "Неизвестен") + " — " + new_song_data.get("title", "Без названия")
+	item_list.set_item_text(item_list_index, display_text)
+
+	return true
