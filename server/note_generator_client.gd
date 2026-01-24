@@ -144,6 +144,24 @@ func _thread_function(data_dict: Dictionary):
 	var audio_data = file_access.get_buffer(file_access.get_length())
 	file_access.close()
 
+	var genres_array = []
+	var primary_genre = ""
+	var song_meta = SongMetadataManager.get_metadata_for_song(song_path)
+	if song_meta and song_meta.has("genres"):
+		if typeof(song_meta["genres"]) == TYPE_STRING:
+			var genres_str = song_meta["genres"]
+			if genres_str != "":
+				var raw_parts = genres_str.split(",")
+				for part in raw_parts:
+					var trimmed = part.strip_edges()
+					if trimmed != "":
+						genres_array.append(trimmed)
+		elif typeof(song_meta["genres"]) == TYPE_ARRAY:
+			genres_array = song_meta["genres"].duplicate()
+
+	if song_meta and song_meta.has("primary_genre"):
+		primary_genre = song_meta["primary_genre"]
+
 	var boundary = "godot_boundary_" + str(randi())
 	var body = PackedByteArray()
 
@@ -156,7 +174,9 @@ func _thread_function(data_dict: Dictionary):
 		"generation_mode": generation_mode,
 		"auto_identify_track": auto_identify_track,
 		"manual_artist": manual_artist,
-		"manual_title": manual_title
+		"manual_title": manual_title,
+		"genres": genres_array,
+		"primary_genre": primary_genre
 	})
 	var metadata_part = "--" + boundary + "\r\n" + \
 		"Content-Disposition: form-data; name=\"metadata\"\r\n" + \
