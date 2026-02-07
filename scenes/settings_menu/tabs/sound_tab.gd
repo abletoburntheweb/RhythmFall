@@ -6,9 +6,10 @@ signal settings_changed
 var game_screen = null 
 
 @onready var music_volume_slider: HSlider = $ContentVBox/MusicVolumeSlider
+@onready var menu_music_volume_slider: HSlider = $ContentVBox/MenuMusicVolumeSlider
 @onready var sfx_volume_slider: HSlider = $ContentVBox/SFXVolumeSlider
 @onready var hit_sounds_volume_slider: HSlider = $ContentVBox/HitSoundsVolumeSlider
-@onready var metronome_volume_slider: HSlider = $ContentVBox/MetronomeVolumeSlider2
+@onready var metronome_volume_slider: HSlider = $ContentVBox/MetronomeVolumeSlider
 @onready var preview_volume_slider: HSlider = $ContentVBox/PreviewVolumeSlider
 
 var _last_test_sound_time: float = 0.0
@@ -24,6 +25,7 @@ func setup_ui_and_manager(screen = null):
 	_apply_initial_volumes()
 
 func _setup_ui():
+	menu_music_volume_slider.set_value_no_signal(SettingsManager.get_menu_music_volume())
 	music_volume_slider.set_value_no_signal(SettingsManager.get_music_volume())
 	sfx_volume_slider.set_value_no_signal(SettingsManager.get_effects_volume())
 	hit_sounds_volume_slider.set_value_no_signal(SettingsManager.get_hit_sounds_volume())
@@ -34,13 +36,15 @@ func _apply_initial_volumes():
 	print("SoundTab.gd: _apply_initial_volumes вызван.")
 
 	var music_vol = music_volume_slider.value
+	var menu_music_vol = menu_music_volume_slider.value
 	var sfx_vol = sfx_volume_slider.value
 	var hit_vol = hit_sounds_volume_slider.value
 	var metro_vol = metronome_volume_slider.value
 	var preview_vol = preview_volume_slider.value
 
-	print("SoundTab.gd: Применяем начальные значения: music=%.1f, sfx=%.1f, hit=%.1f, metro=%.1f, preview=%.1f" % [music_vol, sfx_vol, hit_vol, metro_vol, preview_vol])
+	print("SoundTab.gd: Применяем начальные значения: menu_music=%.1f, music=%.1f, sfx=%.1f, hit=%.1f, metro=%.1f, preview=%.1f" % [menu_music_vol, music_vol, sfx_vol, hit_vol, metro_vol, preview_vol])
 
+	call_deferred("_on_menu_music_volume_changed", menu_music_vol)
 	call_deferred("_on_music_volume_changed", music_vol)
 	call_deferred("_on_sfx_volume_changed", sfx_vol)
 	call_deferred("_on_hit_sounds_volume_changed", hit_vol)
@@ -52,6 +56,8 @@ func _apply_initial_volumes():
 func _connect_signals():
 	if music_volume_slider:
 		music_volume_slider.value_changed.connect(_on_music_volume_changed)
+	if menu_music_volume_slider:
+		menu_music_volume_slider.value_changed.connect(_on_menu_music_volume_changed)
 	if sfx_volume_slider:
 		sfx_volume_slider.value_changed.connect(_on_sfx_volume_changed)
 		sfx_volume_slider.value_changed.connect(_play_test_sfx_sound)
@@ -91,6 +97,12 @@ func _on_music_volume_changed(value: float):
 	MusicManager.set_music_volume(value)  
 	emit_signal("settings_changed") 
 	print("SoundTab.gd: Громкость музыки изменена на %.1f%% (DB: %.2f)" % [value, MusicManager.music_player.volume_db if MusicManager.music_player else -INF]) 
+
+func _on_menu_music_volume_changed(value: float):
+	SettingsManager.set_menu_music_volume(int(value))
+	MusicManager.set_menu_music_volume(value)
+	emit_signal("settings_changed")
+	print("SoundTab.gd: Громкость музыки в меню изменена на %.1f%% (DB: %.2f)" % [value, MusicManager.music_player.volume_db if MusicManager.music_player else -INF])
 
 func _on_sfx_volume_changed(value: float):
 	SettingsManager.set_effects_volume(int(value))

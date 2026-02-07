@@ -54,6 +54,8 @@ var original_game_music_volume: float = 1.0
 var _external_metronome_controlled: bool = false
 
 var _last_beat_index: int = -1
+var _menu_music_volume_pct: float = 50.0
+var _game_music_volume_pct: float = 50.0
 
 func _ready():
 	music_player = AudioStreamPlayer.new()
@@ -134,6 +136,8 @@ func play_game_music_at_position(song_path: String, position: float):
 				music_player.stream = stream
 				if music_player.playing:
 					music_player.stop()
+				var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
+				music_player.volume_db = linear_to_db(game_vol / 100.0)
 				music_player.play(position)
 			else:
 				push_error("MusicManager.gd: music_player не установлен!")
@@ -208,7 +212,14 @@ func set_active_snare_sound(path: String):
 	print("MusicManager: установлен активный снейр-звук: ", path)
 
 func set_music_volume(volume: float):
-	if music_player: 
+	if music_player:
+		_game_music_volume_pct = volume
+		if current_game_music_file != "" or current_menu_music_file == "":
+			music_player.volume_db = linear_to_db(volume / 100.0)
+
+func set_menu_music_volume(volume: float):
+	_menu_music_volume_pct = volume
+	if music_player and current_menu_music_file != "":
 		music_player.volume_db = linear_to_db(volume / 100.0)
 
 func set_sfx_volume(volume: float):
@@ -245,7 +256,10 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 
 	if music_player:
 		current_menu_music_file = music_file
+		current_game_music_file = ""
 		music_player.stream = stream
+		var menu_vol = SettingsManager.get_menu_music_volume() if SettingsManager.has_method("get_menu_music_volume") else _menu_music_volume_pct
+		music_player.volume_db = linear_to_db(menu_vol / 100.0)
 		music_player.play()
 
 func play_game_music(music_file: String):
@@ -263,8 +277,11 @@ func play_game_music(music_file: String):
 			music_player.stream = stream
 			if music_player.playing:
 				music_player.stop()
+			var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
+			music_player.volume_db = linear_to_db(game_vol / 100.0)
 			music_player.play()
 			original_game_music_volume = db_to_linear(music_player.volume_db)
+			current_menu_music_file = ""
 	else:
 		push_error("MusicManager: Файл игровой музыки не найден: " + music_file)
 
@@ -423,7 +440,12 @@ func play_metronome_sound(is_strong_beat: bool = true):
 		push_error("MusicManager: Не удалось загрузить звук метронома: " + full_path)
 
 func update_volumes_from_settings():
-	set_music_volume(SettingsManager.get_music_volume())
+	_game_music_volume_pct = SettingsManager.get_music_volume()
+	_menu_music_volume_pct = SettingsManager.get_menu_music_volume() if SettingsManager.has_method("get_menu_music_volume") else _menu_music_volume_pct
+	if current_game_music_file != "":
+		set_music_volume(_game_music_volume_pct)
+	if current_menu_music_file != "":
+		set_menu_music_volume(_menu_music_volume_pct)
 	set_sfx_volume(SettingsManager.get_effects_volume())
 	set_hit_sounds_volume(SettingsManager.get_hit_sounds_volume())
 	set_metronome_volume(SettingsManager.get_metronome_volume())

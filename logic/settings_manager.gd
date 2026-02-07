@@ -5,6 +5,7 @@ const SETTINGS_PATH = "user://settings.json"
 const MAX_LANES = 5
 var default_settings = {
 	"music_volume": 50.0,
+	"menu_music_volume": 50.0,
 	"effects_volume": 50.0,
 	"hit_sounds_volume": 70.0,
 	"metronome_volume": 30.0, 
@@ -148,6 +149,9 @@ func reset_settings():
 func get_music_volume() -> float:
 	return float(settings.get("music_volume", default_settings["music_volume"]))
 
+func get_menu_music_volume() -> float:
+	return float(settings.get("menu_music_volume", default_settings["menu_music_volume"]))
+
 func get_effects_volume() -> float:
 	return float(settings.get("effects_volume", default_settings["effects_volume"])) 
 
@@ -162,6 +166,9 @@ func get_preview_volume() -> float:
 
 func set_music_volume(volume: float): 
 	settings["music_volume"] = clampf(volume, 0.0, 100.0) 
+
+func set_menu_music_volume(volume: float):
+	settings["menu_music_volume"] = clampf(volume, 0.0, 100.0)
 
 func set_effects_volume(volume: float): 
 	settings["effects_volume"] = clampf(volume, 0.0, 100.0) 

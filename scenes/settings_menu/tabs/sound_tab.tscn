@@ -23,6 +23,13 @@ text = "Громкость музыки"
 [node name="MusicVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
 
+[node name="MenuMusicVolumeLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+text = "Громкость музыки в меню"
+
+[node name="MenuMusicVolumeSlider" type="HSlider" parent="ContentVBox"]
+layout_mode = 2
+
 [node name="SFXVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
 text = "Громкость звуков"
@@ -37,11 +44,11 @@ text = "Громкость нажатий"
 [node name="HitSoundsVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
 
-[node name="MetronomeVolumeLabel2" type="Label" parent="ContentVBox"]
+[node name="MetronomeVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
 text = "Громкость метронома"
 
-[node name="MetronomeVolumeSlider2" type="HSlider" parent="ContentVBox"]
+[node name="MetronomeVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
 
 [node name="PreviewVolumeLabel" type="Label" parent="ContentVBox"]
