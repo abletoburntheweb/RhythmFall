@@ -316,7 +316,22 @@ func _deferred_update_ui():
 			result_datetime_for_result           
 		)
 
-	var song_path = song_info.get("path", "") 
+	var song_path = song_info.get("path", "")
+	if !song_path.is_empty():
+		var final_grade = _calculate_grade()
+		PlayerDataManager.update_best_grade_for_track(song_path, final_grade)
+
+	var achievement_system = null
+	var achievement_manager = null
+	
+	var game_engine = get_parent()
+	if game_engine:
+		if game_engine.has_method("get_achievement_system"):
+			achievement_system = game_engine.get_achievement_system()
+		if game_engine.has_method("get_achievement_manager"):
+			achievement_manager = game_engine.get_achievement_manager()
+			if achievement_manager:
+				achievement_manager.notification_mgr = game_engine
 
 	if session_history_manager:
 		var instrument_type_for_history = song_info.get("instrument", "standard")
@@ -340,18 +355,6 @@ func _deferred_update_ui():
 			title
 		)
 
-	var achievement_system = null
-	var achievement_manager = null
-	
-	var game_engine = get_parent()
-	if game_engine:
-		if game_engine.has_method("get_achievement_system"):
-			achievement_system = game_engine.get_achievement_system()
-		if game_engine.has_method("get_achievement_manager"):
-			achievement_manager = game_engine.get_achievement_manager()
-			if achievement_manager:
-				achievement_manager.notification_mgr = game_engine
-
 	if achievement_system:
 		achievement_system.on_level_completed(accuracy, song_path, is_drum_mode, _calculate_grade())
 	else:
@@ -372,7 +375,3 @@ func _deferred_update_ui():
 		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)
-
-	var final_grade = _calculate_grade()
-	if !song_path.is_empty():
-		PlayerDataManager.update_best_grade_for_track(song_path, final_grade)
