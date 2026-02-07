@@ -5,6 +5,7 @@ extends BaseScreen
 @onready var back_button: Button = $MainContent/MainVBox/BackButton
 @onready var levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/LevelsCompletedLabel
 @onready var drum_levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/DrumLevelsContainer/DrumLevelsCompletedLabel
+@onready var unique_levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/UniqueLevelsCompletedLabel
 @onready var favorite_genre_label: Label = $MainContent/MainVBox/StatsVBox/FavoriteGenreLabel
 @onready var favorite_track_label: Label = $MainContent/MainVBox/StatsVBox/FavoriteTrackLabel
 @onready var overall_accuracy_label: Label = $MainContent/MainVBox/StatsVBox/OverallAccuracyLabel
@@ -83,6 +84,9 @@ func setup_session_history_manager(session_history_mgr):
 
 func refresh_stats():
 	levels_completed_label.text = "Завершено уровней: %d" % PlayerDataManager.get_levels_completed()
+	
+	unique_levels_completed_label.text = "Пройдено уникальных треков: %d" % PlayerDataManager.get_unique_levels_completed()
+	
 	drum_levels_completed_label.text = "Перкуссия: %d" % PlayerDataManager.get_drum_levels_completed()
 	
 	favorite_genre_label.text = "Любимый жанр: %s" % str(PlayerDataManager.data.get("favorite_genre", "Н/Д"))

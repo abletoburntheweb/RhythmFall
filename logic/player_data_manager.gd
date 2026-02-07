@@ -624,7 +624,10 @@ func _trigger_level_achievement_check():
 
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
-
+	
+func get_unique_levels_completed() -> int:
+	return data.get("best_grades_per_track", {}).size()
+	
 func add_drum_level_completed():
 	var current_count = int(data.get("drum_levels_completed", 0))
 	var new_count = current_count + 1
