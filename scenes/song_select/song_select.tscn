@@ -129,6 +129,10 @@ text = "BPM"
 layout_mode = 2
 text = "Длительность"
 
+[node name="PrimaryGenreLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+text = "Жанр"
+
 [node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 

@@ -38,10 +38,8 @@ var session_history_manager = null
 @onready var replay_button: Button = $ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
 
+
 func _ready():
-	replay_button.pressed.connect(_on_replay_button_pressed)
-	song_select_button.pressed.connect(_on_song_select_button_pressed)
-	
 	replay_button.pressed.connect(_on_replay_button_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
 	
@@ -374,3 +372,7 @@ func _deferred_update_ui():
 		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)
+
+	var final_grade = _calculate_grade()
+	if !song_path.is_empty():
+		PlayerDataManager.update_best_grade_for_track(song_path, final_grade)

@@ -184,11 +184,7 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		var json_string = JSON.stringify(results, "\t")
 		file.store_string(json_string)
 		file.close()
-		
-		PlayerDataManager.add_completed_level()
-		if instrument_type == "Перкуссия":
-			PlayerDataManager.add_drum_level_completed()
-		
+				
 		print("ResultsManager.gd: Результат успешно сохранен для песни %s: %d очков, %.2f%%, инструмент: %s, оценка: %s, дата: %s" % [song_path, score, accuracy, instrument_type, grade, result_datetime])
 	else:
 		printerr("ResultsManager.gd: Не удалось создать/открыть файл для записи: ", results_file_path)
