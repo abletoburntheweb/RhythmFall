@@ -218,6 +218,9 @@ func transition_open_settings(_from_pause=false):
 		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
 		return
 
+	if new_screen.has_method("setup_managers"):
+		new_screen.setup_managers(self)
+
 	if _from_pause:
 		if game_engine.current_screen:
 			game_engine.current_screen.add_child(new_screen)

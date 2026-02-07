@@ -25,7 +25,8 @@ func _ready():
 	if parent_node and parent_node.has_method("get_transitions"):
 		trans = parent_node.get_transitions()
 
-	setup_managers(trans)
+	if trans:
+		setup_managers(trans)
 
 	var game_engine_node = null
 	if parent_node and parent_node.has_method("get_achievement_manager"):
@@ -120,11 +121,10 @@ func _on_misc_tab_pressed():
 func _execute_close_transition():
 	if transitions:
 		var current_parent = get_parent()
-		var is_child_of_pause = (
-			current_parent != null and
-			(current_parent.has_signal("resume_requested") or current_parent.has_method("handle_resume_request"))
-		)
-		transitions.close_settings(is_child_of_pause)
+		var from_pause = false
+		if transitions and transitions.game_engine:
+			from_pause = (current_parent == transitions.game_engine.current_screen)
+		transitions.close_settings(from_pause)
 	else:
 		pass
 

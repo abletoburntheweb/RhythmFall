@@ -11,14 +11,18 @@ func setup_managers(trans) -> void:
 
 func _on_back_pressed():
 	print("BaseScreen.gd: Нажата кнопка Назад или Escape.")
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("prepare_screen_exit"):
+	var parent_node = get_parent()
+	var game_engine = null
+	if parent_node and parent_node.has_method("prepare_screen_exit"):
+		game_engine = parent_node
+	elif get_tree().root.has_node("GameEngine"):
+		game_engine = get_tree().root.get_node("GameEngine")
+
+	if game_engine and game_engine.has_method("prepare_screen_exit") and game_engine.current_screen == self:
 		if game_engine.prepare_screen_exit(self):
 			print("BaseScreen.gd: Экран подготовлен к выходу через GameEngine.")
 		else:
 			print("BaseScreen.gd: ОШИБКА подготовки экрана к выходу через GameEngine.")
-	else:
-		printerr("BaseScreen.gd: Не удалось получить GameEngine или метод prepare_screen_exit!")
 
 	cleanup_before_exit()
 

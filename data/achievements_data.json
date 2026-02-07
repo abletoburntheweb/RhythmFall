@@ -68,7 +68,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 17,
+			"current": 17.0,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
@@ -79,7 +79,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 17,
+			"current": 17.0,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
@@ -90,7 +90,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 17,
+			"current": 17.0,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
@@ -101,7 +101,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 17,
+			"current": 17.0,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 21509,
+			"current": 21509.0,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 21509,
+			"current": 21509.0,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 21509,
+			"current": 21509.0,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -145,7 +145,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2760,
+			"current": 2760.0,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
@@ -156,7 +156,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2760,
+			"current": 2760.0,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2760,
+			"current": 2760.0,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -178,7 +178,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 3,
+			"current": 3.0,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
@@ -189,12 +189,12 @@
 		},
 		{
 			"category": "shop",
-			"current": 17,
+			"current": 17.0,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
 			"title": "Коллекция завершена",
-			"total": 68,
+			"total": 68.0,
 			"unlock_date": null,
 			"unlocked": false
 		},
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 27.73,
+			"current": 27.88,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 27.73,
+			"current": 27.88,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 27.73,
+			"current": 27.88,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 27.73,
+			"current": 27.88,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 27.73,
+			"current": 27.88,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
