@@ -93,6 +93,9 @@ func _on_confirm_pressed():
 	SettingsManager.set_setting("last_generation_mode", selected_mode)
 	SettingsManager.set_setting("last_generation_lanes", selected_lanes)
 	SettingsManager.save_settings()
+	
+	MusicManager.play_instrument_select_sound(selected_instrument)
+	
 	emit_signal("generation_settings_confirmed", selected_instrument, selected_mode, selected_lanes)
 	emit_signal("selector_closed")
 
