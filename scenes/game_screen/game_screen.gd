@@ -110,6 +110,7 @@ func _ready():
 	_find_ui_elements()
 	_instantiate_debug_menu()
 	_load_lane_colors()
+	_load_note_colors()
 	
 	_update_active_sounds_from_player_data()
 	PlayerDataManager.active_item_changed.connect(_on_active_item_changed)
@@ -147,6 +148,8 @@ func _ready():
 	add_child(restart_timer)
 	
 func _on_active_item_changed(category: String, item_id: String):
+	if category == "Notes":
+		_load_note_colors()
 	if category == "Kick" or category == "Snare":
 		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
 		if shop_data_file:
@@ -247,6 +250,20 @@ func _load_lane_colors():
 	else:
 		var default_color = Color("#fec6e580")
 		_set_lane_highlight_colors(default_color)
+
+func _load_note_colors():
+	var active_notes_id = PlayerDataManager.get_active_item("Notes")
+	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	if shop_data_file:
+		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
+		shop_data_file.close()
+		
+		for item in shop_data.get("items", []):
+			if item.get("item_id", "") == active_notes_id:
+				var colors = item.get("note_colors", [])
+				if not colors.is_empty():
+					note_manager.set_note_colors(colors)
+				break
 
 
 func _set_lane_highlight_colors(color: Color):

@@ -7,6 +7,8 @@ var game_screen
 var notes = [] 
 var note_spawn_queue = []
 var lanes: int = 4
+var note_colors: Array = []
+
 var BaseNote = preload("res://scenes/game_screen/notes/base_note.gd")
 var DefaultNote = preload("res://scenes/game_screen/notes/default_note.gd")
 var HoldNote = preload("res://scenes/game_screen/notes/hold_note.gd")
@@ -14,6 +16,21 @@ var DrumNote = preload("res://scenes/game_screen/notes/drum_note.gd")
 
 func _init(screen):
 	game_screen = screen
+
+func set_note_colors(colors: Array):
+	note_colors = colors
+
+func _get_color_for_note(lane: int, default_color: Color) -> Color:
+	if note_colors.is_empty():
+		return default_color
+	
+	if note_colors.size() == 1:
+		return Color(note_colors[0])
+	elif note_colors.size() == 5:
+		if lane >= 0 and lane < note_colors.size():
+			return Color(note_colors[lane])
+	
+	return default_color
 
 func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes: int = 4):
 	self.lanes = clamp(lanes, 3, 5) 
@@ -80,15 +97,15 @@ func spawn_notes():
 
 		if note_type == "DefaultNote":
 			note_object = DefaultNote.new(lane, y_spawn, game_time)
-			visual_rect.color = note_object.color
+			visual_rect.color = _get_color_for_note(lane, note_object.color)
 		elif note_type == "HoldNote":
 			var duration = note_info.get("duration", 1.0)
 			var height = int(duration * pixels_per_sec)
 			note_object = HoldNote.new(lane, y_spawn, game_time, height, duration * 1000)
-			visual_rect.color = note_object.color
+			visual_rect.color = _get_color_for_note(lane, note_object.color)
 		elif note_type == "DrumNote":  
 			note_object = DrumNote.new(lane, y_spawn, game_time)
-			visual_rect.color = note_object.color
+			visual_rect.color = _get_color_for_note(lane, note_object.color)
 		else:
 			continue
 

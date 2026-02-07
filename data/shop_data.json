@@ -35,6 +35,14 @@
 	  "is_default": true
 	},
 	{
+	  "item_id": "notes_default",
+	  "name": "Стандартные ноты",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#ff8fa3", "#ffd6a5", "#fdffb6", "#bde0fe", "#a0c4ff"],
+	  "is_default": true
+	},
+	{
 	  "item_id": "kick_1",
 	  "name": "Кик 1",
 	  "price": 450,
@@ -310,6 +318,188 @@
 	  "images_count": 7,
 	  "is_achievement_reward": true,
 	  "achievement_required": "50"
+	},
+	{
+	  "item_id": "notes_monochrome_red",
+	  "name": "Красные ноты",
+	  "price": 150,
+	  "category": "Ноты",
+	  "note_colors": ["#ff0000"]
+	},
+	{
+	  "item_id": "notes_pure_white",
+	  "name": "Чистый белый",
+	  "price": 120,
+	  "category": "Ноты",
+	  "note_colors": ["#ffffff"]
+	},
+	{
+	  "item_id": "notes_soft_gray",
+	  "name": "Мягкий серый",
+	  "price": 100,
+	  "category": "Ноты",
+	  "note_colors": ["#bfbfbf"]
+	},
+	{
+	  "item_id": "notes_neon_cyan",
+	  "name": "Неон-циан",
+	  "price": 220,
+	  "category": "Ноты",
+	  "note_colors": ["#00f5ff"]
+	},
+	{
+	  "item_id": "notes_acid_green",
+	  "name": "Кислотный зелёный",
+	  "price": 240,
+	  "category": "Ноты",
+	  "note_colors": ["#39ff14"]
+	},
+	{
+	  "item_id": "notes_warm_pink",
+	  "name": "Тёплый розовый",
+	  "price": 200,
+	  "category": "Ноты",
+	  "note_colors": ["#ff4fd8"]
+	},
+	{
+	  "item_id": "notes_guitar_hero",
+	  "name": "Guitar Hero",
+	  "price": 500,
+	  "category": "Ноты",
+	  "note_colors": ["#32c832", "#ff3333", "#ffd700", "#33ccff", "#ffa500"]
+	},
+	{
+	  "item_id": "notes_pastel",
+	  "name": "Пастельные ноты",
+	  "price": 400,
+	  "category": "Ноты",
+	  "note_colors": ["#ffb3ba", "#ffdfba", "#ffffba", "#baffc9", "#bae1ff"]
+	},
+	{
+	  "item_id": "notes_rgb_spread",
+	  "name": "RGB Спектр",
+	  "price": 480,
+	  "category": "Ноты",
+	  "note_colors": ["#ff4b4b", "#ffd93d", "#4dff88", "#4db8ff", "#b84dff"]
+	},
+	{
+	  "item_id": "notes_osu_soft",
+	  "name": "Osu!",
+	  "price": 420,
+	  "category": "Ноты",
+	  "note_colors": ["#ff66aa", "#66ccff", "#88ff66", "#ffcc66", "#cc99ff"]
+	},
+	{
+	  "item_id": "notes_neon_arcade",
+	  "name": "Аркадный неон",
+	  "price": 520,
+	  "category": "Ноты",
+	  "note_colors": ["#ff006e", "#fb5607", "#ffbe0b", "#3a86ff", "#8338ec"]
+	},
+	{
+	  "item_id": "notes_synthwave",
+	  "name": "Синтвейв",
+	  "price": 530,
+	  "category": "Ноты",
+	  "note_colors": ["#ff2e88", "#ff6ec7", "#ffd166", "#06d6a0", "#118ab2"]
+	},
+	{
+	  "item_id": "notes_cyberpunk",
+	  "name": "Киберпанк",
+	  "price": 550,
+	  "category": "Ноты",
+	  "note_colors": ["#f72585", "#b5179e", "#7209b7", "#560bad", "#480ca8"]
+	},
+	{
+	  "item_id": "notes_neon_night",
+	  "name": "Неоновая ночь",
+	  "price": 490,
+	  "category": "Ноты",
+	  "note_colors": ["#00f5d4", "#0bbcd6", "#3a86ff", "#8338ec", "#ff006e"]
+	},
+	{
+	  "item_id": "notes_forest",
+	  "name": "Лесная глубина",
+	  "price": 380,
+	  "category": "Ноты",
+	  "note_colors": ["#2d6a4f", "#40916c", "#95d5b2", "#d8f3dc", "#1b4332"]
+	},
+	{
+	  "item_id": "notes_pastel_dream",
+	  "name": "Пастельный сон",
+	  "price": 410,
+	  "category": "Ноты",
+	  "note_colors": ["#ffc6ff", "#bdb2ff", "#a0c4ff", "#caffbf", "#ffd6a5"]
+	},
+	{
+	  "item_id": "notes_sunset_gradient",
+	  "name": "Закатный градиент",
+	  "price": 370,
+	  "category": "Ноты",
+	  "note_colors": ["#ff7b00", "#ff8800", "#ff9500", "#ffaa00", "#ffc300"]
+	},
+	{
+	  "item_id": "notes_high_contrast",
+	  "name": "Высокий контраст",
+	  "price": 460,
+	  "category": "Ноты",
+	  "note_colors": ["#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00"]
+	},
+	{
+	  "item_id": "notes_sakura",
+	  "name": "Сакура-сон",
+	  "price": 320,
+	  "category": "Ноты",
+	  "note_colors": ["#f4a7b9", "#f6c1cc", "#f7d6e0", "#d0f4de", "#cdb4db"]
+	},
+	{
+	  "item_id": "notes_fog",
+	  "name": "Утренний туман",
+	  "price": 280,
+	  "category": "Ноты",
+	  "note_colors": ["#c9c9d6", "#dcd6f7", "#e2ece9", "#bee1e6", "#fde2e4"]
+	},
+	{
+	  "item_id": "notes_forest_soft",
+	  "name": "Лесной покой",
+	  "price": 340,
+	  "category": "Ноты",
+	  "note_colors": ["#588157", "#a3b18a", "#dad7cd", "#b7e4c7", "#95d5b2"]
+	},
+	{
+	  "item_id": "notes_sunset_soft",
+	  "name": "Закат в облаках",
+	  "price": 330,
+	  "category": "Ноты",
+	  "note_colors": ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff"]
+	},
+	{
+	  "item_id": "notes_pro_soft",
+	  "name": "Чёткий фокус",
+	  "price": 440,
+	  "category": "Ноты",
+	  "note_colors": ["#ff8fab", "#ffd6a5", "#ffffff", "#bde0fe", "#a2d2ff"]
+	},
+	{
+	  "item_id": "notes_synth_soft",
+	  "name": "Неон-сон",
+	  "price": 430,
+	  "category": "Ноты",
+	  "note_colors": ["#ff99c8", "#cdb4db", "#ffc8dd", "#bde0fe", "#a2d2ff"]
+	},
+	{
+	  "item_id": "notes_candy",
+	  "name": "Конфетный дождь",
+	  "price": 310,
+	  "category": "Ноты",
+	  "note_colors": ["#ffadad", "#ffc6ff", "#caffbf", "#9bf6ff", "#bdb2ff"]
+	},
+	{
+	  "item_id": "notes_minimal",
+	  "name": "Белый шум",
+	  "price": 260,
+	  "category": "Ноты",
+	  "note_colors": ["#eaeaea", "#d8e2dc", "#ffffff", "#d8e2dc", "#eaeaea"]
 	},
 	{
 	  "item_id": "lanes_highlight_1",

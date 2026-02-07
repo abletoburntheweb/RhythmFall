@@ -77,12 +77,18 @@ func _setup_item():
 	var images_folder = item_data.get("images_folder", "")
 	var category = item_data.get("category", "")
 	var color_hex = item_data.get("color_hex", "")
+	var note_colors = item_data.get("note_colors", [])
 	var texture = null
 	var image_loaded_successfully = false
 
 	if category == "Подсветка линий" and color_hex != "":
 		var hex_color = Color(color_hex)
 		texture = _create_color_texture(hex_color)
+		if texture:
+			image_rect.texture = texture
+			image_loaded_successfully = true
+	elif category == "Ноты" and not note_colors.is_empty():
+		texture = _create_note_preview_texture(note_colors)
 		if texture:
 			image_rect.texture = texture
 			image_loaded_successfully = true
@@ -128,16 +134,41 @@ func _create_color_texture(color: Color) -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+func _create_note_preview_texture(colors: Array) -> Texture2D:
+	var width = 240
+	var height = 180
+	var image = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	
+	if colors.size() == 1:
+		var color = Color(colors[0])
+		image.fill(color)
+	elif colors.size() == 5:
+		var stripe_width = width / 5
+		for i in range(5):
+			var color = Color(colors[i])
+			var rect = Rect2i(i * stripe_width, 0, stripe_width, height)
+			image.fill_rect(rect, color)
+	else:
+		image.fill(Color(0.5, 0.5, 0.5, 1.0)) 
+		
+	return ImageTexture.create_from_image(image)
+
+
+
 func _create_placeholder_with_text():
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	if image_rect:
 		var category = item_data.get("category", "")
 		var color_hex = item_data.get("color_hex", "")
+		var note_colors = item_data.get("note_colors", [])
 		
 		if category == "Подсветка линий" and color_hex != "":
 			var hex_color = Color(color_hex)
 			var color_texture = _create_color_texture(hex_color)
 			image_rect.texture = color_texture
+		elif category == "Ноты" and not note_colors.is_empty():
+			var texture = _create_note_preview_texture(note_colors)
+			image_rect.texture = texture
 		else:
 			var placeholder_width = 240 
 			var placeholder_height = 180 

@@ -60,6 +60,10 @@ text = "Снейр"
 layout_mode = 2
 text = "Обложки"
 
+[node name="CategoryButtonNotes" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
+layout_mode = 2
+text = "Ноты"
+
 [node name="CategoryButtonLaneHighlight" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
 text = "Подсветка линий"

@@ -102,6 +102,7 @@ func _connect_category_buttons():
 	var snare_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonSnare
 	var cover_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover
 	var lane_highlight_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight  
+	var notes_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonNotes
 	var misc_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonMisc
 
 	if all_btn:
@@ -118,7 +119,10 @@ func _connect_category_buttons():
 		_set_category_button_style(cover_btn, false)
 	if lane_highlight_btn:  
 		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Подсветка линий"))
-		_set_category_button_style(lane_highlight_btn, false)  
+		_set_category_button_style(lane_highlight_btn, false)
+	if notes_btn:
+		notes_btn.pressed.connect(_on_category_selected.bind("Ноты"))
+		_set_category_button_style(notes_btn, false)
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
 		_set_category_button_style(misc_btn, false)
@@ -198,6 +202,7 @@ func _get_category_map() -> Dictionary:
 		"Снейр": "Snare",
 		"Обложки": "Covers",
 		"Подсветка линий": "LaneHighlight",
+		"Ноты": "Notes",
 		"Прочее": "Misc"
 	}
 
