@@ -125,12 +125,12 @@ func _setup_item():
 	_update_buttons_and_status()
 
 func _request_threaded_load(path: String) -> void:
-	var req_ok = ResourceLoader.load_threaded_request(path, "ImageTexture")
+	var req_ok = ResourceLoader.load_threaded_request(path, "Texture2D")
 	if req_ok == OK:
 		set_process(true)
 	else:
-		var tex = ResourceLoader.load(path, "ImageTexture")
-		if tex and tex is ImageTexture:
+		var tex = ResourceLoader.load(path, "Texture2D")
+		if tex and tex is Texture2D:
 			var image_rect = $MarginContainer/ContentContainer/ImageRect
 			if image_rect:
 				image_rect.texture = tex
@@ -143,7 +143,7 @@ func _process(delta):
 		var status = ResourceLoader.load_threaded_get_status(_pending_load_path)
 		if status == ResourceLoader.THREAD_LOAD_LOADED:
 			var res = ResourceLoader.load_threaded_get(_pending_load_path)
-			if res and res is ImageTexture:
+			if res and res is Texture2D:
 				var image_rect = $MarginContainer/ContentContainer/ImageRect
 				if image_rect:
 					image_rect.texture = res
