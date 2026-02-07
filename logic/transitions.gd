@@ -5,6 +5,7 @@ var parent = null
 var session_history_manager = null
 
 var main_menu_instance = null
+var _scene_cache: Dictionary = {}
 
 func _init(p_game_engine):
 	game_engine = p_game_engine
@@ -15,12 +16,39 @@ func _init(p_game_engine):
 	else:
 		printerr("Transitions.gd: GameEngine не имеет метода get_session_history_manager!")
 		session_history_manager = null 
+	
+	call_deferred("_warmup_heavy_scenes")
 
 func set_main_menu_instance(instance):
 	main_menu_instance = instance
 
-func _instantiate_if_exists(scene_path):
+func _get_cached_packed(scene_path: String):
+	if _scene_cache.has(scene_path):
+		var cached = _scene_cache[scene_path]
+		if cached and (cached is PackedScene):
+			return cached
+	return null
+
+func _preload_scene(scene_path: String):
+	var existing = _get_cached_packed(scene_path)
+	if existing:
+		return existing
 	var scene_resource = load(scene_path)
+	if scene_resource and scene_resource is PackedScene:
+		_scene_cache[scene_path] = scene_resource
+		return scene_resource
+	return null
+
+func _warmup_heavy_scenes():
+	_preload_scene("res://scenes/song_select/song_select.tscn")
+	_preload_scene("res://scenes/shop/shop_screen.tscn")
+	_preload_scene("res://scenes/achievements/achievements_screen.tscn")
+	_preload_scene("res://scenes/profile/profile_screen.tscn")
+
+func _instantiate_if_exists(scene_path):
+	var scene_resource = _get_cached_packed(scene_path)
+	if not scene_resource:
+		scene_resource = _preload_scene(scene_path)
 	if scene_resource and scene_resource is PackedScene:
 		return scene_resource.instantiate()
 	else:

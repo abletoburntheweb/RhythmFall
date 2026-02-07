@@ -20,6 +20,7 @@ var achievement_unlocked: bool = false
 var is_level_reward: bool = false
 var required_level: int = 0
 var level_unlocked: bool = false
+var _pending_load_path: String = ""
 
 func _ready():
 	if not item_data.has("item_id"):
@@ -94,20 +95,16 @@ func _setup_item():
 			image_loaded_successfully = true
 	elif image_path != "":
 		if FileAccess.file_exists(image_path):
-			texture = ResourceLoader.load(image_path, "ImageTexture")
-			if texture and texture is ImageTexture:
-				image_rect.texture = texture
-				image_loaded_successfully = true
+			_pending_load_path = image_path
+			_create_placeholder_with_text()
+			_request_threaded_load(image_path)
 	elif images_folder != "":
 		var cover_path = images_folder + "/cover1.png"
 
-		var image = Image.new()
-		var error = image.load(cover_path)
-		if error == OK and image:
-			texture = ImageTexture.create_from_image(image)
-			if texture:
-				image_rect.texture = texture
-				image_loaded_successfully = true
+		if FileAccess.file_exists(cover_path):
+			_pending_load_path = cover_path
+			_create_placeholder_with_text()
+			_request_threaded_load(cover_path)
 	else:
 		pass
 
@@ -126,6 +123,37 @@ func _setup_item():
 		name_label.visible = true
 
 	_update_buttons_and_status()
+
+func _request_threaded_load(path: String) -> void:
+	var req_ok = ResourceLoader.load_threaded_request(path, "ImageTexture")
+	if req_ok == OK:
+		set_process(true)
+	else:
+		var tex = ResourceLoader.load(path, "ImageTexture")
+		if tex and tex is ImageTexture:
+			var image_rect = $MarginContainer/ContentContainer/ImageRect
+			if image_rect:
+				image_rect.texture = tex
+				image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+				image_rect.visible = true
+		_pending_load_path = ""
+
+func _process(delta):
+	if _pending_load_path != "":
+		var status = ResourceLoader.load_threaded_get_status(_pending_load_path)
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			var res = ResourceLoader.load_threaded_get(_pending_load_path)
+			if res and res is ImageTexture:
+				var image_rect = $MarginContainer/ContentContainer/ImageRect
+				if image_rect:
+					image_rect.texture = res
+					image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+					image_rect.visible = true
+			_pending_load_path = ""
+			set_process(false)
+		elif status == ResourceLoader.THREAD_LOAD_FAILED:
+			_pending_load_path = ""
+			set_process(false)
 
 
 func _create_color_texture(color: Color) -> Texture2D:
