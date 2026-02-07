@@ -123,6 +123,8 @@ func _connect_ui_signals():
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.gui_input.connect(_on_gui_input_for_label.bind("bpm"))
 	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.mouse_filter = Control.MOUSE_FILTER_STOP
 	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
+	$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel.mouse_filter = Control.MOUSE_FILTER_STOP
+	$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
 	
 func _on_bpm_analysis_started():
 	print("SongSelect.gd: BPM анализ начат.")

@@ -46,10 +46,42 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 			_edit_field("year")
 		"bpm":
 			_edit_bpm()
+		"primary_genre": 
+			_edit_primary_genre()
 		"cover":
 			_edit_cover_stub()
 		_:
 			print("SongEditManager.gd: Редактирование для поля '", field_type, "' не реализовано.")
+
+func _edit_primary_genre():
+	var song_data = _edit_context["song_data"]
+	var old_genre = song_data.get("primary_genre", "Н/Д")
+	if old_genre == "unknown":
+		old_genre = ""
+
+	_edit_context["type"] = "primary_genre"
+
+	var dialog = AcceptDialog.new()
+	dialog.title = "Редактировать жанр"
+	dialog.dialog_text = "Введите основной жанр трека (например: electronic, rap, rock):"
+
+	var line_edit = LineEdit.new()
+	line_edit.text = old_genre
+	line_edit.placeholder_text = "electronic, k-pop, rock..."
+	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_edit_context["line_edit"] = line_edit
+
+	var vbox_container = VBoxContainer.new()
+	vbox_container.add_child(line_edit)
+	dialog.add_child(vbox_container)
+
+	dialog.confirmed.connect(_on_edit_primary_genre_confirmed)
+	dialog.close_requested.connect(_on_dialog_closed)
+
+	_edit_context["dialog"] = dialog
+
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _edit_title():
 	var song_data = _edit_context["song_data"]
@@ -183,7 +215,30 @@ func _on_edit_field_confirmed():
 			print("SongEditManager.gd: Изменения поля '%s' для '%s' переданы в SongMetadataManager для сохранения." % [field_name, song_file_path])
 
 	_cleanup_edit_context() 
-	
+
+func _on_edit_primary_genre_confirmed():
+	var dialog = _edit_context["dialog"]
+	var line_edit = _edit_context["line_edit"]
+	var song_data = _edit_context["song_data"]
+	var selected_item_list_index = _edit_context["selected_index"]
+	var old_genre = song_data.get("primary_genre", "unknown")
+
+	if dialog and line_edit:
+		var new_genre = line_edit.text.strip_edges().to_lower()
+		if new_genre == "":
+			new_genre = "unknown"
+
+		if new_genre != old_genre:
+			song_data["primary_genre"] = new_genre
+			emit_signal("song_edited", song_data, selected_item_list_index)
+
+			var song_file_path = song_data["path"]
+			var fields_to_update = {"primary_genre": new_genre}
+			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			print("SongEditManager.gd: Изменения жанра для '%s' переданы в SongMetadataManager для сохранения." % song_file_path)
+
+	_cleanup_edit_context()
+
 func _on_edit_bpm_confirmed():
 	var dialog = _edit_context["dialog"]
 	var spin_box = _edit_context["spin_box"]

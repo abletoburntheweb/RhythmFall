@@ -89,14 +89,14 @@ layout_mode = 2
 custom_minimum_size = Vector2(1200, 600)
 layout_mode = 0
 offset_right = 1200.0
-offset_bottom = 714.0
+offset_bottom = 741.0
 
 [node name="ResultsItemList" type="ItemList" parent="MainVBox/ContentHBox/SongListVBox"]
 visible = false
 custom_minimum_size = Vector2(1200, 600)
 layout_mode = 0
 offset_right = 1200.0
-offset_bottom = 714.0
+offset_bottom = 741.0
 
 [node name="DetailsVBox" type="VBoxContainer" parent="MainVBox/ContentHBox"]
 layout_direction = 3
