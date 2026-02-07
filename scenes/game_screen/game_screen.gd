@@ -847,3 +847,7 @@ func _exit_to_main_menu():
 		var transitions = game_engine.get_transitions()
 		if transitions:
 			transitions.exit_to_main_menu()
+
+func _exit_tree() -> void:
+	Engine.max_fps = original_max_fps
+	DisplayServer.window_set_vsync_mode(original_vsync_mode)
