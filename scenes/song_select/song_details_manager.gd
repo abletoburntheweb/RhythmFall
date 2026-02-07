@@ -7,6 +7,7 @@ var artist_label: Label = null
 var year_label: Label = null
 var bpm_label: Label = null
 var duration_label: Label = null
+var primary_genre_label: Label = null
 var cover_texture_rect: TextureRect = null
 var play_button: Button = null
 
@@ -36,12 +37,13 @@ func set_current_lanes(lanes: int):
 	current_lanes = lanes
 	_update_play_button_state()
 
-func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
+func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, genre_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
 	year_label = year_lbl
 	bpm_label = bpm_lbl
 	duration_label = duration_lbl
+	primary_genre_label = genre_lbl
 	cover_texture_rect = cover_tex_rect
 	play_button = play_btn
 
@@ -64,6 +66,12 @@ func update_details(song_data: Dictionary):
 		bpm_label.text = "BPM: " + song_data.get("bpm", "Н/Д")
 	if duration_label:
 		duration_label.text = "Длительность: " + song_data.get("duration", "00:00")
+	
+	if primary_genre_label:
+		var genre = song_data.get("primary_genre", "Н/Д")
+		if genre == "unknown":
+			genre = "Н/Д"
+		primary_genre_label.text = "Жанр: " + genre
 
 	var cover_texture = song_data.get("cover", null)
 	if cover_texture_rect:

@@ -59,6 +59,7 @@ func _ready():
 		$MainVBox/ContentHBox/DetailsVBox/YearLabel,
 		$MainVBox/ContentHBox/DetailsVBox/BpmLabel,
 		$MainVBox/ContentHBox/DetailsVBox/DurationLabel,
+		$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel,
 		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect,
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton
 	)
@@ -289,11 +290,21 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 		song_list_manager.populate_items_grouped()
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
-	current_selected_song_data = song_data
-	song_details_manager.stop_preview()
-	song_details_manager.update_details(song_data)
+	var enriched_song_data = song_data.duplicate()
 	
-	var song_file_path = song_data.get("path", "")
+	var song_path = song_data.get("path", "")
+	
+	if song_path != "":
+		var metadata = song_metadata_manager.get_metadata_for_song(song_path)
+		if not metadata.is_empty():
+			for key in metadata:
+				enriched_song_data[key] = metadata[key]
+	
+	current_selected_song_data = enriched_song_data
+	song_details_manager.stop_preview()
+	song_details_manager.update_details(enriched_song_data)
+	
+	var song_file_path = enriched_song_data.get("path", "")
 	if song_file_path != "":
 		current_displayed_song_path = song_file_path
 		song_details_manager.play_song_preview(song_file_path)
@@ -305,7 +316,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		results_button.disabled = true
 		clear_results_button.disabled = true
 	
-	var song_bpm = song_data.get("bpm", "Н/Д")
+	var song_bpm = enriched_song_data.get("bpm", "Н/Д")
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
