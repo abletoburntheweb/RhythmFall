@@ -88,56 +88,48 @@ func exit_to_main_menu():
 		transitions.exit_to_main_menu()
 
 func _render_daily_quests():
-	var list_node = find_child("DailyQuestsList", true, false)
-	if not list_node:
-		return
-	for child in list_node.get_children():
-		list_node.remove_child(child)
-		child.queue_free()
-	var template = list_node.get_node_or_null("QuestItem")
-	if template == null:
-		template = PanelContainer.new()
-		template.name = "QuestItem"
-		var content_vbox = VBoxContainer.new()
-		content_vbox.name = "ContentVBox"
-		template.add_child(content_vbox)
-		var title_label = Label.new()
-		title_label.name = "QuestTitleLabel"
-		title_label.text = "Заголовок задания"
-		content_vbox.add_child(title_label)
-		var desc_label = Label.new()
-		desc_label.name = "QuestDescriptionLabel"
-		desc_label.text = "Описание задания"
-		content_vbox.add_child(desc_label)
-		var pb = ProgressBar.new()
-		pb.name = "QuestProgressBar"
-		pb.min_value = 0
-		pb.max_value = 100
-		content_vbox.add_child(pb)
 	var quests = PlayerDataManager.get_daily_quests()
-	var count = min(3, quests.size())
-	for i in range(count):
-		var q = quests[i]
-		var item = template.duplicate(true)
-		item.name = "QuestItem%d" % (i + 1)
+	for i in range(3):
+		var item_name = "QuestItem%d" % (i + 1)
+		var item = find_child(item_name, true, false)
+		if not item:
+			continue
+
 		var title_label = item.find_child("QuestTitleLabel", true, false)
 		var desc_label = item.find_child("QuestDescriptionLabel", true, false)
 		var pb = item.find_child("QuestProgressBar", true, false)
-		var title = str(q.get("title", "Задание"))
-		var goal = int(q.get("goal", 1))
-		var reward = int(q.get("reward_currency", 0))
-		var progress = int(q.get("progress", 0))
-		var completed = bool(q.get("completed", false))
-		if title_label:
-			title_label.text = title
-		if desc_label:
-			var desc_text = "Награда: %d • Цель: %d • Прогресс: %d/%d" % [reward, goal, progress, goal]
-			if completed:
-				desc_text = desc_text + " (завершено)"
-			desc_label.text = desc_text
-		if pb:
-			var pct = 100 if completed else int(round(100.0 * float(progress) / float(max(1, goal))))
-			pb.min_value = 0
-			pb.max_value = 100
-			pb.value = pct
-		list_node.add_child(item)
+
+		if i < quests.size():
+			var q = quests[i]
+			var title = str(q.get("title", "Задание"))
+			var goal = int(q.get("goal", 1))
+			var reward = int(q.get("reward_currency", 0))
+			var progress = int(q.get("progress", 0))
+			var completed = bool(q.get("completed", false))
+
+			if title_label:
+				title_label.text = title
+				if completed:
+					title_label.add_theme_color_override("font_color", Color.YELLOW)
+				else:
+					title_label.add_theme_color_override("font_color", Color.GRAY)
+
+			if desc_label:
+				var desc_text = "Награда: %d • Цель: %d" % [reward, goal]
+				if completed:
+					desc_text += " (завершено)"
+				else:
+					desc_text += " (%d/%d)" % [progress, goal]
+				desc_label.text = desc_text
+				if completed:
+					desc_label.add_theme_color_override("font_color", Color.WHITE)
+				else:
+					desc_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
+
+			if pb:
+				pb.max_value = goal
+				pb.value = min(progress, goal)
+
+			item.show() 
+		else:
+			item.hide()

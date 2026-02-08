@@ -99,33 +99,71 @@ texture_normal = ExtResource("2_0ebjn")
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 0.010000001
-offset_left = 1534.0
+offset_left = 1564.0
 offset_top = 160.0
-offset_right = 1782.8
-offset_bottom = 734.0
+offset_right = 1890.8
+offset_bottom = 700.0
 
 [node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel"]
 layout_mode = 2
 
 [node name="HeaderLabel" type="Label" parent="DailyQuestsPanel/ContentVBox"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Ежедневные задания"
+horizontal_alignment = 1
 
 [node name="DailyQuestsList" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox"]
 layout_mode = 2
+theme_override_constants/separation = 20
 
-[node name="QuestItem" type="PanelContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList"]
+[node name="QuestItem1" type="PanelContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList"]
 layout_mode = 2
 
-[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem"]
+[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1"]
 layout_mode = 2
 
-[node name="QuestTitleLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+[node name="QuestTitleLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/ContentVBox"]
 layout_mode = 2
 text = "Название задания"
 
-[node name="QuestDescriptionLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+[node name="QuestDescriptionLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/ContentVBox"]
 layout_mode = 2
 text = "Описание задания"
 
-[node name="QuestProgressBar" type="ProgressBar" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+[node name="QuestProgressBar" type="ProgressBar" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/ContentVBox"]
+layout_mode = 2
+
+[node name="QuestItem2" type="PanelContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList"]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2"]
+layout_mode = 2
+
+[node name="QuestTitleLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/ContentVBox"]
+layout_mode = 2
+text = "Название задания"
+
+[node name="QuestDescriptionLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/ContentVBox"]
+layout_mode = 2
+text = "Описание задания"
+
+[node name="QuestProgressBar" type="ProgressBar" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/ContentVBox"]
+layout_mode = 2
+
+[node name="QuestItem3" type="PanelContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList"]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3"]
+layout_mode = 2
+
+[node name="QuestTitleLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/ContentVBox"]
+layout_mode = 2
+text = "Название задания"
+
+[node name="QuestDescriptionLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/ContentVBox"]
+layout_mode = 2
+text = "Описание задания"
+
+[node name="QuestProgressBar" type="ProgressBar" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/ContentVBox"]
 layout_mode = 2
