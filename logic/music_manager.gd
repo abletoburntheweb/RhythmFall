@@ -56,6 +56,7 @@ var _external_metronome_controlled: bool = false
 var _last_beat_index: int = -1
 var _menu_music_volume_pct: float = 50.0
 var _game_music_volume_pct: float = 50.0
+var _metronome_offset_sec: float = 0.0
 
 func _ready():
 	music_player = AudioStreamPlayer.new()
@@ -89,14 +90,20 @@ func set_external_metronome_control(enabled: bool):
 func update_metronome(delta: float, game_time: float, bpm: float):
 	if not _external_metronome_controlled or bpm <= 0:
 		return
+	var time_since_offset = game_time - _metronome_offset_sec
+	if time_since_offset < 0.0:
+		return
 
 	var beat_interval = 60.0 / bpm
-	var current_beat_index = int(floor(game_time / beat_interval))
+	var current_beat_index = int(floor(time_since_offset / beat_interval))
 	var is_strong_beat = (current_beat_index % 4) == 0
 
 	if current_beat_index != _last_beat_index:
 		_last_beat_index = current_beat_index
 		play_metronome_sound(is_strong_beat)
+
+func set_metronome_offset(offset_sec: float):
+	_metronome_offset_sec = max(0.0, offset_sec)
 
 
 func get_volume_multiplier() -> float:

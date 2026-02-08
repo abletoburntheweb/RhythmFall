@@ -387,6 +387,11 @@ func start_gameplay():
 		notes_loaded = true
 		var total_note_count = note_manager.get_spawn_queue_size()
 		score_manager.set_total_notes(total_note_count)
+		var offset = _compute_metronome_offset()
+		MusicManager.set_metronome_offset(offset)
+		var song_path_to_update = selected_song_data.get("path", "")
+		if song_path_to_update != "":
+			SongMetadataManager.update_metadata(song_path_to_update, {"metronome_offset": offset})
 
 	var should_delay_music = false
 	var earliest_note_time = note_manager.get_earliest_note_time()
@@ -436,6 +441,38 @@ func update_speed_from_bpm():
 	var base_speed = 6.0
 	speed = base_speed * (bpm / base_bpm)
 	speed = clamp(speed, 2.0, 12.0)
+
+func _compute_metronome_offset() -> float:
+	var spawn_queue = note_manager.get_spawn_queue()
+	if not spawn_queue or spawn_queue.size() == 0:
+		return 0.0
+	var beat_interval = 60.0 / max(1.0, bpm)
+	var max_scan_time = 30.0
+	var tolerance = 0.06
+	var required_aligned = 6
+	var window_notes = 12
+	var best_time = 0.0
+	for i in range(spawn_queue.size()):
+		var t0 = float(spawn_queue[i].get("time", 0.0))
+		if t0 > max_scan_time:
+			break
+		var aligned = 0
+		var total_err = 0.0
+		var checked = 0
+		for j in range(i + 1, min(spawn_queue.size(), i + 1 + window_notes)):
+			var tj = float(spawn_queue[j].get("time", 0.0))
+			var diff = tj - t0
+			if diff < 0.0:
+				continue
+			var modv = fmod(diff, beat_interval)
+			var err = min(modv, beat_interval - modv)
+			if err <= tolerance:
+				aligned += 1
+				total_err += err
+			checked += 1
+		if aligned >= required_aligned:
+			return t0
+	return float(spawn_queue[0].get("time", 0.0))
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
