@@ -36,5 +36,4 @@ enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg")
 
 [gui]
 
-theme/custom="res://ui/theme/app_theme.tres"
 theme/custom_font="uid://dlkdapepenx4"

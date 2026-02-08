@@ -108,6 +108,7 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "FlatExitButton", text)
 	theme.set_color("font_disabled_color", "FlatExitButton", text.darkened(0.5))
 
+	# Primary/Secondary variations removed per manual styling preference
 
 	theme.set_type_variation("Danger", "Button")
 	var red := theme.get_color("danger", "Palette")
@@ -293,6 +294,7 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "Dropdown", text)
 	theme.set_color("font_disabled_color", "Dropdown", text.darkened(0.5))
 
+	# Removed older ItemList block that used non-standard "background" property to avoid duplication.
 
 	var v_track := StyleBoxFlat.new()
 	v_track.bg_color = Color(0.12, 0.13, 0.17, 1.0)
@@ -541,9 +543,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveAll", act)
 	theme.set_stylebox("pressed", "ActiveAll", act)
 	theme.set_stylebox("focus", "ActiveAll", act)
-	theme.set_color("font_color", "ActiveAll", blue)
-	theme.set_color("font_hover_color", "ActiveAll", blue.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveAll", blue.darkened(0.08))
+	theme.set_color("font_color", "ActiveAll", blue.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveAll", blue.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveAll", blue.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveAll", blue.darkened(0.4))
 
 	theme.set_type_variation("ActiveKick", "Button")
@@ -551,9 +553,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveKick", act)
 	theme.set_stylebox("pressed", "ActiveKick", act)
 	theme.set_stylebox("focus", "ActiveKick", act)
-	theme.set_color("font_color", "ActiveKick", col_kick)
-	theme.set_color("font_hover_color", "ActiveKick", col_kick.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveKick", col_kick.darkened(0.08))
+	theme.set_color("font_color", "ActiveKick", col_kick.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveKick", col_kick.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveKick", col_kick.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveKick", col_kick.darkened(0.4))
 
 	theme.set_type_variation("ActiveSnare", "Button")
@@ -561,9 +563,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveSnare", act)
 	theme.set_stylebox("pressed", "ActiveSnare", act)
 	theme.set_stylebox("focus", "ActiveSnare", act)
-	theme.set_color("font_color", "ActiveSnare", col_snare)
-	theme.set_color("font_hover_color", "ActiveSnare", col_snare.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveSnare", col_snare.darkened(0.08))
+	theme.set_color("font_color", "ActiveSnare", col_snare.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveSnare", col_snare.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveSnare", col_snare.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveSnare", col_snare.darkened(0.4))
 
 	theme.set_type_variation("ActiveCover", "Button")
@@ -571,9 +573,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveCover", act)
 	theme.set_stylebox("pressed", "ActiveCover", act)
 	theme.set_stylebox("focus", "ActiveCover", act)
-	theme.set_color("font_color", "ActiveCover", col_cover)
-	theme.set_color("font_hover_color", "ActiveCover", col_cover.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveCover", col_cover.darkened(0.08))
+	theme.set_color("font_color", "ActiveCover", col_cover.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveCover", col_cover.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveCover", col_cover.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveCover", col_cover.darkened(0.4))
 
 	theme.set_type_variation("ActiveNotes", "Button")
@@ -581,9 +583,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveNotes", act)
 	theme.set_stylebox("pressed", "ActiveNotes", act)
 	theme.set_stylebox("focus", "ActiveNotes", act)
-	theme.set_color("font_color", "ActiveNotes", col_notes)
-	theme.set_color("font_hover_color", "ActiveNotes", col_notes.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveNotes", col_notes.darkened(0.08))
+	theme.set_color("font_color", "ActiveNotes", col_notes.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveNotes", col_notes.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveNotes", col_notes.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveNotes", col_notes.darkened(0.4))
 
 	theme.set_type_variation("ActiveLane", "Button")
@@ -591,9 +593,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveLane", act)
 	theme.set_stylebox("pressed", "ActiveLane", act)
 	theme.set_stylebox("focus", "ActiveLane", act)
-	theme.set_color("font_color", "ActiveLane", col_lane)
-	theme.set_color("font_hover_color", "ActiveLane", col_lane.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveLane", col_lane.darkened(0.08))
+	theme.set_color("font_color", "ActiveLane", col_lane.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveLane", col_lane.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveLane", col_lane.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveLane", col_lane.darkened(0.4))
 
 	theme.set_type_variation("ActiveMisc", "Button")
@@ -601,9 +603,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "ActiveMisc", act)
 	theme.set_stylebox("pressed", "ActiveMisc", act)
 	theme.set_stylebox("focus", "ActiveMisc", act)
-	theme.set_color("font_color", "ActiveMisc", col_misc)
-	theme.set_color("font_hover_color", "ActiveMisc", col_misc.lightened(0.08))
-	theme.set_color("font_pressed_color", "ActiveMisc", col_misc.darkened(0.08))
+	theme.set_color("font_color", "ActiveMisc", col_misc.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveMisc", col_misc.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveMisc", col_misc.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveMisc", col_misc.darkened(0.4))
 
 	theme.set_type_variation("DailyTasksPanel", "PanelContainer")
@@ -642,3 +644,4 @@ static func build_theme() -> Theme:
 	theme.set_constant("outline_size", "DailyTasksProgressBar", 0)
 
 	return theme
+ 

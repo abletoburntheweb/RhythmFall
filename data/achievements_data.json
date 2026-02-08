@@ -101,7 +101,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 15.0,
+			"current": 18,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 2500.0,
+			"current": 3170,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 29.93,
+			"current": 29.98,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 29.93,
+			"current": 29.98,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 29.93,
+			"current": 29.98,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 29.93,
+			"current": 29.98,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 29.93,
+			"current": 29.98,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",

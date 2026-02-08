@@ -27,12 +27,10 @@ layout_mode = 2
 
 [node name="ActionsHeaderLabel" type="Label" parent="ContentVBox/HBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5568628, 0.83137256, 0.6156863, 1)
 text = "Действия"
 
 [node name="KeysHeaderLabel" type="Label" parent="ContentVBox/HBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.64705884, 0.5568628, 0.85882354, 1)
 text = "Клавиши"
 
 [node name="ContentVBox" type="VBoxContainer" parent="ContentVBox"]

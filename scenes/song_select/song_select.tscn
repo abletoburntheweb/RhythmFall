@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c2lldxolkry8n"]
+[gd_scene load_steps=3 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [node name="SongSelect" type="Control"]
 layout_mode = 3
@@ -152,6 +153,8 @@ layout_mode = 2
 
 [node name="PlayButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+theme = ExtResource("2_gqiy2")
+theme_type_variation = &"FlatPlayButton"
 theme_override_font_sizes/font_size = 20
 text = "Играть"
 
@@ -167,6 +170,8 @@ text = "Сгенерировать ноты"
 
 [node name="DeleteButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+theme = ExtResource("2_gqiy2")
+theme_type_variation = &"FlatExitButton"
 theme_override_font_sizes/font_size = 20
 text = "Удалить"
 

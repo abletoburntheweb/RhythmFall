@@ -5,6 +5,7 @@ var currency: int = 0
 var shop_data: Dictionary = {}
 var item_cards: Array[Node] = []
 var achievements_data: Dictionary = {} 
+var current_category: String = "Все"
 
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
@@ -120,6 +121,7 @@ func _connect_category_buttons():
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
 	_update_category_buttons("Все")
+	current_category = "Все"
 		
 func _connect_back_button():
 	var back_button = $MainContent/MainVBox/BackButton
@@ -212,58 +214,17 @@ func _get_category_map() -> Dictionary:
 	}
 
 func _on_category_selected(category: String):
-	for card in item_cards:
-		card.queue_free()
-	item_cards.clear()
-
-	var filtered_items = []
-	for item in shop_data.get("items", []):
-		if category == "Все" or item.category == category:
-			filtered_items.append(item)
-
+	if category == current_category:
+		_update_category_buttons(category)
+		return
 	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
 	if not grid_container:
 		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
 		return
-
-	for i in range(filtered_items.size()):
-		var item_data = filtered_items[i]
-		var new_card = preload("res://scenes/shop/item_card.tscn").instantiate()
-		new_card.item_data = item_data
-
-		var is_purchased = PlayerDataManager.is_item_unlocked(item_data.item_id)
-		var is_active = false
-		var category_map = _get_category_map()
-		var internal_category = category_map.get(item_data.category, "")
-		if internal_category:
-			is_active = (PlayerDataManager.get_active_item(internal_category) == item_data.item_id)
-
-		var achievement_name = ""
-		var achievement_unlocked = false
-		var level_unlocked = false
-
-		if item_data.get("is_level_reward", false):
-			var required_level = item_data.get("required_level", 0)
-			var current_level = PlayerDataManager.get_current_level()
-			level_unlocked = current_level >= required_level
-		elif item_data.get("is_achievement_reward", false):
-			var achievement_id = item_data.get("achievement_required", "")
-			achievement_name = _get_achievement_name_by_id(achievement_id)
-			if achievement_id != "" and achievement_id.is_valid_int():
-				achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id))
-
-		new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
-
-		new_card.buy_pressed.connect(_on_item_buy_pressed)
-		new_card.use_pressed.connect(_on_item_use_pressed)
-		new_card.preview_pressed.connect(_on_item_preview_pressed)
-		new_card.cover_click_pressed.connect(_on_cover_click_pressed)
-
-		grid_container.add_child(new_card)
-		item_cards.append(new_card)
-
+	for card in item_cards:
+		card.visible = (category == "Все" or card.item_data.category == category)
 	_update_category_buttons(category)
-
+	current_category = category
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
