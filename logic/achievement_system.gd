@@ -41,6 +41,7 @@ func on_purchase_made():
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
 	achievement_manager.save_achievements()
+	PlayerDataManager.increment_daily_progress("shop_purchase", 1, {})
 
 func on_currency_changed():
 	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)
@@ -51,11 +52,14 @@ func on_currency_changed():
 
 func on_daily_login():
 	var login_streak = PlayerDataManager.get_login_streak()
+	PlayerDataManager.ensure_daily_quests_for_today()
 	achievement_manager.check_daily_login_achievements(PlayerDataManager)
 	achievement_manager.check_event_achievements()
 	achievement_manager.save_achievements()
 	
 func on_notes_generated():
+	PlayerDataManager.ensure_daily_quests_for_today()
+	PlayerDataManager.increment_daily_progress("notes_generated", 1, {})
 	achievement_manager.check_note_researcher_achievement() 
 	achievement_manager.save_achievements() 
 

@@ -19,6 +19,8 @@ var button_configs = {
 
 func _ready():
 	MusicManager.play_menu_music()
+	PlayerDataManager.ensure_daily_quests_for_today()
+	_render_daily_quests()
 
 	var all_buttons_connected = true
 	for button_name in button_configs:
@@ -82,3 +84,24 @@ func exit_to_main_menu():
 	MusicManager.play_menu_music()
 	if transitions:
 		transitions.exit_to_main_menu()
+
+func _render_daily_quests():
+	var list_node = get_node_or_null("DailyQuestsPanel/VBox/DailyQuestsList")
+	if not list_node:
+		list_node = get_node_or_null("DailyQuestsPanel/DailyQuestsPanel/DailyQuestsList")
+	if not list_node:
+		return
+	for child in list_node.get_children():
+		list_node.remove_child(child)
+		child.queue_free()
+	var quests = PlayerDataManager.get_daily_quests()
+	for i in range(min(3, quests.size())):
+		var q = quests[i]
+		var label = Label.new()
+		var title = str(q.get("title", "Задание"))
+		var progress = int(q.get("progress", 0))
+		var goal = int(q.get("goal", 1))
+		var completed = bool(q.get("completed", false))
+		var status = "Готово" if completed else "%d/%d" % [progress, goal]
+		label.text = "%s — %s" % [title, status]
+		list_node.add_child(label)

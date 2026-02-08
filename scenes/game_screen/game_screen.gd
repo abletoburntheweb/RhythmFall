@@ -554,6 +554,8 @@ func end_game():
 	PlayerDataManager.add_completed_level()
 	if current_instrument == "drums":
 		PlayerDataManager.add_drum_level_completed()
+	PlayerDataManager.increment_daily_progress("levels_completed", 1, {})
+	PlayerDataManager.increment_daily_progress("play_drum_level", 1, {"is_drum_mode": current_instrument == "drums"})
 	
 	var victory_song_info = selected_song_data.duplicate()
 	victory_song_info["instrument"] = current_instrument 
@@ -564,6 +566,12 @@ func end_game():
 	var debug_perfect_hits = perfect_hits_this_level
 	var debug_missed_notes = score_manager.get_missed_notes_count()
 	var debug_hit_notes = score_manager.get_hit_notes_count()
+	if debug_accuracy >= 80.0:
+		PlayerDataManager.increment_daily_progress("accuracy_80", 1, {"accuracy": debug_accuracy})
+	if debug_max_combo >= 30:
+		PlayerDataManager.increment_daily_progress("combo_reached", 1, {"max_combo": debug_max_combo})
+	if debug_missed_notes <= 0:
+		PlayerDataManager.increment_daily_progress("missless", 1, {"missed_notes": debug_missed_notes})
 
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):

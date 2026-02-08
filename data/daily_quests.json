@@ -1,0 +1,24 @@
+{
+  "quests": [
+	{ "id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50 },
+	{ "id": "perfect_hits", "title": "Сделай PERFECT попадания (50)", "event": "perfect_hits", "goal": 50, "reward_currency": 60 },
+	{ "id": "accuracy_80", "title": "Точность ≥ 80% (1)", "event": "accuracy_80", "goal": 1, "reward_currency": 30 },
+	{ "id": "accuracy_90", "title": "Точность ≥ 90% (1)", "event": "accuracy_80", "goal": 1, "reward_currency": 50 },
+	{ "id": "play_drum", "title": "Сыграй уровень на барабанах (1)", "event": "play_drum_level", "goal": 1, "reward_currency": 40 },
+	{ "id": "combo_30", "title": "Комбо ≥ 30 (1)", "event": "combo_reached", "goal": 1, "reward_currency": 25 },
+	{ "id": "combo_60", "title": "Комбо ≥ 60 (1)", "event": "combo_reached", "goal": 1, "reward_currency": 50 },
+	{ "id": "missless", "title": "Без промахов (1)", "event": "missless", "goal": 1, "reward_currency": 80 },
+	{ "id": "notes_generated", "title": "Сгенерируй ноты (2)", "event": "notes_generated", "goal": 2, "reward_currency": 20 },
+	{ "id": "hit_notes", "title": "Попади по нотам (200)", "event": "hit_notes", "goal": 200, "reward_currency": 40 },
+	{ "id": "playtime_30m", "title": "Проведи 30 мин в игре", "event": "playtime_minutes", "goal": 30, "reward_currency": 60 },
+	{ "id": "earn_currency", "title": "Заработай валюту (100)", "event": "currency_earned", "goal": 100, "reward_currency": 30 },
+	{ "id": "spend_currency", "title": "Потрать валюту (100)", "event": "currency_spent", "goal": 100, "reward_currency": 30 },
+	{ "id": "shop_purchase", "title": "Совершить покупку (1)", "event": "shop_purchase", "goal": 1, "reward_currency": 20 },
+	{ "id": "unlock_item", "title": "Открыть предмет (1)", "event": "item_unlocked", "goal": 1, "reward_currency": 20 },
+	{ "id": "drum_perfects", "title": "PERFECT на барабанах (30)", "event": "drum_perfect_hits", "goal": 30, "reward_currency": 50 },
+	{ "id": "genre_play", "title": "Сыграй трек любимого жанра (1)", "event": "favorite_genre_play", "goal": 1, "reward_currency": 20 },
+	{ "id": "two_levels", "title": "Заверши 2 уровня", "event": "levels_completed", "goal": 2, "reward_currency": 40 },
+	{ "id": "three_levels", "title": "Заверши 3 уровня", "event": "levels_completed", "goal": 3, "reward_currency": 60 },
+	{ "id": "restart_level", "title": "Перезапусти уровень (1)", "event": "level_restarted", "goal": 1, "reward_currency": 10 }
+  ]
+}

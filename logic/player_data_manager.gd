@@ -52,7 +52,11 @@ var data: Dictionary = {
 	"xp_for_next_level": 100,
 	"favorite_track": "",
 	"favorite_track_play_count": 0,
-	"favorite_genre": "unknown" 
+	"favorite_genre": "unknown",
+	"daily_quests": {
+		"date": "",
+		"quests": []
+	}
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -142,6 +146,7 @@ func _load():
 				"D": 0,
 				"F": 0
 			})
+			var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
 
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
@@ -172,6 +177,7 @@ func _load():
 			data["favorite_track"] = loaded_favorite_track
 			data["favorite_track_play_count"] = loaded_favorite_track_play_count
 			data["favorite_genre"] = loaded_favorite_genre
+			data["daily_quests"] = loaded_daily_quests
 			
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -273,9 +279,11 @@ func add_currency(amount: int):
 		var spent_amount = abs(amount)
 		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
 		_trigger_currency_achievement_check()
+		increment_daily_progress("currency_spent", spent_amount, {})
 	elif amount > 0:
 		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
 		_trigger_currency_achievement_check()
+		increment_daily_progress("currency_earned", amount, {})
 
 	_save()
 
@@ -645,11 +653,13 @@ func add_total_drum_perfect_hit():
 	var new_total = current_total + 1
 	data["total_drum_perfect_hits"] = new_total
 	_save()
+	increment_daily_progress("drum_perfect_hits", 1, {})
 
 func add_hit_notes(count: int):
 	var current_hits = int(data.get("total_notes_hit", 0))
 	data["total_notes_hit"] = current_hits + count
 	_save() 
+	increment_daily_progress("hit_notes", count, {})
 
 func add_missed_notes(count: int):
 	var current_misses = int(data.get("total_notes_missed", 0))
@@ -705,12 +715,102 @@ func add_play_time_seconds(seconds_to_add: int):
 	data["total_play_time"] = new_time_string
 	emit_signal("total_play_time_changed", new_time_string)
 	_save()
+	var add_minutes = int(seconds_to_add / 60)
+	if add_minutes > 0:
+		increment_daily_progress("playtime_minutes", add_minutes, {})
 
 func get_total_play_time_formatted() -> String:
 	return data.get("total_play_time", "00:00")
 
 func get_total_play_time_seconds() -> int:
 	return _total_play_time_seconds
+
+func ensure_daily_quests_for_today():
+	var today = Time.get_date_string_from_system()
+	var current = data.get("daily_quests", {"date": "", "quests": []})
+	if current.get("date", "") != today:
+		_generate_daily_quests_for_date(today)
+		_save()
+
+func _generate_daily_quests_for_date(date_str: String):
+	var quests_for_day: Array = []
+	var quest_pool: Array = []
+	var file = FileAccess.open("res://data/daily_quests.json", FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		file.close()
+		var parsed = JSON.parse_string(json_text)
+		if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
+			quest_pool = parsed["quests"]
+		else:
+			print("[PlayerDataManager] daily_quests.json повреждён или нет ключа 'quests', используем дефолтный пул")
+	if quest_pool.is_empty():
+		quest_pool = [
+			{"id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50},
+			{"id": "perfect_hits", "title": "Сделай PERFECT попадания (30)", "event": "perfect_hits", "goal": 30, "reward_currency": 40},
+			{"id": "accuracy_80", "title": "Заверши уровень с точностью ≥ 80%", "event": "accuracy_80", "goal": 1, "reward_currency": 30},
+			{"id": "play_drum", "title": "Сыграй уровень на барабанах", "event": "play_drum_level", "goal": 1, "reward_currency": 30},
+			{"id": "combo_30", "title": "Достигни комбо ≥ 30", "event": "combo_reached", "goal": 1, "reward_currency": 20},
+			{"id": "missless", "title": "Пройди без промахов", "event": "missless", "goal": 1, "reward_currency": 50},
+			{"id": "notes_generated", "title": "Сгенерируй ноты для трека", "event": "notes_generated", "goal": 1, "reward_currency": 10}
+		]
+	var count_per_day = 3
+	var indices: Array = []
+	for i in range(quest_pool.size()):
+		indices.append(i)
+	indices.shuffle()
+	for i in range(min(count_per_day, quest_pool.size())):
+		var q = quest_pool[indices[i]].duplicate(true)
+		q["progress"] = 0
+		q["completed"] = false
+		quests_for_day.append(q)
+	data["daily_quests"] = {"date": date_str, "quests": quests_for_day}
+
+func get_daily_quests() -> Array:
+	return data.get("daily_quests", {"date": "", "quests": []}).get("quests", [])
+
+func increment_daily_progress(event_name: String, value: int, context: Dictionary = {}):
+	var dq = data.get("daily_quests", {"date": "", "quests": []})
+	var quests = dq.get("quests", [])
+	var changed = false
+	for q in quests:
+		if q.get("event", "") != event_name:
+			continue
+		if q.get("completed", false):
+			continue
+		var goal = int(q.get("goal", 1))
+		var progress = int(q.get("progress", 0))
+		match event_name:
+			"accuracy_80":
+				var acc = float(context.get("accuracy", 0.0))
+				if acc >= 80.0:
+					progress = goal
+			"combo_reached":
+				var max_combo = int(context.get("max_combo", 0))
+				if max_combo >= 30:
+					progress = goal
+			"missless":
+				var missed_notes = int(context.get("missed_notes", 0))
+				if missed_notes <= 0:
+					progress = goal
+			"play_drum_level":
+				var is_drum = bool(context.get("is_drum_mode", false))
+				if is_drum:
+					progress = min(goal, progress + value)
+			_:
+				progress = min(goal, progress + value)
+		q["progress"] = progress
+		if progress >= goal:
+			q["completed"] = true
+			_add_daily_quest_reward(int(q.get("reward_currency", 0)))
+		changed = true
+	if changed:
+		data["daily_quests"]["quests"] = quests
+		_save()
+
+func _add_daily_quest_reward(amount: int):
+	if amount > 0:
+		add_currency(amount)
 
 func update_best_grade_for_track(song_path: String, new_grade: String):
 	if song_path.is_empty():
