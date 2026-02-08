@@ -16,6 +16,7 @@ extends Control
 @onready var progress_label: Label = $MarginContainer/ContentContainer/TopRowContainer/ProgressLabel
 
 func _ready():
+	clip_contents = true
 	_update_display()
 
 func _update_display():
@@ -38,14 +39,14 @@ func _update_display():
 	if self.icon_texture:
 		icon_texture_rect.texture = self.icon_texture
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	else:
 		var placeholder_image = Image.create(100, 100, false, Image.FORMAT_RGBA8)
 		placeholder_image.fill(Color.WHITE)
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 		icon_texture_rect.texture = placeholder_texture
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 
 	if is_unlocked:
 		title_label.add_theme_color_override("font_color", Color(0.95, 0.70, 0.30, 1.0))

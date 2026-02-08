@@ -94,6 +94,8 @@ func _render_daily_quests():
 		var item = find_child(item_name, true, false)
 		if not item:
 			continue
+		if item is Control:
+			item.clip_contents = true
 
 		var title_label = item.find_child("QuestTitleLabel", true, false)
 		var desc_label = item.find_child("QuestDescriptionLabel", true, false)

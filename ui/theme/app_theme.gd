@@ -48,7 +48,7 @@ static func build_theme() -> Theme:
 	var transparent := Color(0, 0, 0, 0)
 
 	var btn_outline_normal := _make_button_box(transparent, outline, false, 2)
-	var btn_outline_hover := _make_button_box(transparent, blue, false, 2)
+	var btn_outline_hover := _make_button_box(transparent, outline, false, 2)
 	var btn_outline_pressed := _make_button_box(transparent, outline.darkened(0.2), true, 2)
 	var btn_outline_disabled := _make_button_box(transparent, outline.darkened(0.5), false, 2)
 	var btn_outline_focus := _make_button_box(transparent, outline, false, 3)
@@ -63,43 +63,51 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "Button", text)
 	theme.set_color("font_disabled_color", "Button", text.darkened(0.5))
 
-	theme.set_type_variation("Primary", "Button")
-	var btn_primary_normal := _make_button_box(blue, Color(0, 0, 0, 0), true, 0)
-	var btn_primary_hover := _make_button_box(blue.lightened(0.1), Color(0, 0, 0, 0), true, 0)
-	btn_primary_hover.border_color = blue
-	btn_primary_hover.border_width_left = 2
-	btn_primary_hover.border_width_right = 2
-	btn_primary_hover.border_width_top = 2
-	btn_primary_hover.border_width_bottom = 2
-	var btn_primary_pressed := _make_button_box(blue.darkened(0.1), Color(0, 0, 0, 0), true, 0)
-	var btn_primary_disabled := _make_button_box(blue.darkened(0.25), Color(0, 0, 0, 0), true, 0)
-	var btn_primary_focus := _make_button_box(blue, outline, true, 2)
-	theme.set_stylebox("normal", "Primary", btn_primary_normal)
-	theme.set_stylebox("hover", "Primary", btn_primary_hover)
-	theme.set_stylebox("pressed", "Primary", btn_primary_pressed)
-	theme.set_stylebox("disabled", "Primary", btn_primary_disabled)
-	theme.set_stylebox("focus", "Primary", btn_primary_focus)
-	theme.set_color("font_color", "Primary", text)
-	theme.set_color("font_hover_color", "Primary", text)
-	theme.set_color("font_pressed_color", "Primary", text)
-	theme.set_color("font_disabled_color", "Primary", text.darkened(0.5))
+	theme.set_type_variation("FlatButton", "Button")
+	theme.set_stylebox("normal", "FlatButton", btn_outline_normal)
+	theme.set_stylebox("hover", "FlatButton", btn_outline_hover)
+	theme.set_stylebox("pressed", "FlatButton", btn_outline_pressed)
+	theme.set_stylebox("disabled", "FlatButton", btn_outline_disabled)
+	theme.set_stylebox("focus", "FlatButton", btn_outline_focus)
+	theme.set_color("font_color", "FlatButton", text)
+	theme.set_color("font_hover_color", "FlatButton", text)
+	theme.set_color("font_pressed_color", "FlatButton", text)
+	theme.set_color("font_disabled_color", "FlatButton", text.darkened(0.5))
 
-	theme.set_type_variation("Secondary", "Button")
-	var gray := theme.get_color("secondary", "Palette")
-	var btn_secondary_normal := _make_button_box(gray, Color(0, 0, 0, 0), true, 0)
-	var btn_secondary_hover := _make_button_box(gray.lightened(0.06), Color(0, 0, 0, 0), true, 0)
-	var btn_secondary_pressed := _make_button_box(gray.darkened(0.08), Color(0, 0, 0, 0), true, 0)
-	var btn_secondary_disabled := _make_button_box(gray.darkened(0.25), Color(0, 0, 0, 0), true, 0)
-	var btn_secondary_focus := _make_button_box(gray, outline, true, 2)
-	theme.set_stylebox("normal", "Secondary", btn_secondary_normal)
-	theme.set_stylebox("hover", "Secondary", btn_secondary_hover)
-	theme.set_stylebox("pressed", "Secondary", btn_secondary_pressed)
-	theme.set_stylebox("disabled", "Secondary", btn_secondary_disabled)
-	theme.set_stylebox("focus", "Secondary", btn_secondary_focus)
-	theme.set_color("font_color", "Secondary", text)
-	theme.set_color("font_hover_color", "Secondary", text)
-	theme.set_color("font_pressed_color", "Secondary", text)
-	theme.set_color("font_disabled_color", "Secondary", text.darkened(0.5))
+	var play_outline := theme.get_color("accent_teal", "Palette")
+	var fb_play_normal := _make_button_box(transparent, play_outline, false, 2)
+	var fb_play_hover := _make_button_box(transparent, play_outline, false, 2)
+	var fb_play_pressed := _make_button_box(transparent, play_outline.darkened(0.2), true, 2)
+	var fb_play_disabled := _make_button_box(transparent, play_outline.darkened(0.5), false, 2)
+	var fb_play_focus := _make_button_box(transparent, play_outline, false, 3)
+	theme.set_type_variation("FlatPlayButton", "Button")
+	theme.set_stylebox("normal", "FlatPlayButton", fb_play_normal)
+	theme.set_stylebox("hover", "FlatPlayButton", fb_play_hover)
+	theme.set_stylebox("pressed", "FlatPlayButton", fb_play_pressed)
+	theme.set_stylebox("disabled", "FlatPlayButton", fb_play_disabled)
+	theme.set_stylebox("focus", "FlatPlayButton", fb_play_focus)
+	theme.set_color("font_color", "FlatPlayButton", text)
+	theme.set_color("font_hover_color", "FlatPlayButton", text)
+	theme.set_color("font_pressed_color", "FlatPlayButton", text)
+	theme.set_color("font_disabled_color", "FlatPlayButton", text.darkened(0.5))
+
+	var exit_outline := theme.get_color("accent_pink", "Palette")
+	var fb_exit_normal := _make_button_box(transparent, exit_outline, false, 2)
+	var fb_exit_hover := _make_button_box(transparent, exit_outline, false, 2)
+	var fb_exit_pressed := _make_button_box(transparent, exit_outline.darkened(0.2), true, 2)
+	var fb_exit_disabled := _make_button_box(transparent, exit_outline.darkened(0.5), false, 2)
+	var fb_exit_focus := _make_button_box(transparent, exit_outline, false, 3)
+	theme.set_type_variation("FlatExitButton", "Button")
+	theme.set_stylebox("normal", "FlatExitButton", fb_exit_normal)
+	theme.set_stylebox("hover", "FlatExitButton", fb_exit_hover)
+	theme.set_stylebox("pressed", "FlatExitButton", fb_exit_pressed)
+	theme.set_stylebox("disabled", "FlatExitButton", fb_exit_disabled)
+	theme.set_stylebox("focus", "FlatExitButton", fb_exit_focus)
+	theme.set_color("font_color", "FlatExitButton", text)
+	theme.set_color("font_hover_color", "FlatExitButton", text)
+	theme.set_color("font_pressed_color", "FlatExitButton", text)
+	theme.set_color("font_disabled_color", "FlatExitButton", text.darkened(0.5))
+
 
 	theme.set_type_variation("Danger", "Button")
 	var red := theme.get_color("danger", "Palette")
@@ -117,6 +125,7 @@ static func build_theme() -> Theme:
 	theme.set_color("font_hover_color", "Danger", text)
 	theme.set_color("font_pressed_color", "Danger", text)
 	theme.set_color("font_disabled_color", "Danger", text.darkened(0.5))
+
 
 	var slider_box := StyleBoxFlat.new()
 	slider_box.bg_color = Color(0.18, 0.2, 0.26, 1.0)
@@ -185,6 +194,13 @@ static func build_theme() -> Theme:
 	pb_bg.content_margin_top = 6
 	pb_bg.content_margin_bottom = 6
 	theme.set_stylebox("background", "ProgressBar", pb_bg)
+	var pb_fill := StyleBoxFlat.new()
+	pb_fill.bg_color = theme.get_color("accent_teal", "Palette")
+	pb_fill.corner_radius_top_left = 8
+	pb_fill.corner_radius_top_right = 8
+	pb_fill.corner_radius_bottom_right = 8
+	pb_fill.corner_radius_bottom_left = 8
+	theme.set_stylebox("fill", "ProgressBar", pb_fill)
 	theme.set_color("font_color", "ProgressBar", Color.WHITE)
 	theme.set_color("font_outline_color", "ProgressBar", Color(0, 0, 0, 0.8))
 	theme.set_constant("outline_size", "ProgressBar", 0)
@@ -572,5 +588,40 @@ static func build_theme() -> Theme:
 	theme.set_color("font_hover_color", "ActiveMisc", col_misc.lightened(0.08))
 	theme.set_color("font_pressed_color", "ActiveMisc", col_misc.darkened(0.08))
 	theme.set_color("font_disabled_color", "ActiveMisc", col_misc.darkened(0.4))
+
+	theme.set_type_variation("DailyTasksPanel", "PanelContainer")
+	var dt_panel := card_base.duplicate()
+	dt_panel.bg_color = theme.get_color("panel_bg", "Palette").darkened(0.02)
+	dt_panel.border_color = Color(1, 1, 1, 0.12)
+	dt_panel.shadow_size = 0
+	dt_panel.shadow_offset = Vector2(0, 0)
+	theme.set_stylebox("panel", "DailyTasksPanel", dt_panel)
+
+	theme.set_type_variation("DailyTasksCard", "PanelContainer")
+	var dt_card := card_base.duplicate()
+	dt_card.bg_color = theme.get_color("panel_bg", "Palette").darkened(0.01)
+	dt_card.border_color = Color(1, 1, 1, 0.12)
+	dt_card.shadow_color = Color(0, 0, 0, 0.25)
+	dt_card.shadow_size = 4
+	dt_card.shadow_offset = Vector2(0, 2)
+	theme.set_stylebox("panel", "DailyTasksCard", dt_card)
+
+	theme.set_type_variation("DailyTasksHeader", "Label")
+	theme.set_color("font_color", "DailyTasksHeader", theme.get_color("text", "Palette"))
+
+	theme.set_type_variation("DailyTasksTitle", "Label")
+	theme.set_color("font_color", "DailyTasksTitle", theme.get_color("text", "Palette"))
+
+	theme.set_type_variation("DailyTasksDescription", "Label")
+	theme.set_color("font_color", "DailyTasksDescription", theme.get_color("text_muted", "Palette"))
+
+	theme.set_type_variation("DailyTasksProgressBar", "ProgressBar")
+	var dt_pb_bg := pb_bg.duplicate()
+	var dt_pb_fill := pb_fill.duplicate()
+	dt_pb_fill.bg_color = theme.get_color("accent_sky", "Palette")
+	theme.set_stylebox("background", "DailyTasksProgressBar", dt_pb_bg)
+	theme.set_stylebox("fill", "DailyTasksProgressBar", dt_pb_fill)
+	theme.set_color("font_color", "DailyTasksProgressBar", Color.WHITE)
+	theme.set_constant("outline_size", "DailyTasksProgressBar", 0)
 
 	return theme
