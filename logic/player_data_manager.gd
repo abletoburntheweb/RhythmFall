@@ -280,11 +280,9 @@ func add_currency(amount: int):
 		var spent_amount = abs(amount)
 		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
 		_trigger_currency_achievement_check()
-		increment_daily_progress("currency_spent", spent_amount, {})
 	elif amount > 0:
 		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
 		_trigger_currency_achievement_check()
-		increment_daily_progress("currency_earned", amount, {})
 
 	_save()
 
@@ -335,6 +333,7 @@ func check_level_up():
 				achievement_system.on_player_level_changed(new_level)
 		
 		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
+		increment_daily_progress("profile_level_up", 1, {})
 		_save()
 
 func get_xp_progress() -> float:
@@ -733,6 +732,7 @@ func ensure_daily_quests_for_today():
 		_generate_daily_quests_for_date(today)
 		_save()
 		emit_signal("daily_quests_updated")
+		emit_signal("daily_quests_updated")
 
 func _generate_daily_quests_for_date(date_str: String):
 	var quests_for_day: Array = []
@@ -787,9 +787,25 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 				var acc = float(context.get("accuracy", 0.0))
 				if acc >= 80.0:
 					progress = goal
+			"accuracy_90":
+				var acc = float(context.get("accuracy", 0.0))
+				if acc >= 90.0:
+					progress = goal
+			"accuracy_95":
+				var acc = float(context.get("accuracy", 0.0))
+				if acc >= 95.0:
+					progress = goal
 			"combo_reached":
 				var max_combo = int(context.get("max_combo", 0))
 				if max_combo >= 30:
+					progress = goal
+			"combo_reached_60":
+				var max_combo = int(context.get("max_combo", 0))
+				if max_combo >= 60:
+					progress = goal
+			"combo_reached_100":
+				var max_combo = int(context.get("max_combo", 0))
+				if max_combo >= 100:
 					progress = goal
 			"missless":
 				var missed_notes = int(context.get("missed_notes", 0))
@@ -809,6 +825,7 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 	if changed:
 		data["daily_quests"]["quests"] = quests
 		_save()
+		emit_signal("daily_quests_updated")
 		emit_signal("daily_quests_updated")
 
 func _add_daily_quest_reward(amount: int):

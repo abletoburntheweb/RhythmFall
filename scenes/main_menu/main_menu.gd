@@ -94,14 +94,50 @@ func _render_daily_quests():
 	for child in list_node.get_children():
 		list_node.remove_child(child)
 		child.queue_free()
+	var template = list_node.get_node_or_null("QuestItem")
+	if template == null:
+		template = PanelContainer.new()
+		template.name = "QuestItem"
+		var content_vbox = VBoxContainer.new()
+		content_vbox.name = "ContentVBox"
+		template.add_child(content_vbox)
+		var title_label = Label.new()
+		title_label.name = "QuestTitleLabel"
+		title_label.text = "Заголовок задания"
+		content_vbox.add_child(title_label)
+		var desc_label = Label.new()
+		desc_label.name = "QuestDescriptionLabel"
+		desc_label.text = "Описание задания"
+		content_vbox.add_child(desc_label)
+		var pb = ProgressBar.new()
+		pb.name = "QuestProgressBar"
+		pb.min_value = 0
+		pb.max_value = 100
+		content_vbox.add_child(pb)
 	var quests = PlayerDataManager.get_daily_quests()
-	for i in range(min(3, quests.size())):
+	var count = min(3, quests.size())
+	for i in range(count):
 		var q = quests[i]
-		var label = Label.new()
+		var item = template.duplicate(true)
+		item.name = "QuestItem%d" % (i + 1)
+		var title_label = item.find_child("QuestTitleLabel", true, false)
+		var desc_label = item.find_child("QuestDescriptionLabel", true, false)
+		var pb = item.find_child("QuestProgressBar", true, false)
 		var title = str(q.get("title", "Задание"))
-		var progress = int(q.get("progress", 0))
 		var goal = int(q.get("goal", 1))
+		var reward = int(q.get("reward_currency", 0))
+		var progress = int(q.get("progress", 0))
 		var completed = bool(q.get("completed", false))
-		var status = "Готово" if completed else "%d/%d" % [progress, goal]
-		label.text = "%s — %s" % [title, status]
-		list_node.add_child(label)
+		if title_label:
+			title_label.text = title
+		if desc_label:
+			var desc_text = "Награда: %d • Цель: %d • Прогресс: %d/%d" % [reward, goal, progress, goal]
+			if completed:
+				desc_text = desc_text + " (завершено)"
+			desc_label.text = desc_text
+		if pb:
+			var pct = 100 if completed else int(round(100.0 * float(progress) / float(max(1, goal))))
+			pb.min_value = 0
+			pb.max_value = 100
+			pb.value = pct
+		list_node.add_child(item)

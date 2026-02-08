@@ -568,8 +568,16 @@ func end_game():
 	var debug_hit_notes = score_manager.get_hit_notes_count()
 	if debug_accuracy >= 80.0:
 		PlayerDataManager.increment_daily_progress("accuracy_80", 1, {"accuracy": debug_accuracy})
+	if debug_accuracy >= 90.0:
+		PlayerDataManager.increment_daily_progress("accuracy_90", 1, {"accuracy": debug_accuracy})
+	if debug_accuracy >= 95.0:
+		PlayerDataManager.increment_daily_progress("accuracy_95", 1, {"accuracy": debug_accuracy})
 	if debug_max_combo >= 30:
 		PlayerDataManager.increment_daily_progress("combo_reached", 1, {"max_combo": debug_max_combo})
+	if debug_max_combo >= 60:
+		PlayerDataManager.increment_daily_progress("combo_reached_60", 1, {"max_combo": debug_max_combo})
+	if debug_max_combo >= 100:
+		PlayerDataManager.increment_daily_progress("combo_reached_100", 1, {"max_combo": debug_max_combo})
 	if debug_missed_notes <= 0:
 		PlayerDataManager.increment_daily_progress("missless", 1, {"missed_notes": debug_missed_notes})
 
@@ -853,6 +861,7 @@ func restart_level():
 	input_enabled = false
 	countdown_active = true
 	gameplay_started = false
+	PlayerDataManager.increment_daily_progress("level_restarted", 1, {})
 
 	update_ui()
 	if countdown_label:

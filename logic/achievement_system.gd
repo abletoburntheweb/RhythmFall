@@ -41,7 +41,6 @@ func on_purchase_made():
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
 	achievement_manager.save_achievements()
-	PlayerDataManager.increment_daily_progress("shop_purchase", 1, {})
 
 func on_currency_changed():
 	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)

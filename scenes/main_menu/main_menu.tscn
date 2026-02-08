@@ -112,3 +112,20 @@ layout_mode = 2
 
 [node name="DailyQuestsList" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox"]
 layout_mode = 2
+
+[node name="QuestItem" type="PanelContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList"]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem"]
+layout_mode = 2
+
+[node name="QuestTitleLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+layout_mode = 2
+text = "Название задания"
+
+[node name="QuestDescriptionLabel" type="Label" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+layout_mode = 2
+text = "Описание задания"
+
+[node name="QuestProgressBar" type="ProgressBar" parent="DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem/ContentVBox"]
+layout_mode = 2
