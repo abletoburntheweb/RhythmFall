@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b78etu3dej4um"]
+[gd_scene load_steps=3 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
+[ext_resource type="Theme" uid="uid://dk2jv0hjhfwqw" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
 
 [node name="ShopScreen" type="Control"]
 layout_mode = 3
@@ -46,30 +47,44 @@ alignment = 1
 
 [node name="CategoryButtonAll" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryAll"
 text = "Все"
 
 [node name="CategoryButtonKick" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryKick"
 text = "Кик"
 
 [node name="CategoryButtonSnare" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategorySnare"
 text = "Снейр"
 
 [node name="CategoryButtonCover" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryCover"
 text = "Обложки"
 
 [node name="CategoryButtonNotes" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryNotes"
 text = "Ноты"
 
 [node name="CategoryButtonLaneHighlight" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryLane"
 text = "Подсветка линий"
 
 [node name="CategoryButtonMisc" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"CategoryMisc"
 text = "Прочее"
 
 [node name="ContentMargin" type="MarginContainer" parent="MainContent/MainVBox"]

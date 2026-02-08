@@ -161,6 +161,8 @@ func initialize_logic():
 	add_child(achievement_queue_manager)
 	
 	PlayerDataManager.set_game_engine_reference(self)
+	if achievement_system:
+		achievement_system.resync_all()
 
 	session_history_manager = SessionHistoryManager.new() 
 	print("GameEngine.gd: SessionHistoryManager инициализирован.")

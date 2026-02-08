@@ -1,6 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://o1npypfkbsw1"]
+[gd_scene load_steps=7 format=3 uid="uid://o1npypfkbsw1"]
 
 [ext_resource type="Script" uid="uid://dnjxdqfm6i7ua" path="res://scenes/achievements/achievement_pop_up.gd" id="1_3ety8"]
+[ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="2_sqpua"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uk2ul"]
+shader = ExtResource("2_sqpua")
+shader_parameter/corner_radius_px = 20.0
 
 [sub_resource type="Animation" id="Animation_3ety8"]
 length = 0.001
@@ -59,6 +64,7 @@ theme_override_constants/separation = 10
 
 [node name="IconTexture" type="TextureRect" parent="ContentContainer/TopRowContainer"]
 z_as_relative = false
+material = SubResource("ShaderMaterial_uk2ul")
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 size_flags_horizontal = 4

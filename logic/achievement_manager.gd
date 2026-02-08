@@ -164,17 +164,13 @@ func check_first_purchase():
 			break
 
 func check_purchase_count(total_purchases: int):
-	var purchase_achievements = {7: 5, 8: 10, 9: 20, 10: 35}
-
-	for ach_id in purchase_achievements:
-		var required_count = purchase_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_purchases
-				if total_purchases >= required_count and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
-
+	for achievement in achievements:
+		var ach_id = int(achievement.get("id", 0))
+		if ach_id in [7, 8, 9, 10]:
+			var required_count = int(achievement.get("total", 0))
+			achievement.current = total_purchases
+			if total_purchases >= required_count and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 	save_achievements()
 
 func check_currency_achievements(player_data_mgr_override = null):
@@ -186,32 +182,25 @@ func check_currency_achievements(player_data_mgr_override = null):
 	else:
 		print("[AchievementManager] check_currency_achievements: pdm is null!") 
 		return
-
-	var currency_achievements = {11: 2000, 12: 5000, 13: 12000} 
-
-	for ach_id in currency_achievements:
-		var required_amount = currency_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_earned
-				if total_earned >= required_amount and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
-
+	for achievement in achievements:
+		var ach_id = int(achievement.get("id", 0))
+		if ach_id in [11, 12, 13]:
+			var required_amount = int(achievement.get("total", 0))
+			achievement.current = total_earned
+			if total_earned >= required_amount and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 	save_achievements()
 
 func check_spent_currency_achievement(total_spent: int):
-	var spent_achievements = {14: 3000, 15: 8000, 16: 20000}
-
-	for ach_id in spent_achievements:
-		var required_amount = spent_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_spent
-				if total_spent >= required_amount and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break 
-
+	for achievement in achievements:
+		var ach_id = int(achievement.get("id", 0))
+		if ach_id in [14, 15, 16]:
+			var required_amount = int(achievement.get("total", 0))
+			achievement.current = total_spent
+			print("[AchievementManager] check_spent_currency: id=", ach_id, ", spent=", total_spent, ", required=", required_amount, ", unlocked=", achievement.get("unlocked", false))
+			if total_spent >= required_amount and not achievement.get("unlocked", false):
+				print("[AchievementManager] check_spent_currency: unlocking id=", ach_id)
+				_perform_unlock(achievement)
 	save_achievements()
 
 func check_style_hunter_achievement(player_data_mgr_override = null):
@@ -271,6 +260,8 @@ func _map_category_ru_to_internal(category_ru: String) -> String:
 		"Снейр": return "Snare"
 		"Фоны": return "Backgrounds"
 		"Обложки": return "Covers"
+		"Подсветка линий": return "LaneHighlight"
+		"Ноты": return "Notes"
 		"Прочее": return "Misc"
 		_:
 			printerr("Неизвестная категория из shop_data.json: ", category_ru)

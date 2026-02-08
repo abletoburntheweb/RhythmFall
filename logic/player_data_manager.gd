@@ -279,9 +279,11 @@ func add_currency(amount: int):
 	if amount < 0:
 		var spent_amount = abs(amount)
 		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
+		print("[PlayerDataManager] Валюта списана: ", spent_amount, ", всего потрачено: ", data["spent_currency"])
 		_trigger_currency_achievement_check()
 	elif amount > 0:
 		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
+		print("[PlayerDataManager] Валюта получена: ", amount, ", всего заработано: ", data["total_earned_currency"])
 		_trigger_currency_achievement_check()
 
 	_save()

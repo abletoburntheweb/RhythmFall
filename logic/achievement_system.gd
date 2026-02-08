@@ -12,6 +12,21 @@ func _init(ach_manager: AchievementManager, track_stats_mgr: TrackStatsManager):
 	achievement_manager.player_data_mgr = PlayerDataManager
 	PlayerDataManager.achievement_manager = ach_manager
 
+func resync_all():
+	var total_purchases = PlayerDataManager.get_items().size()
+	if total_purchases >= 1:
+		achievement_manager.check_first_purchase()
+	achievement_manager.check_purchase_count(total_purchases)
+	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
+	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
+	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)
+	var total_spent = PlayerDataManager.data.get("spent_currency", 0)
+	achievement_manager.check_currency_achievements(PlayerDataManager)
+	achievement_manager.check_spent_currency_achievement(total_spent)
+	achievement_manager.check_score_achievements(PlayerDataManager)
+	achievement_manager.check_playtime_achievements(PlayerDataManager)
+	achievement_manager.save_achievements()
+
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
 	print("[AchievementSystem] on_level_completed вызван с song_path: ", song_path, ", accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode, ", grade: ", grade)
 	
@@ -37,6 +52,7 @@ func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool =
 
 func on_purchase_made():
 	var total_purchases = PlayerDataManager.get_items().size()
+	achievement_manager.check_first_purchase()
 	achievement_manager.check_purchase_count(total_purchases)
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
