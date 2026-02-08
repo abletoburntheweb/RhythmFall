@@ -8,13 +8,13 @@ var is_game_open = false
 var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
 
 var button_configs = {
-	"PlayButton": _on_play_pressed,
-	"SongSelectButton": _on_song_select_pressed,
-	"AchievementsButton": _on_achievements_pressed,
-	"ShopButton": _on_shop_pressed,
-	"ProfileButton": _on_profile_pressed,
-	"SettingsButton": _on_settings_pressed,
-	"ExitButton": _on_exit_pressed,
+	"ButtonContainer/PlayButton": _on_play_pressed,
+	"ButtonContainer/SongSelectButton": _on_song_select_pressed,
+	"ButtonContainer/AchievementsButton": _on_achievements_pressed,
+	"ButtonContainer/ShopButton": _on_shop_pressed,
+	"ButtonContainer/ProfileButton": _on_profile_pressed,
+	"ButtonContainer/SettingsButton": _on_settings_pressed,
+	"ButtonContainer/ExitButton": _on_exit_pressed,
 }
 
 func _ready():

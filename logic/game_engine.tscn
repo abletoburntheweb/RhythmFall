@@ -1,11 +1,40 @@
-[gd_scene load_steps=2 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=4 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
+[ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
+shader = ExtResource("2_q8hsq")
+shader_parameter/glow_strength = 0.8
+shader_parameter/glow_size = 0.6
+shader_parameter/glow_color = Color(0.3, 0.6, 1, 0.2)
 
 [node name="GameEngine" type="Control"]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_w1ht0")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.067, 0.067, 0.086, 1)
+
+[node name="GlowLayer" type="CanvasLayer" parent="."]
+
+[node name="GlowSprite" type="ColorRect" parent="GlowLayer"]
+material = SubResource("ShaderMaterial_hq7uf")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="FPSLayer" type="CanvasLayer" parent="."]
 layer = 100
@@ -33,8 +62,8 @@ text = "v0.8.0-alpha • Technical Beta (Build 219)"
 
 [node name="XPContainer" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 1600.0
-offset_right = 1600.0
+offset_left = 1598.0
+offset_right = 1598.0
 
 [node name="XPProgressBar" type="ProgressBar" parent="XPContainer"]
 layout_mode = 0
