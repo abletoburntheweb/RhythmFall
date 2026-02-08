@@ -33,3 +33,7 @@ window/size/mode=1
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg")
+
+[gui]
+
+theme/custom_font="uid://dlkdapepenx4"
