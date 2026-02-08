@@ -235,6 +235,8 @@ static func build_theme() -> Theme:
 
 	theme.set_type_variation("CardDefault", "PanelContainer")
 	var card_default := card_base.duplicate()
+	card_default.shadow_size = 0
+	card_default.shadow_offset = Vector2(0, 0)
 	theme.set_stylebox("panel", "CardDefault", card_default)
 
 	theme.set_type_variation("CardActive", "PanelContainer")
@@ -244,12 +246,16 @@ static func build_theme() -> Theme:
 	card_active.border_width_right = 2
 	card_active.border_width_top = 2
 	card_active.border_width_bottom = 2
+	card_active.shadow_size = 0
+	card_active.shadow_offset = Vector2(0, 0)
 	theme.set_stylebox("panel", "CardActive", card_active)
 
 	theme.set_type_variation("CardLocked", "PanelContainer")
 	var card_locked := card_base.duplicate()
 	card_locked.bg_color = card_base.bg_color.darkened(0.15)
 	card_locked.border_color = Color(1, 1, 1, 0.12)
+	card_locked.shadow_size = 0
+	card_locked.shadow_offset = Vector2(0, 0)
 	theme.set_stylebox("panel", "CardLocked", card_locked)
 
 	var opt_normal := _make_button_box(transparent, outline, true, 1)
@@ -275,6 +281,17 @@ static func build_theme() -> Theme:
 	theme.set_color("font_hover_color", "OptionButton", text)
 	theme.set_color("font_pressed_color", "OptionButton", text)
 	theme.set_color("font_disabled_color", "OptionButton", text.darkened(0.5))
+
+	theme.set_type_variation("Dropdown", "OptionButton")
+	theme.set_stylebox("normal", "Dropdown", opt_normal)
+	theme.set_stylebox("hover", "Dropdown", opt_hover)
+	theme.set_stylebox("pressed", "Dropdown", opt_pressed)
+	theme.set_stylebox("disabled", "Dropdown", opt_disabled)
+	theme.set_stylebox("focus", "Dropdown", opt_focus)
+	theme.set_color("font_color", "Dropdown", text)
+	theme.set_color("font_hover_color", "Dropdown", text)
+	theme.set_color("font_pressed_color", "Dropdown", text)
+	theme.set_color("font_disabled_color", "Dropdown", text.darkened(0.5))
 
 
 	var v_track := StyleBoxFlat.new()
@@ -618,7 +635,7 @@ static func build_theme() -> Theme:
 	theme.set_type_variation("DailyTasksProgressBar", "ProgressBar")
 	var dt_pb_bg := pb_bg.duplicate()
 	var dt_pb_fill := pb_fill.duplicate()
-	dt_pb_fill.bg_color = theme.get_color("accent_sky", "Palette")
+	dt_pb_fill.bg_color = theme.get_color("accent_teal", "Palette")
 	theme.set_stylebox("background", "DailyTasksProgressBar", dt_pb_bg)
 	theme.set_stylebox("fill", "DailyTasksProgressBar", dt_pb_fill)
 	theme.set_color("font_color", "DailyTasksProgressBar", Color.WHITE)

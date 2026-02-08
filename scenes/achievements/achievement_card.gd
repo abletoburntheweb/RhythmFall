@@ -17,6 +17,10 @@ extends Control
 
 func _ready():
 	clip_contents = true
+	if is_unlocked:
+		theme_type_variation = "CardDefault"
+	else:
+		theme_type_variation = "CardLocked"
 	_update_display()
 
 func _update_display():

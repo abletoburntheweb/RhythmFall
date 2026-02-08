@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0u5mhsmh2wdx"]
+[gd_scene load_steps=3 format=3 uid="uid://b0u5mhsmh2wdx"]
 
 [ext_resource type="Script" uid="uid://dlrclp0p36h56" path="res://scenes/achievements/achievements_screen.gd" id="1_n2eex"]
+[ext_resource type="Theme" uid="uid://bs5s63rmnicsm" path="res://ui/theme/app_theme.tres" id="1_v157i"]
 
 [node name="AchievementsScreen" type="Control"]
 layout_mode = 3
@@ -9,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_v157i")
 script = ExtResource("1_n2eex")
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
@@ -21,6 +23,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("1_v157i")
+theme_type_variation = &"FlatButton"
 text = "Назад	"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
@@ -45,12 +49,16 @@ layout_mode = 2
 [node name="SearchBar" type="LineEdit" parent="MainVBox/SearchAndFilterHBox"]
 custom_minimum_size = Vector2(1700, 50)
 layout_mode = 2
+theme = ExtResource("1_v157i")
+theme_type_variation = &"SearchField"
 theme_override_font_sizes/font_size = 20
 placeholder_text = "Поиск достижений..."
 
 [node name="FilterBox" type="OptionButton" parent="MainVBox/SearchAndFilterHBox"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
+theme = ExtResource("1_v157i")
+theme_type_variation = &"Dropdown"
 selected = 0
 item_count = 13
 popup/item_0/text = "Все"

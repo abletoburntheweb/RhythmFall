@@ -32,10 +32,15 @@ func _ready():
 	
 	_initialize_display_settings()
 	_connect_level_signals()
-	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
-	theme = app_theme
-	if not ResourceLoader.exists("res://ui/theme/app_theme.tres"):
-		ResourceSaver.save(app_theme, "res://ui/theme/app_theme.tres")
+	var theme_path = "res://ui/theme/app_theme.tres"
+	if ResourceLoader.exists(theme_path):
+		var app_theme_res = ResourceLoader.load(theme_path)
+		if app_theme_res and app_theme_res is Theme:
+			theme = app_theme_res
+	else:
+		var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
+		theme = app_theme
+		ResourceSaver.save(app_theme, theme_path)
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
