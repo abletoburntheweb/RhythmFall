@@ -96,20 +96,19 @@ scale = Vector2(0.3, 0.3)
 texture_normal = ExtResource("2_0ebjn")
 
 [node name="DailyQuestsPanel" type="PanelContainer" parent="."]
-layout_mode = 0
-offset_left = 1431.0
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.010000001
+offset_left = 1534.0
 offset_top = 160.0
-offset_right = 1893.0
-offset_bottom = 740.0
+offset_right = 1782.8
+offset_bottom = 734.0
 
-[node name="DailyQuestsPanel" type="VBoxContainer" parent="DailyQuestsPanel"]
+[node name="ContentVBox" type="VBoxContainer" parent="DailyQuestsPanel"]
 layout_mode = 2
 
-[node name="Header" type="Label" parent="DailyQuestsPanel/DailyQuestsPanel"]
+[node name="HeaderLabel" type="Label" parent="DailyQuestsPanel/ContentVBox"]
 layout_mode = 2
-text = "Ежедневные задания"
-horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="DailyQuestsList" type="VBoxContainer" parent="DailyQuestsPanel/DailyQuestsPanel"]
+[node name="DailyQuestsList" type="VBoxContainer" parent="DailyQuestsPanel/ContentVBox"]
 layout_mode = 2

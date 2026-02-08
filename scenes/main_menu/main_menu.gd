@@ -20,6 +20,8 @@ var button_configs = {
 func _ready():
 	MusicManager.play_menu_music()
 	PlayerDataManager.ensure_daily_quests_for_today()
+	if PlayerDataManager.has_signal("daily_quests_updated"):
+		PlayerDataManager.connect("daily_quests_updated", Callable(self, "_render_daily_quests"))
 	_render_daily_quests()
 
 	var all_buttons_connected = true
@@ -86,9 +88,7 @@ func exit_to_main_menu():
 		transitions.exit_to_main_menu()
 
 func _render_daily_quests():
-	var list_node = get_node_or_null("DailyQuestsPanel/VBox/DailyQuestsList")
-	if not list_node:
-		list_node = get_node_or_null("DailyQuestsPanel/DailyQuestsPanel/DailyQuestsList")
+	var list_node = find_child("DailyQuestsList", true, false)
 	if not list_node:
 		return
 	for child in list_node.get_children():

@@ -61,6 +61,7 @@ var data: Dictionary = {
 
 signal total_play_time_changed(new_time_formatted: String)
 signal level_changed(new_level: int, new_xp: int, xp_for_next_level: int)  
+signal daily_quests_updated()
 
 var _total_play_time_seconds: int = 0
 
@@ -731,6 +732,7 @@ func ensure_daily_quests_for_today():
 	if current.get("date", "") != today:
 		_generate_daily_quests_for_date(today)
 		_save()
+		emit_signal("daily_quests_updated")
 
 func _generate_daily_quests_for_date(date_str: String):
 	var quests_for_day: Array = []
@@ -807,6 +809,7 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 	if changed:
 		data["daily_quests"]["quests"] = quests
 		_save()
+		emit_signal("daily_quests_updated")
 
 func _add_daily_quest_reward(amount: int):
 	if amount > 0:
