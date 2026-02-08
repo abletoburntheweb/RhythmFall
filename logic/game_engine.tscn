@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=5 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
@@ -8,6 +8,9 @@ shader = ExtResource("2_q8hsq")
 shader_parameter/glow_strength = 0.8
 shader_parameter/glow_size = 0.6
 shader_parameter/glow_color = Color(0.3, 0.6, 1, 0.2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q8hsq"]
+bg_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
 
 [node name="GameEngine" type="Control"]
 layout_mode = 3
@@ -71,6 +74,7 @@ offset_left = -9.0
 offset_top = 31.0
 offset_right = 320.0
 offset_bottom = 84.0
+theme_override_styles/fill = SubResource("StyleBoxFlat_q8hsq")
 show_percentage = false
 
 [node name="LevelLabel" type="Label" parent="XPContainer"]

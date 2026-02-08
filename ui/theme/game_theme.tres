@@ -1,0 +1,35 @@
+[gd_resource type="Theme" load_steps=3 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o2sln"]
+bg_color = Color(0.12, 0.13, 0.17, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v71op"]
+bg_color = Color(0.42, 0.57, 0.82, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[resource]
+ComboLabel/base_type = &"Label"
+ComboLabel/colors/font_color = Color(0.478, 0.613, 0.838, 1)
+CountdownLabel/base_type = &"Label"
+CountdownLabel/colors/font_color = Color(1, 1, 1, 1)
+CountdownLabel/colors/font_outline_color = Color(0, 0, 0, 0.7)
+CountdownLabel/constants/outline_size = 2
+JudgementLabel/base_type = &"Label"
+JudgementLabel/colors/font_color = Color(0.95, 0.95, 0.98, 1)
+JudgementLabel/colors/font_outline_color = Color(0, 0, 0, 0.6)
+JudgementLabel/constants/outline_size = 1
+Label/colors/font_color = Color(0.85, 0.88, 0.95, 1)
+ProgressBar/colors/font_color = Color(0.96, 0.97, 1, 1)
+ProgressBar/styles/background = SubResource("StyleBoxFlat_o2sln")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_v71op")
+ScoreLabel/base_type = &"Label"
+ScoreLabel/colors/font_color = Color(0.96, 0.97, 1, 1)
+StatLabel/base_type = &"Label"
+StatLabel/colors/font_color = Color(0.85, 0.88, 0.95, 1)

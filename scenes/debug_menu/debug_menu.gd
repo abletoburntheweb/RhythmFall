@@ -141,9 +141,18 @@ func _on_accuracy_text_submitted(new_text: String):
 		
 		var game_screen = get_parent()
 		if game_screen and game_screen.score_manager:
-			game_screen.score_manager.set_accuracy(accuracy_value)
-			print("DebugMenu: Установлена точность: %.1f%%" % accuracy_value)
-			
+			var total_notes = game_screen.score_manager.total_notes
+			if total_notes <= 0 and game_screen.note_manager:
+				total_notes = game_screen.note_manager.get_spawn_queue_size()
+			if total_notes <= 0:
+				total_notes = 1
+			var missed_notes = int(round(total_notes * (100.0 - accuracy_value) / 100.0))
+			missed_notes = clamp(missed_notes, 0, total_notes)
+			var hit_notes = total_notes - missed_notes
+			game_screen.score_manager.total_notes = total_notes
+			game_screen.score_manager.missed_notes = missed_notes
+			game_screen.score_manager.hit_notes = hit_notes
+			game_screen.score_manager.update_accuracy()
 			if game_screen.has_method("update_ui"):
 				game_screen.update_ui()
 			
@@ -216,31 +225,34 @@ func _on_win_button_pressed():
 	if not game_screen or not game_screen.score_manager or not game_screen.note_manager:
 		printerr("DebugMenu: Не удалось получить доступ к GameScreen или его компонентам.")
 		return
-
-	var target_accuracy = 100.0
+	
+	var target_accuracy = game_screen.score_manager.get_accuracy()
+	var override_with_input = false
 	if accuracy_edit and accuracy_edit.text.is_valid_float():
 		target_accuracy = clampf(accuracy_edit.text.to_float(), 0.0, 100.0)
+		override_with_input = true
 
-	var total_notes = game_screen.note_manager.get_spawn_queue_size()
-	if total_notes == 0:
-		total_notes = 1  
+	var total_notes = game_screen.score_manager.total_notes
+	if total_notes <= 0:
+		total_notes = game_screen.note_manager.get_spawn_queue_size()
+	if total_notes <= 0:
+		total_notes = 1
+	
+	if override_with_input:
+		var missed_notes = int(round(total_notes * (100.0 - target_accuracy) / 100.0))
+		missed_notes = clamp(missed_notes, 0, total_notes)
+		var hit_notes = total_notes - missed_notes
+		game_screen.score_manager.total_notes = total_notes
+		game_screen.score_manager.missed_notes = missed_notes
+		game_screen.score_manager.hit_notes = hit_notes
+		game_screen.score_manager.update_accuracy()
 
-	var missed_notes = int(round(total_notes * (100.0 - target_accuracy) / 100.0))
-	missed_notes = clamp(missed_notes, 0, total_notes)
-	var hit_notes = total_notes - missed_notes
-
-	game_screen.score_manager.total_notes = total_notes
-	game_screen.score_manager.missed_notes = missed_notes
-	game_screen.score_manager.hit_notes = hit_notes
-
-	game_screen.score_manager.accuracy = target_accuracy
-
-	if target_accuracy >= 100.0:
+	if game_screen.score_manager.get_accuracy() >= 100.0:
 		game_screen.score_manager.combo = total_notes
 		game_screen.score_manager.max_combo = total_notes
 	else:
 		game_screen.score_manager.combo = 0
-		game_screen.score_manager.max_combo = max(1, int(target_accuracy / 10))  
+		game_screen.score_manager.max_combo = max(1, int(game_screen.score_manager.get_accuracy() / 10))  
 
 	var base_score_per_hit = 100
 	var multiplier = 1.0
@@ -251,7 +263,7 @@ func _on_win_button_pressed():
 	elif target_accuracy >= 90.0:
 		multiplier = 1.5
 
-	game_screen.score_manager.score = int(hit_notes * base_score_per_hit * multiplier)
+	game_screen.score_manager.score = int(game_screen.score_manager.get_hit_notes_count() * base_score_per_hit * multiplier)
 
 	if game_screen.has_method("update_ui"):
 		game_screen.update_ui()
@@ -260,7 +272,7 @@ func _on_win_button_pressed():
 
 	if game_screen.has_method("end_game"):
 		game_screen.end_game()
-		print("DebugMenu: Игра завершена с точностью %.1f%% (%d/%d нот)" % [target_accuracy, hit_notes, total_notes])
+		print("DebugMenu: Игра завершена с точностью %.1f%% (%d/%d нот)" % [game_screen.score_manager.get_accuracy(), game_screen.score_manager.get_hit_notes_count(), game_screen.score_manager.total_notes])
 	else:
 		printerr("DebugMenu: Метод end_game не найден у GameScreen")
 

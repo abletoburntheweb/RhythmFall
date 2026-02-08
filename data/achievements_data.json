@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 23576.0,
+			"current": 30376.0,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 23576.0,
+			"current": 30376.0,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 23576.0,
+			"current": 30376.0,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 6,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,7 +211,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 6,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -222,7 +222,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 6,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 5,
+			"current": 6,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 61.0,
+			"current": 68.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 61.0,
+			"current": 68.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.47,
+			"current": 30.55,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.47,
+			"current": 30.55,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.47,
+			"current": 30.55,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.47,
+			"current": 30.55,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.47,
+			"current": 30.55,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5573810.0,
+			"current": 8483110.0,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5573810.0,
+			"current": 8483110.0,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5573810.0,
+			"current": 8483110.0,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5573810.0,
+			"current": 8483110.0,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -530,7 +530,7 @@
 		},
 		{
 			"category": "level",
-			"current": 32.0,
+			"current": 33.0,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"image": "res://assets/achievements/tact.png",
@@ -541,7 +541,7 @@
 		},
 		{
 			"category": "level",
-			"current": 32.0,
+			"current": 33.0,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"image": "res://assets/achievements/tempo.png",
@@ -552,7 +552,7 @@
 		},
 		{
 			"category": "level",
-			"current": 32.0,
+			"current": 33.0,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"image": "res://assets/achievements/rhythm.png",
@@ -563,7 +563,7 @@
 		},
 		{
 			"category": "level",
-			"current": 32.0,
+			"current": 33.0,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"image": "res://assets/achievements/arrangement.png",
@@ -574,7 +574,7 @@
 		},
 		{
 			"category": "level",
-			"current": 32.0,
+			"current": 33.0,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"image": "res://assets/achievements/composition.png",
@@ -585,7 +585,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 11.0,
+			"current": 18.0,
 			"description": "Сыграть 3 раза в электронных жанрах (electronic, synthwave, techno, house, trance, IDM, glitch, ambient, chillwave)",
 			"id": 54.0,
 			"image": "res://assets/achievements/electronic_foundation.png",

@@ -107,25 +107,19 @@ func _connect_category_buttons():
 
 	if all_btn:
 		all_btn.pressed.connect(_on_category_selected.bind("Все"))
-		_set_category_button_style(all_btn, true)
 	if kick_btn:
 		kick_btn.pressed.connect(_on_category_selected.bind("Кик"))
-		_set_category_button_style(kick_btn, false)
 	if snare_btn:
 		snare_btn.pressed.connect(_on_category_selected.bind("Снейр"))
-		_set_category_button_style(snare_btn, false)
 	if cover_btn:
 		cover_btn.pressed.connect(_on_category_selected.bind("Обложки"))
-		_set_category_button_style(cover_btn, false)
 	if lane_highlight_btn:  
 		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Подсветка линий"))
-		_set_category_button_style(lane_highlight_btn, false)
 	if notes_btn:
 		notes_btn.pressed.connect(_on_category_selected.bind("Ноты"))
-		_set_category_button_style(notes_btn, false)
 	if misc_btn:
 		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
-		_set_category_button_style(misc_btn, false)
+	_update_category_buttons("Все")
 		
 func _connect_back_button():
 	var back_button = $MainContent/MainVBox/BackButton
@@ -134,13 +128,24 @@ func _connect_back_button():
 	else:
 		printerr("ShopScreen.gd: Кнопка BackButton не найдена по пути $MainContent/MainVBox/BackButton!")
 
-func _set_category_button_style(button: Button, is_all: bool):
-	if is_all:
-		button.self_modulate = Color(1.0, 0.84, 0.0)
-		button.add_theme_color_override("font_color", Color(0.0, 0.0, 0.0))
-	else:
-		button.self_modulate = Color(0.0, 0.0, 0.0, 0.3)
-		button.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+func _update_category_buttons(selected: String):
+	var hbox = $MainContent/MainVBox/VBoxContainer/CategoriesHBox
+	if not hbox:
+		return
+	var all_btn: Button = hbox.get_node("CategoryButtonAll")
+	var kick_btn: Button = hbox.get_node("CategoryButtonKick")
+	var snare_btn: Button = hbox.get_node("CategoryButtonSnare")
+	var cover_btn: Button = hbox.get_node("CategoryButtonCover")
+	var notes_btn: Button = hbox.get_node("CategoryButtonNotes")
+	var lane_btn: Button = hbox.get_node("CategoryButtonLaneHighlight")
+	var misc_btn: Button = hbox.get_node("CategoryButtonMisc")
+	if all_btn: all_btn.theme_type_variation = "ActiveAll" if selected == "Все" else "CategoryAll"
+	if kick_btn: kick_btn.theme_type_variation = "ActiveKick" if selected == "Кик" else "CategoryKick"
+	if snare_btn: snare_btn.theme_type_variation = "ActiveSnare" if selected == "Снейр" else "CategorySnare"
+	if cover_btn: cover_btn.theme_type_variation = "ActiveCover" if selected == "Обложки" else "CategoryCover"
+	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
+	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
+	if misc_btn: misc_btn.theme_type_variation = "ActiveMisc" if selected == "Прочее" else "CategoryMisc"
 
 func _create_item_cards():
 	for card in item_cards:
@@ -256,6 +261,8 @@ func _on_category_selected(category: String):
 
 		grid_container.add_child(new_card)
 		item_cards.append(new_card)
+
+	_update_category_buttons(category)
 
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:

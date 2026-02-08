@@ -25,15 +25,30 @@ static func _make_button_box(bg: Color, border_col: Color, draw_center := true, 
 
 static func build_theme() -> Theme:
 	var theme := Theme.new()
-	var blue := Color(0.42, 0.57, 0.82, 1.0)
+	theme.add_type("Palette")
+	theme.set_color("primary", "Palette", Color(0.42, 0.57, 0.82, 1.0))
+	theme.set_color("secondary", "Palette", Color(0.27, 0.32, 0.40, 1.0))
+	theme.set_color("danger", "Palette", Color(0.85, 0.30, 0.34, 1.0))
+	theme.set_color("outline", "Palette", Color(1, 1, 1, 0.85))
+	theme.set_color("text", "Palette", Color(1, 1, 1, 1.0))
+	theme.set_color("text_muted", "Palette", Color(0.92, 0.94, 0.98, 1.0))
+	theme.set_color("panel_bg", "Palette", Color(0.11, 0.12, 0.16, 1.0))
+	theme.set_color("panel_border", "Palette", Color(1, 1, 1, 0.22))
+	theme.set_color("accent_teal", "Palette", Color(0.38, 0.78, 0.74, 1.0))
+	theme.set_color("accent_purple", "Palette", Color(0.66, 0.58, 0.86, 1.0))
+	theme.set_color("accent_pink", "Palette", Color(0.86, 0.52, 0.72, 1.0))
+	theme.set_color("accent_sky", "Palette", Color(0.52, 0.76, 0.92, 1.0))
+	theme.set_color("accent_mint", "Palette", Color(0.62, 0.86, 0.72, 1.0))
+	theme.set_color("accent_slate", "Palette", Color(0.80, 0.86, 0.94, 1.0))
+	var blue := theme.get_color("primary", "Palette")
 	var blue_hover := blue.lightened(0.1)
 	var blue_pressed := blue.darkened(0.1)
-	var outline := Color(1, 1, 1, 0.85)
-	var text := Color(1, 1, 1, 1)
+	var outline := theme.get_color("outline", "Palette")
+	var text := theme.get_color("text", "Palette")
 	var transparent := Color(0, 0, 0, 0)
 
 	var btn_outline_normal := _make_button_box(transparent, outline, false, 2)
-	var btn_outline_hover := _make_button_box(transparent, outline.lightened(0.2), false, 2)
+	var btn_outline_hover := _make_button_box(transparent, blue, false, 2)
 	var btn_outline_pressed := _make_button_box(transparent, outline.darkened(0.2), true, 2)
 	var btn_outline_disabled := _make_button_box(transparent, outline.darkened(0.5), false, 2)
 	var btn_outline_focus := _make_button_box(transparent, outline, false, 3)
@@ -51,6 +66,11 @@ static func build_theme() -> Theme:
 	theme.set_type_variation("Primary", "Button")
 	var btn_primary_normal := _make_button_box(blue, Color(0, 0, 0, 0), true, 0)
 	var btn_primary_hover := _make_button_box(blue.lightened(0.1), Color(0, 0, 0, 0), true, 0)
+	btn_primary_hover.border_color = blue
+	btn_primary_hover.border_width_left = 2
+	btn_primary_hover.border_width_right = 2
+	btn_primary_hover.border_width_top = 2
+	btn_primary_hover.border_width_bottom = 2
 	var btn_primary_pressed := _make_button_box(blue.darkened(0.1), Color(0, 0, 0, 0), true, 0)
 	var btn_primary_disabled := _make_button_box(blue.darkened(0.25), Color(0, 0, 0, 0), true, 0)
 	var btn_primary_focus := _make_button_box(blue, outline, true, 2)
@@ -65,7 +85,7 @@ static func build_theme() -> Theme:
 	theme.set_color("font_disabled_color", "Primary", text.darkened(0.5))
 
 	theme.set_type_variation("Secondary", "Button")
-	var gray := Color(0.27, 0.32, 0.40, 1.0)
+	var gray := theme.get_color("secondary", "Palette")
 	var btn_secondary_normal := _make_button_box(gray, Color(0, 0, 0, 0), true, 0)
 	var btn_secondary_hover := _make_button_box(gray.lightened(0.06), Color(0, 0, 0, 0), true, 0)
 	var btn_secondary_pressed := _make_button_box(gray.darkened(0.08), Color(0, 0, 0, 0), true, 0)
@@ -82,7 +102,7 @@ static func build_theme() -> Theme:
 	theme.set_color("font_disabled_color", "Secondary", text.darkened(0.5))
 
 	theme.set_type_variation("Danger", "Button")
-	var red := Color(0.85, 0.30, 0.34, 1.0)
+	var red := theme.get_color("danger", "Palette")
 	var btn_danger_normal := _make_button_box(red, Color(0, 0, 0, 0), true, 0)
 	var btn_danger_hover := _make_button_box(red.lightened(0.06), Color(0, 0, 0, 0), true, 0)
 	var btn_danger_pressed := _make_button_box(red.darkened(0.08), Color(0, 0, 0, 0), true, 0)
@@ -164,22 +184,15 @@ static func build_theme() -> Theme:
 	pb_bg.corner_radius_bottom_left = 8
 	pb_bg.content_margin_top = 6
 	pb_bg.content_margin_bottom = 6
-	var pb_fill := StyleBoxFlat.new()
-	pb_fill.bg_color = blue
-	pb_fill.corner_radius_top_left = 8
-	pb_fill.corner_radius_top_right = 8
-	pb_fill.corner_radius_bottom_right = 8
-	pb_fill.corner_radius_bottom_left = 8
 	theme.set_stylebox("background", "ProgressBar", pb_bg)
-	theme.set_stylebox("fill", "ProgressBar", pb_fill)
 	theme.set_color("font_color", "ProgressBar", Color.WHITE)
 	theme.set_color("font_outline_color", "ProgressBar", Color(0, 0, 0, 0.8))
 	theme.set_constant("outline_size", "ProgressBar", 0)
 
 	theme.set_type_variation("LevelLabel", "Label")
-	theme.set_color("font_color", "LevelLabel", Color(0.85, 0.9, 1.0, 1.0))
+	theme.set_color("font_color", "LevelLabel", theme.get_color("text_muted", "Palette"))
 	theme.set_type_variation("XPAmountLabel", "Label")
-	theme.set_color("font_color", "XPAmountLabel", Color(0.9, 0.95, 1.0, 1.0))
+	theme.set_color("font_color", "XPAmountLabel", theme.get_color("text", "Palette"))
 
 	theme.add_type("ChartPoint")
 	theme.set_color("point_color", "ChartPoint", Color(0.6, 0.8, 1.0, 1.0))
@@ -188,8 +201,8 @@ static func build_theme() -> Theme:
 	theme.set_constant("border_width", "ChartPoint", 2)
 
 	var card_base := StyleBoxFlat.new()
-	card_base.bg_color = Color(0.11, 0.12, 0.16, 1.0)
-	card_base.border_color = Color(1, 1, 1, 0.22)
+	card_base.bg_color = theme.get_color("panel_bg", "Palette")
+	card_base.border_color = theme.get_color("panel_border", "Palette")
 	card_base.border_width_left = 1
 	card_base.border_width_right = 1
 	card_base.border_width_top = 1
@@ -321,9 +334,9 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("hover", "PopupMenu", pm_hover)
 	theme.set_stylebox("separator", "PopupMenu", pm_sep)
 	theme.set_color("font_color", "PopupMenu", Color(0.92, 0.94, 0.98, 1.0))
-	theme.set_color("font_hover_color", "PopupMenu", Color.WHITE)
-	theme.set_color("font_disabled_color", "PopupMenu", Color(0.7, 0.72, 0.78, 1.0))
-	theme.set_color("font_accelerator_color", "PopupMenu", Color(0.7, 0.74, 0.8, 0.9))
+	theme.set_color("font_hover_color", "PopupMenu", theme.get_color("text", "Palette"))
+	theme.set_color("font_disabled_color", "PopupMenu", theme.get_color("text_muted", "Palette"))
+	theme.set_color("font_accelerator_color", "PopupMenu", theme.get_color("accent_slate", "Palette"))
 
 	var il_panel := StyleBoxFlat.new()
 	il_panel.bg_color = Color(0.10, 0.11, 0.15, 1.0)
@@ -391,5 +404,173 @@ static func build_theme() -> Theme:
 	theme.set_color("font_disabled_color", "CheckBox", text.darkened(0.5))
 	theme.set_color("checkbox_checked_color", "CheckBox", blue)
 	theme.set_color("checkbox_unchecked_color", "CheckBox", Color(0.75, 0.80, 0.90, 1.0))
+
+	theme.set_type_variation("ShopCurrencyLabel", "Label")
+	theme.set_color("font_color", "ShopCurrencyLabel", Color(0.82, 0.92, 1.0, 1.0))
+	theme.set_color("font_outline_color", "ShopCurrencyLabel", Color(0, 0, 0, 0.6))
+	theme.set_constant("outline_size", "ShopCurrencyLabel", 1)
+
+	var cat_bg := Color(0.12, 0.13, 0.17, 1.0)
+	var cat_border := Color(1, 1, 1, 0.16)
+	var cat_base := _make_button_box(cat_bg, cat_border, true, 1)
+	var cat_base_hover := _make_button_box(cat_bg.lightened(0.06), cat_border.lightened(0.1), true, 1)
+	var cat_base_pressed := _make_button_box(cat_bg.darkened(0.06), cat_border.darkened(0.1), true, 1)
+	var cat_base_focus := _make_button_box(cat_bg, blue, true, 2)
+
+	theme.set_type_variation("CategoryAll", "Button")
+	theme.set_stylebox("normal", "CategoryAll", cat_base)
+	theme.set_stylebox("hover", "CategoryAll", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryAll", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryAll", cat_base_focus)
+	theme.set_color("font_color", "CategoryAll", blue)
+	theme.set_color("font_hover_color", "CategoryAll", blue.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryAll", blue.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryAll", blue.darkened(0.4))
+
+	var col_all := blue
+	var col_kick := theme.get_color("accent_teal", "Palette")
+	var col_snare := theme.get_color("accent_purple", "Palette")
+	var col_cover := theme.get_color("accent_pink", "Palette")
+	var col_notes := theme.get_color("accent_sky", "Palette")
+	var col_lane := theme.get_color("accent_mint", "Palette")
+	var col_misc := theme.get_color("accent_slate", "Palette")
+
+	theme.set_type_variation("CategoryKick", "Button")
+	theme.set_stylebox("normal", "CategoryKick", cat_base)
+	theme.set_stylebox("hover", "CategoryKick", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryKick", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryKick", cat_base_focus)
+	theme.set_color("font_color", "CategoryKick", col_kick)
+	theme.set_color("font_hover_color", "CategoryKick", col_kick.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryKick", col_kick.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryKick", col_kick.darkened(0.4))
+
+	theme.set_type_variation("CategorySnare", "Button")
+	theme.set_stylebox("normal", "CategorySnare", cat_base)
+	theme.set_stylebox("hover", "CategorySnare", cat_base_hover)
+	theme.set_stylebox("pressed", "CategorySnare", cat_base_pressed)
+	theme.set_stylebox("focus", "CategorySnare", cat_base_focus)
+	theme.set_color("font_color", "CategorySnare", col_snare)
+	theme.set_color("font_hover_color", "CategorySnare", col_snare.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategorySnare", col_snare.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategorySnare", col_snare.darkened(0.4))
+
+	theme.set_type_variation("CategoryCover", "Button")
+	theme.set_stylebox("normal", "CategoryCover", cat_base)
+	theme.set_stylebox("hover", "CategoryCover", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryCover", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryCover", cat_base_focus)
+	theme.set_color("font_color", "CategoryCover", col_cover)
+	theme.set_color("font_hover_color", "CategoryCover", col_cover.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryCover", col_cover.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryCover", col_cover.darkened(0.4))
+
+	theme.set_type_variation("CategoryNotes", "Button")
+	theme.set_stylebox("normal", "CategoryNotes", cat_base)
+	theme.set_stylebox("hover", "CategoryNotes", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryNotes", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryNotes", cat_base_focus)
+	theme.set_color("font_color", "CategoryNotes", col_notes)
+	theme.set_color("font_hover_color", "CategoryNotes", col_notes.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryNotes", col_notes.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryNotes", col_notes.darkened(0.4))
+
+	theme.set_type_variation("CategoryLane", "Button")
+	theme.set_stylebox("normal", "CategoryLane", cat_base)
+	theme.set_stylebox("hover", "CategoryLane", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryLane", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryLane", cat_base_focus)
+	theme.set_color("font_color", "CategoryLane", col_lane)
+	theme.set_color("font_hover_color", "CategoryLane", col_lane.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryLane", col_lane.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryLane", col_lane.darkened(0.4))
+
+	theme.set_type_variation("CategoryMisc", "Button")
+	theme.set_stylebox("normal", "CategoryMisc", cat_base)
+	theme.set_stylebox("hover", "CategoryMisc", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryMisc", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryMisc", cat_base_focus)
+	theme.set_color("font_color", "CategoryMisc", col_misc)
+	theme.set_color("font_hover_color", "CategoryMisc", col_misc.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryMisc", col_misc.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryMisc", col_misc.darkened(0.4))
+
+	var act := cat_base.duplicate()
+	act.bg_color = cat_bg.lightened(0.10)
+	act.border_color = blue
+	act.border_width_left = 2
+	act.border_width_right = 2
+	act.border_width_top = 2
+	act.border_width_bottom = 2
+
+	theme.set_type_variation("ActiveAll", "Button")
+	theme.set_stylebox("normal", "ActiveAll", act)
+	theme.set_stylebox("hover", "ActiveAll", act)
+	theme.set_stylebox("pressed", "ActiveAll", act)
+	theme.set_stylebox("focus", "ActiveAll", act)
+	theme.set_color("font_color", "ActiveAll", blue)
+	theme.set_color("font_hover_color", "ActiveAll", blue.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveAll", blue.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveAll", blue.darkened(0.4))
+
+	theme.set_type_variation("ActiveKick", "Button")
+	theme.set_stylebox("normal", "ActiveKick", act)
+	theme.set_stylebox("hover", "ActiveKick", act)
+	theme.set_stylebox("pressed", "ActiveKick", act)
+	theme.set_stylebox("focus", "ActiveKick", act)
+	theme.set_color("font_color", "ActiveKick", col_kick)
+	theme.set_color("font_hover_color", "ActiveKick", col_kick.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveKick", col_kick.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveKick", col_kick.darkened(0.4))
+
+	theme.set_type_variation("ActiveSnare", "Button")
+	theme.set_stylebox("normal", "ActiveSnare", act)
+	theme.set_stylebox("hover", "ActiveSnare", act)
+	theme.set_stylebox("pressed", "ActiveSnare", act)
+	theme.set_stylebox("focus", "ActiveSnare", act)
+	theme.set_color("font_color", "ActiveSnare", col_snare)
+	theme.set_color("font_hover_color", "ActiveSnare", col_snare.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveSnare", col_snare.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveSnare", col_snare.darkened(0.4))
+
+	theme.set_type_variation("ActiveCover", "Button")
+	theme.set_stylebox("normal", "ActiveCover", act)
+	theme.set_stylebox("hover", "ActiveCover", act)
+	theme.set_stylebox("pressed", "ActiveCover", act)
+	theme.set_stylebox("focus", "ActiveCover", act)
+	theme.set_color("font_color", "ActiveCover", col_cover)
+	theme.set_color("font_hover_color", "ActiveCover", col_cover.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveCover", col_cover.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveCover", col_cover.darkened(0.4))
+
+	theme.set_type_variation("ActiveNotes", "Button")
+	theme.set_stylebox("normal", "ActiveNotes", act)
+	theme.set_stylebox("hover", "ActiveNotes", act)
+	theme.set_stylebox("pressed", "ActiveNotes", act)
+	theme.set_stylebox("focus", "ActiveNotes", act)
+	theme.set_color("font_color", "ActiveNotes", col_notes)
+	theme.set_color("font_hover_color", "ActiveNotes", col_notes.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveNotes", col_notes.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveNotes", col_notes.darkened(0.4))
+
+	theme.set_type_variation("ActiveLane", "Button")
+	theme.set_stylebox("normal", "ActiveLane", act)
+	theme.set_stylebox("hover", "ActiveLane", act)
+	theme.set_stylebox("pressed", "ActiveLane", act)
+	theme.set_stylebox("focus", "ActiveLane", act)
+	theme.set_color("font_color", "ActiveLane", col_lane)
+	theme.set_color("font_hover_color", "ActiveLane", col_lane.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveLane", col_lane.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveLane", col_lane.darkened(0.4))
+
+	theme.set_type_variation("ActiveMisc", "Button")
+	theme.set_stylebox("normal", "ActiveMisc", act)
+	theme.set_stylebox("hover", "ActiveMisc", act)
+	theme.set_stylebox("pressed", "ActiveMisc", act)
+	theme.set_stylebox("focus", "ActiveMisc", act)
+	theme.set_color("font_color", "ActiveMisc", col_misc)
+	theme.set_color("font_hover_color", "ActiveMisc", col_misc.lightened(0.08))
+	theme.set_color("font_pressed_color", "ActiveMisc", col_misc.darkened(0.08))
+	theme.set_color("font_disabled_color", "ActiveMisc", col_misc.darkened(0.4))
 
 	return theme

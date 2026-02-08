@@ -22,6 +22,11 @@ func _update_display():
 	title_label.text = title
 	description_label.text = description
 	progress_label.text = progress_text
+	
+	if is_unlocked:
+		progress_label.add_theme_color_override("font_color", Color("#61C7BD"))
+	else:
+		progress_label.add_theme_color_override("font_color", Color("#D1D1D1"))
 
 	if unlock_date_text and unlock_date_text != "":
 		unlock_date_label.text = "Открыто: %s" % unlock_date_text
@@ -43,12 +48,10 @@ func _update_display():
 		icon_texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 
 	if is_unlocked:
-		title_label.add_theme_color_override("font_color", Color.YELLOW)
+		title_label.add_theme_color_override("font_color", Color(0.95, 0.70, 0.30, 1.0))
 		description_label.add_theme_color_override("font_color", Color.WHITE)
 		unlock_date_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
-		progress_label.add_theme_color_override("font_color", Color.LIME_GREEN)
 	else:
 		title_label.add_theme_color_override("font_color", Color.GRAY)
 		description_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
 		unlock_date_label.add_theme_color_override("font_color", Color.GRAY)
-		progress_label.add_theme_color_override("font_color", Color.SILVER)

@@ -110,7 +110,7 @@ func _render_daily_quests():
 			if title_label:
 				title_label.text = title
 				if completed:
-					title_label.add_theme_color_override("font_color", Color.YELLOW)
+					title_label.add_theme_color_override("font_color", Color(0.95, 0.70, 0.30, 1.0))
 				else:
 					title_label.add_theme_color_override("font_color", Color.GRAY)
 

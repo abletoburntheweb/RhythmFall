@@ -69,14 +69,14 @@ func _calculate_grade() -> String:
 		
 func _get_grade_color(grade: String) -> Color:
 	match grade:
-		"SS": return Color.GOLD
-		"S": return Color.SILVER 
-		"A": return Color.GREEN 
-		"B": return Color.CYAN 
-		"C": return Color.HOT_PINK
-		"D": return Color.RED
-		"F": return Color.DARK_RED
-		_: return Color.WHITE
+		"SS": return Color("#F2B35A")
+		"S": return Color("#C8D2E6")
+		"A": return Color("#6B91D2")
+		"B": return Color("#59D1BE")
+		"C": return Color("#A58EDB")
+		"D": return Color("#D56B87")
+		"F": return Color("#8A2F39")
+		_: return Color("#FFFFFF")
 
 func _calculate_xp_new() -> int:
 	var base_xp = sqrt(float(score)) * 2.0 

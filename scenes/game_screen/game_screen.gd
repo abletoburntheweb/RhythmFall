@@ -86,6 +86,11 @@ const HIT_WINDOW_GOOD: float = 0.15
 
 func _ready():
 	game_engine = get_parent()
+	var game_theme = preload("res://ui/theme/game_theme.gd").build_theme()
+	if $UIContainer:
+		$UIContainer.theme = game_theme
+	if not ResourceLoader.exists("res://ui/theme/game_theme.tres"):
+		ResourceSaver.save(game_theme, "res://ui/theme/game_theme.tres")
 	
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):

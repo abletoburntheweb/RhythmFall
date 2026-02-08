@@ -149,10 +149,10 @@ func refresh_stats():
 	a_label.text = "A: %d" % a_count
 	b_label.text = "B: %d" % b_count
 
-	ss_label.modulate = Color.GOLD
-	s_label.modulate = Color.SILVER
-	a_label.modulate = Color.GREEN
-	b_label.modulate = Color.CYAN
+	ss_label.modulate = Color("#F2B35A")
+	s_label.modulate = Color("#C8D2E6")
+	a_label.modulate = Color("#6B91D2")
+	b_label.modulate = Color("#59D1BE")
 
 	if level_label:
 		level_label.text = "Уровень: %d" % PlayerDataManager.get_current_level()
