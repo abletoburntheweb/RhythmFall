@@ -18,7 +18,7 @@ var song_metadata_manager = SongMetadataManager
 @onready var song_item_list_ref: ItemList = $MainVBox/ContentHBox/SongListVBox/SongItemList
 @onready var analyze_bpm_button: Button = $MainVBox/ContentHBox/DetailsVBox/AnalyzeBPMButton
 @onready var results_button: Button = $MainVBox/ContentHBox/DetailsVBox/ResultsButton
-@onready var clear_results_button: Button = $ClearResultsButton
+@onready var clear_results_button: Button = $MainVBox/TopBarHBox/ClearResultsButton
 
 var generation_settings_selector: Control = null
 var file_dialog: FileDialog = null

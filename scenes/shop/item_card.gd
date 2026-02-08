@@ -289,7 +289,7 @@ func _update_buttons_and_status():
 			status_label.text = "✅ Используется"
 			status_label.visible = true
 		elif is_default:
-			status_label.text = "✔️ Дефолтный"
+			status_label.text = "✔️ Стандартный"
 			status_label.visible = true
 
 
