@@ -301,6 +301,7 @@ func add_perfect_hits(count: int):
 	_save()
 	print("[PlayerDataManager] Совершенных попаданий добавлено: %d. Общий счёт: %d" % [count, new_total])
 	_trigger_perfect_hit_achievement_check()
+	increment_daily_progress("perfect_hits", count, {})
 
 func _trigger_perfect_hit_achievement_check():
 	if game_engine_reference:
@@ -661,7 +662,6 @@ func add_hit_notes(count: int):
 	var current_hits = int(data.get("total_notes_hit", 0))
 	data["total_notes_hit"] = current_hits + count
 	_save() 
-	increment_daily_progress("hit_notes", count, {})
 
 func add_missed_notes(count: int):
 	var current_misses = int(data.get("total_notes_missed", 0))
@@ -734,7 +734,6 @@ func ensure_daily_quests_for_today():
 		_generate_daily_quests_for_date(today)
 		_save()
 		emit_signal("daily_quests_updated")
-		emit_signal("daily_quests_updated")
 
 func _generate_daily_quests_for_date(date_str: String):
 	var quests_for_day: Array = []
@@ -774,6 +773,7 @@ func get_daily_quests() -> Array:
 	return data.get("daily_quests", {"date": "", "quests": []}).get("quests", [])
 
 func increment_daily_progress(event_name: String, value: int, context: Dictionary = {}):
+	ensure_daily_quests_for_today()
 	var dq = data.get("daily_quests", {"date": "", "quests": []})
 	var quests = dq.get("quests", [])
 	var changed = false
@@ -827,7 +827,6 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 	if changed:
 		data["daily_quests"]["quests"] = quests
 		_save()
-		emit_signal("daily_quests_updated")
 		emit_signal("daily_quests_updated")
 
 func _add_daily_quest_reward(amount: int):

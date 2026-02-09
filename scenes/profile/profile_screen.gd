@@ -460,7 +460,6 @@ func _update_accuracy_chart():
 			tooltip_label.visible = false
 		return
 	
-	# График зависит от размеров ChartBackground; если он ещё не размечен, откладываем перерисовку
 	if chart_background.size.x <= 0 or chart_background.size.y <= 0:
 		call_deferred("_update_accuracy_chart")
 		return

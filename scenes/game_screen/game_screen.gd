@@ -801,9 +801,9 @@ func check_hit(lane: int):
 
 	if judgement_successful:
 		var points = closest_note.on_hit()
-
-		if current_instrument == "drums":
+		if current_instrument == "drums" and hit_type == "PERFECT":
 			PlayerDataManager.add_total_drum_perfect_hit()
+		PlayerDataManager.increment_daily_progress("hit_notes", 1, {})
 
 		var note_type = closest_note.note_type
 		var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
