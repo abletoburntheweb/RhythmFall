@@ -2,6 +2,9 @@
 class_name ProfileScreen
 extends BaseScreen
 
+const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
+const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
+
 @onready var back_button: Button = $MainContent/MainVBox/BackButton
 @onready var levels_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/LevelsCompletedLabel
 @onready var drum_levels_completed_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumLevelsCompletedLabel
@@ -39,7 +42,11 @@ extends BaseScreen
 @onready var favorite_artist_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteArtistLabel")
 @onready var favorite_genre_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteGenreLabel")
 
+@onready var achievements_list_vbox: VBoxContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox")
+@onready var achievements_empty_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox/EmptyLabel")
+
 var session_history_manager = null
+var achievement_manager: AchievementManager = null
 
 func _play_time_string_to_seconds(time_str: String) -> int:
 	var parts = time_str.split(":")
@@ -61,6 +68,8 @@ func _ready():
 		var session_hist_mgr = null
 		if game_engine.has_method("get_session_history_manager"):
 			session_hist_mgr = game_engine.get_session_history_manager()
+		if game_engine.has_method("get_achievement_manager"):
+			achievement_manager = game_engine.get_achievement_manager()
 
 		if session_hist_mgr:
 			setup_session_history_manager(session_hist_mgr)
@@ -216,6 +225,7 @@ func refresh_stats():
 
 	if session_history_manager:
 		_update_accuracy_chart()
+	_update_recent_achievements()
 
 func _read_basic_metadata(filepath: String) -> Dictionary:
 	var result = {
@@ -294,6 +304,142 @@ func _get_fallback_cover_texture():
 					return texture_ff
 	return null
 
+func _update_recent_achievements():
+	if achievements_list_vbox == null:
+		return
+	for child in achievements_list_vbox.get_children():
+		achievements_list_vbox.remove_child(child)
+		child.queue_free()
+	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
+	if not file:
+		if achievements_empty_label:
+			achievements_empty_label.visible = true
+		return
+	var json_text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(json_text)
+	if not parsed or not parsed.has("achievements") or not (parsed.achievements is Array):
+		if achievements_empty_label:
+			achievements_empty_label.visible = true
+		return
+	var unlocked_list: Array[Dictionary] = []
+	for item in parsed.achievements:
+		if item is Dictionary and item.get("unlocked", false) and item.get("unlock_date", null) != null:
+			unlocked_list.append(item)
+	unlocked_list.sort_custom(Callable(self, "_sort_by_unlock_date_desc"))
+	var to_display = unlocked_list.slice(0, min(5, unlocked_list.size()))
+	if achievements_empty_label:
+		achievements_empty_label.visible = to_display.size() == 0
+	for ach in to_display:
+		var card = ACHIEVEMENT_CARD_SCENE.instantiate()
+		card.title = str(ach.get("title", ""))
+		card.description = str(ach.get("description", ""))
+		card.progress_text = _get_progress_text(ach)
+		card.is_unlocked = true
+		card.unlock_date_text = str(ach.get("unlock_date", ""))
+		var icon_tex = _load_achievement_icon(ach)
+		if icon_tex:
+			card.icon_texture = icon_tex
+		achievements_list_vbox.add_child(card)
+
+func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
+	var ka = _date_key(str(a.get("unlock_date", "")))
+	var kb = _date_key(str(b.get("unlock_date", "")))
+	if ka[0] != kb[0]:
+		return ka[0] > kb[0]
+	if ka[1] != kb[1]:
+		return ka[1] > kb[1]
+	if ka[2] != kb[2]:
+		return ka[2] > kb[2]
+	if ka[3] != kb[3]:
+		return ka[3] > kb[3]
+	return ka[4] > kb[4]
+
+func _date_key(s: String) -> PackedInt32Array:
+	var parts = s.split(",")
+	if parts.size() != 2:
+		return PackedInt32Array([0,0,0,0,0])
+	var date_part = parts[0].strip_edges()
+	var time_part = parts[1].strip_edges()
+	var dparts = date_part.split(" ")
+	if dparts.size() < 3:
+		return PackedInt32Array([0,0,0,0,0])
+	var day = int(dparts[0])
+	var month_str = dparts[1]
+	var year = int(dparts[2])
+	var months = {
+		"Янв": 1, "Фев": 2, "Мар": 3, "Апр": 4, "Мая": 5, "Июн": 6,
+		"Июл": 7, "Авг": 8, "Сен": 9, "Окт": 10, "Ноя": 11, "Дек": 12
+	}
+	var month = int(months.get(month_str, 0))
+	var tparts = time_part.split(":")
+	var hour = tparts[0].to_int() if tparts.size() >= 1 else 0
+	var minute = tparts[1].to_int() if tparts.size() >= 2 else 0
+	return PackedInt32Array([year, month, day, hour, minute])
+
+func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
+	var image_path = str(ach.get("image", ""))
+	if image_path != "" and FileAccess.file_exists(image_path):
+		var loaded_resource = ResourceLoader.load(image_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
+		if loaded_resource and loaded_resource is ImageTexture:
+			return loaded_resource
+		var image = Image.new()
+		var err = image.load(image_path)
+		if err == OK:
+			return ImageTexture.create_from_image(image)
+	var category = str(ach.get("category", ""))
+	var fallback_path = ""
+	match category:
+		"mastery": fallback_path = "res://assets/achievements/mastery.png"
+		"drums": fallback_path = "res://assets/achievements/drums.png"
+		"genres":  fallback_path = "res://assets/achievements/genres.png"
+		"system": fallback_path = "res://assets/achievements/system.png"
+		"shop": fallback_path = "res://assets/achievements/shop.png"
+		"economy": fallback_path = "res://assets/achievements/economy.png"
+		"daily": fallback_path = "res://assets/achievements/daily.png"
+		"playtime": fallback_path = "res://assets/achievements/playtime.png"
+		"events": fallback_path = "res://assets/achievements/events.png"
+		"level": fallback_path = "res://assets/achievements/level.png"
+		_: fallback_path = "res://assets/achievements/default.png"
+	if FileAccess.file_exists(fallback_path):
+		var loaded_default_resource = ResourceLoader.load(fallback_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
+		if loaded_default_resource and loaded_default_resource is ImageTexture:
+			return loaded_default_resource
+		var image2 = Image.new()
+		var err2 = image2.load(fallback_path)
+		if err2 == OK:
+			return ImageTexture.create_from_image(image2)
+	var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	dummy_image.set_pixel(0, 0, Color.WHITE)
+	return ImageTexture.create_from_image(dummy_image)
+
+func _get_progress_text(achievement: Dictionary) -> String:
+	var current = achievement.get("current", 0)
+	var total = achievement.get("total", 1)
+	var unlocked = achievement.get("unlocked", false)
+	var category = achievement.get("category", "")
+	if category == "playtime" and achievement_manager:
+		var formatted = achievement_manager.get_formatted_achievement_progress(int(achievement.get("id", -1)))
+		if formatted:
+			var display_total = str(int(total)) if total == floor(total) else "%0.2f" % [total]
+			if unlocked:
+				return "%s / %s" % [display_total, display_total]
+			else:
+				return "%s / %s" % [formatted.current, display_total]
+	if category == "level":
+		if unlocked:
+			return "%d / %d" % [int(total), int(total)]
+		else:
+			return "%d / %d" % [int(current), int(total)]
+	if typeof(current) == TYPE_BOOL:
+		return "%d / %d" % [int(current), 1]
+	var display_current = current
+	if unlocked and typeof(current) != TYPE_FLOAT:
+		display_current = min(current, total)
+	if typeof(display_current) == TYPE_FLOAT:
+		return "%d / %d" % [int(display_current), int(total)]
+	return "%d / %d" % [int(display_current), int(total)]
+
 func _update_accuracy_chart():
 	if session_history_manager == null:
 		printerr("ProfileScreen: SessionHistoryManager не установлен!")
@@ -314,7 +460,6 @@ func _update_accuracy_chart():
 			tooltip_label.visible = false
 		return
 	
-	# График зависит от размеров ChartBackground; если он ещё не размечен, откладываем перерисовку
 	if chart_background.size.x <= 0 or chart_background.size.y <= 0:
 		call_deferred("_update_accuracy_chart")
 		return

@@ -348,7 +348,6 @@ static func build_theme() -> Theme:
 	theme.set_color("font_hover_color", "FlatBackButton", text)
 	theme.set_color("font_pressed_color", "FlatBackButton", text)
 	theme.set_color("font_disabled_color", "FlatBackButton", text.darkened(0.5))
-	# Primary/Secondary variations removed per manual styling preference
 
 	theme.set_type_variation("Danger", "Button")
 	var red := theme.get_color("danger", "Palette")
@@ -534,7 +533,6 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "Dropdown", text)
 	theme.set_color("font_disabled_color", "Dropdown", text.darkened(0.5))
 
-	# Removed older ItemList block that used non-standard "background" property to avoid duplication.
 
 	var v_track := StyleBoxFlat.new()
 	v_track.bg_color = Color(0.12, 0.13, 0.17, 1.0)
