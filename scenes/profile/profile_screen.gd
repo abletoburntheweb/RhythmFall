@@ -3,37 +3,41 @@ class_name ProfileScreen
 extends BaseScreen
 
 @onready var back_button: Button = $MainContent/MainVBox/BackButton
-@onready var levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/LevelsCompletedLabel
-@onready var drum_levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/DrumLevelsContainer/DrumLevelsCompletedLabel
-@onready var unique_levels_completed_label: Label = $MainContent/MainVBox/StatsVBox/UniqueLevelsCompletedLabel
-@onready var favorite_genre_label: Label = $MainContent/MainVBox/StatsVBox/FavoriteGenreLabel
-@onready var favorite_track_label: Label = $MainContent/MainVBox/StatsVBox/FavoriteTrackLabel
-@onready var overall_accuracy_label: Label = $MainContent/MainVBox/StatsVBox/OverallAccuracyLabel
-@onready var drum_overall_accuracy_label: Label = $MainContent/MainVBox/StatsVBox/DrumOverallAccuracyContainer/DrumOverallAccuracyLabel
-@onready var play_time_label: Label = $MainContent/MainVBox/StatsVBox/PlayTimeLabel
-@onready var total_notes_hit_label: Label = $MainContent/MainVBox/StatsVBox/TotalNotesHitLabel 
-@onready var total_drum_hits_label: Label = $MainContent/MainVBox/StatsVBox/TotalDrumHitsContainer/TotalDrumHitsLabel
-@onready var total_notes_missed_label: Label = $MainContent/MainVBox/StatsVBox/TotalNotesMissedLabel
-@onready var total_drum_misses_label: Label = $MainContent/MainVBox/StatsVBox/TotalDrumMissesContainer/TotalDrumMissesLabel
-@onready var max_hit_streak_label: Label = $MainContent/MainVBox/StatsVBox/MaxHitStreakLabel
-@onready var max_drum_hit_streak_label: Label = $MainContent/MainVBox/StatsVBox/MaxDrumHitStreakContainer/MaxDrumHitStreakLabel
-@onready var total_earned_currency_label: Label = $MainContent/MainVBox/StatsVBox/TotalEarnedCurrencyLabel
-@onready var spent_currency_label: Label = $MainContent/MainVBox/StatsVBox/SpentCurrencyLabel
-@onready var total_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalScoreLabel
-@onready var total_drum_score_label: Label = $MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer/TotalDrumScoreLabel
-@onready var level_label: Label = $MainContent/MainVBox/StatsVBox/LevelLabel
-@onready var xp_label: Label = $MainContent/MainVBox/StatsVBox/XPLabel
-@onready var xp_progress_label: Label = $MainContent/MainVBox/StatsVBox/XPProgressLabel
+@onready var levels_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/LevelsCompletedLabel
+@onready var drum_levels_completed_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumLevelsCompletedLabel
+@onready var unique_levels_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/UniqueLevelsCompletedLabel
+@onready var overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/OverallAccuracyLabel
+@onready var drum_overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumOverallAccuracyLabel
+@onready var play_time_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/PlayTimeLabel
+@onready var total_notes_hit_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesHitLabel 
+@onready var total_drum_hits_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumHitsLabel
+@onready var total_notes_missed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesMissedLabel
+@onready var total_drum_misses_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumMissesLabel
+@onready var max_hit_streak_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/MaxHitStreakLabel
+@onready var max_drum_hit_streak_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/MaxDrumHitStreakLabel
+@onready var total_earned_currency_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox/TotalEarnedCurrencyLabel
+@onready var spent_currency_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox/SpentCurrencyLabel
+@onready var total_score_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalScoreLabel
+@onready var total_drum_score_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumScoreLabel
+@onready var level_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/LevelLabel
+@onready var xp_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/XPLabel
+@onready var xp_progress_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/XPProgressLabel
 
-@onready var ss_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SSLabel
-@onready var s_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/SLabel
-@onready var a_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/ALabel
-@onready var b_label: Label = $MainContent/MainVBox/StatsVBox/HBoxContainer/BLabel
+@onready var ss_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/SSLabel
+@onready var s_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/SLabel
+@onready var a_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/ALabel
+@onready var b_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/BLabel
 
-@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground/AccuracyChartLine
-@onready var accuracy_chart_points: Control = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground/AccuracyChartPoints
-@onready var chart_background: ColorRect = $MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground
-@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/StatsVBox/ChartContainer/TooltipLabel")) as RichTextLabel
+@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartLine
+@onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartPoints
+@onready var chart_background: ColorRect = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground
+@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/ChartCard/ChartContainer/TooltipLabel")) as RichTextLabel
+
+@onready var favorite_track_card: PanelContainer = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard")
+@onready var favorite_cover_texture_rect: TextureRect = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteCoverTextureRect")
+@onready var favorite_title_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteTitleLabel")
+@onready var favorite_artist_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteArtistLabel")
+@onready var favorite_genre_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteGenreLabel")
 
 var session_history_manager = null
 
@@ -89,15 +93,69 @@ func refresh_stats():
 	
 	drum_levels_completed_label.text = "Перкуссия: %d" % PlayerDataManager.get_drum_levels_completed()
 	
-	favorite_genre_label.text = "Любимый жанр: %s" % str(PlayerDataManager.data.get("favorite_genre", "Н/Д"))
-	
 	var favorite_track_path = PlayerDataManager.data.get("favorite_track", "")
 	var favorite_track_count = PlayerDataManager.data.get("favorite_track_play_count", 0)
-	var favorite_track_display = "Н/Д"
-	if favorite_track_path != "":
-		var file_name = favorite_track_path.get_file().get_basename()
-		favorite_track_display = "%s (%d раз(а))" % [file_name, favorite_track_count]
-	favorite_track_label.text = "Любимый трек: %s" % favorite_track_display
+	if favorite_track_path == "" or favorite_track_count == 0:
+		favorite_track_path = TrackStatsManager.get_favorite_track()
+		favorite_track_count = TrackStatsManager.get_favorite_track_count()
+	
+	if favorite_track_card:
+		var metadata = null
+		if favorite_track_path != "":
+			favorite_track_path = favorite_track_path.replace("\\", "/").trim_suffix("/")
+			metadata = SongMetadataManager.get_metadata_for_song(favorite_track_path)
+		var title_text = "Н/Д"
+		var artist_text = "Н/Д"
+		var cover_texture = null
+		if metadata and typeof(metadata) == TYPE_DICTIONARY:
+			title_text = str(metadata.get("title", "Н/Д"))
+			artist_text = str(metadata.get("artist", "Н/Д"))
+			cover_texture = metadata.get("cover", null)
+		if favorite_cover_texture_rect:
+			if cover_texture and cover_texture is ImageTexture:
+				favorite_cover_texture_rect.texture = cover_texture
+			else:
+				var file_cover = _get_cover_from_file(favorite_track_path)
+				if file_cover:
+					favorite_cover_texture_rect.texture = file_cover
+				else:
+					var fallback_texture = _get_fallback_cover_texture()
+					if fallback_texture:
+						favorite_cover_texture_rect.texture = fallback_texture
+					else:
+						var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
+						gray_image.fill(Color(0.5, 0.5, 0.5, 1.0))
+						var gray_texture = ImageTexture.create_from_image(gray_image)
+						favorite_cover_texture_rect.texture = gray_texture
+		if favorite_title_label:
+			favorite_title_label.text = "Название: " + title_text
+		if favorite_artist_label:
+			favorite_artist_label.text = "Исполнитель: " + artist_text
+		if favorite_genre_label:
+			var fav_genre = str(PlayerDataManager.data.get("favorite_genre", "unknown"))
+			if fav_genre == "unknown":
+				fav_genre = TrackStatsManager.get_favorite_genre()
+			if fav_genre == "unknown" or fav_genre == "":
+				fav_genre = "Н/Д"
+			favorite_genre_label.text = "Любимый жанр: %s" % fav_genre
+
+func _get_cover_from_file(filepath: String):
+	if filepath == "":
+		return null
+	var ext = filepath.get_extension().to_lower()
+	if ext != "mp3" and ext != "wav":
+		return null
+	var global_path = ProjectSettings.globalize_path(filepath)
+	if not FileAccess.file_exists(global_path):
+		return null
+	var file_access = FileAccess.open(global_path, FileAccess.READ)
+	if not file_access:
+		return null
+	var file_data = file_access.get_buffer(file_access.get_length())
+	file_access.close()
+	var md = MusicMetadata.new()
+	md.set_from_data(file_data)
+	return md.cover
 	
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
 	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
@@ -164,6 +222,35 @@ func refresh_stats():
 
 	if session_history_manager:
 		_update_accuracy_chart()
+
+func _get_fallback_cover_texture():
+	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
+	var folder_name_map = {
+		"covers_default": "default_covers"
+	}
+	var folder_name = folder_name_map.get(active_cover_item_id, active_cover_item_id.replace("covers_", ""))
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var random_index = rng.randi_range(1, 7)
+	var fallback_cover_filename = "cover%d.png" % random_index
+	var fallback_cover_path = "res://assets/shop/covers/%s/%s" % [folder_name, fallback_cover_filename]
+	if FileAccess.file_exists(fallback_cover_path):
+		var image = Image.new()
+		var error = image.load(fallback_cover_path)
+		if error == OK:
+			var texture = ImageTexture.create_from_image(image)
+			if texture:
+				return texture
+	else:
+		var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
+		if fallback_cover_path != fallback_fallback_path and FileAccess.file_exists(fallback_fallback_path):
+			var image_ff = Image.new()
+			var error_ff = image_ff.load(fallback_fallback_path)
+			if error_ff == OK:
+				var texture_ff = ImageTexture.create_from_image(image_ff)
+				if texture_ff:
+					return texture_ff
+	return null
 
 func _update_accuracy_chart():
 	if session_history_manager == null:

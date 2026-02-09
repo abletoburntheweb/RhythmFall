@@ -163,14 +163,6 @@ text = "A: 0"
 layout_mode = 2
 text = "B: 0"
 
-[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
-layout_mode = 2
-text = "Любимый жанр: Н/Д"
-
-[node name="FavoriteTrackLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
-layout_mode = 2
-text = "Любимый трек: Н/Д"
-
 [node name="PercussionCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/RightColumn"]
 layout_mode = 2
 
@@ -204,6 +196,36 @@ text = "Промахов на перкуссии: 0"
 [node name="MaxDrumHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
 layout_mode = 2
 text = "Макс. серия (перкуссия): 0"
+
+[node name="FavoriteTrackColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
+layout_mode = 2
+
+[node name="FavoriteTrackCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn"]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
+layout_mode = 2
+text = "Любимый трек"
+
+[node name="FavoriteCoverTextureRect" type="TextureRect" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+expand_mode = 1
+
+[node name="FavoriteTitleLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
+layout_mode = 2
+text = "Название песни"
+
+[node name="FavoriteArtistLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
+layout_mode = 2
+text = "Название артиста"
+
+[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
+layout_mode = 2
+text = "Любимый жанр: Н/Д"
 
 [node name="ChartCard" type="PanelContainer" parent="MainContent/MainVBox"]
 layout_mode = 2
