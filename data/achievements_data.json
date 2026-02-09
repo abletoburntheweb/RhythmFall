@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 22658,
+			"current": 23582,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 22658,
+			"current": 23582,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 22658,
+			"current": 23582,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 66.0,
+			"current": 74,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 66.0,
+			"current": 74,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4775810,
+			"current": 4782210,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4775810,
+			"current": 4782210,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4775810,
+			"current": 4782210,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4775810,
+			"current": 4782210,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -464,7 +464,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4.0,
+			"current": 5.0,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
 			"image": "res://assets/achievements/rising_star.png",
@@ -475,7 +475,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4.0,
+			"current": 5.0,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
 			"image": "res://assets/achievements/star_path.png",
@@ -486,7 +486,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4.0,
+			"current": 5.0,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
 			"image": "res://assets/achievements/genius_accuracy.png",
@@ -497,7 +497,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 4.0,
+			"current": 5.0,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,
 			"image": "res://assets/achievements/master_perfection.png",
@@ -585,7 +585,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 25.0,
+			"current": 26.0,
 			"description": "Сыграть 3 раза в электронных жанрах (electronic, synthwave, techno, house, trance, IDM, glitch, ambient, chillwave)",
 			"id": 54.0,
 			"image": "res://assets/achievements/electronic_foundation.png",
@@ -596,7 +596,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0.0,
+			"current": 0,
 			"description": "Сыграть 3 раза в гитарных жанрах (rock, alternative rock, indie rock, garage rock, punk, post-punk, grunge, math rock, post-rock)",
 			"id": 55.0,
 			"image": "res://assets/achievements/guitar_energy.png",
@@ -607,7 +607,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 9.0,
+			"current": 16.0,
 			"description": "Сыграть 3 раза в рэп-жанрах (rap, hip-hop, trap, cloud rap, emo rap, melodic rap, alternative rap, hypertrap)",
 			"id": 56.0,
 			"image": "res://assets/achievements/street_voice.png",
@@ -618,7 +618,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0.0,
+			"current": 0,
 			"description": "Сыграть 3 раза в независимых и альтернативных жанрах (indie, bedroom pop, lo-fi, art pop, alternative)",
 			"id": 57.0,
 			"image": "res://assets/achievements/off_mainstream.png",
@@ -629,7 +629,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0.0,
+			"current": 0,
 			"description": "Сыграть 3 раза в экспериментальной музыке (experimental, avant-garde, fusion, cross-genre, abstract)",
 			"id": 58.0,
 			"image": "res://assets/achievements/beyond_genres.png",

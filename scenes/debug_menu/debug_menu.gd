@@ -262,8 +262,12 @@ func _on_win_button_pressed():
 		multiplier = 2.0
 	elif target_accuracy >= 90.0:
 		multiplier = 1.5
-
-	game_screen.score_manager.score = int(game_screen.score_manager.get_hit_notes_count() * base_score_per_hit * multiplier)
+	
+	var current_score = game_screen.score_manager.get_score()
+	var recompute = override_with_input or current_score <= 0
+	if recompute:
+		var hits_for_score = max(1, game_screen.score_manager.get_hit_notes_count())
+		game_screen.score_manager.score = int(hits_for_score * base_score_per_hit * multiplier)
 
 	if game_screen.has_method("update_ui"):
 		game_screen.update_ui()
