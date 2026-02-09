@@ -68,6 +68,8 @@ func _ready():
 			printerr("ProfileScreen.gd: SessionHistoryManager не получен из GameEngine.")
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
+		if chart_background:
+			chart_background.resized.connect(_on_chart_background_resized)
 	else:
 		printerr("ProfileScreen.gd: Не удалось получить transitions через GameEngine.")
 
@@ -100,17 +102,19 @@ func refresh_stats():
 		favorite_track_count = TrackStatsManager.get_favorite_track_count()
 	
 	if favorite_track_card:
-		var metadata = null
-		if favorite_track_path != "":
-			favorite_track_path = favorite_track_path.replace("\\", "/").trim_suffix("/")
-			metadata = SongMetadataManager.get_metadata_for_song(favorite_track_path)
 		var title_text = "Н/Д"
 		var artist_text = "Н/Д"
 		var cover_texture = null
-		if metadata and typeof(metadata) == TYPE_DICTIONARY:
-			title_text = str(metadata.get("title", "Н/Д"))
-			artist_text = str(metadata.get("artist", "Н/Д"))
-			cover_texture = metadata.get("cover", null)
+		if favorite_track_path != "":
+			favorite_track_path = favorite_track_path.replace("\\", "/").trim_suffix("/")
+			var basic_md = _read_basic_metadata(favorite_track_path)
+			title_text = str(basic_md.get("title", title_text))
+			artist_text = str(basic_md.get("artist", artist_text))
+			cover_texture = basic_md.get("cover", null)
+			var user_md = SongMetadataManager.get_metadata_for_song(favorite_track_path)
+			if user_md and typeof(user_md) == TYPE_DICTIONARY:
+				title_text = str(user_md.get("title", title_text))
+				artist_text = str(user_md.get("artist", artist_text))
 		if favorite_cover_texture_rect:
 			if cover_texture and cover_texture is ImageTexture:
 				favorite_cover_texture_rect.texture = cover_texture
@@ -133,29 +137,11 @@ func refresh_stats():
 			favorite_artist_label.text = "Исполнитель: " + artist_text
 		if favorite_genre_label:
 			var fav_genre = str(PlayerDataManager.data.get("favorite_genre", "unknown"))
-			if fav_genre == "unknown":
+			if fav_genre == "unknown" or fav_genre == "":
 				fav_genre = TrackStatsManager.get_favorite_genre()
 			if fav_genre == "unknown" or fav_genre == "":
 				fav_genre = "Н/Д"
 			favorite_genre_label.text = "Любимый жанр: %s" % fav_genre
-
-func _get_cover_from_file(filepath: String):
-	if filepath == "":
-		return null
-	var ext = filepath.get_extension().to_lower()
-	if ext != "mp3" and ext != "wav":
-		return null
-	var global_path = ProjectSettings.globalize_path(filepath)
-	if not FileAccess.file_exists(global_path):
-		return null
-	var file_access = FileAccess.open(global_path, FileAccess.READ)
-	if not file_access:
-		return null
-	var file_data = file_access.get_buffer(file_access.get_length())
-	file_access.close()
-	var md = MusicMetadata.new()
-	md.set_from_data(file_data)
-	return md.cover
 	
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
 	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
@@ -163,6 +149,14 @@ func _get_cover_from_file(filepath: String):
 	var overall_accuracy = 0.0
 	if total_notes_played > 0:
 		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
+	else:
+		if session_history_manager:
+			var hist = session_history_manager.get_history()
+			if hist.size() > 0:
+				var sum_acc = 0.0
+				for item in hist:
+					sum_acc += float(item.get("accuracy", 0.0))
+				overall_accuracy = sum_acc / float(hist.size())
 	overall_accuracy_label.text = "Общая точность: %.2f%%" % overall_accuracy
 	
 	var total_drum_hits = PlayerDataManager.data.get("total_drum_hits", 0)
@@ -223,6 +217,54 @@ func _get_cover_from_file(filepath: String):
 	if session_history_manager:
 		_update_accuracy_chart()
 
+func _read_basic_metadata(filepath: String) -> Dictionary:
+	var result = {
+		"title": filepath.get_file().get_basename(),
+		"artist": "Неизвестен",
+		"cover": null
+	}
+	var ext = filepath.get_extension().to_lower()
+	var global_path = ProjectSettings.globalize_path(filepath)
+	if FileAccess.file_exists(global_path):
+		var f = FileAccess.open(global_path, FileAccess.READ)
+		if f:
+			var data = f.get_buffer(f.get_length())
+			f.close()
+			var md = MusicMetadata.new()
+			md.set_from_data(data)
+			if md.title != "":
+				result["title"] = md.title
+			if md.artist != "":
+				result["artist"] = md.artist
+			result["cover"] = md.cover
+	if ext == "wav":
+		if result["title"] == filepath.get_file().get_basename():
+			var stem = filepath.get_file().get_basename()
+			if " - " in stem:
+				var parts = stem.split(" - ", false, 1)
+				if parts.size() == 2:
+					result["artist"] = parts[0].strip_edges()
+					result["title"] = parts[1].strip_edges()
+	return result
+
+func _get_cover_from_file(filepath: String):
+	if filepath == "":
+		return null
+	var ext = filepath.get_extension().to_lower()
+	if ext != "mp3" and ext != "wav":
+		return null
+	var global_path = ProjectSettings.globalize_path(filepath)
+	if not FileAccess.file_exists(global_path):
+		return null
+	var file_access = FileAccess.open(global_path, FileAccess.READ)
+	if not file_access:
+		return null
+	var file_data = file_access.get_buffer(file_access.get_length())
+	file_access.close()
+	var md = MusicMetadata.new()
+	md.set_from_data(file_data)
+	return md.cover
+
 func _get_fallback_cover_texture():
 	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
 	var folder_name_map = {
@@ -270,6 +312,11 @@ func _update_accuracy_chart():
 			child.queue_free()
 		if tooltip_label:
 			tooltip_label.visible = false
+		return
+	
+	# График зависит от размеров ChartBackground; если он ещё не размечен, откладываем перерисовку
+	if chart_background.size.x <= 0 or chart_background.size.y <= 0:
+		call_deferred("_update_accuracy_chart")
 		return
 
 	for child in accuracy_chart_points.get_children():
@@ -354,6 +401,9 @@ func _on_point_hovered(global_pos: Vector2, tooltip_text: String, index: int):
 func _on_point_unhovered():
 	if tooltip_label:
 		tooltip_label.visible = false
+		
+func _on_chart_background_resized():
+	_update_accuracy_chart()
 
 func _execute_close_transition():
 	MusicManager.play_cancel_sound()  
