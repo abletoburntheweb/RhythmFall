@@ -10,8 +10,13 @@ var _remap_old_scancode: int = 0
 
 var game_screen = null
 
+@onready var reset_button: Button = $ContentVBox/ResetControlsButton
+
 func _ready():
 	print("ControlsTab.gd: _ready вызван.")
+	if reset_button and not reset_button.has_meta("initialized"):
+		reset_button.pressed.connect(_on_reset_controls_pressed)
+		reset_button.set_meta("initialized", true)
 
 func setup_ui_and_manager(screen = null):
 	game_screen = screen
@@ -25,25 +30,32 @@ func _setup_ui():
 		printerr("ControlsTab.gd: Не найден KeysContainer!")
 		return
 
-	for child in keys_container.get_children():
-		child.queue_free()
-
 	var num_lanes = SettingsManager.MAX_LANES if SettingsManager.has_method("MAX_LANES") else 5
-
 	for i in range(num_lanes):
-		var key_text = SettingsManager.get_key_text_for_lane(i)
-
-		var row_hbox = _create_row_container()
-		row_hbox.name = "Lane%dRow" % (i + 1)
-
-		var line_label = _create_line_label(i + 1)
-		var key_button = _create_key_button(key_text, i)
-
-		var label_margin_container = _wrap_label_in_margin(line_label)
-		row_hbox.add_child(label_margin_container)
-		row_hbox.add_child(key_button)
-
-		keys_container.add_child(row_hbox)
+		var row_name = "Lane%dRow" % (i + 1)
+		var row_hbox = keys_container.get_node_or_null(row_name)
+		if not row_hbox and i < keys_container.get_child_count():
+			row_hbox = keys_container.get_child(i)
+		if row_hbox and row_hbox is HBoxContainer:
+			var label_container = null
+			if row_hbox.get_child_count() > 0:
+				label_container = row_hbox.get_child(0)
+			var label_node = null
+			if label_container and label_container is MarginContainer and label_container.get_child_count() > 0:
+				label_node = label_container.get_child(0)
+			elif label_container and label_container is Label:
+				label_node = label_container
+			if label_node and label_node is Label:
+				label_node.text = "Линия %d" % (i + 1)
+			var button_node = null
+			if row_hbox.get_child_count() > 1:
+				button_node = row_hbox.get_child(1)
+			if button_node and button_node is Button:
+				button_node.text = SettingsManager.get_key_text_for_lane(i)
+				button_node.set_meta("lane_index", i)
+				if not button_node.has_meta("initialized"):
+					button_node.pressed.connect(_on_key_button_pressed.bind(button_node))
+					button_node.set_meta("initialized", true)
 
 	print("ControlsTab.gd: UI управления создано для %d линий." % num_lanes)
 
@@ -61,91 +73,6 @@ func _setup_ui():
 				var button = child.get_child(1)
 				if button and button is Button:
 					print("ControlsTab.gd: DEBUG:   - Button: ", button.text, " (lane_index: ", button.get_meta("lane_index"), ")")
-
-func _create_row_container() -> HBoxContainer:
-	var row_hbox = HBoxContainer.new()
-	row_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_hbox.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	var bg_style = StyleBoxFlat.new()
-	bg_style.bg_color = Color(1.0, 1.0, 1.0, 0.05)
-	bg_style.set("corner_radius_top_left", 10.0)
-	bg_style.set("corner_radius_top_right", 10.0)
-	bg_style.set("corner_radius_bottom_left", 10.0)
-	bg_style.set("corner_radius_bottom_right", 10.0)
-	row_hbox.add_theme_stylebox_override("panel", bg_style)
-
-	row_hbox.add_theme_constant_override("separation", 20)
-
-	return row_hbox
-
-func _create_line_label(lane_number: int) -> Label:
-	var line_label = Label.new()
-	line_label.text = "Линия %d" % lane_number
-	line_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	line_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	line_label.add_theme_color_override("font_color", Color.WHITE)
-	line_label.add_theme_font_size_override("font_size", 22)
-	line_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	return line_label
-
-func _create_key_button(key_text: String, lane_index: int) -> Button:
-	var key_button = Button.new()
-	key_button.text = key_text
-	key_button.size = Vector2(160, 55)
-	key_button.flat = true
-	key_button.set_meta("lane_index", lane_index)
-
-	key_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	key_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	var button_style_normal = _create_button_style()
-	button_style_normal.bg_color = Color(1.0, 1.0, 1.0, 0.1)
-	button_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.25)
-
-	var button_style_hover = button_style_normal.duplicate() 
-	button_style_hover.bg_color = Color(1.0, 1.0, 1.0, 0.2) 
-	button_style_hover.border_color = Color.WHITE 
-
-	var button_style_pressed = button_style_normal.duplicate() 
-	button_style_pressed.bg_color = Color(1.0, 1.0, 1.0, 0.35) 
-
-	key_button.add_theme_stylebox_override("normal", button_style_normal)
-	key_button.add_theme_stylebox_override("hover", button_style_hover)
-	key_button.add_theme_stylebox_override("pressed", button_style_pressed)
-
-	key_button.add_theme_color_override("font_color", Color.WHITE)
-	key_button.add_theme_color_override("font_color_pressed", Color.BLACK) 
-	key_button.add_theme_font_size_override("font_size", 22)
-
-	key_button.pressed.connect(_on_key_button_pressed.bind(key_button))
-
-	return key_button
-
-func _create_button_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.set("border_width_left", 2)
-	style.set("border_width_right", 2)
-	style.set("border_width_top", 2)
-	style.set("border_width_bottom", 2)
-	style.set("corner_radius_top_left", 10.0)
-	style.set("corner_radius_top_right", 10.0)
-	style.set("corner_radius_bottom_left", 10.0)
-	style.set("corner_radius_bottom_right", 10.0)
-	style.set("content_margin_left", 10)
-	style.set("content_margin_right", 10)
-	style.set("content_margin_top", 10)
-	style.set("content_margin_bottom", 10)
-	return style
-
-func _wrap_label_in_margin(label: Label) -> MarginContainer:
-	var margin_container = MarginContainer.new()
-	margin_container.add_theme_constant_override("margin_left", 10)
-	margin_container.add_theme_constant_override("margin_right", 10)
-	margin_container.add_theme_constant_override("margin_top", 5)
-	margin_container.add_theme_constant_override("margin_bottom", 5)
-	margin_container.add_child(label)
-	return margin_container
 
 func _on_key_button_pressed(button: Button):
 	if _remap_active and _remap_target_button:
@@ -228,6 +155,14 @@ func _input(event):
 
 func _get_key_string_from_scancode_for_display(scancode: int) -> String:
 	return SettingsManager._get_key_string_from_scancode(scancode)
+
+func _on_reset_controls_pressed():
+	for i in range(5):
+		var defaults = [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G]
+		SettingsManager.set_key_scancode_for_lane(i, defaults[i])
+	emit_signal("settings_changed")
+	_update_player_keymap()
+	refresh_ui()
 
 func _update_player_keymap():
 	if not game_screen or not game_screen.player:

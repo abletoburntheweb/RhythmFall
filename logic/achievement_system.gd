@@ -112,7 +112,3 @@ func on_grade_earned(grade: String):
 func on_player_level_changed(new_level: int):
 	achievement_manager.check_level_achievements(new_level)
 	achievement_manager.save_achievements()
-
-func on_daily_quests_updated():
-	achievement_manager.check_daily_achievements(PlayerDataManager)
-	achievement_manager.save_achievements()

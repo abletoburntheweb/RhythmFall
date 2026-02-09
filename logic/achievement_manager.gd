@@ -546,18 +546,6 @@ func check_playtime_achievements(player_data_mgr_override = null):
 				if total_play_time_hours_rounded >= required_hours:
 					_perform_unlock(achievement)
 				
-func check_daily_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
-	if not pdm:
-		return
-	var completed_total = pdm.get_daily_quests_completed_total()
-	for achievement in achievements:
-		if achievement.get("category", "") == "daily":
-			var required = int(achievement.get("total", 0))
-			achievement.current = completed_total
-			if completed_total >= required and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
-	save_achievements()
 func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
 	for a in achievements:
 		if a.id == achievement_id:
