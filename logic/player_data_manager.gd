@@ -56,7 +56,8 @@ var data: Dictionary = {
 	"daily_quests": {
 		"date": "",
 		"quests": []
-	}
+	},
+	"daily_quests_completed_total": 0
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -148,6 +149,7 @@ func _load():
 				"F": 0
 			})
 			var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
+			var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
 
 			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
 			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
@@ -179,6 +181,7 @@ func _load():
 			data["favorite_track_play_count"] = loaded_favorite_track_play_count
 			data["favorite_genre"] = loaded_favorite_genre
 			data["daily_quests"] = loaded_daily_quests
+			data["daily_quests_completed_total"] = loaded_daily_quests_completed_total
 			
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
@@ -522,6 +525,7 @@ func reset_progress():
 	data["last_login_date"] = ""
 	data["login_streak"] = 0 
 	data["levels_completed"] = 0
+	data["daily_quests_completed_total"] = 0
 
 	data["currency"] = current_currency 
 	data["active_items"] = current_active_items
@@ -566,6 +570,7 @@ func reset_profile_statistics():
 	data["favorite_track"] = ""
 	data["favorite_track_play_count"] = 0
 	data["favorite_genre"] = "unknown"
+	data["daily_quests_completed_total"] = 0
 	
 	data["total_xp"] = 0
 	data["current_level"] = 1
@@ -823,6 +828,7 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 		if progress >= goal:
 			q["completed"] = true
 			_add_daily_quest_reward(int(q.get("reward_currency", 0)))
+			data["daily_quests_completed_total"] = int(data.get("daily_quests_completed_total", 0)) + 1
 		changed = true
 	if changed:
 		data["daily_quests"]["quests"] = quests
@@ -832,6 +838,9 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 func _add_daily_quest_reward(amount: int):
 	if amount > 0:
 		add_currency(amount)
+
+func get_daily_quests_completed_total() -> int:
+	return int(data.get("daily_quests_completed_total", 0))
 
 func update_best_grade_for_track(song_path: String, new_grade: String):
 	if song_path.is_empty():

@@ -30,6 +30,7 @@ const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 @onready var s_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/SLabel
 @onready var a_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/ALabel
 @onready var b_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/BLabel
+@onready var daily_quests_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/DailyQuestsCompletedLabel
 
 @onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartLine
 @onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartPoints
@@ -77,6 +78,7 @@ func _ready():
 			printerr("ProfileScreen.gd: SessionHistoryManager не получен из GameEngine.")
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
+		PlayerDataManager.daily_quests_updated.connect(_on_daily_quests_updated)
 		if chart_background:
 			chart_background.resized.connect(_on_chart_background_resized)
 	else:
@@ -102,7 +104,7 @@ func refresh_stats():
 	
 	unique_levels_completed_label.text = "Пройдено уникальных треков: %d" % PlayerDataManager.get_unique_levels_completed()
 	
-	drum_levels_completed_label.text = "Уровней на перкуссии: %d" % PlayerDataManager.get_drum_levels_completed()
+	drum_levels_completed_label.text = "Перкуссия: %d" % PlayerDataManager.get_drum_levels_completed()
 	
 	var favorite_track_path = PlayerDataManager.data.get("favorite_track", "")
 	var favorite_track_count = PlayerDataManager.data.get("favorite_track_play_count", 0)
@@ -174,20 +176,22 @@ func refresh_stats():
 	var drum_accuracy = 0.0
 	if total_drum_notes > 0:
 		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
-	drum_overall_accuracy_label.text = "Точность (перкуссия): %.2f%%" % drum_accuracy
+	drum_overall_accuracy_label.text = "Перкуссия: %.2f%%" % drum_accuracy
 	
 	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted() 
 	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
+	if daily_quests_completed_label:
+		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
 
 	total_notes_hit_label.text = "Точных попаданий: %d" % total_notes_hit
-	total_drum_hits_label.text = "Попаданий на перкуссии: %d" % total_drum_hits
+	total_drum_hits_label.text = "Перкуссия: %d" % total_drum_hits
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
-	total_drum_misses_label.text = "Промахов на перкуссии: %d" % total_drum_misses
+	total_drum_misses_label.text = "Перкуссия: %d" % total_drum_misses
 	
 	var max_streak = PlayerDataManager.data.get("max_combo_ever", 0)
 	var max_drum_streak = PlayerDataManager.data.get("max_drum_combo_ever", 0)
 	max_hit_streak_label.text = "Рекордная серия попаданий подряд: %d" % max_streak
-	max_drum_hit_streak_label.text = "Макс. серия (перкуссия): %d" % max_drum_streak
+	max_drum_hit_streak_label.text = "Перкуссия: %d" % max_drum_streak
 
 	total_earned_currency_label.text = "Заработано всего: %d" % PlayerDataManager.data.get("total_earned_currency", 0)
 	spent_currency_label.text = "Потрачено: %d" % PlayerDataManager.data.get("spent_currency", 0)
@@ -197,7 +201,7 @@ func refresh_stats():
 	if total_score_label:
 		total_score_label.text = "Всего очков: %d" % total_score
 	if total_drum_score_label:
-		total_drum_score_label.text = "Очки на перкуссии: %d" % total_drum_score
+		total_drum_score_label.text = "Перкуссия: %d" % total_drum_score
 
 	var grades = PlayerDataManager.data.get("grades", {})
 	var ss_count = grades.get("SS", 0)
@@ -226,6 +230,10 @@ func refresh_stats():
 	if session_history_manager:
 		_update_accuracy_chart()
 	_update_recent_achievements()
+
+func _on_daily_quests_updated():
+	if daily_quests_completed_label:
+		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
 
 func _read_basic_metadata(filepath: String) -> Dictionary:
 	var result = {
