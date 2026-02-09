@@ -255,6 +255,12 @@ func _deferred_update_ui():
 		var grade_color = _get_grade_color(grade)
 		grade_label.text = "Оценка: %s" % grade
 		grade_label.modulate = grade_color
+		var song_path_for_color = song_info.get("path", "")
+		if song_path_for_color != "":
+			var best_map = PlayerDataManager.data.get("best_grades_per_track", {})
+			var best_for_track = str(best_map.get(song_path_for_color, ""))
+			if best_for_track == "SS" and grade == "SS":
+				grade_label.modulate = Color("#2EE59D")
 	
 	if is_instance_valid(currency_label):
 		currency_label.text = "Валюта за уровень: %d" % earned_currency
@@ -269,6 +275,7 @@ func _deferred_update_ui():
 	if is_instance_valid(missed_notes_label):
 		missed_notes_label.text = "Промахов: %d" % calculated_missed_notes
 
+	PlayerDataManager.add_hit_notes(hit_notes_this_level)
 	PlayerDataManager.add_missed_notes(calculated_missed_notes)
 	PlayerDataManager.add_currency(earned_currency)
 	PlayerDataManager.add_perfect_hits(perfect_hits_this_level)

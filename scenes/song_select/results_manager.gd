@@ -23,6 +23,51 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 				return a.get("score", 0) > b.get("score", 0) 
 		)
 
+	if results.size() > 0:
+		var top_result = results[0]
+		var header_idx = results_list.add_item("Лучший результат")
+		results_list.set_item_custom_bg_color(header_idx, Color(0.25, 0.25, 0.15, 1.0))
+		results_list.set_item_selectable(header_idx, false)
+		var original_datetime_str_top = top_result.get("date", "N/A")
+		var formatted_date_str_top = "N/A"
+		if original_datetime_str_top != "N/A":
+			if original_datetime_str_top.length() >= 19 and original_datetime_str_top[4] == '-' and original_datetime_str_top[7] == '-' and original_datetime_str_top[10] == ' ' and original_datetime_str_top[13] == ':' and original_datetime_str_top[16] == ':':
+				var year_top = original_datetime_str_top.substr(0, 4)
+				var month_top = original_datetime_str_top.substr(5, 2)
+				var day_top = original_datetime_str_top.substr(8, 2)
+				var time_part_top = original_datetime_str_top.substr(11, 8)
+				formatted_date_str_top = "%s.%s.%s %s" % [day_top, month_top, year_top, time_part_top]
+			else:
+				formatted_date_str_top = original_datetime_str_top
+		var display_text_top = "%s - %d очков (%.0f%%) [%s] - %s" % [
+			formatted_date_str_top,
+			top_result.get("score", 0),
+			top_result.get("accuracy", 0.0),
+			top_result.get("instrument", "unknown"),
+			top_result.get("grade", "N/A")
+		]
+		var item_idx_top = results_list.add_item(display_text_top)
+		var saved_color_data_top = top_result.get("grade_color", null)
+		var grade_str_top = str(top_result.get("grade", "N/A"))
+		var song_path_top = song_data.get("path", "")
+		var is_repeat_ss_top = false
+		if song_path_top != "" and grade_str_top == "SS":
+			var best_map_top = PlayerDataManager.data.get("best_grades_per_track", {})
+			var best_for_track_top = str(best_map_top.get(song_path_top, ""))
+			is_repeat_ss_top = (best_for_track_top == "SS")
+		if is_repeat_ss_top:
+			results_list.set_item_custom_fg_color(item_idx_top, Color("#2EE59D"))
+		elif saved_color_data_top and saved_color_data_top is Dictionary and saved_color_data_top.has("r"):
+			var saved_grade_color_top = Color(
+				saved_color_data_top.get("r", 1.0),
+				saved_color_data_top.get("g", 1.0),
+				saved_color_data_top.get("b", 1.0),
+				saved_color_data_top.get("a", 1.0)
+			)
+			results_list.set_item_custom_fg_color(item_idx_top, saved_grade_color_top)
+		else:
+			results_list.set_item_custom_fg_color(item_idx_top, Color.WHITE)
+
 	var grouped_results = {}
 	for result in results:
 		var grade = result.get("grade", "N/A")
@@ -82,7 +127,18 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			var item_index = results_list.add_item(display_text)
 
 			var saved_color_data = result.get("grade_color", null)
-			if saved_color_data and saved_color_data is Dictionary and saved_color_data.has("r"):
+			var grade_str = str(result.get("grade", "N/A"))
+			var song_path = song_data.get("path", "")
+			var is_repeat_ss = false
+			if song_path != "" and grade_str == "SS":
+				var best_map = PlayerDataManager.data.get("best_grades_per_track", {})
+				var best_for_track = str(best_map.get(song_path, ""))
+				is_repeat_ss = (best_for_track == "SS")
+			if is_repeat_ss:
+				var repeat_color = Color("#2EE59D")
+				results_list.set_item_custom_fg_color(item_index, repeat_color)
+				print("ResultsManager.gd: Повторный SS, установлен цвет %s для '%s' (индекс %d)" % [repeat_color, display_text, item_index])
+			elif saved_color_data and saved_color_data is Dictionary and saved_color_data.has("r"):
 				var saved_grade_color = Color(
 					saved_color_data.get("r", 1.0),
 					saved_color_data.get("g", 1.0),
