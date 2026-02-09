@@ -1,6 +1,7 @@
-[gd_scene load_steps=70 format=3 uid="uid://b78etu3dej4um"]
+[gd_scene load_steps=71 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1303,6 +1304,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_bjeu6")
+theme_type_variation = &"FlatButton"
 text = "Назад	"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContent/MainVBox"]

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://cc6iriedb1tay"]
+[gd_scene load_steps=3 format=3 uid="uid://cc6iriedb1tay"]
 
 [ext_resource type="Script" uid="uid://dyeo7dkc76xu5" path="res://scenes/settings_menu/tabs/sound_tab.gd" id="1_5oswl"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_lf0cr"]
 
 [node name="SoundTab" type="Control"]
 layout_mode = 3
@@ -22,6 +23,7 @@ text = "Громкость музыки"
 
 [node name="MusicVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")
 
 [node name="MenuMusicVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
@@ -29,6 +31,7 @@ text = "Громкость музыки в меню"
 
 [node name="MenuMusicVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")
 
 [node name="SFXVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
@@ -36,6 +39,7 @@ text = "Громкость звуков"
 
 [node name="SFXVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")
 
 [node name="HitSoundsVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
@@ -43,6 +47,7 @@ text = "Громкость нажатий"
 
 [node name="HitSoundsVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")
 
 [node name="MetronomeVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
@@ -50,6 +55,7 @@ text = "Громкость метронома"
 
 [node name="MetronomeVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")
 
 [node name="PreviewVolumeLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2
@@ -57,3 +63,4 @@ text = "Громкость предпросмотра"
 
 [node name="PreviewVolumeSlider" type="HSlider" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_lf0cr")

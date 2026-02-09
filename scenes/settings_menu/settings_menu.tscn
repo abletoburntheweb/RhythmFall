@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://jsjmtg1mfq15"]
+[gd_scene load_steps=3 format=3 uid="uid://jsjmtg1mfq15"]
 
 [ext_resource type="Script" uid="uid://b1w623ds2gg8i" path="res://scenes/settings_menu/settings_menu.gd" id="1_j78aw"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_p28av"]
 
 [node name="SettingsMenu" type="Control"]
 layout_mode = 3
@@ -27,6 +28,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_p28av")
+theme_type_variation = &"FlatButton"
 text = "Назад	"
 
 [node name="TitleHBox" type="HBoxContainer" parent="MainVBox"]
@@ -48,18 +51,26 @@ alignment = 1
 
 [node name="BtnSound" type="Button" parent="MainVBox/TabsHBox"]
 layout_mode = 2
+theme = ExtResource("2_p28av")
+theme_type_variation = &"FlatButton"
 text = "Звук"
 
 [node name="BtnGraphics" type="Button" parent="MainVBox/TabsHBox"]
 layout_mode = 2
+theme = ExtResource("2_p28av")
+theme_type_variation = &"FlatButton"
 text = "Графика"
 
 [node name="BtnControls" type="Button" parent="MainVBox/TabsHBox"]
 layout_mode = 2
+theme = ExtResource("2_p28av")
+theme_type_variation = &"FlatButton"
 text = "Управление"
 
 [node name="BtnMisc" type="Button" parent="MainVBox/TabsHBox"]
 layout_mode = 2
+theme = ExtResource("2_p28av")
+theme_type_variation = &"FlatButton"
 text = "Прочее"
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]

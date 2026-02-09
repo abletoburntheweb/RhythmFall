@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://dk7vdwevkwjod"]
+[gd_scene load_steps=3 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [node name="GraphicsTab" type="Control"]
 layout_mode = 3
@@ -18,6 +19,7 @@ offset_bottom = 40.0
 
 [node name="FullscreenCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_gfom4")
 text = "Полноэкранный режим"
 
 [node name="FPS" type="HBoxContainer" parent="ContentVBox"]
@@ -29,6 +31,8 @@ text = "FPS:"
 
 [node name="FPSOptionButton" type="OptionButton" parent="ContentVBox/FPS"]
 layout_mode = 2
+theme = ExtResource("2_gfom4")
+theme_type_variation = &"Dropdown"
 selected = 0
 item_count = 3
 popup/item_0/text = "Нет"

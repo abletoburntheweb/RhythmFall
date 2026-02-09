@@ -1,8 +1,9 @@
-[gd_scene load_steps=205 format=3 uid="uid://c8e1wfq8466sn"]
+[gd_scene load_steps=206 format=3 uid="uid://c8e1wfq8466sn"]
 
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
+[ext_resource type="Theme" uid="uid://or17kqgggud0" path="res://ui/theme/app_theme.tres" id="3_uqeha"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1219,28 +1220,28 @@ VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_5w2dg")
 XPAmountLabel/base_type = &"Label"
 XPAmountLabel/colors/font_color = Color(1, 1, 1, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0lg61"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w1c6x"]
 bg_color = Color(0.3, 0.34, 0.44, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rbbun"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lusvy"]
 bg_color = Color(0.384, 0.4192, 0.5072, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8fn6d"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k3y05"]
 bg_color = Color(0.264, 0.2992, 0.3872, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xx3sv"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e6nhj"]
 content_margin_left = 12.0
 content_margin_right = 12.0
 bg_color = Color(0.12, 0.13, 0.17, 1)
@@ -1533,11 +1534,11 @@ ShopCurrencyLabel/base_type = &"Label"
 ShopCurrencyLabel/colors/font_color = Color(0.82, 0.92, 1, 1)
 ShopCurrencyLabel/colors/font_outline_color = Color(0, 0, 0, 0.6)
 ShopCurrencyLabel/constants/outline_size = 1
-VScrollBar/styles/grabber = SubResource("StyleBoxFlat_0lg61")
-VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_rbbun")
-VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_8fn6d")
-VScrollBar/styles/scroll = SubResource("StyleBoxFlat_xx3sv")
-VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_xx3sv")
+VScrollBar/styles/grabber = SubResource("StyleBoxFlat_w1c6x")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_lusvy")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_k3y05")
+VScrollBar/styles/scroll = SubResource("StyleBoxFlat_e6nhj")
+VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_e6nhj")
 XPAmountLabel/base_type = &"Label"
 XPAmountLabel/colors/font_color = Color(1, 1, 1, 1)
 
@@ -2779,11 +2780,11 @@ ShopCurrencyLabel/base_type = &"Label"
 ShopCurrencyLabel/colors/font_color = Color(0.82, 0.92, 1, 1)
 ShopCurrencyLabel/colors/font_outline_color = Color(0, 0, 0, 0.6)
 ShopCurrencyLabel/constants/outline_size = 1
-VScrollBar/styles/grabber = SubResource("StyleBoxFlat_0lg61")
-VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_rbbun")
-VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_8fn6d")
-VScrollBar/styles/scroll = SubResource("StyleBoxFlat_xx3sv")
-VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_xx3sv")
+VScrollBar/styles/grabber = SubResource("StyleBoxFlat_w1c6x")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_lusvy")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_k3y05")
+VScrollBar/styles/scroll = SubResource("StyleBoxFlat_e6nhj")
+VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_e6nhj")
 XPAmountLabel/base_type = &"Label"
 XPAmountLabel/colors/font_color = Color(1, 1, 1, 1)
 
@@ -4123,30 +4124,36 @@ text = "ИГРАТЬ"
 [node name="SongSelectButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
-theme_type_variation = &"FlatButton"
+theme = ExtResource("3_uqeha")
+theme_type_variation = &"FlatMenuSongButton"
 text = "ВЫБОР ПЕСНИ"
 
 [node name="AchievementsButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
+theme = ExtResource("3_uqeha")
+theme_type_variation = &"FlatMenuAchievementsButton"
 text = "ДОСТИЖЕНИЯ"
 
 [node name="ProfileButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
-theme_type_variation = &"FlatButton"
+theme = ExtResource("3_uqeha")
+theme_type_variation = &"FlatMenuProfileButton"
 text = "ПРОФИЛЬ"
 
 [node name="ShopButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
-theme_type_variation = &"FlatButton"
+theme = ExtResource("3_uqeha")
+theme_type_variation = &"FlatMenuShopButton"
 text = "МАГАЗИН"
 
 [node name="SettingsButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
-theme_type_variation = &"FlatButton"
+theme = ExtResource("3_uqeha")
+theme_type_variation = &"FlatMenuSettingsButton"
 text = "НАСТРОЙКИ"
 
 [node name="ExitButton" type="Button" parent="ButtonContainer"]

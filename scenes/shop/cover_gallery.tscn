@@ -1,9 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://bol4h51pj023o"]
 
 [ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hwq2b"]
-bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_hwq2b"]
 
@@ -46,7 +44,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 31)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_hwq2b")
+theme = ExtResource("2_ot1as")
+theme_type_variation = &"FlatBackButton"
 text = "Назад	"
 
 [node name="GridMargin" type="MarginContainer" parent="GalleryContainer"]

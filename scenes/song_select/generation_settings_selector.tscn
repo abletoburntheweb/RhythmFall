@@ -1,9 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
 
 [ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4y251"]
-bg_color = Color(2.9841065e-06, 0.52998865, 0.7637472, 1)
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
 
 [node name="GenerationSettingsSelector" type="Control"]
 layout_mode = 3
@@ -12,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_flxbb")
 script = ExtResource("1_3dj4v")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -32,13 +31,15 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 31)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_4y251")
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatBackButton"
 text = "Назад	"
 
 [node name="InstrumentLabel" type="Label" parent="Container"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
 theme_override_font_sizes/font_size = 32
-text = "Выберите инструмент:"
+text = "Выберите инструмент"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -49,12 +50,15 @@ layout_mode = 2
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "Перкуссия"
 
 [node name="ModeLabel" type="Label" parent="Container"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
-text = "Режим генерации:"
+text = "Режим генерации"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -65,18 +69,23 @@ layout_mode = 2
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "Базовый"
 
 [node name="EnhancedButton" type="Button" parent="Container/ModeButtons"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "Улучшенный"
 
 [node name="LanesLabel" type="Label" parent="Container"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.4745098, 0.8901961, 0.8352941, 1)
 theme_override_font_sizes/font_size = 32
-text = "Количество линий:"
+text = "Количество линий"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -87,18 +96,24 @@ layout_mode = 2
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "3"
 
 [node name="Lanes4Button" type="Button" parent="Container/LanesButtons"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "4"
 
 [node name="Lanes5Button" type="Button" parent="Container/LanesButtons"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "5"
 
 [node name="ConfirmButton" type="Button" parent="Container"]
@@ -106,6 +121,6 @@ clip_contents = true
 custom_minimum_size = Vector2(400, 40)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_styles/normal = SubResource("StyleBoxFlat_4y251")
+theme = ExtResource("1_flxbb")
 text = "Подтвердить
 "

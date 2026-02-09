@@ -108,6 +108,246 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "FlatExitButton", text)
 	theme.set_color("font_disabled_color", "FlatExitButton", text.darkened(0.5))
 
+	var gen_outline := theme.get_color("accent_mint", "Palette")
+	var fb_gen_normal := btn_outline_normal.duplicate()
+	fb_gen_normal.border_color = gen_outline
+	var fb_gen_hover := btn_outline_hover.duplicate()
+	fb_gen_hover.border_color = gen_outline
+	var fb_gen_pressed := btn_outline_pressed.duplicate()
+	fb_gen_pressed.border_color = gen_outline.darkened(0.2)
+	var fb_gen_disabled := btn_outline_disabled.duplicate()
+	fb_gen_disabled.border_color = gen_outline.darkened(0.5)
+	var fb_gen_focus := btn_outline_focus.duplicate()
+	fb_gen_focus.border_color = gen_outline
+	theme.set_type_variation("FlatGenerateButton", "Button")
+	theme.set_stylebox("normal", "FlatGenerateButton", fb_gen_normal)
+	theme.set_stylebox("hover", "FlatGenerateButton", fb_gen_hover)
+	theme.set_stylebox("pressed", "FlatGenerateButton", fb_gen_pressed)
+	theme.set_stylebox("disabled", "FlatGenerateButton", fb_gen_disabled)
+	theme.set_stylebox("focus", "FlatGenerateButton", fb_gen_focus)
+	theme.set_color("font_color", "FlatGenerateButton", text)
+	theme.set_color("font_hover_color", "FlatGenerateButton", text)
+	theme.set_color("font_pressed_color", "FlatGenerateButton", text)
+	theme.set_color("font_disabled_color", "FlatGenerateButton", text.darkened(0.5))
+
+	var bpm_outline := theme.get_color("accent_sky", "Palette")
+	var fb_bpm_normal := btn_outline_normal.duplicate()
+	fb_bpm_normal.border_color = bpm_outline
+	var fb_bpm_hover := btn_outline_hover.duplicate()
+	fb_bpm_hover.border_color = bpm_outline
+	var fb_bpm_pressed := btn_outline_pressed.duplicate()
+	fb_bpm_pressed.border_color = bpm_outline.darkened(0.2)
+	var fb_bpm_disabled := btn_outline_disabled.duplicate()
+	fb_bpm_disabled.border_color = bpm_outline.darkened(0.5)
+	var fb_bpm_focus := btn_outline_focus.duplicate()
+	fb_bpm_focus.border_color = bpm_outline
+	theme.set_type_variation("FlatBpmButton", "Button")
+	theme.set_stylebox("normal", "FlatBpmButton", fb_bpm_normal)
+	theme.set_stylebox("hover", "FlatBpmButton", fb_bpm_hover)
+	theme.set_stylebox("pressed", "FlatBpmButton", fb_bpm_pressed)
+	theme.set_stylebox("disabled", "FlatBpmButton", fb_bpm_disabled)
+	theme.set_stylebox("focus", "FlatBpmButton", fb_bpm_focus)
+	theme.set_color("font_color", "FlatBpmButton", text)
+	theme.set_color("font_hover_color", "FlatBpmButton", text)
+	theme.set_color("font_pressed_color", "FlatBpmButton", text)
+	theme.set_color("font_disabled_color", "FlatBpmButton", text.darkened(0.5))
+
+	var res_outline := theme.get_color("accent_purple", "Palette")
+	var fb_res_normal := btn_outline_normal.duplicate()
+	fb_res_normal.border_color = res_outline
+	var fb_res_hover := btn_outline_hover.duplicate()
+	fb_res_hover.border_color = res_outline
+	var fb_res_pressed := btn_outline_pressed.duplicate()
+	fb_res_pressed.border_color = res_outline.darkened(0.2)
+	var fb_res_disabled := btn_outline_disabled.duplicate()
+	fb_res_disabled.border_color = res_outline.darkened(0.5)
+	var fb_res_focus := btn_outline_focus.duplicate()
+	fb_res_focus.border_color = res_outline
+	theme.set_type_variation("FlatResultsButton", "Button")
+	theme.set_stylebox("normal", "FlatResultsButton", fb_res_normal)
+	theme.set_stylebox("hover", "FlatResultsButton", fb_res_hover)
+	theme.set_stylebox("pressed", "FlatResultsButton", fb_res_pressed)
+	theme.set_stylebox("disabled", "FlatResultsButton", fb_res_disabled)
+	theme.set_stylebox("focus", "FlatResultsButton", fb_res_focus)
+	theme.set_color("font_color", "FlatResultsButton", text)
+	theme.set_color("font_hover_color", "FlatResultsButton", text)
+	theme.set_color("font_pressed_color", "FlatResultsButton", text)
+	theme.set_color("font_disabled_color", "FlatResultsButton", text.darkened(0.5))
+	
+	var menu_song_outline := theme.get_color("primary", "Palette")
+	var fb_menu_song_normal := btn_outline_normal.duplicate()
+	fb_menu_song_normal.border_color = menu_song_outline
+	var fb_menu_song_hover := btn_outline_hover.duplicate()
+	fb_menu_song_hover.border_color = menu_song_outline
+	var fb_menu_song_pressed := btn_outline_pressed.duplicate()
+	fb_menu_song_pressed.border_color = menu_song_outline.darkened(0.2)
+	var fb_menu_song_disabled := btn_outline_disabled.duplicate()
+	fb_menu_song_disabled.border_color = menu_song_outline.darkened(0.5)
+	var fb_menu_song_focus := btn_outline_focus.duplicate()
+	fb_menu_song_focus.border_color = menu_song_outline
+	theme.set_type_variation("FlatMenuSongButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuSongButton", fb_menu_song_normal)
+	theme.set_stylebox("hover", "FlatMenuSongButton", fb_menu_song_hover)
+	theme.set_stylebox("pressed", "FlatMenuSongButton", fb_menu_song_pressed)
+	theme.set_stylebox("disabled", "FlatMenuSongButton", fb_menu_song_disabled)
+	theme.set_stylebox("focus", "FlatMenuSongButton", fb_menu_song_focus)
+	theme.set_color("font_color", "FlatMenuSongButton", text)
+	theme.set_color("font_hover_color", "FlatMenuSongButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuSongButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuSongButton", text.darkened(0.5))
+
+	var menu_shop_outline := theme.get_color("accent_mint", "Palette")
+	var fb_menu_shop_normal := btn_outline_normal.duplicate()
+	fb_menu_shop_normal.border_color = menu_shop_outline
+	var fb_menu_shop_hover := btn_outline_hover.duplicate()
+	fb_menu_shop_hover.border_color = menu_shop_outline
+	var fb_menu_shop_pressed := btn_outline_pressed.duplicate()
+	fb_menu_shop_pressed.border_color = menu_shop_outline.darkened(0.2)
+	var fb_menu_shop_disabled := btn_outline_disabled.duplicate()
+	fb_menu_shop_disabled.border_color = menu_shop_outline.darkened(0.5)
+	var fb_menu_shop_focus := btn_outline_focus.duplicate()
+	fb_menu_shop_focus.border_color = menu_shop_outline
+	theme.set_type_variation("FlatMenuShopButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuShopButton", fb_menu_shop_normal)
+	theme.set_stylebox("hover", "FlatMenuShopButton", fb_menu_shop_hover)
+	theme.set_stylebox("pressed", "FlatMenuShopButton", fb_menu_shop_pressed)
+	theme.set_stylebox("disabled", "FlatMenuShopButton", fb_menu_shop_disabled)
+	theme.set_stylebox("focus", "FlatMenuShopButton", fb_menu_shop_focus)
+	theme.set_color("font_color", "FlatMenuShopButton", text)
+	theme.set_color("font_hover_color", "FlatMenuShopButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuShopButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuShopButton", text.darkened(0.5))
+
+	var menu_profile_outline := theme.get_color("accent_slate", "Palette")
+	var fb_menu_profile_normal := btn_outline_normal.duplicate()
+	fb_menu_profile_normal.border_color = menu_profile_outline
+	var fb_menu_profile_hover := btn_outline_hover.duplicate()
+	fb_menu_profile_hover.border_color = menu_profile_outline
+	var fb_menu_profile_pressed := btn_outline_pressed.duplicate()
+	fb_menu_profile_pressed.border_color = menu_profile_outline.darkened(0.2)
+	var fb_menu_profile_disabled := btn_outline_disabled.duplicate()
+	fb_menu_profile_disabled.border_color = menu_profile_outline.darkened(0.5)
+	var fb_menu_profile_focus := btn_outline_focus.duplicate()
+	fb_menu_profile_focus.border_color = menu_profile_outline
+	theme.set_type_variation("FlatMenuProfileButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuProfileButton", fb_menu_profile_normal)
+	theme.set_stylebox("hover", "FlatMenuProfileButton", fb_menu_profile_hover)
+	theme.set_stylebox("pressed", "FlatMenuProfileButton", fb_menu_profile_pressed)
+	theme.set_stylebox("disabled", "FlatMenuProfileButton", fb_menu_profile_disabled)
+	theme.set_stylebox("focus", "FlatMenuProfileButton", fb_menu_profile_focus)
+	theme.set_color("font_color", "FlatMenuProfileButton", text)
+	theme.set_color("font_hover_color", "FlatMenuProfileButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuProfileButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuProfileButton", text.darkened(0.5))
+
+	var menu_ach_outline := theme.get_color("accent_purple", "Palette")
+	var fb_menu_ach_normal := btn_outline_normal.duplicate()
+	fb_menu_ach_normal.border_color = menu_ach_outline
+	var fb_menu_ach_hover := btn_outline_hover.duplicate()
+	fb_menu_ach_hover.border_color = menu_ach_outline
+	var fb_menu_ach_pressed := btn_outline_pressed.duplicate()
+	fb_menu_ach_pressed.border_color = menu_ach_outline.darkened(0.2)
+	var fb_menu_ach_disabled := btn_outline_disabled.duplicate()
+	fb_menu_ach_disabled.border_color = menu_ach_outline.darkened(0.5)
+	var fb_menu_ach_focus := btn_outline_focus.duplicate()
+	fb_menu_ach_focus.border_color = menu_ach_outline
+	theme.set_type_variation("FlatMenuAchievementsButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuAchievementsButton", fb_menu_ach_normal)
+	theme.set_stylebox("hover", "FlatMenuAchievementsButton", fb_menu_ach_hover)
+	theme.set_stylebox("pressed", "FlatMenuAchievementsButton", fb_menu_ach_pressed)
+	theme.set_stylebox("disabled", "FlatMenuAchievementsButton", fb_menu_ach_disabled)
+	theme.set_stylebox("focus", "FlatMenuAchievementsButton", fb_menu_ach_focus)
+	theme.set_color("font_color", "FlatMenuAchievementsButton", text)
+	theme.set_color("font_hover_color", "FlatMenuAchievementsButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuAchievementsButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuAchievementsButton", text.darkened(0.5))
+
+	var menu_settings_outline := theme.get_color("accent_sky", "Palette")
+	var fb_menu_settings_normal := btn_outline_normal.duplicate()
+	fb_menu_settings_normal.border_color = menu_settings_outline
+	var fb_menu_settings_hover := btn_outline_hover.duplicate()
+	fb_menu_settings_hover.border_color = menu_settings_outline
+	var fb_menu_settings_pressed := btn_outline_pressed.duplicate()
+	fb_menu_settings_pressed.border_color = menu_settings_outline.darkened(0.2)
+	var fb_menu_settings_disabled := btn_outline_disabled.duplicate()
+	fb_menu_settings_disabled.border_color = menu_settings_outline.darkened(0.5)
+	var fb_menu_settings_focus := btn_outline_focus.duplicate()
+	fb_menu_settings_focus.border_color = menu_settings_outline
+	theme.set_type_variation("FlatMenuSettingsButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuSettingsButton", fb_menu_settings_normal)
+	theme.set_stylebox("hover", "FlatMenuSettingsButton", fb_menu_settings_hover)
+	theme.set_stylebox("pressed", "FlatMenuSettingsButton", fb_menu_settings_pressed)
+	theme.set_stylebox("disabled", "FlatMenuSettingsButton", fb_menu_settings_disabled)
+	theme.set_stylebox("focus", "FlatMenuSettingsButton", fb_menu_settings_focus)
+	theme.set_color("font_color", "FlatMenuSettingsButton", text)
+	theme.set_color("font_hover_color", "FlatMenuSettingsButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuSettingsButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuSettingsButton", text.darkened(0.5))
+	
+	var modal_bg := theme.get_color("panel_bg", "Palette").lightened(0.06)
+	var modal_primary_outline := theme.get_color("accent_mint", "Palette")
+	var fb_modal_primary_normal := btn_outline_normal.duplicate()
+	fb_modal_primary_normal.draw_center = true
+	fb_modal_primary_normal.bg_color = modal_bg
+	fb_modal_primary_normal.border_color = modal_primary_outline
+	var fb_modal_primary_hover := btn_outline_hover.duplicate()
+	fb_modal_primary_hover.draw_center = true
+	fb_modal_primary_hover.bg_color = modal_bg.lightened(0.06)
+	fb_modal_primary_hover.border_color = modal_primary_outline
+	var fb_modal_primary_pressed := btn_outline_pressed.duplicate()
+	fb_modal_primary_pressed.draw_center = true
+	fb_modal_primary_pressed.bg_color = modal_bg.darkened(0.08)
+	fb_modal_primary_pressed.border_color = modal_primary_outline.darkened(0.2)
+	var fb_modal_primary_disabled := btn_outline_disabled.duplicate()
+	fb_modal_primary_disabled.draw_center = true
+	fb_modal_primary_disabled.bg_color = modal_bg.darkened(0.12)
+	fb_modal_primary_disabled.border_color = modal_primary_outline.darkened(0.5)
+	var fb_modal_primary_focus := btn_outline_focus.duplicate()
+	fb_modal_primary_focus.draw_center = true
+	fb_modal_primary_focus.bg_color = modal_bg
+	fb_modal_primary_focus.border_color = modal_primary_outline
+	theme.set_type_variation("FlatModalPrimaryButton", "Button")
+	theme.set_stylebox("normal", "FlatModalPrimaryButton", fb_modal_primary_normal)
+	theme.set_stylebox("hover", "FlatModalPrimaryButton", fb_modal_primary_hover)
+	theme.set_stylebox("pressed", "FlatModalPrimaryButton", fb_modal_primary_pressed)
+	theme.set_stylebox("disabled", "FlatModalPrimaryButton", fb_modal_primary_disabled)
+	theme.set_stylebox("focus", "FlatModalPrimaryButton", fb_modal_primary_focus)
+	theme.set_color("font_color", "FlatModalPrimaryButton", text)
+	theme.set_color("font_hover_color", "FlatModalPrimaryButton", text)
+	theme.set_color("font_pressed_color", "FlatModalPrimaryButton", text)
+	theme.set_color("font_disabled_color", "FlatModalPrimaryButton", text.darkened(0.5))
+
+	var modal_back_outline := theme.get_color("accent_slate", "Palette")
+	var fb_modal_back_normal := btn_outline_normal.duplicate()
+	fb_modal_back_normal.draw_center = true
+	fb_modal_back_normal.bg_color = theme.get_color("panel_bg", "Palette").darkened(0.02)
+	fb_modal_back_normal.border_color = modal_back_outline
+	var fb_modal_back_hover := btn_outline_hover.duplicate()
+	fb_modal_back_hover.draw_center = true
+	fb_modal_back_hover.bg_color = fb_modal_back_normal.bg_color.lightened(0.06)
+	fb_modal_back_hover.border_color = modal_back_outline
+	var fb_modal_back_pressed := btn_outline_pressed.duplicate()
+	fb_modal_back_pressed.draw_center = true
+	fb_modal_back_pressed.bg_color = fb_modal_back_normal.bg_color.darkened(0.08)
+	fb_modal_back_pressed.border_color = modal_back_outline.darkened(0.2)
+	var fb_modal_back_disabled := btn_outline_disabled.duplicate()
+	fb_modal_back_disabled.draw_center = true
+	fb_modal_back_disabled.bg_color = fb_modal_back_normal.bg_color.darkened(0.12)
+	fb_modal_back_disabled.border_color = modal_back_outline.darkened(0.5)
+	var fb_modal_back_focus := btn_outline_focus.duplicate()
+	fb_modal_back_focus.draw_center = true
+	fb_modal_back_focus.bg_color = fb_modal_back_normal.bg_color
+	fb_modal_back_focus.border_color = modal_back_outline
+	theme.set_type_variation("FlatBackButton", "Button")
+	theme.set_stylebox("normal", "FlatBackButton", fb_modal_back_normal)
+	theme.set_stylebox("hover", "FlatBackButton", fb_modal_back_hover)
+	theme.set_stylebox("pressed", "FlatBackButton", fb_modal_back_pressed)
+	theme.set_stylebox("disabled", "FlatBackButton", fb_modal_back_disabled)
+	theme.set_stylebox("focus", "FlatBackButton", fb_modal_back_focus)
+	theme.set_color("font_color", "FlatBackButton", text)
+	theme.set_color("font_hover_color", "FlatBackButton", text)
+	theme.set_color("font_pressed_color", "FlatBackButton", text)
+	theme.set_color("font_disabled_color", "FlatBackButton", text.darkened(0.5))
 	# Primary/Secondary variations removed per manual styling preference
 
 	theme.set_type_variation("Danger", "Button")
@@ -644,4 +884,3 @@ static func build_theme() -> Theme:
 	theme.set_constant("outline_size", "DailyTasksProgressBar", 0)
 
 	return theme
- 

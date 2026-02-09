@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://cflfv1lx6qcni"]
+[gd_scene load_steps=3 format=3 uid="uid://cflfv1lx6qcni"]
 
 [ext_resource type="Script" uid="uid://b72o0qprtpesv" path="res://scenes/settings_menu/tabs/misc_tab.gd" id="1_f8lbq"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
 
 [node name="MiscTab" type="Control"]
 layout_mode = 3
@@ -21,6 +22,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Стереть прогресс ачивок"
 
 [node name="ResetBPMBatchButton" type="Button" parent="ContentVBox"]
@@ -28,6 +31,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Сбросить кэш BPM"
 
 [node name="ClearAllCacheButton" type="Button" parent="ContentVBox"]
@@ -35,6 +40,8 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Очистить весь кэш"
 
 [node name="ClearAllResultsButton" type="Button" parent="ContentVBox"]
@@ -42,27 +49,36 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Очистить результаты"
 
 [node name="ResetAllSettingsButton" type="Button" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Сбросить все настройки"
 
 [node name="ResetProfileStatsButton" type="Button" parent="ContentVBox"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatExitButton"
 text = "Сбросить статистику профиля"
 
 [node name="DebugMenuCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_k8h85")
 text = "Дебаг меню"
 
 [node name="ShowManualInputCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_k8h85")
 text = "Уточнять трек перед генерацией
 Если отключить — треки будут генерироваться быстрее, но без учёта жанров"
 
 [node name="EnableGenreDetectionCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
+theme = ExtResource("2_k8h85")
 text = "Включить определение жанров
 Если включено — треки анализируются по стилю для более точной генерации. Может замедлить загрузку."

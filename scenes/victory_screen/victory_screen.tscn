@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://wr4xw6kkexww"]
+[gd_scene load_steps=3 format=3 uid="uid://wr4xw6kkexww"]
 
 [ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
 
 [node name="VictoryScreen" type="Control"]
 layout_mode = 3
@@ -142,10 +143,14 @@ offset_bottom = 1193.0
 modulate = Color(0, 0.62806845, 0.1154759, 1)
 layout_mode = 2
 size_flags_horizontal = 4
+theme = ExtResource("2_rygy8")
+theme_type_variation = &"FlatButton"
 text = "Повторить"
 
 [node name="SongSelectButton" type="Button" parent="ButtonsContainer"]
 modulate = Color(0.40640846, 0.5073241, 1.0039686, 1)
 layout_mode = 2
 size_flags_horizontal = 4
+theme = ExtResource("2_rygy8")
+theme_type_variation = &"FlatButton"
 text = "К списку песен"
