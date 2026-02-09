@@ -34,176 +34,202 @@ theme_override_font_sizes/font_size = 32
 text = "Профиль"
 horizontal_alignment = 1
 
-[node name="StatsVBox" type="VBoxContainer" parent="MainContent/MainVBox"]
+[node name="Separator" type="ColorRect" parent="MainContent/MainVBox"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+color = Color(0.9411765, 0.9411765, 0.9411765, 0)
+
+[node name="TopSection" type="HBoxContainer" parent="MainContent/MainVBox"]
 layout_mode = 2
 
-[node name="LevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="LeftColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
+layout_mode = 2
+
+[node name="GeneralStatsCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/LeftColumn"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
+layout_mode = 2
+text = "Общая статистика"
+
+[node name="LevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Завершено уровней: 0"
 
-[node name="DrumLevelsContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/DrumLevelsContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="DrumLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/DrumLevelsContainer"]
-layout_mode = 2
-text = "Перкуссия: 0"
-
-[node name="UniqueLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="UniqueLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Уникальных песен сыграно: 0"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="SSLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/HBoxContainer"]
-layout_mode = 2
-text = "SS: 0"
-
-[node name="SLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/HBoxContainer"]
-layout_mode = 2
-text = "S: 0"
-
-[node name="ALabel" type="Label" parent="MainContent/MainVBox/StatsVBox/HBoxContainer"]
-layout_mode = 2
-text = "A: 0"
-
-[node name="BLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/HBoxContainer"]
-layout_mode = 2
-text = "B: 0"
-
-[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-text = "Любимый жанр: Н/Д"
-
-[node name="FavoriteTrackLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-text = "Любимый трек: Н/Д"
-
-[node name="OverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="OverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Общая точность: 0.00%"
 
-[node name="DrumOverallAccuracyContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/DrumOverallAccuracyContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="DrumOverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/DrumOverallAccuracyContainer"]
-layout_mode = 2
-text = "Перкуссия: 0"
-
-[node name="PlayTimeLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="PlayTimeLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Времени в игре: 00:00"
 
-[node name="TotalScoreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="TotalScoreLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Всего очков: 0"
 
-[node name="TotalDrumScoreContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="TotalDrumScoreLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumScoreContainer"]
-layout_mode = 2
-text = "Перкуссия: 0"
-
-[node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Точных попаданий: 0"
 
-[node name="TotalDrumHitsContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumHitsContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="TotalDrumHitsLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumHitsContainer"]
-layout_mode = 2
-text = "Перкуссия: 0"
-
-[node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Промахов: 0"
 
-[node name="TotalDrumMissesContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/TotalDrumMissesContainer"]
-custom_minimum_size = Vector2(10, 0)
-layout_mode = 2
-
-[node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/TotalDrumMissesContainer"]
-layout_mode = 2
-text = "Перкуссия: 0"
-
-[node name="MaxHitStreakLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="MaxHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
 text = "Рекордная серия попаданий подряд: 0"
 
-[node name="MaxDrumHitStreakContainer" type="HBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+[node name="CenterColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
 layout_mode = 2
 
-[node name="IndentSpacer" type="Control" parent="MainContent/MainVBox/StatsVBox/MaxDrumHitStreakContainer"]
-custom_minimum_size = Vector2(10, 0)
+[node name="LevelXPCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/CenterColumn"]
 layout_mode = 2
 
-[node name="MaxDrumHitStreakLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/MaxDrumHitStreakContainer"]
+[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard"]
 layout_mode = 2
-text = "Перкуссия: 0"
 
-[node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
 layout_mode = 2
-text = "Заработано всего: 0"
+text = "Уровень"
 
-[node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
-layout_mode = 2
-text = "Потрачено: 0"
-
-[node name="LevelLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="LevelLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
 layout_mode = 2
 text = "Уровень: 1"
 
-[node name="XPLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="XPLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
 layout_mode = 2
 text = "XP: 0 / 100"
 
-[node name="XPProgressLabel" type="Label" parent="MainContent/MainVBox/StatsVBox"]
+[node name="XPProgressLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
 layout_mode = 2
 text = "Прогресс: 0.0%"
 
-[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox/StatsVBox"]
+[node name="EconomyCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/CenterColumn"]
 layout_mode = 2
 
-[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
+[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
+layout_mode = 2
+text = "Экономика"
+
+[node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
+layout_mode = 2
+text = "Заработано всего: 0"
+
+[node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
+layout_mode = 2
+text = "Потрачено: 0"
+
+[node name="RightColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
+layout_mode = 2
+
+[node name="GradesCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/RightColumn"]
+layout_mode = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+layout_mode = 2
+text = "Оценки"
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+layout_mode = 2
+
+[node name="SSLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
+layout_mode = 2
+text = "SS: 0"
+
+[node name="SLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
+layout_mode = 2
+text = "S: 0"
+
+[node name="ALabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
+layout_mode = 2
+text = "A: 0"
+
+[node name="BLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
+layout_mode = 2
+text = "B: 0"
+
+[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+layout_mode = 2
+text = "Любимый жанр: Н/Д"
+
+[node name="FavoriteTrackLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+layout_mode = 2
+text = "Любимый трек: Н/Д"
+
+[node name="PercussionCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/RightColumn"]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Перкуссия"
+
+[node name="DrumLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Уровней на перкуссии: 0"
+
+[node name="DrumOverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Точность (перкуссия): 0"
+
+[node name="TotalDrumScoreLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Очки на перкуссии: 0"
+
+[node name="TotalDrumHitsLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Попаданий на перкуссии: 0"
+
+[node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Промахов на перкуссии: 0"
+
+[node name="MaxDrumHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
+layout_mode = 2
+text = "Макс. серия (перкуссия): 0"
+
+[node name="ChartCard" type="PanelContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+
+[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox/ChartCard"]
+layout_mode = 2
+
+[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
 layout_mode = 2
 text = "Точность за последние 20 сессий"
 horizontal_alignment = 1
 
-[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
+[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
 custom_minimum_size = Vector2(1920, 300)
 layout_mode = 2
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground"]
+[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground"]
 width = 4.0
 default_color = Color(1, 1, 1, 0.5019608)
 round_precision = 32
 antialiased = true
 
-[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/StatsVBox/ChartContainer/ChartBackground"]
+[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground"]
 anchors_preset = 0
 
-[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/StatsVBox/ChartContainer"]
+[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
 layout_mode = 2
 text = "Сессии (1 → 20)"

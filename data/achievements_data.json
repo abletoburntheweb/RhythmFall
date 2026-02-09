@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 60,
+			"current": 60.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 60,
+			"current": 60.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.0,
+			"current": 30.13,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.0,
+			"current": 30.13,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.0,
+			"current": 30.13,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.0,
+			"current": 30.13,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.0,
+			"current": 30.13,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -596,7 +596,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в гитарных жанрах (rock, alternative rock, indie rock, garage rock, punk, post-punk, grunge, math rock, post-rock)",
 			"id": 55.0,
 			"image": "res://assets/achievements/guitar_energy.png",
@@ -618,7 +618,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в независимых и альтернативных жанрах (indie, bedroom pop, lo-fi, art pop, alternative)",
 			"id": 57.0,
 			"image": "res://assets/achievements/off_mainstream.png",
@@ -629,7 +629,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в экспериментальной музыке (experimental, avant-garde, fusion, cross-genre, abstract)",
 			"id": 58.0,
 			"image": "res://assets/achievements/beyond_genres.png",
