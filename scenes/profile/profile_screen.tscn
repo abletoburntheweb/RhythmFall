@@ -64,6 +64,7 @@ horizontal_alignment = 1
 
 [node name="LevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
 text = "Завершено уровней: 0"
 
 [node name="UniqueLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
@@ -84,14 +85,17 @@ text = "Всего очков: 0"
 
 [node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
 text = "Точных попаданий: 0"
 
 [node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
 text = "Промахов: 0"
 
 [node name="MaxHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
 text = "Рекордная серия попаданий подряд: 0"
 
 [node name="CenterColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
@@ -137,10 +141,12 @@ horizontal_alignment = 1
 
 [node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
 text = "Заработано всего: 0"
 
 [node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
 text = "Потрачено: 0"
 
 [node name="RightColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
@@ -193,6 +199,7 @@ horizontal_alignment = 1
 
 [node name="DrumLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
 text = "Уровней на перкуссии: 0"
 
 [node name="DrumOverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
@@ -205,14 +212,17 @@ text = "Очки на перкуссии: 0"
 
 [node name="TotalDrumHitsLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
 text = "Попаданий на перкуссии: 0"
 
 [node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
 text = "Промахов на перкуссии: 0"
 
 [node name="MaxDrumHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
 text = "Макс. серия (перкуссия): 0"
 
 [node name="FavoriteTrackColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
