@@ -73,3 +73,8 @@ func get_history_for_instrument(target_instrument: String) -> Array[Dictionary]:
 		if session.get("instrument", "") == target_instrument:
 			filtered_history.append(session)
 	return filtered_history.duplicate(true)
+
+func clear_history():
+	history.clear()
+	_save()
+	print("SessionHistoryManager: История сессий очищена.")

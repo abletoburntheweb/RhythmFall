@@ -29,6 +29,7 @@ var data: Dictionary = {
 	"levels_completed": 0,
 	"drum_levels_completed": 0,      
 	"total_drum_perfect_hits": 0,   
+	"total_perfect_hits": 0,
 	"total_notes_hit": 0,
 	"total_notes_missed": 0,
 	"max_combo_ever": 0,             
@@ -123,6 +124,7 @@ func _load():
 			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
 			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
 			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
+			var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
 			var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
 			var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0))
 			var loaded_max_combo_ever = int(json_result.get("max_combo_ever", 0))
@@ -163,6 +165,7 @@ func _load():
 			data["levels_completed"] = loaded_levels_completed
 			data["drum_levels_completed"] = loaded_drum_levels_completed
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
+			data["total_perfect_hits"] = loaded_total_perfect_hits
 			data["total_notes_hit"] = loaded_total_notes_hit
 			data["total_notes_missed"] = loaded_total_notes_missed
 			data["max_combo_ever"] = loaded_max_combo_ever
@@ -215,7 +218,6 @@ func _save():
 	data["active_items"] = active_items_clean
 
 	var data_to_save = data.duplicate(true)
-	data_to_save.erase("total_perfect_hits")
 	data_to_save.erase("best_grades_per_track")
 
 	var file_access = FileAccess.open(PLAYER_DATA_PATH, FileAccess.WRITE)
@@ -298,11 +300,11 @@ func _trigger_currency_achievement_check():
 			achievement_system.on_currency_changed()
 
 func add_perfect_hits(count: int):
-	var current_hits = int(data.get("total_notes_hit", 0))
-	var new_total = current_hits + count
-	data["total_notes_hit"] = new_total
+	var current_perfect = int(data.get("total_perfect_hits", 0))
+	var new_total = current_perfect + count
+	data["total_perfect_hits"] = new_total
 	_save()
-	print("[PlayerDataManager] Совершенных попаданий добавлено: %d. Общий счёт: %d" % [count, new_total])
+	print("[PlayerDataManager] Точных попаданий добавлено: %d. Всего точных: %d" % [count, new_total])
 	_trigger_perfect_hit_achievement_check()
 	increment_daily_progress("perfect_hits", count, {})
 
@@ -536,16 +538,18 @@ func reset_progress():
 	print("[PlayerDataManager] Прогресс сброшен.")
 
 func reset_profile_statistics():
-	var current_currency = int(data.get("currency", 0))
-	var current_unlocked_items = data.get("unlocked_item_ids", PackedStringArray()).duplicate()
-	var current_active_items = data.get("active_items", DEFAULT_ACTIVE_ITEMS.duplicate(true)).duplicate(true)
-	var current_unlocked_achievements = data.get("unlocked_achievement_ids", PackedInt32Array()).duplicate()
-	var current_login_streak = int(data.get("login_streak", 0))
-	var current_last_login_date = data.get("last_login_date", "")
+	var default_items = [
+		"kick_default",
+		"snare_default", 
+		"covers_default",
+		"lane_highlight_default",
+		"notes_default"
+	]
 
 	data["levels_completed"] = 0
 	data["drum_levels_completed"] = 0
 	data["total_drum_perfect_hits"] = 0
+	data["total_perfect_hits"] = 0
 	data["total_notes_hit"] = 0
 	data["total_notes_missed"] = 0
 	data["max_combo_ever"] = 0
@@ -554,6 +558,7 @@ func reset_profile_statistics():
 	data["total_drum_misses"] = 0
 	data["total_score_ever"] = 0
 	data["total_drum_score_ever"] = 0
+	data["currency"] = 0
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["total_play_time"] = "00:00" 
@@ -571,6 +576,7 @@ func reset_profile_statistics():
 	data["favorite_track_play_count"] = 0
 	data["favorite_genre"] = "unknown"
 	data["daily_quests_completed_total"] = 0
+	data["daily_quests"] = {"date": "", "quests": []}
 	
 	data["total_xp"] = 0
 	data["current_level"] = 1
@@ -578,17 +584,24 @@ func reset_profile_statistics():
 
 	_total_play_time_seconds = 0
 
-	data["currency"] = current_currency
-	data["unlocked_item_ids"] = current_unlocked_items
-	data["active_items"] = current_active_items
-	data["unlocked_achievement_ids"] = current_unlocked_achievements
-	data["login_streak"] = current_login_streak
-	data["last_login_date"] = current_last_login_date
+	data["unlocked_item_ids"] = PackedStringArray(default_items)
+	data["active_items"] = DEFAULT_ACTIVE_ITEMS.duplicate(true)
+	data["unlocked_achievement_ids"] = PackedInt32Array()
 	
 	_save()
+	for category in DEFAULT_ACTIVE_ITEMS:
+		var def_id = DEFAULT_ACTIVE_ITEMS[category]
+		if def_id != null and def_id is String and def_id != "":
+			set_active_item(category, def_id)
 	data["best_grades_per_track"] = {}
 	_save_best_grades()
-	print("[PlayerDataManager] Статистика профиля (включая валюту, время, но не предметы/ачивки/данные аккаунта) сброшена.")
+	if achievement_manager and achievement_manager.has_method("reset_achievements"):
+		achievement_manager.reset_achievements()
+	if game_engine_reference and game_engine_reference.has_method("get_session_history_manager"):
+		var session_hist_mgr = game_engine_reference.get_session_history_manager()
+		if session_hist_mgr and session_hist_mgr.has_method("clear_history"):
+			session_hist_mgr.clear_history()
+	print("[PlayerDataManager] Полный сброс профиля выполнен: ачивки, валюта, ежедневки, предметы, точные попадания.")
 
 func get_login_streak() -> int:
 	return int(data.get("login_streak", 0))
@@ -675,6 +688,9 @@ func add_missed_notes(count: int):
 
 func get_total_notes_hit() -> int:
 	return int(data.get("total_notes_hit", 0))
+
+func get_total_perfect_hits() -> int:
+	return int(data.get("total_perfect_hits", 0))
 
 func get_total_notes_missed() -> int:
 	return int(data.get("total_notes_missed", 0))

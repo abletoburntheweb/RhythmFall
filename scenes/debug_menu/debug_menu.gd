@@ -249,10 +249,8 @@ func _on_win_button_pressed():
 
 	if game_screen.score_manager.get_accuracy() >= 100.0:
 		game_screen.score_manager.combo = total_notes
-		game_screen.score_manager.max_combo = total_notes
 	else:
 		game_screen.score_manager.combo = 0
-		game_screen.score_manager.max_combo = max(1, int(game_screen.score_manager.get_accuracy() / 10))  
 
 	var base_score_per_hit = 100
 	var multiplier = 1.0

@@ -4,6 +4,7 @@ extends RefCounted
 
 var achievement_manager: AchievementManager = null
 var track_stats_manager: TrackStatsManager = null
+const SHOP_JSON_PATH := "res://data/shop_data.json"
 
 func _init(ach_manager: AchievementManager, track_stats_mgr: TrackStatsManager):
 	achievement_manager = ach_manager
@@ -13,10 +14,10 @@ func _init(ach_manager: AchievementManager, track_stats_mgr: TrackStatsManager):
 	PlayerDataManager.achievement_manager = ach_manager
 
 func resync_all():
-	var total_purchases = PlayerDataManager.get_items().size()
-	if total_purchases >= 1:
+	var paid_purchases = _get_paid_purchases_count()
+	if paid_purchases >= 1:
 		achievement_manager.check_first_purchase()
-	achievement_manager.check_purchase_count(total_purchases)
+	achievement_manager.check_purchase_count(paid_purchases)
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
 	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)
@@ -51,9 +52,10 @@ func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool =
 	achievement_manager.save_achievements()
 
 func on_purchase_made():
-	var total_purchases = PlayerDataManager.get_items().size()
-	achievement_manager.check_first_purchase()
-	achievement_manager.check_purchase_count(total_purchases)
+	var paid_purchases = _get_paid_purchases_count()
+	if paid_purchases >= 1:
+		achievement_manager.check_first_purchase()
+	achievement_manager.check_purchase_count(paid_purchases)
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
 	achievement_manager.save_achievements()
@@ -79,8 +81,8 @@ func on_notes_generated():
 	achievement_manager.save_achievements() 
 
 func on_perfect_hit_made():
-	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
-	achievement_manager.check_rhythm_master_achievement(total_notes_hit) 
+	var total_perfect_hits = PlayerDataManager.get_total_perfect_hits()
+	achievement_manager.check_rhythm_master_achievement(total_perfect_hits) 
 	achievement_manager.save_achievements()
 
 func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
@@ -112,3 +114,22 @@ func on_grade_earned(grade: String):
 func on_player_level_changed(new_level: int):
 	achievement_manager.check_level_achievements(new_level)
 	achievement_manager.save_achievements()
+
+func _get_paid_purchases_count() -> int:
+	var unlocked_items = PlayerDataManager.get_items()
+	var file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
+	if not file:
+		return 0
+	var json_text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(json_text)
+	if not (parsed and parsed.has("items")):
+		return 0
+	var count = 0
+	for item in parsed.items:
+		var price = int(item.get("price", 0))
+		if price > 0:
+			var item_id = item.get("item_id", "")
+			if unlocked_items.has(item_id):
+				count += 1
+	return count
