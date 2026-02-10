@@ -595,6 +595,7 @@ func reset_profile_statistics():
 	data["favorite_genre"] = "unknown"
 	data["daily_quests_completed_total"] = 0
 	data["daily_quests"] = {"date": "", "quests": []}
+	data["profile_created_date"] = Time.get_date_string_from_system()
 	
 	data["total_xp"] = 0
 	data["current_level"] = 1

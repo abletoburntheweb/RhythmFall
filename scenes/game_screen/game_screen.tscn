@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bm0ttk00f5ojg"]
+[gd_scene load_steps=3 format=3 uid="uid://bm0ttk00f5ojg"]
 
 [ext_resource type="Script" uid="uid://cu8mm6w8bjgkg" path="res://scenes/game_screen/game_screen.gd" id="1_shan1"]
+[ext_resource type="Theme" uid="uid://c25ry36xt0f1p" path="res://ui/theme/game_theme.tres" id="2_5dyew"]
 
 [node name="GameScreen" type="Node2D"]
 script = ExtResource("1_shan1")
@@ -98,6 +99,7 @@ offset_bottom = 27.0
 [node name="SongProgressBar" type="ProgressBar" parent="UIContainer/SongProgressContainer"]
 custom_minimum_size = Vector2(1920, 15)
 layout_mode = 2
+theme = ExtResource("2_5dyew")
 
 [node name="StatsContainer" type="VBoxContainer" parent="UIContainer"]
 layout_mode = 0
@@ -113,35 +115,16 @@ text = "Счёт: 0"
 layout_mode = 2
 text = "Комбо: 0"
 
-[node name="MaxComboLabel" type="Label" parent="UIContainer/StatsContainer"]
-layout_mode = 2
-text = "Макс. комбо: 0"
-
-[node name="BpmLabel" type="Label" parent="UIContainer/StatsContainer"]
-layout_mode = 2
-text = "BPM: 0"
-
-[node name="SpeedLabel" type="Label" parent="UIContainer/StatsContainer"]
-layout_mode = 2
-text = "Скорость: 0"
-
-[node name="TimeLabel" type="Label" parent="UIContainer/StatsContainer"]
-layout_mode = 2
-text = "Время: 00:00/2:00"
-
 [node name="AccuracyLabel" type="Label" parent="UIContainer/StatsContainer"]
 layout_mode = 2
 text = "Точность 100%"
 
-[node name="InstrumentLabel" type="Label" parent="UIContainer/StatsContainer"]
-layout_mode = 2
-text = "Инструмент: стандарт"
-
 [node name="JudgementLabel" type="Label" parent="UIContainer"]
 layout_mode = 0
-offset_left = 1740.0
-offset_right = 1920.0
-offset_bottom = 45.0
+offset_left = 1739.0
+offset_top = 25.0
+offset_right = 1919.0
+offset_bottom = 70.0
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 

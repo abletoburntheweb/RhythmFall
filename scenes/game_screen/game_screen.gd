@@ -38,12 +38,7 @@ var sound_factory = null
 
 var score_label: Label = null
 var combo_label: Label = null
-var max_combo_label: Label = null
-var bpm_label: Label = null
-var speed_label: Label = null
-var time_label: Label = null
 var accuracy_label: Label = null
-var instrument_label: Label = null
 var countdown_label: Label = null
 var notes_container: Node2D = null
 var judgement_label: Label = null
@@ -207,12 +202,7 @@ func _find_ui_elements():
 	if ui_container_node:
 		score_label = ui_container_node.get_node_or_null("StatsContainer/ScoreLabel") as Label
 		combo_label = ui_container_node.get_node_or_null("StatsContainer/ComboLabel") as Label
-		max_combo_label = ui_container_node.get_node_or_null("StatsContainer/MaxComboLabel") as Label
-		bpm_label = ui_container_node.get_node_or_null("StatsContainer/BpmLabel") as Label
-		speed_label = ui_container_node.get_node_or_null("StatsContainer/SpeedLabel") as Label
-		time_label = ui_container_node.get_node_or_null("StatsContainer/TimeLabel") as Label
 		accuracy_label = ui_container_node.get_node_or_null("StatsContainer/AccuracyLabel") as Label
-		instrument_label = ui_container_node.get_node_or_null("StatsContainer/InstrumentLabel") as Label
 		judgement_label = ui_container_node.get_node_or_null("JudgementLabel") as Label
 
 		var progress_container = ui_container_node.get_node_or_null("SongProgressContainer")
@@ -327,8 +317,6 @@ func _set_selected_song(song_data: Dictionary):
 
 func _set_instrument(instrument_type: String):
 	current_instrument = instrument_type
-	if instrument_label: 
-		instrument_label.text = "Инструмент: " + ("Перкуссия" if instrument_type == "drums" else "Стандартный")
 		
 func _set_lanes(lane_count: int):
 	lanes = clamp(lane_count, 3, 5)
@@ -612,24 +600,8 @@ func update_ui():
 		score_label.text = "Счёт: %d" % score_manager.get_score()
 	if combo_label:
 		combo_label.text = "Комбо: %d (x%.1f)" % [score_manager.get_combo(), score_manager.get_combo_multiplier()]
-	if max_combo_label:
-		max_combo_label.text = "Макс. комбо: %d" % score_manager.get_max_combo()
-	if bpm_label:
-		if notes_loaded:
-			bpm_label.text = "BPM: %.1f" % bpm
-		else:
-			bpm_label.text = "BPM: Н/Д"
-	if speed_label:
-		if notes_loaded:
-			speed_label.text = "Скорость: %.2f" % speed
-		else:
-			speed_label.text = "Скорость: Н/Д"
-	if time_label:
-		time_label.text = "Время: %.3fс" % game_time
 	if accuracy_label:
 		accuracy_label.text = "Точность: %.2f%%" % score_manager.get_accuracy()
-	if instrument_label:
-		instrument_label.text = "Инструмент: " + ("Перкуссия" if current_instrument == "drums" else "Стандартный")
 	
 	if progress_bar and selected_song_data.has("duration"):
 		var duration_str = selected_song_data.get("duration", "0:00")

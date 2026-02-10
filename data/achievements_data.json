@@ -57,18 +57,18 @@
 		},
 		{
 			"category": "shop",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Совершить первую покупку в магазине",
 			"id": 6.0,
 			"image": "res://assets/achievements/first_purchase.png",
 			"title": "Первая покупка",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "11 Фев 2026, 00:25",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 2,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
@@ -79,7 +79,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 2,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
@@ -90,7 +90,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 2,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
@@ -101,7 +101,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 2,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -112,51 +112,51 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 465188,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
 			"title": "Собиратель I",
 			"total": 2000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "11 Фев 2026, 00:25",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 465188,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
 			"title": "Собиратель II",
 			"total": 5000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "11 Фев 2026, 00:25",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 465188,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
 			"title": "Собиратель III",
 			"total": 12000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "11 Фев 2026, 00:25",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 510,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
 			"title": "Щедрая рука I",
 			"total": 500.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "11 Фев 2026, 00:25",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 510,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
@@ -167,7 +167,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 510,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
@@ -178,7 +178,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 4,
+			"current": 5,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
@@ -189,7 +189,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 2,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 2,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,7 +211,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 2,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -222,7 +222,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 2,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 2,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.08,
+			"current": 0.12,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.08,
+			"current": 0.12,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.08,
+			"current": 0.12,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.08,
+			"current": 0.12,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.08,
+			"current": 0.12,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1200,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1200,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1200,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1200,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
