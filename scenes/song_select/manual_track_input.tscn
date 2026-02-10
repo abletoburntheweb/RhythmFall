@@ -1,10 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8rymenqqh6ac"]
+[gd_scene load_steps=3 format=3 uid="uid://b8rymenqqh6ac"]
 
 [ext_resource type="Script" uid="uid://bs78w2d6b5mdo" path="res://scenes/song_select/manual_track_input.gd" id="1_m7am5"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_nujtq"]
 
 [node name="ManualTrackInput" type="Control"]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_m7am5")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -15,46 +22,62 @@ offset_right = 1920.0
 offset_bottom = 1080.0
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="ModalPanel" type="Panel" parent="."]
-layout_mode = 0
-offset_right = 500.0
-offset_bottom = 300.0
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+offset_left = -244.0
+offset_top = -99.0
+offset_right = -244.0
+offset_bottom = -99.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ModalPanel"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="ModalPanel" type="Panel" parent="CenterContainer"]
+layout_mode = 2
 
-[node name="LabelConfirmation" type="Label" parent="ModalPanel/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/ModalPanel"]
+layout_mode = 0
+offset_right = 504.0
+offset_bottom = 161.0
+theme = ExtResource("2_nujtq")
+
+[node name="LabelConfirmation" type="Label" parent="CenterContainer/ModalPanel/VBoxContainer"]
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Ваш трек: <артист> - <название>?"
 horizontal_alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ModalPanel/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/ModalPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="ButtonYes" type="Button" parent="ModalPanel/VBoxContainer/HBoxContainer"]
+[node name="ButtonYes" type="Button" parent="CenterContainer/ModalPanel/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
+theme = ExtResource("2_nujtq")
+theme_type_variation = &"FlatMenuShopButton"
 text = "Да"
 
-[node name="ButtonNo" type="Button" parent="ModalPanel/VBoxContainer/HBoxContainer"]
+[node name="ButtonNo" type="Button" parent="CenterContainer/ModalPanel/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
+theme = ExtResource("2_nujtq")
+theme_type_variation = &"FlatExitButton"
 text = "Нет"
 
-[node name="LineEditArtist" type="LineEdit" parent="ModalPanel/VBoxContainer"]
+[node name="LineEditArtist" type="LineEdit" parent="CenterContainer/ModalPanel/VBoxContainer"]
 layout_mode = 2
+theme = ExtResource("2_nujtq")
+theme_type_variation = &"SearchField"
 placeholder_text = "Поле ввода для \"Артиста\""
 alignment = 1
 
-[node name="LineEditTitle" type="LineEdit" parent="ModalPanel/VBoxContainer"]
+[node name="LineEditTitle" type="LineEdit" parent="CenterContainer/ModalPanel/VBoxContainer"]
 layout_mode = 2
+theme = ExtResource("2_nujtq")
+theme_type_variation = &"SearchField"
 placeholder_text = "Поле ввода для \"Названия\""
 alignment = 1
 
-[node name="ButtonSave" type="Button" parent="ModalPanel/VBoxContainer"]
+[node name="ButtonSave" type="Button" parent="CenterContainer/ModalPanel/VBoxContainer"]
 layout_mode = 2
+theme = ExtResource("2_nujtq")
+theme_type_variation = &"FlatMenuAchievementsButton"
 text = "Сохранить"

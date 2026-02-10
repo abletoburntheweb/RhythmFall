@@ -6,12 +6,12 @@ signal confirmed
 signal cancelled
 signal manual_entry_confirmed(artist: String, title: String)
 
-@onready var label_confirmation: Label = $ModalPanel/VBoxContainer/LabelConfirmation
-@onready var button_yes: Button = $ModalPanel/VBoxContainer/HBoxContainer/ButtonYes
-@onready var button_no: Button = $ModalPanel/VBoxContainer/HBoxContainer/ButtonNo
-@onready var line_edit_artist: LineEdit = $ModalPanel/VBoxContainer/LineEditArtist
-@onready var line_edit_title: LineEdit = $ModalPanel/VBoxContainer/LineEditTitle
-@onready var button_save: Button = $ModalPanel/VBoxContainer/ButtonSave
+@onready var label_confirmation: Label = $CenterContainer/ModalPanel/VBoxContainer/LabelConfirmation
+@onready var button_yes: Button = $CenterContainer/ModalPanel/VBoxContainer/HBoxContainer/ButtonYes
+@onready var button_no: Button = $CenterContainer/ModalPanel/VBoxContainer/HBoxContainer/ButtonNo
+@onready var line_edit_artist: LineEdit = $CenterContainer/ModalPanel/VBoxContainer/LineEditArtist
+@onready var line_edit_title: LineEdit = $CenterContainer/ModalPanel/VBoxContainer/LineEditTitle
+@onready var button_save: Button = $CenterContainer/ModalPanel/VBoxContainer/ButtonSave
 
 var expected_artist: String = ""
 var expected_title: String = ""
@@ -69,7 +69,8 @@ func _on_save_pressed(dummy_text := ""):
 
 func _on_gui_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var panel_rect = $ModalPanel.get_global_rect() if $ModalPanel else Rect2()
+		var panel_node = $CenterContainer/ModalPanel
+		var panel_rect = panel_node.get_global_rect() if panel_node else Rect2()
 		if not panel_rect.is_empty() and not panel_rect.has_point(get_viewport().get_mouse_position()):
 			hide()
 			emit_signal("cancelled")
