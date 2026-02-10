@@ -58,7 +58,8 @@ var data: Dictionary = {
 		"date": "",
 		"quests": []
 	},
-	"daily_quests_completed_total": 0
+	"daily_quests_completed_total": 0,
+	"profile_created_date": ""
 }
 
 signal total_play_time_changed(new_time_formatted: String)
@@ -189,6 +190,16 @@ func _load():
 			data["last_login_date"] = loaded_last_login
 			data["login_streak"] = loaded_login_streak 
 			
+			var loaded_profile_created_date = str(json_result.get("profile_created_date", ""))
+			if loaded_profile_created_date == "":
+				if loaded_last_login != "":
+					data["profile_created_date"] = loaded_last_login
+				else:
+					data["profile_created_date"] = Time.get_date_string_from_system()
+				_save()
+			else:
+				data["profile_created_date"] = loaded_profile_created_date
+			
 			var loaded_active_items_dict = loaded_active_items.duplicate(true)
 			for category in DEFAULT_ACTIVE_ITEMS:
 				var loaded_value = loaded_active_items_dict.get(category, DEFAULT_ACTIVE_ITEMS[category])
@@ -204,6 +215,7 @@ func _load():
 			_save() 
 	else:
 		print("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
+		data["profile_created_date"] = Time.get_date_string_from_system()
 		_save() 
 
 	_load_best_grades()

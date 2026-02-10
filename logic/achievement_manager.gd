@@ -338,13 +338,12 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 			purchasable_items.append(item)
 
 	var total_purchasable_items = purchasable_items.size() 
-	var total_unlocked_items = 0
 	var shop_item_ids = []
 	var unlocked_item_ids = []
+	var unlocked_purchasable_count = 0
 
 	if pdm:
 		unlocked_item_ids = pdm.get_items()  
-		total_unlocked_items = unlocked_item_ids.size()
 
 		for item in purchasable_items: 
 			shop_item_ids.append(item.get("item_id", ""))
@@ -353,11 +352,13 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 	for shop_id in shop_item_ids:
 		if not unlocked_item_ids.has(shop_id): 
 			missing_items_count += 1
+		else:
+			unlocked_purchasable_count += 1
 
 	for achievement in achievements:
 		if achievement.id == 18 and not achievement.get("unlocked", false):
 			achievement.total = total_purchasable_items
-			achievement.current = total_unlocked_items
+			achievement.current = unlocked_purchasable_count
 
 			if missing_items_count == 0:
 				_perform_unlock(achievement)

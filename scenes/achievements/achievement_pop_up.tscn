@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://o1npypfkbsw1"]
+[gd_scene load_steps=8 format=3 uid="uid://o1npypfkbsw1"]
 
 [ext_resource type="Script" uid="uid://dnjxdqfm6i7ua" path="res://scenes/achievements/achievement_pop_up.gd" id="1_3ety8"]
+[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="1_uk2ul"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="2_sqpua"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uk2ul"]
@@ -53,6 +54,7 @@ offset_bottom = -956.0
 grow_horizontal = 2
 grow_vertical = 2
 pivot_offset = Vector2(0, 956)
+theme = ExtResource("1_uk2ul")
 script = ExtResource("1_3ety8")
 
 [node name="ContentContainer" type="VBoxContainer" parent="."]

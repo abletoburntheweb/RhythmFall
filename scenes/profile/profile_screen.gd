@@ -12,6 +12,7 @@ const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 @onready var overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/OverallAccuracyLabel
 @onready var drum_overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumOverallAccuracyLabel
 @onready var play_time_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/PlayTimeLabel
+@onready var start_date_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/StartDateLabel")
 @onready var total_notes_hit_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesHitLabel 
 @onready var total_drum_hits_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumHitsLabel
 @onready var total_notes_missed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesMissedLabel
@@ -180,6 +181,10 @@ func refresh_stats():
 	
 	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted() 
 	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
+	if start_date_label:
+		var created_str = str(PlayerDataManager.data.get("profile_created_date", ""))
+		var display = _format_date_ru(created_str)
+		start_date_label.text = "В RhythmFall с %s" % display
 	if daily_quests_completed_label:
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
 
@@ -232,6 +237,30 @@ func refresh_stats():
 		_update_accuracy_chart()
 	_update_recent_achievements()
 
+func _format_date_ru(date_str: String) -> String:
+	if date_str == "":
+		var d = Time.get_date_dict_from_system()
+		return _format_date_dict_ru(d)
+	var parts = date_str.split("-")
+	if parts.size() == 3:
+		var year = int(parts[0])
+		var month = int(parts[1])
+		var day = int(parts[2])
+		return _format_date_parts_ru(day, month, year)
+	return date_str
+
+func _format_date_dict_ru(d: Dictionary) -> String:
+	return _format_date_parts_ru(int(d.get("day", 1)), int(d.get("month", 1)), int(d.get("year", 2000)))
+
+func _format_date_parts_ru(day: int, month: int, year: int) -> String:
+	var months = {
+		1: "янв.", 2: "фев.", 3: "мар.", 4: "апр.", 5: "мая",
+		6: "июн.", 7: "июл.", 8: "авг.", 9: "сен.", 10: "окт.", 11: "ноя.", 12: "дек."
+	}
+	var m = months.get(month, "")
+	if m == "":
+		m = str(month)
+	return "%d %s %d" % [day, m, year]
 func _on_daily_quests_updated():
 	if daily_quests_completed_label:
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()

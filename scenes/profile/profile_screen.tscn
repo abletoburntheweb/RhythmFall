@@ -2461,6 +2461,10 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
 text = "Рекордная серия попаданий подряд: 0"
 
+[node name="StartDateLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
+layout_mode = 2
+text = "В RhythmFall с 30 сен. 2025"
+
 [node name="CenterColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
 layout_mode = 2
 
