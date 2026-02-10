@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://butfjs1gy8ocq"
+path="res://.godot/imported/Tycho - Awake.mp3-be14484752f0a6d08bc9dcd794b324ec.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/Tycho - Awake.mp3"
+dest_files=["res://.godot/imported/Tycho - Awake.mp3-be14484752f0a6d08bc9dcd794b324ec.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

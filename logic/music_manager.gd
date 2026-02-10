@@ -4,7 +4,7 @@ extends Node
 const MUSIC_DIR = "res://assets/audio/"
 const SHOP_SOUND_DIR = "res://assets/shop/sounds/"
 
-const DEFAULT_MENU_MUSIC = "Niamos!.mp3"
+const DEFAULT_MENU_MUSIC = "Tycho - Awake.mp3"
 const DEFAULT_INTRO_MUSIC = "intro_music.mp3"
 const DEFAULT_SELECT_SOUND = "select_click.mp3"
 const DEFAULT_CANCEL_SOUND = "cancel_click.mp3"
