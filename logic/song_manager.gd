@@ -211,23 +211,22 @@ func _update_song_data(song_file_path: String):
 		var user_metadata = SongMetadataManager.get_metadata_for_song(song_file_path)
 
 		for key in user_metadata.keys():
-			if songs[index].has(key):
-				if key == "cover":
-					continue  
-				elif key == "duration":
-					if user_metadata[key] != "Н/Д":
-						songs[index][key] = user_metadata[key]
-				elif key == "bpm":
-					var bpm_value = user_metadata[key]
-					if bpm_value != "Н/Д":
-						if bpm_value is String:
-							if bpm_value.is_valid_int() and bpm_value.to_int() != 0:
-								songs[index][key] = bpm_value
-						elif bpm_value is int:
-							if bpm_value != 0:
-								songs[index][key] = bpm_value
-				else:
+			if key == "cover":
+				continue  
+			elif key == "duration":
+				if user_metadata[key] != "Н/Д":
 					songs[index][key] = user_metadata[key]
+			elif key == "bpm":
+				var bpm_value = user_metadata[key]
+				if bpm_value != "Н/Д":
+					if bpm_value is String:
+						if bpm_value.is_valid_int() and bpm_value.to_int() != 0:
+							songs[index][key] = bpm_value
+					elif bpm_value is int:
+						if bpm_value != 0:
+							songs[index][key] = bpm_value
+			else:
+				songs[index][key] = user_metadata[key]
 		
 		print("SongManager.gd: Данные песни '%s' обновлены из метаданных (cover оставлен без изменений)." % song_file_path)
 	else:

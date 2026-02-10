@@ -57,51 +57,51 @@
 		},
 		{
 			"category": "shop",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Совершить первую покупку в магазине",
 			"id": 6.0,
 			"image": "res://assets/achievements/first_purchase.png",
 			"title": "Первая покупка",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "10 Фев 2026, 20:54",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 13,
 			"description": "Купите 3 предмета в магазине",
 			"id": 7.0,
 			"image": "res://assets/achievements/collector_1.png",
 			"title": "Коллекционер I",
 			"total": 3.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "5 Янв 2026, 03:16",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 13,
 			"description": "Купите 5 предметов в магазине",
 			"id": 8.0,
 			"image": "res://assets/achievements/collector_2.png",
 			"title": "Коллекционер II",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "5 Янв 2026, 03:16",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 13,
 			"description": "Купите 10 предметов в магазине",
 			"id": 9.0,
 			"image": "res://assets/achievements/collector_3.png",
 			"title": "Коллекционер III",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "7 Янв 2026, 18:57",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
-			"current": 0,
+			"current": 13,
 			"description": "Купите 15 предметов в магазине",
 			"id": 10.0,
 			"image": "res://assets/achievements/collector_4.png",
@@ -112,69 +112,69 @@
 		},
 		{
 			"category": "economy",
-			"current": 260,
+			"current": 26663,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
 			"title": "Собиратель I",
 			"total": 2000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 260,
+			"current": 26663,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
 			"title": "Собиратель II",
 			"total": 5000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 260,
+			"current": 26663,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
 			"title": "Собиратель III",
 			"total": 12000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 03:03",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 3170,
 			"description": "Потратить 500 единиц валюты",
 			"id": 14.0,
 			"image": "res://assets/achievements/generous_hand_1.png",
 			"title": "Щедрая рука I",
 			"total": 500.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "7 Янв 2026, 18:17",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 3170,
 			"description": "Потратить 1000 единиц валюты",
 			"id": 15.0,
 			"image": "res://assets/achievements/generous_hand_2.png",
 			"title": "Щедрая рука II",
 			"total": 1000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "7 Янв 2026, 19:24",
+			"unlocked": true
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 3170,
 			"description": "Потратить 2500 единиц валюты",
 			"id": 16.0,
 			"image": "res://assets/achievements/generous_hand_3.png",
 			"title": "Щедрая рука III",
 			"total": 2500.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "10 Фев 2026, 20:54",
+			"unlocked": true
 		},
 		{
 			"category": "shop",
@@ -189,7 +189,7 @@
 		},
 		{
 			"category": "shop",
-			"current": 5,
+			"current": 18,
 			"description": "Собрать все предметы из текущего ассортимента магазина",
 			"id": 18.0,
 			"image": "res://assets/achievements/collection_completed.png",
@@ -206,7 +206,7 @@
 			"image": "res://assets/achievements/login_1_day.png",
 			"title": "Первый день",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 14:58",
+			"unlock_date": "1 Янв 2026, 00:40",
 			"unlocked": true
 		},
 		{
@@ -217,8 +217,8 @@
 			"image": "res://assets/achievements/login_7_days.png",
 			"title": "В ритме недели",
 			"total": 7.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "14 Янв 2026, 01:13",
+			"unlocked": true
 		},
 		{
 			"category": "daily",
@@ -244,14 +244,14 @@
 		},
 		{
 			"category": "system",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Сгенерировать свой первый уровень с помощью системы анализа",
 			"id": 23.0,
 			"image": "res://assets/achievements/note_researcher.png",
 			"title": "Нотный исследователь",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 15:54",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
@@ -261,7 +261,7 @@
 			"image": "res://assets/achievements/first_chord.png",
 			"title": "Первый аккорд",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 14:58",
+			"unlock_date": "1 Янв 2026, 01:12",
 			"unlocked": true
 		},
 		{
@@ -272,41 +272,41 @@
 			"image": "res://assets/achievements/flawless_hearing.png",
 			"title": "Безупречный слух",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 14:58",
+			"unlock_date": "1 Янв 2026, 01:12",
 			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 2,
+			"current": 68.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
 			"title": "Новичок ритма",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 03:02",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 2,
+			"current": 68.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
 			"title": "Ритм-мастер",
 			"total": 20.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "17 Янв 2026, 03:49",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1000.0,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
 			"title": "В ритме",
 			"total": 1000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "15 Янв 2026, 20:37",
+			"unlocked": true
 		},
 		{
 			"category": "drums",
@@ -316,7 +316,7 @@
 			"image": "res://assets/achievements/first_strike.png",
 			"title": "Первый удар",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 14:58",
+			"unlock_date": "1 Янв 2026, 01:12",
 			"unlocked": true
 		},
 		{
@@ -327,30 +327,30 @@
 			"image": "res://assets/achievements/clean_rhythm.png",
 			"title": "Чистый ритм",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 14:58",
+			"unlock_date": "1 Янв 2026, 01:12",
 			"unlocked": true
 		},
 		{
 			"category": "drums",
-			"current": 2,
+			"current": 10.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
 			"title": "Сила грува",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "5 Янв 2026, 01:43",
+			"unlocked": true
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 100.0,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,
 			"image": "res://assets/achievements/drum_storm.png",
 			"title": "Барабанный шторм",
 			"total": 100.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
@@ -360,45 +360,45 @@
 			"image": "res://assets/achievements/musical_memory.png",
 			"title": "Музыкальная память",
 			"total": 1.0,
-			"unlock_date": "10 Фев 2026, 15:00",
+			"unlock_date": "7 Янв 2026, 15:53",
 			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 30.98,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
 			"title": "Начинающий меломан",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 16:46",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 30.98,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
 			"title": "Страстный слушатель",
 			"total": 5.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "8 Янв 2026, 03:47",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 30.98,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
 			"title": "Поклонник ритма",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "19 Янв 2026, 21:43",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 30.98,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 30.98,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,51 +420,51 @@
 		},
 		{
 			"category": "mastery",
-			"current": 800,
+			"current": 5050140,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
 			"title": "Первый шаг",
 			"total": 20000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 800,
+			"current": 5050140,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
 			"title": "Счётчик ритма",
 			"total": 75000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 800,
+			"current": 5050140,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
 			"title": "Профессионал",
 			"total": 250000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 800,
+			"current": 5050140,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
 			"title": "Легенда",
 			"total": 750000.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "15 Янв 2026, 20:37",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 4.0,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
 			"image": "res://assets/achievements/rising_star.png",
@@ -475,7 +475,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 4.0,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
 			"image": "res://assets/achievements/star_path.png",
@@ -486,7 +486,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 4.0,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
 			"image": "res://assets/achievements/genius_accuracy.png",
@@ -497,7 +497,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 4.0,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,
 			"image": "res://assets/achievements/master_perfection.png",
@@ -519,51 +519,51 @@
 		},
 		{
 			"category": "events",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Зайти в игру в зимние праздники",
 			"id": 48.0,
 			"image": "res://assets/achievements/winter_jam.png",
 			"title": "Зимний джем",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 Янв 2026, 00:40",
+			"unlocked": true
 		},
 		{
 			"category": "level",
-			"current": 7,
+			"current": 33.0,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"image": "res://assets/achievements/tact.png",
 			"title": "Такт",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "17 Янв 2026, 01:12",
+			"unlocked": true
 		},
 		{
 			"category": "level",
-			"current": 7,
+			"current": 33.0,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"image": "res://assets/achievements/tempo.png",
 			"title": "Темп",
 			"total": 16.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "19 Янв 2026, 20:10",
+			"unlocked": true
 		},
 		{
 			"category": "level",
-			"current": 7,
+			"current": 33.0,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"image": "res://assets/achievements/rhythm.png",
 			"title": "Ритм",
 			"total": 25.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "19 Янв 2026, 20:10",
+			"unlocked": true
 		},
 		{
 			"category": "level",
-			"current": 7,
+			"current": 33.0,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"image": "res://assets/achievements/arrangement.png",
@@ -574,7 +574,7 @@
 		},
 		{
 			"category": "level",
-			"current": 7,
+			"current": 33.0,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"image": "res://assets/achievements/composition.png",
@@ -585,18 +585,18 @@
 		},
 		{
 			"category": "genres",
-			"current": 2.0,
+			"current": 18.0,
 			"description": "Сыграть 3 раза в электронных жанрах (electronic, synthwave, techno, house, trance, IDM, glitch, ambient, chillwave)",
 			"id": 54.0,
 			"image": "res://assets/achievements/electronic_foundation.png",
 			"title": "Электрический фундамент",
 			"total": 3.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "19 Янв 2026, 20:23",
+			"unlocked": true
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в гитарных жанрах (rock, alternative rock, indie rock, garage rock, punk, post-punk, grunge, math rock, post-rock)",
 			"id": 55.0,
 			"image": "res://assets/achievements/guitar_energy.png",
@@ -607,18 +607,18 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 9.0,
 			"description": "Сыграть 3 раза в рэп-жанрах (rap, hip-hop, trap, cloud rap, emo rap, melodic rap, alternative rap, hypertrap)",
 			"id": 56.0,
 			"image": "res://assets/achievements/street_voice.png",
 			"title": "Голос улиц",
 			"total": 3.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "17 Янв 2026, 03:59",
+			"unlocked": true
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в независимых и альтернативных жанрах (indie, bedroom pop, lo-fi, art pop, alternative)",
 			"id": 57.0,
 			"image": "res://assets/achievements/off_mainstream.png",
@@ -629,7 +629,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в экспериментальной музыке (experimental, avant-garde, fusion, cross-genre, abstract)",
 			"id": 58.0,
 			"image": "res://assets/achievements/beyond_genres.png",

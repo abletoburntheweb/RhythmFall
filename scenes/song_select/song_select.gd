@@ -289,8 +289,17 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 			song_item_list_ref.select(item_list_index, true)
 
 		if current_selected_song_data.get("path") == song_data.get("path"):
-			current_selected_song_data = song_data.duplicate()
-			song_details_manager.update_details(current_selected_song_data)
+			var song_path = song_data.get("path", "")
+			var latest = {}
+			if song_path != "":
+				for s in SongManager.get_songs_list():
+					if s.get("path", "") == song_path:
+						latest = s.duplicate(true)
+						break
+			if latest.is_empty():
+				latest = song_data.duplicate(true)
+			current_selected_song_data = latest
+			song_details_manager.update_details(latest)
 	else:
 		song_list_manager.populate_items_grouped()
 
@@ -657,3 +666,4 @@ func _check_if_notes_exist_for_current_settings() -> bool:
 		file_access.close()
 		return true
 	return false
+ 
