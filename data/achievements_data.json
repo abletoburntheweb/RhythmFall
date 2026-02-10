@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 26663,
+			"current": 26468,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 26663,
+			"current": 26468,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 26663,
+			"current": 26468,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -178,12 +178,12 @@
 		},
 		{
 			"category": "shop",
-			"current": 3,
+			"current": 5,
 			"description": "Купить по одному предмету из каждой категории",
 			"id": 17.0,
 			"image": "res://assets/achievements/style_hunter.png",
 			"title": "Охотник за стилем",
-			"total": 5.0,
+			"total": 6.0,
 			"unlock_date": null,
 			"unlocked": false
 		},
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.98,
+			"current": 30.97,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.98,
+			"current": 30.97,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,7 +387,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.98,
+			"current": 30.97,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
@@ -398,7 +398,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.98,
+			"current": 30.97,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 30.98,
+			"current": 30.97,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5050140,
+			"current": 5049420,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5050140,
+			"current": 5049420,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5050140,
+			"current": 5049420,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 5050140,
+			"current": 5049420,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",

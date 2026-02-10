@@ -205,16 +205,10 @@ func check_spent_currency_achievement(total_spent: int):
 
 func check_style_hunter_achievement(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
-	var categories = {
-		"Kick": [],
-		"Snare": [],
-		"Backgrounds": [],
-		"Covers": [],
-		"Misc": []
-	}
+	var categories: Dictionary = {}
 
 	if pdm:
-		var unlocked_items = pdm.get_items() 
+		var unlocked_items = pdm.get_items()
 
 		var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
 		if shop_file:
@@ -226,31 +220,36 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 				for item in shop_json_parse_result.items:
 					var item_id = item.get("item_id", "")
 					var category_ru = item.get("category", "")
-					var category = _map_category_ru_to_internal(category_ru)
+					var category_internal = _map_category_ru_to_internal(category_ru)
+					if category_internal == "":
+						category_internal = category_ru.strip_edges()
 
-					if unlocked_items.has(item_id) and category: 
-						if categories.has(category):
-							categories[category].append(item_id)
+					if not categories.has(category_internal):
+						categories[category_internal] = []
+
+					if unlocked_items.has(item_id):
+						categories[category_internal].append(item_id)
 			else:
 				printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")
 		else:
 			printerr("[AchievementManager] Не удалось открыть файл ", SHOP_JSON_PATH)
 
 	var categories_with_items = 0
-	for items in categories.values():
+	for key in categories.keys():
+		var items: Array = categories[key]
 		if items.size() > 0:
 			categories_with_items += 1
 	var total_categories = categories.size()
 
 	for achievement in achievements:
 		if achievement.id == 17 and not achievement.get("unlocked", false):
-			if achievement.total != total_categories: 
+			if achievement.total != total_categories:
 				achievement.total = total_categories
 			achievement.current = categories_with_items
 
-			if categories_with_items == total_categories:
+			if categories_with_items == total_categories and total_categories > 0:
 				_perform_unlock(achievement)
-			break 
+			break
 
 	save_achievements()
 
@@ -264,8 +263,10 @@ func _map_category_ru_to_internal(category_ru: String) -> String:
 		"Ноты": return "Notes"
 		"Прочее": return "Misc"
 		_:
-			printerr("Неизвестная категория из shop_data.json: ", category_ru)
-			return ""
+			var fallback = category_ru.strip_edges()
+			if fallback == "":
+				printerr("Неизвестная категория из shop_data.json: ", category_ru)
+			return fallback
 
 func check_daily_login_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
