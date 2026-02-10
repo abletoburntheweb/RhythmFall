@@ -127,6 +127,7 @@ func transition_close_game():
 		main_menu_instance.is_game_open = false
 
 func transition_open_song_select():
+	show_level_ui()
 	var new_screen = _instantiate_if_exists("res://scenes/song_select/song_select.tscn")
 	if new_screen:
 		if new_screen.has_method("set_transitions"):

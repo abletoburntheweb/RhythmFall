@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 190,
+			"current": 260,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 190,
+			"current": 260,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 190,
+			"current": 260,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1,
+			"current": 2,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1,
+			"current": 2,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 1,
+			"current": 2,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
@@ -354,14 +354,14 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0.0,
+			"current": 1.0,
 			"description": "Пройти один и тот же уровень дважды",
 			"id": 33.0,
 			"image": "res://assets/achievements/musical_memory.png",
 			"title": "Музыкальная память",
 			"total": 1.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "10 Фев 2026, 15:00",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 400,
+			"current": 800,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 400,
+			"current": 800,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 400,
+			"current": 800,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 400,
+			"current": 800,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -530,7 +530,7 @@
 		},
 		{
 			"category": "level",
-			"current": 3,
+			"current": 7,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"image": "res://assets/achievements/tact.png",
@@ -541,7 +541,7 @@
 		},
 		{
 			"category": "level",
-			"current": 3,
+			"current": 7,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"image": "res://assets/achievements/tempo.png",
@@ -552,7 +552,7 @@
 		},
 		{
 			"category": "level",
-			"current": 3,
+			"current": 7,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"image": "res://assets/achievements/rhythm.png",
@@ -563,7 +563,7 @@
 		},
 		{
 			"category": "level",
-			"current": 3,
+			"current": 7,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"image": "res://assets/achievements/arrangement.png",
@@ -574,7 +574,7 @@
 		},
 		{
 			"category": "level",
-			"current": 3,
+			"current": 7,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"image": "res://assets/achievements/composition.png",
@@ -585,7 +585,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 1,
+			"current": 2.0,
 			"description": "Сыграть 3 раза в электронных жанрах (electronic, synthwave, techno, house, trance, IDM, glitch, ambient, chillwave)",
 			"id": 54.0,
 			"image": "res://assets/achievements/electronic_foundation.png",
