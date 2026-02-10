@@ -91,6 +91,9 @@ func _ready():
 	current_lanes = saved_lanes
 
 	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(saved_instrument, saved_mode, saved_lanes)
+	song_details_manager.set_current_instrument(saved_instrument)
+	song_details_manager.set_current_generation_mode(saved_mode)
+	song_details_manager.set_current_lanes(saved_lanes)
 	
 	filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
 	analyze_bpm_button.disabled = true
@@ -313,6 +316,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		analyze_bpm_button.disabled = false
 		results_button.disabled = false
 		clear_results_button.disabled = false
+		song_details_manager._update_play_button_state()
 	else:
 		analyze_bpm_button.disabled = true
 		results_button.disabled = true
@@ -329,8 +333,10 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		
 		if _check_if_notes_exist_for_current_settings():
 			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false
+			song_details_manager._update_play_button_state()
 		else:
 			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
+			song_details_manager._update_play_button_state()
 
 func _on_song_list_changed():
 	_update_song_count_label()
