@@ -93,9 +93,8 @@ func _on_back_button_pressed():
 
 func _input(event: InputEvent):
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
-		MusicManager.play_cancel_sound()
-		print("CoverGallery.gd: Воспроизведен звук cancel при нажатии Escape.")
 		_on_back_button_pressed()
+		accept_event()
 
 func close_gallery():
 	emit_signal("gallery_closed")

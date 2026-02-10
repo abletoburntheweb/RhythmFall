@@ -105,5 +105,5 @@ func _on_back_button_pressed():
 
 func _input(event: InputEvent):
 	if event.is_action_pressed("ui_cancel"):
-		MusicManager.play_cancel_sound()
 		_on_back_button_pressed()
+		accept_event()
