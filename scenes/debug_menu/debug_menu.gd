@@ -167,7 +167,8 @@ func _on_accuracy_text_submitted(new_text: String):
 func _on_plus_1000_button_pressed():
 	var game_screen = get_parent()
 	if game_screen and game_screen.score_manager:
-		var multiplier = game_screen.score_manager.get_combo_multiplier()
+		var current_combo = game_screen.score_manager.combo
+		var multiplier = min(4.0, 1.0 + float(int(current_combo / 10)))
 		var actual_points = int(1000 * multiplier)
 		
 		game_screen.score_manager.score += actual_points
@@ -247,10 +248,9 @@ func _on_win_button_pressed():
 		game_screen.score_manager.hit_notes = hit_notes
 		game_screen.score_manager.update_accuracy()
 
-	if game_screen.score_manager.get_accuracy() >= 100.0:
-		game_screen.score_manager.combo = total_notes
-	else:
-		game_screen.score_manager.combo = 0
+	var hits_for_combo = game_screen.score_manager.get_hit_notes_count()
+	if target_accuracy >= 100.0 and hits_for_combo > 0:
+		game_screen.score_manager.combo = hits_for_combo
 
 	var base_score_per_hit = 100
 	var multiplier = 1.0

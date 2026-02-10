@@ -102,6 +102,7 @@ func _on_clear_all_cache_pressed():
 func _on_reset_profile_stats_pressed():
 	print("MiscTab.gd: Запрос на сброс статистики профиля.")
 	PlayerDataManager.reset_profile_statistics() 
+	TrackStatsManager.reset_stats()
 	print("MiscTab.gd: Статистика профиля сброшена.")
 	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
 		get_parent().get_parent().get_parent().refresh_stats() 
