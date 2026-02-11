@@ -115,7 +115,7 @@
 	  "image": "res://assets/textures/kick_icon.png"
 	},
 	{
-	  "item_id": "kick_achievement_1",
+	  "item_id": "kick_9",
 	  "name": "Штормовой кик",
 	  "price": 0,
 	  "category": "Кик",
@@ -126,7 +126,7 @@
 	  "achievement_required": "32"
 	},
 	{
-	  "item_id": "kick_achievement_2",
+	  "item_id": "kick_10",
 	  "name": "Памятный кик",
 	  "price": 0,
 	  "category": "Кик",
@@ -137,7 +137,7 @@
 	  "achievement_required": "33"
 	},
 	{
-	  "item_id": "kick_level_1",
+	  "item_id": "kick_11",
 	  "name": "Кик уровень 1",
 	  "price": 0,
 	  "category": "Кик",
@@ -148,7 +148,7 @@
 	  "required_level": 10
 	},
 	{
-	  "item_id": "kick_level_2",
+	  "item_id": "kick_12",
 	  "name": "Кик уровень 2",
 	  "price": 0,
 	  "category": "Кик",
@@ -159,7 +159,7 @@
 	  "required_level": 20
 	},
 	{
-	  "item_id": "kick_daily_1",
+	  "item_id": "kick_13",
 	  "name": "Кик ежедневки 1",
 	  "price": 0,
 	  "category": "Кик",
@@ -170,7 +170,7 @@
 	  "required_daily_completed": 5
 	},
 	{
-	  "item_id": "kick_daily_2",
+	  "item_id": "kick_14",
 	  "name": "Кик ежедневки 2",
 	  "price": 0,
 	  "category": "Кик",
@@ -515,6 +515,51 @@
 	  "note_colors": ["#eaeaea", "#d8e2dc", "#ffffff", "#d8e2dc", "#eaeaea"]
 	},
 	{
+	  "item_id": "notes_creamy_blue_palette",
+	  "name": "Кремово-голубая палитра",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#ffe8d6", "#ffd7ba", "#fec5bb", "#d8e2dc", "#bee1e6"],
+	  "is_achievement_reward": true,
+	  "achievement_required": "34"
+	},
+	{
+	  "item_id": "notes_neon_palette",
+	  "name": "Неоновая палитра",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#00d4ff", "#00ffe1", "#9fffcb", "#ffd166", "#ef476f"],
+	  "is_achievement_reward": true,
+	  "achievement_required": "39"
+	},
+	{
+	  "item_id": "notes_ice_palette",
+	  "name": "Ледяная палитра",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#e0fbfc", "#c2dfe3", "#9db4c0", "#5c6b73", "#253237"],
+	  "is_level_reward": true,
+	  "required_level": 16
+	},
+	{
+	  "item_id": "notes_solar_palette",
+	  "name": "Солнечная палитра",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#fff3b0", "#ffd166", "#fdae61", "#f78c6b", "#e76f51"],
+	  "is_level_reward": true,
+	  "required_level": 50
+	},
+	{
+	  "item_id": "notes_pastel_daily",
+	  "name": "Пастель ежедневок",
+	  "price": 0,
+	  "category": "Ноты",
+	  "note_colors": ["#ffc6ff", "#bdb2ff", "#a0c4ff", "#caffbf", "#ffd6a5"],
+	  "is_daily_reward": true,
+	  "required_daily_completed": 20
+	},
+	{
 	  "item_id": "lanes_highlight_1",
 	  "name": "Огненный закат",
 	  "price": 250,
@@ -653,6 +698,51 @@
 	  "price": 250,
 	  "category": "Подсветка линий",
 	  "color_hex": "#4b369d80"
+	},
+	{
+	  "item_id": "lanes_highlight_24",
+	  "name": "Алый шторм",
+	  "price": 0,
+	  "category": "Подсветка линий",
+	  "color_hex": "#e71d3680",
+	  "is_achievement_reward": true,
+	  "achievement_required": "7"
+	},
+	{
+	  "item_id": "lanes_highlight_25",
+	  "name": "Аметистовый акцент",
+	  "price": 0,
+	  "category": "Подсветка линий",
+	  "color_hex": "#9c89b880",
+	  "is_achievement_reward": true,
+	  "achievement_required": "17"
+	},
+	{
+	  "item_id": "lanes_highlight_21",
+	  "name": "Бирюзовая волна",
+	  "price": 0,
+	  "category": "Подсветка линий",
+	  "color_hex": "#00b4d880",
+	  "is_level_reward": true,
+	  "required_level": 25
+	},
+	{
+	  "item_id": "lanes_highlight_22",
+	  "name": "Оранжевый рассвет",
+	  "price": 0,
+	  "category": "Подсветка линий",
+	  "color_hex": "#ff9f1c80",
+	  "is_level_reward": true,
+	  "required_level": 100
+	},
+	{
+	  "item_id": "lanes_highlight_23",
+	  "name": "Неоновая бирюза",
+	  "price": 0,
+	  "category": "Подсветка линий",
+	  "color_hex": "#2ec4b680",
+	  "is_daily_reward": true,
+	  "required_daily_completed": 10
 	},
 	{
 	  "item_id": "misc_1",
