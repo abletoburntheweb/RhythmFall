@@ -26,6 +26,7 @@ func resync_all():
 	achievement_manager.check_spent_currency_achievement(total_spent)
 	achievement_manager.check_score_achievements(PlayerDataManager)
 	achievement_manager.check_playtime_achievements(PlayerDataManager)
+	achievement_manager.check_level_achievements(PlayerDataManager.get_current_level())
 	achievement_manager.save_achievements()
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
