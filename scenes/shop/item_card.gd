@@ -21,6 +21,9 @@ var is_level_reward: bool = false
 var required_level: int = 0
 var level_unlocked: bool = false
 var _pending_load_path: String = ""
+var is_daily_reward: bool = false
+var required_daily_completed: int = 0
+var daily_unlocked: bool = false
 
 func _ready():
 	if not item_data.has("item_id"):
@@ -66,6 +69,8 @@ func _setup_item():
 	
 	is_level_reward = item_data.get("is_level_reward", false)
 	required_level = item_data.get("required_level", 0)
+	is_daily_reward = item_data.get("is_daily_reward", false)
+	required_daily_completed = item_data.get("required_daily_completed", 0)
 
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
@@ -212,13 +217,26 @@ func _update_buttons_and_status():
 	var buy_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton
 	var achievement_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/AchievementRewardButton 
 	var level_reward_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/LevelRewardButton 
+	var daily_reward_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/DailyRewardButton
 	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
 	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
 	var status_label = $MarginContainer/ContentContainer/StatusLabel
+	
+	if achievement_button:
+		achievement_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		achievement_button.size_flags_stretch_ratio = 1
+	if level_reward_button:
+		level_reward_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		level_reward_button.size_flags_stretch_ratio = 1
+	if daily_reward_button:
+		daily_reward_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		daily_reward_button.size_flags_stretch_ratio = 1
 
 	if is_level_reward:
 		buy_button.visible = false
 		achievement_button.visible = false
+		if daily_reward_button:
+			daily_reward_button.visible = false
 		
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
@@ -237,12 +255,16 @@ func _update_buttons_and_status():
 			level_reward_button.visible = true
 			level_reward_button.text = "Уровень %d 🔒" % required_level
 			level_reward_button.disabled = true 
+			if level_reward_button:
+				level_reward_button.tooltip_text = "Достигните %d уровня" % required_level
 			use_button.visible = false
 			status_label.visible = false
 
 	elif is_achievement_reward:
 		buy_button.visible = false
 		level_reward_button.visible = false  
+		if daily_reward_button:
+			daily_reward_button.visible = false
 		
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
@@ -251,6 +273,8 @@ func _update_buttons_and_status():
 
 		if achievement_unlocked:
 			achievement_button.visible = false
+			if achievement_button:
+				achievement_button.tooltip_text = ""
 			use_button.visible = not is_active
 			if use_button.visible:
 				use_button.text = "✅ Использовать"
@@ -262,12 +286,45 @@ func _update_buttons_and_status():
 			var display_name = achievement_name if achievement_name != "" else "Награда за ачивку"
 			achievement_button.text = display_name + " 🔒"  
 			achievement_button.disabled = true 
+			if achievement_button:
+				var ach_desc = _get_achievement_description_by_id(achievement_required)
+				if ach_desc == "":
+					ach_desc = "Выполните достижение"
+				achievement_button.tooltip_text = ach_desc
+			use_button.visible = false
+			status_label.visible = false
+	elif is_daily_reward:
+		buy_button.visible = false
+		level_reward_button.visible = false
+		achievement_button.visible = false
+		var audio_path = item_data.get("audio", "")
+		preview_button.visible = audio_path != ""
+		if preview_button.visible:
+			preview_button.text = "🔊 Прослушать"
+		if daily_unlocked:
+			if daily_reward_button:
+				daily_reward_button.visible = false
+				daily_reward_button.tooltip_text = ""
+			use_button.visible = not is_active
+			if use_button.visible:
+				use_button.text = "✅ Использовать"
+			status_label.visible = is_active
+			if is_active:
+				status_label.text = "✅ Используется"
+		else:
+			if daily_reward_button:
+				daily_reward_button.visible = true
+				daily_reward_button.text = "Ежедневки: %d 🔒" % required_daily_completed
+				daily_reward_button.disabled = true
+				daily_reward_button.tooltip_text = "Завершите %d ежедневных заданий" % required_daily_completed
 			use_button.visible = false
 			status_label.visible = false
 
 	else:
 		achievement_button.visible = false
 		level_reward_button.visible = false
+		if daily_reward_button:
+			daily_reward_button.visible = false
 		
 		buy_button.visible = not is_purchased and not is_default
 		if buy_button.visible:
@@ -304,8 +361,8 @@ func _on_use_pressed():
 func _on_preview_pressed():
 	var item_id_str = item_data.get("item_id", "") 
 	emit_signal("preview_pressed", item_id_str)
-
-func update_state(purchased: bool, active: bool, file_available: bool = true, achievement_unlocked_param: bool = false, achievement_name_param: String = "", level_unlocked_param: bool = false):
+	
+func update_state(purchased: bool, active: bool, file_available: bool = true, achievement_unlocked_param: bool = false, achievement_name_param: String = "", level_unlocked_param: bool = false, daily_unlocked_param: bool = false):
 	is_purchased = purchased
 	is_active = active
 	self.achievement_unlocked = achievement_unlocked_param
@@ -313,10 +370,36 @@ func update_state(purchased: bool, active: bool, file_available: bool = true, ac
 	self.is_achievement_reward = item_data.get("is_achievement_reward", false)
 	self.level_unlocked = level_unlocked_param
 	self.is_level_reward = item_data.get("is_level_reward", false)
+	self.daily_unlocked = daily_unlocked_param
+	self.is_daily_reward = item_data.get("is_daily_reward", false)
 	
 	if is_level_reward and level_unlocked_param:
 		is_purchased = true 
 	elif is_achievement_reward and achievement_unlocked_param:
 		is_purchased = true 
+	elif is_daily_reward and daily_unlocked_param:
+		is_purchased = true 
 	
 	_setup_item() 
+	
+func _get_achievement_description_by_id(achievement_id_str: String) -> String:
+	var path = "res://data/achievements_data.json"
+	if achievement_id_str == "" or not achievement_id_str.is_valid_int():
+		return ""
+	if not FileAccess.file_exists(path):
+		return ""
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return ""
+	var text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if not (parsed and parsed.has("achievements")):
+		return ""
+	var id_val = int(achievement_id_str)
+	for a in parsed.achievements:
+		if a is Dictionary:
+			var aid = int(a.get("id", -1))
+			if aid == id_val:
+				return String(a.get("description", ""))
+	return ""

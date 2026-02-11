@@ -115,15 +115,6 @@
 	  "image": "res://assets/textures/kick_icon.png"
 	},
 	{
-	  "item_id": "kick_unavailable",
-	  "name": "Кик отсутствующий",
-	  "price": 200,
-	  "category": "Кик",
-	  "type": "kick",
-	  "audio": "res://assets/shop/sounds/kick/kick_unavailable.wav",
-	  "image": "res://assets/textures/kick_icon.png"
-	},
-	{
 	  "item_id": "kick_achievement_1",
 	  "name": "Штормовой кик",
 	  "price": 0,
@@ -166,6 +157,28 @@
 	  "image": "res://assets/textures/kick_icon.png",
 	  "is_level_reward": true,
 	  "required_level": 20
+	},
+	{
+	  "item_id": "kick_daily_1",
+	  "name": "Кик ежедневки 1",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick13.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_daily_reward": true,
+	  "required_daily_completed": 5
+	},
+	{
+	  "item_id": "kick_daily_2",
+	  "name": "Кик ежедневки 2",
+	  "price": 0,
+	  "category": "Кик",
+	  "type": "kick",
+	  "audio": "res://assets/shop/sounds/kick/kick14.wav",
+	  "image": "res://assets/textures/kick_icon.png",
+	  "is_daily_reward": true,
+	  "required_daily_completed": 20
 	},
 	{
 	  "item_id": "snare_1",
@@ -317,7 +330,7 @@
 	  "images_folder": "res://assets/shop/covers/pixel_amp",
 	  "images_count": 7,
 	  "is_achievement_reward": true,
-	  "achievement_required": "50"
+	  "achievement_required": "9"
 	},
 	{
 	  "item_id": "notes_monochrome_red",

@@ -177,6 +177,7 @@ func _create_item_cards():
 		var achievement_name = ""
 		var achievement_unlocked = false
 		var level_unlocked = false
+		var daily_unlocked = false
 
 		if item_data.get("is_level_reward", false):
 			var required_level = item_data.get("required_level", 0)
@@ -187,8 +188,12 @@ func _create_item_cards():
 			achievement_name = _get_achievement_name_by_id(achievement_id)
 			if achievement_id != "" and achievement_id.is_valid_int():
 				achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id)) 
+		elif item_data.get("is_daily_reward", false):
+			var required_daily = int(item_data.get("required_daily_completed", 0))
+			var total_completed = PlayerDataManager.get_daily_quests_completed_total()
+			daily_unlocked = total_completed >= required_daily
 
-		new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
+		new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
 
 		new_card.buy_pressed.connect(_on_item_buy_pressed)
 		new_card.use_pressed.connect(_on_item_use_pressed)
@@ -393,6 +398,7 @@ func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 			var achievement_name = ""
 			var level_unlocked = false
 			var item_data = card.item_data 
+			var daily_unlocked = false
 			
 			if item_data.get("is_level_reward", false):
 				var required_level = item_data.get("required_level", 0)
@@ -404,8 +410,12 @@ func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 					var achievement_id = int(achievement_id_str)
 					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
+			elif item_data.get("is_daily_reward", false):
+				var required_daily = int(item_data.get("required_daily_completed", 0))
+				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
+				daily_unlocked = total_completed >= required_daily
 			
-			card.update_state(purchased, active, true, achievement_unlocked, achievement_name, level_unlocked)
+			card.update_state(purchased, active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
 			break
 
 func _update_all_item_cards_in_category(category: String, active_item_id: String):
@@ -420,6 +430,7 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			var achievement_name = ""
 			var level_unlocked = false
 			var item_data = card.item_data
+			var daily_unlocked = false
 			
 			if item_data.get("is_level_reward", false):
 				var required_level = item_data.get("required_level", 0)
@@ -431,8 +442,12 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 					var achievement_id = int(achievement_id_str)
 					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
 					achievement_name = _get_achievement_name_by_id(achievement_id_str)
+			elif item_data.get("is_daily_reward", false):
+				var required_daily = int(item_data.get("required_daily_completed", 0))
+				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
+				daily_unlocked = total_completed >= required_daily
 			
-			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked)
+			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
 
 func _cleanup_gallery_internal():
 	if current_cover_gallery:

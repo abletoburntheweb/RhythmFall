@@ -2369,10 +2369,12 @@ offset_left = 928.0
 offset_top = 614.0
 offset_right = 1208.0
 offset_bottom = 999.0
+theme = ExtResource("2_ha41t")
 script = ExtResource("1_re5xs")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+theme = ExtResource("2_ha41t")
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 15
 theme_override_constants/margin_right = 15
@@ -2435,6 +2437,12 @@ size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatMenuAchievementsButton"
 text = "Награда за уровень 🔒"
+
+[node name="DailyRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
+layout_mode = 2
+theme = ExtResource("2_ha41t")
+theme_type_variation = &"FlatBackButton"
+text = "Ежедневки 🔒"
 
 [node name="PreviewButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer"]
 layout_mode = 2
