@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1415,12 +1415,17 @@ custom_minimum_size = Vector2(0, 23)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Название"
-autowrap_mode = 2
+clip_text = true
+text_overrun_behavior = 3
+max_lines_visible = 1
 
 [node name="ArtistLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Исполнитель"
+clip_text = true
+text_overrun_behavior = 3
+max_lines_visible = 1
 
 [node name="YearLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2

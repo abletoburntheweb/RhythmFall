@@ -6,6 +6,7 @@ signal active_item_changed(category: String, item_id: String)
 const PLAYER_DATA_PATH = "user://player_data.json" 
 const BEST_GRADES_PATH = "user://best_grades.json" 
 const TRACK_STATS_PATH = "user://track_stats.json"
+const MAX_LEVEL := 100
 
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
@@ -209,6 +210,12 @@ func _load():
 			for category in loaded_active_items_dict:
 				if not DEFAULT_ACTIVE_ITEMS.has(category):
 					data["active_items"][category] = loaded_active_items_dict[category]
+			
+			if data["current_level"] > MAX_LEVEL:
+				data["current_level"] = MAX_LEVEL
+			_calculate_xp_for_next_level()
+			data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
+			
 			print("PlayerDataManager.gd: Данные игрока загружены из ", PLAYER_DATA_PATH)
 		else:
 			print("PlayerDataManager.gd: Ошибка парсинга JSON или данные не являются словарём в ", PLAYER_DATA_PATH)
@@ -329,12 +336,22 @@ func _trigger_perfect_hit_achievement_check():
 func xp_for_level(level: int) -> int:
 	if level <= 1:
 		return 100
-	return int(100 * pow(1.2, level - 1))
+	var capped_level = min(level, MAX_LEVEL)
+	return int(100 * pow(1.2, capped_level - 1))
 
 func _calculate_xp_for_next_level():
-	data["xp_for_next_level"] = xp_for_level(data["current_level"] + 1)
+	if data["current_level"] >= MAX_LEVEL:
+		data["xp_for_next_level"] = xp_for_level(MAX_LEVEL)
+	else:
+		data["xp_for_next_level"] = xp_for_level(data["current_level"] + 1)
 
 func add_xp(amount: int):
+	if data["current_level"] >= MAX_LEVEL:
+		data["total_xp"] = min(data["total_xp"] + amount, data["xp_for_next_level"])
+		print("PlayerDataManager: Добавлено XP (макс. уровень): %d, всего: %d" % [amount, data["total_xp"]])
+		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
+		_save()
+		return
 	data["total_xp"] += amount
 	print("PlayerDataManager: Добавлено XP: %d, всего: %d" % [amount, data["total_xp"]])
 	var leveled_up = check_level_up()
@@ -343,8 +360,11 @@ func add_xp(amount: int):
 		_save()
 
 func check_level_up() -> bool:
+	if data["current_level"] >= MAX_LEVEL:
+		data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
+		return false
 	var leveled: bool = false
-	while data["total_xp"] >= data["xp_for_next_level"]:
+	while data["total_xp"] >= data["xp_for_next_level"] and data["current_level"] < MAX_LEVEL:
 		var old_level = data["current_level"]
 		data["current_level"] += 1
 		var new_level = data["current_level"]
@@ -360,6 +380,8 @@ func check_level_up() -> bool:
 		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
 		increment_daily_progress("profile_level_up", 1, {})
 		_save()
+	if data["current_level"] >= MAX_LEVEL and data["total_xp"] > data["xp_for_next_level"]:
+		data["total_xp"] = data["xp_for_next_level"]
 	return leveled
 
 func get_xp_progress() -> float:
