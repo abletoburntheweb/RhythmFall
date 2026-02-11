@@ -256,7 +256,8 @@ func _update_buttons_and_status():
 			level_reward_button.text = "Уровень %d 🔒" % required_level
 			level_reward_button.disabled = true 
 			if level_reward_button:
-				level_reward_button.tooltip_text = "Достигните %d уровня" % required_level
+				var current_level = PlayerDataManager.get_current_level()
+				level_reward_button.tooltip_text = "Достигните %d/%d уровня" % [current_level, required_level]
 			use_button.visible = false
 			status_label.visible = false
 
@@ -288,9 +289,15 @@ func _update_buttons_and_status():
 			achievement_button.disabled = true 
 			if achievement_button:
 				var ach_desc = _get_achievement_description_by_id(achievement_required)
+				var prog = _get_achievement_progress_by_id(achievement_required)
+				var cur = int(prog.get("current", 0))
+				var tot = int(prog.get("total", 0))
 				if ach_desc == "":
 					ach_desc = "Выполните достижение"
-				achievement_button.tooltip_text = ach_desc
+				if tot > 0:
+					achievement_button.tooltip_text = "%s (%d/%d)" % [ach_desc, cur, tot]
+				else:
+					achievement_button.tooltip_text = ach_desc
 			use_button.visible = false
 			status_label.visible = false
 	elif is_daily_reward:
@@ -316,7 +323,9 @@ func _update_buttons_and_status():
 				daily_reward_button.visible = true
 				daily_reward_button.text = "Ежедневки: %d 🔒" % required_daily_completed
 				daily_reward_button.disabled = true
-				daily_reward_button.tooltip_text = "Завершите %d ежедневных заданий" % required_daily_completed
+				var completed = 0
+				completed = PlayerDataManager.get_daily_quests_completed_total()
+				daily_reward_button.tooltip_text = "Завершите %d/%d ежедневных заданий" % [completed, required_daily_completed]
 			use_button.visible = false
 			status_label.visible = false
 
@@ -403,3 +412,25 @@ func _get_achievement_description_by_id(achievement_id_str: String) -> String:
 			if aid == id_val:
 				return String(a.get("description", ""))
 	return ""
+
+func _get_achievement_progress_by_id(achievement_id_str: String) -> Dictionary:
+	var path = "res://data/achievements_data.json"
+	if achievement_id_str == "" or not achievement_id_str.is_valid_int():
+		return {"current": 0, "total": 0}
+	if not FileAccess.file_exists(path):
+		return {"current": 0, "total": 0}
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return {"current": 0, "total": 0}
+	var text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if not (parsed and parsed.has("achievements")):
+		return {"current": 0, "total": 0}
+	var id_val = int(achievement_id_str)
+	for a in parsed.achievements:
+		if a is Dictionary:
+			var aid = int(a.get("id", -1))
+			if aid == id_val:
+				return {"current": int(a.get("current", 0)), "total": int(a.get("total", 0))}
+	return {"current": 0, "total": 0}
