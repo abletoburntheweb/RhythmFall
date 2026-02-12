@@ -42,6 +42,7 @@ func _update_display():
 
 	if self.icon_texture:
 		icon_texture_rect.texture = self.icon_texture
+		icon_texture_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	else:
@@ -49,6 +50,7 @@ func _update_display():
 		placeholder_image.fill(Color.WHITE)
 		var placeholder_texture = ImageTexture.create_from_image(placeholder_image)
 		icon_texture_rect.texture = placeholder_texture
+		icon_texture_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 

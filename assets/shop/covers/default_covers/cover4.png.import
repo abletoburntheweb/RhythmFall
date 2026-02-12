@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dtwvaj2x70cgi"
+uid="uid://dmmpq8qu6q1wf"
 path="res://.godot/imported/cover4.png-1b64f021baa4db9cffa70ce7f66817d7.ctex"
 metadata={
 "vram_texture": false
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -32,7 +32,7 @@ process/channel_remap/green=1
 process/channel_remap/blue=2
 process/channel_remap/alpha=3
 process/fix_alpha_border=true
-process/premult_alpha=false
+process/premult_alpha=true
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
