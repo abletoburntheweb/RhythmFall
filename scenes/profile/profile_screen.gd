@@ -46,6 +46,7 @@ const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 
 @onready var achievements_list_vbox: VBoxContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox")
 @onready var achievements_empty_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox/EmptyLabel")
+@onready var achievement_card_template: PanelContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard")
 
 var session_history_manager = null
 var achievement_manager: AchievementManager = null
@@ -369,7 +370,14 @@ func _update_recent_achievements():
 	if achievements_empty_label:
 		achievements_empty_label.visible = to_display.size() == 0
 	for ach in to_display:
-		var card = ACHIEVEMENT_CARD_SCENE.instantiate()
+		var card: PanelContainer = null
+		if achievement_card_template:
+			card = achievement_card_template.duplicate(
+				Node.DUPLICATE_SCRIPTS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SIGNALS
+			)
+			card.visible = true
+		else:
+			card = ACHIEVEMENT_CARD_SCENE.instantiate()
 		card.title = str(ach.get("title", ""))
 		card.description = str(ach.get("description", ""))
 		card.progress_text = _get_progress_text(ach)
