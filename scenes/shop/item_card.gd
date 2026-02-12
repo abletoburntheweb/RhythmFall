@@ -74,10 +74,11 @@ func _setup_item():
 
 	var image_rect = $MarginContainer/ContentContainer/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
-	var status_label = $MarginContainer/ContentContainer/StatusLabel
+	var status_hbox = get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox")
+	var status_label = get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox/StatusLabel")
 
-	if status_label:
-		status_label.visible = false
+	if status_hbox:
+		status_hbox.visible = false
 
 	var image_path = item_data.get("image", "") 
 	var images_folder = item_data.get("images_folder", "")
@@ -220,7 +221,8 @@ func _update_buttons_and_status():
 	var daily_reward_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/DailyRewardButton
 	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
 	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
-	var status_label = $MarginContainer/ContentContainer/StatusLabel
+	var status_hbox = get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox")
+	var status_label = get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox/StatusLabel")
 	
 	if achievement_button:
 		achievement_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -241,25 +243,32 @@ func _update_buttons_and_status():
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
-			preview_button.text = "🔊 Прослушать"
+			preview_button.text = "Прослушать"
+			preview_button.icon = load("res://assets/icons/volume_2.svg")
+			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 		if level_unlocked:
 			level_reward_button.visible = false
 			use_button.visible = not is_active
 			if use_button.visible:
-				use_button.text = "✅ Использовать"
-			status_label.visible = is_active
-			if is_active:
-				status_label.text = "✅ Используется"
+				use_button.text = "Использовать"
+			if status_hbox:
+				status_hbox.visible = is_active
+			if is_active and status_label:
+				status_label.text = "Используется"
 		else:
 			level_reward_button.visible = true
-			level_reward_button.text = "Уровень %d 🔒" % required_level
+			level_reward_button.text = "Уровень %d" % required_level
 			level_reward_button.disabled = true 
+			if level_reward_button:
+				level_reward_button.icon = load("res://assets/icons/lock_keyhole.svg")
+				level_reward_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			if level_reward_button:
 				var current_level = PlayerDataManager.get_current_level()
 				level_reward_button.tooltip_text = "Достигните %d/%d уровня" % [current_level, required_level]
 			use_button.visible = false
-			status_label.visible = false
+			if status_hbox:
+				status_hbox.visible = false
 
 	elif is_achievement_reward:
 		buy_button.visible = false
@@ -270,7 +279,9 @@ func _update_buttons_and_status():
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
-			preview_button.text = "🔊 Прослушать"
+			preview_button.text = "Прослушать"
+			preview_button.icon = load("res://assets/icons/volume_2.svg")
+			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 		if achievement_unlocked:
 			achievement_button.visible = false
@@ -278,15 +289,19 @@ func _update_buttons_and_status():
 				achievement_button.tooltip_text = ""
 			use_button.visible = not is_active
 			if use_button.visible:
-				use_button.text = "✅ Использовать"
-			status_label.visible = is_active
-			if is_active:
-				status_label.text = "✅ Используется"
+				use_button.text = "Использовать"
+			if status_hbox:
+				status_hbox.visible = is_active
+			if is_active and status_label:
+				status_label.text = "Используется"
 		else:
 			achievement_button.visible = true
 			var display_name = achievement_name if achievement_name != "" else "Награда за ачивку"
-			achievement_button.text = display_name + " 🔒"  
+			achievement_button.text = display_name 
 			achievement_button.disabled = true 
+			if achievement_button:
+				achievement_button.icon = load("res://assets/icons/lock_keyhole.svg")
+				achievement_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			if achievement_button:
 				var ach_desc = _get_achievement_description_by_id(achievement_required)
 				var prog = _get_achievement_progress_by_id(achievement_required)
@@ -299,7 +314,8 @@ func _update_buttons_and_status():
 				else:
 					achievement_button.tooltip_text = ach_desc
 			use_button.visible = false
-			status_label.visible = false
+			if status_hbox:
+				status_hbox.visible = false
 	elif is_daily_reward:
 		buy_button.visible = false
 		level_reward_button.visible = false
@@ -307,27 +323,33 @@ func _update_buttons_and_status():
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
-			preview_button.text = "🔊 Прослушать"
+			preview_button.text = "Прослушать"
+			preview_button.icon = load("res://assets/icons/volume_2.svg")
+			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		if daily_unlocked:
 			if daily_reward_button:
 				daily_reward_button.visible = false
 				daily_reward_button.tooltip_text = ""
 			use_button.visible = not is_active
 			if use_button.visible:
-				use_button.text = "✅ Использовать"
-			status_label.visible = is_active
-			if is_active:
-				status_label.text = "✅ Используется"
+				use_button.text = "Использовать"
+			if status_hbox:
+				status_hbox.visible = is_active
+			if is_active and status_label:
+				status_label.text = "Используется"
 		else:
 			if daily_reward_button:
 				daily_reward_button.visible = true
-				daily_reward_button.text = "Ежедневки: %d 🔒" % required_daily_completed
+				daily_reward_button.text = "Ежедневки: %d" % required_daily_completed
 				daily_reward_button.disabled = true
+				daily_reward_button.icon = load("res://assets/icons/lock_keyhole.svg")
+				daily_reward_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				var completed = 0
 				completed = PlayerDataManager.get_daily_quests_completed_total()
 				daily_reward_button.tooltip_text = "Завершите %d/%d ежедневных заданий" % [completed, required_daily_completed]
 			use_button.visible = false
-			status_label.visible = false
+			if status_hbox:
+				status_hbox.visible = false
 
 	else:
 		achievement_button.visible = false
@@ -338,25 +360,28 @@ func _update_buttons_and_status():
 		buy_button.visible = not is_purchased and not is_default
 		if buy_button.visible:
 			var price = item_data.get("price", 0)
-			buy_button.text = "Купить за %d 💰" % price
+			buy_button.text = "Купить за %d" % price
 
 		var show_use_button = (is_purchased and not is_active) or (is_default and not is_active)
 		use_button.visible = show_use_button
 		if use_button.visible:
-			use_button.text = "✅ Использовать"
+			use_button.text = "Использовать"
 
 		var audio_path = item_data.get("audio", "")
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
-			preview_button.text = "🔊 Прослушать"
+			preview_button.text = "Прослушать"
+			preview_button.icon = load("res://assets/icons/volume_2.svg")
+			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
-		status_label.visible = false
-		if is_active:
-			status_label.text = "✅ Используется"
-			status_label.visible = true
-		elif is_default:
-			status_label.text = "✔️ Стандартный"
-			status_label.visible = true
+		if status_hbox:
+			status_hbox.visible = false
+		if is_active and status_label and status_hbox:
+			status_label.text = "Используется"
+			status_hbox.visible = true
+		elif is_default and status_label and status_hbox:
+			status_label.text = "Стандартный"
+			status_hbox.visible = true
 
 
 func _on_buy_pressed():

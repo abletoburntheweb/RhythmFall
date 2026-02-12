@@ -1,7 +1,12 @@
-[gd_scene load_steps=121 format=3 uid="uid://6mo443yk7t5j"]
+[gd_scene load_steps=126 format=3 uid="uid://6mo443yk7t5j"]
 
 [ext_resource type="Script" uid="uid://bmqrkwg0bhrko" path="res://scenes/shop/item_card.gd" id="1_re5xs"]
-[ext_resource type="Theme" uid="uid://duo41yu6saaov" path="res://ui/theme/app_theme.tres" id="2_ha41t"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_ha41t"]
+[ext_resource type="Texture2D" uid="uid://ctp88mcj6pj3h" path="res://assets/icons/check.svg" id="3_1pvwo"]
+[ext_resource type="Texture2D" uid="uid://b1maya3ygm205" path="res://assets/icons/doble_check.svg" id="3_4na4q"]
+[ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="4_mfftg"]
+[ext_resource type="Texture2D" path="res://assets/icons/lock-keyhole.svg" id="5_4na4q"]
+[ext_resource type="Texture2D" path="res://assets/icons/volume-2.svg" id="6_mfftg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2397,12 +2402,22 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="StatusLabel" type="Label" parent="MarginContainer/ContentContainer"]
+[node name="StatusDefaultHBox" type="HBoxContainer" parent="MarginContainer/ContentContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/ContentContainer/StatusDefaultHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "✔️ Дефолтный"
+text = "Стандартный"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CurrencyIcon" type="TextureRect" parent="MarginContainer/ContentContainer/StatusDefaultHBox"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+texture = ExtResource("3_4na4q")
+expand_mode = 1
 
 [node name="ButtonsContainer" type="VBoxContainer" parent="MarginContainer/ContentContainer"]
 layout_mode = 2
@@ -2415,37 +2430,50 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatButtonGreen"
-text = "✅ Использовать"
+text = "Использовать"
+icon = ExtResource("3_1pvwo")
+icon_alignment = 2
 
 [node name="BuyButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatMenuShopButton"
-text = "Купить за 200 💰"
+text = "Купить за 200"
+icon = ExtResource("4_mfftg")
+icon_alignment = 2
 
 [node name="AchievementRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatButtonOrange"
-text = "Достижение 🔒"
+text = "Достижение"
+icon = ExtResource("5_4na4q")
+icon_alignment = 2
 
 [node name="LevelRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatMenuAchievementsButton"
-text = "Награда за уровень 🔒"
+text = "Награда за уровень"
+icon = ExtResource("5_4na4q")
+icon_alignment = 2
 
 [node name="DailyRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
 layout_mode = 2
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatBackButton"
-text = "Ежедневки 🔒"
+text = "Ежедневки"
+icon = ExtResource("5_4na4q")
+icon_alignment = 2
 
 [node name="PreviewButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer"]
 layout_mode = 2
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatMenuSettingsButton"
-text = "🔊 Прослушать"
+text = "Прослушать"
+icon = ExtResource("6_mfftg")
+icon_alignment = 2
+metadata/_edit_group_ = true

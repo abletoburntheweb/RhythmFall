@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=6 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
+[ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_hq7uf"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
 shader = ExtResource("2_q8hsq")
@@ -98,3 +99,21 @@ theme_override_font_sizes/font_size = 24
 text = "0/200"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CurrencyContainer" type="HBoxContainer" parent="XPContainer"]
+layout_mode = 0
+offset_left = -5.0
+offset_top = 84.0
+offset_right = 322.0
+offset_bottom = 104.0
+
+[node name="CurrencyLabel" type="Label" parent="XPContainer/CurrencyContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+text = "0"
+
+[node name="CurrencyIcon" type="TextureRect" parent="XPContainer/CurrencyContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+texture = ExtResource("3_hq7uf")
+expand_mode = 1

@@ -46,6 +46,7 @@ func _ready():
 
 	currency = PlayerDataManager.get_currency()  
 	_update_currency_label()
+	_update_shop_progress_label()
 
 	_connect_category_buttons()
 	_connect_back_button()
@@ -89,7 +90,7 @@ func _update_currency_label():
 		if v_box_container:
 			var currency_label = v_box_container.get_node("CurrencyLabel")
 			if currency_label:
-				currency_label.text = "💰 Валюта: %d" % PlayerDataManager.get_currency() 
+				currency_label.text = "Валюта: %d" % PlayerDataManager.get_currency() 
 			else:
 				print("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
 		else:
@@ -97,6 +98,21 @@ func _update_currency_label():
 	else:
 		print("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден по пути $MainContent/MainVBox.")
 
+func _update_shop_progress_label():
+	var items = shop_data.get("items", [])
+	var total_items = items.size()
+	var unlocked = 0
+	for item in items:
+		var item_id = item.get("item_id", "")
+		if item_id != "" and PlayerDataManager.is_item_unlocked(item_id):
+			unlocked += 1
+	var main_vbox = $MainContent/MainVBox
+	if main_vbox:
+		var v_box_container = main_vbox.get_node("VBoxContainer")
+		if v_box_container:
+			var progress_label = v_box_container.get_node("ShopProgressLabel")
+			if progress_label:
+				progress_label.text = "Открыто: %d/%d" % [unlocked, total_items]
 func _connect_category_buttons():
 	var all_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll
 	var kick_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick
@@ -227,7 +243,11 @@ func _on_category_selected(category: String):
 		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
 		return
 	for card in item_cards:
-		card.visible = (category == "Все" or card.item_data.category == category)
+		if is_instance_valid(card):
+			var card_category = ""
+			if card.item_data and card.item_data.has("category"):
+				card_category = String(card.item_data.get("category", ""))
+			card.visible = (category == "Все" or card_category == category)
 	_update_category_buttons(category)
 	current_category = category
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
@@ -261,6 +281,7 @@ func _on_item_buy_pressed(item_id: String):
 			MusicManager.play_shop_purchase()  
 			
 			_update_currency_label()
+			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
 		else:
 			print("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)

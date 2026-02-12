@@ -22,6 +22,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var level_label: Label = $XPContainer/LevelLabel
 @onready var xp_progress_bar: ProgressBar = $XPContainer/XPProgressBar
 @onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
+@onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
 
 func _ready():
 	initialize_logic()
@@ -36,6 +37,7 @@ func _ready():
 	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
 	theme = app_theme
 	ResourceSaver.save(app_theme, theme_path)
+	_update_currency_ui()
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
@@ -47,6 +49,7 @@ func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	xp_progress_bar.max_value = xp_for_next_level
 	xp_progress_bar.value = new_xp
 	xp_amount_label.text = "%d / %d" % [new_xp, xp_for_next_level]
+	_update_currency_ui()
 
 func _update_level_ui():
 	var level = PlayerDataManager.get_current_level()
@@ -57,6 +60,14 @@ func _update_level_ui():
 	xp_progress_bar.max_value = xp_for_next
 	xp_progress_bar.value = total_xp
 	xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
+	_update_currency_ui()
+
+func _update_currency_ui():
+	if currency_label:
+		currency_label.text = str(PlayerDataManager.get_currency())
+
+func on_currency_changed():
+	_update_currency_ui()
 
 func _initialize_display_settings():
 	_update_fps_visibility()

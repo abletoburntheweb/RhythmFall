@@ -317,6 +317,8 @@ func _trigger_currency_achievement_check():
 		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
 		if achievement_system:
 			achievement_system.on_currency_changed()
+		if game_engine_reference.has_method("on_currency_changed"):
+			game_engine_reference.on_currency_changed()
 
 func add_perfect_hits(count: int):
 	var current_perfect = int(data.get("total_perfect_hits", 0))
