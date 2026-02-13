@@ -5,8 +5,8 @@
 [ext_resource type="Texture2D" uid="uid://ctp88mcj6pj3h" path="res://assets/icons/check.svg" id="3_1pvwo"]
 [ext_resource type="Texture2D" uid="uid://b1maya3ygm205" path="res://assets/icons/doble_check.svg" id="3_4na4q"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="4_mfftg"]
-[ext_resource type="Texture2D" path="res://assets/icons/lock-keyhole.svg" id="5_4na4q"]
-[ext_resource type="Texture2D" path="res://assets/icons/volume-2.svg" id="6_mfftg"]
+[ext_resource type="Texture2D" uid="uid://ddfglwjytfycv" path="res://assets/icons/lock_keyhole.svg" id="6_4na4q"]
+[ext_resource type="Texture2D" uid="uid://b3yju7f8f7xk1" path="res://assets/icons/volume_2.svg" id="6_mfftg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2449,7 +2449,7 @@ size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatButtonOrange"
 text = "Достижение"
-icon = ExtResource("5_4na4q")
+icon = ExtResource("6_4na4q")
 icon_alignment = 2
 
 [node name="LevelRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
@@ -2458,7 +2458,7 @@ size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatMenuAchievementsButton"
 text = "Награда за уровень"
-icon = ExtResource("5_4na4q")
+icon = ExtResource("6_4na4q")
 icon_alignment = 2
 
 [node name="DailyRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
@@ -2466,7 +2466,7 @@ layout_mode = 2
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatBackButton"
 text = "Ежедневки"
-icon = ExtResource("5_4na4q")
+icon = ExtResource("6_4na4q")
 icon_alignment = 2
 
 [node name="PreviewButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer"]

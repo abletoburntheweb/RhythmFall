@@ -244,8 +244,6 @@ func _update_buttons_and_status():
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
 			preview_button.text = "Прослушать"
-			preview_button.icon = load("res://assets/icons/volume_2.svg")
-			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 		if level_unlocked:
 			level_reward_button.visible = false
@@ -260,9 +258,6 @@ func _update_buttons_and_status():
 			level_reward_button.visible = true
 			level_reward_button.text = "Уровень %d" % required_level
 			level_reward_button.disabled = true 
-			if level_reward_button:
-				level_reward_button.icon = load("res://assets/icons/lock_keyhole.svg")
-				level_reward_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			if level_reward_button:
 				var current_level = PlayerDataManager.get_current_level()
 				level_reward_button.tooltip_text = "Достигните %d/%d уровня" % [current_level, required_level]
@@ -280,8 +275,6 @@ func _update_buttons_and_status():
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
 			preview_button.text = "Прослушать"
-			preview_button.icon = load("res://assets/icons/volume_2.svg")
-			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 		if achievement_unlocked:
 			achievement_button.visible = false
@@ -299,9 +292,6 @@ func _update_buttons_and_status():
 			var display_name = achievement_name if achievement_name != "" else "Награда за ачивку"
 			achievement_button.text = display_name 
 			achievement_button.disabled = true 
-			if achievement_button:
-				achievement_button.icon = load("res://assets/icons/lock_keyhole.svg")
-				achievement_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			if achievement_button:
 				var ach_desc = _get_achievement_description_by_id(achievement_required)
 				var prog = _get_achievement_progress_by_id(achievement_required)
@@ -324,8 +314,6 @@ func _update_buttons_and_status():
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
 			preview_button.text = "Прослушать"
-			preview_button.icon = load("res://assets/icons/volume_2.svg")
-			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		if daily_unlocked:
 			if daily_reward_button:
 				daily_reward_button.visible = false
@@ -342,8 +330,6 @@ func _update_buttons_and_status():
 				daily_reward_button.visible = true
 				daily_reward_button.text = "Ежедневки: %d" % required_daily_completed
 				daily_reward_button.disabled = true
-				daily_reward_button.icon = load("res://assets/icons/lock_keyhole.svg")
-				daily_reward_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				var completed = 0
 				completed = PlayerDataManager.get_daily_quests_completed_total()
 				daily_reward_button.tooltip_text = "Завершите %d/%d ежедневных заданий" % [completed, required_daily_completed]
@@ -371,8 +357,6 @@ func _update_buttons_and_status():
 		preview_button.visible = audio_path != ""
 		if preview_button.visible:
 			preview_button.text = "Прослушать"
-			preview_button.icon = load("res://assets/icons/volume_2.svg")
-			preview_button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 		if status_hbox:
 			status_hbox.visible = false
