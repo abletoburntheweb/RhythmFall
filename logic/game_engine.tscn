@@ -110,10 +110,11 @@ offset_bottom = 104.0
 [node name="CurrencyLabel" type="Label" parent="XPContainer/CurrencyContainer"]
 layout_mode = 2
 size_flags_horizontal = 10
+theme_override_font_sizes/font_size = 24
 text = "0"
 
 [node name="CurrencyIcon" type="TextureRect" parent="XPContainer/CurrencyContainer"]
-custom_minimum_size = Vector2(20, 0)
+custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 texture = ExtResource("3_hq7uf")
 expand_mode = 1

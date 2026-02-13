@@ -108,11 +108,9 @@ func _update_shop_progress_label():
 			unlocked += 1
 	var main_vbox = $MainContent/MainVBox
 	if main_vbox:
-		var v_box_container = main_vbox.get_node("VBoxContainer")
-		if v_box_container:
-			var progress_label = v_box_container.get_node("ShopProgressLabel")
-			if progress_label:
-				progress_label.text = "Открыто: %d/%d" % [unlocked, total_items]
+		var progress_label = main_vbox.get_node("CounterLabel")
+		if progress_label:
+			progress_label.text = "Открыто: %d / %d" % [unlocked, total_items]
 func _connect_category_buttons():
 	var all_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll
 	var kick_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick

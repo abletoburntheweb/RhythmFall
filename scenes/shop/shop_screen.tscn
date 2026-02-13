@@ -1382,9 +1382,9 @@ layout_mode = 2
 
 [node name="ItemListVBox" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ItemsScroll" type="ScrollContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox"]
-custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 2
 
 [node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll"]
@@ -1398,7 +1398,7 @@ size_flags_horizontal = 4
 
 [node name="ItemsGridBottomMargin" type="MarginContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter"]
 layout_mode = 2
-theme_override_constants/margin_bottom = 140
+theme_override_constants/margin_bottom = 20
 
 [node name="ItemsGrid" type="GridContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin"]
 layout_mode = 2

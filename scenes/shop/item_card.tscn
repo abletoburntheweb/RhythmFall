@@ -2414,7 +2414,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CurrencyIcon" type="TextureRect" parent="MarginContainer/ContentContainer/StatusDefaultHBox"]
-custom_minimum_size = Vector2(20, 0)
+custom_minimum_size = Vector2(28, 0)
 layout_mode = 2
 texture = ExtResource("3_4na4q")
 expand_mode = 1
@@ -2476,4 +2476,3 @@ theme_type_variation = &"FlatMenuSettingsButton"
 text = "Прослушать"
 icon = ExtResource("6_mfftg")
 icon_alignment = 2
-metadata/_edit_group_ = true
