@@ -256,7 +256,6 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 func _map_category_ru_to_internal(category_ru: String) -> String:
 	match category_ru:
 		"Кик": return "Kick"
-		"Снейр": return "Snare"
 		"Фоны": return "Backgrounds"
 		"Обложки": return "Covers"
 		"Подсветка линий": return "LaneHighlight"
@@ -427,7 +426,6 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 
 	pdm.data["drum_levels_completed"] = 0
 	pdm.data["drum_perfect_hits_in_level"] = 0
-	pdm.data["current_snare_streak"] = 0
 	pdm.data["total_drum_perfect_hits"] = 0
 
 	pdm._save()

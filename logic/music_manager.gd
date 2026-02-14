@@ -44,7 +44,6 @@ var _current_metronome_player_index: int = 0
 var _metronome_players: Array[AudioStreamPlayer] = []
 
 var active_kick_sound_path: String = ""
-var active_snare_sound_path: String = ""
 
 var current_menu_music_file: String = ""
 var current_game_music_file: String = ""
@@ -184,15 +183,10 @@ func resume_menu_music():
 
 func _update_active_sound_paths():
 	var active_kick_id = PlayerDataManager.get_active_item("Kick")
-	var active_snare_id = PlayerDataManager.get_active_item("Snare")
 
 	active_kick_sound_path = _get_sound_path_from_shop_data(active_kick_id, "Kick")
 	if active_kick_sound_path == "":
 		active_kick_sound_path = SHOP_SOUND_DIR + "kick/kick_default.wav"
-
-	active_snare_sound_path = _get_sound_path_from_shop_data(active_snare_id, "Snare")
-	if active_snare_sound_path == "":
-		active_snare_sound_path = SHOP_SOUND_DIR + "snare/snare_default.wav"
 
 func _get_sound_path_from_shop_data(item_id: String, category: String) -> String:
 	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
@@ -214,9 +208,6 @@ func set_active_kick_sound(path: String):
 	active_kick_sound_path = path
 	print("MusicManager: установлен активный кик-звук: ", path)
 
-func set_active_snare_sound(path: String):
-	active_snare_sound_path = path
-	print("MusicManager: установлен активный снейр-звук: ", path)
 
 func set_music_volume(volume: float):
 	if music_player:
@@ -405,10 +396,7 @@ func play_miss_hit_sound():
 
 func play_hit_sound(is_kick: bool = true):
 	var sound_path = ""
-	if is_kick:
-		sound_path = active_kick_sound_path
-	else:
-		sound_path = active_snare_sound_path
+	sound_path = active_kick_sound_path
 
 	var stream = load(sound_path) as AudioStream
 	if stream:

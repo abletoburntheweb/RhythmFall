@@ -1344,12 +1344,6 @@ theme = SubResource("Theme_38ec2")
 theme_type_variation = &"CategoryKick"
 text = "Кик"
 
-[node name="CategoryButtonSnare" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
-layout_mode = 2
-theme = SubResource("Theme_38ec2")
-theme_type_variation = &"CategorySnare"
-text = "Снейр"
-
 [node name="CategoryButtonCover" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
 layout_mode = 2
 theme = SubResource("Theme_38ec2")

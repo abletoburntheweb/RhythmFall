@@ -4,7 +4,6 @@ extends Node2D
 const ScoreManager = preload("res://logic/score_manager.gd")
 const NoteManager = preload("res://logic/note_manager.gd")
 const Player = preload("res://logic/player.gd")
-const SoundInstrumentFactory = preload("res://logic/sound_instrument_factory.gd")
 const AutoPlayer = preload("res://scenes/debug_menu/bot.gd")
 const GAME_UPDATE_DELTA = 1.0 / 60.0
 
@@ -34,7 +33,6 @@ var player
 
 var game_engine
 
-var sound_factory = null
 
 var score_label: Label = null
 var combo_label: Label = null
@@ -102,7 +100,6 @@ func _ready():
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
 	player = Player.new(settings_for_player, lanes)  
-	sound_factory = SoundInstrumentFactory.new()
 	
 	player.note_hit.connect(_on_player_hit)
 	player.lane_pressed_changed.connect(_on_lane_pressed_changed) 
@@ -150,7 +147,7 @@ func _ready():
 func _on_active_item_changed(category: String, item_id: String):
 	if category == "Notes":
 		_load_note_colors()
-	if category == "Kick" or category == "Snare":
+	if category == "Kick":
 		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
 		if shop_data_file:
 			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
@@ -160,15 +157,11 @@ func _on_active_item_changed(category: String, item_id: String):
 				if item.get("item_id", "") == item_id:
 					var audio_path = item.get("audio", "")
 					if audio_path:
-						if category == "Kick":
-							MusicManager.set_active_kick_sound(audio_path)
-						elif category == "Snare":
-							MusicManager.set_active_snare_sound(audio_path)
+						MusicManager.set_active_kick_sound(audio_path)
 					break
 
 func _update_active_sounds_from_player_data():
 	var active_kick_id = PlayerDataManager.get_active_item("Kick")
-	var active_snare_id = PlayerDataManager.get_active_item("Snare")
 
 	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
 	if shop_data_file:
@@ -180,13 +173,6 @@ func _update_active_sounds_from_player_data():
 				var audio_path = item.get("audio", "")
 				if audio_path:
 					MusicManager.set_active_kick_sound(audio_path)
-				break
-		
-		for item in shop_data.get("items", []):
-			if item.get("item_id", "") == active_snare_id:
-				var audio_path = item.get("audio", "")
-				if audio_path:
-					MusicManager.set_active_snare_sound(audio_path)
 				break
 
 func _instantiate_debug_menu():
@@ -778,8 +764,8 @@ func check_hit(lane: int):
 		PlayerDataManager.increment_daily_progress("hit_notes", 1, {})
 
 		var note_type = closest_note.note_type
-		var sound_path = sound_factory.get_sound_path_for_note(note_type, current_instrument)
-		MusicManager.play_custom_hit_sound(sound_path)
+		var use_kick = true
+		MusicManager.play_hit_sound(use_kick)
 
 		if judgement_label:
 			judgement_label.text = hit_type

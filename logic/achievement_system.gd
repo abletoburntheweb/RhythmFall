@@ -86,8 +86,6 @@ func on_perfect_hit_made():
 	achievement_manager.check_rhythm_master_achievement(total_perfect_hits) 
 	achievement_manager.save_achievements()
 
-func on_perfect_hit_in_drum_mode(current_drum_streak: int, current_snare_streak: int):
-	pass 
 
 func process_delayed_achievements():
 	var delayed_data = PlayerDataManager.get_and_clear_delayed_achievements()

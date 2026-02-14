@@ -10,7 +10,6 @@ const MAX_LEVEL := 100
 
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
-	"Snare": "snare_default",
 	"Backgrounds": "background_default",
 	"Covers": "covers_default",
 	"LaneHighlight": "lane_highlight_default",
@@ -91,7 +90,6 @@ func _ready():
 
 	var default_items = [
 		"kick_default",
-		"snare_default", 
 		"covers_default",
 		"lane_highlight_default",
         "notes_default"
@@ -582,7 +580,6 @@ func reset_progress():
 func reset_profile_statistics():
 	var default_items = [
 		"kick_default",
-		"snare_default", 
 		"covers_default",
 		"lane_highlight_default",
 		"notes_default"

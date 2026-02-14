@@ -114,7 +114,6 @@ func _update_shop_progress_label():
 func _connect_category_buttons():
 	var all_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll
 	var kick_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick
-	var snare_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonSnare
 	var cover_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover
 	var lane_highlight_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight  
 	var notes_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonNotes
@@ -124,8 +123,6 @@ func _connect_category_buttons():
 		all_btn.pressed.connect(_on_category_selected.bind("Все"))
 	if kick_btn:
 		kick_btn.pressed.connect(_on_category_selected.bind("Кик"))
-	if snare_btn:
-		snare_btn.pressed.connect(_on_category_selected.bind("Снейр"))
 	if cover_btn:
 		cover_btn.pressed.connect(_on_category_selected.bind("Обложки"))
 	if lane_highlight_btn:  
@@ -150,14 +147,12 @@ func _update_category_buttons(selected: String):
 		return
 	var all_btn: Button = hbox.get_node("CategoryButtonAll")
 	var kick_btn: Button = hbox.get_node("CategoryButtonKick")
-	var snare_btn: Button = hbox.get_node("CategoryButtonSnare")
 	var cover_btn: Button = hbox.get_node("CategoryButtonCover")
 	var notes_btn: Button = hbox.get_node("CategoryButtonNotes")
 	var lane_btn: Button = hbox.get_node("CategoryButtonLaneHighlight")
 	var misc_btn: Button = hbox.get_node("CategoryButtonMisc")
 	if all_btn: all_btn.theme_type_variation = "ActiveAll" if selected == "Все" else "CategoryAll"
 	if kick_btn: kick_btn.theme_type_variation = "ActiveKick" if selected == "Кик" else "CategoryKick"
-	if snare_btn: snare_btn.theme_type_variation = "ActiveSnare" if selected == "Снейр" else "CategorySnare"
 	if cover_btn: cover_btn.theme_type_variation = "ActiveCover" if selected == "Обложки" else "CategoryCover"
 	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
 	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
@@ -225,7 +220,6 @@ func _create_item_cards():
 func _get_category_map() -> Dictionary:
 	return {
 		"Кик": "Kick",
-		"Снейр": "Snare",
 		"Обложки": "Covers",
 		"Подсветка линий": "LaneHighlight",
 		"Ноты": "Notes",

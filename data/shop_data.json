@@ -10,15 +10,6 @@
 	  "image": "res://assets/textures/kick_icon.png"
 	},
 	{
-	  "item_id": "snare_default",
-	  "name": "Стандартный снейр",
-	  "price": 0,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare_default.wav",
-	  "image": "res://assets/textures/snare_icon.png"
-	},
-	{
 	  "item_id": "covers_default",
 	  "name": "Волнистый градиент",
 	  "price": 0,
@@ -179,68 +170,6 @@
 	  "image": "res://assets/textures/kick_icon.png",
 	  "is_daily_reward": true,
 	  "required_daily_completed": 20
-	},
-	{
-	  "item_id": "snare_1",
-	  "name": "Снейр 1",
-	  "price": 200,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare1.wav",
-	  "image": "res://assets/textures/snare_icon.png"
-	},
-	{
-	  "item_id": "snare_2",
-	  "name": "Снейр 2",
-	  "price": 300,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare2.wav",
-	  "image": "res://assets/textures/snare_icon.png"
-	},
-	{
-	  "item_id": "snare_achievement_1",
-	  "name": "Грувовый снейр",
-	  "price": 0,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare3.wav",
-	  "image": "res://assets/textures/snare_icon.png",
-	  "is_achievement_reward": true,
-	  "achievement_required": "31"
-	},
-	{
-	  "item_id": "snare_achievement_2",
-	  "name": "Восходящий снейр",
-	  "price": 0,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare4.wav",
-	  "image": "res://assets/textures/snare_icon.png",
-	  "is_achievement_reward": true,
-	  "achievement_required": "43"
-	},
-	{
-	  "item_id": "snare_level_1",
-	  "name": "Снейр уровень 1",
-	  "price": 0,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare5.wav",
-	  "image": "res://assets/textures/snare_icon.png",
-	  "is_level_reward": true,
-	  "required_level": 7
-	},
-	{
-	  "item_id": "snare_level_2",
-	  "name": "Снейр уровень 2",
-	  "price": 0,
-	  "category": "Снейр",
-	  "type": "snare",
-	  "audio": "res://assets/shop/sounds/snare/snare6.wav",
-	  "image": "res://assets/textures/snare_icon.png",
-	  "is_level_reward": true,
-	  "required_level": 50
 	},
 	{
 	  "item_id": "covers_geometric",
