@@ -277,7 +277,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 6,
+			"current": 6.0,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 6,
+			"current": 6.0,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -299,7 +299,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 52,
+			"current": 52.0,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 6,
+			"current": 6.0,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
@@ -343,7 +343,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 22,
+			"current": 22.0,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,
 			"image": "res://assets/achievements/drum_storm.png",
@@ -596,7 +596,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в гитарных жанрах (rock, alternative rock, indie rock, garage rock, punk, post-punk, grunge, math rock, post-rock)",
 			"id": 55.0,
 			"image": "res://assets/achievements/guitar_energy.png",
@@ -607,7 +607,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в рэп-жанрах (rap, hip-hop, trap, cloud rap, emo rap, melodic rap, alternative rap, hypertrap)",
 			"id": 56.0,
 			"image": "res://assets/achievements/street_voice.png",
@@ -618,7 +618,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в независимых и альтернативных жанрах (indie, bedroom pop, lo-fi, art pop, alternative)",
 			"id": 57.0,
 			"image": "res://assets/achievements/off_mainstream.png",
@@ -629,7 +629,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 0.0,
 			"description": "Сыграть 3 раза в экспериментальной музыке (experimental, avant-garde, fusion, cross-genre, abstract)",
 			"id": 58.0,
 			"image": "res://assets/achievements/beyond_genres.png",

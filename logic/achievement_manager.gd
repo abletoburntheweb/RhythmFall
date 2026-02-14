@@ -643,6 +643,7 @@ func _map_canonical_genre_to_group(canonical_genre: String) -> String:
 	if canonical_genre == "":
 		return ""
 	return genre_group_map.get(canonical_genre.to_lower(), "")
+	
 func check_genre_achievements(track_stats_mgr = null):
 	var tsm = track_stats_mgr if track_stats_mgr != null else TrackStatsManager
 	if not tsm:
