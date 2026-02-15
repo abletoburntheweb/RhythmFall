@@ -137,7 +137,7 @@ func _on_bpm_analysis_started():
 func _on_bpm_analysis_completed(bpm_value: int):
 	print("SongSelect.gd: BPM анализ завершён. BPM: ", bpm_value)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + str(bpm_value)
-	analyze_bpm_button.text = "Готово"
+	analyze_bpm_button.text = "BPM вычислен"
 	analyze_bpm_button.disabled = false
 	MusicManager.play_analysis_success()
 	
@@ -179,10 +179,11 @@ func _on_notes_generation_started():
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	print("SongSelect.gd: Генерация нот завершена. Нот: %d, BPM: %f, инструмент: %s" % [notes_data.size(), bpm_value, instrument_type])
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация завершена"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
+	song_details_manager.set_generation_status("Генерация завершена", false)
 	MusicManager.play_analysis_success()
 	
 	var game_engine = get_parent()
