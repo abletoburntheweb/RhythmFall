@@ -58,6 +58,18 @@ func _play_time_string_to_seconds(time_str: String) -> int:
 		var minutes = parts[1].to_int()
 		return (hours * 3600) + (minutes * 60)
 	return 0
+func _format_play_time_ru(time_str: String) -> String:
+	var parts = time_str.split(":")
+	var hours = 0
+	var minutes = 0
+	if parts.size() >= 2:
+		hours = int(parts[0])
+		minutes = int(parts[1])
+	else:
+		var seconds = _play_time_string_to_seconds(time_str)
+		hours = int(seconds / 3600)
+		minutes = int((seconds % 3600) / 60)
+	return "%02dч:%02dм" % [hours, minutes]
 
 func _ready():
 	var game_engine = get_parent()
@@ -95,7 +107,7 @@ func _ready():
 
 func _on_total_play_time_changed(new_time: String):
 	if play_time_label:
-		play_time_label.text = "Времени в игре: %s" % new_time
+		play_time_label.text = "Времени в игре: %s" % _format_play_time_ru(new_time)
 
 func setup_session_history_manager(session_history_mgr):
 	session_history_manager = session_history_mgr
@@ -180,8 +192,9 @@ func refresh_stats():
 		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
 	drum_overall_accuracy_label.text = "Точность: %.2f%%" % drum_accuracy
 	
-	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted() 
-	play_time_label.text = "Времени в игре: %s" % play_time_formatted 
+	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted()
+	var play_time_ru = _format_play_time_ru(play_time_formatted)
+	play_time_label.text = "Времени в игре: %s" % play_time_ru 
 	if start_date_label:
 		var created_str = str(PlayerDataManager.data.get("profile_created_date", ""))
 		var display = _format_date_ru(created_str)

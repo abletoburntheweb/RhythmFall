@@ -27,6 +27,7 @@ func resync_all():
 	achievement_manager.check_score_achievements(PlayerDataManager)
 	achievement_manager.check_playtime_achievements(PlayerDataManager)
 	achievement_manager.check_level_achievements(PlayerDataManager.get_current_level())
+	achievement_manager.check_daily_quests_completed_achievements(PlayerDataManager)
 	achievement_manager.save_achievements()
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
@@ -73,6 +74,10 @@ func on_daily_login():
 	PlayerDataManager.ensure_daily_quests_for_today()
 	achievement_manager.check_daily_login_achievements(PlayerDataManager)
 	achievement_manager.check_event_achievements()
+	achievement_manager.save_achievements()
+	
+func on_daily_quests_updated():
+	achievement_manager.check_daily_quests_completed_achievements(PlayerDataManager)
 	achievement_manager.save_achievements()
 	
 func on_notes_generated():

@@ -4,7 +4,6 @@ extends Node2D
 const ScoreManager = preload("res://logic/score_manager.gd")
 const NoteManager = preload("res://logic/note_manager.gd")
 const Player = preload("res://logic/player.gd")
-const AutoPlayer = preload("res://scenes/debug_menu/bot.gd")
 const GAME_UPDATE_DELTA = 1.0 / 60.0
 
 var original_vsync_mode: int = DisplayServer.VSYNC_ADAPTIVE
@@ -55,8 +54,7 @@ var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
 
 var debug_menu: DebugMenu = null
-
-var auto_player = null
+ 
 
 var perfect_hits_this_level: int = 0
 
@@ -111,8 +109,7 @@ func _ready():
 	
 	_update_active_sounds_from_player_data()
 	PlayerDataManager.active_item_changed.connect(_on_active_item_changed)
-
-	auto_player = AutoPlayer.new(self)
+ 
 
 	game_timer = Timer.new()
 	game_timer.wait_time = GAME_UPDATE_DELTA  
@@ -464,8 +461,8 @@ func _update_game():
 	
 	update_ui()
 	
-	if auto_player:
-		auto_player.simulate()
+	if debug_menu:
+		debug_menu.auto_play_simulate(self)
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
@@ -524,8 +521,8 @@ func end_game():
 	MusicManager.stop_game_music()
 	MusicManager.stop_metronome()
 	
-	if auto_player:
-		auto_player.reset()
+	if debug_menu:
+		debug_menu.auto_play_reset(self)
 	
 	var song_path = selected_song_data.get("path", "")
 	TrackStatsManager.on_track_completed(song_path)

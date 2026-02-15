@@ -44,6 +44,7 @@ func _warmup_heavy_scenes():
 	_preload_scene("res://scenes/shop/shop_screen.tscn")
 	_preload_scene("res://scenes/achievements/achievements_screen.tscn")
 	_preload_scene("res://scenes/profile/profile_screen.tscn")
+	_preload_scene("res://scenes/help/help_screen.tscn")
 
 func _instantiate_if_exists(scene_path):
 	var scene_resource = _get_cached_packed(scene_path)
@@ -217,6 +218,21 @@ func transition_close_profile():
 	game_engine.current_screen = null 
 	transition_open_main_menu()
 
+func transition_open_help():
+	var new_screen = _instantiate_if_exists("res://scenes/help/help_screen.tscn")
+	if new_screen:
+		if new_screen.has_method("setup_managers"):
+			new_screen.setup_managers(self)
+		if game_engine.current_screen:
+			game_engine.current_screen.queue_free()
+		game_engine.add_child(new_screen)
+		game_engine.current_screen = new_screen
+	else:
+		print("Transitions: HelpScreen.tscn не найден, переход отменён.")
+
+func transition_close_help():
+	game_engine.current_screen = null
+	transition_open_main_menu()
 func transition_open_shop():
 	var new_screen = _instantiate_if_exists("res://scenes/shop/shop_screen.tscn")
 	if new_screen:
@@ -398,6 +414,12 @@ func open_profile():
 
 func close_profile():
 	transition_close_profile()
+
+func open_help():
+	transition_open_help()
+
+func close_help():
+	transition_close_help()
 
 func open_shop():
 	transition_open_shop()

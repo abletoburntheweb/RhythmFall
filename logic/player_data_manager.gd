@@ -283,6 +283,10 @@ func set_game_engine_reference(engine):
 			self.total_play_time_changed.connect(achievement_system.on_playtime_changed)
 		else:
 			printerr("[PlayerDataManager] Не удалось подключить сигнал total_play_time_changed к AchievementSystem!")
+		if achievement_system and achievement_system.has_method("on_daily_quests_updated"):
+			self.daily_quests_updated.connect(achievement_system.on_daily_quests_updated)
+		else:
+			printerr("[PlayerDataManager] Не удалось подключить сигнал daily_quests_updated к AchievementSystem!")
 	
 func add_delayed_achievement(achievement_data: Dictionary):
 	delayed_achievements.append(achievement_data)

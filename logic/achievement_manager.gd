@@ -581,10 +581,8 @@ func check_ss_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
 		return
-
 	var ss_count = pdm.data.get("grades", {}).get("SS", 0)
 	var ss_achievements = {43: 5, 44: 10, 45: 25, 46: 50}
-
 	for ach_id in ss_achievements:
 		var required_ss = ss_achievements[ach_id]
 		for achievement in achievements:
@@ -593,8 +591,28 @@ func check_ss_achievements(player_data_mgr_override = null):
 				if ss_count >= required_ss and not achievement.get("unlocked", false):
 					_perform_unlock(achievement)
 				break
-
 	save_achievements()
+
+func check_daily_quests_completed_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+	var total_completed = pdm.get_daily_quests_completed_total()
+	var daily_map = {1: 5, 2: 20, 3: 50, 4: 100, 5: 250}
+	var progress_updated = false
+	for ach_id in daily_map:
+		var required = daily_map[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				var old = int(achievement.get("current", 0))
+				achievement.current = total_completed
+				if total_completed >= required and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				elif old != total_completed and not achievement.get("unlocked", false):
+					progress_updated = true
+				break
+	if progress_updated:
+		save_achievements()
 
 func check_level_achievements(player_level: int):
 	var level_achievements = {49: 10, 50: 16, 51: 25, 52: 50, 53: 100}
