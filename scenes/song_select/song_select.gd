@@ -260,10 +260,12 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	
 	var song_bpm = enriched_song_data.get("bpm", "Н/Д")
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
+		analyze_bpm_button.text = "Вычислить BPM"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 	else:
+		analyze_bpm_button.text = "BPM вычислен"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 		
