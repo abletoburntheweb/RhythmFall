@@ -12,7 +12,6 @@ signal genres_detection_error(message: String)
 signal notes_generation_started
 signal notes_generation_completed(notes: Array, bpm: float, instrument: String)
 signal notes_generation_error(message: String)
-signal manual_identification_needed(path: String)
 
 var bpm_client: Node
 var genre_client: Node
@@ -34,7 +33,6 @@ func _ready():
 	note_client.notes_generation_started.connect(_on_notes_started)
 	note_client.notes_generation_completed.connect(_on_notes_completed)
 	note_client.notes_generation_error.connect(_on_notes_error)
-	note_client.manual_identification_needed.connect(_on_manual_identification)
 	add_child(note_client)
 
 func _on_bpm_started():
@@ -61,8 +59,6 @@ func _on_notes_completed(notes: Array, bpm: float, instrument: String):
 func _on_notes_error(message: String):
 	notes_generation_error.emit(message)
 
-func _on_manual_identification(path: String):
-	manual_identification_needed.emit(path)
 
 func analyze_bpm(path: String):
 	bpm_client.analyze_bpm(path)

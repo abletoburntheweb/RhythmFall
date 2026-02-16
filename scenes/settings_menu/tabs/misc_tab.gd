@@ -12,7 +12,6 @@ var song_metadata_manager = SongMetadataManager
 @onready var reset_profile_stats_button: Button = $ContentVBox/ResetProfileStatsButton
 @onready var clear_all_results_button: Button = $ContentVBox/ClearAllResultsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
-@onready var show_manual_input_checkbox: CheckBox = $ContentVBox/ShowManualInputCheckBox
 @onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
 
 
@@ -46,8 +45,6 @@ func _connect_signals():
 		print("MiscTab.gd: ОШИБКА: clear_all_results_button НЕ найдена в _connect_signals!")
 	if debug_menu_checkbox:
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
-	if show_manual_input_checkbox:
-		show_manual_input_checkbox.toggled.connect(_on_show_manual_input_toggled)
 	if enable_genre_detection_checkbox:  
 		enable_genre_detection_checkbox.toggled.connect(_on_enable_genre_detection_toggled) 
 
@@ -55,9 +52,6 @@ func _connect_signals():
 func _apply_initial_settings():
 	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
 	
-	var show_manual = SettingsManager.get_setting("show_manual_track_input_on_generation", true)
-	show_manual_input_checkbox.set_pressed_no_signal(show_manual)
-
 	var enable_genre = SettingsManager.get_setting("enable_genre_detection", true)
 	enable_genre_detection_checkbox.set_pressed_no_signal(enable_genre)  
 
@@ -174,11 +168,6 @@ func _on_clear_all_results_pressed():
 
 	print("MiscTab.gd: _on_clear_all_results_pressed: best_grades.json и session_history.json успешно очищены.")
 	
-func _on_show_manual_input_toggled(enabled: bool):
-	SettingsManager.set_setting("show_manual_track_input_on_generation", enabled)
-	SettingsManager.save_settings()
-	emit_signal("settings_changed")
-
 func _on_enable_genre_detection_toggled(enabled: bool):
 	SettingsManager.set_setting("enable_genre_detection", enabled)
 	SettingsManager.save_settings()

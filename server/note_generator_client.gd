@@ -5,7 +5,6 @@ extends Node
 signal notes_generation_started
 signal notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String)
 signal notes_generation_error(error_message: String)
-signal manual_identification_needed(song_path: String)
 
 var http_thread: Thread
 var is_generating: bool = false
@@ -92,7 +91,18 @@ func _check_thread_status():
 			emit_signal("notes_generation_error", _thread_result["error"])
 		elif _thread_result.has("manual_identification_required"):
 			_set_is_generating(false)
-			emit_signal("manual_identification_needed", _thread_result["song_path"])
+			var req = _thread_request_data
+			generate_notes(
+				req.song_path,
+				req.instrument_type,
+				req.bpm,
+				req.lanes,
+				req.sync_tolerance,
+				false, 
+				"Unknown",
+				"Unknown",
+				req.generation_mode
+			)
 		elif _thread_result.has("notes"):
 			_set_is_generating(false)
 			var notes = _thread_result["notes"]

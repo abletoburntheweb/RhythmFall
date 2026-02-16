@@ -2437,13 +2437,6 @@ theme = SubResource("Theme_p28av")
 theme_override_font_sizes/font_size = 24
 text = "Дебаг меню"
 
-[node name="ShowManualInputCheckBox" type="CheckBox" parent="ContentVBox"]
-layout_mode = 2
-theme = SubResource("Theme_p28av")
-theme_override_font_sizes/font_size = 24
-text = "Уточнять трек перед генерацией
-Если отключить — треки будут генерироваться быстрее, но без учёта жанров"
-
 [node name="EnableGenreDetectionCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
 theme = SubResource("Theme_p28av")
