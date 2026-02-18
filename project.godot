@@ -36,6 +36,7 @@ enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg")
 
 [gui]
 
+theme/custom="uid://cii8i07lb62pc"
 theme/custom_font="uid://dlkdapepenx4"
 
 [rendering]

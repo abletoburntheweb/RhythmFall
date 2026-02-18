@@ -33,6 +33,8 @@ func _preload_scene(scene_path: String):
 	var existing = _get_cached_packed(scene_path)
 	if existing:
 		return existing
+	if not ResourceLoader.exists(scene_path):
+		return null
 	var scene_resource = load(scene_path)
 	if scene_resource and scene_resource is PackedScene:
 		_scene_cache[scene_path] = scene_resource

@@ -5,6 +5,7 @@ const ServerClients = preload("res://logic/server_clients.gd")
 const GenerationSettingsSelectorScene = preload("res://scenes/song_select/generation_settings_selector.tscn")
 
 var server_clients: ServerClients = ServerClients.new()
+var background_service: BackgroundProcessingService = null
 var song_list_manager: SongListManager = preload("res://scenes/song_select/song_list_manager.gd").new()
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
 var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
@@ -63,13 +64,21 @@ func _ready():
 	song_edit_manager.set_item_list(song_item_list_ref)
 	song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
 		
-	add_child(server_clients)
-	server_clients.bpm_analysis_started.connect(_on_bpm_analysis_started)
-	server_clients.bpm_analysis_completed.connect(_on_bpm_analysis_completed)
-	server_clients.bpm_analysis_error.connect(_on_bpm_analysis_error)
-	server_clients.notes_generation_started.connect(_on_notes_generation_started)
-	server_clients.notes_generation_completed.connect(_on_notes_generation_completed)
-	server_clients.notes_generation_error.connect(_on_notes_generation_error)
+	background_service = game_engine.get_background_service()
+	if background_service:
+		background_service.bpm_started.connect(func(_path, _disp): _on_bpm_analysis_started())
+		background_service.bpm_completed.connect(func(_path, bpm_value, _disp): _on_bpm_analysis_completed(bpm_value))
+		background_service.bpm_error.connect(func(_path, _msg, _disp): _on_bpm_analysis_error(_msg))
+		background_service.notes_started.connect(func(_path, _disp): _on_notes_generation_started())
+		background_service.notes_completed.connect(func(_path, _instr, _disp): _on_notes_generation_completed([], 0.0, _instr))
+		background_service.notes_error.connect(func(_path, msg, _disp): _on_notes_generation_error(msg))
+		var bpm_task = background_service.get_active_bpm_task()
+		if not bpm_task.is_empty():
+			_on_bpm_analysis_started()
+		var notes_task = background_service.get_active_notes_task()
+		if not notes_task.is_empty():
+			_on_notes_generation_started()
+		_apply_background_status_ui()
 	
 	
 	_connect_ui_signals()
@@ -253,6 +262,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		results_button.disabled = false
 		clear_results_button.disabled = false
 		song_details_manager._update_play_button_state()
+		_apply_background_status_ui()
 	else:
 		analyze_bpm_button.disabled = true
 		results_button.disabled = true
@@ -275,6 +285,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		else:
 			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 			song_details_manager._update_play_button_state()
+	_apply_background_status_ui()
 
 func _on_song_list_changed():
 	_update_song_count_label()
@@ -364,8 +375,8 @@ func _generate_notes_for_current_song():
 	var has_genres = metadata.has("genres") and metadata["genres"] != ""
 	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
 
-	if has_genres:
-		server_clients.generate_notes(
+	if has_genres and background_service:
+		background_service.start_notes_generation(
 			song_path,
 			current_instrument,
 			float(song_bpm),
@@ -378,8 +389,8 @@ func _generate_notes_for_current_song():
 		)
 		return
 
-	if not enable_genre_detection:
-		server_clients.generate_notes(
+	if not enable_genre_detection and background_service:
+		background_service.start_notes_generation(
 			song_path,
 			current_instrument,
 			float(song_bpm),
@@ -392,17 +403,18 @@ func _generate_notes_for_current_song():
 		)
 		return
 
-	server_clients.generate_notes(
-		song_path,
-		current_instrument,
-		float(song_bpm),
-		current_lanes,
-		0.2,
-		true,
-		"",
-		"",
-		current_generation_mode
-	)
+	if background_service:
+		background_service.start_notes_generation(
+			song_path,
+			current_instrument,
+			float(song_bpm),
+			current_lanes,
+			0.2,
+			true,
+			"",
+			"",
+			current_generation_mode
+		)
 
 func _on_delete_pressed():
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -472,7 +484,8 @@ func _on_analyze_bpm_pressed():
 	
 	print("SongSelect.gd: Отправка на анализ BPM файла: ", song_path)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Загрузка..."
-	server_clients.analyze_bpm(song_path)
+	if background_service:
+		background_service.start_bpm_analysis(song_path)
 
 func _on_play_pressed():
 	print("SongSelect.gd: _on_play_pressed вызван")
@@ -503,6 +516,20 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 	song_details_manager.set_current_lanes(lanes)
 	
 	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(instrument, mode, lanes)
+
+func _apply_background_status_ui():
+	if not background_service:
+		return
+	var bpm_task = background_service.get_active_bpm_task()
+	if not bpm_task.is_empty():
+		if bpm_task.get("path", "") == current_displayed_song_path:
+			analyze_bpm_button.text = "Вычисление..."
+			analyze_bpm_button.disabled = true
+	var notes_task = background_service.get_active_notes_task()
+	if not notes_task.is_empty():
+		if notes_task.get("path", "") == current_displayed_song_path:
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
 	var inst_abbr = "П" if instrument == "drums" else "С"

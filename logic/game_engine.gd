@@ -24,6 +24,9 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
 @onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
 
+var background_service: BackgroundProcessingService = null
+var notif_ui: Node = null
+
 func _ready():
 	initialize_logic()
 	initialize_screens()
@@ -38,6 +41,7 @@ func _ready():
 	theme = app_theme
 	ResourceSaver.save(app_theme, theme_path)
 	_update_currency_ui()
+	_setup_notifications_ui()
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
@@ -116,23 +120,19 @@ func update_display_settings():
 	_update_fps_visibility()
 
 func _start_play_time_timer():
-	print("GameEngine.gd (DEBUG): _start_play_time_timer вызван. Интервал: ", PLAY_TIME_UPDATE_INTERVAL)
 	if _play_time_timer:
 		if _play_time_timer.time_left > 0:
 			_play_time_timer.timeout.disconnect(_on_play_time_update_timeout) 
-		print("GameEngine.gd (DEBUG): Старый таймер отключен.")
 
 	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)
 	if _play_time_timer:
 		var connect_result = _play_time_timer.timeout.connect(_on_play_time_update_timeout)
-		print("GameEngine.gd (DEBUG): Результат подключения таймера: ", connect_result)
 		if connect_result != 0:
 			printerr("GameEngine.gd (DEBUG): Ошибка подключения таймера! Код: ", connect_result)
 
 func _on_play_time_update_timeout():
 	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
 	var elapsed_seconds = int(elapsed_ms / 1000.0)
-	print("GameEngine.gd (DEBUG): Прошло секунд с последнего таймера: %d (таймер сработал)" % elapsed_seconds)
 	PlayerDataManager.add_play_time_seconds(elapsed_seconds)
 	_session_start_time_ticks = Time.get_ticks_msec()
 	_start_play_time_timer()
@@ -146,7 +146,6 @@ func _finalize_session_time():
 	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
 	var elapsed_seconds = int(elapsed_ms / 1000.0)
 	PlayerDataManager.add_play_time_seconds(elapsed_seconds)
-	print("GameEngine.gd: Сессия завершена, добавлено времени: %d сек (%s)" % [elapsed_seconds, _play_time_seconds_to_string(elapsed_seconds)])
 	_session_start_time_ticks = 0
 
 func _play_time_seconds_to_string(total_seconds: int) -> String:
@@ -176,6 +175,9 @@ func initialize_logic():
 	transitions = preload("res://logic/transitions.gd").new(self)
 
 	call_deferred("_handle_player_login")
+	
+	background_service = preload("res://logic/background_processing_service.gd").new(self)
+	add_child(background_service)
 
 func _date_dict_to_string(date_dict: Dictionary) -> String:
 	if date_dict.has("year") and date_dict.has("month") and date_dict.has("day"):
@@ -320,3 +322,34 @@ func get_session_history_manager() -> SessionHistoryManager:
 
 func get_level_layer() -> Control:
 	return $XPContainer 
+
+func get_background_service() -> BackgroundProcessingService:
+	return background_service
+
+func _setup_notifications_ui():
+	if has_node("NotificationsLayer/NotifHBox"):
+		notif_ui = $NotificationsLayer/NotifHBox
+	return
+
+func notifications_add_or_update(id: String, text: String, cancellable: bool, cancel_method: String):
+	if notif_ui and notif_ui.has_method("show_progress"):
+		var cancel_callable: Callable = Callable()
+		if cancellable and background_service:
+			cancel_callable = func(): background_service.call(cancel_method)
+		notif_ui.show_progress(text, cancel_callable)
+		return
+
+func notifications_error(id: String, text: String, retry_method: String, cancel_method: String):
+	if notif_ui and notif_ui.has_method("show_error"):
+		var retry_callable: Callable = Callable()
+		var cancel_callable: Callable = Callable()
+		if background_service:
+			retry_callable = func(): background_service.call(retry_method)
+			cancel_callable = func(): background_service.call(cancel_method)
+		notif_ui.show_error(text, retry_callable, cancel_callable)
+		return
+
+func notifications_complete(id: String, text: String):
+	if notif_ui and notif_ui.has_method("show_complete"):
+		notif_ui.show_complete(text)
+		return

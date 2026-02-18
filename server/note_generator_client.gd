@@ -11,6 +11,7 @@ var is_generating: bool = false
 var _thread_request_data: Dictionary = {}
 var _thread_result: Dictionary = {}
 var _thread_finished: bool = false
+var _cancel_requested: bool = false
 
 var default_lanes: int = 4
 var default_sync_tolerance: float = 0.2 
@@ -39,6 +40,7 @@ func generate_notes(
 		return
 
 	_set_is_generating(true)
+	_cancel_requested = false
 	emit_signal("notes_generation_started")
 
 	var effective_lanes = lanes if lanes > 0 else default_lanes
@@ -85,6 +87,7 @@ func _check_thread_status():
 
 		if http_thread:
 			http_thread.wait_to_finish()
+			http_thread = null
 
 		if _thread_result.has("error"):
 			_set_is_generating(false)
@@ -103,6 +106,7 @@ func _check_thread_status():
 				"Unknown",
 				req.generation_mode
 			)
+			return
 		elif _thread_result.has("notes"):
 			_set_is_generating(false)
 			var notes = _thread_result["notes"]
@@ -212,6 +216,11 @@ func _thread_function(data_dict: Dictionary):
 		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
 			http_client.poll()
 			OS.delay_msec(100)
+			if _cancel_requested:
+				_thread_result = {"error": "Операция отменена пользователем"}
+				http_client.close()
+				_thread_finished = true
+				return
 
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error_msg = "Не удалось подключиться к серверу. Статус: " + str(http_client.get_status())
@@ -229,6 +238,11 @@ func _thread_function(data_dict: Dictionary):
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 					http_client.poll()
 					OS.delay_msec(100)
+					if _cancel_requested:
+						_thread_result = {"error": "Операция отменена пользователем"}
+						http_client.close()
+						_thread_finished = true
+						return
 
 				var response_code = http_client.get_response_code()
 				var response_body_bytes = PackedByteArray()
@@ -260,7 +274,7 @@ func _thread_function(data_dict: Dictionary):
 						local_error_msg = "Ответ не содержит нот и не требует ручного ввода"
 						local_error_occurred = true
 				else:
-					local_error_msg = "Сервер вернул ошибку: %s. Тело: %s" % [str(response_code), response_text]
+					local_error_msg = "Сервер вернул ошибку: %s" % [str(response_code)]
 					local_error_occurred = true
 
 	http_client.close()
@@ -383,3 +397,7 @@ func _save_notes_locally(song_path: String, instrument: String, notes_data: Arra
 		file.close()
 	else:
 		print("NoteGeneratorClient.gd: Ошибка сохранения нот: ", notes_path)
+
+func request_cancel():
+	if is_generating:
+		_cancel_requested = true

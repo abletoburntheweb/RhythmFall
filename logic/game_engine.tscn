@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=8 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_hq7uf"]
+[ext_resource type="Script" uid="uid://bkldcmlwkw05g" path="res://ui/notification_ui.gd" id="4_358gi"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
 shader = ExtResource("2_q8hsq")
@@ -118,3 +120,38 @@ custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 texture = ExtResource("3_hq7uf")
 expand_mode = 1
+
+[node name="NotificationsLayer" type="CanvasLayer" parent="."]
+
+[node name="NotifHBox" type="HBoxContainer" parent="NotificationsLayer"]
+offset_top = 1063.0
+offset_right = 260.0
+offset_bottom = 1080.0
+script = ExtResource("4_358gi")
+
+[node name="NotificationLabel" type="Label" parent="NotificationsLayer/NotifHBox"]
+visible = false
+custom_minimum_size = Vector2(0, 17)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
+theme_override_font_sizes/font_size = 12
+text = "Текст"
+
+[node name="CancelButton" type="LinkButton" parent="NotificationsLayer/NotifHBox"]
+visible = false
+layout_mode = 2
+theme = ExtResource("4_wjwn5")
+theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
+theme_override_font_sizes/font_size = 12
+text = "Отмена"
+underline = 1
+
+[node name="RetryButton" type="LinkButton" parent="NotificationsLayer/NotifHBox"]
+visible = false
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+theme = ExtResource("4_wjwn5")
+theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
+theme_override_font_sizes/font_size = 12
+text = "Повторить"
+underline = 1

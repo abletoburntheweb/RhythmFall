@@ -2,7 +2,7 @@
 	"achievements": [
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 8,
 			"description": "Выполните 5 ежедневных заданий",
 			"id": 1.0,
 			"image": "res://assets/achievements/daily.png",
@@ -13,7 +13,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 8,
 			"description": "Выполните 20 ежедневных заданий",
 			"id": 2.0,
 			"image": "res://assets/achievements/daily.png",
@@ -24,7 +24,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 8,
 			"description": "Выполните 50 ежедневных заданий",
 			"id": 3.0,
 			"image": "res://assets/achievements/daily.png",
@@ -35,7 +35,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 8,
 			"description": "Выполните 100 ежедневных заданий",
 			"id": 4.0,
 			"image": "res://assets/achievements/daily.png",
@@ -46,7 +46,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 8,
 			"description": "Выполните 250 ежедневных заданий",
 			"id": 5.0,
 			"image": "res://assets/achievements/daily.png",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 466310,
+			"current": 466510,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 466310,
+			"current": 466510,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 466310,
+			"current": 466510,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -200,7 +200,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 9,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"image": "res://assets/achievements/login_1_day.png",
@@ -211,7 +211,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 9,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"image": "res://assets/achievements/login_7_days.png",
@@ -222,7 +222,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 9,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"image": "res://assets/achievements/login_30_days.png",
@@ -233,7 +233,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 7,
+			"current": 9,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"image": "res://assets/achievements/login_365_days.png",
@@ -365,7 +365,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 9.68,
+			"current": 16.03,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"image": "res://assets/achievements/music_lover_beginner.png",
@@ -376,7 +376,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 9.68,
+			"current": 16.03,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"image": "res://assets/achievements/passionate_listener.png",
@@ -387,18 +387,18 @@
 		},
 		{
 			"category": "playtime",
-			"current": 9.68,
+			"current": 16.03,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"image": "res://assets/achievements/rhythm_fan.png",
 			"title": "Поклонник ритма",
 			"total": 10.0,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "17 Фев 2026, 19:37",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 9.68,
+			"current": 16.03,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"image": "res://assets/achievements/syncopation_master.png",
@@ -409,7 +409,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 9.68,
+			"current": 16.03,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"image": "res://assets/achievements/stage_legend.png",

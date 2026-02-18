@@ -778,7 +778,6 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 func add_play_time_seconds(seconds_to_add: int):
 	_total_play_time_seconds += seconds_to_add
 	var new_time_string = _play_time_seconds_to_string(_total_play_time_seconds)
-	print("PlayerDataManager.gd (DEBUG add_play_time): Добавляем: ", seconds_to_add, ", Новое общее время (сек): ", _total_play_time_seconds, ", Новое время (строка): ", new_time_string)
 	data["total_play_time"] = new_time_string
 	emit_signal("total_play_time_changed", new_time_string)
 	_save()
