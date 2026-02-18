@@ -2443,3 +2443,9 @@ theme = SubResource("Theme_p28av")
 theme_override_font_sizes/font_size = 24
 text = "Включить определение жанров
 Если включено — треки анализируются по стилю для более точной генерации. Может замедлить загрузку."
+
+[node name="ShowGenNotifsCheckBox" type="CheckBox" parent="ContentVBox"]
+layout_mode = 2
+theme = SubResource("Theme_p28av")
+theme_override_font_sizes/font_size = 24
+text = "Показывать уведомления о генерации и расчёте BPM"

@@ -86,7 +86,8 @@ func _on_bpm_started():
 		var path = _active_bpm_task.path
 		var disp = _active_bpm_task.display
 		bpm_started.emit(path, disp)
-		if _game_engine and _game_engine.has_method("notifications_add_or_update"):
+		if SettingsManager.get_setting("show_generation_notifications", true) \
+		and _game_engine and _game_engine.has_method("notifications_add_or_update"):
 			_game_engine.notifications_add_or_update("bpm", "Вычисление BPM для %s" % disp, true, "cancel_bpm")
 
 func _on_bpm_completed(bpm_value: int):
@@ -96,8 +97,11 @@ func _on_bpm_completed(bpm_value: int):
 	var disp = _active_bpm_task.display
 	SongMetadataManager.update_metadata(path, {"bpm": str(bpm_value)})
 	bpm_completed.emit(path, bpm_value, disp)
-	if _game_engine and _game_engine.has_method("notifications_complete"):
+	if SettingsManager.get_setting("show_generation_notifications", true) \
+	and _game_engine and _game_engine.has_method("notifications_complete"):
 		_game_engine.notifications_complete("bpm", "BPM вычислен: %d для %s" % [bpm_value, disp])
+	if MusicManager and MusicManager.has_method("play_analysis_success"):
+		MusicManager.play_analysis_success()
 	_active_bpm_task.clear()
 
 func _on_bpm_error(message: String):
@@ -105,16 +109,20 @@ func _on_bpm_error(message: String):
 		return
 	var disp = _active_bpm_task.display
 	bpm_error.emit(_active_bpm_task.path, message, disp)
-	if _game_engine and _game_engine.has_method("notifications_error"):
+	if SettingsManager.get_setting("show_generation_notifications", true) \
+	and _game_engine and _game_engine.has_method("notifications_error"):
 		var show_msg = "Ошибка вычисления BPM: %s" % message
 		_game_engine.notifications_error("bpm", show_msg, "retry_bpm", "cancel_bpm")
+	if MusicManager and MusicManager.has_method("play_analysis_error"):
+		MusicManager.play_analysis_error()
 	_active_bpm_task.clear()
 
 func _on_notes_started():
 	if _active_notes_task.has("path"):
 		var disp = _active_notes_task.display
 		notes_started.emit(_active_notes_task.path, disp)
-		if _game_engine and _game_engine.has_method("notifications_add_or_update"):
+		if SettingsManager.get_setting("show_generation_notifications", true) \
+		and _game_engine and _game_engine.has_method("notifications_add_or_update"):
 			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s" % disp, true, "cancel_notes")
 
 func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String):
@@ -122,8 +130,11 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 		return
 	var disp = _active_notes_task.display
 	notes_completed.emit(_active_notes_task.path, instrument_type, disp)
-	if _game_engine and _game_engine.has_method("notifications_complete"):
+	if SettingsManager.get_setting("show_generation_notifications", true) \
+	and _game_engine and _game_engine.has_method("notifications_complete"):
 		_game_engine.notifications_complete("notes", "Ноты сгенерированы для %s" % disp)
+	if MusicManager and MusicManager.has_method("play_analysis_success"):
+		MusicManager.play_analysis_success()
 	_active_notes_task.clear()
 
 func _on_notes_error(message: String):
@@ -131,11 +142,14 @@ func _on_notes_error(message: String):
 		return
 	var disp = _active_notes_task.display
 	notes_error.emit(_active_notes_task.path, message, disp)
-	if _game_engine and _game_engine.has_method("notifications_error"):
+	if SettingsManager.get_setting("show_generation_notifications", true) \
+	and _game_engine and _game_engine.has_method("notifications_error"):
 		var show_msg = message
 		if show_msg.find("подключиться") != -1:
 			show_msg = "Ошибка генерации: нет подключения к серверу"
 		_game_engine.notifications_error("notes", show_msg, "retry_notes", "cancel_notes")
+	if MusicManager and MusicManager.has_method("play_analysis_error"):
+		MusicManager.play_analysis_error()
 	_active_notes_task.clear()
 
 func retry_bpm():

@@ -140,7 +140,6 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + str(bpm_value)
 	analyze_bpm_button.text = "BPM вычислен"
 	analyze_bpm_button.disabled = false
-	MusicManager.play_analysis_success()
 	
 	var selected_items = song_item_list_ref.get_selected_items()
 	if selected_items.size() > 0:
@@ -171,7 +170,6 @@ func _on_bpm_analysis_error(error_message: String):
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Ошибка"
 	analyze_bpm_button.text = "Ошибка вычисления"
 	analyze_bpm_button.disabled = false
-	MusicManager.play_analysis_error()
 	
 func _on_notes_generation_started():
 	print("SongSelect.gd: Генерация нот начата.")
@@ -185,7 +183,6 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Генерация завершена", false)
-	MusicManager.play_analysis_success()
 	
 	var game_engine = get_parent()
 	var achievement_system = game_engine.get_achievement_system()
@@ -196,7 +193,6 @@ func _on_notes_generation_error(error_message: String):
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ошибка генерации"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
-	MusicManager.play_analysis_error()
 	
 func _on_filter_by_letter_selected(index: int):
 	if song_edit_manager.is_edit_mode_active():

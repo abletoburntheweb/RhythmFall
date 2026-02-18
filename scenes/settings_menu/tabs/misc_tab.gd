@@ -13,10 +13,12 @@ var song_metadata_manager = SongMetadataManager
 @onready var clear_all_results_button: Button = $ContentVBox/ClearAllResultsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 @onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
+@onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
 
 
 func _ready():
 	print("MiscTab.gd: _ready вызван.")
+	_ensure_show_notifs_checkbox()
 	_connect_signals()
 
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
@@ -47,6 +49,8 @@ func _connect_signals():
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 	if enable_genre_detection_checkbox:  
 		enable_genre_detection_checkbox.toggled.connect(_on_enable_genre_detection_toggled) 
+	if show_gen_notifs_checkbox:
+		show_gen_notifs_checkbox.toggled.connect(_on_show_gen_notifs_toggled)
 
 
 func _apply_initial_settings():
@@ -54,6 +58,9 @@ func _apply_initial_settings():
 	
 	var enable_genre = SettingsManager.get_setting("enable_genre_detection", true)
 	enable_genre_detection_checkbox.set_pressed_no_signal(enable_genre)  
+	
+	var show_notifs = SettingsManager.get_setting("show_generation_notifications", true)
+	show_gen_notifs_checkbox.set_pressed_no_signal(show_notifs)
 
 
 func _on_debug_menu_toggled(enabled: bool):
@@ -172,3 +179,19 @@ func _on_enable_genre_detection_toggled(enabled: bool):
 	SettingsManager.set_setting("enable_genre_detection", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
+
+func _on_show_gen_notifs_toggled(enabled: bool):
+	SettingsManager.set_setting("show_generation_notifications", enabled)
+	SettingsManager.save_settings()
+	emit_signal("settings_changed")
+
+func _ensure_show_notifs_checkbox():
+	if show_gen_notifs_checkbox:
+		return
+	var content_vbox = $ContentVBox
+	if content_vbox and content_vbox is VBoxContainer:
+		var cb = CheckBox.new()
+		cb.name = "ShowGenNotifsCheckBox"
+		cb.text = "Показывать уведомления о генерации и расчёте BPM"
+		content_vbox.add_child(cb)
+		show_gen_notifs_checkbox = cb
