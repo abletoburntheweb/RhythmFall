@@ -24,7 +24,6 @@ func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 
 func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	if not FileAccess.file_exists(json_path):
-		print("[AchievementManager] Файл %s не найден. Загружен пустой список." % json_path)
 		achievements = []
 		return
 
@@ -68,7 +67,6 @@ func get_achievement_progress(achievement_id: int) -> Vector2i:
 	for a in achievements:
 		if a.id == achievement_id:
 			return Vector2i(a.get("current", 0), a.get("total", 1))
-	print("[AchievementManager] Достижение с id=%d не найдено" % achievement_id)
 	return Vector2i(0, 1)
 
 func update_progress(achievement_id: int, value: int):
@@ -79,7 +77,6 @@ func update_progress(achievement_id: int, value: int):
 				unlock_achievement_by_id(achievement_id)
 			save_achievements()
 			return
-	print("[AchievementManager] Достижение с id=%d не найдено" % achievement_id)
 
 func unlock_achievement_by_id(achievement_id: int):
 	for a in achievements:
@@ -108,8 +105,6 @@ func _perform_unlock(achievement: Dictionary):
 	var time_str = "%02d:%02d" % [time.hour, time.minute] 
 	achievement.unlock_date = "%d %s %d, %s" % [day, month, year, time_str]
 
-	print("🏆 Достижение открыто: %s" % achievement.title)
-
 	save_achievements()
 
 	if player_data_mgr:
@@ -121,27 +116,21 @@ func _perform_unlock(achievement: Dictionary):
 	if category == "mastery":
 		if not new_mastery_achievements.has(achievement):
 			new_mastery_achievements.append(achievement)
-		print("🎮 Геймплейная ачивка отложена (новая): ", achievement.title)
 	elif notification_mgr: 
-		print("Unlocking achievement: ", achievement)
 		notification_mgr.show_achievement_popup(achievement)
 	else:
-		print("⚠️ Нет notification_mgr для показа ачивки: ", achievement.title)
+		printerr("Нет notification_mgr для показа ачивки: ", achievement.title)
 
 
 func show_all_delayed_mastery_achievements():
-	print("🎯 Показываем все *новые* отложенные геймплейные ачивки...")
-
 	for achievement in new_mastery_achievements:
-		print("🏆 Показываем новую геймплейную ачивку: ", achievement.title)
 		if notification_mgr:
 			notification_mgr.show_achievement_popup(achievement)
 		else:
-			print("⚠️ notification_mgr не установлен для показа: ", achievement.title)
+			printerr("notification_mgr не установлен для показа: ", achievement.title)
 
 func clear_new_mastery_achievements():
 	new_mastery_achievements.clear()
-	print("🎯 Список новых геймплейных ачивок очищен.")
 
 func reset_achievements():
 	for a in achievements:
@@ -178,9 +167,8 @@ func check_currency_achievements(player_data_mgr_override = null):
 	var total_earned = 0
 	if pdm:
 		total_earned = pdm.data.get("total_earned_currency", 0)
-		print("[AchievementManager] check_currency_achievements: total_earned = ", total_earned) 
 	else:
-		print("[AchievementManager] check_currency_achievements: pdm is null!") 
+		printerr("[AchievementManager] check_currency_achievements: pdm is null!") 
 		return
 	for achievement in achievements:
 		var ach_id = int(achievement.get("id", 0))
@@ -197,9 +185,7 @@ func check_spent_currency_achievement(total_spent: int):
 		if ach_id in [14, 15, 16]:
 			var required_amount = int(achievement.get("total", 0))
 			achievement.current = total_spent
-			print("[AchievementManager] check_spent_currency: id=", ach_id, ", spent=", total_spent, ", required=", required_amount, ", unlocked=", achievement.get("unlocked", false))
 			if total_spent >= required_amount and not achievement.get("unlocked", false):
-				print("[AchievementManager] check_spent_currency: unlocking id=", ach_id)
 				_perform_unlock(achievement)
 	save_achievements()
 
@@ -271,7 +257,7 @@ func _map_category_ru_to_internal(category_ru: String) -> String:
 func check_daily_login_achievements(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
-		print("[AchievementManager] Ошибка: player_data_mgr не передан в check_daily_login_achievements.")
+		printerr("[AchievementManager] Ошибка: player_data_mgr не передан в check_daily_login_achievements.")
 		return
 
 	var login_streak = pdm.get_login_streak()
@@ -380,19 +366,14 @@ func check_perfect_accuracy_achievement(accuracy: float):
 				break
 
 func check_levels_completed_achievement(total_levels_completed: int):
-	print("[AchievementManager] Проверка уровней: total_levels_completed = ", total_levels_completed)
 	var level_achievements = {26: 5, 27: 20}
 
 	for ach_id in level_achievements:
 		var required_count = level_achievements[ach_id]
-		print("[AchievementManager] Проверяем ачивку ", ach_id, ", требуется: ", required_count, ", есть: ", total_levels_completed)
 		for achievement in achievements:
 			if achievement.id == ach_id:
-				print("[AchievementManager] Нашли ачивку ", ach_id, ", текущий прогресс: ", achievement.current)
 				achievement.current = total_levels_completed
-				print("[AchievementManager] Установлен прогресс ачивки ", ach_id, " в ", total_levels_completed)
 				if total_levels_completed >= required_count and not achievement.get("unlocked", false):
-					print("[AchievementManager] Разблокируем ачивку ", ach_id, "!")
 					_perform_unlock(achievement)
 				break
 	save_achievements() 
@@ -430,8 +411,7 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	pdm.data["total_drum_perfect_hits"] = 0
 
 	pdm._save()
-
-	print("[AchievementManager] Прогресс достижений и данных игрока (кроме валюты) сброшен.")
+	
 
 func check_rhythm_master_achievement(total_notes_hit: int):
 	var rhythm_master_id = 28
@@ -445,10 +425,8 @@ func check_rhythm_master_achievement(total_notes_hit: int):
 func check_drum_level_achievements(player_data_mgr_override = null, accuracy: float = 0.0, total_drum_levels: int = 0):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
-		print("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
+		printerr("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
 		return
-
-	print("[AchievementManager] [ДИАГНОСТИКА] check_drum_level_achievements вызван. max_drum_combo_ever: ", pdm.data.get("max_drum_combo_ever", 0), ", total_drum_levels: ", total_drum_levels)
 
 	if total_drum_levels >= 1: 
 		for achievement in achievements:
@@ -474,22 +452,15 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 func check_drum_storm_achievement(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
-		print("[AchievementManager] check_drum_storm_achievement: player_data_mgr не передан.")
+		printerr("[AchievementManager] check_drum_storm_achievement: player_data_mgr не передан.")
 		return
-
-	print("[AchievementManager] [ДИАГНОСТИКА] Проверка ачивки 'Барабанный шторм'. Текущее max_drum_combo_ever: ", pdm.data.get("max_drum_combo_ever", 0))
 	for achievement in achievements:
 		if achievement.id == 32 and not achievement.get("unlocked", false):
 			var max_drum_combo = pdm.data.get("max_drum_combo_ever", 0)
 			achievement.current = max_drum_combo
-			print("[AchievementManager] [ДИАГНОСТИКА] Ачивка 32 найдена. Установлен current: ", max_drum_combo, ", порог: ", achievement.get("total", 100))
 			if max_drum_combo >= 100: 
-				print("[AchievementManager] [ДИАГНОСТИКА] Порог ачивки 32 достигнут! Разблокировка.")
 				_perform_unlock(achievement)
-			else:
-				print("[AchievementManager] [ДИАГНОСТИКА] Порог ачивки 32 НЕ достигнут.")
 			break
-	print("[AchievementManager] [ДИАГНОСТИКА] Проверка ачивки 'Барабанный шторм' завершена.")
 
 func check_replay_level_achievement(track_completion_counts: Dictionary):
 	var achievement_id = 33
@@ -512,7 +483,6 @@ func check_replay_level_achievement(track_completion_counts: Dictionary):
 	if replay_found:
 		achievement_to_check.current = 1.0
 		_perform_unlock(achievement_to_check)
-		print("AchievementManager: Ачивка 'Музыкальная память' разблокирована, так как найдена песня, сыгранная более 1 раза.")
 		save_achievements() 
 
 func check_playtime_achievements(player_data_mgr_override = null):
@@ -556,7 +526,6 @@ func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
 			var total_str = "%0.2f" % [total_val]
 			return {"current": current_str, "total": total_str, "unlocked": a.get("unlocked", false)}
 
-	print("[AchievementManager] Достижение с id=%d не найдено" % achievement_id)
 	return {"current": "0.00", "total": "1.00", "unlocked": false}
 
 func check_score_achievements(player_data_mgr_override = null):
@@ -656,7 +625,6 @@ func _load_genre_group_map():
 		else:
 			printerr("[AchievementManager] Группа %s должна содержать массив жанров" % group_name)
 
-	print("[AchievementManager] Загружено %d канонических жанров для группировки" % genre_group_map.size())
 	
 func _map_canonical_genre_to_group(canonical_genre: String) -> String:
 	if canonical_genre == "":

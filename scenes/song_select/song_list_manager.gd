@@ -20,7 +20,7 @@ func set_filter_mode(mode: String):
 
 func populate_items():
 	if not item_list:
-		print("SongListManager: item_list не установлен!")
+		printerr("SongListManager: item_list не установлен!")
 		return
 
 	item_list.clear()
@@ -33,7 +33,7 @@ func populate_items():
 
 func populate_items_grouped():
 	if not item_list:
-		print("SongListManager: item_list не установлен!")
+		printerr("SongListManager: item_list не установлен!")
 		return
 
 	item_list.clear()
@@ -104,9 +104,8 @@ func update_song_count_label(count_label: Label):
 				song_count += 1
 		
 		count_label.text = "Песен: %d" % song_count
-		print("SongListManager.gd: Счётчик песен обновлён: %d (только песни)" % song_count)
 	else:
-		print("SongListManager.gd: Label для счётчика не передан.")
+		printerr("SongListManager.gd: Label для счётчика не передан.")
 
 func add_song_from_path(file_path: String):
 	var metadata_dict = SongManager.add_song(file_path)
@@ -207,13 +206,12 @@ func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
 	if item_list_index >= 0 and item_list_index < current_grouped_data.size():
 		var item_data = current_grouped_data[item_list_index]
 		if item_data.type == "song":
-			print("SongListManager.gd: Возвращаем данные песни по индексу %d: %s (путь: %s)" % [item_list_index, item_data.data.get("title", "N/A"), item_data.data.get("path", "N/A")]) 
 			return item_data.data.duplicate() 
 		else:
-			print("SongListManager.gd: Индекс %d указывает на заголовок, а не на песню." % item_list_index)
+			printerr("SongListManager.gd: Индекс %d указывает на заголовок, а не на песню." % item_list_index)
 			return {}
 	else:
-		print("SongListManager.gd: Индекс %d вне диапазона current_grouped_data." % item_list_index)
+		printerr("SongListManager.gd: Индекс %d вне диапазона current_grouped_data." % item_list_index)
 		return {}
 
 func update_song_at_index(item_list_index: int, new_song_data: Dictionary) -> bool:

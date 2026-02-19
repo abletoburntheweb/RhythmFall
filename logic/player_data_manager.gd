@@ -152,10 +152,7 @@ func _load():
 			})
 			var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
 			var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
-
-			print("PlayerDataManager.gd: Загружено currency: ", loaded_currency)
-			print("PlayerDataManager.gd: Загружено unlocked_item_ids: ", loaded_unlocked_item_ids)
-			print("PlayerDataManager.gd: Загружено active_items: ", loaded_active_items)
+			
 			
 			data["currency"] = loaded_currency
 			data["unlocked_item_ids"] = loaded_unlocked_item_ids 
@@ -214,12 +211,12 @@ func _load():
 			_calculate_xp_for_next_level()
 			data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
 			
-			print("PlayerDataManager.gd: Данные игрока загружены из ", PLAYER_DATA_PATH)
+			
 		else:
-			print("PlayerDataManager.gd: Ошибка парсинга JSON или данные не являются словарём в ", PLAYER_DATA_PATH)
+			printerr("PlayerDataManager.gd: Ошибка парсинга JSON или данные не являются словарём в ", PLAYER_DATA_PATH)
 			_save() 
 	else:
-		print("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
+		printerr("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
 		data["profile_created_date"] = Time.get_date_string_from_system()
 		_save() 
 
@@ -242,9 +239,8 @@ func _save():
 		var json_text = JSON.stringify(data_to_save, "\t") 
 		file_access.store_string(json_text)
 		file_access.close()
-		print("PlayerDataManager.gd: Данные игрока сохранены в ", PLAYER_DATA_PATH)
 	else:
-		print("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
+		printerr("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
 
 func _load_best_grades():
 	var file_access = FileAccess.open(BEST_GRADES_PATH, FileAccess.READ)
@@ -254,12 +250,11 @@ func _load_best_grades():
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
 			data["best_grades_per_track"] = json_result
-			print("PlayerDataManager.gd: Загружены лучшие оценки из ", BEST_GRADES_PATH)
 		else:
-			print("PlayerDataManager.gd: best_grades.json повреждён или не является словарём")
+			printerr("PlayerDataManager.gd: best_grades.json повреждён или не является словарём")
 			data["best_grades_per_track"] = {}
 	else:
-		print("PlayerDataManager.gd: best_grades.json не найден, создаём пустой")
+		printerr("PlayerDataManager.gd: best_grades.json не найден, создаём пустой")
 		data["best_grades_per_track"] = {}
 
 func _save_best_grades():
@@ -268,9 +263,8 @@ func _save_best_grades():
 		var json_text = JSON.stringify(data["best_grades_per_track"], "\t")
 		file_access.store_string(json_text)
 		file_access.close()
-		print("PlayerDataManager.gd: Лучшие оценки сохранены в ", BEST_GRADES_PATH)
 	else:
-		print("PlayerDataManager.gd: Ошибка при открытии best_grades.json для записи")
+		printerr("PlayerDataManager.gd: Ошибка при открытии best_grades.json для записи")
 
 func get_currency() -> int:
 	return int(data.get("currency", 0))
@@ -305,11 +299,9 @@ func add_currency(amount: int):
 	if amount < 0:
 		var spent_amount = abs(amount)
 		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
-		print("[PlayerDataManager] Валюта списана: ", spent_amount, ", всего потрачено: ", data["spent_currency"])
 		_trigger_currency_achievement_check()
 	elif amount > 0:
 		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
-		print("[PlayerDataManager] Валюта получена: ", amount, ", всего заработано: ", data["total_earned_currency"])
 		_trigger_currency_achievement_check()
 
 	_save()
@@ -327,7 +319,6 @@ func add_perfect_hits(count: int):
 	var new_total = current_perfect + count
 	data["total_perfect_hits"] = new_total
 	_save()
-	print("[PlayerDataManager] Точных попаданий добавлено: %d. Всего точных: %d" % [count, new_total])
 	_trigger_perfect_hit_achievement_check()
 	increment_daily_progress("perfect_hits", count, {})
 
@@ -352,12 +343,10 @@ func _calculate_xp_for_next_level():
 func add_xp(amount: int):
 	if data["current_level"] >= MAX_LEVEL:
 		data["total_xp"] = min(data["total_xp"] + amount, data["xp_for_next_level"])
-		print("PlayerDataManager: Добавлено XP (макс. уровень): %d, всего: %d" % [amount, data["total_xp"]])
 		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
 		_save()
 		return
 	data["total_xp"] += amount
-	print("PlayerDataManager: Добавлено XP: %d, всего: %d" % [amount, data["total_xp"]])
 	var leveled_up = check_level_up()
 	if not leveled_up:
 		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
@@ -372,7 +361,6 @@ func check_level_up() -> bool:
 		var old_level = data["current_level"]
 		data["current_level"] += 1
 		var new_level = data["current_level"]
-		print("PlayerDataManager: Уровень повышен! Новый уровень: %d" % new_level)
 		_calculate_xp_for_next_level()
 		leveled = true
 		
@@ -428,7 +416,6 @@ func set_active_item(category: String, item_id: String):
 		var old_item_id = data["active_items"][category]
 		data["active_items"][category] = item_id
 		_save()
-		print("PlayerDataManager: активный предмет изменён - категория: ", category, ", старый ID: ", old_item_id, ", новый ID: ", item_id)
 		emit_signal("active_item_changed", category, item_id)
 
 func get_active_item(category: String) -> String:
@@ -470,12 +457,12 @@ func load_save_data(save_dict: Dictionary):
 					loaded_value = DEFAULT_ACTIVE_ITEMS[category]
 				data["active_items"][category] = loaded_value
 		else:
-			print("PlayerDataManager.gd: load_save_data: Поле 'active_items' не является словарём, пропускаем.")
+			printerr("PlayerDataManager.gd: load_save_data: Поле 'active_items' не является словарём, пропускаем.")
 	if save_dict.has("unlocked_achievement_ids"): 
 		if save_dict["unlocked_achievement_ids"] is Array:
 			data["unlocked_achievement_ids"] = PackedInt32Array(save_dict["unlocked_achievement_ids"]) 
 		else:
-			print("PlayerDataManager.gd: load_save_data: Поле 'unlocked_achievement_ids' не является массивом, пропускаем.")
+			printerr("PlayerDataManager.gd: load_save_data: Поле 'unlocked_achievement_ids' не является массивом, пропускаем.")
 	if save_dict.has("spent_currency"):
 		data["spent_currency"] = int(save_dict["spent_currency"])
 	if save_dict.has("total_earned_currency"):
@@ -579,7 +566,7 @@ func reset_progress():
 	_save()
 	data["best_grades_per_track"] = {}
 	_save_best_grades()
-	print("[PlayerDataManager] Прогресс сброшен.")
+	
 
 func reset_profile_statistics():
 	var default_items = [
@@ -645,7 +632,7 @@ func reset_profile_statistics():
 		var session_hist_mgr = game_engine_reference.get_session_history_manager()
 		if session_hist_mgr and session_hist_mgr.has_method("clear_history"):
 			session_hist_mgr.clear_history()
-	print("[PlayerDataManager] Полный сброс профиля выполнен: ачивки, валюта, ежедневки, предметы, точные попадания.")
+	
 
 func get_login_streak() -> int:
 	return int(data.get("login_streak", 0))
@@ -678,7 +665,7 @@ func unlock_achievement(achievement_id: int) -> void:
 	if not data["unlocked_achievement_ids"].has(achievement_id):  
 		data["unlocked_achievement_ids"].append(achievement_id) 
 		_save()
-		print("[PlayerDataManager] Достижение с ID %d разблокировано для игрока." % achievement_id)
+	
 
 func is_achievement_unlocked(achievement_id: int) -> bool:
 	return data["unlocked_achievement_ids"].has(achievement_id)
@@ -688,7 +675,7 @@ func add_completed_level():
 	var new_count = current_count + 1
 	data["levels_completed"] = new_count
 	_save()
-	print("[PlayerDataManager] Уровень завершён. Текущий levels_completed: ", new_count)
+	
 
 func _trigger_level_achievement_check():
 	if game_engine_reference:
@@ -708,7 +695,7 @@ func add_drum_level_completed():
 	var new_count = current_count + 1
 	data["drum_levels_completed"] = new_count
 	_save()
-	print("[PlayerDataManager] Уровень на барабанах завершён. Текущий drum_levels_completed: ", new_count)
+	
 
 func get_drum_levels_completed() -> int:
 	return int(data.get("drum_levels_completed", 0))
@@ -746,13 +733,11 @@ func add_score_to_total(score: int, is_drum_mode: bool = false):
 	var current_total = int(data.get("total_score_ever", 0))
 	var new_total = current_total + score
 	data["total_score_ever"] = new_total
-	print("[PlayerDataManager] Добавлено очков к общему счёту: %d. Общий счёт: %d" % [score, new_total])
 	
 	if is_drum_mode:
 		var current_drum_total = int(data.get("total_drum_score_ever", 0))
 		var new_drum_total = current_drum_total + score
 		data["total_drum_score_ever"] = new_drum_total
-		print("[PlayerDataManager] Добавлено очков к барабанному счёту: %d. Общий барабанный счёт: %d" % [score, new_drum_total])
 	
 	_save()
 
@@ -810,7 +795,7 @@ func _generate_daily_quests_for_date(date_str: String):
 		if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
 			quest_pool = parsed["quests"]
 		else:
-			print("[PlayerDataManager] daily_quests.json повреждён или нет ключа 'quests', используем дефолтный пул")
+			printerr("[PlayerDataManager] daily_quests.json повреждён или нет ключа 'quests', используем дефолтный пул")
 	if quest_pool.is_empty():
 		quest_pool = [
 			{"id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50},
@@ -922,4 +907,4 @@ func update_best_grade_for_track(song_path: String, new_grade: String):
 
 		_save()  
 		_save_best_grades()  
-		print("PlayerDataManager: Обновлена лучшая оценка для '%s': %s" % [song_path, new_grade])
+		

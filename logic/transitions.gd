@@ -12,7 +12,6 @@ func _init(p_game_engine):
 	parent = p_game_engine
 	if game_engine and game_engine.has_method("get_session_history_manager"):
 		session_history_manager = game_engine.get_session_history_manager()
-		print("Transitions.gd: SessionHistoryManager получен из GameEngine: ", session_history_manager)
 	else:
 		printerr("Transitions.gd: GameEngine не имеет метода get_session_history_manager!")
 		session_history_manager = null 
@@ -96,15 +95,12 @@ func transition_open_game(
 
 		if new_game_screen.has_method("set_results_manager") and results_mgr:
 			new_game_screen.set_results_manager(results_mgr)
-			print("Transitions.gd: ResultsManager передан в GameScreen.")
 
 		if new_game_screen.has_method("_set_generation_mode"):
 			new_game_screen._set_generation_mode(generation_mode)
-			print("Transitions.gd: Режим генерации передан в GameScreen: ", generation_mode)
 
 		if new_game_screen.has_method("_set_lanes"):
 			new_game_screen._set_lanes(lane_count)
-			print("Transitions.gd: Количество линий передано в GameScreen: ", lane_count)
 
 		if new_game_screen.has_method("start_game"):
 			new_game_screen.start_game()
@@ -117,7 +113,7 @@ func transition_open_game(
 		if main_menu_instance:
 			main_menu_instance.is_game_open = true
 	else:
-		print("Transitions: GameScreen.tscn не найден, переход отменён.")
+		printerr("Transitions: GameScreen.tscn не найден, переход отменён.")
 
 func transition_close_game():
 	if not main_menu_instance or not main_menu_instance.is_game_open:
@@ -143,14 +139,14 @@ func transition_open_song_select():
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 	else:
-		print("Transitions: song_select.tscn не найден, переход отменён.")
+		printerr("Transitions: song_select.tscn не найден, переход отменён.")
 
 func transition_close_song_select():
 	if game_engine.current_screen:
 		game_engine.current_screen.queue_free()
 		game_engine.current_screen = null 
 	else:
-		print("Transitions.gd: Текущий экран уже null, ничего не удаляем.")
+		pass
 
 	transition_open_main_menu()
 
@@ -158,7 +154,7 @@ func transition_open_main_menu():
 	show_level_ui()  
 	if main_menu_instance and is_instance_valid(main_menu_instance):
 		if main_menu_instance.is_inside_tree():
-			print("Transitions.gd: main_menu_instance уже внутри дерева сцен, не добавляем заново.")
+			pass
 		else:
 			if game_engine.current_screen and game_engine.current_screen != main_menu_instance:
 				game_engine.current_screen.queue_free()
@@ -195,7 +191,7 @@ func transition_open_achievements():
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 	else:
-		print("Transitions: AchievementsScreen.tscn не найден, переход отменён.")
+		printerr("Transitions: AchievementsScreen.tscn не найден, переход отменён.")
 
 func transition_close_achievements():
 	game_engine.current_screen = null 
@@ -214,7 +210,7 @@ func transition_open_profile():
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 	else:
-		print("Transitions: ProfileScreen.tscn не найден, переход отменён.")
+		printerr("Transitions: ProfileScreen.tscn не найден, переход отменён.")
 
 func transition_close_profile():
 	game_engine.current_screen = null 
@@ -230,7 +226,7 @@ func transition_open_help():
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 	else:
-		print("Transitions: HelpScreen.tscn не найден, переход отменён.")
+		printerr("Transitions: HelpScreen.tscn не найден, переход отменён.")
 
 func transition_close_help():
 	game_engine.current_screen = null
@@ -244,14 +240,14 @@ func transition_open_shop():
 		game_engine.current_screen = new_screen
 		MusicManager.pause_menu_music()
 	else:
-		print("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
+		printerr("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
 		var scene_resource = load("res://scenes/shop/shop_screen.tscn")
 		if not scene_resource:
-			print("Transitions.gd: load() вернул null для пути shop_screen.tscn")
+			printerr("Transitions.gd: load() вернул null для пути shop_screen.tscn")
 		elif not (scene_resource is PackedScene):
-			print("Transitions.gd: Загруженный ресурс не является PackedScene: ", scene_resource)
+			printerr("Transitions.gd: Загруженный ресурс не является PackedScene: ", scene_resource)
 		else:
-			print("Transitions.gd: PackedScene загружен, но instantiate() вернул null. Проверьте сцену и скрипт ShopScreen на ошибки!")
+			printerr("Transitions.gd: PackedScene загружен, но instantiate() вернул null. Проверьте сцену и скрипт ShopScreen на ошибки!")
 
 func transition_close_shop():
 	if game_engine.current_screen:
@@ -262,7 +258,7 @@ func transition_close_shop():
 func transition_open_settings(_from_pause=false):
 	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
 	if not new_screen:
-		print("Transitions: SettingsMenu.tscn не найден, переход отменён.")
+		printerr("Transitions: SettingsMenu.tscn не найден, переход отменён.")
 		return
 
 	if new_screen.has_method("setup_managers"):
@@ -320,7 +316,7 @@ func transition_open_victory_screen(score: int, combo: int, max_combo: int, accu
 		game_engine.add_child(new_screen)
 		game_engine.current_screen = new_screen
 	else:
-		print("Transitions: victory_screen.tscn не найден, переход отменён.")
+		printerr("Transitions: victory_screen.tscn не найден, переход отменён.")
 
 func _on_replay_requested(song_info: Dictionary):
 	transition_open_game(null, song_info, "standard")
@@ -335,7 +331,7 @@ func transition_exit_game():
 	if game_engine.has_method("request_quit"):
 		game_engine.request_quit()
 	else:
-		print("Transitions.gd: ОШИБКА! GameEngine не имеет метода request_quit!")
+		printerr("Transitions.gd: ОШИБКА! GameEngine не имеет метода request_quит!")
 
 func open_game_with_instrument(
 	song_path_or_instrument: String = "",
@@ -355,11 +351,10 @@ func open_game_with_instrument(
 		if current_screen and current_screen.has_method("get_current_selected_song"):
 			selected_song_data = current_screen.get_current_selected_song()
 			var song_path = selected_song_data.get("path", "")
-			print("Transitions.gd: Получен путь к песне из текущего экрана: %s" % song_path)
 			if current_screen.has_method("get_results_manager"):
 				results_manager = current_screen.get_results_manager()
 		else:
-			print("Transitions.gd: Не удалось получить выбранную песню из текущего экрана, запуск игры с инструментом: ", instrument)
+			printerr("Transitions.gd: Не удалось получить выбранную песню из текущего экрана, запуск игры с инструментом: ", instrument)
 			selected_song_data = {}
 			return 
 	
@@ -368,10 +363,8 @@ func open_game_with_instrument(
 		if song_path.is_empty() and current_screen and current_screen.has_method("get_current_selected_song"):
 			selected_song_data = current_screen.get_current_selected_song()
 			song_path = selected_song_data.get("path", "")
-			print("Transitions.gd: Получен путь к песне из текущего экрана: %s" % song_path)
 		else:
 			selected_song_data = {"path": song_path}
-			print("Transitions.gd: Используем переданный путь к песне: %s" % song_path)
 
 		if song_path.is_empty():
 			printerr("Transitions.gd: Невозможно открыть игру - путь к песне пуст!")

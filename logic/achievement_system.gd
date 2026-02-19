@@ -31,7 +31,6 @@ func resync_all():
 	achievement_manager.save_achievements()
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
-	print("[AchievementSystem] on_level_completed вызван с song_path: ", song_path, ", accuracy: ", accuracy, ", is_drum_mode: ", is_drum_mode, ", grade: ", grade)
 	
 	achievement_manager.check_first_level_achievement()
 	achievement_manager.check_perfect_accuracy_achievement(accuracy)

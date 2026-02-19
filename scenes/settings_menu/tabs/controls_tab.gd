@@ -13,7 +13,6 @@ var game_screen = null
 @onready var reset_button: Button = $ContentVBox/ResetControlsButton
 
 func _ready():
-	print("ControlsTab.gd: _ready вызван.")
 	if reset_button and not reset_button.has_meta("initialized"):
 		reset_button.pressed.connect(_on_reset_controls_pressed)
 		reset_button.set_meta("initialized", true)
@@ -23,8 +22,7 @@ func setup_ui_and_manager(screen = null):
 	_setup_ui()
 
 func _setup_ui():
-	print("ControlsTab.gd: _setup_ui вызван.")
-
+	
 	var keys_container = $ContentVBox/KeysContainer
 	if not keys_container:
 		printerr("ControlsTab.gd: Не найден KeysContainer!")
@@ -57,22 +55,7 @@ func _setup_ui():
 					button_node.pressed.connect(_on_key_button_pressed.bind(button_node))
 					button_node.set_meta("initialized", true)
 
-	print("ControlsTab.gd: UI управления создано для %d линий." % num_lanes)
-
-	print("ControlsTab.gd: DEBUG: После _setup_ui, количество дочерних элементов в KeysContainer: ", keys_container.get_child_count())
-	for i in range(keys_container.get_child_count()):
-		var child = keys_container.get_child(i)
-		print("ControlsTab.gd: DEBUG: Дочерний элемент ", i, ": ", child.name, " (", child.get_class(), ")")
-		if child is HBoxContainer:
-			print("ControlsTab.gd: DEBUG:   - HBoxContainer создан, имя: ", child.name)
-			if child.get_child_count() >= 2:
-				var label_container = child.get_child(0)
-				if label_container and label_container.get_child_count() > 0:
-					var label = label_container.get_child(0)
-					print("ControlsTab.gd: DEBUG:   - Label: ", label.text)
-				var button = child.get_child(1)
-				if button and button is Button:
-					print("ControlsTab.gd: DEBUG:   - Button: ", button.text, " (lane_index: ", button.get_meta("lane_index"), ")")
+	
 
 func _on_key_button_pressed(button: Button):
 	if _remap_active and _remap_target_button:
@@ -84,8 +67,15 @@ func _on_key_button_pressed(button: Button):
 	
 	button.text = "..."  
 	_remap_active = true
-
-	print("ControlsTab.gd: Ожидание нажатия новой клавиши для линии %d (scancode %d)..." % [_remap_target_lane + 1, _remap_old_scancode])
+	
+func _is_service_key(scancode: int) -> bool:
+	return scancode == KEY_SHIFT \
+		or scancode == KEY_ALT \
+		or scancode == KEY_CTRL \
+		or scancode == KEY_META \
+		or scancode == KEY_CAPSLOCK \
+		or scancode == KEY_NUMLOCK \
+		or scancode == KEY_SCROLLLOCK
 
 func _input(event):
 	if _remap_active and event is InputEventKey and event.pressed:
@@ -98,7 +88,16 @@ func _input(event):
 			_remap_target_button = null
 			_remap_target_lane = -1
 			_remap_old_scancode = 0
-			print("ControlsTab.gd: Переназначение отменено по Escape.")
+			get_viewport().set_input_as_handled()
+			return
+		
+		if _is_service_key(new_scancode):
+			printerr("ControlsTab.gd: Назначение на служебную клавишу запрещено.")
+			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
+			_remap_active = false
+			_remap_target_button = null
+			_remap_target_lane = -1
+			_remap_old_scancode = 0
 			get_viewport().set_input_as_handled()
 			return
 
@@ -131,16 +130,11 @@ func _input(event):
 
 			duplicate_button.text = SettingsManager.get_key_text_for_lane(duplicate_lane)
 			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
-
-			print("ControlsTab.gd: Клавиши поменяны местами: '%s' (Lane %d) <-> '%s' (Lane %d)" % [
-				_get_key_string_from_scancode_for_display(_remap_old_scancode), duplicate_lane + 1,
-				_get_key_string_from_scancode_for_display(new_scancode), _remap_target_lane + 1
-			])
+			
 		else:
 			SettingsManager.set_key_scancode_for_lane(_remap_target_lane, new_scancode)
 			_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
-
-			print("ControlsTab.gd: Назначена новая клавиша '%s' для линии %d (scancode %d)" % [new_key_text, _remap_target_lane + 1, new_scancode])
+			
 
 		emit_signal("settings_changed")
 		if game_screen and game_screen.player:
@@ -175,7 +169,6 @@ func _update_player_keymap():
 		if scan_code != 0 and scan_code != KEY_X:
 			updated_keymap[scan_code] = i
 	game_screen.player.set_keymap(updated_keymap)
-	print("ControlsTab.gd: Keymap Player обновлён: ", updated_keymap)
 
 func refresh_ui():
 	_setup_ui()

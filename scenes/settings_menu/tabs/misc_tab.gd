@@ -17,17 +17,13 @@ var song_metadata_manager = SongMetadataManager
 
 
 func _ready():
-	print("MiscTab.gd: _ready вызван.")
-	_ensure_show_notifs_checkbox()
 	_connect_signals()
 
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongMetadataManager
 	_apply_initial_settings()
-	print("MiscTab.gd: setup_ui_and_manager вызван.")
 
 func _connect_signals():
-	print("MiscTab.gd: _connect_signals вызван.")
 	if clear_achievements_button:
 		clear_achievements_button.pressed.connect(_on_clear_achievements_pressed)
 	if reset_bpm_batch_button:
@@ -37,14 +33,13 @@ func _connect_signals():
 	if reset_all_settings_button:
 		reset_all_settings_button.pressed.connect(_on_reset_all_settings_pressed)
 	if reset_profile_stats_button: 
-		print("MiscTab.gd: reset_profile_stats_button найдена, подключаю сигнал.")
 		reset_profile_stats_button.pressed.connect(_on_reset_profile_stats_pressed) 
 	else:
-		print("MiscTab.gd: ОШИБКА: reset_profile_stats_button НЕ найдена в _connect_signals!")
+		printerr("MiscTab.gd: ОШИБКА: reset_profile_stats_button НЕ найдена в _connect_signals!")
 	if clear_all_results_button:
 		clear_all_results_button.pressed.connect(_on_clear_all_results_pressed)
 	else:
-		print("MiscTab.gd: ОШИБКА: clear_all_results_button НЕ найдена в _connect_signals!")
+		printerr("MiscTab.gd: ОШИБКА: clear_all_results_button НЕ найдена в _connect_signals!")
 	if debug_menu_checkbox:
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 	if enable_genre_detection_checkbox:  
@@ -68,57 +63,43 @@ func _on_debug_menu_toggled(enabled: bool):
 	emit_signal("settings_changed")
 
 func _on_clear_achievements_pressed():
-	print("MiscTab.gd: Запрос на очистку прогресса ачивок.")
 	var game_engine = get_tree().root.get_node("GameEngine")
 	if game_engine and game_engine.has_method("get_achievement_manager"):
 		var achievement_manager = game_engine.get_achievement_manager()
 		achievement_manager.reset_all_achievements_and_player_data(PlayerDataManager)
-		print("MiscTab.gd: Прогресс ачивок и данных игрока сброшен.")
 	else:
 		printerr("MiscTab.gd: achievement_manager не доступен!")
 
 func _on_reset_bpm_batch_pressed():
-	print("MiscTab.gd: Запрос на сброс кэша BPM.")
 	var current_cache = song_metadata_manager._metadata_cache
 	var modified = false
 	for song_path in current_cache:
 		if current_cache[song_path].has("bpm"):
 			current_cache[song_path]["bpm"] = "Н/Д"
 			modified = true
-			print("MiscTab.gd: BPM сброшен для %s" % song_path.get_file())
 	if modified:
 		song_metadata_manager._save_metadata()
-		print("MiscTab.gd: Кэш BPM сброшен для всех песен и сохранён.")
 		emit_signal("settings_changed")
 	else:
-		print("MiscTab.gd: Кэш метаданных пуст или не содержит BPM для сброса.")
+		pass
 
 func _on_clear_all_cache_pressed():
-	print("MiscTab.gd: Запрос на очистку всего кэша.")
 	song_metadata_manager._metadata_cache = {}
 	song_metadata_manager._save_metadata()
-	print("MiscTab.gd: Весь кэш метаданных песен очищен и сохранён.")
 	emit_signal("settings_changed")
 
 func _on_reset_profile_stats_pressed():
-	print("MiscTab.gd: Запрос на сброс статистики профиля.")
 	PlayerDataManager.reset_profile_statistics() 
 	TrackStatsManager.reset_stats()
-	print("MiscTab.gd: Статистика профиля сброшена.")
 	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
 		get_parent().get_parent().get_parent().refresh_stats() 
 
 func _on_reset_all_settings_pressed():
-	print("MiscTab.gd: Запрос на сброс всех настроек.")
 	SettingsManager.reset_all_settings()
 	_apply_initial_settings()
 	emit_signal("settings_changed")
-	print("MiscTab.gd: Все настройки сброшены к значениям по умолчанию.")
 
 func _on_clear_all_results_pressed():
-	print("MiscTab.gd: Запрос на очистку ВСЕХ результатов из папки user://results/.")
-	print("MiscTab.gd: Также очищаются best_grades.json и session_history.json.")
-
 	var results_dir_path = "user://results"
 	var dir_access = DirAccess.open(results_dir_path)
 
@@ -128,7 +109,7 @@ func _on_clear_all_results_pressed():
 
 	if not dir_access:
 		if not results_dir_exists:
-			print("MiscTab.gd: _on_clear_all_results_pressed: Директория результатов не существует, нечего очищать в results/: ", results_dir_path)
+			pass
 		else:
 			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть директорию: ", results_dir_path)
 	else:
@@ -144,15 +125,15 @@ func _on_clear_all_results_pressed():
 						printerr("MiscTab.gd: _on_clear_all_results_pressed: Ошибка удаления файла: ", file_path, ". Код ошибки: ", err)
 						all_deleted_in_results = false
 					else:
-						print("MiscTab.gd: _on_clear_all_results_pressed: Удалён файл: ", file_path)
+						pass
 				else:
-					print("MiscTab.gd: _on_clear_all_results_pressed: Пропущена поддиректория: ", file_name)
+					pass
 			file_name = dir_access.get_next()
 
 		dir_access.list_dir_end()
 
 		if all_deleted_in_results:
-			print("MiscTab.gd: _on_clear_all_results_pressed: Все файлы из папки ", results_dir_path, " успешно удалены.")
+			pass
 		else:
 			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не все файлы из папки ", results_dir_path, " были удалены.")
 
@@ -169,11 +150,10 @@ func _on_clear_all_results_pressed():
 		if file_access:
 			file_access.store_string("{}")  
 			file_access.close()
-			print("MiscTab.gd: _on_clear_all_results_pressed: Файл очищен (записан пустой JSON): ", file_path)
 		else:
 			printerr("MiscTab.gd: _on_clear_all_results_pressed: Не удалось открыть файл для записи: ", file_path)
 
-	print("MiscTab.gd: _on_clear_all_results_pressed: best_grades.json и session_history.json успешно очищены.")
+	
 	
 func _on_enable_genre_detection_toggled(enabled: bool):
 	SettingsManager.set_setting("enable_genre_detection", enabled)
@@ -184,14 +164,3 @@ func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
-
-func _ensure_show_notifs_checkbox():
-	if show_gen_notifs_checkbox:
-		return
-	var content_vbox = $ContentVBox
-	if content_vbox and content_vbox is VBoxContainer:
-		var cb = CheckBox.new()
-		cb.name = "ShowGenNotifsCheckBox"
-		cb.text = "Показывать уведомления о генерации и расчёте BPM"
-		content_vbox.add_child(cb)
-		show_gen_notifs_checkbox = cb

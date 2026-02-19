@@ -96,7 +96,6 @@ func _input(event):
 			KEY_5:
 				if accuracy_edit:
 					accuracy_edit.grab_focus()
-					print("DebugMenu: Ввод точности - введите значение 0-100 и нажмите Enter")
 				handled = true
 			KEY_6:
 				_on_win_button_pressed()
@@ -165,7 +164,7 @@ func _on_accuracy_text_submitted(new_text: String):
 		else:
 			printerr("DebugMenu: Не удалось получить доступ к score_manager")
 	else:
-		print("DebugMenu: Введено некорректное значение точности: ", new_text)
+		printerr("DebugMenu: Введено некорректное значение точности: ", new_text)
 		accuracy_edit.text = ""
 
 func _on_plus_1000_button_pressed():
@@ -176,7 +175,6 @@ func _on_plus_1000_button_pressed():
 		var actual_points = int(1000 * multiplier)
 		
 		game_screen.score_manager.score += actual_points
-		print("DebugMenu: Добавлено %d очков (с множителем x%.1f). Новый счёт: %d" % [actual_points, multiplier, game_screen.score_manager.get_score()])
 		if game_screen.has_method("update_ui"):
 			game_screen.update_ui()
 	else:
@@ -191,7 +189,6 @@ func _on_minus_1000_button_pressed():
 	var game_screen = get_parent()
 	if game_screen and game_screen.score_manager:
 		game_screen.score_manager.score = max(0, game_screen.score_manager.score - 1000) 
-		print("DebugMenu: Вычтено 1000 очков. Новый счёт: %d" % game_screen.score_manager.get_score())
 		if game_screen.has_method("update_ui"):
 			game_screen.update_ui()
 	else:
@@ -278,12 +275,11 @@ func _on_win_button_pressed():
 
 	if game_screen.has_method("end_game"):
 		game_screen.end_game()
-		print("DebugMenu: Игра завершена с точностью %.1f%% (%d/%d нот)" % [game_screen.score_manager.get_accuracy(), game_screen.score_manager.get_hit_notes_count(), game_screen.score_manager.total_notes])
 	else:
 		printerr("DebugMenu: Метод end_game не найден у GameScreen")
 
 func _on_auto_play_check_box_toggled(button_pressed: bool):
-	print("DebugMenu: Автопрохождение ", "ВКЛ" if button_pressed else "ВЫКЛ")
+	pass
 
 func is_auto_play_enabled() -> bool:
 	if auto_play_check_box:

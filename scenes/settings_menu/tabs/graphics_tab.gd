@@ -9,7 +9,6 @@ var game_engine = null
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
 
 func _ready():
-	print("GraphicsTab.gd: _ready вызван.")
 	_setup_fps_options()
 
 func _setup_fps_options():
@@ -24,7 +23,6 @@ func setup_ui_and_manager(game_engine_node = null):
 	_connect_signals()
 
 func _setup_ui():
-	print("GraphicsTab.gd: _setup_ui вызван.")
 	
 	var current_fps_mode = SettingsManager.get_fps_mode()
 	fps_option_button.select(current_fps_mode)

@@ -27,9 +27,9 @@ func _ready():
 		if json_result is Dictionary:
 			shop_data = json_result
 		else:
-			print("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
+			printerr("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
 	else:
-		print("ShopScreen.gd: Файл shop_data.json не найден: ", file_path)
+		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", file_path)
 
 	var achievements_file_path = "res://data/achievements_data.json"
 	var achievements_file_access = FileAccess.open(achievements_file_path, FileAccess.READ)
@@ -40,9 +40,9 @@ func _ready():
 		if json_result is Dictionary:
 			achievements_data = json_result
 		else:
-			print("ShopScreen.gd: Ошибка парсинга achievements_data.json или данные не являются словарём.")
+			printerr("ShopScreen.gd: Ошибка парсинга achievements_data.json или данные не являются словарём.")
 	else:
-		print("ShopScreen.gd: Файл achievements_data.json не найден: ", achievements_file_path)
+		printerr("ShopScreen.gd: Файл achievements_data.json не найден: ", achievements_file_path)
 
 	currency = PlayerDataManager.get_currency()  
 	_update_currency_label()
@@ -75,11 +75,11 @@ func _ready():
 				if content_margin:
 					content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			else:
-				print("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsGridBottomMargin.")
+				printerr("ShopScreen.gd: ОШИБКА: ItemsGrid НЕ найден внутри ItemsGridBottomMargin.")
 		else:
-			print("ShopScreen.gd: ОШИБКА: ItemsListContainer не найден внутри ItemsScroll.")
+			printerr("ShopScreen.gd: ОШИБКА: ItemsListContainer не найден внутри ItemsScroll.")
 	else:
-		print("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
+		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
 	_create_item_cards()
 
@@ -92,11 +92,11 @@ func _update_currency_label():
 			if currency_label:
 				currency_label.text = "Валюта: %d" % PlayerDataManager.get_currency() 
 			else:
-				print("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
+				printerr("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
 		else:
-			print("ShopScreen.gd: ОШИБКА: VBoxContainer НЕ найден внутри MainVBox.")
+			printerr("ShopScreen.gd: ОШИБКА: VBoxContainer НЕ найден внутри MainVBox.")
 	else:
-		print("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден по пути $MainContent/MainVBox.")
+		printerr("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден по пути $MainContent/MainVBox.")
 
 func _update_shop_progress_label():
 	var items = shop_data.get("items", [])
@@ -189,7 +189,7 @@ func _create_item_cards():
 
 	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
 	if not grid_container:
-		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
+		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
 		return
 
 	for i in range(items.size()):
@@ -253,7 +253,7 @@ func _on_category_selected(category: String):
 		return
 	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
 	if not grid_container:
-		print("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
+		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
 		return
 	for card in item_cards:
 		if is_instance_valid(card):
@@ -297,9 +297,9 @@ func _on_item_buy_pressed(item_id: String):
 			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
 		else:
-			print("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
+			printerr("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
 	else:
-		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
+		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
 
 func _is_item_file_available(item_data: Dictionary) -> bool:
 	var audio_path = item_data.get("audio", "")
@@ -338,16 +338,16 @@ func _on_item_use_pressed(item_id: String):
 			
 			_update_all_item_cards_in_category(internal_category, item_id)
 		else:
-			print("ShopScreen.gd: Неизвестная категория для предмета: ", item_id)
+			printerr("ShopScreen.gd: Неизвестная категория для предмета: ", item_id)
 	else:
-		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
+		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
 
 func _on_item_preview_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		_preview_sound(item_data)
 	else:
-		print("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина для предпросмотра.")
+		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина для предпросмотра.")
 
 func _preview_sound(item: Dictionary):
 	var audio_path = item.get("audio", "")
@@ -408,7 +408,7 @@ func _on_gallery_closed():
 	current_cover_item_data = {}
 
 func _on_cover_selected(index: int):
-	print("ShopScreen.gd: Выбрана обложка %d из пака '%s'." % [index, current_cover_item_data.get("name", "Без названия")])
+	pass
 
 func cleanup_before_exit():
 	_cleanup_gallery_internal()

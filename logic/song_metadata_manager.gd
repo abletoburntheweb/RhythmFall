@@ -52,15 +52,13 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			_metadata_cache[song_file_path][field_name] = updated_fields[field_name]
 
 	_save_metadata()
-	print("SongMetadataManager.gd: Метаданные для '%s' обновлены и сохранены (cover исключён)." % song_file_path)
 	emit_signal("metadata_updated", song_file_path)
 
 func remove_metadata(song_file_path: String):
 	if _metadata_cache.erase(song_file_path):
 		_save_metadata()
-		print("SongMetadataManager.gd: Метаданные для '%s' удалены и изменения сохранены." % song_file_path)
 	else:
-		print("SongMetadataManager.gd: Попытка удаления несуществующих метаданных для '%s'." % song_file_path)
+		pass
 
 func _load_metadata():
 	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.READ)
@@ -72,12 +70,10 @@ func _load_metadata():
 			_metadata_cache = parse_result
 			for key in _metadata_cache.keys():
 				_metadata_cache[key].erase("cover")
-			print("SongMetadataManager.gd: Метаданные песен загружены из %s (cover удалён из кэша). Найдено записей: %d" % [METADATA_FILE_PATH, _metadata_cache.size()])
 		else:
 			printerr("SongMetadataManager.gd: Ошибка парсинга JSON из %s или данные не являются словарём." % METADATA_FILE_PATH)
 			_metadata_cache = {}
 	else:
-		print("SongMetadataManager.gd: Файл метаданных %s не найден. Будет создан новый при первом сохранении." % METADATA_FILE_PATH)
 		_metadata_cache = {}
 
 func _save_metadata():
@@ -91,6 +87,5 @@ func _save_metadata():
 		var json_text = JSON.stringify(cache_to_save, "\t")
 		file_access.store_string(json_text)
 		file_access.close()
-		print("SongMetadataManager.gd: Метаданные песен сохранены в %s (cover исключён)." % METADATA_FILE_PATH)
 	else:
 		printerr("SongMetadataManager.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)

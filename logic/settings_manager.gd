@@ -87,10 +87,10 @@ func _load_settings():
 						controls_updated = true
 
 			if controls_updated:
-				print("SettingsManager: Обновлен формат клавиш управления из float/строк в int при загрузке.")
+				pass
+			if loaded_settings.has("show_manual_track_input_on_generation"):
+				loaded_settings.erase("show_manual_track_input_on_generation")
 			settings = loaded_settings
-			print("SettingsManager: Настройки загружены из ", SETTINGS_PATH)
-			print("SettingsManager: Загруженные настройки: ", settings)
 
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
 			if not settings.get("fullscreen", default_settings["fullscreen"]):
@@ -100,10 +100,8 @@ func _load_settings():
 				var window_size = Vector2i(1920, 1080)
 				DisplayServer.window_set_position((screen_size - window_size) / 2)
 		else:
-			print("SettingsManager: Ошибка парсинга JSON или данные не являются словарём в ", SETTINGS_PATH)
 			_save_settings()
 	else:
-		print("SettingsManager: Файл settings.json не найден, создаем новый: ", SETTINGS_PATH)
 		_save_settings() 
 
 
@@ -113,9 +111,8 @@ func _save_settings():
 		var json_text = JSON.stringify(settings, "\t")
 		file_access.store_string(json_text)
 		file_access.close()
-		print("SettingsManager: Настройки сохранены в ", SETTINGS_PATH)
 	else:
-		print("SettingsManager: Ошибка при открытии файла для записи: ", SETTINGS_PATH)
+		pass
 
 
 func _merge_defaults_with_loaded(defaults: Dictionary, loaded: Dictionary) -> Dictionary:
@@ -143,7 +140,6 @@ func save_settings():
 func reset_settings():
 	settings = default_settings.duplicate(true)
 	_save_settings()
-	print("SettingsManager: Настройки сброшены к значениям по умолчанию.")
 
 func get_music_volume() -> float:
 	return float(settings.get("music_volume", default_settings["music_volume"]))
@@ -200,12 +196,7 @@ func get_fullscreen() -> bool:
 
 func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
-	print("SettingsManager: set_fullscreen вызван с enabled = ", enabled)
 	_save_settings()
-	if enabled:
-		print("SettingsManager: Значение полноэкранного режима установлено в true.")
-	else:
-		print("SettingsManager: Значение полноэкранного режима установлено в false.")
 
 
 func get_enable_debug_menu() -> bool:
@@ -232,7 +223,6 @@ func get_controls_keymap_scancode() -> Dictionary:
 
 func set_controls_keymap_scancode(new_keymap_scancode: Dictionary):
 	settings["controls_keymap"] = new_keymap_scancode.duplicate(true)
-	print("SettingsManager: Установлен keymap (scancode): ", new_keymap_scancode)
 
 func get_key_text_for_lane(lane_index: int) -> String:
 	if lane_index < 0 or lane_index >= MAX_LANES:
@@ -252,7 +242,6 @@ func get_key_text_for_lane(lane_index: int) -> String:
 func set_key_scancode_for_lane(lane_index: int, new_scancode: int):
 	var lane_key = "lane_%d_key" % lane_index
 	settings["controls_keymap"][lane_key] = new_scancode
-	print("SettingsManager: Установлен scancode '", new_scancode, "' (", _get_key_string_from_scancode(new_scancode), ") для линии ", lane_index)
 
 func get_key_scancode_for_lane(lane_index: int) -> int:
 	if lane_index < 0 or lane_index >= MAX_LANES:
@@ -297,7 +286,6 @@ func reset_all_settings():
 	
 	_apply_reset_settings()
 	_save_settings()
-	print("SettingsManager: Все настройки сброшены к значениям по умолчанию")
 
 func _apply_reset_settings():
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", false) else DisplayServer.WINDOW_MODE_WINDOWED)
@@ -309,4 +297,4 @@ func _apply_reset_settings():
 		var window_size = Vector2i(1920, 1080)
 		DisplayServer.window_set_position((screen_size - window_size) / 2)
 	
-	print("SettingsManager: Сброшенные настройки применены к системе")
+	pass

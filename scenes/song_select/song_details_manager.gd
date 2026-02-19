@@ -54,8 +54,7 @@ func setup_audio_player():
 	add_child(preview_player)
 
 func update_details(song_data: Dictionary):
-	print("SongDetailsManager.gd: Обновление информации о песне: %s" % song_data)
-
+	
 	if title_label:
 		title_label.text = "Название: " + song_data.get("title", "Н/Д")
 	if artist_label:
@@ -77,25 +76,21 @@ func update_details(song_data: Dictionary):
 	if cover_texture_rect:
 		if cover_texture and cover_texture is ImageTexture:
 			cover_texture_rect.texture = cover_texture
-			print("SongDetailsManager.gd: Установлена обложка из метаданных.")
 		else:
 			var fallback_texture = _get_fallback_cover_texture()
 			if fallback_texture:
 				cover_texture_rect.texture = fallback_texture
-				print("SongDetailsManager.gd: Установлена резервная обложка из активного пака.")
 			else:
 				var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
 				gray_image.fill(Color(0.5, 0.5, 0.5, 1.0))
 				var gray_texture = ImageTexture.create_from_image(gray_image)
 				cover_texture_rect.texture = gray_texture
-				print("SongDetailsManager.gd: Обложка отсутствует, установлен серый квадрат.")
 
 	_update_play_button_state()
 	_update_generation_status() 
 
 func _get_fallback_cover_texture():
 	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
-	print("SongDetailsManager.gd: Попытка получить резервную обложку из пака: ", active_cover_item_id)
 
 	var folder_name_map = {
 		"covers_default": "default_covers"
@@ -114,14 +109,13 @@ func _get_fallback_cover_texture():
 		if error == OK:
 			var texture = ImageTexture.create_from_image(image)
 			if texture:
-				print("SongDetailsManager.gd: Резервная обложка (%s) загружена из: %s" % [fallback_cover_filename, fallback_cover_path])
 				return texture
 			else:
-				print("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для: ", fallback_cover_path)
+				printerr("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для: " + fallback_cover_path)
 		else:
-			print("SongDetailsManager.gd: Ошибка загрузки Image из файла (%d) : %s" % [error, fallback_cover_path])
+			printerr("SongDetailsManager.gd: Ошибка загрузки Image из файла (%d) : %s" % [error, fallback_cover_path])
 	else:
-		print("SongDetailsManager.gd: Файл резервной обложки не найден: ", fallback_cover_path)
+		printerr("SongDetailsManager.gd: Файл резервной обложки не найден: " + fallback_cover_path)
 		var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
 		if fallback_cover_path != fallback_fallback_path and FileAccess.file_exists(fallback_fallback_path):
 			var image_ff = Image.new()
@@ -129,12 +123,11 @@ func _get_fallback_cover_texture():
 			if error_ff == OK:
 				var texture_ff = ImageTexture.create_from_image(image_ff)
 				if texture_ff:
-					print("SongDetailsManager.gd: Резервная обложка (cover1.png) загружена из: ", fallback_fallback_path)
 					return texture_ff
 				else:
-					print("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для запасного файла: ", fallback_fallback_path)
+					printerr("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для запасного файла: " + fallback_fallback_path)
 			else:
-				print("SongDetailsManager.gd: Ошибка загрузки Image из запасного файла (%d) : %s" % [error_ff, fallback_fallback_path])
+				printerr("SongDetailsManager.gd: Ошибка загрузки Image из запасного файла (%d) : %s" % [error_ff, fallback_fallback_path])
 
 	return null
 
@@ -151,7 +144,6 @@ func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
 	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
 	
 	var notes_file_exists = FileAccess.file_exists(notes_path)
-	print("SongDetailsManager.gd: Проверка файла %s: %s" % [notes_filename, notes_file_exists])
 	return notes_file_exists
 
 func _update_play_button_state():
@@ -182,23 +174,22 @@ func _update_generation_status():
 
 func _on_preview_finished():
 	if _current_preview_file_path != "":
-		print("SongDetailsManager.gd: Воспроизведение предпросмотра завершено, перезапуск: ", _current_preview_file_path)
 		play_song_preview(_current_preview_file_path)
 	else:
-		print("SongDetailsManager.gd: _current_preview_file_path пуст, нечего перезапускать.")
+		pass
 
 func play_song_preview(filepath: String):
 	if filepath == "":
-		print("SongDetailsManager.gd: Путь к файлу пуст, воспроизведение невозможно.")
+		printerr("SongDetailsManager.gd: Путь к файлу пуст, воспроизведение невозможно.")
 		return
 
 	if not FileAccess.file_exists(filepath):
-		print("SongDetailsManager.gd: Файл не найден: ", filepath)
+		printerr("SongDetailsManager.gd: Файл не найден: " + filepath)
 		return
 
 	var file_extension = filepath.get_extension().to_lower()
 	if file_extension != "mp3" and file_extension != "wav":
-		print("SongDetailsManager.gd: Неподдерживаемый формат файла для воспроизведения: ", file_extension)
+		printerr("SongDetailsManager.gd: Неподдерживаемый формат файла для воспроизведения: " + file_extension)
 		return
 
 	if preview_player.playing:
@@ -216,15 +207,12 @@ func play_song_preview(filepath: String):
 
 		var preview_volume_percent = SettingsManager.get_preview_volume()
 		preview_player.volume_db = linear_to_db(preview_volume_percent / 100.0)
-		print("SongDetailsManager.gd: Громкость preview_player установлена из SettingsManager: %.2f dB (%.1f%%)" % [preview_player.volume_db, preview_volume_percent])
 
 		preview_player.play()
-		print("SongDetailsManager.gd: Воспроизведение предпросмотра запущено.")
 	else:
-		print("SongDetailsManager.gd: Не удалось загрузить аудио поток из: ", filepath)
+		printerr("SongDetailsManager.gd: Не удалось загрузить аудио поток из: " + filepath)
 
 func stop_preview():
 	_current_preview_file_path = ""
 	if preview_player and preview_player.playing:
 		preview_player.stop()
-		print("SongDetailsManager.gd: Воспроизведение остановлено.")

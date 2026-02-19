@@ -122,7 +122,7 @@ func load_songs():
 
 	var dir = DirAccess.open(SONG_FOLDER_PATH)
 	if not dir:
-		print("SongManager.gd: Ошибка открытия папки: ", SONG_FOLDER_PATH)
+		printerr("SongManager.gd: Ошибка открытия папки: " + SONG_FOLDER_PATH)
 		return
 
 	dir.list_dir_begin()
@@ -149,7 +149,6 @@ func load_songs():
 						"duration": metadata.get("duration", "00:00"),
 					}
 					SongMetadataManager.update_metadata(path, fields_to_save)
-					print("SongManager.gd: Запись в кэше создана для: ", path)
 
 				songs.append(metadata)
 
@@ -159,19 +158,19 @@ func load_songs():
 func add_song(file_path: String) -> Dictionary:
 	var file_extension = file_path.get_extension().to_lower()
 	if not (file_path.ends_with(".mp3") or file_path.ends_with(".wav")):
-		print("SongManager.gd: Неподдерживаемый формат файла: ", file_extension)
+		printerr("SongManager.gd: Неподдерживаемый формат файла: " + file_extension)
 		return {}
 
 	var dest_path = SONG_FOLDER_PATH + file_path.get_file()
 
 	var base_dir = DirAccess.open("res://")
 	if not base_dir:
-		print("SongManager.gd: Ошибка открытия корневой директории проекта.")
+		printerr("SongManager.gd: Ошибка открытия корневой директории проекта.")
 		return {}
 
 	var copy_result = base_dir.copy(file_path, dest_path)
 	if copy_result != OK:
-		print("SongManager.gd: Ошибка копирования файла: ", file_path, " -> ", dest_path)
+		printerr("SongManager.gd: Ошибка копирования файла: " + file_path + " -> " + dest_path)
 		return {}
 
 	var metadata: Dictionary
@@ -228,7 +227,7 @@ func _update_song_data(song_file_path: String):
 			else:
 				songs[index][key] = user_metadata[key]
 		
-		print("SongManager.gd: Данные песни '%s' обновлены из метаданных (cover оставлен без изменений)." % song_file_path)
+		
 	else:
 		printerr("SongManager.gd: Песня с путём '%s' не найдена в списке для обновления." % song_file_path)
 

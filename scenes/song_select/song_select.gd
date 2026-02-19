@@ -131,12 +131,10 @@ func _connect_ui_signals():
 	$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
 	
 func _on_bpm_analysis_started():
-	print("SongSelect.gd: BPM анализ начат.")
 	analyze_bpm_button.text = "Вычисление..."
 	analyze_bpm_button.disabled = true
 
 func _on_bpm_analysis_completed(bpm_value: int):
-	print("SongSelect.gd: BPM анализ завершён. BPM: ", bpm_value)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + str(bpm_value)
 	analyze_bpm_button.text = "BPM вычислен"
 	analyze_bpm_button.disabled = false
@@ -159,25 +157,22 @@ func _on_bpm_analysis_completed(bpm_value: int):
 			else:
 				metadata["bpm"] = str(bpm_value)
 			song_metadata_manager.update_metadata(song_path, metadata)
-			print("SongSelect.gd: BPM обновлён в SongMetadataManager для: ", song_path)
 			
 			if current_selected_song_data.get("path", "") == song_path:
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 
 func _on_bpm_analysis_error(error_message: String):
-	print("SongSelect.gd: Ошибка BPM анализа: ", error_message)
+	printerr("SongSelect.gd: Ошибка BPM анализа: " + error_message)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Ошибка"
 	analyze_bpm_button.text = "Ошибка вычисления"
 	analyze_bpm_button.disabled = false
 	
 func _on_notes_generation_started():
-	print("SongSelect.gd: Генерация нот начата.")
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
-	print("SongSelect.gd: Генерация нот завершена. Нот: %d, BPM: %f, инструмент: %s" % [notes_data.size(), bpm_value, instrument_type])
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация завершена"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
@@ -189,7 +184,7 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	achievement_system.on_notes_generated()
 
 func _on_notes_generation_error(error_message: String):
-	print("SongSelect.gd: Ошибка генерации нот: ", error_message)
+	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ошибка генерации"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
@@ -215,7 +210,7 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 		was_selected = true
 
 	if song_list_manager.update_song_at_index(item_list_index, song_data):
-		print("SongSelect.gd: Песня обновлена в списке без перезагрузки")
+		pass
 
 		if was_selected:
 			song_item_list_ref.select(item_list_index, true)
@@ -419,7 +414,7 @@ func _on_delete_pressed():
 
 	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_items[0])
 	if selected_song_data.is_empty():
-		print("SongSelect.gd: Выбран не трек (возможно, заголовок группы).")
+		printerr("SongSelect.gd: Выбран не трек (возможно, заголовок группы).")
 		return
 
 	var song_path = selected_song_data.get("path", "")
@@ -442,7 +437,7 @@ func _on_delete_pressed():
 			song_details_manager.stop_preview()
 			analyze_bpm_button.disabled = true
 			
-		print("SongSelect.gd: Трек удалён: ", song_path)
+		pass
 	else:
 		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
 
@@ -478,13 +473,11 @@ func _on_analyze_bpm_pressed():
 	var song_path = selected_song_data.get("path", "")
 	if song_path == "": return
 	
-	print("SongSelect.gd: Отправка на анализ BPM файла: ", song_path)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Загрузка..."
 	if background_service:
 		background_service.start_bpm_analysis(song_path)
 
 func _on_play_pressed():
-	print("SongSelect.gd: _on_play_pressed вызван")
 	if current_selected_song_data.is_empty():
 		printerr("SongSelect.gd: Нет выбранной песни!")
 		return
