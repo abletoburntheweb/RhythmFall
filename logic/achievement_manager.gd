@@ -219,6 +219,7 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 			if shop_json_parse_result and shop_json_parse_result.has("items"):
 				for item in shop_json_parse_result.items:
 					var item_id = item.get("item_id", "")
+					var price = int(item.get("price", 0))
 					var category_ru = item.get("category", "")
 					var category_internal = _map_category_ru_to_internal(category_ru)
 					if category_internal == "":
@@ -227,7 +228,7 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 					if not categories.has(category_internal):
 						categories[category_internal] = []
 
-					if unlocked_items.has(item_id):
+					if price > 0 and unlocked_items.has(item_id):
 						categories[category_internal].append(item_id)
 			else:
 				printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")

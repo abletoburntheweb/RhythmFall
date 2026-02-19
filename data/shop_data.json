@@ -252,6 +252,14 @@
 	  "images_count": 7
 	},
 	{
+	  "item_id": "covers_falling_blocks",
+	  "name": "Падающие блоки",
+	  "price": 450,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/falling_blocks",
+	  "images_count": 7
+	},
+	{
 	  "item_id": "pixel_amp",
 	  "name": "Пиксельный усилитель",
 	  "price": 0,
@@ -260,6 +268,26 @@
 	  "images_count": 7,
 	  "is_achievement_reward": true,
 	  "achievement_required": "9"
+	},
+	{
+	  "item_id": "covers_shatter",
+	  "name": "Разбитые осколки",
+	  "price": 0,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/shatter",
+	  "images_count": 7,
+	  "is_level_reward": true,
+	  "required_level": 25
+	},
+	{
+	  "item_id": "covers_marble_flow",
+	  "name": "Мраморный поток",
+	  "price": 0,
+	  "category": "Обложки",
+	  "images_folder": "res://assets/shop/covers/marble_flow",
+	  "images_count": 7,
+	  "is_daily_reward": true,
+	  "required_daily_completed": 20
 	},
 	{
 	  "item_id": "notes_monochrome_red",

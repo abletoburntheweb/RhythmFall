@@ -20,6 +20,8 @@ var accuracy_edit: LineEdit = null
 var win_button: Button = null
 var auto_pressed_lanes: Dictionary = {}
 var auto_min_press_duration: float = 0.1 
+var auto_hit_offset_time: float = 0.02
+var auto_rehit_interval: float = 0.03
  
 func _ready():
 	fps_label = get_node_or_null("FPSLabel") as Label
@@ -302,7 +304,7 @@ func auto_play_simulate(game_screen):
 		var y_in_zone = abs(note.y - game_screen.hit_zone_y) < hit_tolerance_px
 		
 		var pixels_per_sec = game_screen.speed * (1000.0 / 16.0)
-		var note_time = note.spawn_time + (game_screen.hit_zone_y - note.spawn_y) / pixels_per_sec
+		var note_time = note.spawn_time + (game_screen.hit_zone_y - note.spawn_y) / pixels_per_sec + auto_hit_offset_time
 		var time_diff = abs(current_time - note_time)
 		
 		var in_timing_window = time_diff <= hit_tolerance_time
@@ -313,12 +315,20 @@ func auto_play_simulate(game_screen):
 			if not auto_pressed_lanes.has(note.lane):
 				auto_pressed_lanes[note.lane] = {
 					"time": current_time,
-					"type": "tap"
+					"type": "tap",
+					"last_hit_time": current_time
 				}
 				if note.lane < game_screen.player.lanes_state.size():
 					game_screen.player.lanes_state[note.lane] = true
 				game_screen.check_hit(note.lane)
 				game_screen.player.lane_pressed_changed.emit()
+			else:
+				var press_info = auto_pressed_lanes[note.lane]
+				var last_hit_time = float(press_info.get("last_hit_time", 0.0))
+				if current_time - last_hit_time >= auto_rehit_interval:
+					press_info["last_hit_time"] = current_time
+					auto_pressed_lanes[note.lane] = press_info
+					game_screen.check_hit(note.lane)
 
 	var lanes_to_release = []
 	for lane_key in auto_pressed_lanes.keys():

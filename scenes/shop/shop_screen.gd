@@ -104,7 +104,28 @@ func _update_shop_progress_label():
 	var unlocked = 0
 	for item in items:
 		var item_id = item.get("item_id", "")
-		if item_id != "" and PlayerDataManager.is_item_unlocked(item_id):
+		if item_id == "":
+			continue
+		var is_unlocked_purchase = PlayerDataManager.is_item_unlocked(item_id)
+		var is_default_item = bool(item.get("is_default", false))
+		var is_level_reward_item = bool(item.get("is_level_reward", false))
+		var is_achievement_reward_item = bool(item.get("is_achievement_reward", false))
+		var is_daily_reward_item = bool(item.get("is_daily_reward", false))
+		var available_by_level = false
+		var available_by_achievement = false
+		var available_by_daily = false
+		if is_level_reward_item:
+			var req_level = int(item.get("required_level", 0))
+			available_by_level = PlayerDataManager.get_current_level() >= req_level
+		if is_achievement_reward_item:
+			var ach_req_str = String(item.get("achievement_required", ""))
+			if ach_req_str != "" and ach_req_str.is_valid_int():
+				var ach_id = int(ach_req_str)
+				available_by_achievement = PlayerDataManager.is_achievement_unlocked(ach_id)
+		if is_daily_reward_item:
+			var req_daily = int(item.get("required_daily_completed", 0))
+			available_by_daily = PlayerDataManager.get_daily_quests_completed_total() >= req_daily
+		if is_unlocked_purchase or is_default_item or available_by_level or available_by_achievement or available_by_daily:
 			unlocked += 1
 	var main_vbox = $MainContent/MainVBox
 	if main_vbox:

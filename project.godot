@@ -36,12 +36,12 @@ enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg")
 
 [gui]
 
-theme/custom="uid://cii8i07lb62pc"
 theme/custom_font="uid://dlkdapepenx4"
 
 [rendering]
 
 textures/canvas_textures/default_texture_filter=2
 textures/default_filters/use_nearest_mipmap_filter=true
+textures/default_filters/anisotropic_filtering_level=4
 anti_aliasing/quality/msaa_2d=3
 anti_aliasing/quality/screen_space_aa=1
