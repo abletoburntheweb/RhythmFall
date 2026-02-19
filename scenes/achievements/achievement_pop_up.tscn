@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://o1npypfkbsw1"]
 
 [ext_resource type="Script" uid="uid://dnjxdqfm6i7ua" path="res://scenes/achievements/achievement_pop_up.gd" id="1_3ety8"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="1_uk2ul"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="1_uk2ul"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="2_sqpua"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uk2ul"]
@@ -90,12 +90,14 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
 text = "Название Ачивки"
+text_overrun_behavior = 4
 
 [node name="DescriptionLabel" type="Label" parent="ContentContainer/TopRowContainer/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0.827451, 0.827451, 1)
 theme_override_font_sizes/font_size = 18
 text = "Описание ачивки"
+text_overrun_behavior = 4
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
