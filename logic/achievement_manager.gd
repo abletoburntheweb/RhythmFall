@@ -103,6 +103,17 @@ func get_total_for(achievement_id: int) -> int:
 		return 0
 	return int(a.get("total", 0))
 
+func _get_pdm(pdm_override = null):
+	return pdm_override if pdm_override != null else player_data_mgr
+
+func _update_ids(ids: Array, current: int):
+	for ach_id in ids:
+		var a = get_achievement_by_id(ach_id)
+		if a != null:
+			a.current = current
+			if current >= int(a.get("total", 1)) and not a.get("unlocked", false):
+				_perform_unlock(a)
+
 func get_achievement_progress(achievement_id: int) -> Vector2i: 
 	var a = get_achievement_by_id(achievement_id)
 	if a != null:
@@ -185,50 +196,29 @@ func reset_achievements():
 	print("[AchievementManager] Все достижения сброшены.")
 
 func check_first_purchase():
-	for a in achievements:
-		if a.id == 6 and not a.get("unlocked", false):
-			_perform_unlock(a) 
-			break
+	unlock_achievement_by_id(6)
 
 func check_purchase_count(total_purchases: int):
-	for achievement in achievements:
-		var ach_id = int(achievement.get("id", 0))
-		if ach_id in [7, 8, 9, 10]:
-			var required_count = int(achievement.get("total", 0))
-			achievement.current = total_purchases
-			if total_purchases >= required_count and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
+	_update_ids([7, 8, 9, 10], total_purchases)
 	save_achievements()
 
 func check_currency_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	var total_earned = 0
 	if pdm:
 		total_earned = pdm.data.get("total_earned_currency", 0)
 	else:
 		printerr("[AchievementManager] check_currency_achievements: pdm is null!") 
 		return
-	for achievement in achievements:
-		var ach_id = int(achievement.get("id", 0))
-		if ach_id in [11, 12, 13]:
-			var required_amount = int(achievement.get("total", 0))
-			achievement.current = total_earned
-			if total_earned >= required_amount and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
+	_update_ids([11, 12, 13], total_earned)
 	save_achievements()
 
 func check_spent_currency_achievement(total_spent: int):
-	for achievement in achievements:
-		var ach_id = int(achievement.get("id", 0))
-		if ach_id in [14, 15, 16]:
-			var required_amount = int(achievement.get("total", 0))
-			achievement.current = total_spent
-			if total_spent >= required_amount and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
+	_update_ids([14, 15, 16], total_spent)
 	save_achievements()
 
 func check_style_hunter_achievement(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	var categories: Dictionary = {}
 
 	if pdm:
@@ -266,15 +256,12 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 			categories_with_items += 1
 	var total_categories = categories.size()
 
-	for achievement in achievements:
-		if achievement.id == 17 and not achievement.get("unlocked", false):
-			if achievement.total != total_categories:
-				achievement.total = total_categories
-			achievement.current = categories_with_items
-
-			if categories_with_items == total_categories and total_categories > 0:
-				_perform_unlock(achievement)
-			break
+	var a = get_achievement_by_id(17)
+	if a != null and not a.get("unlocked", false):
+		a.total = total_categories
+		a.current = categories_with_items
+		if categories_with_items == total_categories and total_categories > 0:
+			_perform_unlock(a)
 
 	save_achievements()
 
@@ -323,23 +310,21 @@ func check_event_achievements():
 	var month = date.month 
 
 	if day == 30 and month == 9: 
-		for achievement in achievements:
-			if achievement.id == 47 and not achievement.get("unlocked", false): 
-				achievement.current = 1
-				_perform_unlock(achievement)
-				break
+		var a = get_achievement_by_id(47)
+		if a != null and not a.get("unlocked", false):
+			a.current = 1
+			_perform_unlock(a)
 
 	if (month == 1 and day >= 1 and day <= 10): 
-		for achievement in achievements:
-			if achievement.id == 48 and not achievement.get("unlocked", false):
-				achievement.current = 1
-				_perform_unlock(achievement)
-				break
+		var b = get_achievement_by_id(48)
+		if b != null and not b.get("unlocked", false):
+			b.current = 1
+			_perform_unlock(b)
 
 	save_achievements()
 
 func check_collection_completed_achievement(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
 	if not shop_file:
 		printerr("[AchievementManager] Не удалось открыть файл ", SHOP_JSON_PATH)
@@ -376,29 +361,21 @@ func check_collection_completed_achievement(player_data_mgr_override = null):
 		else:
 			unlocked_purchasable_count += 1
 
-	for achievement in achievements:
-		if achievement.id == 18 and not achievement.get("unlocked", false):
-			achievement.total = total_purchasable_items
-			achievement.current = unlocked_purchasable_count
-
-			if missing_items_count == 0:
-				_perform_unlock(achievement)
-			break
+	var a = get_achievement_by_id(18)
+	if a != null and not a.get("unlocked", false):
+		a.total = total_purchasable_items
+		a.current = unlocked_purchasable_count
+		if missing_items_count == 0:
+			_perform_unlock(a)
 	
 	save_achievements()
 
 func check_first_level_achievement():
-	for achievement in achievements:
-		if achievement.id == 24 and not achievement.get("unlocked", false):
-			_perform_unlock(achievement)
-			break
+	unlock_achievement_by_id(24)
 
 func check_perfect_accuracy_achievement(accuracy: float):
 	if accuracy >= 100.0:
-		for achievement in achievements:
-			if achievement.id == 25 and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
-				break
+		unlock_achievement_by_id(25)
 
 func check_levels_completed_achievement(total_levels_completed: int):
 	var ids = [26, 27, 62, 63, 64]
@@ -412,7 +389,7 @@ func check_levels_completed_achievement(total_levels_completed: int):
 	save_achievements() 
 	
 func check_unique_levels_completed_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 	var unique_completed = pdm.get_unique_levels_completed()
@@ -432,7 +409,7 @@ func check_unique_levels_completed_achievements(player_data_mgr_override = null)
 		save_achievements()
 	
 func check_accuracy_95_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 	var grades: Dictionary = pdm.data.get("grades", {})
@@ -448,7 +425,7 @@ func check_accuracy_95_achievements(player_data_mgr_override = null):
 	save_achievements()
 	
 func check_absolute_precision_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 	var ss_count = int(pdm.data.get("grades", {}).get("SS", 0))
@@ -495,16 +472,14 @@ func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	
 
 func check_rhythm_master_achievement(total_notes_hit: int):
-	var rhythm_master_id = 28
-	for achievement in achievements:
-		if achievement.id == rhythm_master_id and not achievement.get("unlocked", false):
-			achievement.current = total_notes_hit 
-			if total_notes_hit >= 1000:  
-				_perform_unlock(achievement)
-			break 
+	var a = get_achievement_by_id(28)
+	if a != null and not a.get("unlocked", false):
+		a.current = total_notes_hit
+		if total_notes_hit >= 1000:
+			_perform_unlock(a)
 
 func check_drum_level_achievements(player_data_mgr_override = null, accuracy: float = 0.0, total_drum_levels: int = 0):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		printerr("[AchievementManager] check_drum_level_achievements: player_data_mgr не передан.")
 		return
@@ -546,14 +521,8 @@ func check_drum_storm_achievement(player_data_mgr_override = null):
 			break
 
 func check_replay_level_achievement(track_completion_counts: Dictionary):
-	var achievement_id = 33
-	var achievement_to_check = null
-	for a in achievements:
-		if a.id == achievement_id:
-			achievement_to_check = a
-			break
-	
-	if not achievement_to_check or achievement_to_check.get("unlocked", false):
+	var a = get_achievement_by_id(33)
+	if not a or a.get("unlocked", false):
 		return
 
 	var replay_found = false
@@ -564,12 +533,12 @@ func check_replay_level_achievement(track_completion_counts: Dictionary):
 			break 
 
 	if replay_found:
-		achievement_to_check.current = 1.0
-		_perform_unlock(achievement_to_check)
+		a.current = 1.0
+		_perform_unlock(a)
 		save_achievements() 
 
 func check_playtime_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 
@@ -612,7 +581,7 @@ func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
 	return {"current": "0.00", "total": "1.00", "unlocked": false}
 
 func check_score_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 
@@ -629,7 +598,7 @@ func check_score_achievements(player_data_mgr_override = null):
 	save_achievements()
 
 func check_ss_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 	var ss_count = pdm.data.get("grades", {}).get("SS", 0)
@@ -644,7 +613,7 @@ func check_ss_achievements(player_data_mgr_override = null):
 	save_achievements()
 
 func check_daily_quests_completed_achievements(player_data_mgr_override = null):
-	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 	var total_completed = pdm.get_daily_quests_completed_total()
@@ -664,14 +633,7 @@ func check_daily_quests_completed_achievements(player_data_mgr_override = null):
 		save_achievements()
 
 func check_level_achievements(player_level: int):
-	var ids = [49, 50, 51, 52, 53]
-	for ach_id in ids:
-		var achievement = get_achievement_by_id(ach_id)
-		if achievement != null:
-			var required_level = int(achievement.get("total", 0))
-			achievement.current = player_level
-			if player_level >= required_level and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
+	_update_ids([49, 50, 51, 52, 53], player_level)
 
 	save_achievements()
 	

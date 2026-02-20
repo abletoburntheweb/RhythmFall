@@ -203,7 +203,7 @@ func refresh_stats():
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
 
 	var total_perfect_hits = PlayerDataManager.get_total_perfect_hits()
-	total_notes_hit_label.text = "Точных попаданий: %d" % total_perfect_hits
+	total_notes_hit_label.text = "Точных попаданий: %d" % total_notes_hit
 	total_drum_hits_label.text = "Точных попаданий: %d" % total_drum_hits
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
 	total_drum_misses_label.text = "Промахов: %d" % total_drum_misses

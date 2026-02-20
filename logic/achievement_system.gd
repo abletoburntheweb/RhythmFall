@@ -20,7 +20,6 @@ func resync_all():
 	achievement_manager.check_purchase_count(paid_purchases)
 	achievement_manager.check_style_hunter_achievement(PlayerDataManager)
 	achievement_manager.check_collection_completed_achievement(PlayerDataManager)
-	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)
 	var total_spent = PlayerDataManager.data.get("spent_currency", 0)
 	achievement_manager.check_currency_achievements(PlayerDataManager)
 	achievement_manager.check_spent_currency_achievement(total_spent)
@@ -68,7 +67,6 @@ func on_purchase_made():
 	achievement_manager.save_achievements()
 
 func on_currency_changed():
-	var total_earned = PlayerDataManager.data.get("total_earned_currency", 0)
 	var total_spent = PlayerDataManager.data.get("spent_currency", 0)
 	achievement_manager.check_currency_achievements(PlayerDataManager)
 	achievement_manager.check_spent_currency_achievement(total_spent)
