@@ -332,7 +332,7 @@ func xp_for_level(level: int) -> int:
 	if level <= 1:
 		return 100
 	var capped_level = min(level, MAX_LEVEL)
-	return int(100 * pow(1.2, capped_level - 1))
+	return int(100 * pow(1.10, capped_level - 1))
 
 func _calculate_xp_for_next_level():
 	if data["current_level"] >= MAX_LEVEL:
@@ -358,9 +358,11 @@ func check_level_up() -> bool:
 		return false
 	var leveled: bool = false
 	while data["total_xp"] >= data["xp_for_next_level"] and data["current_level"] < MAX_LEVEL:
-		var old_level = data["current_level"]
+		var required = data["xp_for_next_level"]
+		var remainder = data["total_xp"] - required
 		data["current_level"] += 1
 		var new_level = data["current_level"]
+		data["total_xp"] = int(remainder * 0.2)
 		_calculate_xp_for_next_level()
 		leveled = true
 		
