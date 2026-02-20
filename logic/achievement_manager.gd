@@ -17,6 +17,7 @@ var notification_mgr = null
 var achievements: Array[Dictionary] = []
 var genre_group_map: Dictionary = {}
 var new_mastery_achievements: Array[Dictionary] = []
+var _ach_by_id: Dictionary = {}
 
 func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	load_achievements(json_path)
@@ -35,13 +36,37 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 		var json_parse_result = JSON.parse_string(json_text)
 		if json_parse_result and json_parse_result.has("achievements"):
 			if json_parse_result.achievements is Array:
-				var loaded_achievements: Array[Dictionary] = []
+				var loaded: Array[Dictionary] = []
+				var seen_ids: Dictionary = {}
 				for item in json_parse_result.achievements:
 					if item is Dictionary:
-						loaded_achievements.append(item)
+						var ach_id = int(item.get("id", -1))
+						var category = str(item.get("category", ""))
+						var title = str(item.get("title", ""))
+						var total_val = item.get("total", 0)
+						if ach_id < 0 or category == "" or title == "":
+							continue
+						if seen_ids.has(ach_id):
+							continue
+						seen_ids[ach_id] = true
+						if typeof(total_val) == TYPE_NIL:
+							item.total = 1
+						elif typeof(total_val) == TYPE_FLOAT or typeof(total_val) == TYPE_INT:
+							item.total = max(1, int(total_val))
+						else:
+							item.total = 1
+						var cur_val = item.get("current", 0)
+						if typeof(cur_val) == TYPE_NIL:
+							item.current = 0
+						else:
+							item.current = int(cur_val)
+						item.unlocked = bool(item.get("unlocked", false))
+						if not item.has("unlock_date"):
+							item.unlock_date = null
+						loaded.append(item)
 					else:
 						printerr("[AchievementManager] Найден элемент не типа Dictionary в списке достижений: ", item)
-				achievements = loaded_achievements
+				achievements = loaded
 				new_mastery_achievements.clear()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")
@@ -52,6 +77,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	else:
 		printerr("[AchievementManager] Не удалось открыть файл ", json_path)
 		achievements = []
+	_rebuild_index()
 
 func save_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	var file = FileAccess.open(json_path, FileAccess.WRITE)
@@ -63,26 +89,38 @@ func save_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	else:
 		printerr("[AchievementManager] Не удалось сохранить файл ", json_path)
 
-func get_achievement_progress(achievement_id: int) -> Vector2i: 
+func _rebuild_index():
+	_ach_by_id.clear()
 	for a in achievements:
-		if a.id == achievement_id:
-			return Vector2i(a.get("current", 0), a.get("total", 1))
+		_ach_by_id[int(a.get("id", -1))] = a
+
+func get_achievement_by_id(achievement_id: int) -> Dictionary:
+	return _ach_by_id.get(achievement_id, null)
+
+func get_total_for(achievement_id: int) -> int:
+	var a = get_achievement_by_id(achievement_id)
+	if a == null:
+		return 0
+	return int(a.get("total", 0))
+
+func get_achievement_progress(achievement_id: int) -> Vector2i: 
+	var a = get_achievement_by_id(achievement_id)
+	if a != null:
+		return Vector2i(int(a.get("current", 0)), int(a.get("total", 1)))
 	return Vector2i(0, 1)
 
 func update_progress(achievement_id: int, value: int):
-	for a in achievements:
-		if a.id == achievement_id:
-			a.current = min(value, a.get("total", 1))
-			if a.current >= a.get("total", 1):
-				unlock_achievement_by_id(achievement_id)
-			save_achievements()
-			return
+	var a = get_achievement_by_id(achievement_id)
+	if a != null:
+		a.current = min(value, a.get("total", 1))
+		if a.current >= a.get("total", 1):
+			unlock_achievement_by_id(achievement_id)
+		save_achievements()
 
 func unlock_achievement_by_id(achievement_id: int):
-	for a in achievements:
-		if a.id == achievement_id and not a.get("unlocked", false):
-			_perform_unlock(a)
-			break 
+	var a = get_achievement_by_id(achievement_id)
+	if a != null and not a.get("unlocked", false):
+		_perform_unlock(a)
 
 func unlock_achievement(achievement_dict: Dictionary):
 	if not achievement_dict.get("unlocked", false):
@@ -262,22 +300,19 @@ func check_daily_login_achievements(player_data_mgr_override = null):
 
 	var login_streak = pdm.get_login_streak()
 
-	var login_achievements = {19: 1, 20: 7, 21: 30, 22: 365}
+	var login_ids = [19, 20, 21, 22]
 	var progress_updated_but_not_unlocked = false
 
-	for ach_id in login_achievements:
-		var required_days = login_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				var old_current = achievement.current
-				achievement.current = login_streak 
-
-				if login_streak >= required_days and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-
-				elif old_current != login_streak and not achievement.get("unlocked", false):
-					progress_updated_but_not_unlocked = true
-				break
+	for ach_id in login_ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required_days = int(achievement.get("total", 1))
+			var old_current = int(achievement.get("current", 0))
+			achievement.current = login_streak
+			if login_streak >= required_days and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+			elif old_current != login_streak and not achievement.get("unlocked", false):
+				progress_updated_but_not_unlocked = true
 
 	if progress_updated_but_not_unlocked:
 		save_achievements()
@@ -366,16 +401,14 @@ func check_perfect_accuracy_achievement(accuracy: float):
 				break
 
 func check_levels_completed_achievement(total_levels_completed: int):
-	var level_achievements = {26: 5, 27: 20, 62: 50, 63: 100, 64: 200}
-
-	for ach_id in level_achievements:
-		var required_count = level_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_levels_completed
-				if total_levels_completed >= required_count and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
+	var ids = [26, 27, 62, 63, 64]
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required_count = int(achievement.get("total", 1))
+			achievement.current = total_levels_completed
+			if total_levels_completed >= required_count and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 	save_achievements() 
 	
 func check_unique_levels_completed_achievements(player_data_mgr_override = null):
@@ -383,19 +416,18 @@ func check_unique_levels_completed_achievements(player_data_mgr_override = null)
 	if not pdm:
 		return
 	var unique_completed = pdm.get_unique_levels_completed()
-	var unique_map = {59: 10, 60: 25, 61: 50}
+	var ids = [59, 60, 61]
 	var progress_updated = false
-	for ach_id in unique_map:
-		var required = unique_map[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				var old = int(achievement.get("current", 0))
-				achievement.current = unique_completed
-				if unique_completed >= required and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				elif old != unique_completed and not achievement.get("unlocked", false):
-					progress_updated = true
-				break
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required = int(achievement.get("total", 1))
+			var old = int(achievement.get("current", 0))
+			achievement.current = unique_completed
+			if unique_completed >= required and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+			elif old != unique_completed and not achievement.get("unlocked", false):
+				progress_updated = true
 	if progress_updated:
 		save_achievements()
 	
@@ -420,12 +452,11 @@ func check_absolute_precision_achievements(player_data_mgr_override = null):
 	if not pdm:
 		return
 	var ss_count = int(pdm.data.get("grades", {}).get("SS", 0))
-	for achievement in achievements:
-		if achievement.id == 65:
-			achievement.current = ss_count
-			if ss_count >= int(achievement.get("total", 10)) and not achievement.get("unlocked", false):
-				_perform_unlock(achievement)
-			break
+	var achievement = get_achievement_by_id(65)
+	if achievement != null:
+		achievement.current = ss_count
+		if ss_count >= int(achievement.get("total", 10)) and not achievement.get("unlocked", false):
+			_perform_unlock(achievement)
 	save_achievements()  	
 	
 func check_note_researcher_achievement():
@@ -490,14 +521,14 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 				_perform_unlock(achievement)
 				break
 
-	var drum_levels_map = {31: 10, 67: 25, 68: 50, 69: 100}
-	for ach_id in drum_levels_map:
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_drum_levels
-				if total_drum_levels >= drum_levels_map[ach_id] and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
+	var ids = [31, 67, 68, 69]
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required = int(achievement.get("total", 1))
+			achievement.current = total_drum_levels
+			if total_drum_levels >= required and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 
 	check_drum_storm_achievement(pdm)
 
@@ -586,16 +617,14 @@ func check_score_achievements(player_data_mgr_override = null):
 		return
 
 	var total_score = pdm.get_total_score()
-	var score_achievements = {39: 20000, 40: 75000, 41: 250000, 42: 750000}
-
-	for ach_id in score_achievements:
-		var required_score = score_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = total_score
-				if total_score >= required_score and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
+	var ids = [39, 40, 41, 42]
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required_score = int(achievement.get("total", 0))
+			achievement.current = total_score
+			if total_score >= required_score and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 
 	save_achievements()
 
@@ -604,15 +633,14 @@ func check_ss_achievements(player_data_mgr_override = null):
 	if not pdm:
 		return
 	var ss_count = pdm.data.get("grades", {}).get("SS", 0)
-	var ss_achievements = {43: 5, 44: 10, 45: 25, 46: 50}
-	for ach_id in ss_achievements:
-		var required_ss = ss_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = ss_count
-				if ss_count >= required_ss and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
+	var ids = [43, 44, 45, 46]
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required_ss = int(achievement.get("total", 0))
+			achievement.current = ss_count
+			if ss_count >= required_ss and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 	save_achievements()
 
 func check_daily_quests_completed_achievements(player_data_mgr_override = null):
@@ -620,33 +648,30 @@ func check_daily_quests_completed_achievements(player_data_mgr_override = null):
 	if not pdm:
 		return
 	var total_completed = pdm.get_daily_quests_completed_total()
-	var daily_map = {1: 5, 2: 20, 3: 50, 4: 100, 5: 250}
+	var ids = [1, 2, 3, 4, 5]
 	var progress_updated = false
-	for ach_id in daily_map:
-		var required = daily_map[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				var old = int(achievement.get("current", 0))
-				achievement.current = total_completed
-				if total_completed >= required and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				elif old != total_completed and not achievement.get("unlocked", false):
-					progress_updated = true
-				break
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required = int(achievement.get("total", 0))
+			var old = int(achievement.get("current", 0))
+			achievement.current = total_completed
+			if total_completed >= required and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+			elif old != total_completed and not achievement.get("unlocked", false):
+				progress_updated = true
 	if progress_updated:
 		save_achievements()
 
 func check_level_achievements(player_level: int):
-	var level_achievements = {49: 10, 50: 16, 51: 25, 52: 50, 53: 100}
-
-	for ach_id in level_achievements:
-		var required_level = level_achievements[ach_id]
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = player_level
-				if player_level >= required_level and not achievement.get("unlocked", false):
-					_perform_unlock(achievement)
-				break
+	var ids = [49, 50, 51, 52, 53]
+	for ach_id in ids:
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			var required_level = int(achievement.get("total", 0))
+			achievement.current = player_level
+			if player_level >= required_level and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 
 	save_achievements()
 	
@@ -711,28 +736,27 @@ func check_genre_achievements(track_stats_mgr = null):
 			group_counts[group] += count
 
 	var genre_achievements = {
-		54: ["electronic", 3],
-		55: ["guitar_rock", 3],
-		56: ["rap", 3],
-		57: ["indie_alt", 3],
-		58: ["experimental", 3],
-		70: ["pop", 3],
-		71: ["classical_orchestral", 3],
-		72: ["jazz_soul", 3],
-		73: ["folk_world", 3],
-		74: ["industrial_noise", 3]
+		54: "electronic",
+		55: "guitar_rock",
+		56: "rap",
+		57: "indie_alt",
+		58: "experimental",
+		70: "pop",
+		71: "classical_orchestral",
+		72: "jazz_soul",
+		73: "folk_world",
+		74: "industrial_noise"
 	}
 
 	for ach_id in genre_achievements:
-		var group = genre_achievements[ach_id][0]
-		var required = genre_achievements[ach_id][1]
-		var current = group_counts[group]
+		var group = genre_achievements[ach_id]
+		var required = int(get_total_for(ach_id))
+		var current = int(group_counts[group])
 
-		for achievement in achievements:
-			if achievement.id == ach_id:
-				achievement.current = current
-				if current >= required and not achievement.unlocked:
-					_perform_unlock(achievement)
-				break
+		var achievement = get_achievement_by_id(ach_id)
+		if achievement != null:
+			achievement.current = current
+			if current >= required and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
 
 	save_achievements()
