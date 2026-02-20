@@ -12,7 +12,7 @@ const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
 	"Backgrounds": "background_default",
 	"Covers": "covers_default",
-	"LaneHighlight": "lane_highlight_default",
+	"LaneHighlight": "lanes_highlight_default",
 	"Notes": "notes_default",
 	"Misc": null 
 }
