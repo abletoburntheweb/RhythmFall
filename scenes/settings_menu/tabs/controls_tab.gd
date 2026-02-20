@@ -9,13 +9,7 @@ var _remap_target_lane: int = -1
 var _remap_old_scancode: int = 0
 
 var game_screen = null
-
-@onready var reset_button: Button = $ContentVBox/ResetControlsButton
-
-func _ready():
-	if reset_button and not reset_button.has_meta("initialized"):
-		reset_button.pressed.connect(_on_reset_controls_pressed)
-		reset_button.set_meta("initialized", true)
+ 
 
 func setup_ui_and_manager(screen = null):
 	game_screen = screen
@@ -186,7 +180,3 @@ func _update_player_keymap():
 
 func refresh_ui():
 	_setup_ui()
-
-
-func _on_btn_controls_pressed() -> void:
-	pass # Replace with function body.

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c1fahaip3uwgq"]
 
 [ext_resource type="Script" uid="uid://x4rp1r7pakd6" path="res://scenes/settings_menu/tabs/controls_tab.gd" id="1_unoo2"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_704fg"]
+[ext_resource type="Theme" uid="uid://bnqslaqlgqsf6" path="res://ui/theme/app_theme.tres" id="2_704fg"]
 
 [node name="ControlsTab" type="Control"]
 layout_mode = 3
@@ -52,7 +52,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Линия 1"
 
-[node name="Button" type="Button" parent="ContentVBox/KeysContainer/Lane1Row"]
+[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane1Row"]
 layout_mode = 2
 theme = ExtResource("2_704fg")
 text = "A"
@@ -136,3 +136,5 @@ theme_override_colors/font_color = Color(0.6156863, 0.6156863, 0.6156863, 1)
 theme_override_font_sizes/font_size = 24
 text = "Нажмите ESC, чтобы отменить переназначение клавиши"
 horizontal_alignment = 1
+
+[connection signal="pressed" from="ContentVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]

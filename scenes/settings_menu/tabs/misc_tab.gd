@@ -16,37 +16,12 @@ var song_metadata_manager = SongMetadataManager
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
 
 
-func _ready():
-	_connect_signals()
-
+ 
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongMetadataManager
 	_apply_initial_settings()
 
-func _connect_signals():
-	if clear_achievements_button:
-		clear_achievements_button.pressed.connect(_on_clear_achievements_pressed)
-	if reset_bpm_batch_button:
-		reset_bpm_batch_button.pressed.connect(_on_reset_bpm_batch_pressed)
-	if clear_all_cache_button:
-		clear_all_cache_button.pressed.connect(_on_clear_all_cache_pressed)
-	if reset_all_settings_button:
-		reset_all_settings_button.pressed.connect(_on_reset_all_settings_pressed)
-	if reset_profile_stats_button: 
-		reset_profile_stats_button.pressed.connect(_on_reset_profile_stats_pressed) 
-	else:
-		printerr("MiscTab.gd: ОШИБКА: reset_profile_stats_button НЕ найдена в _connect_signals!")
-	if clear_all_results_button:
-		clear_all_results_button.pressed.connect(_on_clear_all_results_pressed)
-	else:
-		printerr("MiscTab.gd: ОШИБКА: clear_all_results_button НЕ найдена в _connect_signals!")
-	if debug_menu_checkbox:
-		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
-	if enable_genre_detection_checkbox:  
-		enable_genre_detection_checkbox.toggled.connect(_on_enable_genre_detection_toggled) 
-	if show_gen_notifs_checkbox:
-		show_gen_notifs_checkbox.toggled.connect(_on_show_gen_notifs_toggled)
-
+ 
 
 func _apply_initial_settings():
 	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
@@ -164,7 +139,3 @@ func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
-
-
-func _on_btn_misc_pressed() -> void:
-	pass # Replace with function body.

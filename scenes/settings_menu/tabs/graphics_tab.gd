@@ -20,7 +20,6 @@ func _setup_fps_options():
 func setup_ui_and_manager(game_engine_node = null):
 	game_engine = game_engine_node 
 	_setup_ui()
-	_connect_signals()
 
 func _setup_ui():
 	
@@ -29,11 +28,6 @@ func _setup_ui():
 	
 	fullscreen_checkbox.set_pressed_no_signal(SettingsManager.get_fullscreen())
 
-func _connect_signals():
-	if fps_option_button:
-		fps_option_button.item_selected.connect(_on_fps_mode_selected)
-	if fullscreen_checkbox:
-		fullscreen_checkbox.toggled.connect(_on_fullscreen_toggled)
 
 func _on_fps_mode_selected(index: int):
 	SettingsManager.set_fps_mode(index)
@@ -51,5 +45,4 @@ func refresh_ui():
 	_setup_ui()
 
 
-func _on_btn_graphics_pressed() -> void:
-	pass # Replace with function body.
+ 

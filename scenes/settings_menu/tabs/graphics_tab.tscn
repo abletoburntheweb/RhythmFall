@@ -2403,3 +2403,6 @@ popup/item_1/text = "Обычный"
 popup/item_1/id = 1
 popup/item_2/text = "Контрастный"
 popup/item_2/id = 2
+
+[connection signal="toggled" from="ContentVBox/FullscreenCheckBox" to="." method="_on_fullscreen_toggled"]
+[connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]

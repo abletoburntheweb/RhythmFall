@@ -15,13 +15,10 @@ var game_screen = null
 var _last_test_sound_time: float = 0.0
 const TEST_SOUND_COOLDOWN: float = 0.2 
 
-func _ready():
-	pass
 
 func setup_ui_and_manager(screen = null): 
 	game_screen = screen
 	_setup_ui()
-	_connect_signals()
 	_apply_initial_volumes()
 
 func _setup_ui():
@@ -50,22 +47,6 @@ func _apply_initial_volumes():
 	call_deferred("_on_preview_volume_changed", preview_vol)
 
 
-func _connect_signals():
-	if music_volume_slider:
-		music_volume_slider.value_changed.connect(_on_music_volume_changed)
-	if menu_music_volume_slider:
-		menu_music_volume_slider.value_changed.connect(_on_menu_music_volume_changed)
-	if sfx_volume_slider:
-		sfx_volume_slider.value_changed.connect(_on_sfx_volume_changed)
-		sfx_volume_slider.value_changed.connect(_play_test_sfx_sound)
-	if hit_sounds_volume_slider:
-		hit_sounds_volume_slider.value_changed.connect(_on_hit_sounds_volume_changed)
-		hit_sounds_volume_slider.value_changed.connect(_play_test_hit_sound)
-	if metronome_volume_slider:
-		metronome_volume_slider.value_changed.connect(_on_metronome_volume_changed)
-		metronome_volume_slider.value_changed.connect(_play_test_metronome_sound)
-	if preview_volume_slider:
-		preview_volume_slider.value_changed.connect(_on_preview_volume_changed)
 
 func _can_play_test_sound() -> bool:
 	var now = Time.get_ticks_msec() / 1000.0
@@ -120,7 +101,3 @@ func _on_preview_volume_changed(value: float):
 func refresh_ui():
 	_setup_ui()
 	_apply_initial_volumes()
-
-
-func _on_btn_sound_pressed() -> void:
-	pass # Replace with function body.

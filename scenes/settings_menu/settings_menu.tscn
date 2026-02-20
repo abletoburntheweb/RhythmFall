@@ -2470,7 +2470,7 @@ visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[connection signal="pressed" from="MainVBox/TabsHBox/BtnSound" to="MainVBox/ContentContainer/SettingsTabContainer/SoundTab" method="_on_btn_sound_pressed"]
-[connection signal="pressed" from="MainVBox/TabsHBox/BtnGraphics" to="MainVBox/ContentContainer/SettingsTabContainer/GraphicsTab" method="_on_btn_graphics_pressed"]
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnSound" to="." method="_on_btn_sound_pressed"]
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnGraphics" to="." method="_on_btn_graphics_pressed"]
 [connection signal="pressed" from="MainVBox/TabsHBox/BtnControls" to="MainVBox/ContentContainer/SettingsTabContainer/ControlsTab" method="_on_btn_controls_pressed"]
 [connection signal="pressed" from="MainVBox/TabsHBox/BtnMisc" to="MainVBox/ContentContainer/SettingsTabContainer/MiscTab" method="_on_btn_misc_pressed"]
