@@ -120,3 +120,7 @@ func _on_preview_volume_changed(value: float):
 func refresh_ui():
 	_setup_ui()
 	_apply_initial_volumes()
+
+
+func _on_btn_sound_pressed() -> void:
+	pass # Replace with function body.

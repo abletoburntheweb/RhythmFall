@@ -1,7 +1,11 @@
-[gd_scene load_steps=121 format=3 uid="uid://jsjmtg1mfq15"]
+[gd_scene load_steps=125 format=3 uid="uid://jsjmtg1mfq15"]
 
 [ext_resource type="Script" uid="uid://b1w623ds2gg8i" path="res://scenes/settings_menu/settings_menu.gd" id="1_j78aw"]
-[ext_resource type="Theme" uid="uid://cw88kmaimkspx" path="res://ui/theme/app_theme.tres" id="2_p28av"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_p28av"]
+[ext_resource type="PackedScene" uid="uid://cc6iriedb1tay" path="res://scenes/settings_menu/tabs/sound_tab.tscn" id="3_bsihy"]
+[ext_resource type="PackedScene" uid="uid://dk7vdwevkwjod" path="res://scenes/settings_menu/tabs/graphics_tab.tscn" id="4_rcdfy"]
+[ext_resource type="PackedScene" uid="uid://c1fahaip3uwgq" path="res://scenes/settings_menu/tabs/controls_tab.tscn" id="5_pdrua"]
+[ext_resource type="PackedScene" uid="uid://cflfv1lx6qcni" path="res://scenes/settings_menu/tabs/misc_tab.tscn" id="6_faeuo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2444,3 +2448,29 @@ theme_override_constants/margin_bottom = 40
 [node name="SettingsTabContainer" type="TabContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
 tab_alignment = 1
+current_tab = 0
+tabs_visible = false
+
+[node name="SoundTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("3_bsihy")]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="GraphicsTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("4_rcdfy")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="ControlsTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("5_pdrua")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="MiscTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("6_faeuo")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnSound" to="MainVBox/ContentContainer/SettingsTabContainer/SoundTab" method="_on_btn_sound_pressed"]
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnGraphics" to="MainVBox/ContentContainer/SettingsTabContainer/GraphicsTab" method="_on_btn_graphics_pressed"]
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnControls" to="MainVBox/ContentContainer/SettingsTabContainer/ControlsTab" method="_on_btn_controls_pressed"]
+[connection signal="pressed" from="MainVBox/TabsHBox/BtnMisc" to="MainVBox/ContentContainer/SettingsTabContainer/MiscTab" method="_on_btn_misc_pressed"]

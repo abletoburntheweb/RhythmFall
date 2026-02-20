@@ -49,3 +49,7 @@ func _on_fullscreen_toggled(enabled: bool):
 
 func refresh_ui():
 	_setup_ui()
+
+
+func _on_btn_graphics_pressed() -> void:
+	pass # Replace with function body.

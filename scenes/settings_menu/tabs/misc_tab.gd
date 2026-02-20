@@ -164,3 +164,7 @@ func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
+
+
+func _on_btn_misc_pressed() -> void:
+	pass # Replace with function body.

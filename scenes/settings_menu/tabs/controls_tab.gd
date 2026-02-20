@@ -186,3 +186,7 @@ func _update_player_keymap():
 
 func refresh_ui():
 	_setup_ui()
+
+
+func _on_btn_controls_pressed() -> void:
+	pass # Replace with function body.

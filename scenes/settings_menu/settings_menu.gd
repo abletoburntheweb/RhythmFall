@@ -11,12 +11,7 @@ var achievement_manager = null
 @onready var tab_container: TabContainer = $MainVBox/ContentContainer/SettingsTabContainer
 @onready var back_button: Button = $MainVBox/BackButton
 
-const TAB_PATHS = {
-	"SoundTab": "res://scenes/settings_menu/tabs/sound_tab.tscn",
-	"GraphicsTab": "res://scenes/settings_menu/tabs/graphics_tab.tscn",
-	"ControlsTab": "res://scenes/settings_menu/tabs/controls_tab.tscn",
-	"MiscTab": "res://scenes/settings_menu/tabs/misc_tab.tscn",
-}
+ 
 
 func _ready():
 	var parent_node = get_parent()
@@ -58,41 +53,28 @@ func _setup_tabs():
 	if get_parent() and get_parent().has_method("get_song_metadata_manager"):
 		song_metadata_mgr = get_parent().get_song_metadata_manager()
 
-	for tab_name in TAB_PATHS:
-		var scene_path = TAB_PATHS[tab_name]
-		var scene_resource = load(scene_path)
-
-		if not scene_resource or not (scene_resource is PackedScene):
-			continue
-
-		var tab_instance = scene_resource.instantiate()
-		if not tab_instance:
-			continue
-
-		tab_container.add_child(tab_instance)
-		var tab_title = tab_name.replace("Tab", "")
-		tab_container.set_tab_title(tab_container.get_tab_count() - 1, tab_title)
-
-		if tab_instance.has_method("setup_ui_and_manager"):
-			if tab_name == "MiscTab":
-				tab_instance.setup_ui_and_manager(
+	for i in range(tab_container.get_child_count()):
+		var child = tab_container.get_child(i)
+		var tab_title = child.name.replace("Tab", "")
+		tab_container.set_tab_title(i, tab_title)
+		if child.has_method("setup_ui_and_manager"):
+			if child.name == "MiscTab":
+				child.setup_ui_and_manager(
 					game_screen,
-					song_metadata_mgr,   
+					song_metadata_mgr,
 					self.achievement_manager
 				)
-			elif tab_name == "GraphicsTab":
+			elif child.name == "GraphicsTab":
 				var game_engine = null
 				if get_parent() and get_parent().has_method("get_settings_manager"):
 					game_engine = get_parent()
 				elif get_tree().root.has_node("GameEngine"):
 					game_engine = get_tree().root.get_node("GameEngine")
-
-				tab_instance.setup_ui_and_manager(game_engine)
+				child.setup_ui_and_manager(game_engine)
 			else:
-				tab_instance.setup_ui_and_manager(game_screen)
-
-		if tab_name in ["SoundTab", "ControlsTab"] and tab_instance.has_signal("settings_changed"):
-			tab_instance.connect("settings_changed", Callable(self, "save_settings"))
+				child.setup_ui_and_manager(game_screen)
+		if child.has_signal("settings_changed"):
+			child.connect("settings_changed", Callable(self, "save_settings"))
 
 func _connect_signals():
 	if btn_sound:
