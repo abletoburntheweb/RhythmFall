@@ -3,15 +3,12 @@ extends PanelContainer
 
 signal popup_finished
 
-@onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var animation_player: AnimationPlayer = $PopupAnimator
 var achievement_data: Dictionary = {}
-var _is_ready: bool = false
 
 func _ready():
-	_is_ready = true
-	
 	if not achievement_data.is_empty():
-		call_deferred("show_popup")
+		show_popup()
 
 func set_achievement_data(ach_data: Dictionary):
 	
@@ -35,8 +32,8 @@ func set_achievement_data(ach_data: Dictionary):
 	
 	_load_achievement_icon(ach_data)
 	
-	if _is_ready:
-		call_deferred("show_popup")
+	if is_inside_tree():
+		show_popup()
 
 func _load_achievement_icon(ach_data: Dictionary):
 	var icon_texture = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
@@ -75,59 +72,18 @@ func _load_achievement_icon(ach_data: Dictionary):
 	
 	icon_texture.texture = null
 
-func _load_default_icon():
-	var icon_texture = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
-	if not icon_texture:
-		return
-	
-	var default_paths = [
-		"res://assets/achievements/default.png",
-		"res://assets/achievements/login_1_day.png" 
-	]
-	
-	for path in default_paths:
-		if FileAccess.file_exists(path):
-			var texture = ResourceLoader.load(path)
-			if texture and texture is Texture2D:
-				icon_texture.texture = texture
-				return
-	
-	icon_texture.texture = null
 
 func show_popup():
-	
-	if not is_inside_tree() or not _is_ready:
-		printerr("[AchievementPopUp] ERROR: Not ready or not in scene tree!")
-		return
-	
-	var has_popup_animation = false
 	if animation_player:
-		has_popup_animation = animation_player.has_animation("popup_show")
-	
-	if animation_player and has_popup_animation:
 		animation_player.play("popup_show")
 		if not animation_player.animation_finished.is_connected(_on_animation_player_animation_finished):
 			animation_player.animation_finished.connect(_on_animation_player_animation_finished)
-	else:
-		visible = true
-		if get_tree():
-			get_tree().create_timer(3.0).timeout.connect(_on_timer_timeout, CONNECT_ONE_SHOT)
-		else:
-			printerr("[AchievementPopUp] ERROR: No scene tree available!")
 
 func _on_animation_player_animation_finished(anim_name: String):
 	if anim_name == "popup_show":
-		if get_tree():
-			get_tree().create_timer(2.0).timeout.connect(_on_display_timeout, CONNECT_ONE_SHOT)
-		else:
-			_on_display_timeout()
+		_on_display_timeout()
 
 func _on_display_timeout():
-	popup_finished.emit()
-	
-	call_deferred("queue_free")
-
-func _on_timer_timeout():
 	popup_finished.emit()
 	
 	call_deferred("queue_free")
