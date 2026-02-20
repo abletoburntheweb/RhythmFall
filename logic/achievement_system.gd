@@ -28,23 +28,29 @@ func resync_all():
 	achievement_manager.check_playtime_achievements(PlayerDataManager)
 	achievement_manager.check_level_achievements(PlayerDataManager.get_current_level())
 	achievement_manager.check_daily_quests_completed_achievements(PlayerDataManager)
+	achievement_manager.check_unique_levels_completed_achievements(PlayerDataManager)
+	achievement_manager.check_accuracy_95_achievements(PlayerDataManager)
+	achievement_manager.check_absolute_precision_achievements(PlayerDataManager)
 	achievement_manager.save_achievements()
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):
 	
 	achievement_manager.check_first_level_achievement()
 	achievement_manager.check_perfect_accuracy_achievement(accuracy)
+	achievement_manager.check_absolute_precision_achievements(PlayerDataManager)
 
 	if track_stats_manager: 
 		track_stats_manager.on_track_completed(song_path)
 		achievement_manager.check_replay_level_achievement(track_stats_manager.track_completion_counts)
 		achievement_manager.check_genre_achievements(track_stats_manager)
+		achievement_manager.check_unique_levels_completed_achievements(PlayerDataManager)
 
 	var total_drum_levels = PlayerDataManager.get_drum_levels_completed()
 	achievement_manager.check_drum_level_achievements(PlayerDataManager, accuracy, total_drum_levels)
 
 	var total_levels_completed = PlayerDataManager.get_levels_completed()
 	achievement_manager.check_levels_completed_achievement(total_levels_completed)
+	achievement_manager.check_accuracy_95_achievements(PlayerDataManager)
 	
 	achievement_manager.check_score_achievements(PlayerDataManager)
 	if grade == "SS":

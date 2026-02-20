@@ -3,5 +3,10 @@
 	"guitar_rock": ["rock", "punk", "metal", "post-rock", "math rock", "garage rock", "alternative rock", "indie rock", "grunge", "shoegaze", "dream pop", "funk", "blues rock", "stoner rock", "hardcore", "emo", "screamo"],
 	"rap": ["rap", "hip hop", "trap", "cloud rap", "drill", "grime", "hip-hop", "urban", "melodic rap", "emo rap", "hypertrap"],
 	"indie_alt": ["indie", "lofi", "bedroom pop", "art pop", "chillwave", "synthpop", "neo soul", "r&b", "indie pop", "indie folk", "alternative", "lo-fi", "twee pop", "baroque pop"],
-	"experimental": ["experimental", "avant-garde", "fusion", "abstract", "noise", "free jazz", "progressive", "cross-genre", "genre-bending", "sound art", "musique concrète"]
+	"experimental": ["experimental", "avant-garde", "fusion", "abstract", "noise", "free jazz", "progressive", "cross-genre", "genre-bending", "sound art", "musique concrète"],
+	"pop": ["pop", "dance pop", "electropop", "synthpop", "hyperpop", "teen pop"],
+	"classical_orchestral": ["classical", "orchestral", "symphonic", "baroque", "romantic", "modern classical", "neoclassical", "chamber", "string quartet"],
+	"jazz_soul": ["jazz", "bebop", "cool jazz", "acid jazz", "nu jazz", "smooth jazz", "swing", "latin jazz", "soul", "neo soul", "funk"],
+	"folk_world": ["folk", "world", "ethnic", "celtic", "balkan", "latin", "afrobeat", "flamenco", "reggae", "samba", "bossa nova"],
+	"industrial_noise": ["industrial", "ebm", "post-industrial", "power noise", "noise", "dark ambient"]
 }

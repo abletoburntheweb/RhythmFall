@@ -366,7 +366,7 @@ func check_perfect_accuracy_achievement(accuracy: float):
 				break
 
 func check_levels_completed_achievement(total_levels_completed: int):
-	var level_achievements = {26: 5, 27: 20}
+	var level_achievements = {26: 5, 27: 20, 62: 50, 63: 100, 64: 200}
 
 	for ach_id in level_achievements:
 		var required_count = level_achievements[ach_id]
@@ -377,6 +377,56 @@ func check_levels_completed_achievement(total_levels_completed: int):
 					_perform_unlock(achievement)
 				break
 	save_achievements() 
+	
+func check_unique_levels_completed_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+	var unique_completed = pdm.get_unique_levels_completed()
+	var unique_map = {59: 10, 60: 25, 61: 50}
+	var progress_updated = false
+	for ach_id in unique_map:
+		var required = unique_map[ach_id]
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				var old = int(achievement.get("current", 0))
+				achievement.current = unique_completed
+				if unique_completed >= required and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				elif old != unique_completed and not achievement.get("unlocked", false):
+					progress_updated = true
+				break
+	if progress_updated:
+		save_achievements()
+	
+func check_accuracy_95_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+	var grades: Dictionary = pdm.data.get("grades", {})
+	var s_count = int(grades.get("S", 0))
+	var ss_count = int(grades.get("SS", 0))
+	var total_95 = s_count + ss_count
+	for achievement in achievements:
+		if achievement.id == 66:
+			achievement.current = total_95
+			if total_95 >= int(achievement.get("total", 15)) and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+			break
+	save_achievements()
+	
+func check_absolute_precision_achievements(player_data_mgr_override = null):
+	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
+	if not pdm:
+		return
+	var ss_count = int(pdm.data.get("grades", {}).get("SS", 0))
+	for achievement in achievements:
+		if achievement.id == 65:
+			achievement.current = ss_count
+			if ss_count >= int(achievement.get("total", 10)) and not achievement.get("unlocked", false):
+				_perform_unlock(achievement)
+			break
+	save_achievements()  	
 	
 func check_note_researcher_achievement():
 	for achievement in achievements:
@@ -440,12 +490,14 @@ func check_drum_level_achievements(player_data_mgr_override = null, accuracy: fl
 				_perform_unlock(achievement)
 				break
 
-	for achievement in achievements:
-		if achievement.id == 31 and not achievement.get("unlocked", false):
-			achievement.current = total_drum_levels
-			if total_drum_levels >= 10:
-				_perform_unlock(achievement)
-			break
+	var drum_levels_map = {31: 10, 67: 25, 68: 50, 69: 100}
+	for ach_id in drum_levels_map:
+		for achievement in achievements:
+			if achievement.id == ach_id:
+				achievement.current = total_drum_levels
+				if total_drum_levels >= drum_levels_map[ach_id] and not achievement.get("unlocked", false):
+					_perform_unlock(achievement)
+				break
 
 	check_drum_storm_achievement(pdm)
 
@@ -534,7 +586,7 @@ func check_score_achievements(player_data_mgr_override = null):
 		return
 
 	var total_score = pdm.get_total_score()
-	var score_achievements = {39: 100000, 40: 300000, 41: 750000, 42: 2000000}
+	var score_achievements = {39: 20000, 40: 75000, 41: 250000, 42: 750000}
 
 	for ach_id in score_achievements:
 		var required_score = score_achievements[ach_id]
@@ -644,7 +696,12 @@ func check_genre_achievements(track_stats_mgr = null):
 		"guitar_rock": 0,
 		"rap": 0,
 		"indie_alt": 0,
-		"experimental": 0
+		"experimental": 0,
+		"pop": 0,
+		"classical_orchestral": 0,
+		"jazz_soul": 0,
+		"folk_world": 0,
+		"industrial_noise": 0
 	}
 
 	for canonical_genre in raw_counts:
@@ -658,7 +715,12 @@ func check_genre_achievements(track_stats_mgr = null):
 		55: ["guitar_rock", 3],
 		56: ["rap", 3],
 		57: ["indie_alt", 3],
-		58: ["experimental", 3]
+		58: ["experimental", 3],
+		70: ["pop", 3],
+		71: ["classical_orchestral", 3],
+		72: ["jazz_soul", 3],
+		73: ["folk_world", 3],
+		74: ["industrial_noise", 3]
 	}
 
 	for ach_id in genre_achievements:

@@ -30,14 +30,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 		var original_datetime_str_top = str(top_result.get("date", "N/A"))
 		var formatted_date_str_top = "N/A"
 		if original_datetime_str_top != "N/A":
-			if original_datetime_str_top.length() >= 19 and original_datetime_str_top[4] == '-' and original_datetime_str_top[7] == '-' and original_datetime_str_top[10] == ' ' and original_datetime_str_top[13] == ':' and original_datetime_str_top[16] == ':':
-				var year_top = original_datetime_str_top.substr(0, 4)
-				var month_top = original_datetime_str_top.substr(5, 2)
-				var day_top = original_datetime_str_top.substr(8, 2)
-				var time_part_top = original_datetime_str_top.substr(11, 8)
-				formatted_date_str_top = "%s.%s.%s %s" % [day_top, month_top, year_top, time_part_top]
-			else:
-				formatted_date_str_top = original_datetime_str_top
+			formatted_date_str_top = _format_iso_to_ddmmyyyy_hhmmss(original_datetime_str_top)
 		var display_text_top = "%s - %d очков (%.0f%%) [%s] - %s" % [
 			formatted_date_str_top,
 			top_result.get("score", 0),
@@ -100,14 +93,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			var original_datetime_str = result.get("date", "N/A")
 			var formatted_date_str = "N/A"
 			if original_datetime_str != "N/A":
-				if original_datetime_str.length() >= 19 and original_datetime_str[4] == '-' and original_datetime_str[7] == '-' and original_datetime_str[10] == ' ' and original_datetime_str[13] == ':' and original_datetime_str[16] == ':':
-					var year = original_datetime_str.substr(0, 4)
-					var month = original_datetime_str.substr(5, 2)
-					var day = original_datetime_str.substr(8, 2)
-					var time_part = original_datetime_str.substr(11, 8) 
-					formatted_date_str = "%s.%s.%s %s" % [day, month, year, time_part]
-				else:
-					formatted_date_str = original_datetime_str
+				formatted_date_str = _format_iso_to_ddmmyyyy_hhmmss(original_datetime_str)
 
 			var display_text = "%s - %d очков (%.0f%%) [%s] - %s" % [
 				formatted_date_str,            
@@ -248,6 +234,15 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 		)
 		return results[0]
 	return {}
+
+func _format_iso_to_ddmmyyyy_hhmmss(date_str: String) -> String:
+	if date_str.length() >= 19 and date_str[4] == '-' and date_str[7] == '-' and date_str[10] == ' ' and date_str[13] == ':' and date_str[16] == ':':
+		var year_v = date_str.substr(0, 4)
+		var month_v = date_str.substr(5, 2)
+		var day_v = date_str.substr(8, 2)
+		var time_part_v = date_str.substr(11, 8)
+		return "%s.%s.%s %s" % [day_v, month_v, year_v, time_part_v]
+	return date_str
 
 func clear_results_for_song(song_path: String) -> bool: 
 	if song_path.is_empty():
