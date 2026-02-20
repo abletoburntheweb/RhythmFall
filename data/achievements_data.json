@@ -2,7 +2,7 @@
 	"achievements": [
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 5 ежедневных заданий",
 			"id": 1.0,
 			"image": "res://assets/achievements/daily.png",
@@ -13,7 +13,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 20 ежедневных заданий",
 			"id": 2.0,
 			"image": "res://assets/achievements/daily.png",
@@ -24,7 +24,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 50 ежедневных заданий",
 			"id": 3.0,
 			"image": "res://assets/achievements/daily.png",
@@ -35,7 +35,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 100 ежедневных заданий",
 			"id": 4.0,
 			"image": "res://assets/achievements/daily.png",
@@ -46,7 +46,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 250 ежедневных заданий",
 			"id": 5.0,
 			"image": "res://assets/achievements/daily.png",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 110,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"image": "res://assets/achievements/currency_collector_1.png",
@@ -123,7 +123,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 110,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"image": "res://assets/achievements/currency_collector_2.png",
@@ -134,7 +134,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 110,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"image": "res://assets/achievements/currency_collector_3.png",
@@ -206,7 +206,7 @@
 			"image": "res://assets/achievements/login_1_day.png",
 			"title": "Первый день",
 			"total": 1,
-			"unlock_date": "20 Фев 2026, 23:42",
+			"unlock_date": "21 Фев 2026, 02:44",
 			"unlocked": true
 		},
 		{
@@ -255,29 +255,29 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти первый уровень",
 			"id": 24.0,
 			"image": "res://assets/achievements/first_chord.png",
 			"title": "Первый аккорд",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "21 Фев 2026, 02:44",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти уровень с 100% точностью",
 			"id": 25.0,
 			"image": "res://assets/achievements/flawless_hearing.png",
 			"title": "Безупречный слух",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "21 Фев 2026, 02:44",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"image": "res://assets/achievements/rhythm_beginner.png",
@@ -288,7 +288,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"image": "res://assets/achievements/rhythm_master.png",
@@ -310,29 +310,29 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти первый уровень в режиме перкуссии",
 			"id": 29.0,
 			"image": "res://assets/achievements/first_strike.png",
 			"title": "Первый удар",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "21 Фев 2026, 02:44",
+			"unlocked": true
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти уровень в режиме перкуссии с 100% точностью",
 			"id": 30.0,
 			"image": "res://assets/achievements/clean_rhythm.png",
 			"title": "Чистый ритм",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "21 Фев 2026, 02:44",
+			"unlocked": true
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"image": "res://assets/achievements/groove_power.png",
@@ -420,7 +420,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 400,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"image": "res://assets/achievements/first_step.png",
@@ -431,7 +431,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 400,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"image": "res://assets/achievements/points_rhythm.png",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 400,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"image": "res://assets/achievements/professional.png",
@@ -453,7 +453,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 400,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"image": "res://assets/achievements/legend.png",
@@ -464,7 +464,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
 			"image": "res://assets/achievements/rising_star.png",
@@ -475,7 +475,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
 			"image": "res://assets/achievements/star_path.png",
@@ -486,7 +486,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
 			"image": "res://assets/achievements/genius_accuracy.png",
@@ -497,7 +497,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,
 			"image": "res://assets/achievements/master_perfection.png",
@@ -530,7 +530,7 @@
 		},
 		{
 			"category": "level",
-			"current": 1,
+			"current": 2,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"image": "res://assets/achievements/tact.png",
@@ -541,7 +541,7 @@
 		},
 		{
 			"category": "level",
-			"current": 1,
+			"current": 2,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"image": "res://assets/achievements/tempo.png",
@@ -552,7 +552,7 @@
 		},
 		{
 			"category": "level",
-			"current": 1,
+			"current": 2,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"image": "res://assets/achievements/rhythm.png",
@@ -563,7 +563,7 @@
 		},
 		{
 			"category": "level",
-			"current": 1,
+			"current": 2,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"image": "res://assets/achievements/arrangement.png",
@@ -574,7 +574,7 @@
 		},
 		{
 			"category": "level",
-			"current": 1,
+			"current": 2,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"image": "res://assets/achievements/composition.png",
@@ -640,7 +640,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 10 уникальных уровней",
 			"id": 59.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -651,7 +651,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 25 уникальных уровней",
 			"id": 60.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -662,7 +662,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 50 уникальных уровней",
 			"id": 61.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -673,7 +673,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 50 уровней",
 			"id": 62.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -684,7 +684,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 100 уровней",
 			"id": 63.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -695,7 +695,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 200 уровней",
 			"id": 64.0,
 			"image": "res://assets/achievements/mastery.png",
@@ -706,7 +706,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 10 уникальных уровней со 100% точностью",
 			"id": 65.0,
 			"image": "res://assets/achievements/absolute_precision.png",
@@ -717,7 +717,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 15 уникальных уровней с точностью ≥95%",
 			"id": 66.0,
 			"image": "res://assets/achievements/stable_form.png",
@@ -728,7 +728,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 25 уровней в режиме перкуссии",
 			"id": 67.0,
 			"image": "res://assets/achievements/drums.png",
@@ -739,7 +739,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 50 уровней в режиме перкуссии",
 			"id": 68.0,
 			"image": "res://assets/achievements/drums.png",
@@ -750,7 +750,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 100 уровней в режиме перкуссии",
 			"id": 69.0,
 			"image": "res://assets/achievements/drums.png",
@@ -761,7 +761,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 1,
 			"description": "Сыграть 3 раза в поп‑жанрах",
 			"id": 70.0,
 			"image": "res://assets/achievements/genres.png",

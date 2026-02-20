@@ -100,9 +100,7 @@ func _ready():
 
 	refresh_stats()
 
-	if back_button:
-		back_button.pressed.connect(_on_back_pressed)
-	else:
+	if back_button == null:
 		printerr("ProfileScreen: Кнопка back_button не найдена!")
 
 func _on_total_play_time_changed(new_time: String):
@@ -495,11 +493,15 @@ func _get_progress_text(achievement: Dictionary) -> String:
 	return "%d / %d" % [int(display_current), int(total)]
 
 func _update_accuracy_chart():
+	if accuracy_chart_line == null or accuracy_chart_points == null or chart_background == null:
+		return
 	if session_history_manager == null:
 		printerr("ProfileScreen: SessionHistoryManager не установлен!")
-		accuracy_chart_line.points = []
-		for child in accuracy_chart_points.get_children():
-			child.queue_free()
+		if accuracy_chart_line:
+			accuracy_chart_line.points = []
+		if accuracy_chart_points:
+			for child in accuracy_chart_points.get_children():
+				child.queue_free()
 		if tooltip_label:
 			tooltip_label.visible = false
 		return
@@ -507,9 +509,11 @@ func _update_accuracy_chart():
 	var history = session_history_manager.get_history()
 	if history.size() == 0:
 		print("ProfileScreen: Нет истории сессий для отображения.")
-		accuracy_chart_line.points = []
-		for child in accuracy_chart_points.get_children():
-			child.queue_free()
+		if accuracy_chart_line:
+			accuracy_chart_line.points = []
+		if accuracy_chart_points:
+			for child in accuracy_chart_points.get_children():
+				child.queue_free()
 		if tooltip_label:
 			tooltip_label.visible = false
 		return
@@ -545,7 +549,8 @@ func _update_accuracy_chart():
 		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
 		var y = bg_height - (accuracy / 100.0) * bg_height
 		points.append(Vector2(x, y))
-	accuracy_chart_line.points = points
+	if accuracy_chart_line:
+		accuracy_chart_line.points = points
 
 	for i in range(20):
 		var session = null

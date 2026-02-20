@@ -4123,3 +4123,6 @@ anchors_preset = 0
 [node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
 layout_mode = 2
 text = "Сессии (1 → 20)"
+
+[connection signal="pressed" from="MainContent/MainVBox/BackButton" to="." method="_on_back_pressed"]
+[connection signal="resized" from="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground" to="." method="_on_chart_background_resized"]

@@ -18,6 +18,7 @@ func _ready():
 	size = Vector2(diameter, diameter)
 	pivot_offset = Vector2.ZERO
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_exited.connect(_on_mouse_exited)
 
 func _draw():
 	if border_width > 0:
@@ -42,10 +43,12 @@ func _gui_input(event):
 			if mouse_inside:
 				if not is_hovered:
 					is_hovered = true
+					queue_redraw()
 					emit_signal("point_hovered", global_position + size / 2, custom_tooltip_text)
 			else:
 				if is_hovered:
 					is_hovered = false
+					queue_redraw()
 					emit_signal("point_unhovered")
 
 func set_custom_tooltip_text(text: String):
@@ -53,3 +56,10 @@ func set_custom_tooltip_text(text: String):
 
 func _property_changed_notify():
 	queue_redraw()
+
+func _on_mouse_exited():
+	mouse_inside = false
+	if is_hovered:
+		is_hovered = false
+		queue_redraw()
+		emit_signal("point_unhovered")
