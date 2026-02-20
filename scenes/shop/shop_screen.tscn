@@ -1397,3 +1397,11 @@ theme_override_constants/margin_bottom = 20
 [node name="ItemsGrid" type="GridContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin"]
 layout_mode = 2
 columns = 5
+
+[connection signal="pressed" from="MainContent/MainVBox/BackButton" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll" to="." method="_on_category_selected"]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick" to="." method="_on_category_selected" binds= ["Кик"]]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover" to="." method="_on_category_selected" binds= ["Обложки"]]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonNotes" to="." method="_on_category_selected" binds= ["Ноты"]]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight" to="." method="_on_category_selected" binds= ["Подсветка линий"]]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonMisc" to="." method="_on_category_selected" binds= ["Прочее"]]

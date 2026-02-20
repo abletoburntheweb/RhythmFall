@@ -10,15 +10,6 @@ signal cover_selected(index: int)
 var cover_image_rects: Array[TextureRect] = []
 
 func _ready():
-	var background = $Background
-	if background and background is ColorRect:
-		background.color = Color(0, 0, 0, 180.0 / 255.0)
-		background.mouse_filter = Control.MOUSE_FILTER_IGNORE 
-
-	var back_button = $GalleryContainer/BackButton
-	if back_button:
-		back_button.pressed.connect(_on_back_button_pressed)
-
 	var grid_container = $GalleryContainer/GridMargin/Content
 	if not grid_container or not grid_container is GridContainer:
 		return
@@ -36,8 +27,6 @@ func _ready():
 		pass 
 
 	_load_images()
-
-	_connect_texture_rect_signals()
 	show()
 
 func _load_images():
@@ -74,11 +63,6 @@ func _load_images():
 			else:
 				pass
 
-func _connect_texture_rect_signals():
-	for i in range(images_count):
-		if i < cover_image_rects.size():
-			var image_rect = cover_image_rects[i]
-			image_rect.gui_input.connect(_on_texture_rect_gui_input.bind(i), CONNECT_ONE_SHOT)
 
 func _on_texture_rect_gui_input(event: InputEvent, index: int):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:

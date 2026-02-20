@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://bol4h51pj023o"]
 
 [ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_hwq2b"]
 
@@ -121,3 +121,12 @@ size_flags_vertical = 4
 texture = SubResource("CanvasTexture_mbixv")
 expand_mode = 1
 stretch_mode = 6
+
+[connection signal="pressed" from="GalleryContainer/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage1" to="." method="_on_texture_rect_gui_input" binds= [0]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage2" to="." method="_on_texture_rect_gui_input" binds= [1]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage3" to="." method="_on_texture_rect_gui_input" binds= [2]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage4" to="." method="_on_texture_rect_gui_input" binds= [3]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage5" to="." method="_on_texture_rect_gui_input" binds= [4]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage6" to="." method="_on_texture_rect_gui_input" binds= [5]]
+[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage7" to="." method="_on_texture_rect_gui_input" binds= [6]]

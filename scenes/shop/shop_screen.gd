@@ -47,9 +47,7 @@ func _ready():
 	currency = PlayerDataManager.get_currency()  
 	_update_currency_label()
 	_update_shop_progress_label()
-
-	_connect_category_buttons()
-	_connect_back_button()
+	
 
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
@@ -132,35 +130,9 @@ func _update_shop_progress_label():
 		var progress_label = main_vbox.get_node("CounterLabel")
 		if progress_label:
 			progress_label.text = "Открыто: %d / %d" % [unlocked, total_items]
-func _connect_category_buttons():
-	var all_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonAll
-	var kick_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonKick
-	var cover_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover
-	var lane_highlight_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight  
-	var notes_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonNotes
-	var misc_btn = $MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonMisc
-
-	if all_btn:
-		all_btn.pressed.connect(_on_category_selected.bind("Все"))
-	if kick_btn:
-		kick_btn.pressed.connect(_on_category_selected.bind("Кик"))
-	if cover_btn:
-		cover_btn.pressed.connect(_on_category_selected.bind("Обложки"))
-	if lane_highlight_btn:  
-		lane_highlight_btn.pressed.connect(_on_category_selected.bind("Подсветка линий"))
-	if notes_btn:
-		notes_btn.pressed.connect(_on_category_selected.bind("Ноты"))
-	if misc_btn:
-		misc_btn.pressed.connect(_on_category_selected.bind("Прочее"))
+func _initialize_categories_default():
 	_update_category_buttons("Все")
 	current_category = "Все"
-		
-func _connect_back_button():
-	var back_button = $MainContent/MainVBox/BackButton
-	if back_button:
-		back_button.pressed.connect(_on_back_pressed)
-	else:
-		printerr("ShopScreen.gd: Кнопка BackButton не найдена по пути $MainContent/MainVBox/BackButton!")
 
 func _update_category_buttons(selected: String):
 	var hbox = $MainContent/MainVBox/VBoxContainer/CategoriesHBox

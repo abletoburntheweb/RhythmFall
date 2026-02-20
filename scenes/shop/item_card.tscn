@@ -2392,6 +2392,7 @@ theme = SubResource("Theme_re5xs")
 [node name="ImageRect" type="TextureRect" parent="MarginContainer/ContentContainer"]
 custom_minimum_size = Vector2(240, 180)
 layout_mode = 2
+mouse_filter = 0
 expand_mode = 1
 
 [node name="NameLabel" type="Label" parent="MarginContainer/ContentContainer"]
@@ -2476,3 +2477,8 @@ theme_type_variation = &"FlatMenuSettingsButton"
 text = "Прослушать"
 icon = ExtResource("6_mfftg")
 icon_alignment = 2
+
+[connection signal="gui_input" from="MarginContainer/ContentContainer/ImageRect" to="." method="_on_image_rect_gui_input"]
+[connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton" to="." method="_on_use_pressed"]
+[connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton" to="." method="_on_buy_pressed"]
+[connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/PreviewButton" to="." method="_on_preview_pressed"]

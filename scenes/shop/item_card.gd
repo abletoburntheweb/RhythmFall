@@ -24,27 +24,11 @@ var _pending_load_path: String = ""
 var is_daily_reward: bool = false
 var required_daily_completed: int = 0
 var daily_unlocked: bool = false
+var _achievements_data_cache = null
 
 func _ready():
 	if not item_data.has("item_id"):
 		return
-
-	var buy_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton
-	if buy_button:
-		buy_button.pressed.connect(_on_buy_pressed)
-
-	var use_button = $MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton
-	if use_button:
-		use_button.pressed.connect(_on_use_pressed)
-
-	var preview_button = $MarginContainer/ContentContainer/ButtonsContainer/PreviewButton
-	if preview_button:
-		preview_button.pressed.connect(_on_preview_pressed)
-
-	var image_rect = $MarginContainer/ContentContainer/ImageRect
-	if image_rect:
-		image_rect.mouse_filter = Control.MOUSE_FILTER_STOP
-		image_rect.gui_input.connect(_on_image_rect_gui_input)
 
 	_setup_item()
 
@@ -130,6 +114,12 @@ func _setup_item():
 
 	_update_buttons_and_status()
 
+func _update_preview_button(preview_button):
+	var audio_path = item_data.get("audio", "")
+	preview_button.visible = audio_path != ""
+	if preview_button.visible:
+		preview_button.text = "Прослушать"
+
 func _request_threaded_load(path: String) -> void:
 	var req_ok = ResourceLoader.load_threaded_request(path, "Texture2D")
 	if req_ok == OK:
@@ -161,6 +151,22 @@ func _process(delta):
 			_pending_load_path = ""
 			set_process(false)
 
+func _get_achievements_data():
+	var path = "res://data/achievements_data.json"
+	if _achievements_data_cache != null:
+		return _achievements_data_cache
+	if not FileAccess.file_exists(path):
+		return null
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return null
+	var text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if not (parsed and parsed.has("achievements")):
+		return null
+	_achievements_data_cache = parsed.achievements
+	return _achievements_data_cache
 
 func _create_color_texture(color: Color) -> Texture2D:
 	var image = Image.create(240, 180, false, Image.FORMAT_RGBA8)
@@ -239,11 +245,7 @@ func _update_buttons_and_status():
 		achievement_button.visible = false
 		if daily_reward_button:
 			daily_reward_button.visible = false
-		
-		var audio_path = item_data.get("audio", "")
-		preview_button.visible = audio_path != ""
-		if preview_button.visible:
-			preview_button.text = "Прослушать"
+		_update_preview_button(preview_button)
 
 		if level_unlocked:
 			level_reward_button.visible = false
@@ -270,11 +272,7 @@ func _update_buttons_and_status():
 		level_reward_button.visible = false  
 		if daily_reward_button:
 			daily_reward_button.visible = false
-		
-		var audio_path = item_data.get("audio", "")
-		preview_button.visible = audio_path != ""
-		if preview_button.visible:
-			preview_button.text = "Прослушать"
+		_update_preview_button(preview_button)
 
 		if achievement_unlocked:
 			achievement_button.visible = false
@@ -310,10 +308,7 @@ func _update_buttons_and_status():
 		buy_button.visible = false
 		level_reward_button.visible = false
 		achievement_button.visible = false
-		var audio_path = item_data.get("audio", "")
-		preview_button.visible = audio_path != ""
-		if preview_button.visible:
-			preview_button.text = "Прослушать"
+		_update_preview_button(preview_button)
 		if daily_unlocked:
 			if daily_reward_button:
 				daily_reward_button.visible = false
@@ -353,10 +348,7 @@ func _update_buttons_and_status():
 		if use_button.visible:
 			use_button.text = "Использовать"
 
-		var audio_path = item_data.get("audio", "")
-		preview_button.visible = audio_path != ""
-		if preview_button.visible:
-			preview_button.text = "Прослушать"
+		_update_preview_button(preview_button)
 
 		if status_hbox:
 			status_hbox.visible = false
@@ -401,21 +393,13 @@ func update_state(purchased: bool, active: bool, file_available: bool = true, ac
 	_setup_item() 
 	
 func _get_achievement_description_by_id(achievement_id_str: String) -> String:
-	var path = "res://data/achievements_data.json"
 	if achievement_id_str == "" or not achievement_id_str.is_valid_int():
 		return ""
-	if not FileAccess.file_exists(path):
-		return ""
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return ""
-	var text = file.get_as_text()
-	file.close()
-	var parsed = JSON.parse_string(text)
-	if not (parsed and parsed.has("achievements")):
+	var achievements = _get_achievements_data()
+	if not achievements:
 		return ""
 	var id_val = int(achievement_id_str)
-	for a in parsed.achievements:
+	for a in achievements:
 		if a is Dictionary:
 			var aid = int(a.get("id", -1))
 			if aid == id_val:
@@ -423,21 +407,13 @@ func _get_achievement_description_by_id(achievement_id_str: String) -> String:
 	return ""
 
 func _get_achievement_progress_by_id(achievement_id_str: String) -> Dictionary:
-	var path = "res://data/achievements_data.json"
 	if achievement_id_str == "" or not achievement_id_str.is_valid_int():
 		return {"current": 0, "total": 0}
-	if not FileAccess.file_exists(path):
-		return {"current": 0, "total": 0}
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return {"current": 0, "total": 0}
-	var text = file.get_as_text()
-	file.close()
-	var parsed = JSON.parse_string(text)
-	if not (parsed and parsed.has("achievements")):
+	var achievements = _get_achievements_data()
+	if not achievements:
 		return {"current": 0, "total": 0}
 	var id_val = int(achievement_id_str)
-	for a in parsed.achievements:
+	for a in achievements:
 		if a is Dictionary:
 			var aid = int(a.get("id", -1))
 			if aid == id_val:
