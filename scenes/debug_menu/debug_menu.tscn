@@ -170,3 +170,10 @@ offset_right = 255.0
 offset_bottom = 581.0
 size_flags_horizontal = 0
 text = "Завершить уровень (Победа)"
+
+[connection signal="toggled" from="AutoPlayCheckBox" to="." method="_on_auto_play_check_box_toggled"]
+[connection signal="pressed" from="Plus1000Button" to="." method="_on_plus_1000_button_pressed"]
+[connection signal="pressed" from="Minus1000Button" to="." method="_on_minus_1000_button_pressed"]
+[connection signal="text_submitted" from="AccuracyEdit" to="." method="_on_accuracy_text_submitted"]
+[connection signal="pressed" from="Plus10ComboButton" to="." method="_on_plus_10_combo_button_pressed"]
+[connection signal="pressed" from="WinButton" to="." method="_on_win_button_pressed"]

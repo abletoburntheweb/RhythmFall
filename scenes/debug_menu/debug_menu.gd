@@ -49,19 +49,8 @@ func _ready():
 	if missing_nodes:
 		printerr("DebugMenu.gd: Не найдены узлы: ", missing_nodes)
 
-	if plus_1000_button:
-		plus_1000_button.pressed.connect(_on_plus_1000_button_pressed)
-	if minus_1000_button:
-		minus_1000_button.pressed.connect(_on_minus_1000_button_pressed)
-	if win_button:
-		win_button.pressed.connect(_on_win_button_pressed)
-	if plus_10_combo_button:
-		plus_10_combo_button.pressed.connect(_on_plus_10_combo_button_pressed)
-	if auto_play_check_box:
-		auto_play_check_box.toggled.connect(_on_auto_play_check_box_toggled)
 	if accuracy_edit:
 		accuracy_edit.placeholder_text = "0-100"
-		accuracy_edit.text_submitted.connect(_on_accuracy_text_submitted)
 	if accuracy_label:
 		accuracy_label.text = "Точность:"
 

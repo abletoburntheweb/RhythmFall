@@ -124,3 +124,11 @@ size_flags_horizontal = 4
 theme = ExtResource("1_flxbb")
 text = "Подтвердить
 "
+
+[connection signal="pressed" from="Container/InstrumentButtons/PercussionButton" to="." method="_on_percussion_selected"]
+[connection signal="pressed" from="Container/ModeButtons/BasicButton" to="." method="_on_basic_selected"]
+[connection signal="pressed" from="Container/ModeButtons/EnhancedButton" to="." method="_on_enhanced_selected"]
+[connection signal="pressed" from="Container/LanesButtons/Lanes3Button" to="." method="_on_lanes3_selected"]
+[connection signal="pressed" from="Container/LanesButtons/Lanes4Button" to="." method="_on_lanes4_selected"]
+[connection signal="pressed" from="Container/LanesButtons/Lanes5Button" to="." method="_on_lanes5_selected"]
+[connection signal="pressed" from="Container/ConfirmButton" to="." method="_on_confirm_pressed"]
