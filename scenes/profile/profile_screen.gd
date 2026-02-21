@@ -49,6 +49,7 @@ const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 @onready var achievement_card_template: PanelContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard")
 
 var session_history_manager = null
+var results_history_service = null
 var achievement_manager: AchievementManager = null
 
 func _play_time_string_to_seconds(time_str: String) -> int:
@@ -81,15 +82,14 @@ func _ready():
 		setup_managers(trans)  
 		
 		var session_hist_mgr = null
-		if game_engine.has_method("get_session_history_manager"):
-			session_hist_mgr = game_engine.get_session_history_manager()
+		if game_engine.has_method("get_results_history_service"):
+			results_history_service = game_engine.get_results_history_service()
+			session_hist_mgr = results_history_service
 		if game_engine.has_method("get_achievement_manager"):
 			achievement_manager = game_engine.get_achievement_manager()
 
 		if session_hist_mgr:
 			setup_session_history_manager(session_hist_mgr)
-		else:
-			printerr("ProfileScreen.gd: SessionHistoryManager не получен из GameEngine.")
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
 		PlayerDataManager.daily_quests_updated.connect(_on_daily_quests_updated)
@@ -109,6 +109,7 @@ func _on_total_play_time_changed(new_time: String):
 
 func setup_session_history_manager(session_history_mgr):
 	session_history_manager = session_history_mgr
+	results_history_service = session_history_mgr
 	refresh_stats()
 
 func refresh_stats():
@@ -173,8 +174,8 @@ func refresh_stats():
 	if total_notes_played > 0:
 		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
 	else:
-		if session_history_manager:
-			var hist = session_history_manager.get_history()
+		if results_history_service:
+			var hist = results_history_service.get_history()
 			if hist.size() > 0:
 				var sum_acc = 0.0
 				for item in hist:
@@ -240,7 +241,7 @@ func refresh_stats():
 		var progress_percent = PlayerDataManager.get_xp_progress() * 100.0
 		xp_progress_label.text = "Прогресс: %.1f%%" % progress_percent
 
-	if session_history_manager:
+	if results_history_service:
 		_update_accuracy_chart()
 	_update_recent_achievements()
 
@@ -495,8 +496,8 @@ func _get_progress_text(achievement: Dictionary) -> String:
 func _update_accuracy_chart():
 	if accuracy_chart_line == null or accuracy_chart_points == null or chart_background == null:
 		return
-	if session_history_manager == null:
-		printerr("ProfileScreen: SessionHistoryManager не установлен!")
+	if results_history_service == null:
+		printerr("ProfileScreen: ResultsHistoryService не установлен!")
 		if accuracy_chart_line:
 			accuracy_chart_line.points = []
 		if accuracy_chart_points:
@@ -506,7 +507,7 @@ func _update_accuracy_chart():
 			tooltip_label.visible = false
 		return
 
-	var history = session_history_manager.get_history()
+	var history = results_history_service.get_history()
 	if history.size() == 0:
 		print("ProfileScreen: Нет истории сессий для отображения.")
 		if accuracy_chart_line:

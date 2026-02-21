@@ -10,7 +10,7 @@ var achievement_manager: AchievementManager = null
 var achievement_system: AchievementSystem = null
 var achievement_queue_manager: AchievementQueueManager = null
 
-var session_history_manager: SessionHistoryManager = null
+var results_history_service: ResultsHistoryService = null
 
 var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
@@ -153,8 +153,8 @@ func initialize_logic():
 	if achievement_system:
 		achievement_system.resync_all()
 
-	session_history_manager = SessionHistoryManager.new() 
-	print("GameEngine.gd: SessionHistoryManager инициализирован.")
+	results_history_service = preload("res://logic/results_history_service.gd").new()
+	print("GameEngine.gd: ResultsHistoryService инициализирован.")
 
 	transitions = preload("res://logic/transitions.gd").new(self)
 
@@ -301,14 +301,17 @@ func get_achievement_system() -> AchievementSystem:
 func get_achievement_queue_manager() -> AchievementQueueManager:
 	return achievement_queue_manager
 
-func get_session_history_manager() -> SessionHistoryManager:
-	return session_history_manager
+func get_session_history_manager():
+	return null
 
 func get_level_layer() -> Control:
 	return $XPContainer 
 
 func get_background_service() -> BackgroundProcessingService:
 	return background_service
+
+func get_results_history_service() -> ResultsHistoryService:
+	return results_history_service
 
 func notifications_add_or_update(id: String, text: String, cancellable: bool, cancel_method: String):
 	if notif_ui and notif_ui.has_method("show_progress"):

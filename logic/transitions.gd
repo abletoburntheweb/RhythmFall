@@ -2,19 +2,12 @@
 var game_engine = null
 var parent = null
 
-var session_history_manager = null
-
 var main_menu_instance = null
 var _scene_cache: Dictionary = {}
 
 func _init(p_game_engine):
 	game_engine = p_game_engine
 	parent = p_game_engine
-	if game_engine and game_engine.has_method("get_session_history_manager"):
-		session_history_manager = game_engine.get_session_history_manager()
-	else:
-		printerr("Transitions.gd: GameEngine не имеет метода get_session_history_manager!")
-		session_history_manager = null 
 	
 	call_deferred("_warmup_heavy_scenes")
 
@@ -267,14 +260,6 @@ func transition_open_victory_screen(score: int, combo: int, max_combo: int, accu
 			print("Transitions.gd: ResultsManager передан в VictoryScreen.")
 		elif results_mgr:
 			printerr("Transitions.gd: VictoryScreen не имеет метода set_results_manager, но ResultsManager передан.")
-		
-		if new_screen.has_method("set_session_history_manager"):
-			if session_history_manager: 
-				new_screen.set_session_history_manager(session_history_manager)
-			else:
-				printerr("Transitions.gd: session_history_manager в Transitions равен null!")
-		else:
-			printerr("Transitions.gd: VictoryScreen не имеет метода set_session_history_manager.")
 		
 		new_screen.song_select_requested.connect(transition_open_song_select)
 		new_screen.replay_requested.connect(_on_replay_requested.bind(song_info))

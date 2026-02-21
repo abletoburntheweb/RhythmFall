@@ -4,6 +4,7 @@ extends Node
 
 var achievement_system = null
 var replay_achievement_sent_for_song: Dictionary = {}
+var results_service: ResultsHistoryService = preload("res://logic/results_history_service.gd").new()
 
 func set_achievement_system(ach_sys):
 	achievement_system = ach_sys
@@ -12,7 +13,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	
 	results_list.clear()
 	
-	var results = load_results_for_song(song_data.get("path", ""))
+	var results = results_service.load_results_for_song(song_data.get("path", ""))
 	
 	if results is Array:
 		results.sort_custom(func(a, b): 
@@ -124,96 +125,14 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 		results_list.add_item("Нет результатов для этой песни")
 
 func load_results_for_song(song_path: String) -> Array:
-	var results = []
-	
-	if song_path.is_empty():
-		printerr("ResultsManager.gd: Пустой путь к песне, невозможно загрузить результаты")
-		return []
-	
-	var song_file_name = song_path.get_file().get_basename()
-	var results_file_path = "user://results/%s_results.json" % song_file_name
-	
-	if FileAccess.file_exists(results_file_path):
-		var file = FileAccess.open(results_file_path, FileAccess.READ)
-		if file:
-			var json_str = file.get_as_text()
-			var json_result = JSON.parse_string(json_str)
-			
-			if json_result and json_result is Array:
-				results = json_result
-			else:
-				printerr("ResultsManager.gd: Файл результатов поврежден или пуст: " + results_file_path)
-				results = []
-		else:
-			printerr("ResultsManager.gd: Не удалось открыть файл результатов для чтения: " + results_file_path)
-			results = []
-	else:
-		results = []
-	
-	return results
+	return results_service.load_results_for_song(song_path)
 
 func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = ""):
-	if song_path.is_empty():
-		printerr("ResultsManager.gd: Пустой путь к песне, невозможно сохранить результат")
-		return
-	
-	var dir = DirAccess.open("user://")
-	if not dir:
-		printerr("ResultsManager.gd: Не удалось открыть директорию user://")
-		return
-	
-	if not dir.dir_exists("results"):
-		var err = dir.make_dir("results")
-		if err != OK:
-			printerr("ResultsManager.gd: Не удалось создать директорию results")
-			return
-	
-	var results = load_results_for_song(song_path)
-	var results_count_before = results.size()
-	
-	var new_result = {
-		"score": score,
-		"accuracy": accuracy,
-		"instrument": instrument_type,
-		"date": result_datetime if result_datetime != "" else Time.get_datetime_string_from_system(true, true),
-		"grade": grade,
-		"grade_color": { "r": grade_color.r, "g": grade_color.g, "b": grade_color.b, "a": grade_color.a },
-	}
-	results.append(new_result)
-	
-	results.sort_custom(func(a, b): 
-		if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
-			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-		else:
-			return a.get("score", 0) > b.get("score", 0) 
-	)
-	
-	if results.size() > 20: 
-		results.resize(20) 
-	
-	var results_count_after = results.size()
-	
-	var song_file_name = song_path.get_file().get_basename()
-	var results_file_path = "user://results/%s_results.json" % song_file_name
-	
-	var file = FileAccess.open(results_file_path, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(results, "\t")
-		file.store_string(json_string)
-		file.close()
-		
-	else:
-		printerr("ResultsManager.gd: Не удалось создать/открыть файл для записи: ", results_file_path)
-		var file_create = FileAccess.open(results_file_path, FileAccess.WRITE)
-		if file_create:
-			file_create.store_string("[]")
-			file_create.close()
-			save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime)
-		else:
-			printerr("ResultsManager.gd: Критическая ошибка - невозможно создать файл: ", results_file_path)
+	results_service.save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime)
 	
 	var song_key = song_path 
-	if results_count_after >= 2 and not replay_achievement_sent_for_song.has(song_key):
+	var current_results = results_service.load_results_for_song(song_path)
+	if current_results.size() >= 2 and not replay_achievement_sent_for_song.has(song_key):
 		replay_achievement_sent_for_song[song_key] = true 
 		if achievement_system:
 			achievement_system.on_song_replayed(song_path) 
@@ -224,16 +143,7 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 
 
 func get_top_result_for_song(song_path: String) -> Dictionary:
-	var results = load_results_for_song(song_path)
-	if results.size() > 0:
-		results.sort_custom(func(a, b): 
-			if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
-				return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-			else:
-				return a.get("score", 0) > b.get("score", 0)
-		)
-		return results[0]
-	return {}
+	return results_service.get_top_result_for_song(song_path)
 
 func _format_iso_to_ddmmyyyy_hhmmss(date_str: String) -> String:
 	if date_str.length() >= 19 and date_str[4] == '-' and date_str[7] == '-' and date_str[10] == ' ' and date_str[13] == ':' and date_str[16] == ':':
@@ -245,27 +155,9 @@ func _format_iso_to_ddmmyyyy_hhmmss(date_str: String) -> String:
 	return date_str
 
 func clear_results_for_song(song_path: String) -> bool: 
-	if song_path.is_empty():
-		printerr("ResultsManager.gd: clear_results_for_song: Пустой путь к песне.")
-		return false
-
-	var song_file_name = song_path.get_file().get_basename()
-	var results_file_path = "user://results/%s_results.json" % song_file_name
-
-	var dir_access_instance = DirAccess.open("user://")
-	var results_dir_path = "results" 
-	var file_exists = FileAccess.file_exists(results_file_path)
-
-	if dir_access_instance and dir_access_instance.dir_exists(results_dir_path) and file_exists:
-		var err = dir_access_instance.remove(results_file_path) 
-		if err == OK:
-			var song_key = song_path
-			if replay_achievement_sent_for_song.has(song_key):
-				replay_achievement_sent_for_song.erase(song_key)
-			return true
-		else:
-			printerr("ResultsManager.gd: Ошибка удаления файла результатов: ", results_file_path, " Код ошибки: ", err)
-			return false
-	else:
-		pass
-		return true
+	var ok = results_service.clear_results_for_song(song_path)
+	if ok:
+		var song_key = song_path
+		if replay_achievement_sent_for_song.has(song_key):
+			replay_achievement_sent_for_song.erase(song_key)
+	return ok

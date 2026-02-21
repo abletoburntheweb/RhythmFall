@@ -20,8 +20,6 @@ var hit_notes_this_level: int = 0
 
 var results_manager = null
 
-var session_history_manager = null
-
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
 @onready var song_label: Label = $SongLabel
@@ -183,9 +181,6 @@ func _show_xp_details():
 func set_results_manager(results_mgr):
 	results_manager = results_mgr
 
-func set_session_history_manager(session_hist_mgr):
-	session_history_manager = session_hist_mgr
-
 func set_achievement_system(ach_sys):
 	if results_manager and results_manager.has_method("set_achievement_system"):
 		results_manager.set_achievement_system(ach_sys)
@@ -340,27 +335,27 @@ func _deferred_update_ui():
 			if achievement_manager:
 				achievement_manager.notification_mgr = game_engine
 
-	if session_history_manager:
-		var instrument_type_for_history = song_info.get("instrument", "standard")
-		if instrument_type_for_history == "drums":
-			instrument_type_for_history = "Перкуссия"
-		var grade_for_history = _calculate_grade()
-		var grade_color_for_history = _get_grade_color(grade_for_history)
-		var current_time_string = Time.get_datetime_string_from_system(true, true)
-		
-		var artist = song_info.get("artist", "N/A")
-		var title = song_info.get("title", "N/A")
-		
-		session_history_manager.add_session_result(
-			accuracy,                    
-			current_time_string,        
-			grade_for_history,          
-			grade_color_for_history,    
-			instrument_type_for_history,
-			score,
-			artist,
-			title
-		)
+	if game_engine and game_engine.has_method("get_results_history_service"):
+		var results_service = game_engine.get_results_history_service()
+		if results_service:
+			var instrument_type_for_history = song_info.get("instrument", "standard")
+			if instrument_type_for_history == "drums":
+				instrument_type_for_history = "Перкуссия"
+			var grade_for_history = _calculate_grade()
+			var grade_color_for_history = _get_grade_color(grade_for_history)
+			var current_time_string = Time.get_datetime_string_from_system(true, true)
+			var artist = song_info.get("artist", "N/A")
+			var title = song_info.get("title", "N/A")
+			results_service.add_session_result(
+				accuracy,
+				current_time_string,
+				grade_for_history,
+				grade_color_for_history,
+				instrument_type_for_history,
+				score,
+				artist,
+				title
+			)
 
 	if achievement_system:
 		achievement_system.on_level_completed(accuracy, song_path, is_drum_mode, _calculate_grade())

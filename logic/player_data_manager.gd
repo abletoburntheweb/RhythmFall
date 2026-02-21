@@ -630,10 +630,13 @@ func reset_profile_statistics():
 	_save_best_grades()
 	if achievement_manager and achievement_manager.has_method("reset_achievements"):
 		achievement_manager.reset_achievements()
-	if game_engine_reference and game_engine_reference.has_method("get_session_history_manager"):
-		var session_hist_mgr = game_engine_reference.get_session_history_manager()
-		if session_hist_mgr and session_hist_mgr.has_method("clear_history"):
-			session_hist_mgr.clear_history()
+	var svc = null
+	if game_engine_reference and game_engine_reference.has_method("get_results_history_service"):
+		svc = game_engine_reference.get_results_history_service()
+	elif game_engine_reference and game_engine_reference.has_method("get_session_history_manager"):
+		svc = game_engine_reference.get_session_history_manager()
+	if svc and svc.has_method("clear_history"):
+		svc.clear_history()
 	
 
 func get_login_streak() -> int:
