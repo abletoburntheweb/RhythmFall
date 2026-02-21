@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://b0u5mhsmh2wdx"]
 
 [ext_resource type="Script" uid="uid://dlrclp0p36h56" path="res://scenes/achievements/achievements_screen.gd" id="1_n2eex"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="1_v157i"]
+[ext_resource type="Theme" uid="uid://dihcy67rk1p7y" path="res://ui/theme/app_theme.tres" id="1_v157i"]
 
 [node name="AchievementsScreen" type="Control"]
 layout_mode = 3
@@ -106,3 +106,7 @@ theme_override_constants/margin_bottom = 160
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin"]
 custom_minimum_size = Vector2(1840, 0)
 layout_mode = 2
+
+[connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
+[connection signal="text_changed" from="MainVBox/SearchAndFilterHBox/SearchBar" to="." method="_on_search_text_changed"]
+[connection signal="item_selected" from="MainVBox/SearchAndFilterHBox/FilterBox" to="." method="_on_filter_selected"]

@@ -37,45 +37,22 @@ func _ready():
 			printerr("AchievementsScreen: Не удалось получить AchievementManager через GameEngine!")
 	else:
 		printerr("AchievementsScreen: GameEngine (get_parent()) не найден!")
-
-	search_bar.text_changed.connect(_on_search_text_changed)
-	filter_box.item_selected.connect(_on_filter_selected)
+	
 
 	_load_achievements_data()
 	_filter_achievements_internal(search_bar.text)
-
-	if back_button:
-		back_button.pressed.connect(_on_back_pressed)
-	else:
-		printerr("AchievementsScreen: Кнопка back_button не найдена!")
+	
 
 
 func _load_achievements_data():
-	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
-	if file:
-		var json_text = file.get_as_text()
-		file.close()
-
-		var json_parse_result = JSON.parse_string(json_text)
-		if json_parse_result and json_parse_result.has("achievements"):
-			if json_parse_result.achievements is Array:
-				var loaded_achievements: Array[Dictionary] = []
-				for item in json_parse_result.achievements:
-					if item is Dictionary:
-						loaded_achievements.append(item)
-					else:
-						printerr("AchievementsScreen: Найден элемент не типа Dictionary в списке достижений: ", item)
-
-				achievements = loaded_achievements
+	var ach_list = _get_achievements_data()
+	achievements = []
+	if ach_list != null:
+		for item in ach_list:
+			if item is Dictionary:
+				achievements.append(item)
 			else:
-				printerr("AchievementsScreen: Поле 'achievements' в JSON не является массивом.")
-				achievements = []
-		else:
-			printerr("AchievementsScreen: Ошибка парсинга JSON или отсутствие ключа 'achievements'.")
-			achievements = []
-	else:
-		printerr("AchievementsScreen: Не удалось открыть файл ", ACHIEVEMENTS_JSON_PATH)
-		achievements = []
+				printerr("AchievementsScreen: Найден элемент не типа Dictionary в списке достижений: ", item)
 
 
 func _sort_by_title(a: Dictionary, b: Dictionary) -> bool:
@@ -87,101 +64,8 @@ func _sort_by_title(a: Dictionary, b: Dictionary) -> bool:
 
 
 func _update_display(achievements_to_display: Array[Dictionary]):
-	for child in achievements_list.get_children():
-		achievements_list.remove_child(child)
-		child.queue_free() 
-
-	for ach in achievements_to_display:
-		if not (ach is Dictionary):
-			printerr("AchievementsScreen.gd: Найден элемент не типа Dictionary в списке для отображения: ", ach)
-			continue 
-		
-		if not ach.has("title"):
-			printerr("AchievementsScreen.gd: У элемента ачивки отсутствует ключ 'title': ", ach)
-			continue 
-		
-		if ach.title == null:
-			printerr("AchievementsScreen.gd: Ключ 'title' для ачивки равен null: ", ach)
-			continue 
-		
-		var card = ACHIEVEMENT_CARD_SCENE.instantiate()
-		card.title = ach.title 
-		card.description = ach.get("description", "") if ach.has("description") else "Нет описания"
-		card.progress_text = _get_progress_text(ach)
-		card.is_unlocked = ach.get("unlocked", false) if ach.has("unlocked") else false
-
-		var icon_texture: ImageTexture = null
-		var used_default = false
-		
-		var image_path = ach.get("image", "") if ach.has("image") else ""
-		if image_path and image_path != "":
-			if FileAccess.file_exists(image_path):
-				var loaded_resource = ResourceLoader.load(image_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
-				if loaded_resource and loaded_resource is ImageTexture:
-					icon_texture = loaded_resource
-				else:
-					var image = Image.new()
-					var err = image.load(image_path)
-					if err == OK:
-						icon_texture = ImageTexture.create_from_image(image)
-					else:
-						printerr("AchievementsScreen: Ошибка загрузки изображения через Image: ", image_path, ", ошибка: ", err)
-						used_default = true
-			else:
-				used_default = true
-		else:
-			used_default = true
-
-		if not icon_texture or used_default:
-			var fallback_path = ""
-			var category = ach.get("category", "")
-			
-			match category:
-				"mastery": fallback_path = "res://assets/achievements/mastery.png"
-				"drums": fallback_path = "res://assets/achievements/drums.png"
-				"genres":  fallback_path = "res://assets/achievements/genres.png"  
-				"system": fallback_path = "res://assets/achievements/system.png"
-				"shop": fallback_path = "res://assets/achievements/shop.png"
-				"economy": fallback_path = "res://assets/achievements/economy.png"
-				"daily": fallback_path = "res://assets/achievements/daily.png"
-				"playtime": fallback_path = "res://assets/achievements/playtime.png"
-				"events": fallback_path = "res://assets/achievements/events.png"
-				"level": fallback_path = "res://assets/achievements/level.png"  
-				_: fallback_path = "res://assets/achievements/default.png"
-			
-			if FileAccess.file_exists(fallback_path):
-				var loaded_default_resource = ResourceLoader.load(fallback_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
-				if loaded_default_resource and loaded_default_resource is ImageTexture:
-					icon_texture = loaded_default_resource
-				else:
-					var image = Image.new()
-					var err = image.load(fallback_path)
-					if err == OK:
-						icon_texture = ImageTexture.create_from_image(image)
-					else:
-						printerr("AchievementsScreen: Ошибка загрузки fallback иконки через Image: ", fallback_path, ", ошибка: ", err)
-						var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
-						dummy_image.set_pixel(0, 0, Color.WHITE)
-						var dummy_texture = ImageTexture.create_from_image(dummy_image)
-						icon_texture = dummy_texture
-			else:
-				printerr("AchievementsScreen: Fallback иконка не найдена (FileAccess): ", fallback_path)
-				var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
-				dummy_image.set_pixel(0, 0, Color.WHITE)
-				var dummy_texture = ImageTexture.create_from_image(dummy_image)
-				icon_texture = dummy_texture
-
-		card.icon_texture = icon_texture 
-
-		var unlock_date_val = ach.get("unlock_date", null)
-		if unlock_date_val == null:
-			card.unlock_date_text = ""
-		else:
-			card.unlock_date_text = str(unlock_date_val) 
-
-		achievements_list.add_child(card)
-
-	_update_counter()
+	_clear_achievements_list()
+	_render_cards_chunked(achievements_to_display)
 
 
 func _get_progress_text(achievement: Dictionary) -> String:
@@ -336,3 +220,99 @@ func _execute_close_transition():
 
 	if is_instance_valid(self):
 		queue_free()
+	
+var _achievements_data_cache = null
+var _texture_cache := {}
+func _get_achievements_data():
+	if _achievements_data_cache != null:
+		return _achievements_data_cache
+	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
+	if not file:
+		return null
+	var text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if not parsed or not parsed.has("achievements") or not (parsed.achievements is Array):
+		return null
+	_achievements_data_cache = parsed.achievements
+	return _achievements_data_cache
+
+func _clear_achievements_list():
+	for child in achievements_list.get_children():
+		achievements_list.remove_child(child)
+		child.queue_free()
+
+func _render_cards_chunked(achievements_to_display: Array[Dictionary]):
+	var batch_size = 20
+	var i = 0
+	while i < achievements_to_display.size():
+		var end = min(i + batch_size, achievements_to_display.size())
+		for j in range(i, end):
+			var ach = achievements_to_display[j]
+			if not (ach is Dictionary):
+				continue
+			if not ach.has("title") or ach.title == null:
+				continue
+			var card = ACHIEVEMENT_CARD_SCENE.instantiate()
+			card.title = ach.title
+			card.description = ach.get("description", "") if ach.has("description") else "Нет описания"
+			card.progress_text = _get_progress_text(ach)
+			card.is_unlocked = ach.get("unlocked", false) if ach.has("unlocked") else false
+			var tex = _get_icon_texture(ach)
+			if tex:
+				card.icon_texture = tex
+			else:
+				var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
+				dummy_image.set_pixel(0, 0, Color.WHITE)
+				var dummy_texture = ImageTexture.create_from_image(dummy_image)
+				card.icon_texture = dummy_texture
+			var unlock_date_val = ach.get("unlock_date", null)
+			if unlock_date_val == null:
+				card.unlock_date_text = ""
+			else:
+				card.unlock_date_text = str(unlock_date_val)
+			achievements_list.add_child(card)
+		await get_tree().process_frame
+		i = end
+	_update_counter()
+
+func _load_texture_cached(path: String) -> ImageTexture:
+	if path == "" or path == null:
+		return null
+	if _texture_cache.has(path):
+		return _texture_cache[path]
+	if not FileAccess.file_exists(path):
+		return null
+	var loaded_resource = ResourceLoader.load(path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
+	if loaded_resource and loaded_resource is ImageTexture:
+		_texture_cache[path] = loaded_resource
+		return loaded_resource
+	var image = Image.new()
+	var err = image.load(path)
+	if err == OK:
+		var tex = ImageTexture.create_from_image(image)
+		_texture_cache[path] = tex
+		return tex
+	return null
+
+func _get_icon_texture(ach: Dictionary) -> ImageTexture:
+	var image_path = ach.get("image", "") if ach.has("image") else ""
+	if image_path and image_path != "":
+		var tex = _load_texture_cached(image_path)
+		if tex:
+			return tex
+	var category = ach.get("category", "")
+	var fallback_path = ""
+	match category:
+		"mastery": fallback_path = "res://assets/achievements/mastery.png"
+		"drums": fallback_path = "res://assets/achievements/drums.png"
+		"genres":  fallback_path = "res://assets/achievements/genres.png"
+		"system": fallback_path = "res://assets/achievements/system.png"
+		"shop": fallback_path = "res://assets/achievements/shop.png"
+		"economy": fallback_path = "res://assets/achievements/economy.png"
+		"daily": fallback_path = "res://assets/achievements/daily.png"
+		"playtime": fallback_path = "res://assets/achievements/playtime.png"
+		"events": fallback_path = "res://assets/achievements/events.png"
+		"level": fallback_path = "res://assets/achievements/level.png"
+		_: fallback_path = "res://assets/achievements/default.png"
+	return _load_texture_cached(fallback_path)
