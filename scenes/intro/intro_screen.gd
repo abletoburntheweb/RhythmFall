@@ -4,19 +4,18 @@ extends Control
 @onready var logo_texture_rect = $LogoTextureRect
 @onready var intro_timer = $IntroTimer
 @onready var animation_player = $IntroAnimationPlayer
+@export var play_intro_music: bool = true
+@export var play_menu_music_on_exit: bool = true
 
 var game_engine: Node = null
 
 
 func _ready():
 	_setup_overlay_visibility()
-		
-	animation_player.play("fade_in_out")
-
-	intro_timer.timeout.connect(_on_timer_timeout)
-	intro_timer.start()
-
-	MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+	if play_intro_music:
+		MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+	if animation_player:
+		animation_player.play("fade_in_out")
 
 func _setup_overlay_visibility():
 	var game_engine = get_parent()
@@ -32,8 +31,9 @@ func _on_timer_timeout():
 	go_to_main_menu()
 
 func go_to_main_menu():
-	MusicManager.stop_music()
-	MusicManager.play_menu_music(MusicManager.DEFAULT_MENU_MUSIC)
+	if play_menu_music_on_exit:
+		MusicManager.stop_music()
+		MusicManager.play_menu_music(MusicManager.DEFAULT_MENU_MUSIC)
 
 	if game_engine and game_engine.has_method("show_main_menu"):
 		game_engine.show_main_menu()

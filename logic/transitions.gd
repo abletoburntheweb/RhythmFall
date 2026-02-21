@@ -57,6 +57,18 @@ func _instantiate_if_exists(scene_path):
 		printerr("Transitions: Сцена не найдена: ", scene_path)
 		return null
 
+func _switch_to_screen_instance(instance):
+	if not instance:
+		return
+	if game_engine.current_screen:
+		game_engine.current_screen.queue_free()
+	game_engine.add_child(instance)
+	game_engine.current_screen = instance
+
+func _return_to_main_menu():
+	game_engine.current_screen = null
+	transition_open_main_menu()
+
 func hide_level_ui():
 	if game_engine and game_engine.has_method("get_level_layer"):
 		var level_layer = game_engine.get_level_layer()
@@ -104,11 +116,7 @@ func transition_open_game(
 
 		if new_game_screen.has_method("start_game"):
 			new_game_screen.start_game()
-
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_game_screen)
-		game_engine.current_screen = new_game_screen
+		_switch_to_screen_instance(new_game_screen)
 
 		if main_menu_instance:
 			main_menu_instance.is_game_open = true
@@ -133,22 +141,12 @@ func transition_open_song_select():
 			new_screen.set_transitions(self) 
 		else:
 			printerr("Transitions.gd: Новый экземпляр SongSelect не имеет метода set_transitions!")
-
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 	else:
 		printerr("Transitions: song_select.tscn не найден, переход отменён.")
 
 func transition_close_song_select():
-	if game_engine.current_screen:
-		game_engine.current_screen.queue_free()
-		game_engine.current_screen = null 
-	else:
-		pass
-
-	transition_open_main_menu()
+	_return_to_main_menu()
 
 func transition_open_main_menu():
 	show_level_ui()  
@@ -156,11 +154,7 @@ func transition_open_main_menu():
 		if main_menu_instance.is_inside_tree():
 			pass
 		else:
-			if game_engine.current_screen and game_engine.current_screen != main_menu_instance:
-				game_engine.current_screen.queue_free()
-				game_engine.current_screen = null 
-			game_engine.add_child(main_menu_instance)
-			game_engine.current_screen = main_menu_instance
+			_switch_to_screen_instance(main_menu_instance)
 		MusicManager.play_menu_music() 
 	else:
 		var new_main_menu_instance = _instantiate_if_exists("res://scenes/main_menu/main_menu.tscn")
@@ -172,12 +166,7 @@ func transition_open_main_menu():
 			
 			main_menu_instance = new_main_menu_instance
 			
-			if game_engine.current_screen:
-				game_engine.current_screen.queue_free()
-				game_engine.current_screen = null
-			
-			game_engine.add_child(main_menu_instance)
-			game_engine.current_screen = main_menu_instance
+			_switch_to_screen_instance(main_menu_instance)
 			MusicManager.play_menu_music()  
 		else:
 			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
@@ -186,16 +175,12 @@ func transition_open_achievements():
 	
 	var new_screen = _instantiate_if_exists("res://scenes/achievements/achievements_screen.tscn")
 	if new_screen:
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 	else:
 		printerr("Transitions: AchievementsScreen.tscn не найден, переход отменён.")
 
 func transition_close_achievements():
-	game_engine.current_screen = null 
-	transition_open_main_menu()
+	_return_to_main_menu()
 
 func transition_open_profile():
 	var new_screen = _instantiate_if_exists("res://scenes/profile/profile_screen.tscn")
@@ -204,40 +189,28 @@ func transition_open_profile():
 			new_screen.setup_managers(self) 
 		else:
 			printerr("Transitions.gd: Экземпляр ProfileScreen не имеет метода setup_managers!")
-
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 	else:
 		printerr("Transitions: ProfileScreen.tscn не найден, переход отменён.")
 
 func transition_close_profile():
-	game_engine.current_screen = null 
-	transition_open_main_menu()
+	_return_to_main_menu()
 
 func transition_open_help():
 	var new_screen = _instantiate_if_exists("res://scenes/help/help_screen.tscn")
 	if new_screen:
 		if new_screen.has_method("setup_managers"):
 			new_screen.setup_managers(self)
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 	else:
 		printerr("Transitions: HelpScreen.tscn не найден, переход отменён.")
 
 func transition_close_help():
-	game_engine.current_screen = null
-	transition_open_main_menu()
+	_return_to_main_menu()
 func transition_open_shop():
 	var new_screen = _instantiate_if_exists("res://scenes/shop/shop_screen.tscn")
 	if new_screen:
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 		MusicManager.pause_menu_music()
 	else:
 		printerr("Transitions.gd: ОШИБКА! ShopScreen.tscn не найден или не удалось инстанцировать.") 
@@ -250,10 +223,7 @@ func transition_open_shop():
 			printerr("Transitions.gd: PackedScene загружен, но instantiate() вернул null. Проверьте сцену и скрипт ShopScreen на ошибки!")
 
 func transition_close_shop():
-	if game_engine.current_screen:
-		game_engine.current_screen.queue_free()
-		game_engine.current_screen = null
-	transition_open_main_menu()
+	_return_to_main_menu()
 
 func transition_open_settings(_from_pause=false):
 	var new_screen = _instantiate_if_exists("res://scenes/settings_menu/settings_menu.tscn")
@@ -310,11 +280,7 @@ func transition_open_victory_screen(score: int, combo: int, max_combo: int, accu
 		
 		new_screen.song_select_requested.connect(transition_open_song_select)
 		new_screen.replay_requested.connect(_on_replay_requested.bind(song_info))
-		
-		if game_engine.current_screen:
-			game_engine.current_screen.queue_free()
-		game_engine.add_child(new_screen)
-		game_engine.current_screen = new_screen
+		_switch_to_screen_instance(new_screen)
 	else:
 		printerr("Transitions: victory_screen.tscn не найден, переход отменён.")
 

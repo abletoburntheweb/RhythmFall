@@ -57,6 +57,21 @@ var _menu_music_volume_pct: float = 50.0
 var _game_music_volume_pct: float = 50.0
 var _metronome_offset_sec: float = 0.0
 
+func _load_audio_stream(path: String, base_dir: String = "") -> AudioStream:
+	var full_path = (base_dir + path) if base_dir != "" else path
+	if not ResourceLoader.exists(full_path):
+		return null
+	return load(full_path) as AudioStream
+
+func _play_stream_on(player: AudioStreamPlayer, stream: AudioStream, volume_pct: float, position: float = 0.0, restart_if_playing: bool = true):
+	if not player or not stream:
+		return
+	if restart_if_playing and player.playing:
+		player.stop()
+	player.stream = stream
+	player.volume_db = linear_to_db(volume_pct / 100.0)
+	player.play(position)
+
 func _ready():
 	music_player = AudioStreamPlayer.new()
 	music_player.name = "MusicPlayer"
@@ -134,23 +149,16 @@ func stop_game_music():
 		pass 
 
 func play_game_music_at_position(song_path: String, position: float):
-	if FileAccess.file_exists(song_path):
-		var stream = load(song_path) as AudioStream
-		if stream:
-			if music_player:
-				current_game_music_file = song_path
-				music_player.stream = stream
-				if music_player.playing:
-					music_player.stop()
-				var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
-				music_player.volume_db = linear_to_db(game_vol / 100.0)
-				music_player.play(position)
-			else:
-				push_error("MusicManager.gd: music_player не установлен!")
-		else:
-			push_error("MusicManager.gd: Не удалось загрузить аудио для игры: " + song_path)
-	else:
+	var stream = _load_audio_stream(song_path)
+	if not stream:
 		push_error("MusicManager.gd: Файл игровой музыки не найден: " + song_path)
+		return
+	if music_player:
+		current_game_music_file = song_path
+		var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
+		_play_stream_on(music_player, stream, game_vol, position, true)
+	else:
+		push_error("MusicManager.gd: music_player не установлен!")
 
 func pause_menu_music():
 	if music_player and current_menu_music_file != "":
@@ -234,8 +242,8 @@ func set_metronome_volume(volume: float):
 			player.volume_db = linear_to_db(volume / 100.0)
 
 func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = false):
+	var stream = _load_audio_stream(music_file, MUSIC_DIR)
 	var full_path = MUSIC_DIR + music_file
-	var stream = load(full_path) as AudioStream
 	if not stream:
 		push_error("MusicManager: Не удалось загрузить аудио для меню: " + full_path)
 		return
@@ -245,43 +253,35 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 	elif stream is AudioStreamWAV:
 		stream.loop = true
 
-	if music_player and music_player.stream == stream and not restart: 
+	if music_player and music_player.stream == stream and not restart:
 		if music_player.playing:
-			return 
-		else:
-			music_player.play() 
 			return
+		music_player.play()
+		return
 
 	if music_player:
 		current_menu_music_file = music_file
 		current_game_music_file = ""
-		music_player.stream = stream
 		var menu_vol = SettingsManager.get_menu_music_volume() if SettingsManager.has_method("get_menu_music_volume") else _menu_music_volume_pct
-		music_player.volume_db = linear_to_db(menu_vol / 100.0)
-		music_player.play()
+		_play_stream_on(music_player, stream, menu_vol, 0.0, true)
 
 func play_game_music(music_file: String):
-	if FileAccess.file_exists(music_file):
-		var stream = load(music_file) as AudioStream
-		if not stream:
-			push_error("MusicManager: Не удалось загрузить аудио для игры: " + music_file)
+	var stream = _load_audio_stream(music_file)
+	if not stream:
+		push_error("MusicManager: Не удалось загрузить аудио для игры: " + music_file)
+		return
+
+	if music_player:
+		if music_player.stream == stream and music_player.playing:
 			return
 
-		if music_player:
-			if music_player.stream == stream and music_player.playing:
-				return
-
-			current_game_music_file = music_file 
-			music_player.stream = stream
-			if music_player.playing:
-				music_player.stop()
-			var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
-			music_player.volume_db = linear_to_db(game_vol / 100.0)
-			music_player.play()
-			original_game_music_volume = db_to_linear(music_player.volume_db)
-			current_menu_music_file = ""
+		current_game_music_file = music_file
+		var game_vol = SettingsManager.get_music_volume() if SettingsManager.has_method("get_music_volume") else _game_music_volume_pct
+		_play_stream_on(music_player, stream, game_vol, 0.0, true)
+		original_game_music_volume = db_to_linear(music_player.volume_db)
+		current_menu_music_file = ""
 	else:
-		push_error("MusicManager: Файл игровой музыки не найден: " + music_file)
+		push_error("MusicManager.gd: music_player не установлен!")
 
 func set_music_position(position: float):
 	if music_player and music_player.stream:
@@ -328,7 +328,7 @@ func stop_metronome():
 			
 func play_sfx(sound_path: String):
 	var full_path = MUSIC_DIR + sound_path
-	var stream = load(full_path) as AudioStream
+	var stream = _load_audio_stream(sound_path, MUSIC_DIR)
 	if stream:
 		var new_player = AudioStreamPlayer.new()
 		new_player.stream = stream
@@ -397,8 +397,7 @@ func play_miss_hit_sound():
 func play_hit_sound(is_kick: bool = true):
 	var sound_path = ""
 	sound_path = active_kick_sound_path
-
-	var stream = load(sound_path) as AudioStream
+	var stream = _load_audio_stream(sound_path)
 	if stream:
 		if hit_sound_player: 
 			hit_sound_player.stream = stream
@@ -408,9 +407,7 @@ func play_hit_sound(is_kick: bool = true):
 
 func play_custom_hit_sound(sound_path: String):
 	var full_path = sound_path
-	if not full_path.begins_with("res://"):
-		pass
-	var stream = load(full_path) as AudioStream
+	var stream = _load_audio_stream(full_path)
 	if stream:
 		if hit_sound_player:
 			hit_sound_player.stream = stream
@@ -423,7 +420,7 @@ func play_custom_hit_sound(sound_path: String):
 func play_metronome_sound(is_strong_beat: bool = true):
 	var sound_file = DEFAULT_METRONOME_STRONG_SOUND if is_strong_beat else DEFAULT_METRONOME_WEAK_SOUND
 	var full_path = MUSIC_DIR + sound_file
-	var stream = load(full_path) as AudioStream
+	var stream = _load_audio_stream(sound_file, MUSIC_DIR)
 	if stream:
 		var player_index = _current_metronome_player_index
 		_current_metronome_player_index = (player_index + 1) % _metronome_players.size()
