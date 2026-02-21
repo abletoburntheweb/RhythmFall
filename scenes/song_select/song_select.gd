@@ -6,9 +6,8 @@ const GenerationSettingsSelectorScene = preload("res://scenes/song_select/genera
 
 var server_clients: ServerClients = ServerClients.new()
 var background_service: BackgroundProcessingService = null
-var song_list_manager: SongListManager = preload("res://scenes/song_select/song_list_manager.gd").new()
+var song_list_manager: SongListController = preload("res://scenes/song_select/song_list_controller.gd").new()
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
-var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
 
 var song_metadata_manager = SongLibrary 
@@ -60,9 +59,7 @@ func _ready():
 	)
 	song_details_manager.setup_audio_player()  
 	
-	add_child(song_edit_manager)
-	song_edit_manager.set_item_list(song_item_list_ref)
-	song_edit_manager.song_edited.connect(_on_song_edited_from_manager)
+	song_list_manager.song_edited.connect(_on_song_edited_from_manager)
 		
 	background_service = game_engine.get_background_service()
 	if background_service:
@@ -189,7 +186,7 @@ func _on_notes_generation_error(error_message: String):
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
 	
 func _on_filter_by_letter_selected(index: int):
-	if song_edit_manager.is_edit_mode_active():
+	if song_list_manager.is_edit_mode_active():
 		pass
 	var selected_text = filter_by_letter.get_item_text(index)
 	var mode = "title" if selected_text == "Название" else "artist"
@@ -200,7 +197,7 @@ func _on_search_text_changed(new_text: String):
 	song_list_manager.filter_items(new_text)
 
 func _update_filters_visibility():
-	var is_edit_mode = song_edit_manager.is_edit_mode_active()
+	var is_edit_mode = song_list_manager.is_edit_mode_active()
 	if is_edit_mode:
 		song_list_manager.set_filter_mode("title")
 		filter_by_letter.select(0)
@@ -329,22 +326,22 @@ func _cleanup_file_dialog():
 
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
-		if song_edit_manager.is_edit_mode_active():
+		if song_list_manager.is_edit_mode_active():
 			var selected_indices = song_item_list_ref.get_selected_items()
 			if selected_indices.size() > 0:
 				var song_data = song_list_manager.get_song_data_by_item_list_index(selected_indices[0])
 				if not song_data.is_empty():
-					song_edit_manager.start_editing(field_type, song_data, selected_indices[0])
+					song_list_manager.start_editing(field_type, song_data, selected_indices[0])
 
 func _toggle_edit_mode():
-	song_edit_manager.set_edit_mode(!song_edit_manager.is_edit_mode_active())
+	song_list_manager.set_edit_mode(!song_list_manager.is_edit_mode_active())
 	_update_edit_button_style()
 	_update_filters_visibility()
 	
 	filter_by_letter.item_selected.emit(filter_by_letter.get_selected_id())
 
 func _update_edit_button_style():
-	if song_edit_manager.is_edit_mode_active():
+	if song_list_manager.is_edit_mode_active():
 		edit_button.self_modulate = Color(0.8, 0.8, 1.0, 1.0)
 		edit_button.text = "Редактировать (ВКЛ)"
 	else:
