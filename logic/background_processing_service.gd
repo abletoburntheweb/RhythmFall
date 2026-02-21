@@ -1,3 +1,4 @@
+# logic/background_processing_service.gd
 extends Node
 class_name BackgroundProcessingService
 

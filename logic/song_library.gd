@@ -1,3 +1,4 @@
+# logic/song_library.gd
 extends Node
 
 signal metadata_updated(song_file_path: String)

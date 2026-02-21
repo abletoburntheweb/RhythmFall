@@ -17,10 +17,10 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 	
 	if results is Array:
 		results.sort_custom(func(a, b): 
-			if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
-				return a.get("accuracy", 0.0) > b.get("accuracy", 0.0) 
+			if a.get("score", 0) != b.get("score", 0):
+				return a.get("score", 0) > b.get("score", 0)
 			else:
-				return a.get("score", 0) > b.get("score", 0) 
+				return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
 		)
 
 	if results.size() > 0:

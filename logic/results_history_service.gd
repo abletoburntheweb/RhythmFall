@@ -1,3 +1,4 @@
+# logic/results_history_service.gd
 class_name ResultsHistoryService
 extends RefCounted
 
@@ -41,10 +42,10 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 	}
 	results.append(new_result)
 	results.sort_custom(func(a, b):
-		if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
-			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-		else:
+		if a.get("score", 0) != b.get("score", 0):
 			return a.get("score", 0) > b.get("score", 0)
+		else:
+			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
 	)
 	if results.size() > 20:
 		results.resize(20)
@@ -71,10 +72,10 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 	if results.size() == 0:
 		return {}
 	results.sort_custom(func(a, b):
-		if a.get("accuracy", 0.0) != b.get("accuracy", 0.0):
-			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-		else:
+		if a.get("score", 0) != b.get("score", 0):
 			return a.get("score", 0) > b.get("score", 0)
+		else:
+			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
 	)
 	return results[0]
 

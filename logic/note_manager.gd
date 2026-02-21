@@ -10,9 +10,7 @@ var lanes: int = 4
 var note_colors: Array = []
 
 var BaseNote = preload("res://scenes/game_screen/notes/base_note.gd")
-var DefaultNote = preload("res://scenes/game_screen/notes/default_note.gd")
-var HoldNote = preload("res://scenes/game_screen/notes/hold_note.gd")
-var DrumNote = preload("res://scenes/game_screen/notes/drum_note.gd")
+var Note = preload("res://scenes/game_screen/notes/note.gd")
 
 func _init(screen):
 	game_screen = screen
@@ -95,19 +93,15 @@ func spawn_notes():
 		var note_object = null
 		var visual_rect = ColorRect.new()
 
-		if note_type == "DefaultNote":
-			note_object = DefaultNote.new(lane, y_spawn, game_time)
-			visual_rect.color = _get_color_for_note(lane, note_object.color)
-		elif note_type == "HoldNote":
+		if note_type == "HoldNote":
 			var duration = note_info.get("duration", 1.0)
 			var height = int(duration * pixels_per_sec)
-			note_object = HoldNote.new(lane, y_spawn, game_time, height, duration * 1000)
-			visual_rect.color = _get_color_for_note(lane, note_object.color)
-		elif note_type == "DrumNote":  
-			note_object = DrumNote.new(lane, y_spawn, game_time)
-			visual_rect.color = _get_color_for_note(lane, note_object.color)
+			note_object = Note.new(lane, y_spawn, game_time, "HoldNote", height, duration * 1000)
+		elif note_type == "DrumNote":
+			note_object = Note.new(lane, y_spawn, game_time, "DrumNote")
 		else:
-			continue
+			note_object = Note.new(lane, y_spawn, game_time, "DefaultNote")
+		visual_rect.color = _get_color_for_note(lane, note_object.color)
 
 		if note_object:
 			note_object.time = note_time
@@ -115,7 +109,7 @@ func spawn_notes():
 
 			var default_note_height = 20.0 
 
-			if note_type == "HoldNote":
+			if note_object.note_kind == "HoldNote":
 				visual_rect.size = Vector2(lane_width, note_object.height)
 			else:
 				visual_rect.size = Vector2(lane_width, default_note_height)
