@@ -21,19 +21,10 @@ func _ready():
 	selected_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
 	selected_mode = SettingsManager.get_setting("last_generation_mode", "basic")
 	selected_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
-
-	$Container/InstrumentButtons/PercussionButton.pressed.connect(_on_percussion_selected)
-	$Container/ModeButtons/BasicButton.pressed.connect(_on_basic_selected)
-	$Container/ModeButtons/EnhancedButton.pressed.connect(_on_enhanced_selected)
-	$Container/LanesButtons/Lanes3Button.pressed.connect(_on_lanes3_selected)
-	$Container/LanesButtons/Lanes4Button.pressed.connect(_on_lanes4_selected)
-	$Container/LanesButtons/Lanes5Button.pressed.connect(_on_lanes5_selected)
-	$Container/ConfirmButton.pressed.connect(_on_confirm_pressed)
-	$Container/BackButton.pressed.connect(_on_back_button_pressed)
+	
 
 	_update_ui_from_selection()
 
-	show()
 	
 func _update_ui_from_selection():
 	for btn in [$Container/InstrumentButtons/PercussionButton]:

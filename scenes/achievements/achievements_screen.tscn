@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://b0u5mhsmh2wdx"]
 
 [ext_resource type="Script" uid="uid://dlrclp0p36h56" path="res://scenes/achievements/achievements_screen.gd" id="1_n2eex"]
-[ext_resource type="Theme" uid="uid://dihcy67rk1p7y" path="res://ui/theme/app_theme.tres" id="1_v157i"]
+[ext_resource type="Theme" uid="uid://du6hu5fcptdre" path="res://ui/theme/app_theme.tres" id="1_v157i"]
 
 [node name="AchievementsScreen" type="Control"]
 layout_mode = 3

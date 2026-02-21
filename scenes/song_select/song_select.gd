@@ -96,39 +96,38 @@ func _ready():
 	song_details_manager.set_current_generation_mode(saved_mode)
 	song_details_manager.set_current_lanes(saved_lanes)
 	
-	filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
 	analyze_bpm_button.disabled = true
 	results_button.disabled = true
 	clear_results_button.disabled = true
 
 func _connect_ui_signals():
-	$MainVBox/BackButton.pressed.connect(_on_back_pressed)
-	$MainVBox/TopBarHBox/SearchBar.text_changed.connect(song_list_manager.filter_items)
-	$MainVBox/TopBarHBox/AddButton.pressed.connect(_on_add_pressed)
-	edit_button.pressed.connect(_toggle_edit_mode)
 	_update_edit_button_style()
-
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.pressed.connect(_on_generate_pressed)
-	analyze_bpm_button.pressed.connect(_on_analyze_bpm_pressed)
-	$MainVBox/ContentHBox/DetailsVBox/DeleteButton.pressed.connect(_on_delete_pressed)
-	results_button.pressed.connect(_on_results_pressed)
-	clear_results_button.pressed.connect(_on_clear_results_pressed)
-	$MainVBox/TopBarHBox/GenerationSettingsButton.pressed.connect(_on_generation_settings_pressed)
+	var title_label = $MainVBox/ContentHBox/DetailsVBox/TitleLabel
+	var artist_label = $MainVBox/ContentHBox/DetailsVBox/ArtistLabel
+	var year_label = $MainVBox/ContentHBox/DetailsVBox/YearLabel
+	var bpm_label = $MainVBox/ContentHBox/DetailsVBox/BpmLabel
+	var cover_rect = $MainVBox/ContentHBox/DetailsVBox/CoverTextureRect
+	var primary_genre_label = $MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel
 	
-	$MainVBox/ContentHBox/DetailsVBox/PlayButton.pressed.connect(_on_play_pressed)
+	title_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	artist_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	year_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	bpm_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	cover_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	primary_genre_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	
-	$MainVBox/ContentHBox/DetailsVBox/TitleLabel.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/TitleLabel.gui_input.connect(_on_gui_input_for_label.bind("title"))
-	$MainVBox/ContentHBox/DetailsVBox/ArtistLabel.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/ArtistLabel.gui_input.connect(_on_gui_input_for_label.bind("artist"))
-	$MainVBox/ContentHBox/DetailsVBox/YearLabel.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/YearLabel.gui_input.connect(_on_gui_input_for_label.bind("year"))
-	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.gui_input.connect(_on_gui_input_for_label.bind("bpm"))
-	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
-	$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel.mouse_filter = Control.MOUSE_FILTER_STOP
-	$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
+	if not title_label.gui_input.is_connected(_on_gui_input_for_label):
+		title_label.gui_input.connect(_on_gui_input_for_label.bind("title"))
+	if not artist_label.gui_input.is_connected(_on_gui_input_for_label):
+		artist_label.gui_input.connect(_on_gui_input_for_label.bind("artist"))
+	if not year_label.gui_input.is_connected(_on_gui_input_for_label):
+		year_label.gui_input.connect(_on_gui_input_for_label.bind("year"))
+	if not bpm_label.gui_input.is_connected(_on_gui_input_for_label):
+		bpm_label.gui_input.connect(_on_gui_input_for_label.bind("bpm"))
+	if not cover_rect.gui_input.is_connected(_on_gui_input_for_label):
+		cover_rect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
+	if not primary_genre_label.gui_input.is_connected(_on_gui_input_for_label):
+		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
 	
 func _on_bpm_analysis_started():
 	analyze_bpm_button.text = "Вычисление..."
@@ -196,6 +195,9 @@ func _on_filter_by_letter_selected(index: int):
 	var mode = "title" if selected_text == "Название" else "artist"
 	song_list_manager.set_filter_mode(mode)
 	song_list_manager.populate_items_grouped()
+	
+func _on_search_text_changed(new_text: String):
+	song_list_manager.filter_items(new_text)
 
 func _update_filters_visibility():
 	var is_edit_mode = song_edit_manager.is_edit_mode_active()
@@ -335,14 +337,11 @@ func _on_gui_input_for_label(event: InputEvent, field_type: String):
 					song_edit_manager.start_editing(field_type, song_data, selected_indices[0])
 
 func _toggle_edit_mode():
-	if filter_by_letter.is_connected("item_selected", _on_filter_by_letter_selected):
-		filter_by_letter.disconnect("item_selected", _on_filter_by_letter_selected)
-	
 	song_edit_manager.set_edit_mode(!song_edit_manager.is_edit_mode_active())
 	_update_edit_button_style()
 	_update_filters_visibility()
 	
-	filter_by_letter.item_selected.connect(_on_filter_by_letter_selected)
+	filter_by_letter.item_selected.emit(filter_by_letter.get_selected_id())
 
 func _update_edit_button_style():
 	if song_edit_manager.is_edit_mode_active():

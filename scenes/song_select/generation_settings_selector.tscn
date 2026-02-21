@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
 
 [ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
+[ext_resource type="Theme" uid="uid://dw7nvwfovhyro" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
 
 [node name="GenerationSettingsSelector" type="Control"]
 layout_mode = 3
