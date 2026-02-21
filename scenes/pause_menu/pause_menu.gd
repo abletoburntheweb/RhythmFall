@@ -10,11 +10,7 @@ signal exit_to_menu_requested
 var transitions = null
 
 func _ready():
-	$MenuContainer/ResumeButton.pressed.connect(_on_resume_pressed)
-	$MenuContainer/RestartButton.pressed.connect(_on_restart_pressed)
-	$MenuContainer/SongSelectButton.pressed.connect(_on_song_select_pressed)
-	$MenuContainer/SettingsButton.pressed.connect(_on_settings_pressed)
-	$MenuContainer/ExitToMenuButton.pressed.connect(_on_exit_to_menu_pressed)
+	pass
 
 func set_transitions(transitions_instance):
 	transitions = transitions_instance

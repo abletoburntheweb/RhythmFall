@@ -329,8 +329,6 @@ func _unhandled_input(event):
 		get_viewport().set_input_as_handled()
 
 func _execute_close_transition():
-	MusicManager.play_cancel_sound()  
-
 	if is_instance_valid(transitions):
 		transitions.close_achievements() 
 	else:

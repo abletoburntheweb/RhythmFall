@@ -6620,3 +6620,11 @@ layout_mode = 2
 theme = SubResource("Theme_55cdj")
 theme_type_variation = &"DailyTasksProgressBar"
 rounded = true
+
+[connection signal="pressed" from="ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="ButtonContainer/SongSelectButton" to="." method="_on_song_select_pressed"]
+[connection signal="pressed" from="ButtonContainer/AchievementsButton" to="." method="_on_achievements_pressed"]
+[connection signal="pressed" from="ButtonContainer/ProfileButton" to="." method="_on_profile_pressed"]
+[connection signal="pressed" from="ButtonContainer/ShopButton" to="." method="_on_shop_pressed"]
+[connection signal="pressed" from="ButtonContainer/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]

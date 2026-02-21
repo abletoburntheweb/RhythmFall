@@ -610,8 +610,6 @@ func _on_chart_background_resized():
 	_update_accuracy_chart()
 
 func _execute_close_transition():
-	MusicManager.play_cancel_sound()  
-
 	if transitions:
 		transitions.close_profile()
 		

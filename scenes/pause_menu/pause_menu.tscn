@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://hbupjp838y2b"]
 
 [ext_resource type="Script" uid="uid://dcjmvp0dga6d2" path="res://scenes/pause_menu/pause_menu.gd" id="1_5bgjm"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_qcmsd"]
+[ext_resource type="Theme" uid="uid://b1qqg5csw8xtd" path="res://ui/theme/app_theme.tres" id="2_qcmsd"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1350,3 +1350,9 @@ size_flags_horizontal = 4
 theme = SubResource("Theme_qcmsd")
 theme_type_variation = &"FlatExitButton"
 text = "ВЫЙТИ В МЕНЮ"
+
+[connection signal="pressed" from="MenuContainer/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="MenuContainer/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="MenuContainer/SongSelectButton" to="." method="_on_song_select_pressed"]
+[connection signal="pressed" from="MenuContainer/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="MenuContainer/ExitToMenuButton" to="." method="_on_exit_to_menu_pressed"]
