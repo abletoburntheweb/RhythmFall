@@ -4,16 +4,16 @@ class_name NotificationUI
 @onready var label: Label = $NotificationLabel
 @onready var cancel_btn: BaseButton = $CancelButton
 @onready var retry_btn: BaseButton = $RetryButton
+@onready var clear_timer: Timer = $ClearTimer
 
 var _clear_token: int = 0
+var _pending_token: int = 0
 var on_cancel: Callable = Callable()
 var on_retry: Callable = Callable()
+@export var duration_clear_ms: int = 5000
+@export var cancel_hide_keywords: Array[String] = ["отмен", "cancel"]
 
 func _ready():
-	if cancel_btn and not cancel_btn.is_connected("pressed", _on_cancel_pressed):
-		cancel_btn.pressed.connect(_on_cancel_pressed)
-	if retry_btn and not retry_btn.is_connected("pressed", _on_retry_pressed):
-		retry_btn.pressed.connect(_on_retry_pressed)
 	_clear_immediate()
 
 func show_progress(text: String, cancel_callable: Callable):
@@ -33,22 +33,14 @@ func show_error(text: String, retry_callable: Callable, cancel_callable: Callabl
 	var is_cancel_text = _is_cancel_text(text)
 	cancel_btn.visible = cancel_callable.is_valid() and not is_cancel_text
 	retry_btn.visible = retry_callable.is_valid()
-	var token = Time.get_ticks_msec()
-	_clear_token = token
-	await get_tree().create_timer(5.0).timeout
-	if _clear_token == token:
-		_clear_immediate()
+	_schedule_clear()
 
 func show_complete(text: String):
 	label.text = text
 	label.visible = true
 	cancel_btn.visible = false
 	retry_btn.visible = false
-	var token = Time.get_ticks_msec()
-	_clear_token = token
-	await get_tree().create_timer(5.0).timeout
-	if _clear_token == token:
-		_clear_immediate()
+	_schedule_clear()
 
 func clear_immediately():
 	_clear_immediate()
@@ -76,4 +68,27 @@ func _on_retry_pressed():
 
 func _is_cancel_text(text: String) -> bool:
 	var lower = text.to_lower()
-	return lower.find("отмен") != -1 or lower.find("cancel") != -1
+	for kw in cancel_hide_keywords:
+		if lower.find(kw.to_lower()) != -1:
+			return true
+	return false
+
+func _schedule_clear():
+	var token = Time.get_ticks_msec()
+	_clear_token = token
+	_pending_token = token
+	var seconds = float(duration_clear_ms) / 1000.0
+	if clear_timer:
+		if not clear_timer.is_stopped():
+			clear_timer.stop()
+		clear_timer.one_shot = true
+		clear_timer.wait_time = seconds
+		clear_timer.start()
+	else:
+		await get_tree().create_timer(seconds).timeout
+		if _clear_token == token:
+			_clear_immediate()
+
+func _on_clear_timeout():
+	if _clear_token == _pending_token:
+		_clear_immediate()

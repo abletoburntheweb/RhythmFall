@@ -1,7 +1,7 @@
 [gd_scene load_steps=75 format=3 uid="uid://dj8l7fx26h51g"]
 
 [ext_resource type="Script" uid="uid://d1x5u2u7grlsv" path="res://scenes/achievements/achievement_card.gd" id="1_7c2k7"]
-[ext_resource type="Theme" uid="uid://cori1ireyi77u" path="res://ui/theme/app_theme.tres" id="1_fsctk"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="1_fsctk"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="3_cehhg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
@@ -1313,7 +1313,7 @@ offset_bottom = -978.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_fsctk")
-theme_type_variation = &"CardDefault"
+theme_type_variation = &"CardLocked"
 script = ExtResource("1_7c2k7")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
@@ -1335,6 +1335,7 @@ theme_override_constants/separation = 10
 
 [node name="IconTexture" type="TextureRect" parent="MarginContainer/ContentContainer/TopRowContainer"]
 z_as_relative = false
+texture_filter = 4
 material = SubResource("ShaderMaterial_fkpat")
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2

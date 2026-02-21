@@ -4,86 +4,80 @@ extends PanelContainer
 signal popup_finished
 
 @onready var animation_player: AnimationPlayer = $PopupAnimator
+@onready var title_label: Label = $ContentContainer/TopRowContainer/InfoVBox/AchievementTitleLabel
+@onready var description_label: Label = $ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel
+@onready var icon_texture_rect: TextureRect = $ContentContainer/TopRowContainer/IconTexture
 var achievement_data: Dictionary = {}
 
 func _ready():
 	if not achievement_data.is_empty():
-		show_popup()
+		_apply_data()
 
 func set_achievement_data(ach_data: Dictionary):
-	
 	achievement_data = ach_data.duplicate()
-	
-	var title_label = get_node_or_null("ContentContainer/TopRowContainer/InfoVBox/AchievementTitleLabel")
-	var description_label = get_node_or_null("ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel")
-	var icon_texture = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
-	
-	if title_label:
-		var new_title = ach_data.get("title", "Название отсутствует")
-		title_label.text = new_title
-	else:
-		printerr("[AchievementPopUp] ERROR: title_label is NULL!")
-	
-	if description_label:
-		var new_desc = ach_data.get("description", "Описание отсутствует")
-		description_label.text = new_desc
-	else:
-		printerr("[AchievementPopUp] ERROR: description_label is NULL!")
-	
-	_load_achievement_icon(ach_data)
-	
 	if is_inside_tree():
-		show_popup()
+		_apply_data()
 
 func _load_achievement_icon(ach_data: Dictionary):
-	var icon_texture = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
-	if not icon_texture:
-		printerr("[AchievementPopUp] ERROR: icon_texture is NULL!")
-		return
-	
 	var image_path = ach_data.get("image", "")
-	var category = ach_data.get("category", "")
-	
-	if image_path and image_path != "" and FileAccess.file_exists(image_path):
-		var texture = ResourceLoader.load(image_path)
-		if texture and texture is Texture2D:
-			icon_texture.texture = texture
-			return
-
-	var fallback_path = ""
-	
+	if image_path == "":
+		var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
+		if fallback_path != "":
+			var tex_fb = ResourceLoader.load(fallback_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
+			if tex_fb and tex_fb is Texture2D:
+				icon_texture_rect.texture = tex_fb
+		return
+	var texture = ResourceLoader.load(image_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
+	if texture and texture is Texture2D:
+		icon_texture_rect.texture = texture
+	else:
+		var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
+		if fallback_path != "":
+			var tex_fb = ResourceLoader.load(fallback_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
+			if tex_fb and tex_fb is Texture2D:
+				icon_texture_rect.texture = tex_fb
+ 
+func _ensure_nodes():
+	if title_label == null:
+		title_label = get_node_or_null("ContentContainer/TopRowContainer/InfoVBox/AchievementTitleLabel")
+	if description_label == null:
+		description_label = get_node_or_null("ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel")
+	if icon_texture_rect == null:
+		icon_texture_rect = get_node_or_null("ContentContainer/TopRowContainer/IconTexture")
+	if animation_player == null:
+		animation_player = get_node_or_null("PopupAnimator")
+ 
+func _get_fallback_icon_path(category: String) -> String:
 	match category:
-		"mastery": fallback_path = "res://assets/achievements/mastery.png"
-		"drums": fallback_path = "res://assets/achievements/drums.png"
-		"genres":  fallback_path = "res://assets/achievements/genres.png"  
-		"system": fallback_path = "res://assets/achievements/system.png"
-		"shop": fallback_path = "res://assets/achievements/shop.png"
-		"economy": fallback_path = "res://assets/achievements/economy.png"
-		"daily": fallback_path = "res://assets/achievements/daily.png"
-		"playtime": fallback_path = "res://assets/achievements/playtime.png"
-		"events": fallback_path = "res://assets/achievements/events.png"
-		_: fallback_path = "res://assets/achievements/default.png" 
-	
-	if FileAccess.file_exists(fallback_path):
-		var texture = ResourceLoader.load(fallback_path)
-		if texture and texture is Texture2D:
-			icon_texture.texture = texture
-			return
-	
-	icon_texture.texture = null
-
-
+		"mastery": return "res://assets/achievements/mastery.png"
+		"drums": return "res://assets/achievements/drums.png"
+		"system": return "res://assets/achievements/system.png"
+		"shop": return "res://assets/achievements/shop.png"
+		"economy": return "res://assets/achievements/economy.png"
+		"daily": return "res://assets/achievements/daily.png"
+		"playtime": return "res://assets/achievements/playtime.png"
+		"events": return "res://assets/achievements/events.png"
+		"level": return "res://assets/achievements/level.png"
+		_: return "res://assets/achievements/default.png"
+ 
+func _apply_data():
+	_ensure_nodes()
+	if title_label == null or description_label == null:
+		call_deferred("_apply_data")
+		return
+	title_label.text = achievement_data.get("title", "Название отсутствует")
+	description_label.text = achievement_data.get("description", "Описание отсутствует")
+	_load_achievement_icon(achievement_data)
+	show_popup()
+ 
 func show_popup():
-	if animation_player:
-		animation_player.play("popup_show")
-		if not animation_player.animation_finished.is_connected(_on_animation_player_animation_finished):
-			animation_player.animation_finished.connect(_on_animation_player_animation_finished)
+	_ensure_nodes()
+	if animation_player == null:
+		return
+	animation_player.play("popup_show")
 
 func _on_animation_player_animation_finished(anim_name: String):
-	if anim_name == "popup_show":
-		_on_display_timeout()
-
-func _on_display_timeout():
 	popup_finished.emit()
-	
 	call_deferred("queue_free")
+
+ 

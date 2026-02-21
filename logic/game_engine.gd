@@ -25,7 +25,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
 
 var background_service: BackgroundProcessingService = null
-var notif_ui: Node = null
+@onready var notif_ui: Node = $NotificationsLayer/NotifHBox
 
 func _ready():
 	initialize_logic()
@@ -41,7 +41,6 @@ func _ready():
 	theme = app_theme
 	ResourceSaver.save(app_theme, theme_path)
 	_update_currency_ui()
-	_setup_notifications_ui()
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
@@ -74,17 +73,8 @@ func on_currency_changed():
 	_update_currency_ui()
 
 func _initialize_display_settings():
+	_apply_window_settings()
 	_update_fps_visibility()
-
-	if SettingsManager.get_fullscreen():
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_size(Vector2i(1920, 1080))
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-		var screen_size = DisplayServer.screen_get_size()
-		var window_size = Vector2i(1920, 1080)
-		DisplayServer.window_set_position((screen_size - window_size) / 2)
 
 func _update_fps_visibility():
 	match SettingsManager.get_fps_mode():
@@ -107,6 +97,10 @@ func _process(delta):
 			fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 func update_display_settings():
+	_apply_window_settings()
+	_update_fps_visibility()
+
+func _apply_window_settings():
 	if SettingsManager.get_fullscreen():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
@@ -116,19 +110,11 @@ func update_display_settings():
 		var screen_size = DisplayServer.screen_get_size()
 		var window_size = Vector2i(1920, 1080)
 		DisplayServer.window_set_position((screen_size - window_size) / 2)
-	
-	_update_fps_visibility()
 
 func _start_play_time_timer():
-	if _play_time_timer:
-		if _play_time_timer.time_left > 0:
-			_play_time_timer.timeout.disconnect(_on_play_time_update_timeout) 
-
 	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)
 	if _play_time_timer:
-		var connect_result = _play_time_timer.timeout.connect(_on_play_time_update_timeout)
-		if connect_result != 0:
-			printerr("GameEngine.gd (DEBUG): Ошибка подключения таймера! Код: ", connect_result)
+		_play_time_timer.timeout.connect(_on_play_time_update_timeout)
 
 func _on_play_time_update_timeout():
 	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
@@ -139,8 +125,6 @@ func _on_play_time_update_timeout():
 
 func _exit_tree():
 	_finalize_session_time()
-	if _play_time_timer and _play_time_timer.is_connected("timeout", _on_play_time_update_timeout):
-		_play_time_timer.timeout.disconnect(_on_play_time_update_timeout)
 
 func _finalize_session_time():
 	var elapsed_ms = Time.get_ticks_msec() - _session_start_time_ticks
@@ -325,11 +309,6 @@ func get_level_layer() -> Control:
 
 func get_background_service() -> BackgroundProcessingService:
 	return background_service
-
-func _setup_notifications_ui():
-	if has_node("NotificationsLayer/NotifHBox"):
-		notif_ui = $NotificationsLayer/NotifHBox
-	return
 
 func notifications_add_or_update(id: String, text: String, cancellable: bool, cancel_method: String):
 	if notif_ui and notif_ui.has_method("show_progress"):

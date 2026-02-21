@@ -9,6 +9,14 @@ var _remap_target_lane: int = -1
 var _remap_old_scancode: int = 0
 
 var game_screen = null
+@onready var keys_container: VBoxContainer = $ContentVBox/KeysContainer
+@onready var lane_buttons := [
+	$ContentVBox/KeysContainer/Lane1Row/KeyButton,
+	$ContentVBox/KeysContainer/Lane2Row/KeyButton,
+	$ContentVBox/KeysContainer/Lane3Row/KeyButton,
+	$ContentVBox/KeysContainer/Lane4Row/KeyButton,
+	$ContentVBox/KeysContainer/Lane5Row/KeyButton
+]
  
 
 func setup_ui_and_manager(screen = null):
@@ -16,77 +24,24 @@ func setup_ui_and_manager(screen = null):
 	_setup_ui()
 
 func _setup_ui():
-	
-	var keys_container = $ContentVBox/KeysContainer
-	if not keys_container:
-		printerr("ControlsTab.gd: Не найден KeysContainer!")
-		return
-
 	var num_lanes = SettingsManager.MAX_LANES if SettingsManager.has_method("MAX_LANES") else 5
 	for i in range(num_lanes):
-		var row_name = "Lane%dRow" % (i + 1)
-		var row_hbox = keys_container.get_node_or_null(row_name)
-		if not row_hbox and i < keys_container.get_child_count():
-			row_hbox = keys_container.get_child(i)
-		if row_hbox and row_hbox is HBoxContainer:
-			var label_container = null
-			if row_hbox.get_child_count() > 0:
-				label_container = row_hbox.get_child(0)
-			var label_node = null
-			if label_container and label_container is MarginContainer and label_container.get_child_count() > 0:
-				label_node = label_container.get_child(0)
-			elif label_container and label_container is Label:
-				label_node = label_container
-			if label_node and label_node is Label:
-				label_node.text = "Линия %d" % (i + 1)
-			var button_node = null
-			if row_hbox.get_child_count() > 1:
-				button_node = row_hbox.get_child(1)
-			if button_node and button_node is Button:
-				button_node.text = SettingsManager.get_key_text_for_lane(i)
-				button_node.set_meta("lane_index", i)
-				if not button_node.has_meta("initialized"):
-					button_node.pressed.connect(_on_key_button_pressed.bind(button_node))
-					button_node.set_meta("initialized", true)
+		if i < lane_buttons.size() and lane_buttons[i]:
+			lane_buttons[i].text = SettingsManager.get_key_text_for_lane(i)
 
 	
 
-func _on_key_button_pressed(button: Button):
+func _on_key_button_pressed(lane_index: int):
 	if _remap_active and _remap_target_button:
 		_remap_target_button.text = SettingsManager.get_key_text_for_lane(_remap_target_lane)
-
-	_remap_target_button = button
-	_remap_target_lane = button.get_meta("lane_index")
+	_remap_target_lane = lane_index
+	_remap_target_button = lane_buttons[lane_index] if lane_index >= 0 and lane_index < lane_buttons.size() else null
 	_remap_old_scancode = SettingsManager.get_key_scancode_for_lane(_remap_target_lane) 
 	
-	button.text = "..."  
+	if _remap_target_button:
+		_remap_target_button.text = "..."
 	_remap_active = true
 	
-func _is_service_key(scancode: int) -> bool:
-	return scancode == KEY_SHIFT \
-		or scancode == KEY_ALT \
-		or scancode == KEY_CTRL \
-		or scancode == KEY_META \
-		or scancode == KEY_CAPSLOCK \
-		or scancode == KEY_NUMLOCK \
-		or scancode == KEY_SCROLLLOCK \
-		or scancode == KEY_TAB \
-		or scancode == KEY_QUOTELEFT \
-		or scancode == KEY_ENTER \
-		or scancode == KEY_BACKSPACE \
-		or scancode == KEY_F1 \
-		or scancode == KEY_F2 \
-		or scancode == KEY_F3 \
-		or scancode == KEY_F4 \
-		or scancode == KEY_F5 \
-		or scancode == KEY_F6 \
-		or scancode == KEY_F7 \
-		or scancode == KEY_F8 \
-		or scancode == KEY_F9 \
-		or scancode == KEY_F10 \
-		or scancode == KEY_F11 \
-		or scancode == KEY_F12
-
 func _input(event):
 	if _remap_active and event is InputEventKey and event.pressed:
 		var new_scancode = event.keycode
@@ -105,32 +60,20 @@ func _input(event):
 			get_viewport().set_input_as_handled()
 			return
 		
-		if _is_service_key(new_scancode):
-			get_viewport().set_input_as_handled()
-			return
-
-		var keys_container = $ContentVBox/KeysContainer
-		if not keys_container:
-			printerr("ControlsTab.gd: Не найден KeysContainer при обработке ввода!")
-			_remap_active = false
-			_remap_target_button = null
-			_remap_target_lane = -1
-			_remap_old_scancode = 0
+		if SettingsManager.is_service_key(new_scancode):
 			get_viewport().set_input_as_handled()
 			return
 
 		var duplicate_button: Button = null
 		var duplicate_lane: int = -1
-		for child in keys_container.get_children():
-			if child is HBoxContainer:
-				var btn = child.get_child(1)
-				if btn is Button and btn != _remap_target_button:
-					var btn_lane = btn.get_meta("lane_index")
-					var btn_scancode = SettingsManager.get_key_scancode_for_lane(btn_lane)
-					if btn_scancode == new_scancode:
-						duplicate_button = btn
-						duplicate_lane = btn_lane
-						break 
+		for i in range(lane_buttons.size()):
+			var btn: Button = lane_buttons[i]
+			if btn and btn != _remap_target_button:
+				var btn_scancode = SettingsManager.get_key_scancode_for_lane(i)
+				if btn_scancode == new_scancode:
+					duplicate_button = btn
+					duplicate_lane = i
+					break 
 
 		if duplicate_button:
 			SettingsManager.set_key_scancode_for_lane(duplicate_lane, _remap_old_scancode)

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c1fahaip3uwgq"]
 
 [ext_resource type="Script" uid="uid://x4rp1r7pakd6" path="res://scenes/settings_menu/tabs/controls_tab.gd" id="1_unoo2"]
-[ext_resource type="Theme" uid="uid://bnqslaqlgqsf6" path="res://ui/theme/app_theme.tres" id="2_704fg"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_704fg"]
 
 [node name="ControlsTab" type="Control"]
 layout_mode = 3
@@ -137,4 +137,9 @@ theme_override_font_sizes/font_size = 24
 text = "Нажмите ESC, чтобы отменить переназначение клавиши"
 horizontal_alignment = 1
 
+[connection signal="pressed" from="ContentVBox/KeysContainer/Lane1Row/KeyButton" to="." method="_on_key_button_pressed" binds= [0]]
+[connection signal="pressed" from="ContentVBox/KeysContainer/Lane2Row/KeyButton" to="." method="_on_key_button_pressed" binds= [1]]
+[connection signal="pressed" from="ContentVBox/KeysContainer/Lane3Row/KeyButton" to="." method="_on_key_button_pressed" binds= [2]]
+[connection signal="pressed" from="ContentVBox/KeysContainer/Lane4Row/KeyButton" to="." method="_on_key_button_pressed" binds= [3]]
+[connection signal="pressed" from="ContentVBox/KeysContainer/Lane5Row/KeyButton" to="." method="_on_key_button_pressed" binds= [4]]
 [connection signal="pressed" from="ContentVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]

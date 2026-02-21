@@ -276,6 +276,31 @@ func _get_key_string_from_scancode(scancode: int) -> String:
 		printerr("SettingsManager: _get_key_string_from_scancode: Неизвестный scancode ", scancode)
 		return "Key" + str(scancode)
 	return key_string
+ 
+static func is_service_key(scancode: int) -> bool:
+	return scancode == KEY_SHIFT \
+		or scancode == KEY_ALT \
+		or scancode == KEY_CTRL \
+		or scancode == KEY_META \
+		or scancode == KEY_CAPSLOCK \
+		or scancode == KEY_NUMLOCK \
+		or scancode == KEY_SCROLLLOCK \
+		or scancode == KEY_TAB \
+		or scancode == KEY_QUOTELEFT \
+		or scancode == KEY_ENTER \
+		or scancode == KEY_BACKSPACE \
+		or scancode == KEY_F1 \
+		or scancode == KEY_F2 \
+		or scancode == KEY_F3 \
+		or scancode == KEY_F4 \
+		or scancode == KEY_F5 \
+		or scancode == KEY_F6 \
+		or scancode == KEY_F7 \
+		or scancode == KEY_F8 \
+		or scancode == KEY_F9 \
+		or scancode == KEY_F10 \
+		or scancode == KEY_F11 \
+		or scancode == KEY_F12
 func reset_all_settings():
 	var current_controls = settings.get("controls_keymap", {}).duplicate(true)
 	

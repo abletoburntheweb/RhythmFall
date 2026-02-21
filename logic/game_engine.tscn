@@ -155,3 +155,11 @@ theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
 theme_override_font_sizes/font_size = 12
 text = "Повторить"
 underline = 1
+
+[node name="ClearTimer" type="Timer" parent="NotificationsLayer/NotifHBox"]
+wait_time = 5.0
+one_shot = true
+
+[connection signal="pressed" from="NotificationsLayer/NotifHBox/CancelButton" to="NotificationsLayer/NotifHBox" method="_on_cancel_pressed"]
+[connection signal="pressed" from="NotificationsLayer/NotifHBox/RetryButton" to="NotificationsLayer/NotifHBox" method="_on_retry_pressed"]
+[connection signal="timeout" from="NotificationsLayer/NotifHBox/ClearTimer" to="NotificationsLayer/NotifHBox" method="_on_clear_timeout"]

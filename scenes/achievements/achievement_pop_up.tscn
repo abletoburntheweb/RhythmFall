@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://o1npypfkbsw1"]
+[gd_scene load_steps=9 format=3 uid="uid://o1npypfkbsw1"]
 
 [ext_resource type="Script" uid="uid://dnjxdqfm6i7ua" path="res://scenes/achievements/achievement_pop_up.gd" id="1_3ety8"]
 [ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="1_uk2ul"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="2_sqpua"]
+[ext_resource type="Texture2D" uid="uid://cgaef1a7w6b85" path="res://assets/achievements/default.png" id="4_j0e20"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uk2ul"]
 shader = ExtResource("2_sqpua")
@@ -71,6 +72,7 @@ custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+texture = ExtResource("4_j0e20")
 expand_mode = 1
 stretch_mode = 5
 

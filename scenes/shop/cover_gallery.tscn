@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://bol4h51pj023o"]
 
 [ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
-[ext_resource type="Theme" uid="uid://dbn7v18sdwsds" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
+[ext_resource type="Theme" uid="uid://cdktrifnedc3v" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_hwq2b"]
 
