@@ -66,7 +66,6 @@ func _switch_to_screen_instance(instance):
 	game_engine.current_screen = instance
 
 func _return_to_main_menu():
-	game_engine.current_screen = null
 	transition_open_main_menu()
 
 func hide_level_ui():
@@ -126,10 +125,9 @@ func transition_open_game(
 func transition_close_game():
 	if not main_menu_instance or not main_menu_instance.is_game_open:
 		return
-
-	game_engine.current_screen = null 
+	
 	transition_open_main_menu()
-
+	
 	if main_menu_instance:
 		main_menu_instance.is_game_open = false
 

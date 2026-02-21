@@ -367,7 +367,7 @@ func start_gameplay():
 		MusicManager.set_metronome_offset(offset)
 		var song_path_to_update = selected_song_data.get("path", "")
 		if song_path_to_update != "":
-			SongMetadataManager.update_metadata(song_path_to_update, {"metronome_offset": offset})
+			SongLibrary.update_metadata(song_path_to_update, {"metronome_offset": offset})
 
 	var should_delay_music = false
 	var earliest_note_time = note_manager.get_earliest_note_time()

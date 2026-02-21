@@ -63,7 +63,7 @@ func on_track_completed(track_path: String):
 
 	track_completion_counts[normalized_path] = track_completion_counts.get(normalized_path, 0) + 1
 
-	var metadata = SongMetadataManager.get_metadata_for_song(normalized_path)
+	var metadata = SongLibrary.get_metadata_for_song(normalized_path)
 
 	var genre = "unknown"
 	if metadata and typeof(metadata) == TYPE_DICTIONARY and metadata.has("primary_genre"):

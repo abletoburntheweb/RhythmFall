@@ -3,7 +3,7 @@ extends Control
 
 signal settings_changed
 
-var song_metadata_manager = SongMetadataManager 
+var song_metadata_manager = SongLibrary 
 const FILES_TO_CLEAR := ["best_grades.json", "session_history.json"]
 
 @onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
@@ -19,7 +19,7 @@ const FILES_TO_CLEAR := ["best_grades.json", "session_history.json"]
 
  
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
-	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongMetadataManager
+	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongLibrary
 	_apply_initial_settings()
 
  

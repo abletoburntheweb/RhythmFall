@@ -29,7 +29,7 @@ func _init(game_engine_ref: Node = null):
 	_server_clients.notes_generation_error.connect(_on_notes_error)
 
 func _get_display_name(song_path: String) -> String:
-	var meta = SongMetadataManager.get_metadata_for_song(song_path)
+	var meta = SongLibrary.get_metadata_for_song(song_path)
 	var artist = meta.get("artist", "Неизвестен")
 	var title = meta.get("title", song_path.get_file().get_basename())
 	return "%s - %s" % [artist, title]
@@ -95,7 +95,7 @@ func _on_bpm_completed(bpm_value: int):
 		return
 	var path = _active_bpm_task.path
 	var disp = _active_bpm_task.display
-	SongMetadataManager.update_metadata(path, {"bpm": str(bpm_value)})
+	SongLibrary.update_metadata(path, {"bpm": str(bpm_value)})
 	bpm_completed.emit(path, bpm_value, disp)
 	if SettingsManager.get_setting("show_generation_notifications", true) \
 	and _game_engine and _game_engine.has_method("notifications_complete"):

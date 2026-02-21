@@ -24,7 +24,7 @@ func populate_items():
 		return
 
 	item_list.clear()
-	var songs_list = SongManager.get_songs_list()
+	var songs_list = SongLibrary.get_songs_list()
 
 	for song_data in songs_list:
 		var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
@@ -39,7 +39,7 @@ func populate_items_grouped():
 	item_list.clear()
 	current_grouped_data.clear()
 
-	var songs_list = SongManager.get_songs_list()
+	var songs_list = SongLibrary.get_songs_list()
 	if songs_list.is_empty():
 		emit_signal("song_list_changed")
 		return
@@ -108,7 +108,7 @@ func update_song_count_label(count_label: Label):
 		printerr("SongListManager.gd: Label для счётчика не передан.")
 
 func add_song_from_path(file_path: String):
-	var metadata_dict = SongManager.add_song(file_path)
+	var metadata_dict = SongLibrary.add_song(file_path)
 	if not metadata_dict.is_empty():
 		emit_signal("song_added", metadata_dict)
 
@@ -126,7 +126,7 @@ func filter_items(filter_text: String):
 	item_list.clear()
 	current_grouped_data.clear()
 
-	var songs_list = SongManager.get_songs_list()
+	var songs_list = SongLibrary.get_songs_list()
 
 	if filter_text.is_empty():
 		populate_items_grouped()

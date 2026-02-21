@@ -78,7 +78,10 @@ func _edit_primary_genre():
 
 	_edit_context["dialog"] = dialog
 
-	add_child(dialog)
+	if get_parent():
+		get_parent().add_child(dialog)
+	else:
+		add_child(dialog)
 	dialog.popup_centered()
 
 func _edit_year():
@@ -119,7 +122,10 @@ func _edit_year():
 
 	_edit_context["dialog"] = dialog
 
-	add_child(dialog)
+	if get_parent():
+		get_parent().add_child(dialog)
+	else:
+		add_child(dialog)
 	dialog.popup_centered()
 
 func _on_edit_year_confirmed():
@@ -142,7 +148,7 @@ func _on_edit_year_confirmed():
 
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"year": new_year_str}
-			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
 			emit_signal("song_edited", song_data, selected_item_list_index)
 
 	_cleanup_edit_context()
@@ -171,7 +177,10 @@ func _edit_title():
 
 	_edit_context["dialog"] = dialog
 
-	add_child(dialog)
+	if get_parent():
+		get_parent().add_child(dialog)
+	else:
+		add_child(dialog)
 	dialog.popup_centered()
 
 func _edit_field(field_name: String):
@@ -203,7 +212,10 @@ func _edit_field(field_name: String):
 
 	_edit_context["dialog"] = dialog
 
-	add_child(dialog)
+	if get_parent():
+		get_parent().add_child(dialog)
+	else:
+		add_child(dialog)
 	dialog.popup_centered()
 
 func _edit_bpm():
@@ -238,7 +250,10 @@ func _edit_bpm():
 
 	_edit_context["dialog"] = dialog
 
-	add_child(dialog)
+	if get_parent():
+		get_parent().add_child(dialog)
+	else:
+		add_child(dialog)
 	dialog.popup_centered()
 
 func _edit_cover_stub():
@@ -258,7 +273,7 @@ func _on_edit_title_confirmed():
 			
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"title": new_title}
-			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 
 	_cleanup_edit_context() 
@@ -277,7 +292,7 @@ func _on_edit_field_confirmed():
 			song_data[field_name] = new_value 
 			var song_file_path = song_data["path"]
 			var fields_to_update = {field_name: new_value}
-			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 
 	_cleanup_edit_context() 
@@ -299,7 +314,7 @@ func _on_edit_primary_genre_confirmed():
 
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"primary_genre": new_genre}
-			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
 			emit_signal("song_edited", song_data, selected_item_list_index)
 
 	_cleanup_edit_context()
@@ -324,7 +339,7 @@ func _on_edit_bpm_confirmed():
 			
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"bpm": new_bpm_str}
-			SongMetadataManager.update_metadata(song_file_path, fields_to_update)
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
 			emit_signal("song_edited", song_data, selected_item_list_index) 
 
 	_cleanup_edit_context()

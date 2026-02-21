@@ -134,7 +134,7 @@ func refresh_stats():
 			title_text = str(basic_md.get("title", title_text))
 			artist_text = str(basic_md.get("artist", artist_text))
 			cover_texture = basic_md.get("cover", null)
-			var user_md = SongMetadataManager.get_metadata_for_song(favorite_track_path)
+			var user_md = SongLibrary.get_metadata_for_song(favorite_track_path)
 			if user_md and typeof(user_md) == TYPE_DICTIONARY:
 				title_text = str(user_md.get("title", title_text))
 				artist_text = str(user_md.get("artist", artist_text))

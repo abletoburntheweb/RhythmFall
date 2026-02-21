@@ -118,7 +118,7 @@ func _check_thread_status():
 			
 			var track_info = _thread_result.get("track_info", {})
 			if !track_info.is_empty() and track_info.has("genres"):
-				SongMetadataManager.update_metadata(_thread_request_data.song_path, {"genres": track_info["genres"]})
+				SongLibrary.update_metadata(_thread_request_data.song_path, {"genres": track_info["genres"]})
 			
 			emit_signal("notes_generation_completed", notes, bpm_val, inst_type)
 		else:
@@ -160,7 +160,7 @@ func _thread_function(data_dict: Dictionary):
 
 	var genres_array = []
 	var primary_genre = ""
-	var song_meta = SongMetadataManager.get_metadata_for_song(song_path)
+	var song_meta = SongLibrary.get_metadata_for_song(song_path)
 	if song_meta and song_meta.has("genres"):
 		if typeof(song_meta["genres"]) == TYPE_STRING:
 			var genres_str = song_meta["genres"]

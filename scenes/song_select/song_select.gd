@@ -11,7 +11,7 @@ var song_details_manager: SongDetailsManager = preload("res://scenes/song_select
 var song_edit_manager: SongEditManager = preload("res://scenes/song_select/song_edit_manager.gd").new()
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
 
-var song_metadata_manager = SongMetadataManager 
+var song_metadata_manager = SongLibrary 
 
 @onready var edit_button: Button = $MainVBox/TopBarHBox/EditButton
 @onready var filter_by_letter: OptionButton = $MainVBox/TopBarHBox/FilterByLetter
@@ -33,13 +33,13 @@ func _ready():
 	var game_engine = get_parent()
 	var trans = game_engine.get_transitions()
 	
-	song_metadata_manager = SongMetadataManager
+	song_metadata_manager = SongLibrary
 	
 	setup_managers(trans)  
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 		
-	SongManager.load_songs()
+	SongLibrary.load_songs()
 	
 	add_child(song_list_manager)
 	song_list_manager.set_item_list(song_item_list_ref)
@@ -144,7 +144,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 		var song_path = selected_song_data.get("path", "")
 		
 		if song_path != "":
-			var metadata = song_metadata_manager.get_metadata_for_song(song_path)
+			var metadata = SongLibrary.get_metadata_for_song(song_path)
 			if metadata.is_empty():
 				metadata = {
 					"title": selected_song_data.get("title", "Без названия"),
@@ -155,7 +155,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 				}
 			else:
 				metadata["bpm"] = str(bpm_value)
-			song_metadata_manager.update_metadata(song_path, metadata)
+			SongLibrary.update_metadata(song_path, metadata)
 			
 			if current_selected_song_data.get("path", "") == song_path:
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
@@ -221,7 +221,7 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 			var song_path = song_data.get("path", "")
 			var latest = {}
 			if song_path != "":
-				for s in SongManager.get_songs_list():
+				for s in SongLibrary.get_songs_list():
 					if s.get("path", "") == song_path:
 						latest = s.duplicate(true)
 						break
@@ -238,7 +238,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	var song_path = song_data.get("path", "")
 	
 	if song_path != "":
-		var metadata = song_metadata_manager.get_metadata_for_song(song_path)
+		var metadata = SongLibrary.get_metadata_for_song(song_path)
 		if not metadata.is_empty():
 			for key in metadata:
 				enriched_song_data[key] = metadata[key]
@@ -328,7 +328,7 @@ func _cleanup_file_dialog():
 		file_dialog = null
 
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
 		if song_edit_manager.is_edit_mode_active():
 			var selected_indices = song_item_list_ref.get_selected_items()
 			if selected_indices.size() > 0:
@@ -361,7 +361,7 @@ func _generate_notes_for_current_song():
 	var song_bpm = current_selected_song_data.get("bpm", -1)
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д": return
 
-	var metadata = song_metadata_manager.get_metadata_for_song(song_path)
+	var metadata = SongLibrary.get_metadata_for_song(song_path)
 	var has_genres = metadata.has("genres") and metadata["genres"] != ""
 	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
 
@@ -422,10 +422,10 @@ func _on_delete_pressed():
 
 	var dir = DirAccess.open("res://")
 	if dir and dir.remove(song_path) == OK:
-		song_metadata_manager.remove_metadata(song_path)
+		SongLibrary.remove_metadata(song_path)
 		results_manager.clear_results_for_song(song_path)
 		
-		SongManager.load_songs()
+		SongLibrary.load_songs()
 		
 		song_list_manager.populate_items_grouped()
 		_on_song_list_changed()
@@ -530,7 +530,7 @@ func _on_generation_settings_closed():
 		
 func _on_song_metadata_updated(song_file_path: String):
 	if current_displayed_song_path == song_file_path:
-		for song in SongManager.get_songs_list():
+		for song in SongLibrary.get_songs_list():
 			if song.path == song_file_path:
 				song_details_manager.update_details(song)
 				break
