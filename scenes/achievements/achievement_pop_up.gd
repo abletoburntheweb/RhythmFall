@@ -8,10 +8,14 @@ signal popup_finished
 @onready var description_label: Label = $ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel
 @onready var icon_texture_rect: TextureRect = $ContentContainer/TopRowContainer/IconTexture
 var achievement_data: Dictionary = {}
+const DEFAULT_ICON_PATH := "res://assets/achievements/default.png"
 
 func _ready():
+	z_index = 100
 	if not achievement_data.is_empty():
 		_apply_data()
+	if animation_player:
+		animation_player.animation_finished.connect(_on_animation_player_animation_finished)
 
 func set_achievement_data(ach_data: Dictionary):
 	achievement_data = ach_data.duplicate()
@@ -19,23 +23,24 @@ func set_achievement_data(ach_data: Dictionary):
 		_apply_data()
 
 func _load_achievement_icon(ach_data: Dictionary):
-	var image_path = ach_data.get("image", "")
-	if image_path == "":
+	var image_path = str(ach_data.get("image", ""))
+	var loaded_tex: Texture2D = null
+	if image_path != "" and ResourceLoader.exists(image_path):
+		var tex = ResourceLoader.load(image_path, "Texture2D")
+		if tex and tex is Texture2D:
+			loaded_tex = tex
+	if loaded_tex == null:
 		var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
-		if fallback_path != "":
-			var tex_fb = ResourceLoader.load(fallback_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
+		if fallback_path != "" and ResourceLoader.exists(fallback_path):
+			var tex_fb = ResourceLoader.load(fallback_path, "Texture2D")
 			if tex_fb and tex_fb is Texture2D:
-				icon_texture_rect.texture = tex_fb
-		return
-	var texture = ResourceLoader.load(image_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
-	if texture and texture is Texture2D:
-		icon_texture_rect.texture = texture
-	else:
-		var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
-		if fallback_path != "":
-			var tex_fb = ResourceLoader.load(fallback_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
-			if tex_fb and tex_fb is Texture2D:
-				icon_texture_rect.texture = tex_fb
+				loaded_tex = tex_fb
+	if loaded_tex == null and ResourceLoader.exists(DEFAULT_ICON_PATH):
+		var tex_def = ResourceLoader.load(DEFAULT_ICON_PATH, "Texture2D")
+		if tex_def and tex_def is Texture2D:
+			loaded_tex = tex_def
+	if loaded_tex:
+		icon_texture_rect.texture = loaded_tex
  
 func _ensure_nodes():
 	if title_label == null:

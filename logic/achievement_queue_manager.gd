@@ -20,20 +20,18 @@ func _process_delayed_achievements():
 		call_deferred("_process_queue")
 
 func add_achievement_to_queue(achievement_data: Dictionary):
-	
-	if not is_inside_tree():
-		_delayed_achievements.append(achievement_data)
-		return
-	
 	achievement_queue.append(achievement_data)
-	
-	call_deferred("_process_queue")
+	if is_inside_tree():
+		call_deferred("_process_queue")
+	else:
+		self.tree_entered.connect(_process_queue, CONNECT_ONE_SHOT)
 
 func _process_queue():
 	if is_showing_popup or achievement_queue.is_empty():
 		return
 	
 	if not is_inside_tree():
+		self.tree_entered.connect(_process_queue, CONNECT_ONE_SHOT)
 		return
 	
 	is_showing_popup = true
@@ -46,21 +44,32 @@ func _show_achievement_popup(achievement_data: Dictionary):
 	current_popup = popup_scene.instantiate()
 	
 	var root = get_tree().root
+	var parent_node: Node = root
+	var game_engine_node = root.get_node_or_null("GameEngine")
+	if game_engine_node:
+		var notifications_layer = game_engine_node.get_node_or_null("NotificationsLayer")
+		if notifications_layer:
+			parent_node = notifications_layer
 	
-	root.add_child.call_deferred(current_popup)
-	
-	if current_popup.is_inside_tree():
-		_setup_popup(current_popup, achievement_data)
-	else:
-		current_popup.tree_entered.connect(_on_popup_entered_tree.bind(achievement_data), CONNECT_ONE_SHOT)
+	parent_node.add_child(current_popup)
+	_setup_popup(current_popup, achievement_data)
 
 func _setup_popup(popup: Control, achievement_data: Dictionary):
 	popup.set_achievement_data(achievement_data)
+	popup.anchor_right = 1.0
+	popup.anchor_bottom = 1.0
+	popup.offset_right = 0.0
+	popup.offset_bottom = 0.0
+	popup.position.x = 1420.0
+	popup.position.y = 1081.0
+	popup.z_index = 200
 	
 	if popup.has_signal("popup_finished"):
 		popup.popup_finished.connect(_on_popup_finished, CONNECT_ONE_SHOT)
 	else:
-		get_tree().create_timer(5.0).timeout.connect(_on_popup_finished, CONNECT_ONE_SHOT)
+		get_tree().create_timer(6.5).timeout.connect(_on_popup_finished, CONNECT_ONE_SHOT)
+	# Страховка на случай потери сигнала
+	get_tree().create_timer(6.5).timeout.connect(_on_popup_finished, CONNECT_ONE_SHOT)
 
 func _on_popup_entered_tree(achievement_data: Dictionary):
 	if current_popup and current_popup.is_inside_tree():
@@ -72,8 +81,7 @@ func _on_popup_finished():
 		current_popup = null
 	
 	is_showing_popup = false
-	
-	call_deferred("_process_queue")
+	get_tree().create_timer(0.8).timeout.connect(_process_queue, CONNECT_ONE_SHOT)
 
 func clear_queue():
 	achievement_queue.clear()
@@ -88,3 +96,4 @@ func get_queue_size() -> int:
 
 func is_busy() -> bool:
 	return is_showing_popup
+ 
