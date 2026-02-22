@@ -31,7 +31,6 @@ func read_metadata(filepath: String) -> Dictionary:
 		"duration": "00:00",
 		"file_mtime": FileAccess.get_modified_time(filepath)
 	}
-	# Ленивая загрузка тегов убрана для ускорения старта
 	var filename_stem = filepath.get_file().get_basename()
 	if metadata["title"] == filename_stem:
 		if " - " in filename_stem:

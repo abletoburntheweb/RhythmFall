@@ -724,9 +724,9 @@ func check_hit(lane: int):
 			candidates.append(note)
 
 	if candidates.size() == 0:
-		score_manager.add_miss_hit()
+		score_manager.reset_combo()
 		MusicManager.play_miss_hit_sound()
-		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо" % lane)
+		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо (без штрафа точности)" % lane)
 		return
 
 	var closest_note = candidates[0]

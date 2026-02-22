@@ -219,7 +219,6 @@ func _load():
 		data["profile_created_date"] = Time.get_date_string_from_system()
 		_save() 
 
-	# Синхронизировать лучшие оценки с TrackStatsManager
 	if TrackStatsManager and TrackStatsManager.has_method("get_best_grades_map"):
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
@@ -637,9 +636,8 @@ func increment_login_streak() -> void:
 
 func reset_login_streak() -> void:
 	data["login_streak"] = 0
-	data["last_login_date"] = Time.get_date_string_from_system()
+	data["last_login_date"] = ""
 	_save()
-	_trigger_login_achievement_check()  
 
 func _trigger_login_achievement_check():
 	if game_engine_reference:

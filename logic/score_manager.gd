@@ -68,17 +68,12 @@ func set_total_notes(total: int):
 	update_accuracy()
 
 func update_accuracy():
-	print("[ScoreManager] update_accuracy вызван: missed_notes=%d (%s), total_notes=%d (%s)" % [missed_notes, typeof(missed_notes), total_notes, typeof(total_notes)])
-	if total_notes == 0:
+	var played_notes = hit_notes + missed_notes
+	if played_notes <= 0:
 		accuracy = 100.0
 	else:
-		var intermediate_calc = (float(missed_notes) / total_notes) * 100
-		print("[ScoreManager] Промежуточный расчёт (missed_notes / total_notes) * 100 = (%d / %d) * 100 = %.6f" % [missed_notes, total_notes, intermediate_calc])
-		accuracy = max(0.0, 100.0 - intermediate_calc)
-		print("[ScoreManager] Рассчитанная точность (до max): %.6f" % (100.0 - intermediate_calc))
+		accuracy = (float(hit_notes) / float(played_notes)) * 100.0
 	accuracy = clamp(accuracy, 0.0, 100.0)
-	print("[ScoreManager] Установленная точность (accuracy): %.6f" % accuracy)
-	print("[ScoreManager] Рассчитанная точность: %.2f%% (из %d промахов из %d)" % [accuracy, missed_notes, total_notes])
 
 func get_accuracy() -> float:
 	return accuracy

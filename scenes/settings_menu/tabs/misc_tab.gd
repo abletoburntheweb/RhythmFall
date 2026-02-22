@@ -62,6 +62,7 @@ func _on_clear_all_cache_pressed():
 
 func _on_reset_profile_stats_pressed():
 	PlayerDataManager.reset_profile_statistics() 
+	PlayerDataManager.reset_login_streak()
 	TrackStatsManager.reset_stats()
 	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
 		get_parent().get_parent().get_parent().refresh_stats() 
