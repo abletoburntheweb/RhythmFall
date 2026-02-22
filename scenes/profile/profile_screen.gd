@@ -431,15 +431,6 @@ func _date_key(s: String) -> PackedInt32Array:
 	return PackedInt32Array([year, month, day, hour, minute])
 
 func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
-	var image_path = str(ach.get("image", ""))
-	if image_path != "" and FileAccess.file_exists(image_path):
-		var loaded_resource = ResourceLoader.load(image_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
-		if loaded_resource and loaded_resource is ImageTexture:
-			return loaded_resource
-		var image = Image.new()
-		var err = image.load(image_path)
-		if err == OK:
-			return ImageTexture.create_from_image(image)
 	var category = str(ach.get("category", ""))
 	var fallback_path = ""
 	match category:

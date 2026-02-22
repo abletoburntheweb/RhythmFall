@@ -296,11 +296,6 @@ func _load_texture_cached(path: String) -> ImageTexture:
 	return null
 
 func _get_icon_texture(ach: Dictionary) -> ImageTexture:
-	var image_path = ach.get("image", "") if ach.has("image") else ""
-	if image_path and image_path != "":
-		var tex = _load_texture_cached(image_path)
-		if tex:
-			return tex
 	var category = ach.get("category", "")
 	var fallback_path = ""
 	match category:

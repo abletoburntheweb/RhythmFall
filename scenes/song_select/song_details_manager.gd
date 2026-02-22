@@ -64,7 +64,56 @@ func update_details(song_data: Dictionary):
 	if bpm_label:
 		bpm_label.text = "BPM: " + song_data.get("bpm", "Н/Д")
 	if duration_label:
-		duration_label.text = "Длительность: " + song_data.get("duration", "00:00")
+		var dur = song_data.get("duration", "00:00")
+		duration_label.text = "Длительность: " + dur
+		if dur == "00:00":
+			var path = song_data.get("path", "")
+			if path != "":
+				var ext = path.get_extension().to_lower()
+				var stream = null
+				if ext == "mp3":
+					stream = ResourceLoader.load(path, "AudioStreamMP3")
+				elif ext == "wav":
+					stream = ResourceLoader.load(path, "AudioStreamWAV")
+				if stream and stream is AudioStream:
+					var seconds = stream.get_length()
+					if seconds > 0:
+						var minutes_i = int(seconds) / 60
+						var seconds_i = int(seconds) % 60
+						var dur_str = "%02d:%02d" % [minutes_i, seconds_i]
+						duration_label.text = "Длительность: " + dur_str
+						SongLibrary.update_metadata(path, {"duration": dur_str})
+	if title_label or artist_label or year_label:
+		var path_for_tags = song_data.get("path", "")
+		var title_val = song_data.get("title", "")
+		var artist_val = song_data.get("artist", "Неизвестен")
+		var need_tags = false
+		var stem = ""
+		if path_for_tags != "":
+			stem = path_for_tags.get_file().get_basename()
+		if title_val == stem or artist_val == "Неизвестен":
+			need_tags = true
+		if need_tags and path_for_tags != "":
+			var global_path = ProjectSettings.globalize_path(path_for_tags)
+			if FileAccess.file_exists(global_path):
+				var fa = FileAccess.open(global_path, FileAccess.READ)
+				if fa:
+					var buf = fa.get_buffer(fa.get_length())
+					fa.close()
+					var mm = MusicMetadata.new()
+					mm.set_from_data(buf)
+					var updated = {}
+					if mm.title != "" and title_label:
+						title_label.text = "Название: " + mm.title
+						updated["title"] = mm.title
+					if mm.artist != "" and artist_label:
+						artist_label.text = "Исполнитель: " + mm.artist
+						updated["artist"] = mm.artist
+					if mm.year != 0 and year_label:
+						year_label.text = "Год: " + str(mm.year)
+						updated["year"] = str(mm.year)
+					if not updated.is_empty():
+						SongLibrary.update_metadata(path_for_tags, updated)
 	
 	if primary_genre_label:
 		var genre = song_data.get("primary_genre", "Н/Д")
@@ -77,14 +126,29 @@ func update_details(song_data: Dictionary):
 		if cover_texture and cover_texture is ImageTexture:
 			cover_texture_rect.texture = cover_texture
 		else:
-			var fallback_texture = _get_fallback_cover_texture()
-			if fallback_texture:
-				cover_texture_rect.texture = fallback_texture
-			else:
-				var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
-				gray_image.fill(Color(0.5, 0.5, 0.5, 1.0))
-				var gray_texture = ImageTexture.create_from_image(gray_image)
-				cover_texture_rect.texture = gray_texture
+			var path_for_cover = song_data.get("path", "")
+			var applied = false
+			if path_for_cover != "":
+				var global_path = ProjectSettings.globalize_path(path_for_cover)
+				if FileAccess.file_exists(global_path):
+					var fa = FileAccess.open(global_path, FileAccess.READ)
+					if fa:
+						var buf = fa.get_buffer(fa.get_length())
+						fa.close()
+						var mm = MusicMetadata.new()
+						mm.set_from_data(buf)
+						if mm.cover and mm.cover is ImageTexture:
+							cover_texture_rect.texture = mm.cover
+							applied = true
+			if not applied:
+				var fallback_texture = _get_fallback_cover_texture()
+				if fallback_texture:
+					cover_texture_rect.texture = fallback_texture
+				else:
+					var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
+					gray_image.fill(Color(0.5, 0.5, 0.5, 1.0))
+					var gray_texture = ImageTexture.create_from_image(gray_image)
+					cover_texture_rect.texture = gray_texture
 
 	_update_play_button_state()
 	_update_generation_status() 

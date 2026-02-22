@@ -38,6 +38,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 			if json_parse_result.achievements is Array:
 				var loaded: Array[Dictionary] = []
 				var seen_ids: Dictionary = {}
+				var changed := false
 				for item in json_parse_result.achievements:
 					if item is Dictionary:
 						var ach_id = int(item.get("id", -1))
@@ -49,6 +50,9 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 						if seen_ids.has(ach_id):
 							continue
 						seen_ids[ach_id] = true
+						if item.has("image"):
+							item.erase("image")
+							changed = true
 						if typeof(total_val) == TYPE_NIL:
 							item.total = 1
 						elif typeof(total_val) == TYPE_FLOAT or typeof(total_val) == TYPE_INT:
@@ -67,6 +71,8 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 					else:
 						printerr("[AchievementManager] Найден элемент не типа Dictionary в списке достижений: ", item)
 				achievements = loaded
+				if changed:
+					save_achievements(json_path)
 				new_mastery_achievements.clear()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")

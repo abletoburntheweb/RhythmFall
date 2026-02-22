@@ -31,28 +31,7 @@ func read_metadata(filepath: String) -> Dictionary:
 		"duration": "00:00",
 		"file_mtime": FileAccess.get_modified_time(filepath)
 	}
-	var global_path = ProjectSettings.globalize_path(filepath)
-	if FileAccess.file_exists(global_path):
-		var file_access = FileAccess.open(global_path, FileAccess.READ)
-		if file_access:
-			var file_data = file_access.get_buffer(file_access.get_length())
-			file_access.close()
-			var metadata_instance = MusicMetadata.new()
-			metadata_instance.set_from_data(file_data)
-			if metadata_instance.title != "":
-				metadata["title"] = metadata_instance.title
-			if metadata_instance.artist != "":
-				metadata["artist"] = metadata_instance.artist
-			if metadata_instance.year != 0:
-				metadata["year"] = str(metadata_instance.year)
-			metadata["cover"] = metadata_instance.cover
-	var audio_stream = ResourceLoader.load(filepath, "", ResourceLoader.CACHE_MODE_IGNORE)
-	if audio_stream and audio_stream is AudioStream:
-		var duration_seconds = audio_stream.get_length()
-		if duration_seconds > 0:
-			var minutes = int(duration_seconds) / 60
-			var seconds = int(duration_seconds) % 60
-			metadata["duration"] = "%02d:%02d" % [minutes, seconds]
+	# Ленивая загрузка тегов убрана для ускорения старта
 	var filename_stem = filepath.get_file().get_basename()
 	if metadata["title"] == filename_stem:
 		if " - " in filename_stem:

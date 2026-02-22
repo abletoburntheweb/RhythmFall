@@ -23,11 +23,9 @@ func set_achievement_data(ach_data: Dictionary):
 		_apply_data()
 
 func _load_achievement_icon(ach_data: Dictionary):
-	var image_path = str(ach_data.get("image", ""))
-	var loaded_tex: Texture2D = _load_texture_any(image_path)
-	if loaded_tex == null:
-		var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
-		loaded_tex = _load_texture_any(fallback_path)
+	var loaded_tex: Texture2D = null
+	var fallback_path = _get_fallback_icon_path(ach_data.get("category", ""))
+	loaded_tex = _load_texture_any(fallback_path)
 	if loaded_tex == null:
 		loaded_tex = _load_texture_any(DEFAULT_ICON_PATH)
 	if loaded_tex and icon_texture_rect:
