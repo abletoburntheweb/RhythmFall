@@ -24,7 +24,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
 @onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
 
-var background_service: BackgroundProcessingService = null
+var background_service: GenerationService = null
 @onready var notif_ui: Node = $NotificationsLayer/NotifHBox
 
 func _ready():
@@ -160,7 +160,7 @@ func initialize_logic():
 
 	call_deferred("_handle_player_login")
 	
-	background_service = preload("res://logic/background_processing_service.gd").new(self)
+	background_service = preload("res://logic/generation_service.gd").new(self)
 	add_child(background_service)
 
 func _date_dict_to_string(date_dict: Dictionary) -> String:
@@ -307,7 +307,7 @@ func get_session_history_manager():
 func get_level_layer() -> Control:
 	return $XPContainer 
 
-func get_background_service() -> BackgroundProcessingService:
+func get_background_service() -> GenerationService:
 	return background_service
 
 func get_results_history_service() -> ResultsHistoryService:

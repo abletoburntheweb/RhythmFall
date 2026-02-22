@@ -1,11 +1,10 @@
 # scenes/song_select/song_select.gd
 extends BaseScreen
 
-const ServerClients = preload("res://logic/server_clients.gd")
+const GenerationService = preload("res://logic/generation_service.gd")
 const GenerationSettingsSelectorScene = preload("res://scenes/song_select/generation_settings_selector.tscn")
 
-var server_clients: ServerClients = ServerClients.new()
-var background_service: BackgroundProcessingService = null
+var background_service: GenerationService = null
 var song_list_manager: SongListController = preload("res://scenes/song_select/song_list_controller.gd").new()
 var song_details_manager: SongDetailsManager = preload("res://scenes/song_select/song_details_manager.gd").new()
 var results_manager: ResultsManager = preload("res://scenes/song_select/results_manager.gd").new()
