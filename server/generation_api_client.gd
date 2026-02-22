@@ -12,6 +12,9 @@ signal genres_error(error_message: String)
 signal notes_started
 signal notes_completed(notes_data: Array, bpm_value: float, instrument_type: String)
 signal notes_error(error_message: String)
+signal bpm_status(status: String)
+signal genres_status(status: String)
+signal notes_status(status: String)
 
 var _bpm_thread: Thread = null
 var _genres_thread: Thread = null
@@ -24,6 +27,9 @@ var _notes_req: Dictionary = {}
 var _bpm_res: Dictionary = {}
 var _genres_res: Dictionary = {}
 var _notes_res: Dictionary = {}
+var _bpm_status_queue: Array = []
+var _genres_status_queue: Array = []
+var _notes_status_queue: Array = []
 
 var _bpm_done: bool = false
 var _genres_done: bool = false
@@ -39,6 +45,7 @@ func analyze_bpm(song_path: String):
 	_bpm_res = {}
 	_bpm_done = false
 	_cancel_bpm = false
+	_bpm_status_queue.clear()
 	emit_signal("bpm_started")
 	_bpm_thread = Thread.new()
 	var err = _bpm_thread.start(func(): _bpm_worker(_bpm_req.duplicate()))
@@ -54,6 +61,7 @@ func detect_genres(artist: String, title: String):
 	_genres_req = {"artist": artist, "title": title}
 	_genres_res = {}
 	_genres_done = false
+	_genres_status_queue.clear()
 	emit_signal("genres_started")
 	_genres_thread = Thread.new()
 	var err = _genres_thread.start(func(): _genres_worker(_genres_req.duplicate()))
@@ -80,6 +88,7 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 	_notes_res = {}
 	_notes_done = false
 	_cancel_notes = false
+	_notes_status_queue.clear()
 	emit_signal("notes_started")
 	_notes_thread = Thread.new()
 	var err = _notes_thread.start(func(): _notes_worker(_notes_req.duplicate()))
@@ -103,6 +112,10 @@ func _start_timer(cb: Callable):
 	t.start()
 
 func _check_bpm():
+	if _bpm_status_queue.size() > 0:
+		for s in _bpm_status_queue:
+			emit_signal("bpm_status", s)
+		_bpm_status_queue.clear()
 	if _bpm_done:
 		var t = get_child(get_child_count() - 1)
 		if t and t is Timer:
@@ -119,6 +132,10 @@ func _check_bpm():
 			emit_signal("bpm_error", "Неизвестная ошибка")
 
 func _check_genres():
+	if _genres_status_queue.size() > 0:
+		for s in _genres_status_queue:
+			emit_signal("genres_status", s)
+		_genres_status_queue.clear()
 	if _genres_done:
 		var t = get_child(get_child_count() - 1)
 		if t and t is Timer:
@@ -135,6 +152,10 @@ func _check_genres():
 			emit_signal("genres_error", "Неизвестная ошибка")
 
 func _check_notes():
+	if _notes_status_queue.size() > 0:
+		for s in _notes_status_queue:
+			emit_signal("notes_status", s)
+		_notes_status_queue.clear()
 	if _notes_done:
 		var t = get_child(get_child_count() - 1)
 		if t and t is Timer:
@@ -161,6 +182,7 @@ func _bpm_worker(data_dict: Dictionary):
 		_bpm_res = {"error": "Пустой путь"}
 		_bpm_done = true
 		return
+	_bpm_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host("localhost", 5000)
 	if err != OK:
@@ -174,15 +196,18 @@ func _bpm_worker(data_dict: Dictionary):
 				http_client.close()
 				_bpm_done = true
 				return
+		_bpm_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
+			_bpm_status_queue.append("Открытие файла")
 			var file_access = FileAccess.open(song_path, FileAccess.READ)
 			if not file_access:
 				local_error = "Не удалось открыть файл: " + song_path
 			else:
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
+				_bpm_status_queue.append("Формирование запроса")
 				var boundary = "bpm_boundary_" + str(Time.get_ticks_msec())
 				var body = PackedByteArray()
 				var header = ("--%s\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"%s\"\r\n" + "Content-Type: application/octet-stream\r\n\r\n") % [boundary, song_path.get_file()]
@@ -190,6 +215,7 @@ func _bpm_worker(data_dict: Dictionary):
 				body.append_array(file_data)
 				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
 				var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
+				_bpm_status_queue.append("Отправка данных")
 				http_client.request_raw(HTTPClient.METHOD_POST, "/analyze_bpm", headers, body)
 				http_client.poll()
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
@@ -200,6 +226,7 @@ func _bpm_worker(data_dict: Dictionary):
 						http_client.close()
 						_bpm_done = true
 						return
+				_bpm_status_queue.append("Получение ответа")
 				var response_code = http_client.get_response_code()
 				var response_body = PackedByteArray()
 				while http_client.get_status() == HTTPClient.STATUS_BODY:
@@ -208,6 +235,7 @@ func _bpm_worker(data_dict: Dictionary):
 						break
 					response_body.append_array(chunk)
 					http_client.poll()
+				_bpm_status_queue.append("Обработка ответа")
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
 				if response_code == 200 and response_json and response_json.has("bpm"):
@@ -227,6 +255,7 @@ func _genres_worker(data_dict: Dictionary):
 		_genres_res = {"error": "Пустые поля"}
 		_genres_done = true
 		return
+	_genres_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host("localhost", 5000)
 	if err != OK:
@@ -235,9 +264,11 @@ func _genres_worker(data_dict: Dictionary):
 		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
 			http_client.poll()
 			OS.delay_msec(100)
+		_genres_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
+			_genres_status_queue.append("Отправка запроса")
 			var payload = JSON.stringify({"artist": artist, "title": title}).to_utf8_buffer()
 			var headers = PackedStringArray(["Content-Type: application/json", "Content-Length: " + str(payload.size())])
 			http_client.request_raw(HTTPClient.METHOD_POST, "/get_genres_manual", headers, payload)
@@ -245,6 +276,7 @@ func _genres_worker(data_dict: Dictionary):
 			while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 				http_client.poll()
 				OS.delay_msec(100)
+			_genres_status_queue.append("Получение ответа")
 			var response_code = http_client.get_response_code()
 			var response_body = PackedByteArray()
 			while http_client.get_status() == HTTPClient.STATUS_BODY:
@@ -253,6 +285,7 @@ func _genres_worker(data_dict: Dictionary):
 					break
 				response_body.append_array(chunk)
 				http_client.poll()
+			_genres_status_queue.append("Обработка ответа")
 			var response_text = response_body.get_string_from_utf8()
 			var response_json = JSON.parse_string(response_text)
 			if response_code == 200 and response_json and response_json.has("genres"):
@@ -271,6 +304,7 @@ func _notes_worker(data_dict: Dictionary):
 		_notes_res = {"error": "Пустой путь"}
 		_notes_done = true
 		return
+	_notes_status_queue.append("Подключение к серверу...")
 	var instrument_type = data_dict.get("instrument_type", "drums")
 	var bpm = data_dict.get("bpm", 120.0)
 	var lanes = data_dict.get("lanes", 4)
@@ -286,6 +320,7 @@ func _notes_worker(data_dict: Dictionary):
 		return
 	var audio_data = file_access.get_buffer(file_access.get_length())
 	file_access.close()
+	_notes_status_queue.append("Формирование запроса")
 	var boundary = "notes_boundary_" + str(randi())
 	var body = PackedByteArray()
 	var metadata_json = JSON.stringify({
@@ -319,6 +354,7 @@ func _notes_worker(data_dict: Dictionary):
 				http_client.close()
 				_notes_done = true
 				return
+		_notes_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
@@ -336,6 +372,7 @@ func _notes_worker(data_dict: Dictionary):
 						http_client.close()
 						_notes_done = true
 						return
+				_notes_status_queue.append("Получение ответа")
 				var response_code = http_client.get_response_code()
 				var response_body = PackedByteArray()
 				while http_client.get_status() == HTTPClient.STATUS_BODY:
@@ -344,6 +381,7 @@ func _notes_worker(data_dict: Dictionary):
 						break
 					response_body.append_array(chunk)
 					http_client.poll()
+				_notes_status_queue.append("Обработка ответа")
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
 				if response_code == 200 and response_json is Dictionary:

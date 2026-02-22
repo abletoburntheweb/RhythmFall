@@ -2,7 +2,7 @@
 	"achievements": [
 		{
 			"category": "daily",
-			"current": 2,
+			"current": 1,
 			"description": "Выполните 5 ежедневных заданий",
 			"id": 1.0,
 			"title": "Новичок дня",
@@ -12,7 +12,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 2,
+			"current": 1,
 			"description": "Выполните 20 ежедневных заданий",
 			"id": 2.0,
 			"title": "Настоящее усердие",
@@ -22,7 +22,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 2,
+			"current": 1,
 			"description": "Выполните 50 ежедневных заданий",
 			"id": 3.0,
 			"title": "Работник дня",
@@ -32,7 +32,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 2,
+			"current": 1,
 			"description": "Выполните 100 ежедневных заданий",
 			"id": 4.0,
 			"title": "Ежедневный герой",
@@ -42,7 +42,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 2,
+			"current": 1,
 			"description": "Выполните 250 ежедневных заданий",
 			"id": 5.0,
 			"title": "Мастер привычки",
@@ -102,7 +102,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 300,
+			"current": 90,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"title": "Собиратель I",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 300,
+			"current": 90,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"title": "Собиратель II",
@@ -122,7 +122,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 300,
+			"current": 90,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"title": "Собиратель III",
@@ -187,7 +187,7 @@
 			"id": 19.0,
 			"title": "Первый день",
 			"total": 1,
-			"unlock_date": "22 Фев 2026, 14:03",
+			"unlock_date": "22 Фев 2026, 14:23",
 			"unlocked": true
 		},
 		{
@@ -237,7 +237,7 @@
 			"id": 24.0,
 			"title": "Первый аккорд",
 			"total": 1,
-			"unlock_date": "22 Фев 2026, 14:03",
+			"unlock_date": "22 Фев 2026, 14:23",
 			"unlocked": true
 		},
 		{
@@ -247,7 +247,7 @@
 			"id": 25.0,
 			"title": "Безупречный слух",
 			"total": 1,
-			"unlock_date": "22 Фев 2026, 14:03",
+			"unlock_date": "22 Фев 2026, 14:23",
 			"unlocked": true
 		},
 		{
@@ -287,7 +287,7 @@
 			"id": 29.0,
 			"title": "Первый удар",
 			"total": 1,
-			"unlock_date": "22 Фев 2026, 14:03",
+			"unlock_date": "22 Фев 2026, 14:23",
 			"unlocked": true
 		},
 		{
@@ -297,7 +297,7 @@
 			"id": 30.0,
 			"title": "Чистый ритм",
 			"total": 1,
-			"unlock_date": "22 Фев 2026, 14:03",
+			"unlock_date": "22 Фев 2026, 14:23",
 			"unlocked": true
 		},
 		{

@@ -16,6 +16,10 @@ var _active_bpm_task: Dictionary = {}
 var _active_notes_task: Dictionary = {}
 var _last_bpm_task: Dictionary = {}
 var _last_notes_task: Dictionary = {}
+var _bpm_queue: Array[String] = []
+var _notes_queue: Array[Dictionary] = []
+var _bpm_delay_timer: Timer = null
+var _notes_delay_timer: Timer = null
 
 func _init(game_engine_ref: Node = null):
 	_game_engine = game_engine_ref
@@ -27,6 +31,9 @@ func _init(game_engine_ref: Node = null):
 	_api.notes_started.connect(_on_notes_started)
 	_api.notes_completed.connect(_on_notes_completed)
 	_api.notes_error.connect(_on_notes_error)
+	_api.bpm_status.connect(_on_bpm_status)
+	_api.notes_status.connect(_on_notes_status)
+	_api.genres_status.connect(_on_genres_status)
 
 func _get_display_name(song_path: String) -> String:
 	var meta = SongLibrary.get_metadata_for_song(song_path)
@@ -36,6 +43,7 @@ func _get_display_name(song_path: String) -> String:
 
 func start_bpm_analysis(song_path: String):
 	if _active_bpm_task.has("path"):
+		_bpm_queue.append(song_path)
 		return
 	_active_bpm_task = {"path": song_path, "display": _get_display_name(song_path)}
 	_last_bpm_task = _active_bpm_task.duplicate(true)
@@ -43,6 +51,17 @@ func start_bpm_analysis(song_path: String):
 
 func start_notes_generation(song_path: String, instrument: String, bpm: float, lanes: int, tolerance: float, auto_identify: bool, artist: String, title: String, mode: String):
 	if _active_notes_task.has("path"):
+		_notes_queue.append({
+			"path": song_path,
+			"instrument": instrument,
+			"bpm": bpm,
+			"lanes": lanes,
+			"tolerance": tolerance,
+			"auto_identify": auto_identify,
+			"artist": artist,
+			"title": title,
+			"mode": mode
+		})
 		return
 	_active_notes_task = {
 		"path": song_path,
@@ -104,6 +123,8 @@ func _on_bpm_completed(bpm_value: int):
 	if MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
 	_active_bpm_task.clear()
+	if _bpm_queue.size() > 0:
+		_start_next_bpm_delayed()
 
 func _on_bpm_error(message: String):
 	if not _active_bpm_task.has("path"):
@@ -117,6 +138,14 @@ func _on_bpm_error(message: String):
 	if MusicManager and MusicManager.has_method("play_analysis_error"):
 		MusicManager.play_analysis_error()
 	_active_bpm_task.clear()
+	if _bpm_queue.size() > 0:
+		_start_next_bpm_delayed()
+
+func _on_bpm_status(status: String):
+	if _active_bpm_task.has("path"):
+		var disp = _active_bpm_task.display
+		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
+			_game_engine.notifications_add_or_update("bpm", "%s: %s" % [disp, status], true, "cancel_bpm")
 
 func _on_notes_started():
 	if _active_notes_task.has("path"):
@@ -153,6 +182,8 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	if MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
 	_active_notes_task.clear()
+	if _notes_queue.size() > 0:
+		_start_next_notes_delayed()
 
 func _on_notes_error(message: String):
 	if not _active_notes_task.has("path"):
@@ -167,9 +198,66 @@ func _on_notes_error(message: String):
 	if MusicManager and MusicManager.has_method("play_analysis_error"):
 		MusicManager.play_analysis_error()
 	_active_notes_task.clear()
+	if _notes_queue.size() > 0:
+		_start_next_notes_delayed()
+
+func _on_notes_status(status: String):
+	if _active_notes_task.has("path"):
+		var disp = _active_notes_task.display
+		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
+			_game_engine.notifications_add_or_update("notes", "%s: %s" % [disp, status], true, "cancel_notes")
+
+func _on_genres_status(status: String):
+	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
+		_game_engine.notifications_add_or_update("genres", "Жанры: %s" % status, false, "")
 
 func get_active_bpm_task() -> Dictionary:
 	return _active_bpm_task.duplicate(true)
 
 func get_active_notes_task() -> Dictionary:
 	return _active_notes_task.duplicate(true)
+
+func _get_queue_delay_seconds() -> float:
+	return float(SettingsManager.get_setting("generation_queue_delay_seconds", 5.0))
+
+func _start_next_bpm_delayed():
+	if _bpm_delay_timer == null:
+		_bpm_delay_timer = Timer.new()
+		_bpm_delay_timer.one_shot = true
+		_bpm_delay_timer.timeout.connect(_on_bpm_delay_timeout)
+		add_child(_bpm_delay_timer)
+	_bpm_delay_timer.wait_time = _get_queue_delay_seconds()
+	_bpm_delay_timer.start()
+
+func _on_bpm_delay_timeout():
+	if _bpm_queue.size() == 0:
+		return
+	var next_path = _bpm_queue[0]
+	_bpm_queue.remove_at(0)
+	start_bpm_analysis(next_path)
+
+func _start_next_notes_delayed():
+	if _notes_delay_timer == null:
+		_notes_delay_timer = Timer.new()
+		_notes_delay_timer.one_shot = true
+		_notes_delay_timer.timeout.connect(_on_notes_delay_timeout)
+		add_child(_notes_delay_timer)
+	_notes_delay_timer.wait_time = _get_queue_delay_seconds()
+	_notes_delay_timer.start()
+
+func _on_notes_delay_timeout():
+	if _notes_queue.size() == 0:
+		return
+	var next = _notes_queue[0]
+	_notes_queue.remove_at(0)
+	start_notes_generation(
+		next.get("path", ""),
+		next.get("instrument", "drums"),
+		float(next.get("bpm", 120.0)),
+		int(next.get("lanes", 4)),
+		float(next.get("tolerance", 0.2)),
+		bool(next.get("auto_identify", true)),
+		next.get("artist", ""),
+		next.get("title", ""),
+		next.get("mode", "basic")
+	)
