@@ -4,7 +4,7 @@
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_hq7uf"]
 [ext_resource type="Script" uid="uid://bkldcmlwkw05g" path="res://ui/notification_ui.gd" id="4_358gi"]
-[ext_resource type="Theme" uid="uid://byls6b4qhu2r0" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
+[ext_resource type="Theme" uid="uid://dgur7qq0j57mw" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
 shader = ExtResource("2_q8hsq")

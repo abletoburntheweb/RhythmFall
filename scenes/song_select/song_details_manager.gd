@@ -8,6 +8,7 @@ var year_label: Label = null
 var bpm_label: Label = null
 var duration_label: Label = null
 var primary_genre_label: Label = null
+var play_count_label: Label = null
 var cover_texture_rect: TextureRect = null
 var play_button: Button = null
 
@@ -37,13 +38,14 @@ func set_current_lanes(lanes: int):
 	current_lanes = lanes
 	_update_play_button_state()
 
-func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, genre_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
+func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, genre_lbl: Label, play_count_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button):
 	title_label = title_lbl
 	artist_label = artist_lbl
 	year_label = year_lbl
 	bpm_label = bpm_lbl
 	duration_label = duration_lbl
 	primary_genre_label = genre_lbl
+	play_count_label = play_count_lbl
 	cover_texture_rect = cover_tex_rect
 	play_button = play_btn
 
@@ -120,6 +122,12 @@ func update_details(song_data: Dictionary):
 		if genre == "unknown":
 			genre = "Н/Д"
 		primary_genre_label.text = "Жанр: " + genre
+	if play_count_label:
+		var path = song_data.get("path", "")
+		var count = 0
+		if TrackStatsManager and TrackStatsManager.has_method("get_completion_count"):
+			count = TrackStatsManager.get_completion_count(path)
+		play_count_label.text = "Сыгран: %d раз" % count
 
 	var cover_texture = song_data.get("cover", null)
 	if cover_texture_rect:

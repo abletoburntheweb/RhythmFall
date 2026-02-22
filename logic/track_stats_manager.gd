@@ -5,6 +5,7 @@ const TRACK_STATS_PATH = "user://track_stats.json"
 
 var track_completion_counts: Dictionary = {}
 var genre_play_counts: Dictionary = {}  
+var best_grades_per_track: Dictionary = {}
 var favorite_track: String = ""
 var favorite_track_play_count: int = 0
 var favorite_genre: String = "unknown"  
@@ -21,6 +22,7 @@ func _load():
 		if json_result is Dictionary:
 			track_completion_counts = json_result.get("track_completion_counts", {})
 			genre_play_counts = json_result.get("genre_play_counts", {}) 
+			best_grades_per_track = json_result.get("best_grades_per_track", {})
 			_update_favorite_track()
 			_update_favorite_genre()  
 			print("TrackStatsManager: Загружены статы треков и жанров")
@@ -32,13 +34,15 @@ func _load():
 func _reset_data():
 	track_completion_counts = {}
 	genre_play_counts = {}
+	best_grades_per_track = {}
 	_update_favorite_track()
 	_update_favorite_genre()
 
 func _save():
 	var data_to_save = {
 		"track_completion_counts": track_completion_counts,
-		"genre_play_counts": genre_play_counts  
+		"genre_play_counts": genre_play_counts,
+		"best_grades_per_track": best_grades_per_track
 	}
 	var file_access = FileAccess.open(TRACK_STATS_PATH, FileAccess.WRITE)
 	if file_access:
@@ -109,6 +113,20 @@ func get_favorite_track_count() -> int:
 
 func get_favorite_genre() -> String:
 	return favorite_genre
+
+func get_completion_count(track_path: String) -> int:
+	var normalized = track_path.replace("\\", "/").trim_suffix("/")
+	return int(track_completion_counts.get(normalized, 0))
+
+func set_best_grade_for_track(track_path: String, grade: String):
+	if track_path.is_empty():
+		return
+	var normalized = track_path.replace("\\", "/").trim_suffix("/")
+	best_grades_per_track[normalized] = grade
+	_save()
+
+func get_best_grades_map() -> Dictionary:
+	return best_grades_per_track.duplicate(true)
 
 func reset_stats():
 	_reset_data()

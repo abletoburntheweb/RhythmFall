@@ -4,7 +4,6 @@ extends Node
 signal active_item_changed(category: String, item_id: String)
 
 const PLAYER_DATA_PATH = "user://player_data.json" 
-const BEST_GRADES_PATH = "user://best_grades.json" 
 const TRACK_STATS_PATH = "user://track_stats.json"
 const MAX_LEVEL := 100
 
@@ -220,7 +219,9 @@ func _load():
 		data["profile_created_date"] = Time.get_date_string_from_system()
 		_save() 
 
-	_load_best_grades()
+	# Синхронизировать лучшие оценки с TrackStatsManager
+	if TrackStatsManager and TrackStatsManager.has_method("get_best_grades_map"):
+		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func _save():
 	var active_items_clean = {}
@@ -242,29 +243,9 @@ func _save():
 	else:
 		printerr("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
 
-func _load_best_grades():
-	var file_access = FileAccess.open(BEST_GRADES_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			data["best_grades_per_track"] = json_result
-		else:
-			printerr("PlayerDataManager.gd: best_grades.json повреждён или не является словарём")
-			data["best_grades_per_track"] = {}
-	else:
-		printerr("PlayerDataManager.gd: best_grades.json не найден, создаём пустой")
-		data["best_grades_per_track"] = {}
-
 func _save_best_grades():
-	var file_access = FileAccess.open(BEST_GRADES_PATH, FileAccess.WRITE)
-	if file_access:
-		var json_text = JSON.stringify(data["best_grades_per_track"], "\t")
-		file_access.store_string(json_text)
-		file_access.close()
-	else:
-		printerr("PlayerDataManager.gd: Ошибка при открытии best_grades.json для записи")
+	if TrackStatsManager and TrackStatsManager.has_method("get_best_grades_map"):
+		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func get_currency() -> int:
 	return int(data.get("currency", 0))
@@ -910,6 +891,7 @@ func update_best_grade_for_track(song_path: String, new_grade: String):
 
 		data["best_grades_per_track"][song_path] = new_grade
 
+		if TrackStatsManager and TrackStatsManager.has_method("set_best_grade_for_track"):
+			TrackStatsManager.set_best_grade_for_track(song_path, new_grade)
 		_save()  
-		_save_best_grades()  
 		

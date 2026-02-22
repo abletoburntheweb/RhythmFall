@@ -1381,23 +1381,23 @@ custom_minimum_size = Vector2(1920, 100)
 layout_mode = 2
 
 [node name="SongListVBox" type="Control" parent="MainVBox/ContentHBox"]
-custom_minimum_size = Vector2(1300, 600)
+custom_minimum_size = Vector2(1400, 600)
 layout_mode = 2
 
 [node name="SongItemList" type="ItemList" parent="MainVBox/ContentHBox/SongListVBox"]
 custom_minimum_size = Vector2(1300, 600)
 layout_mode = 0
-offset_right = 1300.0
-offset_bottom = 825.0
+offset_right = 1400.0
+offset_bottom = 853.0
 theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 
 [node name="ResultsItemList" type="ItemList" parent="MainVBox/ContentHBox/SongListVBox"]
 visible = false
-custom_minimum_size = Vector2(1300, 600)
+custom_minimum_size = Vector2(1400, 600)
 layout_mode = 0
 offset_right = 1300.0
-offset_bottom = 825.0
+offset_bottom = 853.0
 theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 
@@ -1447,6 +1447,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Жанр"
 
+[node name="PlayCountLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Сыгран: 0 раз"
+
 [node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 
@@ -1485,29 +1490,6 @@ theme_type_variation = &"FlatResultsButton"
 theme_override_font_sizes/font_size = 20
 text = "Результаты
 "
-
-[node name="BPMList" type="Label" parent="MainVBox/ContentHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Daft Punk - Around the World.mp3 - 121 bpm
-beat1 - 104 bpm
-BUTTERFLY SCISSORS - Blooming.mp3 - 93 bpm
-Simply - BLAH BLAH BLAH.mp3 - 93 bpm
-Daydreaming.mp3 - 114 bpm
-Biology - Fox Vibes.mp3 - 61 bpm
-Awasetsu Mona - Heart Killa.mp3 - 101 bpm
-hyperpop5demo.mp3 - 157 bpm
-Stray Kids - I Like It .mp3 - 146 bpm
-Killshot - Eminem.mp3 - 106 bpm
-hako - listen!.mp3 - 134 bpm
-TAAR - Move Along.mp3 - 109 bpm
-NF - MOTTO.mp3 - 160 bpm
-MOTTO - NF.mp3 - 80 bpm
-Play Dead - Kala - 135 bpm
-synth3.mp3 - 100 bpm
-Kayzo - WASTE AWAY.mp3 - 150 bpm
-Stray Kids - We Go.mp3 - 87 bpm
-Ouse - Why Did You Tell Me.mp3 - 80 bpm"
 
 [connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
 [connection signal="text_changed" from="MainVBox/TopBarHBox/SearchBar" to="." method="_on_search_text_changed"]

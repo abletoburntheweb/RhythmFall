@@ -43,6 +43,7 @@ offset_top = 1081.0
 offset_bottom = 125.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme = ExtResource("1_uk2ul")
 script = ExtResource("1_3ety8")
 
