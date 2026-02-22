@@ -56,24 +56,13 @@ func _show_achievement_popup(achievement_data: Dictionary):
 
 func _setup_popup(popup: Control, achievement_data: Dictionary):
 	popup.set_achievement_data(achievement_data)
-	popup.anchor_right = 1.0
-	popup.anchor_bottom = 1.0
-	popup.offset_right = 0.0
-	popup.offset_bottom = 0.0
-	popup.position.x = 1420.0
-	popup.position.y = 1081.0
-	popup.z_index = 200
-	
 	if popup.has_signal("popup_finished"):
 		popup.popup_finished.connect(_on_popup_finished, CONNECT_ONE_SHOT)
 	else:
 		get_tree().create_timer(6.5).timeout.connect(_on_popup_finished, CONNECT_ONE_SHOT)
-	# Страховка на случай потери сигнала
-	get_tree().create_timer(6.5).timeout.connect(_on_popup_finished, CONNECT_ONE_SHOT)
 
 func _on_popup_entered_tree(achievement_data: Dictionary):
-	if current_popup and current_popup.is_inside_tree():
-		_setup_popup(current_popup, achievement_data)
+	pass
 
 func _on_popup_finished():
 	if current_popup:
