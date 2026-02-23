@@ -6,10 +6,6 @@ const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 const SHOP_JSON_PATH := "res://data/shop_data.json"
 const DEFAULT_ACHIEVEMENT_ICON_PATH := "res://assets/achievements/default.png"
 
-const MONTHS_RU_SHORT = [
-	"Янв", "Фев", "Мар", "Апр", "Мая", "Июн",
-	"Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
-]
 
 var player_data_mgr = null 
 var notification_mgr = null
@@ -153,12 +149,10 @@ func _perform_unlock(achievement: Dictionary):
 
 	var date = Time.get_date_dict_from_system()
 	var time = Time.get_time_dict_from_system()
-
-	var day = date.day
-	var month = MONTHS_RU_SHORT[date.month - 1]
-	var year = date.year
-	var time_str = "%02d:%02d" % [time.hour, time.minute] 
-	achievement.unlock_date = "%d %s %d, %s" % [day, month, year, time_str]
+	var TimeUtils = preload("res://logic/utils/time_utils.gd")
+	var date_text = TimeUtils.format_date_parts_ru(int(date.get("day", 1)), int(date.get("month", 1)), int(date.get("year", 2000)))
+	var time_str = "%02d:%02d" % [int(time.get("hour", 0)), int(time.get("minute", 0))]
+	achievement.unlock_date = "%s, %s" % [date_text, time_str]
 
 	save_achievements()
 

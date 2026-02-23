@@ -9,6 +9,7 @@ signal popup_finished
 @onready var icon_texture_rect: TextureRect = $ContentContainer/TopRowContainer/IconTexture
 var achievement_data: Dictionary = {}
 const DEFAULT_ICON_PATH := "res://assets/achievements/default.png"
+var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
 
 func _ready():
 	z_index = 100
@@ -62,18 +63,7 @@ func _ensure_nodes():
 		animation_player = get_node_or_null("PopupAnimator")
  
 func _get_fallback_icon_path(category: String) -> String:
-	match category:
-		"mastery": return "res://assets/achievements/mastery.png"
-		"drums": return "res://assets/achievements/drums.png"
-		"genres": return "res://assets/achievements/genres.png"
-		"system": return "res://assets/achievements/system.png"
-		"shop": return "res://assets/achievements/shop.png"
-		"economy": return "res://assets/achievements/economy.png"
-		"daily": return "res://assets/achievements/daily.png"
-		"playtime": return "res://assets/achievements/playtime.png"
-		"events": return "res://assets/achievements/events.png"
-		"level": return "res://assets/achievements/level.png"
-		_: return "res://assets/achievements/default.png"
+	return AchievementsUtils.icon_path_for_category(category)
  
 func _apply_data():
 	_ensure_nodes()

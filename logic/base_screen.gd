@@ -37,7 +37,7 @@ func cleanup_before_exit() -> void:
 	pass
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
+	if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed) or event.is_action_pressed("ui_cancel"):
 		accept_event()
 		_on_back_pressed()
 

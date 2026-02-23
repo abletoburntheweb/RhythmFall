@@ -196,7 +196,8 @@ func refresh_stats():
 	play_time_label.text = "Времени в игре: %s" % play_time_ru 
 	if start_date_label:
 		var created_str = str(PlayerDataManager.data.get("profile_created_date", ""))
-		var display = _format_date_ru(created_str)
+		var TimeUtils = preload("res://logic/utils/time_utils.gd")
+		var display = TimeUtils.format_iso_date_ru(created_str)
 		start_date_label.text = "В RhythmFall с %s" % display
 	if daily_quests_completed_label:
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
@@ -245,30 +246,6 @@ func refresh_stats():
 		_update_accuracy_chart()
 	_update_recent_achievements()
 
-func _format_date_ru(date_str: String) -> String:
-	if date_str == "":
-		var d = Time.get_date_dict_from_system()
-		return _format_date_dict_ru(d)
-	var parts = date_str.split("-")
-	if parts.size() == 3:
-		var year = int(parts[0])
-		var month = int(parts[1])
-		var day = int(parts[2])
-		return _format_date_parts_ru(day, month, year)
-	return date_str
-
-func _format_date_dict_ru(d: Dictionary) -> String:
-	return _format_date_parts_ru(int(d.get("day", 1)), int(d.get("month", 1)), int(d.get("year", 2000)))
-
-func _format_date_parts_ru(day: int, month: int, year: int) -> String:
-	var months = {
-		1: "янв.", 2: "фев.", 3: "мар.", 4: "апр.", 5: "мая",
-		6: "июн.", 7: "июл.", 8: "авг.", 9: "сен.", 10: "окт.", 11: "ноя.", 12: "дек."
-	}
-	var m = months.get(month, "")
-	if m == "":
-		m = str(month)
-	return "%d %s %d" % [day, m, year]
 func _on_daily_quests_updated():
 	if daily_quests_completed_label:
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
@@ -385,19 +362,13 @@ func _update_recent_achievements():
 			card.visible = true
 		else:
 			card = ACHIEVEMENT_CARD_SCENE.instantiate()
-		card.title = str(ach.get("title", ""))
-		card.description = str(ach.get("description", ""))
-		card.progress_text = _get_progress_text(ach)
-		card.is_unlocked = true
-		card.unlock_date_text = str(ach.get("unlock_date", ""))
-		var icon_tex = _load_achievement_icon(ach)
-		if icon_tex:
-			card.icon_texture = icon_tex
 		achievements_list_vbox.add_child(card)
+		card.apply_achievement(ach, achievement_manager)
 
 func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
-	var ka = _date_key(str(a.get("unlock_date", "")))
-	var kb = _date_key(str(b.get("unlock_date", "")))
+	var TimeUtils = preload("res://logic/utils/time_utils.gd")
+	var ka = TimeUtils.unlock_date_key(str(a.get("unlock_date", "")))
+	var kb = TimeUtils.unlock_date_key(str(b.get("unlock_date", "")))
 	if ka[0] != kb[0]:
 		return ka[0] > kb[0]
 	if ka[1] != kb[1]:
@@ -408,43 +379,12 @@ func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
 		return ka[3] > kb[3]
 	return ka[4] > kb[4]
 
-func _date_key(s: String) -> PackedInt32Array:
-	var parts = s.split(",")
-	if parts.size() != 2:
-		return PackedInt32Array([0,0,0,0,0])
-	var date_part = parts[0].strip_edges()
-	var time_part = parts[1].strip_edges()
-	var dparts = date_part.split(" ")
-	if dparts.size() < 3:
-		return PackedInt32Array([0,0,0,0,0])
-	var day = int(dparts[0])
-	var month_str = dparts[1]
-	var year = int(dparts[2])
-	var months = {
-		"Янв": 1, "Фев": 2, "Мар": 3, "Апр": 4, "Мая": 5, "Июн": 6,
-		"Июл": 7, "Авг": 8, "Сен": 9, "Окт": 10, "Ноя": 11, "Дек": 12
-	}
-	var month = int(months.get(month_str, 0))
-	var tparts = time_part.split(":")
-	var hour = tparts[0].to_int() if tparts.size() >= 1 else 0
-	var minute = tparts[1].to_int() if tparts.size() >= 2 else 0
-	return PackedInt32Array([year, month, day, hour, minute])
+ 
 
 func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
 	var category = str(ach.get("category", ""))
-	var fallback_path = ""
-	match category:
-		"mastery": fallback_path = "res://assets/achievements/mastery.png"
-		"drums": fallback_path = "res://assets/achievements/drums.png"
-		"genres":  fallback_path = "res://assets/achievements/genres.png"
-		"system": fallback_path = "res://assets/achievements/system.png"
-		"shop": fallback_path = "res://assets/achievements/shop.png"
-		"economy": fallback_path = "res://assets/achievements/economy.png"
-		"daily": fallback_path = "res://assets/achievements/daily.png"
-		"playtime": fallback_path = "res://assets/achievements/playtime.png"
-		"events": fallback_path = "res://assets/achievements/events.png"
-		"level": fallback_path = "res://assets/achievements/level.png"
-		_: fallback_path = "res://assets/achievements/default.png"
+	var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd")
+	var fallback_path = AchievementsUtils.icon_path_for_category(category)
 	if FileAccess.file_exists(fallback_path):
 		var loaded_default_resource = ResourceLoader.load(fallback_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
 		if loaded_default_resource and loaded_default_resource is ImageTexture:
@@ -457,32 +397,6 @@ func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
 	dummy_image.set_pixel(0, 0, Color.WHITE)
 	return ImageTexture.create_from_image(dummy_image)
 
-func _get_progress_text(achievement: Dictionary) -> String:
-	var current = achievement.get("current", 0)
-	var total = achievement.get("total", 1)
-	var unlocked = achievement.get("unlocked", false)
-	var category = achievement.get("category", "")
-	if category == "playtime" and achievement_manager:
-		var formatted = achievement_manager.get_formatted_achievement_progress(int(achievement.get("id", -1)))
-		if formatted:
-			var display_total = str(int(total)) if total == floor(total) else "%0.2f" % [total]
-			if unlocked:
-				return "%s / %s" % [display_total, display_total]
-			else:
-				return "%s / %s" % [formatted.current, display_total]
-	if category == "level":
-		if unlocked:
-			return "%d / %d" % [int(total), int(total)]
-		else:
-			return "%d / %d" % [int(current), int(total)]
-	if typeof(current) == TYPE_BOOL:
-		return "%d / %d" % [int(current), 1]
-	var display_current = current
-	if unlocked and typeof(current) != TYPE_FLOAT:
-		display_current = min(current, total)
-	if typeof(display_current) == TYPE_FLOAT:
-		return "%d / %d" % [int(display_current), int(total)]
-	return "%d / %d" % [int(display_current), int(total)]
 
 func _update_accuracy_chart():
 	if accuracy_chart_line == null or accuracy_chart_points == null or chart_background == null:
