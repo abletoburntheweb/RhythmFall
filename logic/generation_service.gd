@@ -63,6 +63,7 @@ func _init(game_engine_ref: Node = null):
 	_api.bpm_status.connect(_on_bpm_status)
 	_api.notes_status.connect(_on_notes_status)
 	_api.genres_status.connect(_on_genres_status)
+	_api.genres_completed.connect(_on_genres_completed)
 
 func _get_display_name(song_path: String) -> String:
 	var meta = SongLibrary.get_metadata_for_song(song_path)
@@ -213,7 +214,9 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 		fa.close()
 	notes_completed.emit(path, instrument_type, disp)
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
-		_game_engine.notifications_complete("notes", "Ноты сгенерированы для %s" % disp)
+		var instr_code = "П" if instrument_type.to_lower() == "drums" else instrument_type.substr(0, 1).to_upper()
+		var mode_code = "Б" if gen_mode.to_lower() == "basic" else "У"
+		_game_engine.notifications_complete("notes", "%s: Генерация завершена: %s %s %d" % [disp, instr_code, mode_code, int(lanes_val)])
 	if MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
 	_active_notes_task.clear()
@@ -226,9 +229,7 @@ func _on_notes_error(message: String):
 	var disp = _active_notes_task.display
 	notes_error.emit(_active_notes_task.path, message, disp)
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_error"):
-		var show_msg = message
-		if show_msg.find("подключиться") != -1:
-			show_msg = "Ошибка генерации: нет подключения к серверу"
+		var show_msg = "%s: Ошибка %s" % [disp, message]
 		_game_engine.notifications_error("notes", show_msg, "retry_notes", "cancel_notes")
 	if MusicManager and MusicManager.has_method("play_analysis_error"):
 		MusicManager.play_analysis_error()
@@ -247,8 +248,18 @@ func _on_notes_status(status: String):
 		notes_progress.emit(_active_notes_task.path, k, _NOTES_STAGES.size(), status)
 
 func _on_genres_status(status: String):
-	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-		_game_engine.notifications_add_or_update("genres", "Жанры: %s" % status, false, "")
+	pass
+
+func _on_genres_completed(artist: String, title: String, genres: Array):
+	var path = ""
+	if _active_notes_task.has("path"):
+		path = _active_notes_task.path
+	elif _last_notes_task.has("path"):
+		path = _last_notes_task.path
+	if path != "":
+		var primary = str(genres[0]) if genres.size() > 0 else "unknown"
+		print("[Genres] Update for %s: %s (primary: %s)" % [path, ", ".join(genres), primary])
+		SongLibrary.update_metadata(path, {"genres": genres, "primary_genre": primary})
 
 func get_active_bpm_task() -> Dictionary:
 	return _active_bpm_task.duplicate(true)

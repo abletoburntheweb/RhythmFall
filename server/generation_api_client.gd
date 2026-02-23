@@ -172,8 +172,16 @@ func _check_notes():
 			generate_notes(req.song_path, req.instrument_type, req.bpm, req.lanes, req.sync_tolerance, false, "Unknown", "Unknown", req.generation_mode)
 		elif _notes_res.has("notes"):
 			emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
+			if _notes_res.has("track_info"):
+				var ti = _notes_res.track_info
+				var artist = str(ti.get("artist", "Unknown"))
+				var title = str(ti.get("title", "Unknown"))
+				var genres = ti.get("genres", [])
+				if genres is Array:
+					emit_signal("genres_completed", artist, title, genres)
 		else:
 			emit_signal("notes_error", "Неизвестная ошибка")
+
 
 func _bpm_worker(data_dict: Dictionary):
 	var local_result = {}
@@ -343,6 +351,15 @@ func _notes_worker(data_dict: Dictionary):
 			var boundary = "notes_boundary_" + str(randi())
 			var task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
 			var body = PackedByteArray()
+			var client_meta = SongLibrary.get_metadata_for_song(song_path)
+			var client_genres_arr: Array = []
+			var client_genres_str = str(client_meta.get("genres", ""))
+			if client_genres_str.strip_edges() != "":
+				for part in client_genres_str.split(","):
+					var s = str(part).strip_edges()
+					if s != "":
+						client_genres_arr.append(s)
+			var client_primary_genre = str(client_meta.get("primary_genre", ""))
 			var metadata_json = JSON.stringify({
 				"original_filename": song_path.get_file(),
 				"bpm": bpm,
@@ -353,7 +370,9 @@ func _notes_worker(data_dict: Dictionary):
 				"auto_identify_track": auto_identify,
 				"manual_artist": manual_artist,
 				"manual_title": manual_title,
-				"progress_delay_seconds": 2.0
+				"progress_delay_seconds": 2.0,
+				"genres": client_genres_arr,
+				"primary_genre": client_primary_genre
 			})
 			var metadata_part = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"metadata\"\r\n" + "Content-Type: application/json\r\n\r\n" + metadata_json + "\r\n"
 			body.append_array(metadata_part.to_utf8_buffer())
@@ -428,7 +447,8 @@ func _notes_worker(data_dict: Dictionary):
 							"notes": response_json["notes"],
 							"bpm": response_json.get("bpm", bpm),
 							"lanes": response_json.get("lanes", lanes),
-							"instrument_type": response_json.get("instrument_type", instrument_type)
+							"instrument_type": response_json.get("instrument_type", instrument_type),
+							"track_info": response_json.get("track_info", {})
 						}
 					else:
 						local_error = "Ответ не содержит нот"

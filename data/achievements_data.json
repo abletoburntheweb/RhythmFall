@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 1.5,
+			"current": 2.55,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
@@ -342,7 +342,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 1.5,
+			"current": 2.55,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
@@ -352,7 +352,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 1.5,
+			"current": 2.55,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 1.5,
+			"current": 2.55,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 1.5,
+			"current": 2.55,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",
