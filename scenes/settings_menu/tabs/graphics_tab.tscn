@@ -2377,6 +2377,7 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="FullscreenCheckBox" type="CheckBox" parent="ContentVBox"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme = SubResource("Theme_p28av")
 theme_override_font_sizes/font_size = 24
@@ -2387,10 +2388,11 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ContentVBox/FPS"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "FPS:"
 
 [node name="FPSOptionButton" type="OptionButton" parent="ContentVBox/FPS"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme = SubResource("Theme_p28av")
 theme_type_variation = &"Dropdown"

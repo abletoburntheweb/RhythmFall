@@ -458,3 +458,6 @@ func play_instrument_select_sound(instrument_type: String):
 		play_sfx(sound_file_name) 
 	else:
 		print("MusicManager: Файл звука инструмента не найден: ", full_path)
+
+func get_music_player() -> AudioStreamPlayer:
+	return music_player

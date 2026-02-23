@@ -148,7 +148,11 @@ func _init_rhythm_notifier():
 	rhythm_notifier = RhythmNotifier.new()
 	add_child(rhythm_notifier)
 	rhythm_notifier.bpm = bpm
-	rhythm_notifier.running = true
+	rhythm_notifier.running = false
+	if MusicManager.has_method("get_music_player"):
+		var mp = MusicManager.get_music_player()
+		if mp:
+			rhythm_notifier.audio_stream_player = mp
 	rhythm_notifier.beats(4).connect(_on_strong_beat)
 	rhythm_notifier.beats(1.0).connect(_on_any_beat)
 
@@ -498,7 +502,8 @@ func _update_game():
 	
 	if rhythm_notifier:
 		rhythm_notifier.bpm = bpm
-		rhythm_notifier.current_position = MusicManager.get_current_music_position()
+		if rhythm_notifier.audio_stream_player == null:
+			rhythm_notifier.current_position = MusicManager.get_current_music_position()
 	
 	if debug_menu:
 		debug_menu.auto_play_simulate(self)
