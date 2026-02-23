@@ -71,6 +71,8 @@ var victory_delay_timer: Timer = null
 
 var gameplay_started: bool = false
 
+var rhythm_notifier: RhythmNotifier = null
+
 const HIT_WINDOW_PERFECT: float = 0.05
 const HIT_WINDOW_GOOD: float = 0.15
 
@@ -110,6 +112,7 @@ func _ready():
 	_update_active_sounds_from_player_data()
 	PlayerDataManager.active_item_changed.connect(_on_active_item_changed)
  
+	_init_rhythm_notifier()
 
 	game_timer = Timer.new()
 	game_timer.wait_time = GAME_UPDATE_DELTA  
@@ -140,6 +143,38 @@ func _ready():
 	restart_timer.wait_time = 1.5  
 	restart_timer.timeout.connect(_on_restart_confirmed)
 	add_child(restart_timer)
+	
+func _init_rhythm_notifier():
+	rhythm_notifier = RhythmNotifier.new()
+	add_child(rhythm_notifier)
+	rhythm_notifier.bpm = bpm
+	rhythm_notifier.running = true
+	rhythm_notifier.beats(4).connect(_on_strong_beat)
+	rhythm_notifier.beats(1.0).connect(_on_any_beat)
+
+func _on_any_beat(_i):
+	_pulse_hit_zone(false)
+
+func _on_strong_beat(_i):
+	_pulse_hit_zone(true)
+
+func _pulse_hit_zone(strong: bool):
+	var hit_zone = get_node_or_null("HitZone") as ColorRect
+	if not hit_zone:
+		return
+	var original_color = hit_zone.color
+	hit_zone.color = Color(1, 1, 1, 1) if strong else Color(0.95, 0.95, 0.95, 1)
+	var t := Timer.new()
+	t.one_shot = true
+	t.wait_time = 0.08
+	t.timeout.connect(func():
+		if is_instance_valid(hit_zone):
+			hit_zone.color = original_color
+		if is_instance_valid(t):
+			t.queue_free()
+	)
+	add_child(t)
+	t.start()
 	
 func _on_active_item_changed(category: String, item_id: String):
 	if category == "Notes":
@@ -460,6 +495,10 @@ func _update_game():
 		note_manager.spawn_notes() 
 	
 	update_ui()
+	
+	if rhythm_notifier:
+		rhythm_notifier.bpm = bpm
+		rhythm_notifier.current_position = MusicManager.get_current_music_position()
 	
 	if debug_menu:
 		debug_menu.auto_play_simulate(self)
