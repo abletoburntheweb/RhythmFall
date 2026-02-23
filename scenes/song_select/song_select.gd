@@ -54,6 +54,7 @@ func _ready():
 		$MainVBox/ContentHBox/DetailsVBox/DurationLabel,
 		$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel,
 		$MainVBox/ContentHBox/DetailsVBox/PlayCountLabel,
+		$MainVBox/ContentHBox/DetailsVBox/BestGradeLabel,
 		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect,
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton
 	)

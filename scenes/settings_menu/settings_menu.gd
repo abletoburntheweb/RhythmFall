@@ -11,8 +11,6 @@ var achievement_manager = null
 @onready var tab_container: TabContainer = $MainVBox/ContentContainer/SettingsTabContainer
 @onready var back_button: Button = $MainVBox/BackButton
 
- 
-
 func _ready():
 	var parent_node = get_parent()
 	var trans = null
@@ -88,17 +86,21 @@ func _connect_signals():
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
 
+func _switch_tab(index: int):
+	if tab_container:
+		tab_container.current_tab = index
+
 func _on_sound_tab_pressed():
-	tab_container.current_tab = 0
+	_switch_tab(0)
 
 func _on_graphics_tab_pressed():
-	tab_container.current_tab = 1
+	_switch_tab(1)
 
 func _on_controls_tab_pressed():
-	tab_container.current_tab = 2
+	_switch_tab(2)
 
 func _on_misc_tab_pressed():
-	tab_container.current_tab = 3
+	_switch_tab(3)
 
 func _execute_close_transition():
 	if transitions:

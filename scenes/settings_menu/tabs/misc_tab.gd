@@ -6,21 +6,27 @@ signal settings_changed
 var song_metadata_manager = SongLibrary 
 const FILES_TO_CLEAR := ["best_grades.json", "session_history.json"]
 
-@onready var clear_achievements_button: Button = $ContentVBox/ClearAchievementsButton
+@onready var reset_confirm_dialog: ConfirmationDialog = $ResetConfirmDialog
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
 @onready var clear_all_cache_button: Button = $ContentVBox/ClearAllCacheButton
 @onready var reset_all_settings_button: Button = $ContentVBox/ResetAllSettingsButton
 @onready var reset_profile_stats_button: Button = $ContentVBox/ResetProfileStatsButton
-@onready var clear_all_results_button: Button = $ContentVBox/ClearAllResultsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 @onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
 
 
+func _ready():
+	if reset_confirm_dialog:
+		reset_confirm_dialog.confirmed.connect(_confirm_reset_profile_stats)
+ 
+ 
  
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongLibrary
 	_apply_initial_settings()
+
+ 
 
  
 
@@ -38,11 +44,6 @@ func _on_debug_menu_toggled(enabled: bool):
 	SettingsManager.set_enable_debug_menu(enabled)
 	emit_signal("settings_changed")
 
-func _on_clear_achievements_pressed():
-	var game_engine = get_tree().root.get_node("GameEngine")
-	if game_engine and game_engine.has_method("get_achievement_manager"):
-		var achievement_manager = game_engine.get_achievement_manager()
-		achievement_manager.reset_all_achievements_and_player_data(PlayerDataManager)
 
 func _on_reset_bpm_batch_pressed():
 	var current_cache = song_metadata_manager._metadata_cache
@@ -61,18 +62,18 @@ func _on_clear_all_cache_pressed():
 	emit_signal("settings_changed")
 
 func _on_reset_profile_stats_pressed():
-	PlayerDataManager.reset_profile_statistics() 
-	PlayerDataManager.reset_login_streak()
-	TrackStatsManager.reset_stats()
-	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
-		get_parent().get_parent().get_parent().refresh_stats() 
+	if reset_confirm_dialog:
+		reset_confirm_dialog.popup_centered()
+	else:
+		_confirm_reset_profile_stats()
 
 func _on_reset_all_settings_pressed():
 	SettingsManager.reset_all_settings()
 	_apply_initial_settings()
 	emit_signal("settings_changed")
 
-func _on_clear_all_results_pressed():
+
+func _clear_all_results_internal():
 	var results_dir_path = "user://results"
 	var dir_access = DirAccess.open(results_dir_path)
 	if dir_access:
@@ -91,9 +92,16 @@ func _on_clear_all_results_pressed():
 		if file_access:
 			file_access.store_string("{}")  
 			file_access.close()
-	emit_signal("settings_changed")
  
 	
+func _confirm_reset_profile_stats():
+	PlayerDataManager.reset_profile_statistics() 
+	PlayerDataManager.reset_login_streak()
+	TrackStatsManager.reset_stats()
+	_clear_all_results_internal()
+	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
+		get_parent().get_parent().get_parent().refresh_stats() 
+	emit_signal("settings_changed")
 func _on_enable_genre_detection_toggled(enabled: bool):
 	SettingsManager.set_setting("enable_genre_detection", enabled)
 	SettingsManager.save_settings()

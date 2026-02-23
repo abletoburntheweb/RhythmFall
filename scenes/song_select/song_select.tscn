@@ -1388,7 +1388,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(1300, 600)
 layout_mode = 0
 offset_right = 1400.0
-offset_bottom = 853.0
+offset_bottom = 884.0
 theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 
@@ -1396,8 +1396,8 @@ theme_override_font_sizes/font_size = 22
 visible = false
 custom_minimum_size = Vector2(1400, 600)
 layout_mode = 0
-offset_right = 1300.0
-offset_bottom = 853.0
+offset_right = 1400.0
+offset_bottom = 884.0
 theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 
@@ -1451,6 +1451,11 @@ text = "Жанр"
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Сыгран: 0 раз"
+
+[node name="BestGradeLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Лучшая оценка:"
 
 [node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
