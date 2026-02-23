@@ -4,10 +4,12 @@ class_name GenerationService
 signal bpm_started(song_path: String, display_name: String)
 signal bpm_completed(song_path: String, bpm_value: int, display_name: String)
 signal bpm_error(song_path: String, message: String, display_name: String)
+signal bpm_progress(song_path: String, stage_index: int, total: int, status: String)
 
 signal notes_started(song_path: String, display_name: String)
 signal notes_completed(song_path: String, instrument: String, display_name: String)
 signal notes_error(song_path: String, message: String, display_name: String)
+signal notes_progress(song_path: String, stage_index: int, total: int, status: String)
 
 var _api: GenerationApiClient = null
 var _game_engine: Node = null
@@ -20,6 +22,33 @@ var _bpm_queue: Array[String] = []
 var _notes_queue: Array[Dictionary] = []
 var _bpm_delay_timer: Timer = null
 var _notes_delay_timer: Timer = null
+
+var _BPM_STAGES := [
+	"Подключение к серверу...",
+	"Соединение установлено",
+	"Открытие файла",
+	"Формирование запроса",
+	"Отправка данных",
+	"Получение ответа",
+	"Обработка ответа"
+]
+var _NOTES_STAGES := [
+	"Подключение к серверу...",
+	"Соединение установлено",
+	"Идентификация трека...",
+	"Определение жанров...",
+	"Разделение на стемы...",
+	"Детекция ударных...",
+	"Назначение линий...",
+	"Сохранение нот...",
+	"Формирование ответа..."
+]
+
+func _stage_index_for(status: String, stages: Array) -> int:
+	for i in range(stages.size()):
+		if status.begins_with(stages[i]):
+			return i + 1
+	return 0
 
 func _init(game_engine_ref: Node = null):
 	_game_engine = game_engine_ref
@@ -109,7 +138,8 @@ func _on_bpm_started():
 		var disp = _active_bpm_task.display
 		bpm_started.emit(path, disp)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			_game_engine.notifications_add_or_update("bpm", "Вычисление BPM для %s" % disp, true, "cancel_bpm")
+			var total := 1 + _bpm_queue.size()
+			_game_engine.notifications_add_or_update("bpm", "Вычисление BPM для %s (1/%d)" % [disp, total], true, "cancel_bpm")
 
 func _on_bpm_completed(bpm_value: int):
 	if not _active_bpm_task.has("path"):
@@ -144,15 +174,20 @@ func _on_bpm_error(message: String):
 func _on_bpm_status(status: String):
 	if _active_bpm_task.has("path"):
 		var disp = _active_bpm_task.display
+		var total := 1 + _bpm_queue.size()
+		var k := _stage_index_for(status, _BPM_STAGES)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			_game_engine.notifications_add_or_update("bpm", "%s: %s" % [disp, status], true, "cancel_bpm")
+			var stage_info := ("(%d/%d)" % [k, _BPM_STAGES.size()]) if k > 0 else ""
+			_game_engine.notifications_add_or_update("bpm", "%s (1/%d) %s: %s" % [disp, total, stage_info, status], true, "cancel_bpm")
+		bpm_progress.emit(_active_bpm_task.path, k, _BPM_STAGES.size(), status)
 
 func _on_notes_started():
 	if _active_notes_task.has("path"):
 		var disp = _active_notes_task.display
 		notes_started.emit(_active_notes_task.path, disp)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s" % disp, true, "cancel_notes")
+			var total := 1 + _notes_queue.size()
+			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s (1/%d)" % [disp, total], true, "cancel_notes")
 
 func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	if not _active_notes_task.has("path"):
@@ -204,8 +239,12 @@ func _on_notes_error(message: String):
 func _on_notes_status(status: String):
 	if _active_notes_task.has("path"):
 		var disp = _active_notes_task.display
+		var total := 1 + _notes_queue.size()
+		var k := _stage_index_for(status, _NOTES_STAGES)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			_game_engine.notifications_add_or_update("notes", "%s: %s" % [disp, status], true, "cancel_notes")
+			var stage_info := ("(%d/%d)" % [k, _NOTES_STAGES.size()]) if k > 0 else ""
+			_game_engine.notifications_add_or_update("notes", "%s (1/%d) %s: %s" % [disp, total, stage_info, status], true, "cancel_notes")
+		notes_progress.emit(_active_notes_task.path, k, _NOTES_STAGES.size(), status)
 
 func _on_genres_status(status: String):
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
@@ -219,6 +258,23 @@ func get_active_notes_task() -> Dictionary:
 
 func _get_queue_delay_seconds() -> float:
 	return float(SettingsManager.get_setting("generation_queue_delay_seconds", 5.0))
+
+func get_bpm_queue_position(song_path: String) -> int:
+	if _active_bpm_task.has("path") and _active_bpm_task.path == song_path:
+		return 1
+	for i in range(_bpm_queue.size()):
+		if _bpm_queue[i] == song_path:
+			return i + 2
+	return 0
+
+func get_notes_queue_position(song_path: String) -> int:
+	if _active_notes_task.has("path") and _active_notes_task.path == song_path:
+		return 1
+	for i in range(_notes_queue.size()):
+		var item = _notes_queue[i]
+		if item.has("path") and item.path == song_path:
+			return i + 2
+	return 0
 
 func _start_next_bpm_delayed():
 	if _bpm_delay_timer == null:

@@ -421,6 +421,7 @@ func _generate_notes_for_current_song():
 			"",
 			current_generation_mode
 		)
+		_apply_background_status_ui()
 
 func _on_delete_pressed():
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -491,6 +492,7 @@ func _on_analyze_bpm_pressed():
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Загрузка..."
 	if background_service:
 		background_service.start_bpm_analysis(song_path)
+		_apply_background_status_ui()
 
 func _on_play_pressed():
 	if current_selected_song_data.is_empty():
@@ -524,16 +526,20 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 func _apply_background_status_ui():
 	if not background_service:
 		return
-	var bpm_task = background_service.get_active_bpm_task()
-	if not bpm_task.is_empty():
-		if bpm_task.get("path", "") == current_displayed_song_path:
-			analyze_bpm_button.text = "Вычисление..."
-			analyze_bpm_button.disabled = true
-	var notes_task = background_service.get_active_notes_task()
-	if not notes_task.is_empty():
-		if notes_task.get("path", "") == current_displayed_song_path:
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	var pos_bpm = background_service.get_bpm_queue_position(current_displayed_song_path)
+	if pos_bpm == 1:
+		analyze_bpm_button.text = "Вычисление..."
+		analyze_bpm_button.disabled = true
+	elif pos_bpm > 1:
+		analyze_bpm_button.text = "В очереди (%d)" % pos_bpm
+		analyze_bpm_button.disabled = true
+	var pos_notes = background_service.get_notes_queue_position(current_displayed_song_path)
+	if pos_notes == 1:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	elif pos_notes > 1:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "В очереди (%d)" % pos_notes
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
 	var inst_abbr = "П" if instrument == "drums" else "С"

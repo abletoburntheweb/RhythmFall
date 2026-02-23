@@ -36,10 +36,7 @@ func _ready():
 	
 	_initialize_display_settings()
 	_connect_level_signals()
-	var theme_path = "res://ui/theme/app_theme.tres"
-	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
-	theme = app_theme
-	ResourceSaver.save(app_theme, theme_path)
+	_initialize_theme()
 	_update_currency_ui()
 
 func _connect_level_signals():
@@ -75,6 +72,12 @@ func on_currency_changed():
 func _initialize_display_settings():
 	_apply_window_settings()
 	_update_fps_visibility()
+
+func _initialize_theme():
+	var theme_path = "res://ui/theme/app_theme.tres"
+	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
+	theme = app_theme
+	ResourceSaver.save(app_theme, theme_path)
 
 func _update_fps_visibility():
 	match SettingsManager.get_fps_mode():

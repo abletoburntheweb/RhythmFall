@@ -167,6 +167,7 @@ func _check_notes():
 		if _notes_res.has("error"):
 			emit_signal("notes_error", _notes_res.error)
 		elif _notes_res.has("manual_identification_required"):
+			_notes_status_queue.append("Требуется ручная идентификация трека")
 			var req = _notes_req
 			generate_notes(req.song_path, req.instrument_type, req.bpm, req.lanes, req.sync_tolerance, false, "Unknown", "Unknown", req.generation_mode)
 		elif _notes_res.has("notes"):
@@ -184,6 +185,7 @@ func _bpm_worker(data_dict: Dictionary):
 		return
 	_bpm_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
+	_notes_status_queue.append("Подключение к серверу...")
 	var err = http_client.connect_to_host("localhost", 5000)
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
@@ -313,34 +315,6 @@ func _notes_worker(data_dict: Dictionary):
 	var manual_artist = data_dict.get("manual_artist", "")
 	var manual_title = data_dict.get("manual_title", "")
 	var generation_mode = data_dict.get("generation_mode", "basic")
-	var file_access = FileAccess.open(song_path, FileAccess.READ)
-	if not file_access:
-		_notes_res = {"error": "Не удалось открыть файл"}
-		_notes_done = true
-		return
-	var audio_data = file_access.get_buffer(file_access.get_length())
-	file_access.close()
-	_notes_status_queue.append("Формирование запроса")
-	var boundary = "notes_boundary_" + str(randi())
-	var body = PackedByteArray()
-	var metadata_json = JSON.stringify({
-		"original_filename": song_path.get_file(),
-		"bpm": bpm,
-		"lanes": lanes,
-		"instrument_type": instrument_type,
-		"sync_tolerance": sync_tolerance,
-		"generation_mode": generation_mode,
-		"auto_identify_track": auto_identify,
-		"manual_artist": manual_artist,
-		"manual_title": manual_title
-	})
-	var metadata_part = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"metadata\"\r\n" + "Content-Type: application/json\r\n\r\n" + metadata_json + "\r\n"
-	body.append_array(metadata_part.to_utf8_buffer())
-	var file_part_header = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"upload.mp3\"\r\n" + "Content-Type: audio/mpeg\r\n\r\n"
-	body.append_array(file_part_header.to_utf8_buffer())
-	body.append_array(audio_data)
-	var closing_boundary = "\r\n--" + boundary + "--\r\n"
-	body.append_array(closing_boundary.to_utf8_buffer())
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host("localhost", 5000)
 	if err != OK:
@@ -358,15 +332,77 @@ func _notes_worker(data_dict: Dictionary):
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
-			var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
+			var file_access = FileAccess.open(song_path, FileAccess.READ)
+			if not file_access:
+				_notes_res = {"error": "Не удалось открыть файл"}
+				http_client.close()
+				_notes_done = true
+				return
+			var audio_data = file_access.get_buffer(file_access.get_length())
+			file_access.close()
+			var boundary = "notes_boundary_" + str(randi())
+			var task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
+			var body = PackedByteArray()
+			var metadata_json = JSON.stringify({
+				"original_filename": song_path.get_file(),
+				"bpm": bpm,
+				"lanes": lanes,
+				"instrument_type": instrument_type,
+				"sync_tolerance": sync_tolerance,
+				"generation_mode": generation_mode,
+				"auto_identify_track": auto_identify,
+				"manual_artist": manual_artist,
+				"manual_title": manual_title,
+				"progress_delay_seconds": 2.0
+			})
+			var metadata_part = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"metadata\"\r\n" + "Content-Type: application/json\r\n\r\n" + metadata_json + "\r\n"
+			body.append_array(metadata_part.to_utf8_buffer())
+			var file_part_header = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"upload.mp3\"\r\n" + "Content-Type: audio/mpeg\r\n\r\n"
+			body.append_array(file_part_header.to_utf8_buffer())
+			body.append_array(audio_data)
+			var closing_boundary = "\r\n--" + boundary + "--\r\n"
+			body.append_array(closing_boundary.to_utf8_buffer())
+			var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary, "X-Task-Id: " + task_id])
 			err = http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, body)
 			if err != OK:
 				local_error = "Ошибка отправки: " + str(err)
 			else:
 				http_client.poll()
+				var last_poll := Time.get_ticks_msec()
+				var last_count := 0
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 					http_client.poll()
 					OS.delay_msec(100)
+					if Time.get_ticks_msec() - last_poll >= 800:
+						var poll_client = HTTPClient.new()
+						var perr = poll_client.connect_to_host("localhost", 5000)
+						if perr == OK:
+							while poll_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
+								poll_client.poll()
+								OS.delay_msec(50)
+							if poll_client.get_status() == HTTPClient.STATUS_CONNECTED:
+								var q: String = "/task_status?task_id=" + task_id
+								poll_client.request_raw(HTTPClient.METHOD_GET, q, PackedStringArray(), PackedByteArray())
+								while poll_client.get_status() == HTTPClient.STATUS_REQUESTING:
+									poll_client.poll()
+									OS.delay_msec(50)
+								var response_body = PackedByteArray()
+								while poll_client.get_status() == HTTPClient.STATUS_BODY:
+									var chunk = poll_client.read_response_body_chunk()
+									if chunk.size() == 0:
+										break
+									response_body.append_array(chunk)
+									poll_client.poll()
+								var txt = response_body.get_string_from_utf8()
+								var js = JSON.parse_string(txt)
+								if js and js.has("statuses"):
+									var statuses = js["statuses"]
+									if statuses is Array:
+										for i in range(last_count, statuses.size()):
+											_notes_status_queue.append(str(statuses[i]))
+										last_count = statuses.size()
+						poll_client.close()
+						last_poll = Time.get_ticks_msec()
 					if _cancel_notes:
 						_notes_res = {"error": "Операция отменена"}
 						http_client.close()
