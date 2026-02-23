@@ -1,4 +1,5 @@
 extends RefCounted
+class_name TimeUtils
 
 static func _month_short_ru(month: int) -> String:
 	var m = {
@@ -67,3 +68,12 @@ static func unlock_date_key(s: String) -> PackedInt32Array:
 	var hour = tparts[0].to_int() if tparts.size() >= 1 else 0
 	var minute = tparts[1].to_int() if tparts.size() >= 2 else 0
 	return PackedInt32Array([year, month, day, hour, minute])
+
+static func format_iso_to_ddmmyyyy_hhmmss(date_str: String) -> String:
+	if date_str.length() >= 19 and date_str[4] == '-' and date_str[7] == '-' and (date_str[10] == ' ' or date_str[10] == 'T') and date_str[13] == ':' and date_str[16] == ':':
+		var year_v = date_str.substr(0, 4)
+		var month_v = date_str.substr(5, 2)
+		var day_v = date_str.substr(8, 2)
+		var time_part_v = date_str.substr(11, 8)
+		return "%s.%s.%s %s" % [day_v, month_v, year_v, time_part_v]
+	return date_str

@@ -88,8 +88,8 @@ func _update_currency_label():
 	if main_vbox:
 		var v_box_container = main_vbox.get_node("VBoxContainer")
 		if v_box_container:
-			var currency_label = v_box_container.get_node("CurrencyLabel")
-			if currency_label:
+			var currency_label = v_box_container.find_child("CurrencyLabel", true, false)
+			if currency_label and currency_label is Label:
 				currency_label.text = "Валюта: %d" % PlayerDataManager.get_currency() 
 			else:
 				printerr("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
@@ -129,8 +129,8 @@ func _update_shop_progress_label():
 			unlocked += 1
 	var main_vbox = $MainContent/MainVBox
 	if main_vbox:
-		var progress_label = main_vbox.get_node("CounterLabel")
-		if progress_label:
+		var progress_label = main_vbox.find_child("CounterLabel", true, false)
+		if progress_label and progress_label is Label:
 			progress_label.text = "Открыто: %d / %d" % [unlocked, total_items]
 func _initialize_categories_default():
 	_update_category_buttons("Все")
@@ -158,7 +158,10 @@ func _create_item_cards():
 		card.queue_free()
 	item_cards.clear()
 	var items = shop_data.get("items", [])
-	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
+	var main_vbox = $MainContent/MainVBox
+	var grid_container = null
+	if main_vbox:
+		grid_container = main_vbox.find_child("ItemsGrid", true, false)
 	if not grid_container:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
 		return
@@ -220,7 +223,10 @@ func _on_category_selected(category: String):
 	if category == current_category:
 		_update_category_buttons(category)
 		return
-	var grid_container = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer/ItemsGridCenter/ItemsGridBottomMargin/ItemsGrid
+	var root_container = $MainContent/MainVBox
+	var grid_container = null
+	if root_container:
+		grid_container = root_container.find_child("ItemsGrid", true, false)
 	if not grid_container:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
 		return
@@ -238,7 +244,9 @@ func _on_category_selected(category: String):
 				processed = 0
 	_update_category_buttons(category)
 	current_category = category
-	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
+	var items_scroll = null
+	if root_container:
+		items_scroll = root_container.find_child("ItemsScroll", true, false)
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
 		items_scroll.scroll_horizontal = 0
@@ -400,31 +408,37 @@ func _find_item_by_id(item_id: String) -> Dictionary:
 			return item
 	return {}
 
+func _compute_unlock_state(item_data: Dictionary) -> Dictionary:
+	var achievement_unlocked = false
+	var achievement_name = ""
+	var level_unlocked = false
+	var daily_unlocked = false
+	if item_data.get("is_level_reward", false):
+		var required_level = item_data.get("required_level", 0)
+		var current_level = PlayerDataManager.get_current_level()
+		level_unlocked = current_level >= required_level
+	elif item_data.get("is_achievement_reward", false):
+		var achievement_id_str = item_data.get("achievement_required", "")
+		if achievement_id_str != "" and achievement_id_str.is_valid_int():
+			var achievement_id = int(achievement_id_str)
+			achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
+			achievement_name = _get_achievement_name_by_id(achievement_id_str)
+	elif item_data.get("is_daily_reward", false):
+		var required_daily = int(item_data.get("required_daily_completed", 0))
+		var total_completed = PlayerDataManager.get_daily_quests_completed_total()
+		daily_unlocked = total_completed >= required_daily
+	return {
+		"achievement_unlocked": achievement_unlocked,
+		"achievement_name": achievement_name,
+		"level_unlocked": level_unlocked,
+		"daily_unlocked": daily_unlocked
+	}
+
 func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 	for card in item_cards:
 		if card.item_data.get("item_id", "") == item_id:
-			var achievement_unlocked = false
-			var achievement_name = ""
-			var level_unlocked = false
-			var item_data = card.item_data 
-			var daily_unlocked = false
-			
-			if item_data.get("is_level_reward", false):
-				var required_level = item_data.get("required_level", 0)
-				var current_level = PlayerDataManager.get_current_level()
-				level_unlocked = current_level >= required_level
-			elif item_data.get("is_achievement_reward", false):
-				var achievement_id_str = item_data.get("achievement_required", "")
-				if achievement_id_str != "" and achievement_id_str.is_valid_int():
-					var achievement_id = int(achievement_id_str)
-					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
-					achievement_name = _get_achievement_name_by_id(achievement_id_str)
-			elif item_data.get("is_daily_reward", false):
-				var required_daily = int(item_data.get("required_daily_completed", 0))
-				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
-				daily_unlocked = total_completed >= required_daily
-			
-			card.update_state(purchased, active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
+			var st = _compute_unlock_state(card.item_data)
+			card.update_state(purchased, active, true, st.achievement_unlocked, st.achievement_name, st.level_unlocked, st.daily_unlocked)
 			break
 
 func _update_all_item_cards_in_category(category: String, active_item_id: String):
@@ -434,29 +448,8 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 		if internal_category == category:
 			var is_purchased = PlayerDataManager.is_item_unlocked(card.item_data.item_id)
 			var is_active = (card.item_data.item_id == active_item_id)
-			
-			var achievement_unlocked = false
-			var achievement_name = ""
-			var level_unlocked = false
-			var item_data = card.item_data
-			var daily_unlocked = false
-			
-			if item_data.get("is_level_reward", false):
-				var required_level = item_data.get("required_level", 0)
-				var current_level = PlayerDataManager.get_current_level()
-				level_unlocked = current_level >= required_level
-			elif item_data.get("is_achievement_reward", false):
-				var achievement_id_str = item_data.get("achievement_required", "")
-				if achievement_id_str != "" and achievement_id_str.is_valid_int():
-					var achievement_id = int(achievement_id_str)
-					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(achievement_id)
-					achievement_name = _get_achievement_name_by_id(achievement_id_str)
-			elif item_data.get("is_daily_reward", false):
-				var required_daily = int(item_data.get("required_daily_completed", 0))
-				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
-				daily_unlocked = total_completed >= required_daily
-			
-			card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
+			var st = _compute_unlock_state(card.item_data)
+			card.update_state(is_purchased, is_active, true, st.achievement_unlocked, st.achievement_name, st.level_unlocked, st.daily_unlocked)
 
 func _cleanup_gallery_internal():
 	if current_cover_gallery:

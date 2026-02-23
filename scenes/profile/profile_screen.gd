@@ -150,11 +150,6 @@ func refresh_stats():
 					var fallback_texture = _get_fallback_cover_texture()
 					if fallback_texture:
 						favorite_cover_texture_rect.texture = fallback_texture
-					else:
-						var gray_image = Image.create(400, 400, false, Image.FORMAT_RGBA8)
-						gray_image.fill(Color(0.5, 0.5, 0.5, 1.0))
-						var gray_texture = ImageTexture.create_from_image(gray_image)
-						favorite_cover_texture_rect.texture = gray_texture
 		if favorite_title_label:
 			favorite_title_label.text = "Название: " + title_text
 		if favorite_artist_label:

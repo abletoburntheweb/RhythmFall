@@ -63,12 +63,12 @@ func _ready():
 		
 	background_service = game_engine.get_background_service()
 	if background_service:
-		background_service.bpm_started.connect(func(_path, _disp): _on_bpm_analysis_started())
-		background_service.bpm_completed.connect(func(_path, bpm_value, _disp): _on_bpm_analysis_completed(bpm_value))
-		background_service.bpm_error.connect(func(_path, _msg, _disp): _on_bpm_analysis_error(_msg))
-		background_service.notes_started.connect(func(_path, _disp): _on_notes_generation_started())
-		background_service.notes_completed.connect(func(_path, _instr, _disp): _on_notes_generation_completed([], 0.0, _instr))
-		background_service.notes_error.connect(func(_path, msg, _disp): _on_notes_generation_error(msg))
+		background_service.bpm_started.connect(_on_bpm_started)
+		background_service.bpm_completed.connect(_on_bpm_completed)
+		background_service.bpm_error.connect(_on_bpm_error)
+		background_service.notes_started.connect(_on_notes_started)
+		background_service.notes_completed.connect(_on_notes_completed)
+		background_service.notes_error.connect(_on_notes_error)
 		var bpm_task = background_service.get_active_bpm_task()
 		if not bpm_task.is_empty():
 			_on_bpm_analysis_started()
@@ -125,6 +125,24 @@ func _connect_ui_signals():
 		cover_rect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
 	if not primary_genre_label.gui_input.is_connected(_on_gui_input_for_label):
 		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
+ 
+func _on_bpm_started(_path, _disp):
+	_on_bpm_analysis_started()
+ 
+func _on_bpm_completed(_path, bpm_value, _disp):
+	_on_bpm_analysis_completed(bpm_value)
+ 
+func _on_bpm_error(_path, msg, _disp):
+	_on_bpm_analysis_error(msg)
+ 
+func _on_notes_started(_path, _disp):
+	_on_notes_generation_started()
+ 
+func _on_notes_completed(_path, instr, _disp):
+	_on_notes_generation_completed([], 0.0, instr)
+ 
+func _on_notes_error(_path, msg, _disp):
+	_on_notes_generation_error(msg)
 	
 func _on_bpm_analysis_started():
 	analyze_bpm_button.text = "Вычисление..."

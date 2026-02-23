@@ -6,12 +6,13 @@ signal cover_selected(index: int)
 
 @export var images_folder: String = ""
 @export var images_count: int = 0
+@export var reveal_delay: float = 0.25
 
 var cover_image_rects: Array[TextureRect] = []
-var _texture_cache: Dictionary = {}
-var _is_loading: bool = false
-var _pending_paths: Array = []
-var _poll_timer: Timer = null
+var _path_to_rect: Dictionary = {}
+var _loaded_textures: Dictionary = {}
+var _reveal_timer: Timer = null
+var _loader: ThreadedTextureLoader = null
 
 func _ready():
 	var grid_container = $GalleryContainer/GridMargin/Content
@@ -34,66 +35,53 @@ func _ready():
 	show()
 
 func _load_images_threaded():
-	if _is_loading:
-		return
-	_is_loading = true
 	for i in range(cover_image_rects.size()):
 		var image_rect = cover_image_rects[i]
 		image_rect.texture = null
-		image_rect.visible = (i < images_count)
+		image_rect.visible = false
 		if image_rect:
 			image_rect.custom_minimum_size = Vector2(350, 350)
 			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	_pending_paths.clear()
+	_path_to_rect.clear()
+	_loaded_textures.clear()
+	var loader_script = preload("res://logic/utils/threaded_texture_loader.gd")
+	_loader = loader_script.get_instance()
+	if _loader:
+		_loader.loaded.connect(_on_loader_loaded)
 	for i in range(images_count):
 		var index = i + 1
 		var image_path = images_folder + "/cover" + str(index) + ".png"
 		if FileAccess.file_exists(image_path):
-			_pending_paths.append(image_path)
-			ResourceLoader.load_threaded_request(image_path, "Texture")
-	if _poll_timer == null:
-		_poll_timer = Timer.new()
-		_poll_timer.wait_time = 0.05
-		_poll_timer.one_shot = false
-		_poll_timer.timeout.connect(_on_poll_threaded)
-		add_child(_poll_timer)
-	_poll_timer.start()
+			_path_to_rect[image_path] = cover_image_rects[i]
+			if _loader:
+				_loader.request(image_path)
+	if _reveal_timer == null:
+		_reveal_timer = Timer.new()
+		_reveal_timer.one_shot = true
+		_reveal_timer.wait_time = reveal_delay
+		_reveal_timer.timeout.connect(_on_reveal_timeout)
+		add_child(_reveal_timer)
+	_reveal_timer.start()
 
-func _on_poll_threaded():
-	if _pending_paths.is_empty():
-		if _poll_timer:
-			_poll_timer.stop()
-		_apply_textures_batch()
-		_is_loading = false
-		return
-	var completed: Array = []
-	for path in _pending_paths:
-		var status = ResourceLoader.load_threaded_get_status(path)
-		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			var tex = ResourceLoader.load_threaded_get(path)
-			if tex and tex is Texture:
-				_texture_cache[path] = tex
-			completed.append(path)
-		elif status == ResourceLoader.THREAD_LOAD_FAILED:
-			completed.append(path)
-	for path in completed:
-		_pending_paths.erase(path)
+func _on_loader_loaded(path: String, tex: Texture2D) -> void:
+	if tex:
+		_loaded_textures[path] = tex
 
 func _apply_textures_batch():
+	pass
+
+func _on_reveal_timeout():
 	var i = 0
 	for rect in cover_image_rects:
 		if i >= images_count:
 			rect.visible = false
 		else:
 			var path = images_folder + "/cover" + str(i + 1) + ".png"
-			if _texture_cache.has(path):
-				rect.texture = _texture_cache[path]
-				rect.visible = true
-				rect.custom_minimum_size = Vector2(350, 350)
-				rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-			else:
-				rect.texture = null
-				rect.visible = true
+			var tex: Texture2D = _loaded_textures.get(path, null)
+			rect.texture = tex
+			rect.visible = true
+			rect.custom_minimum_size = Vector2(350, 350)
+			rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		i += 1
 
 

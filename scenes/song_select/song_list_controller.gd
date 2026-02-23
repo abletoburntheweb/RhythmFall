@@ -42,73 +42,12 @@ func populate_items():
 func populate_items_grouped():
 	if not item_list:
 		return
-	var previous_path = ""
-	var selected_indices = item_list.get_selected_items() if item_list else []
-	if selected_indices.size() > 0:
-		var si = selected_indices[0]
-		if si >= 0 and si < current_grouped_data.size():
-			var prev_item = current_grouped_data[si]
-			if prev_item.type == "song":
-				previous_path = prev_item.data.get("path", "")
+	var prev = _get_selected_song_path()
 	item_list.clear()
-	current_grouped_data.clear()
-	var songs_list = SongLibrary.get_songs_list()
-	if songs_list.is_empty():
-		emit_signal("song_list_changed")
-		return
-	if current_filter_mode == "title":
-		songs_list.sort_custom(func(a, b):
-			var title_a = a.get("title", "").to_lower()
-			var title_b = b.get("title", "").to_lower()
-			return title_a < title_b
-		)
-	else:
-		songs_list.sort_custom(func(a, b):
-			var artist_a = a.get("artist", "").to_lower()
-			var artist_b = b.get("artist", "").to_lower()
-			return artist_a < artist_b
-		)
-	var groups = {}
-	for song_data in songs_list:
-		var first_char = get_first_letter(get_filter_field_value(song_data).to_lower())
-		if first_char == "":
-			first_char = "?"
-		if not groups.has(first_char):
-			groups[first_char] = []
-		groups[first_char].append(song_data)
-	var sorted_letters = groups.keys()
-	sorted_letters.sort()
-	for letter in sorted_letters:
-		var songs_in_group = groups[letter]
-		var header_text = "%d %s" % [songs_in_group.size(), letter.to_upper()]
-		current_grouped_data.append({
-			"type": "header",
-			"text": header_text,
-			"letter": letter,
-			"expanded": true
-		})
-		for song_data in songs_in_group:
-			current_grouped_data.append({
-				"type": "song",
-				"data": song_data.duplicate(true)
-			})
-	for item_data in current_grouped_data:
-		if item_data.type == "header":
-			var display_text = item_data.text
-			var item_index = item_list.add_item(display_text)
-			item_list.set_item_custom_bg_color(item_index, Color(0.2, 0.2, 0.2, 1.0))
-			item_list.set_item_selectable(item_index, false)
-		else:
-			var song_data = item_data.data
-			var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
-			item_list.add_item(display_text)
+	current_grouped_data = _build_grouped_data(_sorted_songs(SongLibrary.get_songs_list()))
+	_render_grouped_data()
 	emit_signal("song_list_changed")
-	if previous_path != "":
-		for i in range(current_grouped_data.size()):
-			var it = current_grouped_data[i]
-			if it.type == "song" and it.data.get("path", "") == previous_path:
-				item_list.select(i, true)
-				break
+	_reselect_previous(prev)
 
 func update_song_count_label(count_label: Label):
 	if count_label:
@@ -133,78 +72,20 @@ func _on_item_selected(index):
 func filter_items(filter_text: String):
 	if not item_list:
 		return
-	var previous_path = ""
-	var selected_indices = item_list.get_selected_items() if item_list else []
-	if selected_indices.size() > 0:
-		var si = selected_indices[0]
-		if si >= 0 and si < current_grouped_data.size():
-			var prev_item = current_grouped_data[si]
-			if prev_item.type == "song":
-				previous_path = prev_item.data.get("path", "")
+	var prev = _get_selected_song_path()
 	item_list.clear()
-	current_grouped_data.clear()
-	var songs_list = SongLibrary.get_songs_list()
 	if filter_text.is_empty():
-		populate_items_grouped()
-		return
-	var filtered_songs = []
-	for song_data in songs_list:
-		var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
-		if filter_text.to_lower() in display_text.to_lower():
-			filtered_songs.append(song_data)
-	if current_filter_mode == "title":
-		filtered_songs.sort_custom(func(a, b):
-			var title_a = a.get("title", "").to_lower()
-			var title_b = b.get("title", "").to_lower()
-			return title_a < title_b
-		)
+		current_grouped_data = _build_grouped_data(_sorted_songs(SongLibrary.get_songs_list()))
 	else:
-		filtered_songs.sort_custom(func(a, b):
-			var artist_a = a.get("artist", "").to_lower()
-			var artist_b = b.get("artist", "").to_lower()
-			return artist_a < artist_b
-		)
-	var groups = {}
-	for song_data in filtered_songs:
-		var first_char = get_first_letter(get_filter_field_value(song_data).to_lower())
-		if first_char == "":
-			first_char = "?"
-		if not groups.has(first_char):
-			groups[first_char] = []
-		groups[first_char].append(song_data)
-	var sorted_letters = groups.keys()
-	sorted_letters.sort()
-	for letter in sorted_letters:
-		var songs_in_group = groups[letter]
-		var header_text = "%d %s" % [songs_in_group.size(), group_key_to_text(letter)]
-		current_grouped_data.append({
-			"type": "header",
-			"text": "%d %s" % [songs_in_group.size(), letter.to_upper()],
-			"letter": letter,
-			"expanded": true
-		})
-		for song_data in songs_in_group:
-			current_grouped_data.append({
-				"type": "song",
-				"data": song_data.duplicate(true)
-			})
-	for item_data in current_grouped_data:
-		if item_data.type == "header":
-			var display_text = item_data.text
-			var item_index = item_list.add_item(display_text)
-			item_list.set_item_custom_bg_color(item_index, Color(0.2, 0.2, 0.2, 1.0))
-			item_list.set_item_selectable(item_index, false)
-		else:
-			var song_data = item_data.data
+		var filtered = []
+		for song_data in SongLibrary.get_songs_list():
 			var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
-			item_list.add_item(display_text)
+			if filter_text.to_lower() in display_text.to_lower():
+				filtered.append(song_data)
+		current_grouped_data = _build_grouped_data(_sorted_songs(filtered))
+	_render_grouped_data()
 	emit_signal("song_list_changed")
-	if previous_path != "":
-		for i in range(current_grouped_data.size()):
-			var it = current_grouped_data[i]
-			if it.type == "song" and it.data.get("path", "") == previous_path:
-				item_list.select(i, true)
-				break
+	_reselect_previous(prev)
 
 func group_key_to_text(letter: String) -> String:
 	return letter.to_upper()
@@ -524,3 +405,77 @@ func _cleanup_edit_context():
 
 func _on_dialog_closed():
 	_cleanup_edit_context()
+
+func _sorted_songs(songs_list: Array) -> Array:
+	var arr = songs_list.duplicate()
+	if current_filter_mode == "title":
+		arr.sort_custom(func(a, b):
+			var title_a = a.get("title", "").to_lower()
+			var title_b = b.get("title", "").to_lower()
+			return title_a < title_b
+		)
+	else:
+		arr.sort_custom(func(a, b):
+			var artist_a = a.get("artist", "").to_lower()
+			var artist_b = b.get("artist", "").to_lower()
+			return artist_a < artist_b
+		)
+	return arr
+
+func _build_grouped_data(songs_list: Array) -> Array:
+	var groups = {}
+	for song_data in songs_list:
+		var first_char = get_first_letter(get_filter_field_value(song_data).to_lower())
+		if first_char == "":
+			first_char = "?"
+		if not groups.has(first_char):
+			groups[first_char] = []
+		groups[first_char].append(song_data)
+	var sorted_letters = groups.keys()
+	sorted_letters.sort()
+	var grouped = []
+	for letter in sorted_letters:
+		var songs_in_group = groups[letter]
+		var header_text = "%d %s" % [songs_in_group.size(), letter.to_upper()]
+		grouped.append({
+			"type": "header",
+			"text": header_text,
+			"letter": letter,
+			"expanded": true
+		})
+		for song_data in songs_in_group:
+			grouped.append({
+				"type": "song",
+				"data": song_data.duplicate(true)
+			})
+	return grouped
+
+func _render_grouped_data():
+	for item_data in current_grouped_data:
+		if item_data.type == "header":
+			var idx = item_list.add_item(item_data.text)
+			item_list.set_item_custom_bg_color(idx, Color(0.2, 0.2, 0.2, 1.0))
+			item_list.set_item_selectable(idx, false)
+		else:
+			var song_data = item_data.data
+			var text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
+			item_list.add_item(text)
+
+func _get_selected_song_path() -> String:
+	var selected = item_list.get_selected_items() if item_list else []
+	if selected.size() > 0:
+		var si = selected[0]
+		if si >= 0 and si < current_grouped_data.size():
+			var prev_item = current_grouped_data[si]
+			if prev_item.type == "song":
+				return prev_item.data.get("path", "")
+	return ""
+
+func _reselect_previous(previous_path: String) -> void:
+	if previous_path == "":
+		return
+	for i in range(current_grouped_data.size()):
+		var it = current_grouped_data[i]
+		if it.type == "song" and it.data.get("path", "") == previous_path:
+			item_list.select(i, true)
+			break
