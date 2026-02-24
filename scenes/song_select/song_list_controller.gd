@@ -1,4 +1,3 @@
-# scenes/song_select/song_list_controller.gd
 extends Node
 class_name SongListController
 
@@ -10,6 +9,9 @@ signal song_edited(song_data: Dictionary, item_list_index: int)
 var item_list: ItemList = null
 var current_grouped_data = []
 var current_filter_mode = "title"
+var current_instrument: String = "drums"
+var current_mode: String = "basic"
+var current_lanes: int = 4
 
 var edit_mode: bool = false
 var _edit_context = {
@@ -29,6 +31,12 @@ func set_item_list(list_control: ItemList):
 
 func set_filter_mode(mode: String):
 	current_filter_mode = mode
+
+func set_generation_settings(instrument: String, mode: String, lanes: int):
+	current_instrument = instrument
+	current_mode = mode
+	current_lanes = lanes
+	refresh_highlight_for_current_settings()
 
 func populate_items():
 	if not item_list:
@@ -460,7 +468,10 @@ func _render_grouped_data():
 		else:
 			var song_data = item_data.data
 			var text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
-			item_list.add_item(text)
+			var idx = item_list.add_item(text)
+			var song_path = String(song_data.get("path", ""))
+			if _notes_exist_for(song_path, current_instrument, current_mode, current_lanes):
+				item_list.set_item_custom_fg_color(idx, Color("#61C7BD"))
 
 func _get_selected_song_path() -> String:
 	var selected = item_list.get_selected_items() if item_list else []
@@ -480,3 +491,32 @@ func _reselect_previous(previous_path: String) -> void:
 		if it.type == "song" and it.data.get("path", "") == previous_path:
 			item_list.select(i, true)
 			break
+
+func refresh_highlight_for_current_settings():
+	if not item_list:
+		return
+	for i in range(current_grouped_data.size()):
+		var item_data = current_grouped_data[i]
+		if item_data.type == "song":
+			var song_path = String(item_data.data.get("path", ""))
+			if _notes_exist_for(song_path, current_instrument, current_mode, current_lanes):
+				item_list.set_item_custom_fg_color(i, Color("#61C7BD"))
+			else:
+				item_list.set_item_custom_fg_color(i, Color.WHITE)
+
+func _notes_exist_for(song_path: String, instrument: String, mode: String, lanes: int) -> bool:
+	if song_path == "":
+		return false
+	var base_name = song_path.get_file().get_basename()
+	var notes_filename = "%s_%s_%s_lanes%d.json" % [
+		base_name,
+		instrument,
+		mode.to_lower(),
+		lanes
+	]
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
+	var fa = FileAccess.open(notes_path, FileAccess.READ)
+	if fa:
+		fa.close()
+		return true
+	return false

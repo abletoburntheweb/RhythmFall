@@ -95,6 +95,7 @@ func _ready():
 	song_details_manager.set_current_instrument(saved_instrument)
 	song_details_manager.set_current_generation_mode(saved_mode)
 	song_details_manager.set_current_lanes(saved_lanes)
+	song_list_manager.set_generation_settings(saved_instrument, saved_mode, saved_lanes)
 	
 	analyze_bpm_button.disabled = true
 	results_button.disabled = true
@@ -230,6 +231,7 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Генерация завершена", false)
+	song_list_manager.refresh_highlight_for_current_settings()
 	
 	var game_engine = get_parent()
 	var achievement_system = game_engine.get_achievement_system()
@@ -364,6 +366,8 @@ func _open_generation_settings_selector():
 	generation_settings_selector = GenerationSettingsSelectorScene.instantiate()
 	generation_settings_selector.generation_settings_confirmed.connect(_on_generation_settings_confirmed)
 	generation_settings_selector.selector_closed.connect(_on_generation_settings_closed)
+	if current_displayed_song_path != "":
+		generation_settings_selector.set_current_song_path(current_displayed_song_path)
 	get_parent().add_child(generation_settings_selector)
 	
 func _on_file_selected_internal(path):
@@ -559,6 +563,7 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 	song_details_manager.set_current_instrument(current_instrument)
 	song_details_manager.set_current_generation_mode(current_generation_mode)
 	song_details_manager.set_current_lanes(lanes)
+	song_list_manager.set_generation_settings(current_instrument, current_generation_mode, current_lanes)
 	
 	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(instrument, mode, lanes)
 	_apply_background_status_ui()

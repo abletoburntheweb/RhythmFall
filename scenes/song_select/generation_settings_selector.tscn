@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
 
 [ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
-[ext_resource type="Theme" uid="uid://dw7nvwfovhyro" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
+[ext_resource type="Theme" uid="uid://deg7v6d0dtn88" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
 
 [node name="GenerationSettingsSelector" type="Control"]
 layout_mode = 3
@@ -116,15 +116,24 @@ theme = ExtResource("1_flxbb")
 theme_type_variation = &"FlatModalPrimaryButton"
 text = "5"
 
+[node name="StatusLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Нет нот"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="ConfirmButton" type="Button" parent="Container"]
 clip_contents = true
-custom_minimum_size = Vector2(400, 40)
+custom_minimum_size = Vector2(400, 60)
 layout_mode = 2
 size_flags_horizontal = 4
 theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatBpmButton"
 text = "Подтвердить
 "
 
+[connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="Container/InstrumentButtons/PercussionButton" to="." method="_on_percussion_selected"]
 [connection signal="pressed" from="Container/ModeButtons/BasicButton" to="." method="_on_basic_selected"]
 [connection signal="pressed" from="Container/ModeButtons/EnhancedButton" to="." method="_on_enhanced_selected"]

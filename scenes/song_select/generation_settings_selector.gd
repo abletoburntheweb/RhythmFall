@@ -8,6 +8,8 @@ signal selector_closed
 var selected_instrument: String = "drums"
 var selected_mode: String = "basic"
 var selected_lanes: int = 4
+var current_song_path: String = ""
+var status_label: Label = null
 
 const ACTIVE_COLOR = Color(0.8, 0.8, 1.0, 1.0)
 const DEFAULT_COLOR = Color(1.0, 1.0, 1.0, 1.0)
@@ -22,8 +24,9 @@ func _ready():
 	selected_mode = SettingsManager.get_setting("last_generation_mode", "basic")
 	selected_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
 	
-
+	status_label = $Container/StatusLabel
 	_update_ui_from_selection()
+	_update_status_indicator()
 
 	
 func _update_ui_from_selection():
@@ -46,6 +49,7 @@ func _update_ui_from_selection():
 		3: $Container/LanesButtons/Lanes3Button.self_modulate = ACTIVE_COLOR
 		4: $Container/LanesButtons/Lanes4Button.self_modulate = ACTIVE_COLOR
 		5: $Container/LanesButtons/Lanes5Button.self_modulate = ACTIVE_COLOR
+	_update_status_indicator()
 		
 func _on_percussion_selected():
 	selected_instrument = "drums"
@@ -78,6 +82,7 @@ func _set_active_button(active_btn: Button):
 			child.self_modulate = DEFAULT_COLOR
 	
 	active_btn.self_modulate = ACTIVE_COLOR
+	_update_status_indicator()
 
 func _on_confirm_pressed():
 	SettingsManager.set_setting("last_generation_instrument", selected_instrument)
@@ -93,6 +98,38 @@ func _on_confirm_pressed():
 func _on_back_button_pressed():
 	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
+	
+func set_current_song_path(path: String):
+	current_song_path = path
+	_update_status_indicator()
+	
+func _update_status_indicator():
+	if not status_label:
+		return
+	var exists = _notes_exist_for_selection()
+	if exists:
+		status_label.text = "Ноты готовы"
+		status_label.add_theme_color_override("font_color", Color("#61C7BD"))
+	else:
+		status_label.text = "Нет нот"
+		status_label.add_theme_color_override("font_color", Color("#C99AE5"))
+	
+func _notes_exist_for_selection() -> bool:
+	if current_song_path == "":
+		return false
+	var base_name = current_song_path.get_file().get_basename()
+	var notes_filename = "%s_%s_%s_lanes%d.json" % [
+		base_name,
+		selected_instrument,
+		selected_mode.to_lower(),
+		selected_lanes
+	]
+	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
+	var fa = FileAccess.open(notes_path, FileAccess.READ)
+	if fa:
+		fa.close()
+		return true
+	return false
 
 func _input(event: InputEvent):
 	if event.is_action_pressed("ui_cancel"):
