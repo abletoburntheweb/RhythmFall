@@ -1,3 +1,4 @@
+# logic/generation_service.gd
 extends Node
 class_name GenerationService
 

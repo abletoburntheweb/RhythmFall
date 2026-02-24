@@ -165,6 +165,7 @@ func initialize_logic():
 	
 	background_service = preload("res://logic/generation_service.gd").new(self)
 	add_child(background_service)
+	
 
 func _date_dict_to_string(date_dict: Dictionary) -> String:
 	if date_dict.has("year") and date_dict.has("month") and date_dict.has("day"):

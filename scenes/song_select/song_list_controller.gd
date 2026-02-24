@@ -1,3 +1,4 @@
+# scenes/song_select/song_list_controller.gd
 extends Node
 class_name SongListController
 

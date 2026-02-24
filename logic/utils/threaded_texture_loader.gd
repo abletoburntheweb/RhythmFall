@@ -1,3 +1,4 @@
+# logic/utils/threaded_texture_loader.gd
 extends Node
 class_name ThreadedTextureLoader
 signal loaded(path: String, texture: Texture2D)

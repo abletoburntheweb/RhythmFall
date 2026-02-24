@@ -30,6 +30,10 @@ func _process_queue():
 	if is_showing_popup or achievement_queue.is_empty():
 		return
 	
+	if _is_gameplay_active():
+		get_tree().create_timer(1.0).timeout.connect(_process_queue, CONNECT_ONE_SHOT)
+		return
+	
 	if not is_inside_tree():
 		self.tree_entered.connect(_process_queue, CONNECT_ONE_SHOT)
 		return
@@ -38,10 +42,17 @@ func _process_queue():
 	var next_achievement = achievement_queue.pop_front()
 	_show_achievement_popup(next_achievement)
 
+func _is_gameplay_active() -> bool:
+	var root = get_tree().root
+	var game_engine_node = root.get_node_or_null("GameEngine")
+	if game_engine_node and game_engine_node.get_node_or_null("GameScreen"):
+		return true
+	return false
 func _show_achievement_popup(achievement_data: Dictionary):
 	
 	var popup_scene = preload("res://scenes/achievements/achievement_pop_up.tscn")
 	current_popup = popup_scene.instantiate()
+	MusicManager.play_achievement_sound()
 	
 	var root = get_tree().root
 	var parent_node: Node = root

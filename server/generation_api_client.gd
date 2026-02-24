@@ -1,3 +1,4 @@
+# server/generation_api_client.gd
 extends Node
 class_name GenerationApiClient
 

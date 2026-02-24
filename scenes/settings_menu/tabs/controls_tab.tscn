@@ -53,8 +53,10 @@ theme_override_font_sizes/font_size = 24
 text = "Линия 1"
 
 [node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane1Row"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 24
 text = "A"
 
 [node name="Lane2Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
@@ -69,8 +71,10 @@ theme_override_font_sizes/font_size = 24
 text = "Линия 2"
 
 [node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane2Row"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 24
 text = "S"
 
 [node name="Lane3Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
@@ -85,8 +89,10 @@ theme_override_font_sizes/font_size = 24
 text = "Линия 3"
 
 [node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane3Row"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 24
 text = "D"
 
 [node name="Lane4Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
@@ -101,8 +107,10 @@ theme_override_font_sizes/font_size = 24
 text = "Линия 4"
 
 [node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane4Row"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 24
 text = "F"
 
 [node name="Lane5Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
@@ -117,8 +125,10 @@ theme_override_font_sizes/font_size = 24
 text = "Линия 5"
 
 [node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane5Row"]
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 24
 text = "G"
 
 [node name="ResetControlsButton" type="Button" parent="ContentVBox"]

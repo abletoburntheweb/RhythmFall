@@ -159,8 +159,6 @@ func _perform_unlock(achievement: Dictionary):
 	if player_data_mgr:
 		player_data_mgr.unlock_achievement(achievement.id)
 
-	MusicManager.play_achievement_sound()  
-
 	var category = achievement.get("category", "")
 	if category == "mastery":
 		if not new_mastery_achievements.has(achievement):

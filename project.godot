@@ -22,6 +22,7 @@ TrackStatsManager="*res://logic/track_stats_manager.gd"
 SettingsManager="*res://logic/settings_manager.gd"
 MusicManager="*res://logic/music_manager.gd"
 SongLibrary="*res://logic/song_library.gd"
+Console="*res://addons/console/console.gd"
 
 [display]
 
@@ -31,7 +32,7 @@ window/size/mode=1
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg")
+enabled=PackedStringArray("res://addons/MusicMetadata/plugin.cfg", "res://addons/console/plugin.cfg")
 
 [gui]
 

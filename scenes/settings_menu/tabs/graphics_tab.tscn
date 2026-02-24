@@ -1,6 +1,7 @@
-[gd_scene load_steps=120 format=3 uid="uid://dk7vdwevkwjod"]
+[gd_scene load_steps=121 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
+[ext_resource type="Theme" uid="uid://dq1jeuco1akmf" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2394,7 +2395,7 @@ text = "FPS:"
 [node name="FPSOptionButton" type="OptionButton" parent="ContentVBox/FPS"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme = SubResource("Theme_p28av")
+theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
 theme_override_font_sizes/font_size = 24
 selected = 0
