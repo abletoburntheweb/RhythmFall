@@ -77,6 +77,8 @@ func _ready():
 		if not notes_task.is_empty():
 			_on_notes_generation_started()
 		_apply_background_status_ui()
+		if not background_service.notes_progress.is_connected(_on_notes_progress):
+			background_service.notes_progress.connect(_on_notes_progress)
 	
 	
 	_connect_ui_signals()
@@ -137,13 +139,48 @@ func _on_bpm_error(_path, msg, _disp):
 	_on_bpm_analysis_error(msg)
  
 func _on_notes_started(_path, _disp):
-	_on_notes_generation_started()
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_notes_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+		and String(t.get("instrument", "")) == current_instrument
+		and String(t.get("mode", "")) == current_generation_mode
+		and int(t.get("lanes", 0)) == current_lanes
+	)
+	if same:
+		_on_notes_generation_started()
  
 func _on_notes_completed(_path, instr, _disp):
-	_on_notes_generation_completed([], 0.0, instr)
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_notes_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+		and String(t.get("instrument", "")) == current_instrument
+		and String(t.get("mode", "")) == current_generation_mode
+		and int(t.get("lanes", 0)) == current_lanes
+	)
+	if same:
+		_on_notes_generation_completed([], 0.0, instr)
  
 func _on_notes_error(_path, msg, _disp):
-	_on_notes_generation_error(msg)
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_notes_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+		and String(t.get("instrument", "")) == current_instrument
+		and String(t.get("mode", "")) == current_generation_mode
+		and int(t.get("lanes", 0)) == current_lanes
+	)
+	if same:
+		_on_notes_generation_error(msg)
+func _on_notes_progress(_path: String, _k: int, _total: int, _status: String):
+	_apply_background_status_ui()
 	
 func _on_bpm_analysis_started():
 	analyze_bpm_button.text = "Вычисление..."
@@ -524,6 +561,7 @@ func _on_generation_settings_confirmed(instrument: String, mode: String, lanes: 
 	song_details_manager.set_current_lanes(lanes)
 	
 	$MainVBox/TopBarHBox/GenerationSettingsButton.text = _format_generation_settings_label(instrument, mode, lanes)
+	_apply_background_status_ui()
 
 func _apply_background_status_ui():
 	if not background_service:
@@ -535,13 +573,18 @@ func _apply_background_status_ui():
 	elif pos_bpm > 1:
 		analyze_bpm_button.text = "В очереди (%d)" % pos_bpm
 		analyze_bpm_button.disabled = true
-	var pos_notes = background_service.get_notes_queue_position(current_displayed_song_path)
+	var pos_notes = background_service.get_notes_queue_position(current_displayed_song_path, current_instrument, current_generation_mode, current_lanes)
 	if pos_notes == 1:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 	elif pos_notes > 1:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "В очереди (%d)" % pos_notes
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	else:
+		var song_bpm_val = current_selected_song_data.get("bpm", "Н/Д")
+		if str(song_bpm_val) != "-1" and song_bpm_val != "Н/Д":
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
 	var inst_abbr = "П" if instrument == "drums" else "С"

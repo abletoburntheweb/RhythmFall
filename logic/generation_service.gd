@@ -290,12 +290,25 @@ func get_bpm_queue_position(song_path: String) -> int:
 			return i + 2
 	return 0
 
-func get_notes_queue_position(song_path: String) -> int:
-	if _active_notes_task.has("path") and _active_notes_task.path == song_path:
-		return 1
+func get_notes_queue_position(song_path: String, instrument: String, mode: String, lanes: int) -> int:
+	if _active_notes_task.has("path"):
+		var same_active: bool = (
+			String(_active_notes_task.get("path", "")) == song_path
+			and String(_active_notes_task.get("instrument", "")) == instrument
+			and String(_active_notes_task.get("mode", "")) == mode
+			and int(_active_notes_task.get("lanes", 0)) == lanes
+		)
+		if same_active:
+			return 1
 	for i in range(_notes_queue.size()):
-		var item = _notes_queue[i]
-		if item.has("path") and item.path == song_path:
+		var item: Dictionary = _notes_queue[i]
+		var same_queued: bool = (
+			item.has("path") and String(item.get("path", "")) == song_path
+			and String(item.get("instrument", "")) == instrument
+			and String(item.get("mode", "")) == mode
+			and int(item.get("lanes", 0)) == lanes
+		)
+		if same_queued:
 			return i + 2
 	return 0
 
