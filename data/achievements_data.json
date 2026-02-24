@@ -422,7 +422,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 1,
 			"description": "Выбить 5 оценок SS",
 			"id": 43.0,
 			"title": "Восходящий",
@@ -432,7 +432,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 1,
 			"description": "Выбить 10 оценок SS",
 			"id": 44.0,
 			"title": "Звёздный путь",
@@ -442,7 +442,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 1,
 			"description": "Выбить 25 оценок SS",
 			"id": 45.0,
 			"title": "Гений точности",
@@ -452,7 +452,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1.0,
+			"current": 1,
 			"description": "Выбить 50 оценок SS",
 			"id": 46.0,
 			"title": "Мастер совершенства",

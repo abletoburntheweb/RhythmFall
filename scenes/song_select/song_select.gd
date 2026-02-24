@@ -393,6 +393,7 @@ func _generate_notes_for_current_song():
 			"",  
 			current_generation_mode
 		)
+		_apply_background_status_ui()
 		return
 
 	if not enable_genre_detection and background_service:
@@ -407,6 +408,7 @@ func _generate_notes_for_current_song():
 			"Unknown",
 			current_generation_mode
 		)
+		_apply_background_status_ui()
 		return
 
 	if background_service:
