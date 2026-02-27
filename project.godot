@@ -23,6 +23,7 @@ SettingsManager="*res://logic/settings_manager.gd"
 MusicManager="*res://logic/music_manager.gd"
 SongLibrary="*res://logic/song_library.gd"
 Console="*res://addons/console/console.gd"
+DebugCommands="*res://addons/console/debug_commands.gd"
 
 [display]
 

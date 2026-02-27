@@ -702,12 +702,6 @@
 	  "required_daily_completed": 10
 	},
 	{
-	  "item_id": "misc_1",
-	  "name": "Бонус 1",
-	  "price": 300,
-	  "image": "res://assets/textures/placeholder.png",
-	  "category": "Прочее",
-	  "is_equippable": false
-	}
+  }
   ]
 }

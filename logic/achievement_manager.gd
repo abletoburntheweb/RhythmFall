@@ -96,7 +96,7 @@ func _rebuild_index():
 	for a in achievements:
 		_ach_by_id[int(a.get("id", -1))] = a
 
-func get_achievement_by_id(achievement_id: int) -> Dictionary:
+func get_achievement_by_id(achievement_id: int):
 	return _ach_by_id.get(achievement_id, null)
 
 func get_total_for(achievement_id: int) -> int:
@@ -158,6 +158,8 @@ func _perform_unlock(achievement: Dictionary):
 
 	if player_data_mgr:
 		player_data_mgr.unlock_achievement(achievement.id)
+
+	# Звук воспроизводится при фактическом показе попапа, вне геймплея
 
 	var category = achievement.get("category", "")
 	if category == "mastery":
@@ -270,7 +272,6 @@ func _map_category_ru_to_internal(category_ru: String) -> String:
 		"Обложки": return "Covers"
 		"Подсветка линий": return "LaneHighlight"
 		"Ноты": return "Notes"
-		"Прочее": return "Misc"
 		_:
 			var fallback = category_ru.strip_edges()
 			if fallback == "":

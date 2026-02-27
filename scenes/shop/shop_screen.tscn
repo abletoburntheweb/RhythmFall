@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
-[ext_resource type="Theme" uid="uid://fqxdbc48x6o1" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
+[ext_resource type="Theme" uid="uid://dbr250ti86tsm" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1362,12 +1362,6 @@ theme = SubResource("Theme_38ec2")
 theme_type_variation = &"CategoryLane"
 text = "Подсветка линий"
 
-[node name="CategoryButtonMisc" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoriesHBox"]
-layout_mode = 2
-theme = SubResource("Theme_38ec2")
-theme_type_variation = &"CategoryMisc"
-text = "Прочее"
-
 [node name="ContentMargin" type="MarginContainer" parent="MainContent/MainVBox"]
 layout_mode = 2
 
@@ -1404,4 +1398,3 @@ columns = 5
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonCover" to="." method="_on_category_selected" binds= ["Обложки"]]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonNotes" to="." method="_on_category_selected" binds= ["Ноты"]]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonLaneHighlight" to="." method="_on_category_selected" binds= ["Подсветка линий"]]
-[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoriesHBox/CategoryButtonMisc" to="." method="_on_category_selected" binds= ["Прочее"]]

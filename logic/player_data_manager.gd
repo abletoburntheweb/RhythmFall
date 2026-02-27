@@ -12,8 +12,7 @@ const DEFAULT_ACTIVE_ITEMS = {
 	"Backgrounds": "background_default",
 	"Covers": "covers_default",
 	"LaneHighlight": "lanes_highlight_default",
-	"Notes": "notes_default",
-	"Misc": null 
+	"Notes": "notes_default"
 }
 
 var data: Dictionary = {
@@ -227,8 +226,6 @@ func _save():
 	for category in DEFAULT_ACTIVE_ITEMS:
 		var current_value = data["active_items"].get(category)
 		active_items_clean[category] = current_value
-	if data["active_items"].has("Misc") and not active_items_clean.has("Misc"):
-		active_items_clean["Misc"] = data["active_items"]["Misc"]
 	data["active_items"] = active_items_clean
 
 	var data_to_save = data.duplicate(true)

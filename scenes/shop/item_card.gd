@@ -30,6 +30,8 @@ var _current_image_path: String = ""
 
 func _ready():
 	if not item_data.has("item_id"):
+		visible = false
+		queue_free()
 		return
 
 	_setup_item()

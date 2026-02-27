@@ -145,13 +145,11 @@ func _update_category_buttons(selected: String):
 	var cover_btn: Button = hbox.get_node("CategoryButtonCover")
 	var notes_btn: Button = hbox.get_node("CategoryButtonNotes")
 	var lane_btn: Button = hbox.get_node("CategoryButtonLaneHighlight")
-	var misc_btn: Button = hbox.get_node("CategoryButtonMisc")
 	if all_btn: all_btn.theme_type_variation = "ActiveAll" if selected == "Все" else "CategoryAll"
 	if kick_btn: kick_btn.theme_type_variation = "ActiveKick" if selected == "Кик" else "CategoryKick"
 	if cover_btn: cover_btn.theme_type_variation = "ActiveCover" if selected == "Обложки" else "CategoryCover"
 	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
 	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
-	if misc_btn: misc_btn.theme_type_variation = "ActiveMisc" if selected == "Прочее" else "CategoryMisc"
 
 func _create_item_cards():
 	for card in item_cards:
@@ -171,14 +169,16 @@ func _create_item_cards():
 		var end = min(i + batch_size, items.size())
 		for j in range(i, end):
 			var item_data = items[j]
+			if not (item_data is Dictionary) or not item_data.has("item_id"):
+				continue
 			var new_card = ITEM_CARD_SCENE.instantiate()
 			new_card.item_data = item_data
-			var is_purchased = PlayerDataManager.is_item_unlocked(item_data.item_id)
+			var is_purchased = PlayerDataManager.is_item_unlocked(String(item_data.get("item_id", "")))
 			var is_active = false
 			var category_map = _get_category_map()
-			var internal_category = category_map.get(item_data.category, "")
+			var internal_category = category_map.get(String(item_data.get("category", "")), "")
 			if internal_category:
-				is_active = (PlayerDataManager.get_active_item(internal_category) == item_data.item_id)
+				is_active = (PlayerDataManager.get_active_item(internal_category) == String(item_data.get("item_id", "")))
 			var achievement_name = ""
 			var achievement_unlocked = false
 			var level_unlocked = false
@@ -215,8 +215,7 @@ func _get_category_map() -> Dictionary:
 		"Кик": "Kick",
 		"Обложки": "Covers",
 		"Подсветка линий": "LaneHighlight",
-		"Ноты": "Notes",
-		"Прочее": "Misc"
+		"Ноты": "Notes"
 	}
 
 func _on_category_selected(category: String):
@@ -313,7 +312,7 @@ func _on_item_use_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
 		var category_map = _get_category_map()
-		var internal_category = category_map.get(item_data.category, "")
+		var internal_category = category_map.get(String(item_data.get("category", "")), "")
 		if internal_category:
 			PlayerDataManager.set_active_item(internal_category, item_id)
 			
@@ -444,10 +443,10 @@ func _update_item_card_state(item_id: String, purchased: bool, active: bool):
 func _update_all_item_cards_in_category(category: String, active_item_id: String):
 	for card in item_cards:
 		var category_map = _get_category_map()
-		var internal_category = category_map.get(card.item_data.category, "")
+		var internal_category = category_map.get(String(card.item_data.get("category", "")), "")
 		if internal_category == category:
-			var is_purchased = PlayerDataManager.is_item_unlocked(card.item_data.item_id)
-			var is_active = (card.item_data.item_id == active_item_id)
+			var is_purchased = PlayerDataManager.is_item_unlocked(String(card.item_data.get("item_id", "")))
+			var is_active = (String(card.item_data.get("item_id", "")) == active_item_id)
 			var st = _compute_unlock_state(card.item_data)
 			card.update_state(is_purchased, is_active, true, st.achievement_unlocked, st.achievement_name, st.level_unlocked, st.daily_unlocked)
 
