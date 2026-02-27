@@ -7,6 +7,9 @@ const PLAYER_DATA_PATH = "user://player_data.json"
 const TRACK_STATS_PATH = "user://track_stats.json"
 const MAX_LEVEL := 100
 
+var InventoryServiceScript = preload("res://logic/services/inventory_service.gd")
+var CurrencyServiceScript = preload("res://logic/services/currency_service.gd")
+
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
 	"Backgrounds": "background_default",
@@ -70,6 +73,10 @@ var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
 
+var inventory = null
+var currency_svc = null
+var daily_quests_mgr = null
+
 
 func _ready():
 	_load()
@@ -86,10 +93,23 @@ func _ready():
 	data["favorite_track"] = max_track
 	data["favorite_track_play_count"] = max_count
 
+	inventory = InventoryServiceScript.new()
+	inventory.set_data_ref(data)
+	inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
+	inventory.active_item_changed.connect(_on_inventory_active_item_changed)
+
+	currency_svc = CurrencyServiceScript.new()
+	currency_svc.set_data_ref(data)
+	currency_svc.currency_changed.connect(_on_currency_changed)
+
+	daily_quests_mgr = preload("res://logic/daily_quests_manager.gd").new()
+	daily_quests_mgr.set_player_data_manager(self)
+	daily_quests_mgr.daily_quests_updated.connect(_on_daily_quests_manager_updated)
+
 	var default_items = [
 		"kick_default",
 		"covers_default",
-		"lane_highlight_default",
+		"lanes_highlight_default",
         "notes_default"
 	]
 	var items_changed = false
@@ -195,14 +215,7 @@ func _load():
 				data["profile_created_date"] = loaded_profile_created_date
 			
 			var loaded_active_items_dict = loaded_active_items.duplicate(true)
-			for category in DEFAULT_ACTIVE_ITEMS:
-				var loaded_value = loaded_active_items_dict.get(category, DEFAULT_ACTIVE_ITEMS[category])
-				if loaded_value == null:
-					loaded_value = DEFAULT_ACTIVE_ITEMS[category] 
-				data["active_items"][category] = loaded_value
-			for category in loaded_active_items_dict:
-				if not DEFAULT_ACTIVE_ITEMS.has(category):
-					data["active_items"][category] = loaded_active_items_dict[category]
+			inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
 			
 			if data["current_level"] > MAX_LEVEL:
 				data["current_level"] = MAX_LEVEL
@@ -222,11 +235,8 @@ func _load():
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func _save():
-	var active_items_clean = {}
-	for category in DEFAULT_ACTIVE_ITEMS:
-		var current_value = data["active_items"].get(category)
-		active_items_clean[category] = current_value
-	data["active_items"] = active_items_clean
+	if inventory:
+		data["active_items"] = inventory.get_active_items_trimmed(DEFAULT_ACTIVE_ITEMS)
 
 	var data_to_save = data.duplicate(true)
 	data_to_save.erase("best_grades_per_track")
@@ -244,7 +254,7 @@ func _save_best_grades():
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func get_currency() -> int:
-	return int(data.get("currency", 0))
+	return currency_svc.get_currency() if currency_svc else int(data.get("currency", 0))
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
@@ -269,18 +279,9 @@ func get_and_clear_delayed_achievements() -> Array[Dictionary]:
 	return achievements
 
 func add_currency(amount: int):
-	var old_currency = int(data.get("currency", 0))
-	var new_currency = old_currency + amount
-	data["currency"] = max(0, new_currency) 
-
-	if amount < 0:
-		var spent_amount = abs(amount)
-		data["spent_currency"] = int(data.get("spent_currency", 0)) + spent_amount
+	if currency_svc:
+		currency_svc.add_currency(amount)
 		_trigger_currency_achievement_check()
-	elif amount > 0:
-		data["total_earned_currency"] = int(data.get("total_earned_currency", 0)) + amount
-		_trigger_currency_achievement_check()
-
 	_save()
 
 func _trigger_currency_achievement_check():
@@ -290,6 +291,12 @@ func _trigger_currency_achievement_check():
 			achievement_system.on_currency_changed()
 		if game_engine_reference.has_method("on_currency_changed"):
 			game_engine_reference.on_currency_changed()
+
+func _on_currency_changed(old_value: int, new_value: int):
+	pass
+
+func _on_inventory_active_item_changed(category: String, item_id: String):
+	emit_signal("active_item_changed", category, item_id)
 
 func add_perfect_hits(count: int):
 	var current_perfect = int(data.get("total_perfect_hits", 0))
@@ -373,13 +380,15 @@ func get_xp_for_next_level() -> int:
 	return data["xp_for_next_level"]
 
 func get_items() -> PackedStringArray:
-	return data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
+	return inventory.get_unlocked_items() if inventory else data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
 
 func unlock_item(item_name: String):
-	if not data["unlocked_item_ids"].has(item_name):
-		data["unlocked_item_ids"].append(item_name)  
-		_trigger_purchase_achievement_check()
-		_save()
+	if inventory:
+		var before = inventory.is_item_unlocked(item_name)
+		inventory.unlock_item(item_name)
+		if not before:
+			_trigger_purchase_achievement_check()
+			_save()
 
 func _trigger_purchase_achievement_check():
 	if game_engine_reference:
@@ -388,32 +397,22 @@ func _trigger_purchase_achievement_check():
 			achievement_system.on_purchase_made()
 
 func is_item_unlocked(item_name: String) -> bool:
-	return data["unlocked_item_ids"].has(item_name) 
+	return inventory.is_item_unlocked(item_name) if inventory else data["unlocked_item_ids"].has(item_name) 
 
 func set_active_item(category: String, item_id: String):
-	if data["active_items"].has(category):
-		var old_item_id = data["active_items"][category]
-		data["active_items"][category] = item_id
+	if inventory:
+		inventory.set_active_item(category, item_id)
 		_save()
 		emit_signal("active_item_changed", category, item_id)
 
 func get_active_item(category: String) -> String:
-	var active_item_id = data["active_items"].get(category)
-	if active_item_id == null:
-		var default_item = DEFAULT_ACTIVE_ITEMS.get(category, "")
-		return default_item if default_item != null else ""
-	return active_item_id 
+	return inventory.get_active_item(category) if inventory else String(data["active_items"].get(category, ""))
 
 func get_all_unlocked_items() -> PackedStringArray:
-	return data.get("unlocked_item_ids", PackedStringArray()).duplicate() 
+	return inventory.get_unlocked_items() if inventory else data.get("unlocked_item_ids", PackedStringArray()).duplicate() 
 
 func get_active_items() -> Dictionary:
-	var active_items_copy = {}
-	for category in data["active_items"]:
-		var value = data["active_items"][category]
-		if value is String or value == null:
-			active_items_copy[category] = value
-	return active_items_copy
+	return inventory.get_active_items() if inventory else data.get("active_items", {}).duplicate(true)
 
 func get_save_data() -> Dictionary:
 	var save_dict = data.duplicate(true)
@@ -430,11 +429,7 @@ func load_save_data(save_dict: Dictionary):
 			data["active_items"].clear()
 			data["active_items"].merge(DEFAULT_ACTIVE_ITEMS.duplicate(true)) 
 			data["active_items"].merge(save_dict["active_items"]) 
-			for category in DEFAULT_ACTIVE_ITEMS:
-				var loaded_value = data["active_items"].get(category, DEFAULT_ACTIVE_ITEMS[category])
-				if loaded_value == null:
-					loaded_value = DEFAULT_ACTIVE_ITEMS[category]
-				data["active_items"][category] = loaded_value
+			inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
 		else:
 			printerr("PlayerDataManager.gd: load_save_data: Поле 'active_items' не является словарём, пропускаем.")
 	if save_dict.has("unlocked_achievement_ids"): 
@@ -758,114 +753,33 @@ func get_total_play_time_seconds() -> int:
 	return _total_play_time_seconds
 
 func ensure_daily_quests_for_today():
-	var today = Time.get_date_string_from_system()
-	var current = data.get("daily_quests", {"date": "", "quests": []})
-	if current.get("date", "") != today:
-		_generate_daily_quests_for_date(today)
-		_save()
-		emit_signal("daily_quests_updated")
+	if daily_quests_mgr:
+		daily_quests_mgr.ensure_daily_quests_for_today()
 
 func _generate_daily_quests_for_date(date_str: String):
-	var quests_for_day: Array = []
-	var quest_pool: Array = []
-	var file = FileAccess.open("res://data/daily_quests.json", FileAccess.READ)
-	if file:
-		var json_text = file.get_as_text()
-		file.close()
-		var parsed = JSON.parse_string(json_text)
-		if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
-			quest_pool = parsed["quests"]
-		else:
-			printerr("[PlayerDataManager] daily_quests.json повреждён или нет ключа 'quests', используем дефолтный пул")
-	if quest_pool.is_empty():
-		quest_pool = [
-			{"id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50},
-			{"id": "perfect_hits", "title": "Сделай PERFECT попадания (30)", "event": "perfect_hits", "goal": 30, "reward_currency": 40},
-			{"id": "accuracy_80", "title": "Заверши уровень с точностью ≥ 80%", "event": "accuracy_80", "goal": 1, "reward_currency": 30},
-			{"id": "play_drum", "title": "Сыграй уровень на барабанах", "event": "play_drum_level", "goal": 1, "reward_currency": 30},
-			{"id": "combo_30", "title": "Достигни комбо ≥ 30", "event": "combo_reached", "goal": 1, "reward_currency": 20},
-			{"id": "missless", "title": "Пройди без промахов", "event": "missless", "goal": 1, "reward_currency": 50},
-			{"id": "notes_generated", "title": "Сгенерируй ноты для трека", "event": "notes_generated", "goal": 1, "reward_currency": 10}
-		]
-	var count_per_day = 3
-	var indices: Array = []
-	for i in range(quest_pool.size()):
-		indices.append(i)
-	indices.shuffle()
-	for i in range(min(count_per_day, quest_pool.size())):
-		var q = quest_pool[indices[i]].duplicate(true)
-		q["progress"] = 0
-		q["completed"] = false
-		quests_for_day.append(q)
-	data["daily_quests"] = {"date": date_str, "quests": quests_for_day}
+	if daily_quests_mgr:
+		daily_quests_mgr._generate_daily_quests_for_date(date_str)
 
 func get_daily_quests() -> Array:
-	return data.get("daily_quests", {"date": "", "quests": []}).get("quests", [])
+	if daily_quests_mgr:
+		return daily_quests_mgr.get_daily_quests()
+	return []
 
 func increment_daily_progress(event_name: String, value: int, context: Dictionary = {}):
-	ensure_daily_quests_for_today()
-	var dq = data.get("daily_quests", {"date": "", "quests": []})
-	var quests = dq.get("quests", [])
-	var changed = false
-	for q in quests:
-		if q.get("event", "") != event_name:
-			continue
-		if q.get("completed", false):
-			continue
-		var goal = int(q.get("goal", 1))
-		var progress = int(q.get("progress", 0))
-		match event_name:
-			"accuracy_80":
-				var acc = float(context.get("accuracy", 0.0))
-				if acc >= 80.0:
-					progress = goal
-			"accuracy_90":
-				var acc = float(context.get("accuracy", 0.0))
-				if acc >= 90.0:
-					progress = goal
-			"accuracy_95":
-				var acc = float(context.get("accuracy", 0.0))
-				if acc >= 95.0:
-					progress = goal
-			"combo_reached":
-				var max_combo = int(context.get("max_combo", 0))
-				if max_combo >= 30:
-					progress = goal
-			"combo_reached_60":
-				var max_combo = int(context.get("max_combo", 0))
-				if max_combo >= 60:
-					progress = goal
-			"combo_reached_100":
-				var max_combo = int(context.get("max_combo", 0))
-				if max_combo >= 100:
-					progress = goal
-			"missless":
-				var missed_notes = int(context.get("missed_notes", 0))
-				if missed_notes <= 0:
-					progress = goal
-			"play_drum_level":
-				var is_drum = bool(context.get("is_drum_mode", false))
-				if is_drum:
-					progress = min(goal, progress + value)
-			_:
-				progress = min(goal, progress + value)
-		q["progress"] = progress
-		if progress >= goal:
-			q["completed"] = true
-			_add_daily_quest_reward(int(q.get("reward_currency", 0)))
-			data["daily_quests_completed_total"] = int(data.get("daily_quests_completed_total", 0)) + 1
-		changed = true
-	if changed:
-		data["daily_quests"]["quests"] = quests
-		_save()
-		emit_signal("daily_quests_updated")
+	if daily_quests_mgr:
+		daily_quests_mgr.increment_daily_progress(event_name, value, context)
 
 func _add_daily_quest_reward(amount: int):
-	if amount > 0:
-		add_currency(amount)
+	if daily_quests_mgr:
+		daily_quests_mgr._add_daily_quest_reward(amount)
 
 func get_daily_quests_completed_total() -> int:
-	return int(data.get("daily_quests_completed_total", 0))
+	if daily_quests_mgr:
+		return daily_quests_mgr.get_daily_quests_completed_total()
+	return 0
+
+func _on_daily_quests_manager_updated():
+	emit_signal("daily_quests_updated")
 
 func update_best_grade_for_track(song_path: String, new_grade: String):
 	if song_path.is_empty():
