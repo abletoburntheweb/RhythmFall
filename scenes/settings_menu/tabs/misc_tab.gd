@@ -38,10 +38,12 @@ func _apply_initial_settings():
 	
 	var show_notifs = SettingsManager.get_setting("show_generation_notifications", true)
 	show_gen_notifs_checkbox.set_pressed_no_signal(show_notifs)
+	_apply_console_state_from_settings()
 
 
 func _on_debug_menu_toggled(enabled: bool):
 	SettingsManager.set_enable_debug_menu(enabled)
+	_apply_console_state_from_settings()
 	emit_signal("settings_changed")
 
 
@@ -99,9 +101,33 @@ func _confirm_reset_profile_stats():
 	PlayerDataManager.reset_login_streak()
 	TrackStatsManager.reset_stats()
 	_clear_all_results_internal()
-	if get_parent() and get_parent().get_parent() and get_parent().get_parent().has_method("refresh_stats"):
-		get_parent().get_parent().get_parent().refresh_stats() 
+	_refresh_profile_ui_if_visible()
 	emit_signal("settings_changed")
+	
+func _apply_console_state_from_settings():
+	var console_node = get_tree().root.get_node_or_null("Console")
+	if console_node:
+		if SettingsManager.get_enable_debug_menu():
+			if console_node.has_method("enable"):
+				console_node.enable()
+		else:
+			if console_node.has_method("disable"):
+				console_node.disable()
+				
+func _refresh_profile_ui_if_visible():
+	var root = get_tree().root
+	_call_refresh_stats_recursive(root)
+	
+func _call_refresh_stats_recursive(node):
+	if not node:
+		return false
+	var called = false
+	if node.has_method("refresh_stats"):
+		node.refresh_stats()
+		called = true
+	for child in node.get_children():
+		called = _call_refresh_stats_recursive(child) or called
+	return called
 func _on_enable_genre_detection_toggled(enabled: bool):
 	SettingsManager.set_setting("enable_genre_detection", enabled)
 	SettingsManager.save_settings()

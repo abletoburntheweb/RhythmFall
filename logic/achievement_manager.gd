@@ -159,7 +159,6 @@ func _perform_unlock(achievement: Dictionary):
 	if player_data_mgr:
 		player_data_mgr.unlock_achievement(achievement.id)
 
-	# Звук воспроизводится при фактическом показе попапа, вне геймплея
 
 	var category = achievement.get("category", "")
 	if category == "mastery":
@@ -220,6 +219,7 @@ func check_spent_currency_achievement(total_spent: int):
 func check_style_hunter_achievement(player_data_mgr_override = null):
 	var pdm = _get_pdm(player_data_mgr_override)
 	var categories: Dictionary = {}
+	var purchasable_categories: Dictionary = {}
 
 	if pdm:
 		var unlocked_items = pdm.get_items()
@@ -242,8 +242,10 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 					if not categories.has(category_internal):
 						categories[category_internal] = []
 
-					if price > 0 and unlocked_items.has(item_id):
-						categories[category_internal].append(item_id)
+					if price > 0:
+						purchasable_categories[category_internal] = true
+						if unlocked_items.has(item_id):
+							categories[category_internal].append(item_id)
 			else:
 				printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")
 		else:
@@ -254,7 +256,7 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 		var items: Array = categories[key]
 		if items.size() > 0:
 			categories_with_items += 1
-	var total_categories = categories.size()
+	var total_categories = purchasable_categories.size()
 
 	var a = get_achievement_by_id(17)
 	if a != null and not a.get("unlocked", false):

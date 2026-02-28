@@ -6,9 +6,8 @@ signal active_item_changed(category: String, item_id: String)
 const PLAYER_DATA_PATH = "user://player_data.json" 
 const TRACK_STATS_PATH = "user://track_stats.json"
 const MAX_LEVEL := 100
-
-var InventoryServiceScript = preload("res://logic/services/inventory_service.gd")
-var CurrencyServiceScript = preload("res://logic/services/currency_service.gd")
+const INT64_MAX := 9223372036854775807
+const CURRENCY_CAP := 9999999999
 
 const DEFAULT_ACTIVE_ITEMS = {
 	"Kick": "kick_default",
@@ -17,6 +16,13 @@ const DEFAULT_ACTIVE_ITEMS = {
 	"LaneHighlight": "lanes_highlight_default",
 	"Notes": "notes_default"
 }
+
+const DEFAULT_UNLOCKED_ITEMS = [
+	"kick_default",
+	"covers_default",
+	"lanes_highlight_default",
+	"notes_default"
+]
 
 var data: Dictionary = {
 	"currency": 0,
@@ -66,15 +72,13 @@ var data: Dictionary = {
 signal total_play_time_changed(new_time_formatted: String)
 signal level_changed(new_level: int, new_xp: int, xp_for_next_level: int)  
 signal daily_quests_updated()
+signal profile_statistics_reset()
 
 var _total_play_time_seconds: int = 0
 
 var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
-
-var inventory = null
-var currency_svc = null
 var daily_quests_mgr = null
 
 
@@ -93,25 +97,11 @@ func _ready():
 	data["favorite_track"] = max_track
 	data["favorite_track_play_count"] = max_count
 
-	inventory = InventoryServiceScript.new()
-	inventory.set_data_ref(data)
-	inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
-	inventory.active_item_changed.connect(_on_inventory_active_item_changed)
-
-	currency_svc = CurrencyServiceScript.new()
-	currency_svc.set_data_ref(data)
-	currency_svc.currency_changed.connect(_on_currency_changed)
-
 	daily_quests_mgr = preload("res://logic/daily_quests_manager.gd").new()
 	daily_quests_mgr.set_player_data_manager(self)
-	daily_quests_mgr.daily_quests_updated.connect(_on_daily_quests_manager_updated)
+	daily_quests_mgr.daily_quests_updated.connect(func(): emit_signal("daily_quests_updated"))
 
-	var default_items = [
-		"kick_default",
-		"covers_default",
-		"lanes_highlight_default",
-        "notes_default"
-	]
+	var default_items = DEFAULT_UNLOCKED_ITEMS
 	var items_changed = false
 	for item_id in default_items:
 		if not data["unlocked_item_ids"].has(item_id):   
@@ -128,15 +118,11 @@ func _load():
 		var json_result = JSON.parse_string(json_text)
 		if json_result is Dictionary:
 			var loaded_currency = int(json_result.get("currency", 0))
-			var loaded_unlocked_item_ids = json_result.get("unlocked_item_ids", PackedStringArray())
-			if loaded_unlocked_item_ids is Array:
-				loaded_unlocked_item_ids = PackedStringArray(loaded_unlocked_item_ids)
+			var loaded_unlocked_item_ids = _to_packed_string_array(json_result.get("unlocked_item_ids", PackedStringArray()))
 			var loaded_active_items = json_result.get("active_items", {})
 			var loaded_last_login = json_result.get("last_login_date", "")
 			var loaded_login_streak = int(json_result.get("login_streak", 0))
-			var loaded_unlocked_achievement_ids = json_result.get("unlocked_achievement_ids", PackedInt32Array())
-			if loaded_unlocked_achievement_ids is Array:
-				loaded_unlocked_achievement_ids = PackedInt32Array(loaded_unlocked_achievement_ids)
+			var loaded_unlocked_achievement_ids = _to_packed_int_array(json_result.get("unlocked_achievement_ids", PackedInt32Array()))
 			var loaded_spent_currency = int(json_result.get("spent_currency", 0))
 			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
 			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
@@ -172,11 +158,11 @@ func _load():
 			var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
 			
 			
-			data["currency"] = loaded_currency
+			data["currency"] = clamp(loaded_currency, 0, CURRENCY_CAP)
 			data["unlocked_item_ids"] = loaded_unlocked_item_ids 
 			data["unlocked_achievement_ids"] = loaded_unlocked_achievement_ids 
-			data["spent_currency"] = loaded_spent_currency
-			data["total_earned_currency"] = loaded_total_earned_currency
+			data["spent_currency"] = max(0, loaded_spent_currency)
+			data["total_earned_currency"] = max(0, loaded_total_earned_currency)
 			data["levels_completed"] = loaded_levels_completed
 			data["drum_levels_completed"] = loaded_drum_levels_completed
 			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
@@ -191,9 +177,9 @@ func _load():
 			data["total_score_ever"] = loaded_total_score_ever
 			data["total_drum_score_ever"] = loaded_total_drum_score_ever
 			data["grades"] = loaded_grades
-			data["total_xp"] = loaded_total_xp
+			data["total_xp"] = max(0, loaded_total_xp)
 			data["current_level"] = loaded_current_level
-			data["xp_for_next_level"] = loaded_xp_for_next_level
+			data["xp_for_next_level"] = max(1, loaded_xp_for_next_level)
 
 			data["favorite_track"] = loaded_favorite_track
 			data["favorite_track_play_count"] = loaded_favorite_track_play_count
@@ -215,7 +201,14 @@ func _load():
 				data["profile_created_date"] = loaded_profile_created_date
 			
 			var loaded_active_items_dict = loaded_active_items.duplicate(true)
-			inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
+			for category in DEFAULT_ACTIVE_ITEMS:
+				var loaded_value = loaded_active_items_dict.get(category, DEFAULT_ACTIVE_ITEMS[category])
+				if loaded_value == null:
+					loaded_value = DEFAULT_ACTIVE_ITEMS[category]
+				data["active_items"][category] = loaded_value
+			for category in loaded_active_items_dict:
+				if not DEFAULT_ACTIVE_ITEMS.has(category):
+					data["active_items"][category] = loaded_active_items_dict[category]
 			
 			if data["current_level"] > MAX_LEVEL:
 				data["current_level"] = MAX_LEVEL
@@ -235,8 +228,11 @@ func _load():
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func _save():
-	if inventory:
-		data["active_items"] = inventory.get_active_items_trimmed(DEFAULT_ACTIVE_ITEMS)
+	var active_items_clean = {}
+	for category in DEFAULT_ACTIVE_ITEMS:
+		var current_value = data["active_items"].get(category)
+		active_items_clean[category] = current_value
+	data["active_items"] = active_items_clean
 
 	var data_to_save = data.duplicate(true)
 	data_to_save.erase("best_grades_per_track")
@@ -254,7 +250,7 @@ func _save_best_grades():
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func get_currency() -> int:
-	return currency_svc.get_currency() if currency_svc else int(data.get("currency", 0))
+	return int(data.get("currency", 0))
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
@@ -279,26 +275,32 @@ func get_and_clear_delayed_achievements() -> Array[Dictionary]:
 	return achievements
 
 func add_currency(amount: int):
-	if currency_svc:
-		currency_svc.add_currency(amount)
+	var old_currency = int(data.get("currency", 0))
+	var new_currency = _saturating_add_nonneg(old_currency, amount, CURRENCY_CAP)
+	data["currency"] = new_currency 
+
+	if amount < 0:
+		var spent_amount = abs(amount)
+		var old_spent = int(data.get("spent_currency", 0))
+		data["spent_currency"] = _saturating_add_nonneg(old_spent, spent_amount, INT64_MAX)
 		_trigger_currency_achievement_check()
+	elif amount > 0:
+		var old_earned = int(data.get("total_earned_currency", 0))
+		data["total_earned_currency"] = _saturating_add_nonneg(old_earned, amount, INT64_MAX)
+		_trigger_currency_achievement_check()
+
 	_save()
 
 func _trigger_currency_achievement_check():
-	if game_engine_reference:
-		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-		if achievement_system:
-			achievement_system.on_currency_changed()
-		if game_engine_reference.has_method("on_currency_changed"):
-			game_engine_reference.on_currency_changed()
-
-func _on_currency_changed(old_value: int, new_value: int):
-	pass
-
-func _on_inventory_active_item_changed(category: String, item_id: String):
-	emit_signal("active_item_changed", category, item_id)
+	var achievement_system = _get_achievement_system()
+	if achievement_system:
+		achievement_system.on_currency_changed()
+	if game_engine_reference and game_engine_reference.has_method("on_currency_changed"):
+		game_engine_reference.on_currency_changed()
 
 func add_perfect_hits(count: int):
+	if count <= 0:
+		return
 	var current_perfect = int(data.get("total_perfect_hits", 0))
 	var new_total = current_perfect + count
 	data["total_perfect_hits"] = new_total
@@ -307,10 +309,9 @@ func add_perfect_hits(count: int):
 	increment_daily_progress("perfect_hits", count, {})
 
 func _trigger_perfect_hit_achievement_check():
-	if game_engine_reference:
-		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-		if achievement_system:
-			achievement_system.on_perfect_hit_made()
+	var achievement_system = _get_achievement_system()
+	if achievement_system:
+		achievement_system.on_perfect_hit_made()
 
 func xp_for_level(level: int) -> int:
 	if level <= 1:
@@ -325,12 +326,16 @@ func _calculate_xp_for_next_level():
 		data["xp_for_next_level"] = xp_for_level(data["current_level"] + 1)
 
 func add_xp(amount: int):
+	if amount <= 0:
+		return
+	# Сатурирующее сложение XP, чтобы избежать переполнений.
+	var summed = _saturating_add_nonneg(int(data.get("total_xp", 0)), amount, INT64_MAX)
+	data["total_xp"] = summed
 	if data["current_level"] >= MAX_LEVEL:
-		data["total_xp"] = min(data["total_xp"] + amount, data["xp_for_next_level"])
+		data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
 		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
 		_save()
 		return
-	data["total_xp"] += amount
 	var leveled_up = check_level_up()
 	if not leveled_up:
 		emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
@@ -350,10 +355,9 @@ func check_level_up() -> bool:
 		_calculate_xp_for_next_level()
 		leveled = true
 		
-		if game_engine_reference:
-			var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-			if achievement_system and achievement_system.has_method("on_player_level_changed"):
-				achievement_system.on_player_level_changed(new_level)
+		var achievement_system = _get_achievement_system()
+		if achievement_system and achievement_system.has_method("on_player_level_changed"):
+			achievement_system.on_player_level_changed(new_level)
 		
 		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
 		increment_daily_progress("profile_level_up", 1, {})
@@ -380,39 +384,81 @@ func get_xp_for_next_level() -> int:
 	return data["xp_for_next_level"]
 
 func get_items() -> PackedStringArray:
-	return inventory.get_unlocked_items() if inventory else data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
+	return data.get("unlocked_item_ids", PackedStringArray()).duplicate()  
 
 func unlock_item(item_name: String):
-	if inventory:
-		var before = inventory.is_item_unlocked(item_name)
-		inventory.unlock_item(item_name)
-		if not before:
-			_trigger_purchase_achievement_check()
-			_save()
+	if not data["unlocked_item_ids"].has(item_name):
+		data["unlocked_item_ids"].append(item_name)  
+		_trigger_purchase_achievement_check()
+		_save()
 
 func _trigger_purchase_achievement_check():
-	if game_engine_reference:
-		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-		if achievement_system:
-			achievement_system.on_purchase_made()
+	var achievement_system = _get_achievement_system()
+	if achievement_system:
+		achievement_system.on_purchase_made()
+
+func _get_achievement_system():
+	if game_engine_reference and game_engine_reference.has_method("get_achievement_system"):
+		return game_engine_reference.get_achievement_system()
+	return null
+
+func _to_packed_string_array(value):
+	if value is PackedStringArray:
+		return value
+	if value is Array:
+		return PackedStringArray(value)
+	return PackedStringArray()
+
+func _to_packed_int_array(value):
+	if value is PackedInt32Array:
+		return value
+	if value is Array:
+		return PackedInt32Array(value)
+	return PackedInt32Array()
+
+func _saturating_add_nonneg(base: int, delta: int, cap: int) -> int:
+	var b = max(0, base)
+	if delta > 0:
+		# избегаем переполнения через проверку разницы
+		var room = cap - b
+		if delta > room:
+			return cap
+		return b + delta
+	elif delta < 0:
+		var take = -delta
+		if take > b:
+			return 0
+		return b - take
+	else:
+		return b
 
 func is_item_unlocked(item_name: String) -> bool:
-	return inventory.is_item_unlocked(item_name) if inventory else data["unlocked_item_ids"].has(item_name) 
+	return data["unlocked_item_ids"].has(item_name) 
 
 func set_active_item(category: String, item_id: String):
-	if inventory:
-		inventory.set_active_item(category, item_id)
+	if data["active_items"].has(category):
+		var old_item_id = data["active_items"][category]
+		data["active_items"][category] = item_id
 		_save()
 		emit_signal("active_item_changed", category, item_id)
 
 func get_active_item(category: String) -> String:
-	return inventory.get_active_item(category) if inventory else String(data["active_items"].get(category, ""))
+	var active_item_id = data["active_items"].get(category)
+	if active_item_id == null:
+		var default_item = DEFAULT_ACTIVE_ITEMS.get(category, "")
+		return default_item if default_item != null else ""
+	return active_item_id 
 
 func get_all_unlocked_items() -> PackedStringArray:
-	return inventory.get_unlocked_items() if inventory else data.get("unlocked_item_ids", PackedStringArray()).duplicate() 
+	return data.get("unlocked_item_ids", PackedStringArray()).duplicate() 
 
 func get_active_items() -> Dictionary:
-	return inventory.get_active_items() if inventory else data.get("active_items", {}).duplicate(true)
+	var active_items_copy = {}
+	for category in data["active_items"]:
+		var value = data["active_items"][category]
+		if value is String or value == null:
+			active_items_copy[category] = value
+	return active_items_copy
 
 func get_save_data() -> Dictionary:
 	var save_dict = data.duplicate(true)
@@ -422,21 +468,21 @@ func load_save_data(save_dict: Dictionary):
 	if save_dict.has("currency"):
 		data["currency"] = int(save_dict["currency"])
 	if save_dict.has("unlocked_item_ids"):
-		if save_dict["unlocked_item_ids"] is Array:
-			data["unlocked_item_ids"] = PackedStringArray(save_dict["unlocked_item_ids"]) 
+		data["unlocked_item_ids"] = _to_packed_string_array(save_dict["unlocked_item_ids"])
 	if save_dict.has("active_items"):
 		if save_dict["active_items"] is Dictionary:
 			data["active_items"].clear()
 			data["active_items"].merge(DEFAULT_ACTIVE_ITEMS.duplicate(true)) 
 			data["active_items"].merge(save_dict["active_items"]) 
-			inventory.ensure_defaults(DEFAULT_ACTIVE_ITEMS)
+			for category in DEFAULT_ACTIVE_ITEMS:
+				var loaded_value = data["active_items"].get(category, DEFAULT_ACTIVE_ITEMS[category])
+				if loaded_value == null:
+					loaded_value = DEFAULT_ACTIVE_ITEMS[category]
+				data["active_items"][category] = loaded_value
 		else:
 			printerr("PlayerDataManager.gd: load_save_data: Поле 'active_items' не является словарём, пропускаем.")
 	if save_dict.has("unlocked_achievement_ids"): 
-		if save_dict["unlocked_achievement_ids"] is Array:
-			data["unlocked_achievement_ids"] = PackedInt32Array(save_dict["unlocked_achievement_ids"]) 
-		else:
-			printerr("PlayerDataManager.gd: load_save_data: Поле 'unlocked_achievement_ids' не является массивом, пропускаем.")
+		data["unlocked_achievement_ids"] = _to_packed_int_array(save_dict["unlocked_achievement_ids"])
 	if save_dict.has("spent_currency"):
 		data["spent_currency"] = int(save_dict["spent_currency"])
 	if save_dict.has("total_earned_currency"):
@@ -543,12 +589,7 @@ func reset_progress():
 	
 
 func reset_profile_statistics():
-	var default_items = [
-		"kick_default",
-		"covers_default",
-		"lane_highlight_default",
-		"notes_default"
-	]
+	var default_items = DEFAULT_UNLOCKED_ITEMS
 
 	data["levels_completed"] = 0
 	data["drum_levels_completed"] = 0
@@ -609,7 +650,11 @@ func reset_profile_statistics():
 		svc = game_engine_reference.get_session_history_manager()
 	if svc and svc.has_method("clear_history"):
 		svc.clear_history()
-	
+	if game_engine_reference and game_engine_reference.has_method("on_currency_changed"):
+		game_engine_reference.on_currency_changed()
+	emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
+	emit_signal("total_play_time_changed", data.get("total_play_time", "00:00"))
+	emit_signal("profile_statistics_reset")
 
 func get_login_streak() -> int:
 	return int(data.get("login_streak", 0))
@@ -632,10 +677,9 @@ func reset_login_streak() -> void:
 	_save()
 
 func _trigger_login_achievement_check():
-	if game_engine_reference:
-		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-		if achievement_system:
-			achievement_system.on_daily_login()
+	var achievement_system = _get_achievement_system()
+	if achievement_system:
+		achievement_system.on_daily_login()
 
 func unlock_achievement(achievement_id: int) -> void:
 	if not data["unlocked_achievement_ids"].has(achievement_id):  
@@ -654,11 +698,10 @@ func add_completed_level():
 	
 
 func _trigger_level_achievement_check():
-	if game_engine_reference:
-		var achievement_system = game_engine_reference.get_achievement_system() if game_engine_reference.has_method("get_achievement_system") else null
-		if achievement_system:
-			var final_accuracy = 100.0
-			achievement_system.on_level_completed(final_accuracy)
+	var achievement_system = _get_achievement_system()
+	if achievement_system:
+		var final_accuracy = 100.0
+		achievement_system.on_level_completed(final_accuracy)
 
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
@@ -684,11 +727,15 @@ func add_total_drum_perfect_hit():
 	increment_daily_progress("drum_perfect_hits", 1, {})
 
 func add_hit_notes(count: int):
+	if count <= 0:
+		return
 	var current_hits = int(data.get("total_notes_hit", 0))
 	data["total_notes_hit"] = current_hits + count
 	_save() 
 
 func add_missed_notes(count: int):
+	if count <= 0:
+		return
 	var current_misses = int(data.get("total_notes_missed", 0))
 	data["total_notes_missed"] = current_misses + count
 	_save() 
@@ -706,6 +753,8 @@ func get_total_notes_played() -> int:
 	return get_total_notes_hit() + get_total_notes_missed()
 
 func add_score_to_total(score: int, is_drum_mode: bool = false):
+	if score <= 0:
+		return
 	var current_total = int(data.get("total_score_ever", 0))
 	var new_total = current_total + score
 	data["total_score_ever"] = new_total
@@ -737,6 +786,8 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 	return str(hours).pad_zeros(2) + ":" + str(minutes).pad_zeros(2)
 
 func add_play_time_seconds(seconds_to_add: int):
+	if seconds_to_add <= 0:
+		return
 	_total_play_time_seconds += seconds_to_add
 	var new_time_string = _play_time_seconds_to_string(_total_play_time_seconds)
 	data["total_play_time"] = new_time_string
@@ -777,9 +828,6 @@ func get_daily_quests_completed_total() -> int:
 	if daily_quests_mgr:
 		return daily_quests_mgr.get_daily_quests_completed_total()
 	return 0
-
-func _on_daily_quests_manager_updated():
-	emit_signal("daily_quests_updated")
 
 func update_best_grade_for_track(song_path: String, new_grade: String):
 	if song_path.is_empty():

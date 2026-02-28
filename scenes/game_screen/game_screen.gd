@@ -53,7 +53,7 @@ var skip_rewind_seconds = 5.0
 var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
 
-var debug_menu: DebugMenu = null
+var debug_menu = null
  
 
 var perfect_hits_this_level: int = 0
@@ -212,12 +212,7 @@ func _update_active_sounds_from_player_data():
 				break
 
 func _instantiate_debug_menu():
-	var debug_menu_scene = preload("res://scenes/debug_menu/debug_menu.tscn")
-	if debug_menu_scene:
-		var new_debug_menu = debug_menu_scene.instantiate() as DebugMenu
-		if new_debug_menu:
-			add_child(new_debug_menu)
-			debug_menu = new_debug_menu
+	pass
 
 func _find_ui_elements():
 	var ui_container_node = $UIContainer

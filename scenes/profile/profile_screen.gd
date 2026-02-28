@@ -93,6 +93,8 @@ func _ready():
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
 		PlayerDataManager.daily_quests_updated.connect(_on_daily_quests_updated)
+		if PlayerDataManager.has_signal("profile_statistics_reset"):
+			PlayerDataManager.profile_statistics_reset.connect(func(): refresh_stats())
 		if chart_background:
 			chart_background.resized.connect(_on_chart_background_resized)
 	else:

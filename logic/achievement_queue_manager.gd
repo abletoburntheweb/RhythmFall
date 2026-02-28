@@ -6,6 +6,7 @@ var achievement_queue: Array[Dictionary] = []
 var is_showing_popup: bool = false
 var current_popup: Control = null
 var _delayed_achievements: Array[Dictionary] = []
+var _has_played_sound_in_cycle: bool = false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -40,7 +41,10 @@ func _process_queue():
 	
 	is_showing_popup = true
 	var next_achievement = achievement_queue.pop_front()
-	_show_achievement_popup(next_achievement)
+	var play_sound = not _has_played_sound_in_cycle
+	_show_achievement_popup(next_achievement, play_sound)
+	if play_sound:
+		_has_played_sound_in_cycle = true
 
 func _is_gameplay_active() -> bool:
 	var root = get_tree().root
@@ -48,11 +52,12 @@ func _is_gameplay_active() -> bool:
 	if game_engine_node and game_engine_node.get_node_or_null("GameScreen"):
 		return true
 	return false
-func _show_achievement_popup(achievement_data: Dictionary):
+func _show_achievement_popup(achievement_data: Dictionary, play_sound := true):
 	
 	var popup_scene = preload("res://scenes/achievements/achievement_pop_up.tscn")
 	current_popup = popup_scene.instantiate()
-	MusicManager.play_achievement_sound()
+	if play_sound:
+		MusicManager.play_achievement_sound()
 	
 	var root = get_tree().root
 	var parent_node: Node = root
@@ -81,6 +86,9 @@ func _on_popup_finished():
 		current_popup = null
 	
 	is_showing_popup = false
+	# Если очередь опустела, следующая серия снова прозвучит
+	if achievement_queue.is_empty():
+		_has_played_sound_in_cycle = false
 	get_tree().create_timer(0.8).timeout.connect(_process_queue, CONNECT_ONE_SHOT)
 
 func clear_queue():
@@ -96,4 +104,5 @@ func get_queue_size() -> int:
 
 func is_busy() -> bool:
 	return is_showing_popup
+ 
  
