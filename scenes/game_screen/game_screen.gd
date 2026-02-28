@@ -54,7 +54,8 @@ var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
 
 var debug_menu = null
- 
+var auto_play_enabled: bool = false 
+var _autoplay_press_until := {}
 
 var perfect_hits_this_level: int = 0
 
@@ -179,6 +180,48 @@ func _pulse_hit_zone(strong: bool):
 	)
 	add_child(t)
 	t.start()
+	
+func set_autoplay_enabled(enabled: bool):
+	auto_play_enabled = enabled
+	
+func is_autoplay_enabled() -> bool:
+	return auto_play_enabled
+
+func _auto_play_simulate():
+	if pauser and pauser.is_paused:
+		return
+	if not notes_loaded:
+		return
+	var hit_zone_y_float = float(hit_zone_y)
+	var threshold = 50.0
+	var lanes_to_hit := {}
+	for note in note_manager.get_notes():
+		if note.is_missed:
+			continue
+		var dist = abs(note.y - hit_zone_y_float)
+		if dist <= threshold:
+			lanes_to_hit[note.lane] = true
+	for lane in lanes_to_hit.keys():
+		check_hit(int(lane))
+		# продлеваем "нажатие" для подсветки
+		var ln := int(lane)
+		var until_time = game_time + 0.08
+		var prev_until = _autoplay_press_until.get(ln, 0.0)
+		_autoplay_press_until[ln] = max(prev_until, until_time)
+	# обновляем состояния линий для подсветки
+	_autoplay_update_lane_highlights()
+
+func _autoplay_update_lane_highlights():
+	if not player or player.lanes_state.is_empty():
+		return
+	var changed := false
+	for i in range(lanes):
+		var should_pressed = _autoplay_press_until.get(i, 0.0) > game_time
+		if i < player.lanes_state.size() and player.lanes_state[i] != should_pressed:
+			player.lanes_state[i] = should_pressed
+			changed = true
+	if changed:
+		player.lane_pressed_changed.emit()
 	
 func _on_active_item_changed(category: String, item_id: String):
 	if category == "Notes":
@@ -500,8 +543,8 @@ func _update_game():
 		if rhythm_notifier.audio_stream_player == null:
 			rhythm_notifier.current_position = MusicManager.get_current_music_position()
 	
-	if debug_menu:
-		debug_menu.auto_play_simulate(self)
+	if auto_play_enabled:
+		_auto_play_simulate()
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
@@ -562,6 +605,7 @@ func end_game():
 	
 	if debug_menu:
 		debug_menu.auto_play_reset(self)
+	auto_play_enabled = false
 	
 	var song_path = selected_song_data.get("path", "")
 	TrackStatsManager.on_track_completed(song_path)

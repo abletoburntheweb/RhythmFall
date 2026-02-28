@@ -1,7 +1,8 @@
+# addons/console/debug_commands.gd
 extends Node
 
 const INT64_MAX := 9223372036854775807
-const MAX_INPUT_DELTA := 1000000000 
+const MAX_INPUT_DELTA := 1000000000
 
 func _ready():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -36,6 +37,8 @@ func _register(c):
 	c.add_command("game.combo.add_10", _game_combo_add_10, [], 0, "Добавить 10 к комбо")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
+	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
+	c.add_command("game.autoplay", _game_autoplay_toggle, [], 0, "Переключить автоигру")
 func _remove_aliases(c):
 	c.remove_command("ach.unlock")
 	c.remove_command("ach.show")
@@ -522,6 +525,43 @@ func _game_win(accuracy_opt := ""):
 		gs.end_game()
 	if c:
 		c.print_info("Симулировано завершение уровня (точность: %.2f%%)" % target_accuracy)
+		
+func _game_autoplay_on():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs:
+		if c: c.print_error("GameScreen не найден")
+		return
+	if gs.has_method("set_autoplay_enabled"):
+		gs.set_autoplay_enabled(true)
+		if c: c.print_info("Автоигра: ВКЛ.")
+	else:
+		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
+
+func _game_autoplay_status():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs:
+		if c: c.print_error("GameScreen не найден")
+		return
+	if gs.has_method("is_autoplay_enabled"):
+		var st = gs.is_autoplay_enabled()
+		if c: c.print_info("Автоигра: " + ("ВКЛ." if st else "ВЫКЛ."))
+	else:
+		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
+
+func _game_autoplay_toggle():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs:
+		if c: c.print_error("GameScreen не найден")
+		return
+	if gs.has_method("is_autoplay_enabled") and gs.has_method("set_autoplay_enabled"):
+		var st = gs.is_autoplay_enabled()
+		gs.set_autoplay_enabled(not st)
+		if c: c.print_info("Автоигра: " + ("ВКЛ." if (not st) else "ВЫКЛ."))
+	else:
+		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
 func _parse_int(s: String) -> int:
 	var out := ""
 	var seen_sign := false

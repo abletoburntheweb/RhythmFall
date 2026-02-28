@@ -102,7 +102,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 210,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"title": "Собиратель I",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 210,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"title": "Собиратель II",
@@ -122,7 +122,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 0,
+			"current": 210,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"title": "Собиратель III",
@@ -182,17 +182,17 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"title": "Первый день",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 01:45",
+			"unlocked": true
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"title": "В ритме недели",
@@ -202,7 +202,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"title": "Без выходных",
@@ -212,7 +212,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"title": "Верный музыкант",
@@ -232,13 +232,13 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти первый уровень",
 			"id": 24.0,
 			"title": "Первый аккорд",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 01:56",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
@@ -252,7 +252,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 5 уровней",
 			"id": 26.0,
 			"title": "Новичок ритма",
@@ -262,7 +262,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 20 уровней",
 			"id": 27.0,
 			"title": "Ритм-мастер",
@@ -272,7 +272,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 74,
 			"description": "Набрать 1000 точных попаданий",
 			"id": 28.0,
 			"title": "В ритме",
@@ -282,13 +282,13 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти первый уровень в режиме перкуссии",
 			"id": 29.0,
 			"title": "Первый удар",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 01:56",
+			"unlocked": true
 		},
 		{
 			"category": "drums",
@@ -302,7 +302,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 10 уровней в режиме перкуссии",
 			"id": 31.0,
 			"title": "Сила грува",
@@ -312,7 +312,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 30,
 			"description": "Совершить серию из 100 точных ударов подряд в режиме перкуссии",
 			"id": 32.0,
 			"title": "Барабанный шторм",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.02,
+			"current": 0.1,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
@@ -342,7 +342,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.02,
+			"current": 0.1,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
@@ -352,7 +352,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.02,
+			"current": 0.1,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.02,
+			"current": 0.1,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.02,
+			"current": 0.1,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",
@@ -382,7 +382,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 13400,
 			"description": "Набрать 20 000 очков",
 			"id": 39.0,
 			"title": "Первый шаг",
@@ -392,7 +392,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 13400,
 			"description": "Набрать 75 000 очков",
 			"id": 40.0,
 			"title": "Счётчик ритма",
@@ -402,7 +402,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 13400,
 			"description": "Набрать 250 000 очков",
 			"id": 41.0,
 			"title": "Профессионал",
@@ -412,7 +412,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 13400,
 			"description": "Набрать 750 000 очков",
 			"id": 42.0,
 			"title": "Легенда",
@@ -482,7 +482,7 @@
 		},
 		{
 			"category": "level",
-			"current": 0,
+			"current": 2,
 			"description": "Достичь 10 уровня",
 			"id": 49.0,
 			"title": "Такт",
@@ -492,7 +492,7 @@
 		},
 		{
 			"category": "level",
-			"current": 0,
+			"current": 2,
 			"description": "Достичь 16 уровня",
 			"id": 50.0,
 			"title": "Темп",
@@ -502,7 +502,7 @@
 		},
 		{
 			"category": "level",
-			"current": 0,
+			"current": 2,
 			"description": "Достичь 25 уровня",
 			"id": 51.0,
 			"title": "Ритм",
@@ -512,7 +512,7 @@
 		},
 		{
 			"category": "level",
-			"current": 0,
+			"current": 2,
 			"description": "Достичь 50 уровня",
 			"id": 52.0,
 			"title": "Аранжировка",
@@ -522,7 +522,7 @@
 		},
 		{
 			"category": "level",
-			"current": 0,
+			"current": 2,
 			"description": "Достичь 100 уровня",
 			"id": 53.0,
 			"title": "Композиция",
@@ -532,7 +532,7 @@
 		},
 		{
 			"category": "genres",
-			"current": 0,
+			"current": 1,
 			"description": "Сыграть 3 раза в электронных жанрах",
 			"id": 54.0,
 			"title": "Электрический фундамент",
@@ -582,7 +582,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 10 уникальных уровней",
 			"id": 59.0,
 			"title": "Уникальность I",
@@ -592,7 +592,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 25 уникальных уровней",
 			"id": 60.0,
 			"title": "Уникальность II",
@@ -602,7 +602,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 50 уникальных уровней",
 			"id": 61.0,
 			"title": "Уникальность III",
@@ -612,7 +612,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 50 уровней",
 			"id": 62.0,
 			"title": "Опытный ритм",
@@ -622,7 +622,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 100 уровней",
 			"id": 63.0,
 			"title": "Ветеран ритма",
@@ -632,7 +632,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Завершить 200 уровней",
 			"id": 64.0,
 			"title": "Легенда ритма",
@@ -652,7 +652,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 15 уникальных уровней с точностью ≥95%",
 			"id": 66.0,
 			"title": "Стабильная форма",
@@ -662,7 +662,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 25 уровней в режиме перкуссии",
 			"id": 67.0,
 			"title": "Пульс грува",
@@ -672,7 +672,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 50 уровней в режиме перкуссии",
 			"id": 68.0,
 			"title": "Мощь грува",
@@ -682,7 +682,7 @@
 		},
 		{
 			"category": "drums",
-			"current": 0,
+			"current": 1,
 			"description": "Пройти 100 уровней в режиме перкуссии",
 			"id": 69.0,
 			"title": "Легенда грува",

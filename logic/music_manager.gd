@@ -57,11 +57,40 @@ var _menu_music_volume_pct: float = 50.0
 var _game_music_volume_pct: float = 50.0
 var _metronome_offset_sec: float = 0.0
 
+var _stream_cache: Dictionary = {}
+const SFX_POOL_SIZE := 8
+var _sfx_pool: Array[AudioStreamPlayer] = []
+const PRELOAD_SFX := [
+	DEFAULT_SELECT_SOUND,
+	DEFAULT_CANCEL_SOUND,
+	ANALYSIS_SUCCESS_SOUND,
+	ANALYSIS_ERROR_SOUND,
+	DEFAULT_ACHIEVEMENT_SOUND,
+	SHOP_PURCHASE_SOUND,
+	SHOP_APPLY_SOUND,
+	DEFAULT_DEFAULT_SHOP_SOUND,
+	DEFAULT_METRONOME_STRONG_SOUND,
+	DEFAULT_METRONOME_WEAK_SOUND,
+	DEFAULT_COVER_CLICK_SOUND,
+	DEFAULT_LEVEL_START_SOUND,
+	DEFAULT_RESTART_SOUND,
+	DEFAULT_MISS_HIT_SOUND_1,
+	DEFAULT_MISS_HIT_SOUND_2,
+	DEFAULT_MISS_HIT_SOUND_3,
+	DEFAULT_MISS_HIT_SOUND_4,
+	DEFAULT_MISS_HIT_SOUND_5
+]
+
 func _load_audio_stream(path: String, base_dir: String = "") -> AudioStream:
 	var full_path = (base_dir + path) if base_dir != "" else path
+	if _stream_cache.has(full_path):
+		return _stream_cache[full_path]
 	if not ResourceLoader.exists(full_path):
 		return null
-	return load(full_path) as AudioStream
+	var stream := load(full_path) as AudioStream
+	if stream:
+		_stream_cache[full_path] = stream
+	return stream
 
 func _play_stream_on(player: AudioStreamPlayer, stream: AudioStream, volume_pct: float, position: float = 0.0, restart_if_playing: bool = true):
 	if not player or not stream:
@@ -95,6 +124,8 @@ func _ready():
 
 	_metronome_players = [metronome_player1, metronome_player2]
 	_update_active_sound_paths()
+	_init_sfx_pool()
+	_preload_common_sfx()
 	
 func set_external_metronome_control(enabled: bool):
 	_external_metronome_controlled = enabled
@@ -330,22 +361,20 @@ func play_sfx(sound_path: String):
 	var full_path = MUSIC_DIR + sound_path
 	var stream = _load_audio_stream(sound_path, MUSIC_DIR)
 	if stream:
-		var new_player = AudioStreamPlayer.new()
-		new_player.stream = stream
-		if sfx_player:
-			new_player.volume_db = sfx_player.volume_db
-			
-		add_child(new_player)
-		
-		new_player.finished.connect(Callable(self, "_on_sfx_player_finished").bind(new_player))
-		
-		new_player.play()
+		var p = _get_free_sfx_player()
+		if p:
+			p.stream = stream
+			if sfx_player:
+				p.volume_db = sfx_player.volume_db
+			p.play()
+		else:
+			push_error("MusicManager: Нет свободного SFX-плеера для " + full_path)
 	else:
 		push_error("MusicManager: Не удалось загрузить SFX: " + full_path)
 
 func _on_sfx_player_finished(player: AudioStreamPlayer):
 	if player and is_instance_valid(player):
-		player.queue_free() 
+		pass
 
 func play_select_sound():
 	play_sfx(DEFAULT_SELECT_SOUND)
@@ -461,3 +490,24 @@ func play_instrument_select_sound(instrument_type: String):
 
 func get_music_player() -> AudioStreamPlayer:
 	return music_player
+
+func _init_sfx_pool():
+	for i in range(SFX_POOL_SIZE):
+		var p = AudioStreamPlayer.new()
+		p.name = "SFXPool_%d" % i
+		add_child(p)
+		_sfx_pool.append(p)
+		if sfx_player:
+			p.volume_db = sfx_player.volume_db
+
+func _get_free_sfx_player() -> AudioStreamPlayer:
+	for p in _sfx_pool:
+		if p and not p.playing:
+			return p
+	if _sfx_pool.size() > 0:
+		return _sfx_pool[0]
+	return null
+
+func _preload_common_sfx():
+	for file_name in PRELOAD_SFX:
+		_load_audio_stream(file_name, MUSIC_DIR)

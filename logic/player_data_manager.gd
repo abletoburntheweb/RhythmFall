@@ -328,7 +328,6 @@ func _calculate_xp_for_next_level():
 func add_xp(amount: int):
 	if amount <= 0:
 		return
-	# Сатурирующее сложение XP, чтобы избежать переполнений.
 	var summed = _saturating_add_nonneg(int(data.get("total_xp", 0)), amount, INT64_MAX)
 	data["total_xp"] = summed
 	if data["current_level"] >= MAX_LEVEL:
@@ -419,7 +418,6 @@ func _to_packed_int_array(value):
 func _saturating_add_nonneg(base: int, delta: int, cap: int) -> int:
 	var b = max(0, base)
 	if delta > 0:
-		# избегаем переполнения через проверку разницы
 		var room = cap - b
 		if delta > room:
 			return cap
