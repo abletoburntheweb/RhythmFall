@@ -212,7 +212,10 @@ func _on_bpm_analysis_completed(bpm_value: int):
 			SongLibrary.update_metadata(song_path, metadata)
 			
 			if current_selected_song_data.get("path", "") == song_path:
-				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+				if _check_if_notes_exist_for_current_settings():
+					$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
+				else:
+					$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 
 func _on_bpm_analysis_error(error_message: String):
@@ -226,11 +229,11 @@ func _on_notes_generation_started():
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
-	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация завершена"
+	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
-	song_details_manager.set_generation_status("Генерация завершена", false)
+	song_details_manager.set_generation_status("Ноты сгенерированы", false)
 	song_list_manager.refresh_highlight_for_current_settings()
 	
 	var game_engine = get_parent()
@@ -324,7 +327,10 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
 	else:
 		analyze_bpm_button.text = "BPM вычислен"
-		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+		if _check_if_notes_exist_for_current_settings():
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 		
 		if _check_if_notes_exist_for_current_settings():
@@ -588,7 +594,10 @@ func _apply_background_status_ui():
 	else:
 		var song_bpm_val = current_selected_song_data.get("bpm", "Н/Д")
 		if str(song_bpm_val) != "-1" and song_bpm_val != "Н/Д":
-			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+			if _check_if_notes_exist_for_current_settings():
+				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
+			else:
+				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
