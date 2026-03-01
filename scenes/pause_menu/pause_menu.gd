@@ -17,24 +17,28 @@ func set_transitions(transitions_instance):
 	print("PauseMenu.gd: Transitions установлен")
 
 func _on_resume_pressed():
+	MusicManager.play_select_sound()
 	resume_requested.emit()
 	
 func _on_restart_pressed():
 	restart_requested.emit()
 	
 func _on_song_select_pressed():
+	MusicManager.play_select_sound()
 	if transitions:
 		transitions.open_song_select() 
 	else:
 		printerr("PauseMenu.gd: transitions не установлен!")
 
 func _on_settings_pressed():
+	MusicManager.play_select_sound()
 	if transitions:
 		transitions.open_settings(true) 
 	else:
 		printerr("PauseMenu.gd: transitions не установлен!")
 
 func _on_exit_to_menu_pressed():
+	MusicManager.play_select_sound()
 	if transitions:
 		transitions.exit_to_main_menu()
 	else:

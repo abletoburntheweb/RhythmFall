@@ -743,21 +743,19 @@ func _input(event):
 			if countdown_active:
 				skip_countdown()
 				return
-
-	if not input_enabled:
-		return
-
-	if event is InputEventKey and event.pressed:
-		var keycode = event.keycode
-
-		if keycode == KEY_ESCAPE and not countdown_active:
+		if event.keycode == KEY_ESCAPE and not countdown_active:
 			if pauser.is_paused:
 				pauser.handle_resume_request()
 			else:
 				pauser.handle_pause_request()
 			return
 
-		elif keycode == KEY_SPACE and not countdown_active:
+	if not input_enabled:
+		return
+
+	if event is InputEventKey and event.pressed:
+		var keycode = event.keycode
+		if keycode == KEY_SPACE and not countdown_active:
 			if skip_intro():
 				return
 
