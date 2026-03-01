@@ -333,7 +333,7 @@ func _notes_worker(data_dict: Dictionary):
 			http_client.poll()
 			OS.delay_msec(100)
 			if _cancel_notes:
-				_notes_res = {"error": "Операция отменена"}
+				_notes_res = {"error": "Отменено пользователем"}
 				http_client.close()
 				_notes_done = true
 				return
@@ -433,7 +433,20 @@ func _notes_worker(data_dict: Dictionary):
 						poll_client.close()
 						last_poll = Time.get_ticks_msec()
 					if _cancel_notes:
-						_notes_res = {"error": "Операция отменена"}
+						var canc = HTTPClient.new()
+						var cerr = canc.connect_to_host("localhost", 5000)
+						if cerr == OK:
+							while canc.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
+								canc.poll()
+								OS.delay_msec(50)
+							if canc.get_status() == HTTPClient.STATUS_CONNECTED:
+								var cq = "/cancel_task?task_id=" + task_id
+								canc.request_raw(HTTPClient.METHOD_GET, cq, PackedStringArray(), PackedByteArray())
+								while canc.get_status() == HTTPClient.STATUS_REQUESTING:
+									canc.poll()
+									OS.delay_msec(50)
+						canc.close()
+						_notes_res = {"error": "Отменено пользователем"}
 						http_client.close()
 						_notes_done = true
 						return
@@ -450,7 +463,9 @@ func _notes_worker(data_dict: Dictionary):
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
 				if response_code == 200 and response_json is Dictionary:
-					if response_json.has("status") and str(response_json["status"]) == "requires_manual_input":
+					if response_json.has("status") and str(response_json["status"]) == "cancelled_by_user":
+						local_error = "Отменено пользователем"
+					elif response_json.has("status") and str(response_json["status"]) == "requires_manual_input":
 						local_result = {"manual_identification_required": true, "song_path": song_path}
 					elif response_json.has("notes"):
 						local_result = {
@@ -463,7 +478,10 @@ func _notes_worker(data_dict: Dictionary):
 					else:
 						local_error = "Ответ не содержит нот"
 				else:
-					local_error = "Ошибка: " + str(response_code)
+					if response_code == 499:
+						local_error = "Отменено пользователем"
+					else:
+						local_error = "Ошибка: " + str(response_code)
 	http_client.close()
 	_notes_res = local_result if local_error == "" else {"error": local_error}
 	_notes_done = true
