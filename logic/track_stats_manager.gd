@@ -78,11 +78,10 @@ func on_track_completed(track_path: String):
 	_update_favorite_track()
 	_update_favorite_genre()
 	_save()
-
 	PlayerDataManager.data["favorite_track"] = favorite_track
 	PlayerDataManager.data["favorite_track_play_count"] = favorite_track_play_count
 	PlayerDataManager.data["favorite_genre"] = favorite_genre
-	PlayerDataManager._save()
+	PlayerDataManager.flush_save()
 	
 	_just_completed_level = true  
 
@@ -135,6 +134,6 @@ func reset_stats():
 	PlayerDataManager.data["favorite_track"] = ""
 	PlayerDataManager.data["favorite_track_play_count"] = 0
 	PlayerDataManager.data["favorite_genre"] = "unknown"
-	PlayerDataManager._save()
+	PlayerDataManager.flush_save()
 	
 	print("TrackStatsManager: Статы треков и жанров сброшены.")

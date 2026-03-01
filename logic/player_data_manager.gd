@@ -80,6 +80,9 @@ var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
 var daily_quests_mgr = null
+var _save_pending: bool = false
+var _save_timer = null
+const SAVE_DEBOUNCE_SECONDS: float = 1.0
 
 
 func _ready():
@@ -228,6 +231,27 @@ func _load():
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
 
 func _save():
+	_schedule_save()
+
+func flush_save():
+	_write_to_disk()
+
+func _schedule_save():
+	if _save_pending:
+		return
+	_save_pending = true
+	if is_inside_tree():
+		_save_timer = get_tree().create_timer(SAVE_DEBOUNCE_SECONDS)
+		if _save_timer:
+			_save_timer.timeout.connect(_on_save_timer_timeout)
+	else:
+		_write_to_disk()
+
+func _on_save_timer_timeout():
+	_write_to_disk()
+
+func _write_to_disk():
+	_save_pending = false
 	var active_items_clean = {}
 	for category in DEFAULT_ACTIVE_ITEMS:
 		var current_value = data["active_items"].get(category)

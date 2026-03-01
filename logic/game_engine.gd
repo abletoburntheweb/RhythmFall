@@ -262,7 +262,7 @@ func _switch_to_screen(new_screen_instance):
 
 func request_quit():
 	_finalize_session_time()
-	PlayerDataManager._save()
+	PlayerDataManager.flush_save()
 	SettingsManager.save_settings()
 	get_tree().quit()
 
@@ -274,7 +274,7 @@ func prepare_screen_exit(screen_to_exit: Node) -> bool:
 	if screen_to_exit.has_method("cleanup_before_exit"):
 		screen_to_exit.cleanup_before_exit()
 
-	PlayerDataManager._save()
+	PlayerDataManager.flush_save()
 	SettingsManager.save_settings()
 
 	return true

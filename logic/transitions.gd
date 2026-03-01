@@ -34,11 +34,27 @@ func _preload_scene(scene_path: String):
 	return null
 
 func _warmup_heavy_scenes():
-	_preload_scene("res://scenes/song_select/song_select.tscn")
-	_preload_scene("res://scenes/shop/shop_screen.tscn")
-	_preload_scene("res://scenes/achievements/achievements_screen.tscn")
-	_preload_scene("res://scenes/profile/profile_screen.tscn")
-	_preload_scene("res://scenes/help/help_screen.tscn")
+	var to_prewarm := [
+		"res://scenes/main_menu/main_menu.tscn",
+		"res://scenes/song_select/song_select.tscn",
+		"res://scenes/shop/shop_screen.tscn",
+		"res://scenes/achievements/achievements_screen.tscn",
+		"res://scenes/profile/profile_screen.tscn",
+		"res://scenes/settings_menu/settings_menu.tscn",
+		"res://scenes/victory_screen/victory_screen.tscn",
+		"res://scenes/game_screen/game_screen.tscn",
+		"res://scenes/help/help_screen.tscn"
+	]
+	call_deferred("_prewarm_step", to_prewarm, 0)
+
+func _prewarm_step(list: Array, index: int):
+	if index >= list.size():
+		return
+	var path = String(list[index])
+	_preload_scene(path)
+	if game_engine and game_engine.has_method("get_tree"):
+		await game_engine.get_tree().process_frame
+	call_deferred("_prewarm_step", list, index + 1)
 
 func _instantiate_if_exists(scene_path):
 	var scene_resource = _get_cached_packed(scene_path)

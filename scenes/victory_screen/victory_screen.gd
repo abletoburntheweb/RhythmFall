@@ -278,13 +278,13 @@ func _deferred_update_ui():
 	var current_max_combo = PlayerDataManager.data.get("max_combo_ever", 0)
 	if max_combo > current_max_combo:
 		PlayerDataManager.data["max_combo_ever"] = max_combo
-		PlayerDataManager._save()
+		PlayerDataManager.flush_save()
 
 	var instrument_used_for_combo_check = song_info.get("instrument", "standard")
 	var current_max_drum_combo = PlayerDataManager.data.get("max_drum_combo_ever", 0)
 	if instrument_used_for_combo_check == "drums" and max_combo > current_max_drum_combo:
 		PlayerDataManager.data["max_drum_combo_ever"] = max_combo
-		PlayerDataManager._save()
+		PlayerDataManager.flush_save()
 
 	if instrument_used_for_combo_check == "drums":
 		var current_drum_hits = PlayerDataManager.data.get("total_drum_hits", 0)
@@ -295,7 +295,7 @@ func _deferred_update_ui():
 		var new_drum_misses = current_drum_misses + calculated_missed_notes
 		PlayerDataManager.data["total_drum_misses"] = new_drum_misses
 		
-		PlayerDataManager._save()
+		PlayerDataManager.flush_save()
 
 	var is_drum_mode = (instrument_used_for_combo_check == "drums")
 	PlayerDataManager.add_score_to_total(score, is_drum_mode)
