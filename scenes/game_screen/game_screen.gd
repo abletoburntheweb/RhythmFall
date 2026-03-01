@@ -210,11 +210,9 @@ func _auto_play_simulate():
 		if ln < 0 or ln >= lanes:
 			continue
 		check_hit(ln)
-		# продлеваем "нажатие" для подсветки
 		var until_time = game_time + 0.08
 		var prev_until = _autoplay_press_until.get(ln, 0.0)
 		_autoplay_press_until[ln] = max(prev_until, until_time)
-	# обновляем состояния линий для подсветки
 	_autoplay_update_lane_highlights()
 
 func _reset_autoplay_state():

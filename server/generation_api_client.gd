@@ -354,13 +354,22 @@ func _notes_worker(data_dict: Dictionary):
 			var body = PackedByteArray()
 			var client_meta = SongLibrary.get_metadata_for_song(song_path)
 			var client_genres_arr: Array = []
-			var client_genres_str = str(client_meta.get("genres", ""))
-			if client_genres_str.strip_edges() != "":
-				for part in client_genres_str.split(","):
-					var s = str(part).strip_edges()
+			var genres_val = client_meta.get("genres", "")
+			if typeof(genres_val) == TYPE_ARRAY:
+				for g in genres_val:
+					var s = str(g).strip_edges()
 					if s != "":
 						client_genres_arr.append(s)
+			else:
+				var client_genres_str = str(genres_val)
+				if client_genres_str.strip_edges() != "":
+					for part in client_genres_str.split(","):
+						var s = str(part).strip_edges()
+						if s != "":
+							client_genres_arr.append(s)
 			var client_primary_genre = str(client_meta.get("primary_genre", ""))
+			if client_primary_genre.strip_edges() == "" and client_genres_arr.size() > 0:
+				client_primary_genre = str(client_genres_arr[0])
 			var metadata_json = JSON.stringify({
 				"original_filename": song_path.get_file(),
 				"bpm": bpm,

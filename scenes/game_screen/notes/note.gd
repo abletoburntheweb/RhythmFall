@@ -1,3 +1,4 @@
+# scenes/game_screen/notes/note.gd
 class_name Note
 extends BaseNote
 

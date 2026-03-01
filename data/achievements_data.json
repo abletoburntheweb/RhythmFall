@@ -222,13 +222,13 @@
 		},
 		{
 			"category": "system",
-			"current": 0,
+			"current": 1,
 			"description": "Сгенерировать свой первый уровень с помощью системы анализа",
 			"id": 23.0,
 			"title": "Нотный исследователь",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 14:22",
+			"unlocked": true
 		},
 		{
 			"category": "mastery",
@@ -332,27 +332,27 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.18,
+			"current": 6.58,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 14:18",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.18,
+			"current": 6.58,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
 			"total": 5,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 21:48",
+			"unlocked": true
 		},
 		{
 			"category": "playtime",
-			"current": 0.18,
+			"current": 6.58,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.18,
+			"current": 6.58,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.18,
+			"current": 6.58,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",

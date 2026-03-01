@@ -1,3 +1,4 @@
+# ui/notification_ui.gd
 extends HBoxContainer
 class_name NotificationUI
 

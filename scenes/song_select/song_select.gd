@@ -425,7 +425,15 @@ func _generate_notes_for_current_song():
 	if str(song_bpm) == "-1" or song_bpm == "Н/Д": return
 
 	var metadata = SongLibrary.get_metadata_for_song(song_path)
-	var has_genres = metadata.has("genres") and metadata["genres"] != ""
+	var has_genres := false
+	if metadata.has("genres"):
+		if typeof(metadata["genres"]) == TYPE_ARRAY:
+			has_genres = metadata["genres"].size() > 0
+		else:
+			has_genres = str(metadata["genres"]).strip_edges() != ""
+	if not has_genres and metadata.has("primary_genre"):
+		var pg = str(metadata["primary_genre"]).strip_edges().to_lower()
+		has_genres = (pg != "" and pg != "unknown")
 	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
 
 	if has_genres and background_service:

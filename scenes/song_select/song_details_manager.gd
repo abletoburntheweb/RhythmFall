@@ -283,11 +283,10 @@ func _apply_tags_if_needed(song_data: Dictionary) -> void:
 	var need_title := true
 	var need_artist := true
 	var need_year := true
-	# Не затираем ручные правки: если в кеше уже есть осмысленные значения, оставляем их
 	if not current_meta.is_empty():
-		var cur_title = String(current_meta.get("title", ""))
-		var cur_artist = String(current_meta.get("artist", "Неизвестен"))
-		var cur_year = String(current_meta.get("year", "Н/Д"))
+		var cur_title = str(current_meta.get("title", ""))
+		var cur_artist = str(current_meta.get("artist", "Неизвестен"))
+		var cur_year = str(current_meta.get("year", "Н/Д"))
 		need_title = (cur_title == "" or cur_title == stem or cur_title == "Без названия")
 		need_artist = (cur_artist == "" or cur_artist == "Неизвестен")
 		need_year = (cur_year == "" or cur_year == "Н/Д" or cur_year == "0")
@@ -317,10 +316,9 @@ func _apply_tags_if_needed(song_data: Dictionary) -> void:
 		updated["year"] = y
 	if not updated.is_empty():
 		_tag_sync_in_progress = true
-		# Обновляем только отличающиеся значения
 		var diff := {}
 		for k in updated.keys(): 
-			if not current_meta.has(k) or String(current_meta[k]) != String(updated[k]):
+			if not current_meta.has(k) or str(current_meta[k]) != str(updated[k]):
 				diff[k] = updated[k]
 		if not diff.is_empty():
 			SongLibrary.update_metadata(path_for_tags, diff)
@@ -345,7 +343,6 @@ func _apply_cover_texture(song_data: Dictionary) -> void:
 				if mm.cover and mm.cover is ImageTexture:
 					cover_texture_rect.texture = mm.cover
 					applied = true
-			# Sidecar изображения рядом с файлом: <basename>.jpg/.png или cover.jpg/.png
 			if not applied:
 				var base_dir = global_path.get_base_dir()
 				var stem = path_for_cover.get_file().get_basename()

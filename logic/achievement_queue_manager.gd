@@ -86,7 +86,6 @@ func _on_popup_finished():
 		current_popup = null
 	
 	is_showing_popup = false
-	# Если очередь опустела, следующая серия снова прозвучит
 	if achievement_queue.is_empty():
 		_has_played_sound_in_cycle = false
 	get_tree().create_timer(0.8).timeout.connect(_process_queue, CONNECT_ONE_SHOT)

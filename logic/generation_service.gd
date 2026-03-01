@@ -1,3 +1,4 @@
+# scenes/song_select/song_select.gd
 extends Node
 class_name GenerationService
 
@@ -269,9 +270,12 @@ func _on_genres_completed(artist: String, title: String, genres: Array):
 	elif _last_notes_task.has("path"):
 		path = _last_notes_task.path
 	if path != "":
-		var primary = str(genres[0]) if genres.size() > 0 else "unknown"
-		print("[Genres] Update for %s: %s (primary: %s)" % [path, ", ".join(genres), primary])
-		SongLibrary.update_metadata(path, {"genres": genres, "primary_genre": primary})
+		if genres.size() > 0:
+			var primary = str(genres[0])
+			print("[Genres] Update for %s: %s (primary: %s)" % [path, ", ".join(genres), primary])
+			SongLibrary.update_metadata(path, {"genres": genres, "primary_genre": primary})
+		else:
+			print("[Genres] Empty genres received; keeping existing metadata for %s" % path)
 
 func get_active_bpm_task() -> Dictionary:
 	return _active_bpm_task.duplicate(true)
