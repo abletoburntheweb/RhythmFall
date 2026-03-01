@@ -124,7 +124,8 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			"genres": "",
 			"primary_genre": "unknown"
 		}
-	if not _metadata_cache.has(song_file_path):
+	# Сохраняем время изменения файла один раз
+	if _metadata_cache.has(song_file_path) and not _metadata_cache[song_file_path].has("file_mtime"):
 		_metadata_cache[song_file_path]["file_mtime"] = int(FileAccess.get_modified_time(song_file_path))
 	if updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY:
 		var genres_array = updated_fields["genres"]
@@ -136,12 +137,19 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			_metadata_cache[song_file_path]["primary_genre"] = "unknown"
 		updated_fields = updated_fields.duplicate()
 		updated_fields.erase("genres")
+	var any_changed := false
 	for field_name in updated_fields:
-		if field_name != "cover":
-			_metadata_cache[song_file_path][field_name] = updated_fields[field_name]
-	_save_metadata()
-	_update_song_in_list(song_file_path)
-	emit_signal("metadata_updated", song_file_path)
+		if field_name == "cover":
+			continue
+		var new_val = updated_fields[field_name]
+		var old_val = _metadata_cache[song_file_path].get(field_name, null)
+		if String(old_val) != String(new_val):
+			_metadata_cache[song_file_path][field_name] = new_val
+			any_changed = true
+	if any_changed:
+		_save_metadata()
+		_update_song_in_list(song_file_path)
+		emit_signal("metadata_updated", song_file_path)
 
 func remove_metadata(song_file_path: String):
 	if _metadata_cache.erase(song_file_path):

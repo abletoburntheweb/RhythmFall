@@ -120,6 +120,10 @@ func _get_fallback_cover_texture():
 		"covers_default": "default_covers"
 	}
 	var folder_name = folder_name_map.get(active_cover_item_id, active_cover_item_id.replace("covers_", ""))
+	var base_folder = "res://assets/shop/covers/"
+	var dir = DirAccess.open(base_folder)
+	if not dir or not dir.dir_exists(folder_name):
+		folder_name = "default_covers"
 
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
@@ -266,37 +270,61 @@ func _update_duration_if_unknown(song_data: Dictionary) -> void:
 			duration_label.text = "Длительность: " + dur_str
 			SongLibrary.update_metadata(path, {"duration": dur_str})
 
+var _tag_sync_in_progress := false
+
 func _apply_tags_if_needed(song_data: Dictionary) -> void:
 	var path_for_tags = song_data.get("path", "")
-	var title_val = song_data.get("title", "")
-	var artist_val = song_data.get("artist", "Неизвестен")
-	var need_tags = false
-	var stem = ""
-	if path_for_tags != "":
-		stem = path_for_tags.get_file().get_basename()
-	if title_val == stem or artist_val == "Неизвестен":
-		need_tags = true
-	if need_tags and path_for_tags != "":
-		var global_path = ProjectSettings.globalize_path(path_for_tags)
-		if FileAccess.file_exists(global_path):
-			var fa = FileAccess.open(global_path, FileAccess.READ)
-			if fa:
-				var buf = fa.get_buffer(fa.get_length())
-				fa.close()
-				var mm = MusicMetadata.new()
-				mm.set_from_data(buf)
-				var updated = {}
-				if mm.title != "" and title_label:
-					title_label.text = "Название: " + mm.title
-					updated["title"] = mm.title
-				if mm.artist != "" and artist_label:
-					artist_label.text = "Исполнитель: " + mm.artist
-					updated["artist"] = mm.artist
-				if mm.year != 0 and year_label:
-					year_label.text = "Год: " + str(mm.year)
-					updated["year"] = str(mm.year)
-				if not updated.is_empty():
-					SongLibrary.update_metadata(path_for_tags, updated)
+	if path_for_tags == "":
+		return
+	if _tag_sync_in_progress:
+		return
+	var current_meta = SongLibrary.get_metadata_for_song(path_for_tags)
+	var stem: String = String(path_for_tags).get_file().get_basename()
+	var need_title := true
+	var need_artist := true
+	var need_year := true
+	# Не затираем ручные правки: если в кеше уже есть осмысленные значения, оставляем их
+	if not current_meta.is_empty():
+		var cur_title = String(current_meta.get("title", ""))
+		var cur_artist = String(current_meta.get("artist", "Неизвестен"))
+		var cur_year = String(current_meta.get("year", "Н/Д"))
+		need_title = (cur_title == "" or cur_title == stem or cur_title == "Без названия")
+		need_artist = (cur_artist == "" or cur_artist == "Неизвестен")
+		need_year = (cur_year == "" or cur_year == "Н/Д" or cur_year == "0")
+	var global_path = ProjectSettings.globalize_path(path_for_tags)
+	if not FileAccess.file_exists(global_path):
+		return
+	var fa = FileAccess.open(global_path, FileAccess.READ)
+	if not fa:
+		return
+	var buf = fa.get_buffer(fa.get_length())
+	fa.close()
+	var mm = MusicMetadata.new()
+	mm.set_from_data(buf)
+	var updated = {}
+	if mm.title != "" and need_title:
+		if title_label and ("Название: " + mm.title != title_label.text):
+			title_label.text = "Название: " + mm.title
+		updated["title"] = mm.title
+	if mm.artist != "" and need_artist:
+		if artist_label and ("Исполнитель: " + mm.artist != artist_label.text):
+			artist_label.text = "Исполнитель: " + mm.artist
+		updated["artist"] = mm.artist
+	if mm.year != 0 and need_year:
+		var y = str(mm.year)
+		if year_label and ("Год: " + y != year_label.text):
+			year_label.text = "Год: " + y
+		updated["year"] = y
+	if not updated.is_empty():
+		_tag_sync_in_progress = true
+		# Обновляем только отличающиеся значения
+		var diff := {}
+		for k in updated.keys(): 
+			if not current_meta.has(k) or String(current_meta[k]) != String(updated[k]):
+				diff[k] = updated[k]
+		if not diff.is_empty():
+			SongLibrary.update_metadata(path_for_tags, diff)
+		_tag_sync_in_progress = false
 
 func _apply_cover_texture(song_data: Dictionary) -> void:
 	var cover_texture = song_data.get("cover", null)
@@ -317,6 +345,31 @@ func _apply_cover_texture(song_data: Dictionary) -> void:
 				if mm.cover and mm.cover is ImageTexture:
 					cover_texture_rect.texture = mm.cover
 					applied = true
+			# Sidecar изображения рядом с файлом: <basename>.jpg/.png или cover.jpg/.png
+			if not applied:
+				var base_dir = global_path.get_base_dir()
+				var stem = path_for_cover.get_file().get_basename()
+				var candidates = [
+					base_dir + "/" + stem + ".jpg",
+					base_dir + "/" + stem + ".png",
+					base_dir + "/cover.jpg",
+					base_dir + "/cover.png"
+				]
+				for img_path in candidates:
+					if FileAccess.file_exists(img_path):
+						var img_file = FileAccess.open(img_path, FileAccess.READ)
+						if img_file:
+							var img_buf = img_file.get_buffer(img_file.get_length())
+							img_file.close()
+							var image = Image.new()
+							var ok = image.load_png_from_buffer(img_buf)
+							if ok != OK:
+								ok = image.load_jpg_from_buffer(img_buf)
+							if ok == OK:
+								var tex = ImageTexture.create_from_image(image)
+								cover_texture_rect.texture = tex
+								applied = true
+								break
 	if applied:
 		return
 	var fallback_texture = _get_fallback_cover_texture()
