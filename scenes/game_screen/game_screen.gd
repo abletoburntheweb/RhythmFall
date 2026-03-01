@@ -56,6 +56,7 @@ var lane_nodes: Array[ColorRect] = []
 var debug_menu = null
 var auto_play_enabled: bool = false 
 var _autoplay_press_until := {}
+const AUTOPLAY_NO_PRESS_TIME: float = -1000000000.0
 
 var perfect_hits_this_level: int = 0
 
@@ -183,6 +184,7 @@ func _pulse_hit_zone(strong: bool):
 	
 func set_autoplay_enabled(enabled: bool):
 	auto_play_enabled = enabled
+	_reset_autoplay_state()
 	
 func is_autoplay_enabled() -> bool:
 	return auto_play_enabled
@@ -200,23 +202,37 @@ func _auto_play_simulate():
 			continue
 		var dist = abs(note.y - hit_zone_y_float)
 		if dist <= threshold:
-			lanes_to_hit[note.lane] = true
+			var ln_idx := int(note.lane)
+			if ln_idx >= 0 and ln_idx < lanes:
+				lanes_to_hit[ln_idx] = true
 	for lane in lanes_to_hit.keys():
-		check_hit(int(lane))
-		# продлеваем "нажатие" для подсветки
 		var ln := int(lane)
+		if ln < 0 or ln >= lanes:
+			continue
+		check_hit(ln)
+		# продлеваем "нажатие" для подсветки
 		var until_time = game_time + 0.08
 		var prev_until = _autoplay_press_until.get(ln, 0.0)
 		_autoplay_press_until[ln] = max(prev_until, until_time)
 	# обновляем состояния линий для подсветки
 	_autoplay_update_lane_highlights()
 
+func _reset_autoplay_state():
+	_autoplay_press_until.clear()
+	if player and not player.lanes_state.is_empty():
+		for i in range(player.lanes_state.size()):
+			player.lanes_state[i] = false
+		player.lane_pressed_changed.emit()
+	for i in range(lane_highlight_nodes.size()):
+		if lane_highlight_nodes[i]:
+			lane_highlight_nodes[i].visible = false
+ 
 func _autoplay_update_lane_highlights():
 	if not player or player.lanes_state.is_empty():
 		return
 	var changed := false
 	for i in range(lanes):
-		var should_pressed = _autoplay_press_until.get(i, 0.0) > game_time
+		var should_pressed = _autoplay_press_until.get(i, AUTOPLAY_NO_PRESS_TIME) > game_time
 		if i < player.lanes_state.size() and player.lanes_state[i] != should_pressed:
 			player.lanes_state[i] = should_pressed
 			changed = true
@@ -419,6 +435,7 @@ func start_gameplay():
 		return
 
 	gameplay_started = true
+	_reset_autoplay_state()
 
 	var song_to_load = selected_song_data
 	if not song_to_load or not song_to_load.get("path"):
@@ -691,6 +708,10 @@ func update_countdown_display():
 		countdown_label.visible = true
 
 func _input(event):
+	if get_tree() and get_tree().root:
+		var c = get_tree().root.get_node_or_null("Console")
+		if c and c.is_visible():
+			return
 	if event is InputEventKey and !event.echo:
 		var ctrl_pressed = Input.is_physical_key_pressed(KEY_CTRL)
 		var r_pressed = Input.is_physical_key_pressed(KEY_R)
@@ -893,6 +914,7 @@ func restart_level():
 	MusicManager.stop_game_music()
 	MusicManager.stop_metronome()
 
+	_reset_autoplay_state()
 	player.reset()
 	score_manager.reset()
 	note_manager.clear_notes()

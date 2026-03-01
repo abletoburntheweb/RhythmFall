@@ -2,7 +2,7 @@
 	"achievements": [
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 5 ежедневных заданий",
 			"id": 1.0,
 			"title": "Новичок дня",
@@ -12,7 +12,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 20 ежедневных заданий",
 			"id": 2.0,
 			"title": "Настоящее усердие",
@@ -22,7 +22,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 50 ежедневных заданий",
 			"id": 3.0,
 			"title": "Работник дня",
@@ -32,7 +32,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 100 ежедневных заданий",
 			"id": 4.0,
 			"title": "Ежедневный герой",
@@ -42,7 +42,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Выполните 250 ежедневных заданий",
 			"id": 5.0,
 			"title": "Мастер привычки",
@@ -102,7 +102,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 149,
+			"current": 159,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"title": "Собиратель I",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 149,
+			"current": 159,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"title": "Собиратель II",
@@ -122,7 +122,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 149,
+			"current": 159,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"title": "Собиратель III",
@@ -182,17 +182,17 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"title": "Первый день",
 			"total": 1,
-			"unlock_date": null,
-			"unlocked": false
+			"unlock_date": "1 мар. 2026, 03:07",
+			"unlocked": true
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"title": "В ритме недели",
@@ -202,7 +202,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"title": "Без выходных",
@@ -212,7 +212,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 0,
+			"current": 1,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"title": "Верный музыкант",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 0.1,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
@@ -342,7 +342,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 0.1,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
@@ -352,7 +352,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 0.1,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 0.1,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 0.0,
+			"current": 0.1,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",
@@ -582,7 +582,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1,
+			"current": 0,
 			"description": "Пройти 10 уникальных уровней",
 			"id": 59.0,
 			"title": "Уникальность I",
@@ -592,7 +592,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1,
+			"current": 0,
 			"description": "Пройти 25 уникальных уровней",
 			"id": 60.0,
 			"title": "Уникальность II",
@@ -602,7 +602,7 @@
 		},
 		{
 			"category": "mastery",
-			"current": 1,
+			"current": 0,
 			"description": "Пройти 50 уникальных уровней",
 			"id": 61.0,
 			"title": "Уникальность III",
