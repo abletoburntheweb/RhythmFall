@@ -499,6 +499,12 @@ func _on_delete_pressed():
 		SongLibrary.remove_metadata(song_path)
 		results_manager.clear_results_for_song(song_path)
 		
+		var base_name = song_path.get_file().get_basename()
+		var notes_dir_path = "user://notes/%s" % base_name
+		var user_dir = DirAccess.open("user://")
+		if user_dir and user_dir.dir_exists(notes_dir_path):
+			_delete_directory_recursive(notes_dir_path)
+		
 		SongLibrary.load_songs()
 		
 		song_list_manager.populate_items_grouped()
@@ -513,6 +519,26 @@ func _on_delete_pressed():
 		pass
 	else:
 		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
+
+func _delete_directory_recursive(dir_path: String) -> void:
+	var dir = DirAccess.open(dir_path)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var name = dir.get_next()
+	while name != "":
+		if name != "." and name != "..":
+			var child_path = "%s/%s" % [dir_path, name]
+			if dir.current_is_dir():
+				_delete_directory_recursive(child_path)
+			var root = DirAccess.open("user://")
+			if root:
+				root.remove(child_path)
+		name = dir.get_next()
+	dir.list_dir_end()
+	var root2 = DirAccess.open("user://")
+	if root2:
+		root2.remove(dir_path)
 
 func _on_results_pressed():
 	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList

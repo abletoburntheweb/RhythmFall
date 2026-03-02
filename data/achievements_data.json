@@ -2,7 +2,7 @@
 	"achievements": [
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 3,
 			"description": "Выполните 5 ежедневных заданий",
 			"id": 1.0,
 			"title": "Новичок дня",
@@ -12,7 +12,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 3,
 			"description": "Выполните 20 ежедневных заданий",
 			"id": 2.0,
 			"title": "Настоящее усердие",
@@ -22,7 +22,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 3,
 			"description": "Выполните 50 ежедневных заданий",
 			"id": 3.0,
 			"title": "Работник дня",
@@ -32,7 +32,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 3,
 			"description": "Выполните 100 ежедневных заданий",
 			"id": 4.0,
 			"title": "Ежедневный герой",
@@ -42,7 +42,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 1,
+			"current": 3,
 			"description": "Выполните 250 ежедневных заданий",
 			"id": 5.0,
 			"title": "Мастер привычки",
@@ -102,7 +102,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 159,
+			"current": 699,
 			"description": "Собрать 2000 единиц валюты",
 			"id": 11.0,
 			"title": "Собиратель I",
@@ -112,7 +112,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 159,
+			"current": 699,
 			"description": "Собрать 5000 единиц валюты",
 			"id": 12.0,
 			"title": "Собиратель II",
@@ -122,7 +122,7 @@
 		},
 		{
 			"category": "economy",
-			"current": 159,
+			"current": 699,
 			"description": "Собрать 12000 единиц валюты",
 			"id": 13.0,
 			"title": "Собиратель III",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.68,
+			"current": 7.78,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
@@ -342,7 +342,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.68,
+			"current": 7.78,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
@@ -352,7 +352,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.68,
+			"current": 7.78,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.68,
+			"current": 7.78,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 7.68,
+			"current": 7.78,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",
