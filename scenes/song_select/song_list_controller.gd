@@ -160,29 +160,19 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 
 func _edit_primary_genre():
 	var song_data = _edit_context["song_data"]
-	var old_genre = song_data.get("primary_genre", "Н/Д")
-	if old_genre == "unknown":
-		old_genre = ""
+	var old_genre = song_data.get("primary_genre", "")
 	_edit_context["type"] = "primary_genre"
-	var dialog = AcceptDialog.new()
-	dialog.title = "Редактировать жанр"
-	dialog.dialog_text = "Введите основной жанр трека (например: electronic, rap, rock):"
-	var line_edit = LineEdit.new()
-	line_edit.text = old_genre
-	line_edit.placeholder_text = "electronic, k-pop, rock..."
-	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_edit_context["line_edit"] = line_edit
-	var vbox_container = VBoxContainer.new()
-	vbox_container.add_child(line_edit)
-	dialog.add_child(vbox_container)
-	dialog.confirmed.connect(_on_edit_primary_genre_confirmed)
-	dialog.close_requested.connect(_on_dialog_closed)
-	_edit_context["dialog"] = dialog
-	if get_parent():
-		get_parent().add_child(dialog)
-	else:
-		add_child(dialog)
-	dialog.popup_centered()
+	var dlg_scene = load("res://scenes/song_select/genre_picker_dialog.tscn")
+	if dlg_scene:
+		var dlg = dlg_scene.instantiate()
+		_edit_context["dialog"] = dlg
+		if dlg.has_method("set_initial"):
+			dlg.set_initial(old_genre)
+		dlg.genre_selected.connect(_on_genre_selected_from_picker)
+		if get_parent():
+			get_parent().add_child(dlg)
+		else:
+			add_child(dlg)
 
 func _edit_year():
 	var song_data = _edit_context["song_data"]
@@ -361,22 +351,30 @@ func _on_edit_field_confirmed():
 			emit_signal("song_edited", song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
-func _on_edit_primary_genre_confirmed():
-	var dialog = _edit_context["dialog"]
-	var line_edit = _edit_context["line_edit"]
-	var song_data = _edit_context["song_data"]
+
+func _on_genre_selected_from_picker(primary_genre: String, all_genres: Array):
 	var selected_item_list_index = _edit_context["selected_index"]
-	var old_genre = song_data.get("primary_genre", "unknown")
-	if dialog and line_edit:
-		var new_genre = line_edit.text.strip_edges().to_lower()
-		if new_genre == "":
-			new_genre = "unknown"
-		if new_genre != old_genre:
-			song_data["primary_genre"] = new_genre
-			var song_file_path = song_data["path"]
-			var fields_to_update = {"primary_genre": new_genre}
-			SongLibrary.update_metadata(song_file_path, fields_to_update)
-			emit_signal("song_edited", song_data, selected_item_list_index)
+	if selected_item_list_index < 0 or selected_item_list_index >= current_grouped_data.size():
+		_cleanup_edit_context()
+		return
+	var item_data = current_grouped_data[selected_item_list_index]
+	if item_data.type != "song":
+		_cleanup_edit_context()
+		return
+	var song_data = item_data.data
+	var song_file_path = song_data.get("path", "")
+	var fields_to_update = {"primary_genre": primary_genre}
+	if all_genres and all_genres is Array and all_genres.size() > 0:
+		fields_to_update["genres"] = all_genres
+	SongLibrary.update_metadata(song_file_path, fields_to_update)
+	var persisted = SongLibrary.get_metadata_for_song(song_file_path)
+	if persisted.is_empty():
+		song_data["primary_genre"] = primary_genre
+		if all_genres and all_genres is Array and all_genres.size() > 0:
+			song_data["genres"] = all_genres
+		emit_signal("song_edited", song_data, selected_item_list_index)
+	else:
+		emit_signal("song_edited", persisted, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _on_edit_bpm_confirmed():
@@ -421,13 +419,23 @@ func _sorted_songs(songs_list: Array) -> Array:
 		arr.sort_custom(func(a, b):
 			var title_a = a.get("title", "").to_lower()
 			var title_b = b.get("title", "").to_lower()
-			return title_a < title_b
+			if title_a == title_b:
+				var artist_a = a.get("artist", "").to_lower()
+				var artist_b = b.get("artist", "").to_lower()
+				return artist_a < artist_b
+			else:
+				return title_a < title_b
 		)
 	else:
 		arr.sort_custom(func(a, b):
 			var artist_a = a.get("artist", "").to_lower()
 			var artist_b = b.get("artist", "").to_lower()
-			return artist_a < artist_b
+			if artist_a == artist_b:
+				var title_a = a.get("title", "").to_lower()
+				var title_b = b.get("title", "").to_lower()
+				return title_a < title_b
+			else:
+				return artist_a < artist_b
 		)
 	return arr
 

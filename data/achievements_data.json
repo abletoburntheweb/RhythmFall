@@ -182,7 +182,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 3,
+			"current": 4,
 			"description": "Зайти в игру впервые",
 			"id": 19.0,
 			"title": "Первый день",
@@ -192,7 +192,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 3,
+			"current": 4,
 			"description": "Заходить в игру 7 дней подряд",
 			"id": 20.0,
 			"title": "В ритме недели",
@@ -202,7 +202,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 3,
+			"current": 4,
 			"description": "Заходить 30 дней подряд",
 			"id": 21.0,
 			"title": "Без выходных",
@@ -212,7 +212,7 @@
 		},
 		{
 			"category": "daily",
-			"current": 3,
+			"current": 4,
 			"description": "Заходить 365 дней подряд",
 			"id": 22.0,
 			"title": "Верный музыкант",
@@ -332,7 +332,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 19.53,
+			"current": 19.75,
 			"description": "Провести в игре 1 час",
 			"id": 34.0,
 			"title": "Начинающий меломан",
@@ -342,7 +342,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 19.53,
+			"current": 19.75,
 			"description": "Провести в игре 5 часов",
 			"id": 35.0,
 			"title": "Страстный слушатель",
@@ -352,7 +352,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 19.53,
+			"current": 19.75,
 			"description": "Провести в игре 10 часов",
 			"id": 36.0,
 			"title": "Поклонник ритма",
@@ -362,7 +362,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 19.53,
+			"current": 19.75,
 			"description": "Провести в игре 50 часов",
 			"id": 37.0,
 			"title": "Мастер синкоп",
@@ -372,7 +372,7 @@
 		},
 		{
 			"category": "playtime",
-			"current": 19.53,
+			"current": 19.75,
 			"description": "Провести в игре 200 часов",
 			"id": 38.0,
 			"title": "Легенда сцены",

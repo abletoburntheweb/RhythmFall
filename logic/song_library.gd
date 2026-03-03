@@ -36,7 +36,6 @@ func read_metadata(filepath: String) -> Dictionary:
 		"duration": "00:00",
 		"file_mtime": FileAccess.get_modified_time(filepath)
 	}
-	# ID3 читается асинхронно — здесь только лёгкий фолбэк по имени файла
 
 	var filename_stem = filepath.get_file().get_basename()
 	if str(metadata["artist"]) == "Неизвестен" or str(metadata["title"]) == filename_stem:
@@ -78,7 +77,6 @@ func load_songs():
 						"duration": metadata.get("duration", "00:00")
 					}
 					update_metadata(path, fields_to_save)
-				# Планируем асинхронное обогащение ID3 для неизвестных/фолбэк записей
 				if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
 					_id3_queue.append(path)
 				songs.append(metadata)
@@ -111,7 +109,6 @@ func add_song(file_path: String) -> Dictionary:
 		"cover": metadata.get("cover", null)
 	}
 	update_metadata(dest_path, fields_to_save)
-	# Запланировать фоновое чтение ID3 для добавленного файла
 	if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == dest_path.get_file().get_basename():
 		_id3_queue.append(dest_path)
 		_start_id3_enrichment_if_needed()
@@ -143,17 +140,24 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 		}
 	if _metadata_cache.has(song_file_path) and not _metadata_cache[song_file_path].has("file_mtime"):
 		_metadata_cache[song_file_path]["file_mtime"] = int(FileAccess.get_modified_time(song_file_path))
-	if updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY:
+	var any_changed := false
+	var had_genres := updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY
+	if had_genres:
 		var genres_array = updated_fields["genres"]
 		var genres_str = ", ".join(genres_array)
+		var old_genres = _metadata_cache[song_file_path].get("genres", "")
+		if str(old_genres) != str(genres_str):
+			any_changed = true
 		_metadata_cache[song_file_path]["genres"] = genres_str
+		var old_pg = _metadata_cache[song_file_path].get("primary_genre", "unknown")
+		var new_pg = "unknown"
 		if !genres_array.is_empty():
-			_metadata_cache[song_file_path]["primary_genre"] = str(genres_array[0])
-		else:
-			_metadata_cache[song_file_path]["primary_genre"] = "unknown"
+			new_pg = str(genres_array[0])
+		_metadata_cache[song_file_path]["primary_genre"] = new_pg
+		if str(old_pg) != str(new_pg):
+			any_changed = true
 		updated_fields = updated_fields.duplicate()
 		updated_fields.erase("genres")
-	var any_changed := false
 	for field_name in updated_fields:
 		if field_name == "cover":
 			continue
@@ -166,6 +170,8 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 		_save_metadata()
 		_update_song_in_list(song_file_path)
 		emit_signal("metadata_updated", song_file_path)
+	else:
+		pass
 
 func remove_metadata(song_file_path: String):
 	if _metadata_cache.erase(song_file_path):
@@ -197,7 +203,7 @@ func _update_song_in_list(song_file_path: String):
 							songs[index][key] = bpm_value
 			else:
 				songs[index][key] = user_metadata[key]
- 
+
 func _load_metadata():
 	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.READ)
 	if file_access:
@@ -228,7 +234,6 @@ func _save_metadata():
 	else:
 		printerr("SongLibrary.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)
 
-# Фоновое чтение ID3, чтобы не просаживать FPS
 func _start_id3_enrichment_if_needed():
 	if _id3_running:
 		return

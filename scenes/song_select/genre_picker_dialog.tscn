@@ -1,0 +1,59 @@
+[gd_scene load_steps=3 format=3 uid="uid://bvqgg8p62jhe0"]
+
+[ext_resource type="Script" uid="uid://dwrvglrg13hnt" path="res://scenes/song_select/genre_picker_dialog.gd" id="1_06red"]
+[ext_resource type="Theme" uid="uid://cr2btofc1yysg" path="res://ui/theme/app_theme.tres" id="2_n0ssd"]
+
+[node name="GenrePicker" type="Control"]
+layout_mode = 3
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_n0ssd")
+script = ExtResource("1_06red")
+metadata/_custom_type_script = "uid://dwrvglrg13hnt"
+
+[node name="Background" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"FlatBackButton"
+text = "Назад	"
+
+[node name="InstrumentLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = "Выберите жанр"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SearchLineEdit" type="LineEdit" parent="Container"]
+custom_minimum_size = Vector2(1700, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Поиск жанра…"
+
+[node name="GenreList" type="ItemList" parent="Container"]
+custom_minimum_size = Vector2(0, 930)
+layout_mode = 2
+theme = ExtResource("2_n0ssd")
+theme_override_font_sizes/font_size = 20
+
+[connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="text_changed" from="Container/SearchLineEdit" to="." method="_on_search_changed"]
+[connection signal="item_activated" from="Container/GenreList" to="." method="_on_item_activated"]

@@ -270,10 +270,16 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 		was_selected = true
 
 	if song_list_manager.update_song_at_index(item_list_index, song_data):
-		pass
-
 		if was_selected:
 			song_item_list_ref.select(item_list_index, true)
+			var path = String(song_data.get("path", ""))
+			var persisted = SongLibrary.get_metadata_for_song(path)
+			if persisted.is_empty():
+				current_selected_song_data = song_data.duplicate(true)
+			else:
+				current_selected_song_data = persisted.duplicate(true)
+			current_displayed_song_path = path
+			song_details_manager.update_details(current_selected_song_data)
 
 		if current_selected_song_data.get("path") == song_data.get("path"):
 			var song_path = song_data.get("path", "")
