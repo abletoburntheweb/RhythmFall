@@ -175,10 +175,19 @@ func _check_notes():
 			emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
 			if _notes_res.has("track_info"):
 				var ti = _notes_res.track_info
+				var source = str(ti.get("genres_source", "")).strip_edges().to_lower()
 				var artist = str(ti.get("artist", "Unknown"))
 				var title = str(ti.get("title", "Unknown"))
 				var genres = ti.get("genres", [])
-				if genres is Array:
+				var path = _notes_req.get("song_path", "")
+				var allow_update = false
+				if path != "":
+					var meta = SongLibrary.get_metadata_for_song(path)
+					var local_pg = str(meta.get("primary_genre", "")).strip_edges().to_lower()
+					allow_update = (source == "server") or (local_pg == "" or local_pg == "unknown")
+				else:
+					allow_update = (source == "server")
+				if allow_update and genres is Array:
 					emit_signal("genres_completed", artist, title, genres)
 		else:
 			emit_signal("notes_error", "Неизвестная ошибка")

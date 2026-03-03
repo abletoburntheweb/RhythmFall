@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="3_uqeha"]
+[ext_resource type="Theme" uid="uid://dq1jeuco1akmf" path="res://ui/theme/app_theme.tres" id="3_uqeha"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
