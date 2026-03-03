@@ -2,12 +2,17 @@
 extends Node
 
 signal metadata_updated(song_file_path: String)
+signal id3_scan_started()
+signal id3_scan_finished()
 
 const SONG_FOLDER_PATH = "res://songs/"
 const METADATA_FILE_PATH = "user://song_metadata.json"
 
 var songs: Array[Dictionary] = []
 var _metadata_cache: Dictionary = {}
+var _id3_thread: Thread = null
+var _id3_queue: Array = []
+var _id3_running: bool = false
 
 func _init():
 	_load_metadata()
@@ -31,13 +36,17 @@ func read_metadata(filepath: String) -> Dictionary:
 		"duration": "00:00",
 		"file_mtime": FileAccess.get_modified_time(filepath)
 	}
+	# ID3 читается асинхронно — здесь только лёгкий фолбэк по имени файла
+
 	var filename_stem = filepath.get_file().get_basename()
-	if metadata["title"] == filename_stem:
+	if str(metadata["artist"]) == "Неизвестен" or str(metadata["title"]) == filename_stem:
 		if " - " in filename_stem:
 			var parts = filename_stem.split(" - ", false, 1)
 			if parts.size() == 2:
-				metadata["artist"] = parts[0].strip_edges()
-				metadata["title"] = parts[1].strip_edges()
+				var first := parts[0].strip_edges()
+				var second := parts[1].strip_edges()
+				metadata["title"] = first
+				metadata["artist"] = second
 	var user_metadata = get_metadata_for_song(filepath)
 	if not user_metadata.is_empty():
 		for key in user_metadata.keys():
@@ -69,9 +78,13 @@ func load_songs():
 						"duration": metadata.get("duration", "00:00")
 					}
 					update_metadata(path, fields_to_save)
+				# Планируем асинхронное обогащение ID3 для неизвестных/фолбэк записей
+				if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
+					_id3_queue.append(path)
 				songs.append(metadata)
 		file_name = dir.get_next()
 	dir.list_dir_end()
+	_start_id3_enrichment_if_needed()
 
 func add_song(file_path: String) -> Dictionary:
 	var file_extension = file_path.get_extension().to_lower()
@@ -98,6 +111,10 @@ func add_song(file_path: String) -> Dictionary:
 		"cover": metadata.get("cover", null)
 	}
 	update_metadata(dest_path, fields_to_save)
+	# Запланировать фоновое чтение ID3 для добавленного файла
+	if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == dest_path.get_file().get_basename():
+		_id3_queue.append(dest_path)
+		_start_id3_enrichment_if_needed()
 	return metadata
 
 func get_songs_list() -> Array[Dictionary]:
@@ -210,3 +227,66 @@ func _save_metadata():
 		file_access.close()
 	else:
 		printerr("SongLibrary.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)
+
+# Фоновое чтение ID3, чтобы не просаживать FPS
+func _start_id3_enrichment_if_needed():
+	if _id3_running:
+		return
+	if _id3_queue.is_empty():
+		return
+	emit_signal("id3_scan_started")
+	_id3_running = true
+	_id3_thread = Thread.new()
+	var err = _id3_thread.start(func(): _id3_worker(_id3_queue.duplicate()))
+	if err != OK:
+		_id3_running = false
+		_id3_thread = null
+		printerr("SongLibrary.gd: Не удалось запустить поток ID3: " + str(err))
+
+func _id3_worker(queue: Array):
+	var MusicMetadataRes = load("res://addons/MusicMetadata/MusicMetadata.gd")
+	for p in queue:
+		var fa := FileAccess.open(p, FileAccess.READ)
+		if fa:
+			var header := fa.get_buffer(10)
+			var ok := (header.size() >= 10 and header.slice(0, 3).get_string_from_ascii() == "ID3")
+			var fields := {}
+			if ok:
+				var size_bytes := header.slice(6, 10)
+				var size := 0
+				for b in size_bytes:
+					size = (size << 7) | int(b & 0x7f)
+				var tag := fa.get_buffer(size)
+				var data := PackedByteArray()
+				data.append_array(header)
+				data.append_array(tag)
+				var md = MusicMetadataRes.new(data)
+				if md:
+					var id3_title: String = str(md.title).strip_edges()
+					var id3_artist: String = str(md.artist).strip_edges()
+					var id3_year_val: int = int(md.year)
+					var id3_bpm_val: int = int(md.bpm)
+					if id3_title != "":
+						fields["title"] = id3_title
+					if id3_artist != "":
+						fields["artist"] = id3_artist
+					if id3_year_val > 0:
+						fields["year"] = str(id3_year_val)
+					if id3_bpm_val > 0:
+						fields["bpm"] = str(id3_bpm_val)
+			fa.close()
+			if not fields.is_empty():
+				call_deferred("_apply_id3_result", p, fields)
+		OS.delay_msec(5)
+	call_deferred("_finish_id3_worker")
+
+func _apply_id3_result(path: String, fields: Dictionary):
+	update_metadata(path, fields)
+
+func _finish_id3_worker():
+	if _id3_thread:
+		_id3_thread.wait_to_finish()
+		_id3_thread = null
+	_id3_queue.clear()
+	_id3_running = false
+	emit_signal("id3_scan_finished")
