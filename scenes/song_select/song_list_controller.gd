@@ -364,7 +364,9 @@ func _on_genre_selected_from_picker(primary_genre: String, all_genres: Array):
 	var song_data = item_data.data
 	var song_file_path = song_data.get("path", "")
 	var fields_to_update = {"primary_genre": primary_genre}
-	if all_genres and all_genres is Array and all_genres.size() > 0:
+	if primary_genre == "unknown":
+		fields_to_update["genres"] = []
+	elif all_genres and all_genres is Array and all_genres.size() > 0:
 		fields_to_update["genres"] = all_genres
 	SongLibrary.update_metadata(song_file_path, fields_to_update)
 	var persisted = SongLibrary.get_metadata_for_song(song_file_path)

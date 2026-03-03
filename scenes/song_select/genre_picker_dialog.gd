@@ -108,6 +108,12 @@ func _on_back_button_pressed():
 	MusicManager.play_cancel_sound()
 	queue_free()
 
+func _on_reset_pressed():
+	MusicManager.play_cancel_sound()
+	emit_signal("genre_selected", "unknown", [])
+	if auto_close:
+		queue_free()
+
 func _input(event: InputEvent):
 	if event.is_action_pressed("ui_cancel"):
 		_on_back_button_pressed()
