@@ -24,7 +24,6 @@ func _ready():
 	_list = get_node_or_null("GenreList")
 	if _list == null:
 		_list = get_node_or_null("Container/GenreList")
-	# Сигналы подключены через .tscn: BackButton.pressed, SearchLineEdit.text_changed, GenreList.item_activated
 	_populate()
 	if _list:
 		_grouped_data = _build_grouped_data(_filtered)

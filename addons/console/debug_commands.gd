@@ -31,6 +31,8 @@ func _register(c):
 	c.add_command("daily.list", _daily_list, [], 0, "Показать текущие ежедневки")
 	c.add_command("daily.progress", _daily_progress, ["quest_id", "value"], 2, "Добавить прогресс для ежедневки")
 	c.add_command("daily.complete", _daily_complete, ["quest_id"], 1, "Завершить ежедневку")
+	c.add_command("daily.complete_all", _daily_complete_all, [], 0, "Завершить все текущие ежедневки")
+	c.add_command("daily.load_all", _daily_load_all, [], 0, "Загрузить все ежедневки из daily_quests.json на сегодня")
 	c.add_command("game.info", _game_info, [], 0, "Показать параметры текущей игры")
 	c.add_command("game.score.add_1000", _game_score_add_1000, [], 0, "Добавить 1000 очков с множителем")
 	c.add_command("game.score.sub_1000", _game_score_sub_1000, [], 0, "Уменьшить счёт на 1000")
@@ -357,6 +359,55 @@ func _daily_complete(token: String):
 			ctx = {}
 	PlayerDataManager.increment_daily_progress(ev, 999999, ctx)
 	if c: c.print_info("Ежедневка завершена")
+	
+func _daily_complete_all():
+	var c = get_tree().root.get_node_or_null("Console")
+	var qs = PlayerDataManager.get_daily_quests()
+	if qs.is_empty():
+		if c: c.print_error("Ежедневки отсутствуют")
+		return
+	for q in qs:
+		var ev = String(q.get("event",""))
+		var ctx := {}
+		match ev:
+			"accuracy_80", "accuracy_90", "accuracy_95":
+				ctx = {"accuracy": 100.0}
+			"combo_reached", "combo_reached_60", "combo_reached_100":
+				ctx = {"max_combo": 100}
+			"missless":
+				ctx = {"missed_notes": 0}
+			"play_drum_level":
+				ctx = {"is_drum_mode": true}
+			_:
+				ctx = {}
+		PlayerDataManager.increment_daily_progress(ev, 999999, ctx)
+	if c: c.print_info("Все текущие ежедневки завершены")
+
+func _daily_load_all():
+	var c = get_tree().root.get_node_or_null("Console")
+	var today = Time.get_date_string_from_system()
+	var quest_pool: Array = []
+	var file = FileAccess.open("res://data/daily_quests.json", FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		file.close()
+		var parsed = JSON.parse_string(json_text)
+		if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
+			quest_pool = parsed["quests"]
+	if quest_pool.is_empty():
+		if c: c.print_error("daily_quests.json пуст или не найден")
+		return
+	var quests_for_day: Array = []
+	for q in quest_pool:
+		if q is Dictionary:
+			var qcopy = q.duplicate(true)
+			qcopy["progress"] = 0
+			qcopy["completed"] = false
+			quests_for_day.append(qcopy)
+	PlayerDataManager.data["daily_quests"] = {"date": today, "quests": quests_for_day}
+	PlayerDataManager.flush_save()
+	if c:
+		c.print_info("Загружены все ежедневки (%d) на сегодня" % quests_for_day.size())
 	
 func _parse_int_saturated(s: String) -> int:
 	var n := int(s)
