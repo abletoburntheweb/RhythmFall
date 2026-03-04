@@ -252,16 +252,18 @@ func _on_filter_by_letter_selected(index: int):
 	var selected_text = filter_by_letter.get_item_text(index)
 	var mode = "title" if selected_text == "Название" else "artist"
 	song_list_manager.set_filter_mode(mode)
-	song_list_manager.populate_items_grouped()
+	var search_bar = $MainVBox/TopBarHBox/SearchBar
+	if search_bar:
+		var q = String(search_bar.text)
+		song_list_manager.filter_items(q)
+	else:
+		song_list_manager.populate_items_grouped()
 	
 func _on_search_text_changed(new_text: String):
 	song_list_manager.filter_items(new_text)
 
 func _update_filters_visibility():
 	var is_edit_mode = song_list_manager.is_edit_mode_active()
-	if is_edit_mode:
-		song_list_manager.set_filter_mode("title")
-		filter_by_letter.select(0)
 
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 	var was_selected = false
@@ -409,8 +411,10 @@ func _toggle_edit_mode():
 	song_list_manager.set_edit_mode(!song_list_manager.is_edit_mode_active())
 	_update_edit_button_style()
 	_update_filters_visibility()
-	
-	filter_by_letter.item_selected.emit(filter_by_letter.get_selected_id())
+	var search_bar = $MainVBox/TopBarHBox/SearchBar
+	if search_bar:
+		var q = String(search_bar.text)
+		song_list_manager.filter_items(q)
 
 func _update_edit_button_style():
 	if song_list_manager.is_edit_mode_active():
