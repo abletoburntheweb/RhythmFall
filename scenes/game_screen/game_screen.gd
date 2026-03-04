@@ -594,7 +594,6 @@ func _check_song_end():
 	if spawn_queue_empty and active_notes_empty:
 		notes_ended = true 
 		_update_hint()
-		# Не выходим: даём возможность авто-завершить по окончанию трека
 
 	if selected_song_data and selected_song_data.has("duration"):
 		var duration_value = selected_song_data.get("duration", 0)
@@ -746,7 +745,6 @@ func _skip_intro_available() -> bool:
 		return false
 	if skip_used:
 		return false
-	# Доступно только до любых нажатий/промахов
 	if score_manager:
 		if score_manager.get_hit_notes_count() > 0:
 			return false

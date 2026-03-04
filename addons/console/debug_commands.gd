@@ -390,6 +390,7 @@ func _game_seek_to_no_notes():
 	if not gs:
 		if c: c.print_error("GameScreen не найден")
 		return
+	# Определяем длительность трека
 	var duration_seconds: float = 0.0
 	var dur = gs.selected_song_data.get("duration", 0)
 	if typeof(dur) == TYPE_STRING:
@@ -400,6 +401,7 @@ func _game_seek_to_no_notes():
 			duration_seconds = float(minutes * 60 + seconds)
 	elif typeof(dur) == TYPE_FLOAT:
 		duration_seconds = float(dur)
+	# Целимся ближе к концу, но оставляем немного музыки
 	var target := 0.0
 	if duration_seconds > 0.0:
 		target = max(0.0, duration_seconds - 10.0)
@@ -408,8 +410,10 @@ func _game_seek_to_no_notes():
 	gs.game_time = target
 	if MusicManager.has_method("set_music_position"):
 		MusicManager.set_music_position(target)
+	# Очищаем ноты и очередь спавна, чтобы имитировать отсутствие нот
 	if gs.note_manager:
 		gs.note_manager.clear_notes()
+	# Принудительно проверить окончание нот и обновить подсказку
 	if gs.has_method("_check_song_end"):
 		gs._check_song_end()
 	if gs.has_method("_update_hint"):
@@ -482,13 +486,35 @@ func _game_info():
 		var notes_total = 0
 		if gs.note_manager and gs.note_manager.has_method("get_spawn_queue_size"):
 			notes_total = gs.note_manager.get_spawn_queue_size()
-		var score = gs.score_manager and gs.score_manager.get_score() or 0
-		var combo = gs.score_manager and gs.score_manager.get_combo() or 0
-		var max_combo = gs.score_manager and gs.score_manager.get_max_combo() or 0
-		var mult = gs.score_manager and gs.score_manager.get_combo_multiplier() or 1.0
-		var acc = gs.score_manager and gs.score_manager.get_accuracy() or 0.0
-		c.print_info("Счёт: %d | Комбо: %d (max %d, x%.1f) | Точн.: %.2f%%" % [score, combo, max_combo, mult, acc])
-		c.print_info("Нот активных: %d | Всего нот: %d | BPM: %.1f | Время: %.2fs" % [notes_active, notes_total, gs.bpm, gs.game_time])
+		var score := 0
+		var combo := 0
+		var max_combo := 0
+		var mult := 1.0
+		var acc := 0.0
+		if gs.score_manager:
+			score = int(gs.score_manager.get_score())
+			combo = int(gs.score_manager.get_combo())
+			max_combo = int(gs.score_manager.get_max_combo())
+			mult = float(gs.score_manager.get_combo_multiplier())
+			acc = float(gs.score_manager.get_accuracy())
+		var t := max(0.0, gs.game_time)
+		var m := int(floor(t / 60.0))
+		var s := int(floor(fmod(t, 60.0)))
+		var mm := str(m).pad_zeros(2)
+		var ss := str(s).pad_zeros(2)
+		var mult_txt := "x" + str(snapped(mult, 0.1))
+		var acc_txt := str(snapped(acc, 0.01)) + "%"
+		var bpm_txt := str(snapped(gs.bpm, 0.1))
+		var t_txt := str(snapped(t, 0.01)) + "s"
+		c.print_info("Счёт: " + str(score))
+		c.print_info("Комбо: " + str(combo))
+		c.print_info("Макс. комбо: " + str(max_combo))
+		c.print_info("Множитель: " + mult_txt)
+		c.print_info("Точность: " + acc_txt)
+		c.print_info("Активных нот: " + str(notes_active))
+		c.print_info("Всего нот: " + str(notes_total))
+		c.print_info("BPM: " + bpm_txt)
+		c.print_info("Время: " + t_txt + " (" + mm + ":" + ss + ")")
 
 func _game_score_add_1000():
 	var c = get_tree().root.get_node_or_null("Console")
