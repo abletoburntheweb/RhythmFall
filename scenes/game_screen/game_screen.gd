@@ -469,11 +469,18 @@ func start_gameplay():
 
 	var should_delay_music = false
 	var earliest_note_time = note_manager.get_earliest_note_time()
-	if earliest_note_time > 0 and earliest_note_time <= EARLY_NOTE_THRESHOLD:
-		should_delay_music = true
+	var pre_delay := 0.0
+	if earliest_note_time > 0:
+		var pixels_per_sec = speed * (1000.0 / 16.0)
+		var initial_y_offset_from_top = -20.0
+		var distance_to_travel = float(hit_zone_y) - initial_y_offset_from_top
+		var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
+		if earliest_note_time <= time_to_reach_hit_zone:
+			should_delay_music = true
+			pre_delay = time_to_reach_hit_zone - earliest_note_time
 
 	if should_delay_music:
-		game_time = -MUSIC_START_DELAY_IF_EARLY_NOTES
+		game_time = -pre_delay
 	else:
 		game_time = 0.0
 
@@ -492,7 +499,7 @@ func start_gameplay():
 
 		delayed_music_timer = Timer.new()
 		delayed_music_timer.name = "DelayedMusicTimer"
-		delayed_music_timer.wait_time = MUSIC_START_DELAY_IF_EARLY_NOTES
+		delayed_music_timer.wait_time = max(0.0, pre_delay)
 		delayed_music_timer.one_shot = true
 
 		delayed_music_timer.timeout.connect(func():
@@ -587,6 +594,7 @@ func _check_song_end():
 	if spawn_queue_empty and active_notes_empty:
 		notes_ended = true 
 		_update_hint()
+		# Не выходим: даём возможность авто-завершить по окончанию трека
 
 	if selected_song_data and selected_song_data.has("duration"):
 		var duration_value = selected_song_data.get("duration", 0)
@@ -738,6 +746,7 @@ func _skip_intro_available() -> bool:
 		return false
 	if skip_used:
 		return false
+	# Доступно только до любых нажатий/промахов
 	if score_manager:
 		if score_manager.get_hit_notes_count() > 0:
 			return false
