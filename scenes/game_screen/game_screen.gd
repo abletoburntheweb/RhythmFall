@@ -40,6 +40,7 @@ var countdown_label: Label = null
 var notes_container: Node2D = null
 var judgement_label: Label = null
 var progress_bar: ProgressBar = null
+var hint_label: Label = null
 
 var game_timer: Timer
 var countdown_timer
@@ -282,6 +283,8 @@ func _find_ui_elements():
 		var progress_container = ui_container_node.get_node_or_null("SongProgressContainer")
 		if progress_container:
 			progress_bar = progress_container.get_node_or_null("SongProgressBar") as ProgressBar
+		
+		hint_label = ui_container_node.get_node_or_null("HintLabel") as Label
 
 	countdown_label = get_node_or_null("CountdownLabel") as Label
 	notes_container = get_node_or_null("NotesContainer") as Node2D
@@ -360,6 +363,7 @@ func start_countdown():
 	input_enabled = false
 	countdown_remaining = 5
 	update_countdown_display()
+	_update_hint()
 
 	var scene_tree_timer = get_tree().create_timer(1.0)
 	scene_tree_timer.timeout.connect(_update_countdown)
@@ -374,6 +378,7 @@ func _update_countdown():
 	
 	countdown_remaining -= 1
 	update_countdown_display()
+	_update_hint()
 	
 	if countdown_remaining <= 0:
 		countdown_active = false
@@ -381,6 +386,7 @@ func _update_countdown():
 			countdown_label.visible = false
 		input_enabled = true  
 		start_gameplay() 
+		_update_hint()
 	else:
 		var scene_tree_timer = get_tree().create_timer(1.0)
 		scene_tree_timer.timeout.connect(_update_countdown)
@@ -503,6 +509,7 @@ func start_gameplay():
 		MusicManager.play_game_music(song_path)
 
 	check_song_end_timer.start()
+	_update_hint()
 
 func update_speed_from_bpm():
 	var base_bpm = 120.0
@@ -550,6 +557,7 @@ func _update_game():
 	
 	if not countdown_active: 
 		note_manager.spawn_notes() 
+		_update_hint()
 	
 	update_ui()
 	
@@ -570,7 +578,7 @@ func _update_game():
 		MusicManager.update_metronome(GAME_UPDATE_DELTA, game_time, bpm)  
 
 func _check_song_end():
-	if pauser.is_paused or game_finished or notes_ended:
+	if pauser.is_paused or game_finished:
 		return
 
 	var spawn_queue_empty = note_manager.get_spawn_queue_size() == 0
@@ -578,14 +586,17 @@ func _check_song_end():
 
 	if spawn_queue_empty and active_notes_empty:
 		notes_ended = true 
-		victory_delay_timer.start(VICTORY_DELAY_AFTER_NOTES) 
-		return
+		_update_hint()
 
 	if selected_song_data and selected_song_data.has("duration"):
-		var duration_value = selected_song_data.get("duration", 0.0)
-		if typeof(duration_value) == TYPE_FLOAT and duration_value > 0:
-			var duration = duration_value
-			if game_time >= duration - 0.1:
+		var duration_value = selected_song_data.get("duration", 0)
+		var duration_seconds: float = 0.0
+		if typeof(duration_value) == TYPE_FLOAT:
+			duration_seconds = float(duration_value)
+		elif typeof(duration_value) == TYPE_STRING:
+			duration_seconds = _parse_duration_string(String(duration_value))
+		if duration_seconds > 0.0:
+			if game_time >= duration_seconds - 0.1:
 				end_game()
 				return
 
@@ -705,6 +716,45 @@ func update_countdown_display():
 		countdown_label.text = str(countdown_remaining)
 		countdown_label.visible = true
 
+func _update_hint():
+	if hint_label == null:
+		return
+	var text := ""
+	if countdown_active:
+		text = "Нажмите пробел, чтобы пропустить отсчёт"
+	elif _skip_intro_available():
+		text = "Нажмите пробел, чтобы пропустить вступление"
+	elif notes_ended and not game_finished:
+		text = "Нажмите пробел, чтобы перейти к результатам"
+	else:
+		text = ""
+	hint_label.text = text
+	hint_label.visible = (text != "")
+
+func _skip_intro_available() -> bool:
+	if game_time < 0:
+		return false
+	if pauser.is_paused or game_finished or countdown_active:
+		return false
+	if skip_used:
+		return false
+	if score_manager:
+		if score_manager.get_hit_notes_count() > 0:
+			return false
+		if score_manager.get_missed_notes_count() > 0:
+			return false
+	if game_time >= skip_time_threshold:
+		return false
+	var spawn_queue = note_manager.get_spawn_queue()
+	if not spawn_queue or spawn_queue.size() == 0:
+		return false
+	var first_note_time = spawn_queue[0].get("time", 0.0)
+	if first_note_time <= game_time:
+		return false
+	if first_note_time < skip_time_threshold:
+		return false
+	return true
+
 func _input(event):
 	if get_tree() and get_tree().root:
 		var c = get_tree().root.get_node_or_null("Console")
@@ -756,9 +806,12 @@ func _input(event):
 	if event is InputEventKey and event.pressed:
 		var keycode = event.keycode
 		if keycode == KEY_SPACE and not countdown_active:
-			if skip_intro():
+			if notes_ended and not game_finished:
+				end_game()
 				return
-
+			if skip_intro():
+				_update_hint()
+				return
 		if not countdown_active:
 			player.handle_key_press(keycode)
 
@@ -776,6 +829,7 @@ func skip_countdown():
 		if countdown_timer:
 			pass
 		start_gameplay()
+		_update_hint()
 
 func skip_intro() -> bool:
 	if game_time < 0: 
@@ -925,6 +979,7 @@ func restart_level():
 	PlayerDataManager.increment_daily_progress("level_restarted", 1, {})
 
 	update_ui()
+	_update_hint()
 	if countdown_label:
 		countdown_label.visible = true
 

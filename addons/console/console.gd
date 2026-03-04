@@ -152,21 +152,21 @@ func _exit_tree() -> void:
 
 
 func _ready() -> void:
-	add_command("quit", quit, 0, 0, "Quits the game.")
-	add_command("exit", quit, 0, 0, "Quits the game.")
-	add_command("clear", clear, 0, 0, "Clears the text on the console.")
-	add_command("delete_history", delete_history, 0, 0, "Deletes the history of previously entered commands.")
-	add_command("help", help, 0, 0, "Displays instructions on how to use the console.")
-	add_command("commands_list", commands_list, 0, 0, "Lists all commands and their descriptions.")
-	add_command("commands", commands, 0, 0, "Lists commands with no descriptions.")
-	add_command("calc", calculate, ["mathematical expression to evaluate"], 0, "Evaluates the math passed in for quick arithmetic.")
-	add_command("echo", print_line, ["string"], 1, "Prints given string to the console.")
-	add_command("echo_warning", print_warning, ["string"], 1, "Prints given string as warning to the console.")
-	add_command("echo_info", print_info, ["string"], 1, "Prints given string as info to the console.")
-	add_command("echo_error", print_error, ["string"], 1, "Prints given string as an error to the console.")
-	add_command("pause", pause, 0, 0, "Pauses node processing.")
-	add_command("unpause", unpause, 0, 0, "Unpauses node processing.")
-	add_command("exec", exec, 1, 1, "Execute a script.")
+	add_command("quit", quit, 0, 0, "Выходит из игры.")
+	add_command("exit", quit, 0, 0, "Выходит из игры.")
+	add_command("clear", clear, 0, 0, "Очищает вывод консоли.")
+	add_command("delete_history", delete_history, 0, 0, "Удаляет историю введённых команд.")
+	add_command("help", help, 0, 0, "Показывает инструкцию по использованию консоли.")
+	add_command("commands_list", commands_list, 0, 0, "Показывает список всех команд с описаниями.")
+	add_command("commands", commands, 0, 0, "Показывает список команд без описаний.")
+	add_command("calc", calculate, ["математическое выражение"], 0, "Вычисляет указанное выражение.")
+	add_command("echo", print_line, ["строка"], 1, "Печатает строку в консоль.")
+	add_command("echo_warning", print_warning, ["строка"], 1, "Печатает строку как предупреждение.")
+	add_command("echo_info", print_info, ["строка"], 1, "Печатает строку как информационное сообщение.")
+	add_command("echo_error", print_error, ["строка"], 1, "Печатает строку как ошибку.")
+	add_command("pause", pause, 0, 0, "Ставит игру на паузу (останавливает обработку узлов).")
+	add_command("unpause", unpause, 0, 0, "Снимает игру с паузы.")
+	add_command("exec", exec, 1, 1, "Выполняет скрипт из файла user://<имя>.txt.")
 	# Try to load debug commands module if autoload isn't present
 	var dbg_path := "res://addons/console/debug_commands.gd"
 	if ResourceLoader.exists(dbg_path):
@@ -472,26 +472,26 @@ func delete_history() -> void:
 
 
 func help() -> void:
-	rich_label.append_text("	Built in commands:
-		[color=light_green]calc[/color]: Calculates a given expresion
-		[color=light_green]clear[/color]: Clears the registry view
-		[color=light_green]commands[/color]: Shows a reduced list of all the currently registered commands
-		[color=light_green]commands_list[/color]: Shows a detailed list of all the currently registered commands
-		[color=light_green]delete_history[/color]: Deletes the commands history
-		[color=light_green]echo[/color]: Prints a given string to the console
-		[color=light_green]echo_error[/color]: Prints a given string as an error to the console
-		[color=light_green]echo_info[/color]: Prints a given string as info to the console
-		[color=light_green]echo_warning[/color]: Prints a given string as warning to the console
-		[color=light_green]pause[/color]: Pauses node processing
-		[color=light_green]unpause[/color]: Unpauses node processing
-		[color=light_green]quit[/color]: Quits the game
-	Controls:
-		[color=light_blue]Up[/color] and [color=light_blue]Down[/color] arrow keys to navigate commands history
-		[color=light_blue]PageUp[/color] and [color=light_blue]PageDown[/color] to scroll registry
-		[[color=light_blue]Ctrl[/color] + [color=light_blue]~[/color]] to change console size between half screen and full screen
-		[[color=light_blue]Ctrl[/color] + [color=light_blue]Mouse Wheel[/color]] up/down to change console font size
-		[color=light_blue]~[/color] or [color=light_blue]Esc[/color] key to close the console
-		[color=light_blue]Tab[/color] key to autocomplete, [color=light_blue]Tab[/color] again to cycle between matching suggestions\n\n")
+	rich_label.append_text("	Встроенные команды:
+		[color=light_green]calc[/color]: Вычисляет указанное выражение
+		[color=light_green]clear[/color]: Очищает вывод консоли
+		[color=light_green]commands[/color]: Показывает сокращённый список зарегистрированных команд
+		[color=light_green]commands_list[/color]: Показывает подробный список зарегистрированных команд с описаниями
+		[color=light_green]delete_history[/color]: Удаляет историю введённых команд
+		[color=light_green]echo[/color]: Печатает строку в консоль
+		[color=light_green]echo_error[/color]: Печатает строку как ошибку
+		[color=light_green]echo_info[/color]: Печатает строку как информационное сообщение
+		[color=light_green]echo_warning[/color]: Печатает строку как предупреждение
+		[color=light_green]pause[/color]: Ставит игру на паузу
+		[color=light_green]unpause[/color]: Снимает игру с паузы
+		[color=light_green]quit[/color]: Выходит из игры
+	Управление:
+		Стрелки [color=light_blue]Up[/color]/[color=light_blue]Down[/color] — навигация по истории команд
+		[color=light_blue]PageUp[/color]/[color=light_blue]PageDown[/color] — прокрутка журнала
+		[color=light_blue]Ctrl[/color] + [color=light_blue]~[/color] — переключение размера консоли (полэкрана/весь экран)
+		[color=light_blue]Ctrl[/color] + [color=light_blue]Колесо мыши[/color] вверх/вниз — изменить размер шрифта консоли
+		Клавиша [color=light_blue]~[/color] или [color=light_blue]Esc[/color] — закрыть консоль
+		[color=light_blue]Tab[/color] — автодополнение, повторное [color=light_blue]Tab[/color] — цикл по вариантам\n\n")
 
 
 func calculate(command : String) -> void:

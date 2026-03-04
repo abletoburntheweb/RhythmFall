@@ -58,7 +58,7 @@ theme_override_font_sizes/font_size = 20
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_type_variation = &"FlatModalPrimaryButton"
-text = "Сбросить"
+text = "Сбросить жанр"
 
 [connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="text_changed" from="Container/SearchLineEdit" to="." method="_on_search_changed"]

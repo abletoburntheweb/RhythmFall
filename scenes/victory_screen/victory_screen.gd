@@ -230,8 +230,10 @@ func _calculate_currency_new() -> int:
 	return max(1, int(total_currency))
 
 func _deferred_update_ui():
-	if is_instance_valid(song_label) and song_info.get("title"):
-		song_label.text = song_info["title"]
+	if is_instance_valid(song_label):
+		var artist = str(song_info.get("artist", "Неизвестен"))
+		var title = str(song_info.get("title", "Без названия"))
+		song_label.text = "%s — %s" % [artist, title]
 	
 	if is_instance_valid(score_label):
 		score_label.text = "Счёт: %d" % score  

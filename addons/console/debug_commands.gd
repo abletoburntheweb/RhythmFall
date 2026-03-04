@@ -37,6 +37,7 @@ func _register(c):
 	c.add_command("game.score.add_1000", _game_score_add_1000, [], 0, "Добавить 1000 очков с множителем")
 	c.add_command("game.score.sub_1000", _game_score_sub_1000, [], 0, "Уменьшить счёт на 1000")
 	c.add_command("game.combo.add_10", _game_combo_add_10, [], 0, "Добавить 10 к комбо")
+	c.add_command("game.seek_to_no_notes", _game_seek_to_no_notes, [], 0, "Переместиться к концу песни без нот")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
@@ -382,6 +383,38 @@ func _daily_complete_all():
 				ctx = {}
 		PlayerDataManager.increment_daily_progress(ev, 999999, ctx)
 	if c: c.print_info("Все текущие ежедневки завершены")
+
+func _game_seek_to_no_notes():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs:
+		if c: c.print_error("GameScreen не найден")
+		return
+	var duration_seconds: float = 0.0
+	var dur = gs.selected_song_data.get("duration", 0)
+	if typeof(dur) == TYPE_STRING:
+		var parts = String(dur).split(":")
+		if parts.size() == 2:
+			var minutes = int(parts[0])
+			var seconds = int(parts[1])
+			duration_seconds = float(minutes * 60 + seconds)
+	elif typeof(dur) == TYPE_FLOAT:
+		duration_seconds = float(dur)
+	var target := 0.0
+	if duration_seconds > 0.0:
+		target = max(0.0, duration_seconds - 10.0)
+	else:
+		target = 0.0
+	gs.game_time = target
+	if MusicManager.has_method("set_music_position"):
+		MusicManager.set_music_position(target)
+	if gs.note_manager:
+		gs.note_manager.clear_notes()
+	if gs.has_method("_check_song_end"):
+		gs._check_song_end()
+	if gs.has_method("_update_hint"):
+		gs._update_hint()
+	if c: c.print_info("Перемещено к времени без нот: " + str(target) + " сек")
 
 func _daily_load_all():
 	var c = get_tree().root.get_node_or_null("Console")
