@@ -38,6 +38,7 @@ func _register(c):
 	c.add_command("game.score.sub_1000", _game_score_sub_1000, [], 0, "Уменьшить счёт на 1000")
 	c.add_command("game.combo.add_10", _game_combo_add_10, [], 0, "Добавить 10 к комбо")
 	c.add_command("game.seek_to_no_notes", _game_seek_to_no_notes, [], 0, "Переместиться к концу песни без нот")
+	c.add_command("game.seek", _game_seek_to_time, ["pos"], 1, "Переместиться к позиции (сек или MM:SS)")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
@@ -78,6 +79,7 @@ func _refresh_autocomplete(c):
 	c.add_command_autocomplete_list("stats.hits.add", PackedStringArray(["10","50","100","500"]))
 	c.add_command_autocomplete_list("stats.misses.add", PackedStringArray(["1","5","10","50"]))
 	c.add_command_autocomplete_list("stats.perfect.add", PackedStringArray(["1","5","10","50"]))
+	c.add_command_autocomplete_list("game.seek", PackedStringArray(["30","60","90","120","01:00","01:30","02:00"]))
 func _get_engine():
 	return get_tree().root.get_node_or_null("GameEngine")
  
@@ -419,6 +421,53 @@ func _game_seek_to_no_notes():
 	if gs.has_method("_update_hint"):
 		gs._update_hint()
 	if c: c.print_info("Перемещено к времени без нот: " + str(target) + " сек")
+
+func _parse_time_to_seconds(s: String) -> float:
+	var txt := String(s).strip_edges()
+	if ":" in txt:
+		var parts = txt.split(":")
+		if parts.size() == 2 and parts[0].is_valid_int() and parts[1].is_valid_int():
+			var minutes = int(parts[0])
+			var seconds = int(parts[1])
+			return float(max(0, minutes) * 60 + max(0, seconds))
+		return -1.0
+	else:
+		var val := 0.0
+		if txt.is_valid_float():
+			val = float(txt)
+		elif txt.is_valid_int():
+			val = float(int(txt))
+		else:
+			return -1.0
+		return max(0.0, val)
+
+func _game_seek_to_time(pos: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs:
+		if c: c.print_error("GameScreen не найден")
+		return
+	var t = _parse_time_to_seconds(pos)
+	if t < 0.0:
+		if c: c.print_error("Некорректный формат позиции. Используйте секунды или MM:SS")
+		return
+	gs.game_time = t
+	if MusicManager.has_method("set_music_position"):
+		MusicManager.set_music_position(t)
+	if gs.note_manager:
+		if gs.note_manager.has_method("clear_active_notes"):
+			gs.note_manager.clear_active_notes()
+		gs.note_manager.skip_notes_before_time(t)
+	if gs.has_method("_update_hint"):
+		gs._update_hint()
+	if gs.has_method("_check_song_end"):
+		gs._check_song_end()
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		var m := int(floor(t / 60.0))
+		var s := int(floor(fmod(t, 60.0)))
+		c.print_info("Перемещено к позиции: " + str(t) + " сек (" + str(m).pad_zeros(2) + ":" + str(s).pad_zeros(2) + ")")
 
 func _daily_load_all():
 	var c = get_tree().root.get_node_or_null("Console")

@@ -165,6 +165,12 @@ func clear_notes():
 	notes.clear()
 	note_spawn_queue.clear()
 	total_loaded_notes_count = 0
+	
+func clear_active_notes():
+	for note in notes:
+		if note.visual_node and note.visual_node.get_parent():
+			note.visual_node.queue_free()
+	notes.clear()
 
 
 func get_spawn_queue_size() -> int:
