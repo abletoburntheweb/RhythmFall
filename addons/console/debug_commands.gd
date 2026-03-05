@@ -659,6 +659,7 @@ func _game_win(accuracy_opt := ""):
 	var hits_for_combo = gs.score_manager.get_hit_notes_count()
 	if target_accuracy >= 100.0 and hits_for_combo > 0:
 		gs.score_manager.combo = hits_for_combo
+		gs.score_manager.max_combo = max(gs.score_manager.max_combo, hits_for_combo)
 	var base_score_per_hit = 100
 	var multiplier = 1.0
 	if target_accuracy >= 100.0:

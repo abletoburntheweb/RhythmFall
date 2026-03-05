@@ -77,32 +77,32 @@ func _get_grade_color(grade: String) -> Color:
 		_: return Color("#FFFFFF")
 
 func _calculate_xp_new() -> int:
-	var base_xp = sqrt(float(score)) * 2.0 
+	var base_xp = sqrt(float(score)) * 1.2 
 
 	var accuracy_bonus = 0.0
 	if accuracy >= 100.0:
-		accuracy_bonus = 40.0
+		accuracy_bonus = 20.0
 	elif accuracy >= 98.0:
-		accuracy_bonus = 25.0
+		accuracy_bonus = 12.0
 	elif accuracy >= 95.0:
-		accuracy_bonus = 15.0
+		accuracy_bonus = 7.0
 	elif accuracy >= 90.0:
-		accuracy_bonus = 5.0
+		accuracy_bonus = 2.0
 
 	var combo_bonus = 0.0
 	if max_combo > 0:
-		combo_bonus = log(float(max_combo) + 1.0) * 10.0 
+		combo_bonus = log(float(max_combo) + 1.0) * 6.0 
 
 	var grade_bonus = 0.0
 	var grade = _calculate_grade()
 	match grade:
-		"SS": grade_bonus = 80.0
-		"S":  grade_bonus = 40.0
-		"A":  grade_bonus = 20.0
-		"B":  grade_bonus = 5.0
+		"SS": grade_bonus = 50.0
+		"S":  grade_bonus = 25.0
+		"A":  grade_bonus = 10.0
+		"B":  grade_bonus = 3.0
 	var full_combo_bonus = 0.0
 	if calculated_missed_notes == 0 and calculated_total_notes > 0:
-		full_combo_bonus = 60.0
+		full_combo_bonus = 15.0
 
 	var total_xp = int(base_xp + accuracy_bonus + combo_bonus + grade_bonus + full_combo_bonus)
 	return max(1, total_xp)
@@ -208,23 +208,23 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	call_deferred("_deferred_update_ui")
 
 func _calculate_currency_new() -> int:
-	var base_currency = sqrt(float(score)) * 1.5  
+	var base_currency = sqrt(float(score)) * 0.9  
 
 	var combo_bonus = 0.0
 	if max_combo > 0:
-		combo_bonus = log(float(max_combo) + 1.0) * 5.0 
+		combo_bonus = log(float(max_combo) + 1.0) * 3.0 
 
 	var accuracy_bonus = 0.0
 	if accuracy >= 100.0:
-		accuracy_bonus = 40.0
+		accuracy_bonus = 20.0
 	elif accuracy >= 95.0:
-		accuracy_bonus = (accuracy - 90.0) * 1.0 
+		accuracy_bonus = (accuracy - 90.0) * 0.5 
 
 	var full_combo_bonus = 0.0
 	if calculated_missed_notes == 0 and calculated_total_notes > 0:
-		full_combo_bonus = 25.0
+		full_combo_bonus = 10.0
 
-	var multiplier_bonus = (calculated_combo_multiplier - 1.0) * 4.0 
+	var multiplier_bonus = (calculated_combo_multiplier - 1.0) * 2.0 
 
 	var total_currency = base_currency + combo_bonus + accuracy_bonus + full_combo_bonus + multiplier_bonus
 	return max(1, int(total_currency))

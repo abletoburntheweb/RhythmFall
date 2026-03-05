@@ -36,7 +36,7 @@
 	{
 	  "item_id": "kick_1",
 	  "name": "Кик 1",
-	  "price": 450,
+	  "price": 600,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick1.wav",
@@ -45,7 +45,7 @@
 	{
 	  "item_id": "kick_2",
 	  "name": "Кик 2",
-	  "price": 320,
+	  "price": 420,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick2.wav",
@@ -54,7 +54,7 @@
 	{
 	  "item_id": "kick_3",
 	  "name": "Кик 3",
-	  "price": 680,
+	  "price": 900,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick7.wav",
@@ -63,7 +63,7 @@
 	{
 	  "item_id": "kick_4",
 	  "name": "Кик 4",
-	  "price": 410,
+	  "price": 540,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick8.wav",
@@ -72,7 +72,7 @@
 	{
 	  "item_id": "kick_5",
 	  "name": "Кик 5",
-	  "price": 850,
+	  "price": 1000,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick9.wav",
@@ -81,7 +81,7 @@
 	{
 	  "item_id": "kick_6",
 	  "name": "Кик 6",
-	  "price": 520,
+	  "price": 680,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick10.wav",
@@ -90,7 +90,7 @@
 	{
 	  "item_id": "kick_7",
 	  "name": "Кик 7",
-	  "price": 370,
+	  "price": 490,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick11.wav",
@@ -99,7 +99,7 @@
 	{
 	  "item_id": "kick_8",
 	  "name": "Кик 8",
-	  "price": 740,
+	  "price": 970,
 	  "category": "Кик",
 	  "type": "kick",
 	  "audio": "res://assets/shop/sounds/kick/kick12.wav",
@@ -174,7 +174,7 @@
 	{
 	  "item_id": "covers_geometric",
 	  "name": "Кристальные грани",
-	  "price": 480,
+	  "price": 630,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/geometric",
 	  "images_count": 7
@@ -182,7 +182,7 @@
 	{
 	  "item_id": "covers_flowing_lines",
 	  "name": "Текучие линии",
-	  "price": 320,
+	  "price": 420,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/flowing_lines",
 	  "images_count": 7
@@ -190,7 +190,7 @@
 	{
 	  "item_id": "covers_music_note",
 	  "name": "Одиночная нота",
-	  "price": 560,
+	  "price": 730,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/music_note",
 	  "images_count": 7
@@ -198,7 +198,7 @@
 	{
 	  "item_id": "covers_ink_splash",
 	  "name": "Брызги чернил",
-	  "price": 410,
+	  "price": 540,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/ink_splash",
 	  "images_count": 7
@@ -206,7 +206,7 @@
 	{
 	  "item_id": "covers_vinyl",
 	  "name": "Виниловая пластинка",
-	  "price": 630,
+	  "price": 820,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/vinyl",
 	  "images_count": 7
@@ -214,7 +214,7 @@
 	{
 	  "item_id": "covers_spiderweb",
 	  "name": "Чернильная паутина",
-	  "price": 370,
+	  "price": 490,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/spiderweb",
 	  "images_count": 7
@@ -222,7 +222,7 @@
 	{
 	  "item_id": "covers_explosion",
 	  "name": "Радиальные брызги",
-	  "price": 520,
+	  "price": 680,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/explosion",
 	  "images_count": 7
@@ -230,7 +230,7 @@
 	{
 	  "item_id": "covers_shards",
 	  "name": "Осколки",
-	  "price": 290,
+	  "price": 780,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/shards",
 	  "images_count": 7
@@ -238,7 +238,7 @@
 	{
 	  "item_id": "covers_cross",
 	  "name": "Крестообразные линии",
-	  "price": 440,
+	  "price": 580,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/cross",
 	  "images_count": 7
@@ -246,7 +246,7 @@
 	{
 	  "item_id": "covers_brush",
 	  "name": "Графические штрихи",
-	  "price": 390,
+	  "price": 510,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/brush",
 	  "images_count": 7
@@ -254,7 +254,7 @@
 	{
 	  "item_id": "covers_falling_blocks",
 	  "name": "Падающие блоки",
-	  "price": 450,
+	  "price": 590,
 	  "category": "Обложки",
 	  "images_folder": "res://assets/shop/covers/falling_blocks",
 	  "images_count": 7
@@ -292,182 +292,182 @@
 	{
 	  "item_id": "notes_monochrome_red",
 	  "name": "Красные ноты",
-	  "price": 150,
+	  "price": 200,
 	  "category": "Ноты",
 	  "note_colors": ["#ff0000"]
 	},
 	{
 	  "item_id": "notes_pure_white",
 	  "name": "Чистый белый",
-	  "price": 120,
+	  "price": 160,
 	  "category": "Ноты",
 	  "note_colors": ["#ffffff"]
 	},
 	{
 	  "item_id": "notes_soft_gray",
 	  "name": "Мягкий серый",
-	  "price": 100,
+	  "price": 130,
 	  "category": "Ноты",
 	  "note_colors": ["#bfbfbf"]
 	},
 	{
 	  "item_id": "notes_neon_cyan",
 	  "name": "Неон-циан",
-	  "price": 220,
+	  "price": 290,
 	  "category": "Ноты",
 	  "note_colors": ["#00f5ff"]
 	},
 	{
 	  "item_id": "notes_acid_green",
 	  "name": "Кислотный зелёный",
-	  "price": 240,
+	  "price": 320,
 	  "category": "Ноты",
 	  "note_colors": ["#39ff14"]
 	},
 	{
 	  "item_id": "notes_warm_pink",
 	  "name": "Тёплый розовый",
-	  "price": 200,
+	  "price": 260,
 	  "category": "Ноты",
 	  "note_colors": ["#ff4fd8"]
 	},
 	{
 	  "item_id": "notes_guitar_hero",
 	  "name": "Guitar Hero",
-	  "price": 500,
+	  "price": 650,
 	  "category": "Ноты",
 	  "note_colors": ["#32c832", "#ff3333", "#ffd700", "#33ccff", "#ffa500"]
 	},
 	{
 	  "item_id": "notes_pastel",
 	  "name": "Пастельные ноты",
-	  "price": 400,
+	  "price": 520,
 	  "category": "Ноты",
 	  "note_colors": ["#ffb3ba", "#ffdfba", "#ffffba", "#baffc9", "#bae1ff"]
 	},
 	{
 	  "item_id": "notes_rgb_spread",
 	  "name": "RGB Спектр",
-	  "price": 480,
+	  "price": 630,
 	  "category": "Ноты",
 	  "note_colors": ["#ff4b4b", "#ffd93d", "#4dff88", "#4db8ff", "#b84dff"]
 	},
 	{
 	  "item_id": "notes_osu_soft",
 	  "name": "Osu!",
-	  "price": 420,
+	  "price": 550,
 	  "category": "Ноты",
 	  "note_colors": ["#ff66aa", "#66ccff", "#88ff66", "#ffcc66", "#cc99ff"]
 	},
 	{
 	  "item_id": "notes_neon_arcade",
 	  "name": "Аркадный неон",
-	  "price": 520,
+	  "price": 680,
 	  "category": "Ноты",
 	  "note_colors": ["#ff006e", "#fb5607", "#ffbe0b", "#3a86ff", "#8338ec"]
 	},
 	{
 	  "item_id": "notes_synthwave",
 	  "name": "Синтвейв",
-	  "price": 530,
+	  "price": 690,
 	  "category": "Ноты",
 	  "note_colors": ["#ff2e88", "#ff6ec7", "#ffd166", "#06d6a0", "#118ab2"]
 	},
 	{
 	  "item_id": "notes_cyberpunk",
 	  "name": "Киберпанк",
-	  "price": 550,
+	  "price": 720,
 	  "category": "Ноты",
 	  "note_colors": ["#f72585", "#b5179e", "#7209b7", "#560bad", "#480ca8"]
 	},
 	{
 	  "item_id": "notes_neon_night",
 	  "name": "Неоновая ночь",
-	  "price": 490,
+	  "price": 640,
 	  "category": "Ноты",
 	  "note_colors": ["#00f5d4", "#0bbcd6", "#3a86ff", "#8338ec", "#ff006e"]
 	},
 	{
 	  "item_id": "notes_forest",
 	  "name": "Лесная глубина",
-	  "price": 380,
+	  "price": 500,
 	  "category": "Ноты",
 	  "note_colors": ["#2d6a4f", "#40916c", "#95d5b2", "#d8f3dc", "#1b4332"]
 	},
 	{
 	  "item_id": "notes_pastel_dream",
 	  "name": "Пастельный сон",
-	  "price": 410,
+	  "price": 540,
 	  "category": "Ноты",
 	  "note_colors": ["#ffc6ff", "#bdb2ff", "#a0c4ff", "#caffbf", "#ffd6a5"]
 	},
 	{
 	  "item_id": "notes_sunset_gradient",
 	  "name": "Закатный градиент",
-	  "price": 370,
+	  "price": 490,
 	  "category": "Ноты",
 	  "note_colors": ["#ff7b00", "#ff8800", "#ff9500", "#ffaa00", "#ffc300"]
 	},
 	{
 	  "item_id": "notes_high_contrast",
 	  "name": "Высокий контраст",
-	  "price": 460,
+	  "price": 600,
 	  "category": "Ноты",
 	  "note_colors": ["#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00"]
 	},
 	{
 	  "item_id": "notes_sakura",
 	  "name": "Сакура-сон",
-	  "price": 320,
+	  "price": 420,
 	  "category": "Ноты",
 	  "note_colors": ["#f4a7b9", "#f6c1cc", "#f7d6e0", "#d0f4de", "#cdb4db"]
 	},
 	{
 	  "item_id": "notes_fog",
 	  "name": "Утренний туман",
-	  "price": 280,
+	  "price": 370,
 	  "category": "Ноты",
 	  "note_colors": ["#c9c9d6", "#dcd6f7", "#e2ece9", "#bee1e6", "#fde2e4"]
 	},
 	{
 	  "item_id": "notes_forest_soft",
 	  "name": "Лесной покой",
-	  "price": 340,
+	  "price": 450,
 	  "category": "Ноты",
 	  "note_colors": ["#588157", "#a3b18a", "#dad7cd", "#b7e4c7", "#95d5b2"]
 	},
 	{
 	  "item_id": "notes_sunset_soft",
 	  "name": "Закат в облаках",
-	  "price": 330,
+	  "price": 430,
 	  "category": "Ноты",
 	  "note_colors": ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff"]
 	},
 	{
 	  "item_id": "notes_pro_soft",
 	  "name": "Чёткий фокус",
-	  "price": 440,
+	  "price": 580,
 	  "category": "Ноты",
 	  "note_colors": ["#ff8fab", "#ffd6a5", "#ffffff", "#bde0fe", "#a2d2ff"]
 	},
 	{
 	  "item_id": "notes_synth_soft",
 	  "name": "Неон-сон",
-	  "price": 430,
+	  "price": 560,
 	  "category": "Ноты",
 	  "note_colors": ["#ff99c8", "#cdb4db", "#ffc8dd", "#bde0fe", "#a2d2ff"]
 	},
 	{
 	  "item_id": "notes_candy",
 	  "name": "Конфетный дождь",
-	  "price": 310,
+	  "price": 410,
 	  "category": "Ноты",
 	  "note_colors": ["#ffadad", "#ffc6ff", "#caffbf", "#9bf6ff", "#bdb2ff"]
 	},
 	{
 	  "item_id": "notes_minimal",
 	  "name": "Белый шум",
-	  "price": 260,
+	  "price": 340,
 	  "category": "Ноты",
 	  "note_colors": ["#eaeaea", "#d8e2dc", "#ffffff", "#d8e2dc", "#eaeaea"]
 	},
@@ -519,140 +519,140 @@
 	{
 	  "item_id": "lanes_highlight_1",
 	  "name": "Огненный закат",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#ff6b3580"
 	},
 	{
 	  "item_id": "lanes_highlight_2",
 	  "name": "Океанская волна",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#176b8780"
 	},
 	{
 	  "item_id": "lanes_highlight_3",
 	  "name": "Лайм-базальт",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#6a994e80"
 	},
 	{
 	  "item_id": "lanes_highlight_4",
 	  "name": "Фиолетовая тьма",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#5e548e80"
 	},
 	{
 	  "item_id": "lanes_highlight_5",
 	  "name": "Солнечный блик",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#f1c40f80"
 	},
 	{
 	  "item_id": "lanes_highlight_6",
 	  "name": "Морская пена",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#d6e4e580"
 	},
 	{
 	  "item_id": "lanes_highlight_7",
 	  "name": "Багровый рассвет",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#b5347180"
 	},
 	{
 	  "item_id": "lanes_highlight_8",
 	  "name": "Изумрудный лес",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#0b6e4f80"
 	},
 	{
 	  "item_id": "lanes_highlight_9",
 	  "name": "Сиреневая дымка",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#8a5a9b80"
 	},
 	{
 	  "item_id": "lanes_highlight_10",
 	  "name": "Карамельная вуаль",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#d8a78280"
 	},
 	{
 	  "item_id": "lanes_highlight_11",
 	  "name": "Электрический синий",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#2a9d8f80"
 	},
 	{
 	  "item_id": "lanes_highlight_12",
 	  "name": "Розовый кварц",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#e76f5180"
 	},
 	{
 	  "item_id": "lanes_highlight_13",
 	  "name": "Темный графит",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#3d405b80"
 	},
 	{
 	  "item_id": "lanes_highlight_14",
 	  "name": "Золотой песок",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#e9c46a80"
 	},
 	{
 	  "item_id": "lanes_highlight_15",
 	  "name": "Алый шарм",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#e6394680"
 	},
 	{
 	  "item_id": "lanes_highlight_16",
 	  "name": "Лавандовый туман",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#c3a9d880"
 	},
 	{
 	  "item_id": "lanes_highlight_17",
 	  "name": "Тёплый янтарь",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#f4a26180"
 	},
 	{
 	  "item_id": "lanes_highlight_18",
 	  "name": "Холодный сталь",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#a0aec080"
 	},
 	{
 	  "item_id": "lanes_highlight_19",
 	  "name": "Неон-зелёный",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#7cfc0080"
 	},
 	{
 	  "item_id": "lanes_highlight_20",
 	  "name": "Глубокий индиго",
-	  "price": 250,
+	  "price": 350,
 	  "category": "Подсветка линий",
 	  "color_hex": "#4b369d80"
 	},

@@ -4,7 +4,7 @@ extends Control
 signal settings_changed
 
 var song_metadata_manager = SongLibrary 
-const FILES_TO_CLEAR := ["best_grades.json", "session_history.json"]
+const FILES_TO_CLEAR := ["session_history.json"]
 
 @onready var reset_confirm_dialog: ConfirmationDialog = $ResetConfirmDialog
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
