@@ -392,7 +392,6 @@ func _game_seek_to_no_notes():
 	if not gs:
 		if c: c.print_error("GameScreen не найден")
 		return
-	# Определяем длительность трека
 	var duration_seconds: float = 0.0
 	var dur = gs.selected_song_data.get("duration", 0)
 	if typeof(dur) == TYPE_STRING:
@@ -403,7 +402,6 @@ func _game_seek_to_no_notes():
 			duration_seconds = float(minutes * 60 + seconds)
 	elif typeof(dur) == TYPE_FLOAT:
 		duration_seconds = float(dur)
-	# Целимся ближе к концу, но оставляем немного музыки
 	var target := 0.0
 	if duration_seconds > 0.0:
 		target = max(0.0, duration_seconds - 10.0)
@@ -412,10 +410,8 @@ func _game_seek_to_no_notes():
 	gs.game_time = target
 	if MusicManager.has_method("set_music_position"):
 		MusicManager.set_music_position(target)
-	# Очищаем ноты и очередь спавна, чтобы имитировать отсутствие нот
 	if gs.note_manager:
 		gs.note_manager.clear_notes()
-	# Принудительно проверить окончание нот и обновить подсказку
 	if gs.has_method("_check_song_end"):
 		gs._check_song_end()
 	if gs.has_method("_update_hint"):

@@ -14,6 +14,7 @@ const FILES_TO_CLEAR := ["best_grades.json", "session_history.json"]
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 @onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
+@onready var enable_stems_checkbox: CheckBox = $ContentVBox/EnableStemsCheckBox
 
 
 func _ready():
@@ -38,6 +39,9 @@ func _apply_initial_settings():
 	
 	var show_notifs = SettingsManager.get_setting("show_generation_notifications", true)
 	show_gen_notifs_checkbox.set_pressed_no_signal(show_notifs)
+	
+	var use_stems = SettingsManager.get_setting("use_stems_in_generation", true)
+	enable_stems_checkbox.set_pressed_no_signal(use_stems)
 	_apply_console_state_from_settings()
 
 
@@ -134,5 +138,10 @@ func _on_enable_genre_detection_toggled(enabled: bool):
 
 func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
+	SettingsManager.save_settings()
+	emit_signal("settings_changed")
+
+func _on_enable_stems_toggled(enabled: bool):
+	SettingsManager.set_setting("use_stems_in_generation", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")

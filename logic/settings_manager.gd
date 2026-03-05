@@ -23,7 +23,8 @@ var default_settings = {
 	},
 	"last_generation_instrument": "drums",
 	"last_generation_mode": "basic",
-	"last_generation_lanes": 4
+	"last_generation_lanes": 4,
+	"use_stems_in_generation": true
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
