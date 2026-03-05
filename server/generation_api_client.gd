@@ -390,6 +390,7 @@ func _notes_worker(data_dict: Dictionary):
 				"manual_artist": manual_artist,
 				"manual_title": manual_title,
 				"progress_delay_seconds": 2.0,
+				"use_stems": bool(SettingsManager.get_setting("use_stems_in_generation", true)),
 				"genres": client_genres_arr,
 				"primary_genre": client_primary_genre
 			})
