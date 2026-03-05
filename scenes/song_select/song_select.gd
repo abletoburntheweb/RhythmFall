@@ -72,7 +72,8 @@ func _ready():
 		background_service.notes_error.connect(_on_notes_error)
 		var bpm_task = background_service.get_active_bpm_task()
 		if not bpm_task.is_empty():
-			_on_bpm_analysis_started()
+			if String(bpm_task.get("path", "")) == current_displayed_song_path:
+				_on_bpm_analysis_started()
 		var notes_task = background_service.get_active_notes_task()
 		if not notes_task.is_empty():
 			_on_notes_generation_started()
@@ -131,13 +132,37 @@ func _connect_ui_signals():
 		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
  
 func _on_bpm_started(_path, _disp):
-	_on_bpm_analysis_started()
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_bpm_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+	)
+	if same:
+		_on_bpm_analysis_started()
  
 func _on_bpm_completed(_path, bpm_value, _disp):
-	_on_bpm_analysis_completed(bpm_value)
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_bpm_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+	)
+	if same:
+		_on_bpm_analysis_completed(bpm_value)
  
 func _on_bpm_error(_path, msg, _disp):
-	_on_bpm_analysis_error(msg)
+	if not background_service:
+		return
+	var t: Dictionary = background_service.get_active_bpm_task()
+	var same: bool = (
+		t.has("path")
+		and String(t.get("path", "")) == current_displayed_song_path
+	)
+	if same:
+		_on_bpm_analysis_error(msg)
  
 func _on_notes_started(_path, _disp):
 	if not background_service:

@@ -594,6 +594,10 @@ func _check_song_end():
 	if spawn_queue_empty and active_notes_empty:
 		notes_ended = true 
 		_update_hint()
+		if victory_delay_timer.is_stopped():
+			victory_delay_timer.one_shot = true
+			victory_delay_timer.wait_time = VICTORY_DELAY_AFTER_NOTES
+			victory_delay_timer.start()
 
 	if selected_song_data and selected_song_data.has("duration"):
 		var duration_value = selected_song_data.get("duration", 0)
@@ -604,8 +608,16 @@ func _check_song_end():
 			duration_seconds = _parse_duration_string(String(duration_value))
 		if duration_seconds > 0.0:
 			if game_time >= duration_seconds - 0.1:
-				end_game()
-				return
+				var sqe = note_manager.get_spawn_queue_size() == 0
+				var ane = note_manager.get_notes().size() == 0
+				if sqe and ane:
+					notes_ended = true
+					_update_hint()
+					if victory_delay_timer.is_stopped():
+						victory_delay_timer.one_shot = true
+						victory_delay_timer.wait_time = VICTORY_DELAY_AFTER_NOTES
+						victory_delay_timer.start()
+					return
 
 func _on_victory_delay_timeout():
 	end_game() 
