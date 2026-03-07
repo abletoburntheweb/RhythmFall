@@ -23,7 +23,10 @@ func _generate_daily_quests_for_date(date_str: String):
 		return
 	var quests_for_day: Array = []
 	var quest_pool: Array = []
-	var file = FileAccess.open("res://data/daily_quests.json", FileAccess.READ)
+	var user_path = "user://daily_quests.json"
+	var res_path = "res://data/daily_quests.json"
+	var open_path = user_path if FileAccess.file_exists(user_path) else res_path
+	var file = FileAccess.open(open_path, FileAccess.READ)
 	if file:
 		var json_text = file.get_as_text()
 		file.close()

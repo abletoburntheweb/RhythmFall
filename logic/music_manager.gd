@@ -13,7 +13,7 @@ const ANALYSIS_ERROR_SOUND = "analysis_error.wav"
 const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.mp3"
 const SHOP_PURCHASE_SOUND = "shop_purchase.wav"
 const SHOP_APPLY_SOUND = "shop_apply.wav"
-const DEFAULT_DEFAULT_SHOP_SOUND = "missing_sound.mp3"
+const DEFAULT_SHOP_SOUND = "missing_sound.mp3"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
@@ -68,7 +68,7 @@ const PRELOAD_SFX := [
 	DEFAULT_ACHIEVEMENT_SOUND,
 	SHOP_PURCHASE_SOUND,
 	SHOP_APPLY_SOUND,
-	DEFAULT_DEFAULT_SHOP_SOUND,
+	DEFAULT_SHOP_SOUND,
 	DEFAULT_METRONOME_STRONG_SOUND,
 	DEFAULT_METRONOME_WEAK_SOUND,
 	DEFAULT_COVER_CLICK_SOUND,
@@ -228,7 +228,9 @@ func _update_active_sound_paths():
 		active_kick_sound_path = SHOP_SOUND_DIR + "kick/kick_default.wav"
 
 func _get_sound_path_from_shop_data(item_id: String, category: String) -> String:
-	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+	var shop_data_file = FileAccess.open(path, FileAccess.READ)
 	if shop_data_file:
 		var json_text = shop_data_file.get_as_text()
 		shop_data_file.close()
@@ -401,7 +403,7 @@ func play_shop_apply():
 	play_sfx(SHOP_APPLY_SOUND)
 	
 func play_default_shop_sound():
-	play_sfx(DEFAULT_DEFAULT_SHOP_SOUND)
+	play_sfx(DEFAULT_SHOP_SOUND)
 	
 func play_cover_click_sound():
 	play_sfx(DEFAULT_COVER_CLICK_SOUND)

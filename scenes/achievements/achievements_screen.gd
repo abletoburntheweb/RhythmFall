@@ -162,7 +162,9 @@ var _texture_cache := {}
 func _get_achievements_data():
 	if _achievements_data_cache != null:
 		return _achievements_data_cache
-	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
+	var user_path = "user://achievements_data.json"
+	var open_path = user_path if FileAccess.file_exists(user_path) else ACHIEVEMENTS_JSON_PATH
+	var file = FileAccess.open(open_path, FileAccess.READ)
 	if not file:
 		return null
 	var text = file.get_as_text()

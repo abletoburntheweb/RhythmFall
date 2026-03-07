@@ -20,11 +20,13 @@ func _init(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	_load_genre_group_map()
 
 func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
-	if not FileAccess.file_exists(json_path):
+	var user_path = "user://achievements_data.json"
+	var open_path = user_path if FileAccess.file_exists(user_path) else json_path
+	if not FileAccess.file_exists(open_path):
 		achievements = []
 		return
 
-	var file = FileAccess.open(json_path, FileAccess.READ)
+	var file = FileAccess.open(open_path, FileAccess.READ)
 	if file:
 		var json_text = file.get_as_text()
 		file.close()
@@ -68,7 +70,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 						printerr("[AchievementManager] Найден элемент не типа Dictionary в списке достижений: ", item)
 				achievements = loaded
 				if changed:
-					save_achievements(json_path)
+					save_achievements(user_path)
 				new_mastery_achievements.clear()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")
@@ -77,19 +79,21 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 			printerr("[AchievementManager] Ошибка парсинга JSON или отсутствие ключа 'achievements'.")
 			achievements = []
 	else:
-		printerr("[AchievementManager] Не удалось открыть файл ", json_path)
+		printerr("[AchievementManager] Не удалось открыть файл ", open_path)
 		achievements = []
 	_rebuild_index()
 
 func save_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
-	var file = FileAccess.open(json_path, FileAccess.WRITE)
+	var user_path = "user://achievements_data.json"
+	var save_path = user_path
+	var file = FileAccess.open(save_path, FileAccess.WRITE)
 	if file:
 		var json_to_save = {"achievements": achievements}
 		var json_string = JSON.stringify(json_to_save, "\t")
 		file.store_string(json_string)
 		file.close()
 	else:
-		printerr("[AchievementManager] Не удалось сохранить файл ", json_path)
+		printerr("[AchievementManager] Не удалось сохранить файл ", save_path)
 
 func _rebuild_index():
 	_ach_by_id.clear()
@@ -639,7 +643,8 @@ func check_level_achievements(player_level: int):
 	save_achievements()
 	
 func _load_genre_group_map():
-	var path = "res://data/genre_groups.json"
+	var user_path = "user://genre_groups.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/genre_groups.json"
 	if not FileAccess.file_exists(path):
 		printerr("[AchievementManager] Файл genre_groups.json не найден!")
 		return

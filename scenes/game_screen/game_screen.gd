@@ -242,7 +242,9 @@ func _on_active_item_changed(category: String, item_id: String):
 	if category == "Notes":
 		_load_note_colors()
 	if category == "Kick":
-		var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+		var user_path = "user://shop_data.json"
+		var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+		var shop_data_file = FileAccess.open(path, FileAccess.READ)
 		if shop_data_file:
 			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
 			shop_data_file.close()
@@ -257,7 +259,9 @@ func _on_active_item_changed(category: String, item_id: String):
 func _update_active_sounds_from_player_data():
 	var active_kick_id = PlayerDataManager.get_active_item("Kick")
 
-	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+	var shop_data_file = FileAccess.open(path, FileAccess.READ)
 	if shop_data_file:
 		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
 		shop_data_file.close()
@@ -308,7 +312,9 @@ func _find_ui_elements():
 
 func _load_lane_colors():
 	var active_lane_highlight_id = PlayerDataManager.get_active_item("LaneHighlight")
-	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+	var shop_data_file = FileAccess.open(path, FileAccess.READ)
 	if shop_data_file:
 		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
 		shop_data_file.close()
@@ -325,7 +331,9 @@ func _load_lane_colors():
 
 func _load_note_colors():
 	var active_notes_id = PlayerDataManager.get_active_item("Notes")
-	var shop_data_file = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path2 = "user://shop_data.json"
+	var path2 = user_path2 if FileAccess.file_exists(user_path2) else "res://data/shop_data.json"
+	var shop_data_file = FileAccess.open(path2, FileAccess.READ)
 	if shop_data_file:
 		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
 		shop_data_file.close()

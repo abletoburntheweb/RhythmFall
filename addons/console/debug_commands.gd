@@ -43,6 +43,7 @@ func _register(c):
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
 	c.add_command("game.autoplay", _game_autoplay_toggle, [], 0, "Переключить автоигру")
+	c.add_command("diag.verify_data", _diag_verify_data, [], 0, "Проверить целостность пользовательских данных")
 func _remove_aliases(c):
 	c.remove_command("ach.unlock")
 	c.remove_command("ach.show")
@@ -115,7 +116,9 @@ func _get_daily_ids() -> PackedStringArray:
 	return res
 func _load_shop_item_ids() -> PackedStringArray:
 	var res : PackedStringArray
-	var f = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+	var f = FileAccess.open(path, FileAccess.READ)
 	if f:
 		var txt = f.get_as_text()
 		f.close()
@@ -469,7 +472,9 @@ func _daily_load_all():
 	var c = get_tree().root.get_node_or_null("Console")
 	var today = Time.get_date_string_from_system()
 	var quest_pool: Array = []
-	var file = FileAccess.open("res://data/daily_quests.json", FileAccess.READ)
+	var user_path = "user://daily_quests.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/daily_quests.json"
+	var file = FileAccess.open(path, FileAccess.READ)
 	if file:
 		var json_text = file.get_as_text()
 		file.close()
@@ -517,6 +522,93 @@ func _resolve_daily_by_token(token: String) -> Dictionary:
 		if String(q.get("id","")) == token:
 			return q
 	return {}
+
+func _diag_verify_data():
+	var c = get_tree().root.get_node_or_null("Console")
+	var total_checks = 0
+	var failed = 0
+	var function_exists = func(path: String) -> bool:
+		return ResourceLoader.exists(path)
+	var parse_with_fallback = func(user_path: String, res_path: String):
+		var used = ""
+		var data = null
+		var p = user_path if FileAccess.file_exists(user_path) else res_path
+		var f = FileAccess.open(p, FileAccess.READ)
+		if f:
+			used = p
+			var txt = f.get_as_text()
+			f.close()
+			data = JSON.parse_string(txt)
+		return [data, used]
+	var ach_res = parse_with_fallback.call("user://achievements_data.json", "res://data/achievements_data.json")
+	total_checks += 1
+	if ach_res[0] is Dictionary and ach_res[0].has("achievements") and (ach_res[0].achievements is Array):
+		if c: c.print_info("OK: achievements_data.json -> " + String(ach_res[1]))
+	else:
+		failed += 1
+		if c: c.print_error("FAIL: achievements_data.json")
+	var shop_res = parse_with_fallback.call("user://shop_data.json", "res://data/shop_data.json")
+	total_checks += 1
+	if shop_res[0] is Dictionary and shop_res[0].has("items") and (shop_res[0].items is Array):
+		if c: c.print_info("OK: shop_data.json -> " + String(shop_res[1]))
+	else:
+		failed += 1
+		if c: c.print_error("FAIL: shop_data.json")
+	var dq_res = parse_with_fallback.call("user://daily_quests.json", "res://data/daily_quests.json")
+	total_checks += 1
+	if dq_res[0] is Dictionary and dq_res[0].has("quests") and (dq_res[0].quests is Array):
+		if c: c.print_info("OK: daily_quests.json -> " + String(dq_res[1]))
+	else:
+		failed += 1
+		if c: c.print_error("FAIL: daily_quests.json")
+	var gg_res = parse_with_fallback.call("user://genre_groups.json", "res://data/genre_groups.json")
+	total_checks += 1
+	if gg_res[0] is Dictionary:
+		if c: c.print_info("OK: genre_groups.json -> " + String(gg_res[1]))
+	else:
+		failed += 1
+		if c: c.print_error("FAIL: genre_groups.json")
+	if shop_res[0] is Dictionary and shop_res[0].has("items") and (shop_res[0].items is Array):
+		var items = shop_res[0].items
+		var missing_assets = 0
+		for it in items:
+			if it is Dictionary:
+				var ap = String(it.get("audio",""))
+				if ap != "":
+					if not ap.begins_with("res://"):
+						ap = "res://assets/shop/sounds/" + ap
+					if not function_exists.call(ap):
+						missing_assets += 1
+		total_checks += 1
+		if missing_assets == 0:
+			if c: c.print_info("OK: аудиофайлы магазина доступны")
+		else:
+			failed += 1
+			if c: c.print_error("WARN: отсутствуют аудиофайлы магазина: " + str(missing_assets))
+	if ach_res[0] is Dictionary and ach_res[0].has("achievements") and (ach_res[0].achievements is Array) and shop_res[0] is Dictionary:
+		var ach_list: Array = ach_res[0].achievements
+		var ach_titles := {}
+		var ach_ids := {}
+		for a in ach_list:
+			if a is Dictionary:
+				ach_titles[str(a.get("title","")).to_lower()] = true
+				ach_ids[str(a.get("id",""))] = true
+		var bad_links = 0
+		for it in shop_res[0].get("items", []):
+			if it is Dictionary and bool(it.get("is_achievement_reward", false)):
+				var req = String(it.get("achievement_required","")).strip_edges()
+				if req != "":
+					var ok = ach_titles.has(req.to_lower()) or ach_ids.has(req)
+					if not ok:
+						bad_links += 1
+		total_checks += 1
+		if bad_links == 0:
+			if c: c.print_info("OK: связи магазин↔достижения консистентны")
+		else:
+			failed += 1
+			if c: c.print_error("WARN: неконсистентные ссылки магазин↔достижения: " + str(bad_links))
+	if c:
+		c.print_info("Итог: " + str(total_checks - failed) + " OK / " + str(total_checks) + " всего")
 
 func _game_info():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -732,7 +824,9 @@ func _parse_int(s: String) -> int:
 		val = int(out)
 	return val
 func _get_shop_item(id: String) -> Dictionary:
-	var f = FileAccess.open("res://data/shop_data.json", FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
+	var f = FileAccess.open(path, FileAccess.READ)
 	if f:
 		var txt = f.get_as_text()
 		f.close()

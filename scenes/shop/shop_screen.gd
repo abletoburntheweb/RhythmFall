@@ -20,7 +20,8 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: Не удалось получить transitions через GameEngine.")
 
-	var file_path = "res://data/shop_data.json"
+	var user_shop = "user://shop_data.json"
+	var file_path = (user_shop if FileAccess.file_exists(user_shop) else "res://data/shop_data.json")
 	var file_access = FileAccess.open(file_path, FileAccess.READ)
 	if file_access:
 		var json_text = file_access.get_as_text()
@@ -33,7 +34,8 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", file_path)
 
-	var achievements_file_path = "res://data/achievements_data.json"
+	var user_ach = "user://achievements_data.json"
+	var achievements_file_path = (user_ach if FileAccess.file_exists(user_ach) else "res://data/achievements_data.json")
 	var achievements_file_access = FileAccess.open(achievements_file_path, FileAccess.READ)
 	if achievements_file_access:
 		var json_text = achievements_file_access.get_as_text()
@@ -279,6 +281,7 @@ func _on_item_buy_pressed(item_id: String):
 			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
 		else:
+			MusicManager.play_default_shop_sound()
 			printerr("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
 	else:
 		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")

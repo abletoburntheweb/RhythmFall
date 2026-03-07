@@ -100,7 +100,8 @@ func _process(delta):
 	pass
 
 func _get_achievements_data():
-	var path = "res://data/achievements_data.json"
+	var user_path = "user://achievements_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/achievements_data.json"
 	if _achievements_data_cache != null:
 		return _achievements_data_cache
 	if not FileAccess.file_exists(path):

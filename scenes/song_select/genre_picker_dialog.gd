@@ -36,7 +36,10 @@ func _ready():
 
 func _populate():
 	_all = []
-	var fa = FileAccess.open("res://data/genre_groups.json", FileAccess.READ)
+	var user_path = "user://genre_groups.json"
+	var res_path = "res://data/genre_groups.json"
+	var open_path = user_path if FileAccess.file_exists(user_path) else res_path
+	var fa = FileAccess.open(open_path, FileAccess.READ)
 	if fa:
 		var txt = fa.get_as_text()
 		fa.close()

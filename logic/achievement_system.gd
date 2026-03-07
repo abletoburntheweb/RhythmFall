@@ -123,7 +123,9 @@ func on_player_level_changed(new_level: int):
 
 func _get_paid_purchases_count() -> int:
 	var unlocked_items = PlayerDataManager.get_items()
-	var file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
+	var user_path = "user://shop_data.json"
+	var open_path = user_path if FileAccess.file_exists(user_path) else SHOP_JSON_PATH
+	var file = FileAccess.open(open_path, FileAccess.READ)
 	if not file:
 		return 0
 	var json_text = file.get_as_text()

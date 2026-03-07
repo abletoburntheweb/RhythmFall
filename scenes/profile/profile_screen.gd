@@ -332,6 +332,10 @@ func _update_recent_achievements():
 		child.queue_free()
 	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
 	if not file:
+		var user_path = "user://achievements_data.json"
+		if FileAccess.file_exists(user_path):
+			file = FileAccess.open(user_path, FileAccess.READ)
+	if not file:
 		if achievements_empty_label:
 			achievements_empty_label.visible = true
 		return
