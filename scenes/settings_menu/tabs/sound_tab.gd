@@ -108,7 +108,7 @@ func _start_calibration():
 	_calibration_timer.start()
 	_on_metronome_tick()
 	start_calibration_button.text = "Остановить калибровку"
-	# Поставим громкость метронома и заглушим музыку на время калибровки
+
 	MusicManager.set_metronome_volume(SettingsManager.get_metronome_volume())
 	if MusicManager.has_method("pause_music"):
 		MusicManager.pause_music()

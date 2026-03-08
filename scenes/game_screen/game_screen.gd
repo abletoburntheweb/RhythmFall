@@ -469,11 +469,6 @@ func start_gameplay():
 		notes_loaded = true
 		var total_note_count = note_manager.get_spawn_queue_size()
 		score_manager.set_total_notes(total_note_count)
-		var offset = _compute_metronome_offset()
-		MusicManager.set_metronome_offset(offset)
-		var song_path_to_update = selected_song_data.get("path", "")
-		if song_path_to_update != "":
-			SongLibrary.update_metadata(song_path_to_update, {"metronome_offset": offset})
 
 	var should_delay_music = false
 	var earliest_note_time = note_manager.get_earliest_note_time()
@@ -492,11 +487,8 @@ func start_gameplay():
 	else:
 		game_time = 0.0
 
-	MusicManager.set_external_metronome_control(true)
 	MusicManager.play_level_start_sound()
 	
-	var metronome_volume = SettingsManager.get_metronome_volume()
-	MusicManager.set_metronome_volume(metronome_volume)
 	
 	var song_path = selected_song_data.get("path", "")
 
@@ -532,37 +524,6 @@ func update_speed_from_bpm():
 	speed = base_speed * (bpm / base_bpm)
 	speed = clamp(speed, 2.0, 12.0)
 
-func _compute_metronome_offset() -> float:
-	var spawn_queue = note_manager.get_spawn_queue()
-	if not spawn_queue or spawn_queue.size() == 0:
-		return 0.0
-	var beat_interval = 60.0 / max(1.0, bpm)
-	var max_scan_time = 30.0
-	var tolerance = 0.06
-	var required_aligned = 6
-	var window_notes = 12
-	var best_time = 0.0
-	for i in range(spawn_queue.size()):
-		var t0 = float(spawn_queue[i].get("time", 0.0))
-		if t0 > max_scan_time:
-			break
-		var aligned = 0
-		var total_err = 0.0
-		var checked = 0
-		for j in range(i + 1, min(spawn_queue.size(), i + 1 + window_notes)):
-			var tj = float(spawn_queue[j].get("time", 0.0))
-			var diff = tj - t0
-			if diff < 0.0:
-				continue
-			var modv = fmod(diff, beat_interval)
-			var err = min(modv, beat_interval - modv)
-			if err <= tolerance:
-				aligned += 1
-				total_err += err
-			checked += 1
-		if aligned >= required_aligned:
-			return t0
-	return float(spawn_queue[0].get("time", 0.0))
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
@@ -588,9 +549,7 @@ func _update_game():
 		debug_menu.update_debug_info(self)
 	
 	note_manager.update_notes()
-	
-	if not pauser.is_paused:
-		MusicManager.update_metronome(GAME_UPDATE_DELTA, game_time, bpm)  
+
 
 func _check_song_end():
 	if pauser.is_paused or game_finished:
@@ -654,7 +613,6 @@ func end_game():
 		check_song_end_timer.stop()
 	
 	MusicManager.stop_game_music()
-	MusicManager.stop_metronome()
 	
 	if debug_menu:
 		debug_menu.auto_play_reset(self)
@@ -920,10 +878,7 @@ func check_hit(lane: int):
 
 	var pixels_per_sec = speed * (1000.0 / 16.0)
 	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
-	var input_offset_sec := 0.0
-	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
-		input_offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
-	var time_diff = abs((current_time - input_offset_sec) - note_time)
+	var time_diff = abs(current_time - note_time)
 
 	var hit_type = "miss"
 	var judgement_successful = false
@@ -992,7 +947,6 @@ func restart_level():
 		delayed_music_timer = null
 
 	MusicManager.stop_game_music()
-	MusicManager.stop_metronome()
 
 	_reset_autoplay_state()
 	player.reset()

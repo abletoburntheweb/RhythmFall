@@ -103,9 +103,6 @@ func handle_resume_request():
 	if game_timer:
 		game_timer.start()
 	
-	var metronome_volume = SettingsManager.get_metronome_volume()
-	MusicManager.set_metronome_volume(metronome_volume)
-	
 	game_screen.input_enabled = true
 	
 	if pause_menu_instance and is_instance_valid(pause_menu_instance):
