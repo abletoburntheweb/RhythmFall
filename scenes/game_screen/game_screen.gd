@@ -920,7 +920,10 @@ func check_hit(lane: int):
 
 	var pixels_per_sec = speed * (1000.0 / 16.0)
 	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
-	var time_diff = abs(current_time - note_time)
+	var input_offset_sec := 0.0
+	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
+		input_offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
+	var time_diff = abs((current_time - input_offset_sec) - note_time)
 
 	var hit_type = "miss"
 	var judgement_successful = false

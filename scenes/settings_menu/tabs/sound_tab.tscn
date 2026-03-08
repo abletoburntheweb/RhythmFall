@@ -1,6 +1,7 @@
-[gd_scene load_steps=120 format=3 uid="uid://cc6iriedb1tay"]
+[gd_scene load_steps=121 format=3 uid="uid://cc6iriedb1tay"]
 
 [ext_resource type="Script" uid="uid://dyeo7dkc76xu5" path="res://scenes/settings_menu/tabs/sound_tab.gd" id="1_5oswl"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_lf0cr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2430,12 +2431,52 @@ text = "Громкость предпросмотра"
 layout_mode = 2
 theme = SubResource("Theme_p28av")
 
+[node name="TimingOffsetValueLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Оффсет: 0 мс"
+
+[node name="StartCalibrationButton" type="Button" parent="ContentVBox"]
+layout_mode = 2
+theme = ExtResource("2_lf0cr")
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 24
+text = "Калибровка аудио"
+
+[node name="CalibrationStatusLabel" type="Label" parent="ContentVBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Осталось 10 нажатий"
+
+[node name="ResetCalibrationButton" type="Button" parent="ContentVBox"]
+layout_mode = 2
+theme = ExtResource("2_lf0cr")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 24
+text = "Сбросить калибровку аудио"
+
+[node name="ResetCalibrationConfirmDialog" type="ConfirmationDialog" parent="."]
+oversampling_override = 1.0
+title = "Сброс профиля"
+initial_position = 2
+size = Vector2i(505, 113)
+borderless = true
+theme = ExtResource("2_lf0cr")
+theme_type_variation = &"ConfirmationDialogDanger"
+ok_button_text = "Сбросить"
+dialog_text = "Сбросить тайминговый оффсет к 0 мс?"
+cancel_button_text = "Отмена"
+
 [connection signal="value_changed" from="ContentVBox/MusicVolumeSlider" to="." method="_on_music_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/MenuMusicVolumeSlider" to="." method="_on_menu_music_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
 [connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_on_sfx_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
+[connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
 [connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
+[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
 [connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
+[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
+[connection signal="pressed" from="ContentVBox/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
+[connection signal="pressed" from="ContentVBox/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]
+[connection signal="confirmed" from="ResetCalibrationConfirmDialog" to="." method="_confirm_reset_calibration"]

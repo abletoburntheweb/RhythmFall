@@ -17,12 +17,6 @@ const FILES_TO_CLEAR := ["session_history.json"]
 @onready var enable_stems_checkbox: CheckBox = $ContentVBox/EnableStemsCheckBox
 
 
-func _ready():
-	if reset_confirm_dialog:
-		reset_confirm_dialog.confirmed.connect(_confirm_reset_profile_stats)
- 
- 
- 
 func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
 	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongLibrary
 	_apply_initial_settings()

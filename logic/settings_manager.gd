@@ -10,6 +10,7 @@ var default_settings = {
 	"hit_sounds_volume": 70.0,
 	"metronome_volume": 30.0, 
 	"preview_volume": 70.0,
+	"timing_offset_ms": 0,
 	"fps_mode": 0, 
 	"fullscreen": false,
 	"enable_debug_menu": false,
@@ -177,6 +178,12 @@ func set_metronome_volume(volume: float):
 
 func set_preview_volume(volume: float):
 	settings["preview_volume"] = clampf(volume, 0.0, 100.0) 
+
+func get_timing_offset_ms() -> int:
+	return int(settings.get("timing_offset_ms", default_settings["timing_offset_ms"]))
+
+func set_timing_offset_ms(value: int):
+	settings["timing_offset_ms"] = clamp(value, -500, 500)
 
 func get_fps_mode() -> int:
 	return settings.get("fps_mode", default_settings["fps_mode"])

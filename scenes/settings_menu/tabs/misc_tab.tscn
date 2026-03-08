@@ -5236,3 +5236,4 @@ cancel_button_text = "Отмена"
 [connection signal="toggled" from="ContentVBox/EnableGenreDetectionCheckBox" to="." method="_on_enable_genre_detection_toggled"]
 [connection signal="toggled" from="ContentVBox/EnableStemsCheckBox" to="." method="_on_enable_stems_toggled"]
 [connection signal="toggled" from="ContentVBox/ShowGenNotifsCheckBox" to="." method="_on_show_gen_notifs_toggled"]
+[connection signal="confirmed" from="ResetConfirmDialog" to="." method="_confirm_reset_profile_stats"]
