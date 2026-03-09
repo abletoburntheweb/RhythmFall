@@ -1,123 +1,36 @@
-# RhythmFall — инструкция по работе с Git
+# RhythmFall
 
-Эта инструкция поможет быстро вспомнить основные команды Git при работе с проектом RhythmFall.
-Она создана для повседневных задач — добавить изменения, сделать коммит и отправить их на GitHub.
+Turn your own music into playable rhythm‑game levels. The project focuses on fully local, automatic note generation from audio — no manual charting required.
 
-## Первичная настройка (если вы впервые на устройстве)
+Note: This repository contains the Godot client. For the server (audio analysis and note generation), use RhythmFallServer: https://github.com/abletoburntheweb/RhythmFallServer
 
-Если вы впервые работаете с этим репозиторием на *локальном устройстве* (например, на новом компьютере или в новой папке), и вы *не клонировали* его командой `git clone`, выполните следующие шаги *один раз*:
+Languages: English | [Русский](./README.ru.md)
 
-1.  **Инициализация локального репозитория** (если вы не клонировали):
-    ```bash
-    git init
-    ```
-2.  **Связывание с удалённым репозиторием GitHub**:
-    ```bash
-    git remote add origin https://github.com/abletoburntheweb/RhythmFall.git
-    ```
-3.  **Добавление файлов**:
-    ```bash
-    git add .
-    ```
-4.  **Создание первого коммита**:
-    ```bash
-    git commit -m "Initial commit"
-    ```
-5.  **Первый push в ветку `main`** (установка связи с удалённой веткой `main`):
-    ```bash
-    git push -u origin main
-    ```
+## What It Is
+RhythmFall is a Godot‑based rhythm game that analyzes any track you choose and builds a playable note chart on the fly. A lightweight local server handles audio analysis and returns notes to the game.
 
-## Рабочий цикл (коротко)
+## How It Works
+- The Godot client sends a selected song to a local Python server.
+- The server estimates tempo and drum events, applies genre‑aware patterns, and generates a chart.
+- The client saves the chart locally and you can play immediately.
 
-```bash
-git status
-git add .
-git commit -m "что сделал"
-git push
-```
+## Key Features
+- Automatic note generation from audio (no manual mapping)
+- Drum‑focused patterns with basic and enhanced modes
+- Genre‑aware density and groove
+- Optional stems separation for improved detection
+- Fully local workflow (talks to localhost)
 
-После выполнения первичной настройки при повторной работе с репозиторием на этом устройстве начальные шаги можно пропустить и использовать стандартный рабочий цикл.
+## Quick Start
+- Start the local server (see the separate server repository for setup).
+- Launch the Godot client and open the game.
+- Generate notes: choose drums, mode (basic/enhanced), and lanes; pick a song.
+- Play the newly generated level.
 
-## Проверка состояния
-
-Посмотреть, какие файлы изменены, добавлены или не отслеживаются:
-
-```bash
-git status
-```
-
-## Добавление файлов в индекс
-
-Добавить все изменения:
-
-```bash
-git add .
-```
-
-Можно смело использовать `git add .`, потому что в проекте настроен `.gitignore`, и он исключает всё лишнее (например, музыку, кеш, временные файлы Godot и служебные папки).
-Поэтому даже если в папке `songs/` лежат mp3 — они не попадут в коммит.
-
-Добавить конкретные файлы вручную:
-
-```bash
-git add scenes/song_select/song_select.gd
-git add logic/song_manager.gd
-```
-
-## Создание коммита
-
-Сделать коммит с описанием изменений:
-
-```bash
-git commit -m "описание изменений"
-```
-
-Примеры:
-
-```bash
-git commit -m "update song_select layout"
-git commit -m "add song_manager.gd with metadata support"
-```
-
-## Отправка изменений на GitHub
-
-Отправить локальные коммиты в основную ветку:
-
-```bash
-git push origin main
-```
-
-## Получение обновлений с GitHub
-
-Если кто-то (или ты на другом устройстве) уже пушил изменения:
-
-```bash
-git pull origin main
-```
-
-## Отмена случайных изменений
-
-Отменить изменения в конкретном файле:
-
-```bash
-git restore path/to/file.gd
-```
-
-Отменить всё несохранённое:
-
-```bash
-git restore .
-```
-
-## Исключения в `.gitignore`
-
-В проекте уже настроен `.gitignore`, который исключает:
-
-- временные файлы Godot (`.import/`, `.godot/`, `.cache/`)
-- системные (Thumbs.db, .DS_Store)
-- Python-кеш (`__pycache__/`, `*.pyc`)
-- IDE-конфиги (`.idea/`, `.vscode/`)
-- музыку и импорты из `songs/`
-
-Благодаря этому `.gitignore` можно безопасно добавлять всё через `git add .` — в репозиторий уйдут только нужные файлы проекта.
+## Notes
+- Your music stays on your machine and is not part of the repository.
+- Analysis and generation run locally; tracks are not uploaded anywhere.
+- Output quality depends on mix and genre; the enhanced mode is more accurate but slower.
+- Stems can improve drum detection but significantly increase processing time — disable for quick tests.
+- Common audio formats are supported; niche codecs may have limitations.
+- For pipeline details and advanced configuration, refer to the server repository.
