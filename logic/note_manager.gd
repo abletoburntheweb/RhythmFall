@@ -71,7 +71,7 @@ func spawn_notes():
 	if note_spawn_queue.size() == 0:
 		return
 		
-	var pixels_per_sec = speed * (1000.0 / 16.0)
+	var pixels_per_sec = speed * 60.0
 	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone

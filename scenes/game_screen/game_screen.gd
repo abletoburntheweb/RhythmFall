@@ -400,8 +400,15 @@ func _update_countdown():
 		scene_tree_timer.timeout.connect(_update_countdown)
 		countdown_timer = scene_tree_timer
 
-func _set_selected_song(song_data: Dictionary):
-	selected_song_data = song_data.duplicate() 
+func _set_selected_song(song_data):
+	if song_data == null:
+		selected_song_data = {}
+	elif song_data is Dictionary:
+		selected_song_data = song_data.duplicate(true)
+	elif song_data is String:
+		selected_song_data = {"path": song_data}
+	else:
+		selected_song_data = {}
 
 func _set_instrument(instrument_type: String):
 	current_instrument = instrument_type
@@ -474,7 +481,7 @@ func start_gameplay():
 	var earliest_note_time = note_manager.get_earliest_note_time()
 	var pre_delay := 0.0
 	if earliest_note_time > 0:
-		var pixels_per_sec = speed * (1000.0 / 16.0)
+		var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA) 
 		var initial_y_offset_from_top = -20.0
 		var distance_to_travel = float(hit_zone_y) - initial_y_offset_from_top
 		var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
@@ -873,7 +880,7 @@ func check_hit(lane: int):
 			closest_note = note
 			closest_distance = dist
 
-	var pixels_per_sec = speed * (1000.0 / 16.0)
+	var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA) 
 	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
 	var time_diff = abs(current_time_adjusted - note_time)
 
