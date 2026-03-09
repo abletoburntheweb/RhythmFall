@@ -7,6 +7,7 @@ var game_engine = null
 
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
+@onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpin
 
 func _ready():
 	pass
@@ -28,6 +29,9 @@ func _setup_ui():
 	_select_fps_by_id(current_fps_mode)
 	
 	fullscreen_checkbox.set_pressed_no_signal(SettingsManager.get_fullscreen())
+	
+	var spd = SettingsManager.get_scroll_speed()
+	scroll_speed_spin.set_value_no_signal(spd)
 
 
 func _on_fps_mode_selected(index: int):
@@ -45,3 +49,7 @@ func _on_fullscreen_toggled(enabled: bool):
 
 func refresh_ui():
 	_setup_ui()
+
+func _on_scroll_speed_spin_changed(value: float):
+	SettingsManager.set_scroll_speed(value)
+	emit_signal("settings_changed")

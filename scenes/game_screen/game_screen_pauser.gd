@@ -85,11 +85,12 @@ func handle_resume_request():
 	
 	is_paused = false
 	
+	if game_screen and game_screen.has_variable("speed"):
+		game_screen.speed = SettingsManager.get_scroll_speed()
+	
 	MusicManager.set_music_volume_multiplier(original_music_volume)
 
-	if game_screen.delayed_music_timer \
-	and is_instance_valid(game_screen.delayed_music_timer) \
-	and game_screen.delayed_music_timer.is_stopped():
+	if game_screen.delayed_music_timer and is_instance_valid(game_screen.delayed_music_timer) and game_screen.delayed_music_timer.is_stopped():
 		game_screen.delayed_music_timer.start()
 	else:
 		var song_path = game_screen.selected_song_data.get("path", "")

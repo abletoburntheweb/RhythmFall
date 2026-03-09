@@ -25,7 +25,8 @@ var default_settings = {
 	"last_generation_instrument": "drums",
 	"last_generation_mode": "basic",
 	"last_generation_lanes": 4,
-	"use_stems_in_generation": true
+	"use_stems_in_generation": true,
+	"scroll_speed": 6.0
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
@@ -179,11 +180,19 @@ func set_metronome_volume(volume: float):
 func set_preview_volume(volume: float):
 	settings["preview_volume"] = clampf(volume, 0.0, 100.0) 
 
+func get_scroll_speed() -> float:
+	return float(settings.get("scroll_speed", default_settings["scroll_speed"]))
+
+func set_scroll_speed(value: float):
+	settings["scroll_speed"] = clampf(value, 1.0, 20.0)
+	_save_settings()
+
 func get_timing_offset_ms() -> int:
 	return int(settings.get("timing_offset_ms", default_settings["timing_offset_ms"]))
 
 func set_timing_offset_ms(value: int):
 	settings["timing_offset_ms"] = clamp(value, -500, 500)
+	_save_settings()
 
 func get_fps_mode() -> int:
 	return settings.get("fps_mode", default_settings["fps_mode"])

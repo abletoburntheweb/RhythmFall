@@ -1,7 +1,7 @@
 [gd_scene load_steps=121 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
-[ext_resource type="Theme" uid="uid://cnejij27w72h1" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2389,7 +2389,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="ContentVBox/FPS"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 24
 text = "FPS:"
 
 [node name="FPSOptionButton" type="OptionButton" parent="ContentVBox/FPS"]
@@ -2407,5 +2407,22 @@ popup/item_1/id = 1
 popup/item_2/text = "Контрастный"
 popup/item_2/id = 2
 
+[node name="ScrollSpeed" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="ScrollSpeedLabel" type="Label" parent="ContentVBox/ScrollSpeed"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Скорость движения нот"
+
+[node name="ScrollSpeedSpin" type="SpinBox" parent="ContentVBox/ScrollSpeed"]
+layout_mode = 2
+theme = ExtResource("2_gfom4")
+min_value = 1.0
+max_value = 20.0
+step = 0.1
+value = 6.0
+
 [connection signal="toggled" from="ContentVBox/FullscreenCheckBox" to="." method="_on_fullscreen_toggled"]
 [connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
+[connection signal="value_changed" from="ContentVBox/ScrollSpeed/ScrollSpeedSpin" to="." method="_on_scroll_speed_spin_changed"]

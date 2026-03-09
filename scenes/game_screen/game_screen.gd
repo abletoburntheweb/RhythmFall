@@ -112,6 +112,8 @@ func _ready():
 	_load_lane_colors()
 	_load_note_colors()
 	
+	speed = SettingsManager.get_scroll_speed()
+	
 	_update_active_sounds_from_player_data()
 	PlayerDataManager.active_item_changed.connect(_on_active_item_changed)
  
@@ -447,6 +449,7 @@ func start_gameplay():
 		return
 
 	gameplay_started = true
+	speed = SettingsManager.get_scroll_speed()
 	_reset_autoplay_state()
 
 	var song_to_load = selected_song_data
@@ -463,7 +466,6 @@ func start_gameplay():
 			var new_bpm = float(bpm_str)
 			if new_bpm > 0:
 				bpm = new_bpm
-				update_speed_from_bpm()
 
 	if note_manager.get_spawn_queue_size() > 0:
 		notes_loaded = true
@@ -517,13 +519,6 @@ func start_gameplay():
 
 	check_song_end_timer.start()
 	_update_hint()
-
-func update_speed_from_bpm():
-	var base_bpm = 120.0
-	var base_speed = 6.0
-	speed = base_speed * (bpm / base_bpm)
-	speed = clamp(speed, 2.0, 12.0)
-
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
@@ -924,6 +919,7 @@ func _process(delta):
 		update_ui()
 		
 func restart_level():
+	speed = SettingsManager.get_scroll_speed()
 	Engine.max_fps = original_max_fps
 	DisplayServer.window_set_vsync_mode(original_vsync_mode)
 	
