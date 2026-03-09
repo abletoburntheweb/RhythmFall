@@ -36,6 +36,8 @@ var menu_music_position_before_shop: float = 0.0
 var music_player: AudioStreamPlayer = null
 var sfx_player: AudioStreamPlayer = null
 var hit_sound_player: AudioStreamPlayer = null
+const HIT_POOL_SIZE := 4
+var _hit_pool: Array[AudioStreamPlayer] = []
 var metronome_player1: AudioStreamPlayer = null
 var metronome_player2: AudioStreamPlayer = null
 
@@ -113,6 +115,11 @@ func _ready():
 	hit_sound_player = AudioStreamPlayer.new()
 	hit_sound_player.name = "HitSoundPlayer"
 	add_child(hit_sound_player)
+	for i in range(HIT_POOL_SIZE):
+		var hp = AudioStreamPlayer.new()
+		hp.name = "HitPool_%d" % i
+		add_child(hp)
+		_hit_pool.append(hp)
 
 	metronome_player1 = AudioStreamPlayer.new()
 	metronome_player1.name = "MetronomePlayer1"
@@ -268,6 +275,9 @@ func set_sfx_volume(volume: float):
 func set_hit_sounds_volume(volume: float): 
 	if hit_sound_player: 
 		hit_sound_player.volume_db = linear_to_db(volume / 100.0)
+	for p in _hit_pool:
+		if p:
+			p.volume_db = linear_to_db(volume / 100.0)
 
 func set_metronome_volume(volume: float):
 	for player in _metronome_players:
@@ -430,11 +440,23 @@ func play_hit_sound(is_kick: bool = true):
 	sound_path = active_kick_sound_path
 	var stream = _load_audio_stream(sound_path)
 	if stream:
-		if hit_sound_player: 
+		var player := _get_free_hit_player()
+		if player:
+			player.stream = stream
+			player.play()
+		elif hit_sound_player:
 			hit_sound_player.stream = stream
 			hit_sound_player.play()
 	else:
 		push_error("MusicManager: Не удалось загрузить звук удара: " + sound_path)
+
+func _get_free_hit_player() -> AudioStreamPlayer:
+	for p in _hit_pool:
+		if p and not p.playing:
+			return p
+	if _hit_pool.size() > 0:
+		return _hit_pool[0]
+	return null
 
 func play_custom_hit_sound(sound_path: String):
 	var full_path = sound_path

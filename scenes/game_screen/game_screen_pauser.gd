@@ -85,7 +85,7 @@ func handle_resume_request():
 	
 	is_paused = false
 	
-	if game_screen and game_screen.has_variable("speed"):
+	if game_screen:
 		game_screen.speed = SettingsManager.get_scroll_speed()
 	
 	MusicManager.set_music_volume_multiplier(original_music_volume)

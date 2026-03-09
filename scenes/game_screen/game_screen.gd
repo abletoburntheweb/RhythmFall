@@ -95,8 +95,6 @@ func _ready():
 	original_max_fps = Engine.max_fps
 	original_vsync_mode = DisplayServer.window_get_vsync_mode()
 
-	Engine.max_fps = 60
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 
 	var settings_for_player = SettingsManager.settings.duplicate(true)
 
@@ -850,6 +848,10 @@ func check_hit(lane: int):
 		return
 
 	var current_time = game_time
+	var offset_sec := 0.0
+	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
+		offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
+	var current_time_adjusted = current_time + offset_sec
 	var hit_zone_y_float = float(hit_zone_y)
 	var candidates = []
 
@@ -873,7 +875,7 @@ func check_hit(lane: int):
 
 	var pixels_per_sec = speed * (1000.0 / 16.0)
 	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
-	var time_diff = abs(current_time - note_time)
+	var time_diff = abs(current_time_adjusted - note_time)
 
 	var hit_type = "miss"
 	var judgement_successful = false
@@ -920,11 +922,6 @@ func _process(delta):
 		
 func restart_level():
 	speed = SettingsManager.get_scroll_speed()
-	Engine.max_fps = original_max_fps
-	DisplayServer.window_set_vsync_mode(original_vsync_mode)
-	
-	Engine.max_fps = 60
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 
 	if game_finished:
 		return
