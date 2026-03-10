@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
+[ext_resource type="Theme" uid="uid://cqd2qgfhw3ylk" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1321,14 +1321,6 @@ theme = ExtResource("2_gqiy2")
 theme_type_variation = &"SearchField"
 placeholder_text = "Поиск..."
 
-[node name="AddButton" type="Button" parent="MainVBox/TopBarHBox"]
-custom_minimum_size = Vector2(120, 0)
-layout_mode = 2
-size_flags_stretch_ratio = 0.0
-theme = ExtResource("2_gqiy2")
-theme_type_variation = &"FlatButton"
-text = "Добавить"
-
 [node name="EditButton" type="Button" parent="MainVBox/TopBarHBox"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
@@ -1498,7 +1490,6 @@ text = "Результаты
 
 [connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
 [connection signal="text_changed" from="MainVBox/TopBarHBox/SearchBar" to="." method="_on_search_text_changed"]
-[connection signal="pressed" from="MainVBox/TopBarHBox/AddButton" to="." method="_on_add_pressed"]
 [connection signal="pressed" from="MainVBox/TopBarHBox/EditButton" to="." method="_toggle_edit_mode"]
 [connection signal="pressed" from="MainVBox/TopBarHBox/GenerationSettingsButton" to="." method="_on_generation_settings_pressed"]
 [connection signal="item_selected" from="MainVBox/TopBarHBox/FilterByLetter" to="." method="_on_filter_by_letter_selected"]

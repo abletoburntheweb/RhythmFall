@@ -2,10 +2,12 @@
 extends Node
 
 signal metadata_updated(song_file_path: String)
+signal songs_list_changed()
 signal id3_scan_started()
 signal id3_scan_finished()
 
-const SONG_FOLDER_PATH = "res://songs/"
+const BUILT_IN_FOLDER_PATH = "res://bundled_songs/"
+const USER_DEFAULT_FOLDER_PATH = "user://Songs/"
 const METADATA_FILE_PATH = "user://song_metadata.json"
 
 var songs: Array[Dictionary] = []
@@ -18,12 +20,37 @@ func _init():
 	_load_metadata()
 
 func _ready():
-	_create_directories_if_missing()
+	load_songs()
 
-func _create_directories_if_missing():
-	var dir = DirAccess.open("res://")
-	if not dir.dir_exists("songs"):
-		dir.make_dir("songs")
+func _get_effective_user_songs_path() -> String:
+	var p = ""
+	if SettingsManager and SettingsManager.has_method("get_setting"):
+		p = String(SettingsManager.get_setting("user_songs_path", ""))
+	if p == "":
+		p = USER_DEFAULT_FOLDER_PATH
+	if not p.ends_with("/"):
+		p += "/"
+	return p
+
+func _ensure_user_dir_exists():
+	var path = _get_effective_user_songs_path()
+	var base = path
+	if base.begins_with("user://"):
+		var root = DirAccess.open("user://")
+		if root:
+			var rel = base.trim_prefix("user://")
+			var parts = rel.split("/", false)
+			var current = "user://"
+			for part in parts:
+				if part == "":
+					continue
+				current += part + "/"
+				var d = DirAccess.open(current)
+				if not d:
+					var parent_path = current.get_base_dir()
+					var parent = DirAccess.open(parent_path)
+					if parent:
+						parent.make_dir(current.get_file())
 
 func read_metadata(filepath: String) -> Dictionary:
 	var metadata = {
@@ -55,9 +82,41 @@ func read_metadata(filepath: String) -> Dictionary:
 
 func load_songs():
 	songs.clear()
-	var dir = DirAccess.open(SONG_FOLDER_PATH)
+	var dir = DirAccess.open(BUILT_IN_FOLDER_PATH)
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if not dir.current_is_dir():
+				var file_lower = file_name.to_lower()
+				if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
+					var path = BUILT_IN_FOLDER_PATH + file_name
+					var metadata = read_metadata(path)
+					var cached_metadata = get_metadata_for_song(path)
+					if cached_metadata.is_empty():
+						var fields_to_save = {
+							"title": metadata.get("title", "Без названия"),
+							"artist": metadata.get("artist", "Неизвестен"),
+							"bpm": metadata.get("bpm", "Н/Д"),
+							"year": metadata.get("year", "Н/Д"),
+							"duration": metadata.get("duration", "00:00")
+						}
+						update_metadata(path, fields_to_save)
+					if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
+						_id3_queue.append(path)
+					metadata["source"] = "built_in"
+					songs.append(metadata)
+			file_name = dir.get_next()
+		dir.list_dir_end()
+	_start_id3_enrichment_if_needed()
+	emit_signal("songs_list_changed")
+
+func scan_user_songs():
+	var user_path = _get_effective_user_songs_path()
+	_ensure_user_dir_exists()
+	var dir = DirAccess.open(user_path)
 	if not dir:
-		printerr("SongLibrary.gd: Ошибка открытия папки: " + SONG_FOLDER_PATH)
+		printerr("SongLibrary.gd: Ошибка открытия папки пользователя: " + user_path)
 		return
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
@@ -65,21 +124,19 @@ func load_songs():
 		if not dir.current_is_dir():
 			var file_lower = file_name.to_lower()
 			if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
-				var path = SONG_FOLDER_PATH + file_name
-				var metadata = read_metadata(path)
-				var cached_metadata = get_metadata_for_song(path)
-				if cached_metadata.is_empty():
-					var fields_to_save = {
-						"title": metadata.get("title", "Без названия"),
-						"artist": metadata.get("artist", "Неизвестен"),
-						"bpm": metadata.get("bpm", "Н/Д"),
-						"year": metadata.get("year", "Н/Д"),
-						"duration": metadata.get("duration", "00:00")
-					}
-					update_metadata(path, fields_to_save)
-				if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
-					_id3_queue.append(path)
-				songs.append(metadata)
+				var path = user_path + file_name
+				var exists := false
+				for s in songs:
+					if s.get("path", "") == path:
+						exists = true
+						break
+				if not exists:
+					var metadata = read_metadata(path)
+					metadata["source"] = "user"
+					if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
+						_id3_queue.append(path)
+					songs.append(metadata)
+					songs.append(metadata)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	_start_id3_enrichment_if_needed()
@@ -89,7 +146,9 @@ func add_song(file_path: String) -> Dictionary:
 	if not (file_path.ends_with(".mp3") or file_path.ends_with(".wav")):
 		printerr("SongLibrary.gd: Неподдерживаемый формат файла: " + file_extension)
 		return {}
-	var dest_path = SONG_FOLDER_PATH + file_path.get_file()
+	var user_root = _get_effective_user_songs_path()
+	_ensure_user_dir_exists()
+	var dest_path = user_root + file_path.get_file()
 	var base_dir = DirAccess.open("res://")
 	if not base_dir:
 		printerr("SongLibrary.gd: Ошибка открытия корневой директории проекта.")
@@ -99,6 +158,7 @@ func add_song(file_path: String) -> Dictionary:
 		printerr("SongLibrary.gd: Ошибка копирования файла: " + file_path + " -> " + dest_path)
 		return {}
 	var metadata = read_metadata(dest_path)
+	metadata["source"] = "user"
 	songs.append(metadata)
 	var fields_to_save = {
 		"title": metadata.get("title", "Без названия"),
@@ -112,6 +172,7 @@ func add_song(file_path: String) -> Dictionary:
 	if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == dest_path.get_file().get_basename():
 		_id3_queue.append(dest_path)
 		_start_id3_enrichment_if_needed()
+	emit_signal("songs_list_changed")
 	return metadata
 
 func get_songs_list() -> Array[Dictionary]:
@@ -233,6 +294,84 @@ func _save_metadata():
 		file_access.close()
 	else:
 		printerr("SongLibrary.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)
+
+func _normalize_dir_path(p: String) -> String:
+	var res = String(p)
+	if res == "":
+		res = USER_DEFAULT_FOLDER_PATH
+	if not res.ends_with("/"):
+		res += "/"
+	return res
+
+func _index_audio_files(root: String) -> Dictionary:
+	var index := {}
+	var dir = DirAccess.open(root)
+	if not dir:
+		return index
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir():
+			var lower = file_name.to_lower()
+			if lower.ends_with(".mp3") or lower.ends_with(".wav"):
+				index[file_name] = root + file_name
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	return index
+
+func prepare_user_path_migration(old_root: String, new_root: String) -> Dictionary:
+	var old_r = _normalize_dir_path(old_root)
+	var new_r = _normalize_dir_path(new_root)
+	var matches := {}
+	var new_index = _index_audio_files(new_r)
+	for k in _metadata_cache.keys():
+		var s := String(k)
+		if s.begins_with(old_r):
+			var fname := s.get_file()
+			if new_index.has(fname):
+				matches[s] = new_index[fname]
+	return {"matches": matches}
+
+func apply_user_path_migration(matches: Dictionary, remove_unmatched_under_old_root: bool, old_root: String):
+	var old_r = _normalize_dir_path(old_root)
+	for old_path in matches.keys():
+		var new_path = matches[old_path]
+		var old_record = _metadata_cache.get(old_path, null)
+		if old_record:
+			var merged = {}
+			if _metadata_cache.has(new_path):
+				merged = _metadata_cache[new_path].duplicate(true)
+			else:
+				merged = old_record.duplicate(true)
+			for key in old_record.keys():
+				if not merged.has(key) or str(merged[key]) == "" or str(merged[key]) == "Н/Д" or str(merged[key]) == "unknown" or str(merged[key]) == "0":
+					merged[key] = old_record[key]
+			merged["path"] = new_path
+			_metadata_cache[new_path] = merged
+			_metadata_cache.erase(old_path)
+	for k in _metadata_cache.keys():
+		pass
+	if remove_unmatched_under_old_root:
+		var snapshot = _metadata_cache.keys()
+		for k2 in snapshot:
+			var s2 := String(k2)
+			if s2.begins_with(old_r) and not matches.has(s2):
+				_metadata_cache.erase(k2)
+	_save_metadata()
+	emit_signal("songs_list_changed")
+
+func clear_metadata_under_root(root: String):
+	var r = _normalize_dir_path(root)
+	var snapshot = _metadata_cache.keys()
+	var changed := false
+	for k in snapshot:
+		var s := String(k)
+		if s.begins_with(r):
+			_metadata_cache.erase(k)
+			changed = true
+	if changed:
+		_save_metadata()
+	emit_signal("songs_list_changed")
 
 func _start_id3_enrichment_if_needed():
 	if _id3_running:

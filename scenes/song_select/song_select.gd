@@ -19,7 +19,6 @@ var song_metadata_manager = SongLibrary
 @onready var clear_results_button: Button = $MainVBox/TopBarHBox/ClearResultsButton
 
 var generation_settings_selector: Control = null
-var file_dialog: FileDialog = null
 
 var current_instrument: String = "drums"
 var current_generation_mode: String = "basic"
@@ -36,6 +35,8 @@ func _ready():
 	setup_managers(trans)  
 	
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
+	if SongLibrary and SongLibrary.has_signal("songs_list_changed"):
+		SongLibrary.songs_list_changed.connect(_on_songs_list_changed_from_library)
 		
 	SongLibrary.load_songs()
 	
@@ -377,26 +378,8 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 func _on_song_list_changed():
 	_update_song_count_label()
 
-func _on_add_pressed():
-	_open_file_dialog_for_add()
-	
 func _on_generation_settings_pressed():
 	_open_generation_settings_selector()
-	
-func _open_file_dialog_for_add():
-	if file_dialog:
-		file_dialog.queue_free()
-		file_dialog = null
-	
-	file_dialog = FileDialog.new()
-	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	file_dialog.title = "Выберите аудиофайл"
-	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = ["*.mp3; MP3 Audio", "*.wav; WAV Audio"]
-	file_dialog.file_selected.connect(_on_file_selected_internal)
-	file_dialog.canceled.connect(_cleanup_file_dialog)  
-	add_child(file_dialog)
-	file_dialog.popup_centered()
 	
 func _open_generation_settings_selector():
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
@@ -408,20 +391,6 @@ func _open_generation_settings_selector():
 	if current_displayed_song_path != "":
 		generation_settings_selector.set_current_song_path(current_displayed_song_path)
 	get_parent().add_child(generation_settings_selector)
-	
-func _on_file_selected_internal(path):
-	var file_extension = path.get_extension().to_lower()
-	if file_extension != "mp3" and file_extension != "wav":
-		_cleanup_file_dialog()
-		return
-	song_list_manager.add_song_from_path(path)
-	song_list_manager.populate_items_grouped()
-	_cleanup_file_dialog()
-
-func _cleanup_file_dialog():
-	if file_dialog and is_instance_valid(file_dialog):
-		file_dialog.queue_free()
-		file_dialog = null
 
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
@@ -685,11 +654,13 @@ func _on_song_metadata_updated(song_file_path: String):
 				song_details_manager.update_details(song)
 				break
 
+func _on_songs_list_changed_from_library():
+	if song_list_manager:
+		song_list_manager.populate_items_grouped()
+		_on_song_list_changed()
+
 func cleanup_before_exit():
 	song_details_manager.stop_preview()
-	if file_dialog and is_instance_valid(file_dialog):
-		file_dialog.queue_free()
-		file_dialog = null
 
 func get_current_selected_song() -> Dictionary:
 	return current_selected_song_data.duplicate()

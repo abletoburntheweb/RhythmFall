@@ -38,3 +38,4 @@ addons/old-git-plugin/
 songs/*.mp3
 songs/*.mp3.import
 songs/
+bundled_songs/

@@ -1,7 +1,7 @@
 [gd_scene load_steps=258 format=3 uid="uid://cflfv1lx6qcni"]
 
 [ext_resource type="Script" uid="uid://b72o0qprtpesv" path="res://scenes/settings_menu/tabs/misc_tab.gd" id="1_f8lbq"]
-[ext_resource type="Theme" uid="uid://cao567dyuvqnu" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
+[ext_resource type="Theme" uid="uid://c6b5vp5ijae75" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -5175,6 +5175,16 @@ theme_type_variation = &"FlatExitButton"
 theme_override_font_sizes/font_size = 24
 text = "Очистить весь кэш"
 
+[node name="ClearNotesButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 24
+text = "Очистить папку с нотами"
+
 [node name="ResetAllSettingsButton" type="Button" parent="ContentVBox"]
 layout_mode = 2
 theme = SubResource("Theme_p28av")
@@ -5215,6 +5225,39 @@ theme = SubResource("Theme_p28av")
 theme_override_font_sizes/font_size = 24
 text = "Показывать уведомления о генерации и расчёте BPM"
 
+[node name="SongsFolderHBox" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="SongsFolderLabel" type="Label" parent="ContentVBox/SongsFolderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Папка песен:"
+
+[node name="SongsFolderLineEdit" type="LineEdit" parent="ContentVBox/SongsFolderHBox"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+
+[node name="ChooseSongsFolderButton" type="Button" parent="ContentVBox/SongsFolderHBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 24
+text = "Выбрать…"
+
+[node name="ScanSongsButton" type="Button" parent="ContentVBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatMenuSettingsButton"
+theme_override_font_sizes/font_size = 24
+text = "Сканировать песни"
+
 [node name="ResetConfirmDialog" type="ConfirmationDialog" parent="."]
 oversampling_override = 1.0
 title = "Сброс профиля"
@@ -5228,12 +5271,40 @@ dialog_text = "Это удалит результаты и статистику 
 Продолжить?"
 cancel_button_text = "Отмена"
 
+[node name="SongsFolderDialog" type="FileDialog" parent="."]
+oversampling_override = 1.0
+title = "Open a Directory"
+initial_position = 1
+size = Vector2i(675, 360)
+theme = ExtResource("2_k8h85")
+ok_button_text = "Сохранить"
+cancel_button_text = "Отмена"
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[node name="MigratePathsDialog" type="ConfirmationDialog" parent="."]
+oversampling_override = 1.0
+title = "Перепривязка путей"
+initial_position = 1
+size = Vector2i(271, 100)
+borderless = true
+ok_button_text = "Обновить"
+dialog_text = "Перепривязка путей"
+dialog_close_on_escape = false
+cancel_button_text = "Отмена"
+
 [connection signal="pressed" from="ContentVBox/ResetBPMBatchButton" to="." method="_on_reset_bpm_batch_pressed"]
 [connection signal="pressed" from="ContentVBox/ClearAllCacheButton" to="." method="_on_clear_all_cache_pressed"]
+[connection signal="pressed" from="ContentVBox/ClearNotesButton" to="." method="_on_clear_notes_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetAllSettingsButton" to="." method="_on_reset_all_settings_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetProfileStatsButton" to="." method="_on_reset_profile_stats_pressed"]
 [connection signal="toggled" from="ContentVBox/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]
 [connection signal="toggled" from="ContentVBox/EnableGenreDetectionCheckBox" to="." method="_on_enable_genre_detection_toggled"]
 [connection signal="toggled" from="ContentVBox/EnableStemsCheckBox" to="." method="_on_enable_stems_toggled"]
 [connection signal="toggled" from="ContentVBox/ShowGenNotifsCheckBox" to="." method="_on_show_gen_notifs_toggled"]
+[connection signal="pressed" from="ContentVBox/SongsFolderHBox/ChooseSongsFolderButton" to="." method="_on_choose_songs_folder_pressed"]
+[connection signal="pressed" from="ContentVBox/ScanSongsButton" to="." method="_on_scan_songs_pressed"]
 [connection signal="confirmed" from="ResetConfirmDialog" to="." method="_confirm_reset_profile_stats"]
+[connection signal="dir_selected" from="SongsFolderDialog" to="." method="_on_songs_folder_dir_selected"]
+[connection signal="confirmed" from="MigratePathsDialog" to="." method="_on_migrate_paths_confirmed"]

@@ -15,15 +15,13 @@ const FILES_TO_CLEAR := ["session_history.json"]
 @onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
 @onready var enable_stems_checkbox: CheckBox = $ContentVBox/EnableStemsCheckBox
+@onready var songs_folder_line_edit: LineEdit = $ContentVBox/SongsFolderHBox/SongsFolderLineEdit
+@onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
+@onready var migrate_paths_dialog: ConfirmationDialog = $MigratePathsDialog
 
 
-func setup_ui_and_manager(music, screen = null, song_metadata_mgr = null, achievement_mgr = null):
-	song_metadata_manager = song_metadata_mgr if song_metadata_mgr else SongLibrary
-	_apply_initial_settings()
-
- 
-
- 
+func _ready():
+	call_deferred("_apply_initial_settings")
 
 func _apply_initial_settings():
 	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
@@ -36,6 +34,11 @@ func _apply_initial_settings():
 	
 	var use_stems = SettingsManager.get_setting("use_stems_in_generation", true)
 	enable_stems_checkbox.set_pressed_no_signal(use_stems)
+	
+	var p = String(SettingsManager.get_setting("user_songs_path", ""))
+	if p == "":
+		p = "user://Songs"
+	songs_folder_line_edit.text = p
 	_apply_console_state_from_settings()
 
 
@@ -60,6 +63,30 @@ func _on_clear_all_cache_pressed():
 	song_metadata_manager._metadata_cache = {}
 	song_metadata_manager._save_metadata()
 	emit_signal("settings_changed")
+
+func _on_clear_notes_pressed():
+	_delete_directory_recursive("user://notes")
+	emit_signal("settings_changed")
+
+func _delete_directory_recursive(dir_path: String) -> void:
+	var dir = DirAccess.open(dir_path)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var name = dir.get_next()
+	while name != "":
+		if name != "." and name != "..":
+			var child_path = "%s/%s" % [dir_path, name]
+			if dir.current_is_dir():
+				_delete_directory_recursive(child_path)
+			var root = DirAccess.open("user://")
+			if root:
+				root.remove(child_path)
+		name = dir.get_next()
+	dir.list_dir_end()
+	var root2 = DirAccess.open("user://")
+	if root2:
+		root2.remove(dir_path)
 
 func _on_reset_profile_stats_pressed():
 	if reset_confirm_dialog:
@@ -139,3 +166,58 @@ func _on_enable_stems_toggled(enabled: bool):
 	SettingsManager.set_setting("use_stems_in_generation", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
+
+func _on_choose_songs_folder_pressed():
+	if songs_folder_dialog:
+		songs_folder_dialog.current_dir = "user://"
+		songs_folder_dialog.popup_centered()
+
+func _on_songs_folder_dir_selected(path: String):
+	var old_path = String(SettingsManager.get_setting("user_songs_path", ""))
+	if old_path == "":
+		old_path = "user://Songs/"
+	if not old_path.ends_with("/"):
+		old_path += "/"
+	var new_path = String(path)
+	if not new_path.ends_with("/"):
+		new_path += "/"
+	var prep = {}
+	if SongLibrary and SongLibrary.has_method("prepare_user_path_migration"):
+		prep = SongLibrary.prepare_user_path_migration(old_path, new_path)
+	var matches: Dictionary = prep.get("matches", {})
+	if matches.size() > 0 and migrate_paths_dialog:
+		_pending_old_user_path = old_path
+		_pending_new_user_path = new_path
+		_pending_migration_map = matches.duplicate(true)
+		migrate_paths_dialog.dialog_text = "Найдено %d совпадений в новой папке. Обновить пути?" % matches.size()
+		migrate_paths_dialog.popup_centered()
+		return
+	var old_dir_exists = DirAccess.open(old_path) != null
+	if not old_dir_exists and matches.size() == 0:
+		if SongLibrary and SongLibrary.has_method("clear_metadata_under_root"):
+			SongLibrary.clear_metadata_under_root(old_path)
+	SettingsManager.set_setting("user_songs_path", new_path)
+	SettingsManager.save_settings()
+	if songs_folder_line_edit:
+		songs_folder_line_edit.text = new_path
+	emit_signal("settings_changed")
+
+var _pending_migration_map: Dictionary = {}
+var _pending_old_user_path: String = ""
+var _pending_new_user_path: String = ""
+
+func _on_migrate_paths_confirmed():
+	if SongLibrary and SongLibrary.has_method("apply_user_path_migration"):
+		SongLibrary.apply_user_path_migration(_pending_migration_map, false, _pending_old_user_path)
+	SettingsManager.set_setting("user_songs_path", _pending_new_user_path)
+	SettingsManager.save_settings()
+	if songs_folder_line_edit:
+		songs_folder_line_edit.text = _pending_new_user_path
+	_pending_migration_map.clear()
+	_pending_old_user_path = ""
+	_pending_new_user_path = ""
+	emit_signal("settings_changed")
+
+func _on_scan_songs_pressed():
+	if SongLibrary and SongLibrary.has_method("scan_user_songs"):
+		SongLibrary.scan_user_songs()

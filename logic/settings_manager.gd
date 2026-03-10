@@ -15,6 +15,7 @@ var default_settings = {
 	"fullscreen": false,
 	"enable_debug_menu": false,
 	"enable_genre_detection": true,
+	"user_songs_path": "",
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,
