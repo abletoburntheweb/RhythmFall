@@ -119,11 +119,6 @@ func load_songs():
 		if p.begins_with(user_root):
 			if FileAccess.file_exists(p):
 				var md = read_metadata(p)
-				if str(md.get("duration", "00:00")) == "00:00":
-					var dur2 = _compute_duration_str(p)
-					if dur2 != "00:00":
-						md["duration"] = dur2
-						update_metadata(p, {"duration": dur2})
 				md["source"] = "user"
 				songs.append(md)
 	_start_id3_enrichment_if_needed()
@@ -405,6 +400,81 @@ func clear_metadata_under_root(root: String):
 			changed = true
 	if changed:
 		_save_metadata()
+	emit_signal("songs_list_changed")
+
+func _is_placeholder(field: String, value, path_for_stem: String) -> bool:
+	var v = str(value)
+	match field:
+		"title":
+			var stem = path_for_stem.get_file().get_basename()
+			return v == "" or v == "Без названия" or v == stem
+		"artist":
+			return v == "" or v == "Неизвестен"
+		"bpm":
+			return v == "" or v == "Н/Д" or v == "0" or v == "-1"
+		"year":
+			return v == "" or v == "Н/Д" or v == "0"
+		"duration":
+			return v == "" or v == "00:00"
+		"primary_genre":
+			return v == "" or v == "unknown"
+		"genres":
+			return v == ""
+		_:
+			return v == ""
+
+func _dedupe_metadata_for_user_root(current_root: String):
+	var r = _normalize_dir_path(current_root)
+	var index := {}
+	for k in _metadata_cache.keys():
+		var s := String(k)
+		if s.begins_with(r):
+			if FileAccess.file_exists(s):
+				index[s.get_file()] = s
+	var changed := false
+	var snapshot = _metadata_cache.keys()
+	for k in snapshot:
+		var old_path := String(k)
+		if old_path.begins_with(r):
+			continue
+		var fname = old_path.get_file()
+		if index.has(fname):
+			var new_path = index[fname]
+			var old_rec = _metadata_cache.get(old_path, {})
+			var new_rec = _metadata_cache.get(new_path, {})
+			var merged = new_rec.duplicate(true) if not new_rec.is_empty() else old_rec.duplicate(true)
+			var fields = ["title","artist","bpm","year","duration","primary_genre","genres"]
+			for f in fields:
+				var cur_val = merged.get(f, "")
+				var old_val = old_rec.get(f, "")
+				if _is_placeholder(f, cur_val, new_path) and not _is_placeholder(f, old_val, old_path):
+					merged[f] = old_val
+			merged["path"] = new_path
+			_metadata_cache[new_path] = merged
+			_metadata_cache.erase(old_path)
+			changed = true
+	if changed:
+		_save_metadata()
+
+func prepare_dedupe_for_user_root(current_root: String) -> Dictionary:
+	var r = _normalize_dir_path(current_root)
+	var index := {}
+	for k in _metadata_cache.keys():
+		var s := String(k)
+		if s.begins_with(r) and FileAccess.file_exists(s):
+			index[s.get_file()] = s
+	var matches := {}
+	for k in _metadata_cache.keys():
+		var old_path := String(k)
+		if old_path.begins_with(r):
+			continue
+		var fname = old_path.get_file()
+		if index.has(fname):
+			matches[old_path] = index[fname]
+	return {"matches": matches}
+
+func apply_dedupe_for_user_root(current_root: String):
+	_dedupe_metadata_for_user_root(current_root)
 	emit_signal("songs_list_changed")
 
 func _start_id3_enrichment_if_needed():

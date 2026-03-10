@@ -181,21 +181,6 @@ func _on_songs_folder_dir_selected(path: String):
 	var new_path = String(path)
 	if not new_path.ends_with("/"):
 		new_path += "/"
-	var prep = {}
-	if SongLibrary and SongLibrary.has_method("prepare_user_path_migration"):
-		prep = SongLibrary.prepare_user_path_migration(old_path, new_path)
-	var matches: Dictionary = prep.get("matches", {})
-	if matches.size() > 0 and migrate_paths_dialog:
-		_pending_old_user_path = old_path
-		_pending_new_user_path = new_path
-		_pending_migration_map = matches.duplicate(true)
-		migrate_paths_dialog.dialog_text = "Найдено %d совпадений в новой папке. Обновить пути?" % matches.size()
-		migrate_paths_dialog.popup_centered()
-		return
-	var old_dir_exists = DirAccess.open(old_path) != null
-	if not old_dir_exists and matches.size() == 0:
-		if SongLibrary and SongLibrary.has_method("clear_metadata_under_root"):
-			SongLibrary.clear_metadata_under_root(old_path)
 	SettingsManager.set_setting("user_songs_path", new_path)
 	SettingsManager.save_settings()
 	if songs_folder_line_edit:
@@ -221,3 +206,27 @@ func _on_migrate_paths_confirmed():
 func _on_scan_songs_pressed():
 	if SongLibrary and SongLibrary.has_method("scan_user_songs"):
 		SongLibrary.scan_user_songs()
+		var current_root = String(SettingsManager.get_setting("user_songs_path", ""))
+		if current_root == "":
+			current_root = "user://Songs/"
+		if not current_root.ends_with("/"):
+			current_root += "/"
+		if SongLibrary.has_method("prepare_dedupe_for_user_root"):
+			var prep = SongLibrary.prepare_dedupe_for_user_root(current_root)
+			var matches: Dictionary = prep.get("matches", {})
+			if matches.size() > 0:
+				var dlg = ConfirmationDialog.new()
+				dlg.title = "Объединение метаданных"
+				dlg.dialog_text = "Найдено %d совпадений по именам файлов.\nОбъединить метаданные со старых путей в новую папку?" % matches.size()
+				dlg.confirmed.connect(func():
+					if SongLibrary and SongLibrary.has_method("apply_dedupe_for_user_root"):
+						SongLibrary.apply_dedupe_for_user_root(current_root)
+					if is_instance_valid(dlg):
+						dlg.queue_free()
+				)
+				dlg.canceled.connect(func():
+					if is_instance_valid(dlg):
+						dlg.queue_free()
+				)
+				add_child(dlg)
+				dlg.popup_centered()
