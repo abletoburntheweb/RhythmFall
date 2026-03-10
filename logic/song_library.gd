@@ -275,6 +275,7 @@ func _load_metadata():
 			_metadata_cache = parse_result
 			for key in _metadata_cache.keys():
 				_metadata_cache[key].erase("cover")
+				_metadata_cache[key].erase("metronome_offset")
 		else:
 			printerr("SongLibrary.gd: Ошибка парсинга JSON из %s или данные не являются словарём." % METADATA_FILE_PATH)
 			_metadata_cache = {}
