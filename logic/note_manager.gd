@@ -76,8 +76,8 @@ func spawn_notes():
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
 
-	var screen_width = DisplayServer.screen_get_size().x
-	var lane_width = screen_width / lanes
+	var lane_width = game_screen.get_lane_width()
+	var start_x = 0.0
 
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
@@ -114,7 +114,7 @@ func spawn_notes():
 			else:
 				visual_rect.size = Vector2(lane_width, default_note_height)
 
-			visual_rect.position = Vector2(lane * lane_width, y_spawn)
+			visual_rect.position = Vector2(start_x + lane * lane_width, y_spawn)
 			
 			game_screen.notes_container.add_child(visual_rect)
 			notes.append(note_object)

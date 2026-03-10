@@ -12,78 +12,90 @@ offset_right = 40.0
 offset_bottom = 40.0
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="HitZone" type="ColorRect" parent="."]
-offset_top = 900.0
-offset_right = 1920.0
-offset_bottom = 930.0
+[node name="Playfield" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 660.0
+offset_right = 1260.0
+offset_bottom = 1080.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HitZone" type="ColorRect" parent="Playfield"]
+layout_mode = 1
+anchors_preset = -1
+offset_top = 950.0
+offset_right = 600.0
+offset_bottom = 980.0
 color = Color(1, 0.88235295, 0.85882354, 1)
 
-[node name="LanesContainer" type="Node2D" parent="."]
+[node name="LanesContainer" type="Node2D" parent="Playfield"]
 
-[node name="Lane0Highlight" type="ColorRect" parent="LanesContainer"]
+[node name="Lane0Highlight" type="ColorRect" parent="Playfield/LanesContainer"]
 visible = false
-offset_right = 384.0
+offset_right = 120.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
-[node name="Lane1Highlight" type="ColorRect" parent="LanesContainer"]
+[node name="Lane1Highlight" type="ColorRect" parent="Playfield/LanesContainer"]
 visible = false
 offset_left = 384.0
-offset_right = 768.0
+offset_right = 240.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
-[node name="Lane2Highlight" type="ColorRect" parent="LanesContainer"]
+[node name="Lane2Highlight" type="ColorRect" parent="Playfield/LanesContainer"]
 visible = false
 offset_left = 768.0
-offset_right = 1152.0
+offset_right = 360.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
-[node name="Lane3Highlight" type="ColorRect" parent="LanesContainer"]
+[node name="Lane3Highlight" type="ColorRect" parent="Playfield/LanesContainer"]
 visible = false
 offset_left = 1152.0
-offset_right = 1536.0
+offset_right = 480.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
-[node name="Lane4Highlight" type="ColorRect" parent="LanesContainer"]
+[node name="Lane4Highlight" type="ColorRect" parent="Playfield/LanesContainer"]
 visible = false
 offset_left = 1536.0
-offset_right = 1920.0
+offset_right = 600.0
 offset_bottom = 1080.0
 color = Color(0.99726194, 0.7774682, 0.899526, 1)
 
-[node name="Lane0" type="ColorRect" parent="LanesContainer"]
-offset_top = 900.0
-offset_right = 384.0
-offset_bottom = 930.0
+[node name="Lane0" type="ColorRect" parent="Playfield/LanesContainer"]
+offset_top = 950.0
+offset_right = 120.0
+offset_bottom = 980.0
 
-[node name="Lane1" type="ColorRect" parent="LanesContainer"]
+[node name="Lane1" type="ColorRect" parent="Playfield/LanesContainer"]
 offset_left = 384.0
-offset_top = 900.0
-offset_right = 768.0
-offset_bottom = 930.0
+offset_top = 950.0
+offset_right = 384.0
+offset_bottom = 980.0
 
-[node name="Lane2" type="ColorRect" parent="LanesContainer"]
+[node name="Lane2" type="ColorRect" parent="Playfield/LanesContainer"]
 offset_left = 768.0
-offset_top = 900.0
-offset_right = 1152.0
-offset_bottom = 930.0
+offset_top = 950.0
+offset_right = 768.0
+offset_bottom = 980.0
 
-[node name="Lane3" type="ColorRect" parent="LanesContainer"]
+[node name="Lane3" type="ColorRect" parent="Playfield/LanesContainer"]
 offset_left = 1152.0
-offset_top = 900.0
-offset_right = 1536.0
-offset_bottom = 930.0
+offset_top = 950.0
+offset_right = 1152.0
+offset_bottom = 980.0
 
-[node name="Lane4" type="ColorRect" parent="LanesContainer"]
+[node name="Lane4" type="ColorRect" parent="Playfield/LanesContainer"]
 offset_left = 1536.0
-offset_top = 900.0
-offset_right = 1920.0
-offset_bottom = 930.0
+offset_top = 950.0
+offset_right = 1536.0
+offset_bottom = 980.0
 
-[node name="NotesContainer" type="Node2D" parent="."]
+[node name="NotesContainer" type="Node2D" parent="Playfield"]
 
 [node name="UIContainer" type="Control" parent="."]
 layout_mode = 3
@@ -137,10 +149,14 @@ offset_bottom = 1080.0
 theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
 theme_override_font_sizes/font_size = 12
 
-[node name="CountdownLabel" type="Label" parent="."]
-offset_left = 960.0
-offset_top = 340.0
-offset_right = 1074.0
-offset_bottom = 613.0
+[node name="CenterContainer" type="CenterContainer" parent="UIContainer"]
+layout_mode = 1
+anchors_preset = -1
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="CountdownLabel" type="Label" parent="UIContainer/CenterContainer"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 200
 text = "5"
+horizontal_alignment = 1

@@ -29,10 +29,8 @@ var selected_song_data: Dictionary = {}
 var score_manager
 var note_manager
 var player
-
 var game_engine
-
-
+ 
 var score_label: Label = null
 var combo_label: Label = null
 var accuracy_label: Label = null
@@ -166,7 +164,7 @@ func _on_strong_beat(_i):
 	_pulse_hit_zone(true)
 
 func _pulse_hit_zone(strong: bool):
-	var hit_zone = get_node_or_null("HitZone") as ColorRect
+	var hit_zone = get_node_or_null("Playfield/HitZone") as ColorRect
 	if not hit_zone:
 		return
 	var original_color = hit_zone.color
@@ -196,13 +194,18 @@ func _auto_play_simulate():
 	if not notes_loaded:
 		return
 	var hit_zone_y_float = float(hit_zone_y)
-	var threshold = 50.0
+	var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA)
+	var offset_sec := 0.0
+	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
+		offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
+	var current_time_adjusted = game_time + offset_sec
 	var lanes_to_hit := {}
 	for note in note_manager.get_notes():
 		if note.is_missed:
 			continue
-		var dist = abs(note.y - hit_zone_y_float)
-		if dist <= threshold:
+		var note_time = note.spawn_time + (hit_zone_y_float - note.spawn_y) / pixels_per_sec
+		var delta = note_time - current_time_adjusted
+		if abs(delta) <= (GAME_UPDATE_DELTA * 0.5):
 			var ln_idx := int(note.lane)
 			if ln_idx >= 0 and ln_idx < lanes:
 				lanes_to_hit[ln_idx] = true
@@ -290,10 +293,12 @@ func _find_ui_elements():
 		
 		hint_label = ui_container_node.get_node_or_null("HintLabel") as Label
 
-	countdown_label = get_node_or_null("CountdownLabel") as Label
-	notes_container = get_node_or_null("NotesContainer") as Node2D
+	countdown_label = get_node_or_null("UIContainer/CenterContainer/CountdownLabel") as Label
+	if countdown_label == null:
+		countdown_label = get_node_or_null("CountdownLabel") as Label
+	notes_container = get_node_or_null("Playfield/NotesContainer") as Node2D
 
-	var lanes_container_node = get_node_or_null("LanesContainer")
+	var lanes_container_node = get_node_or_null("Playfield/LanesContainer")
 	if lanes_container_node:
 		lane_highlight_nodes = [
 			lanes_container_node.get_node_or_null("Lane0Highlight") as ColorRect,
@@ -419,8 +424,14 @@ func _set_lanes(lane_count: int):
 	_update_lane_layout()
 
 func _update_lane_layout():
-	var screen_width = DisplayServer.screen_get_size().x  
-	var lane_width = screen_width / lanes
+	var hit_zone = get_node_or_null("Playfield/HitZone") as ColorRect
+	if not hit_zone:
+		return
+	var playfield = get_node_or_null("Playfield") as Control
+	var start_x = 0.0
+	var playfield_width = hit_zone.size.x
+	var playfield_height = playfield.size.y if playfield else 1080.0
+	var lane_width = playfield_width / lanes
 
 	for i in range(5): 
 		var is_active = (i < lanes)
@@ -430,20 +441,32 @@ func _update_lane_layout():
 			if lane_node:
 				lane_node.visible = is_active
 				if is_active:
-					lane_node.position.x = i * lane_width
+					lane_node.position.x = start_x + i * lane_width
 					lane_node.size.x = lane_width
+					lane_node.position.y = hit_zone.position.y
+					lane_node.size.y = hit_zone.size.y
 
 		if i < lane_highlight_nodes.size():
 			var highlight_node = lane_highlight_nodes[i]
 			if highlight_node:
 				highlight_node.visible = false
 				if is_active:
-					highlight_node.position.x = i * lane_width
+					highlight_node.position.x = start_x + i * lane_width
 					highlight_node.size.x = lane_width
+					highlight_node.position.y = 0.0
+					highlight_node.size.y = playfield_height
 
-	var hit_zone = get_node_or_null("HitZone")
-	if hit_zone:
-		hit_zone.size.x = screen_width
+	hit_zone_y = int(hit_zone.position.y)
+	
+func get_playfield_width() -> float:
+	var hz = get_node_or_null("Playfield/HitZone") as ColorRect
+	return float(hz.size.x) if hz else 600.0
+
+func get_lane_width() -> float:
+	return get_playfield_width() / float(lanes)
+
+func get_playfield_start_x() -> float:
+	return 0.0
 	
 func _set_generation_mode(mode: String): 
 	current_generation_mode = mode
