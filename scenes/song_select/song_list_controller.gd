@@ -44,7 +44,7 @@ func populate_items():
 	item_list.clear()
 	var songs_list = SongLibrary.get_songs_list()
 	for song_data in songs_list:
-		var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
+		var display_text = _format_display_text(song_data)
 		item_list.add_item(display_text)
 	emit_signal("song_list_changed")
 
@@ -88,7 +88,7 @@ func filter_items(filter_text: String):
 	else:
 		var filtered = []
 		for song_data in SongLibrary.get_songs_list():
-			var display_text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
+			var display_text = _format_display_text(song_data)
 			if filter_text.to_lower() in display_text.to_lower():
 				filtered.append(song_data)
 		current_grouped_data = _build_grouped_data(_sorted_songs(filtered))
@@ -106,9 +106,9 @@ func get_first_letter(text: String) -> String:
 
 func get_filter_field_value(song_data: Dictionary) -> String:
 	if current_filter_mode == "title":
-		return song_data.get("title", "")
+		return _effective_title(song_data)
 	else:
-		return song_data.get("artist", "")
+		return _effective_artist(song_data)
 
 func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
 	if item_list_index >= 0 and item_list_index < current_grouped_data.size():
@@ -125,7 +125,7 @@ func update_song_at_index(item_list_index: int, new_song_data: Dictionary) -> bo
 	if item_data.type != "song":
 		return false
 	current_grouped_data[item_list_index].data = new_song_data.duplicate(true)
-	var display_text = new_song_data.get("artist", "Неизвестен") + " — " + new_song_data.get("title", "Без названия")
+	var display_text = _format_display_text(new_song_data)
 	item_list.set_item_text(item_list_index, display_text)
 	return true
 
@@ -419,23 +419,29 @@ func _sorted_songs(songs_list: Array) -> Array:
 	var arr = songs_list.duplicate()
 	if current_filter_mode == "title":
 		arr.sort_custom(func(a, b):
-			var title_a = a.get("title", "").to_lower()
-			var title_b = b.get("title", "").to_lower()
+			var title_a = _effective_title(a).to_lower()
+			var title_b = _effective_title(b).to_lower()
 			if title_a == title_b:
-				var artist_a = a.get("artist", "").to_lower()
-				var artist_b = b.get("artist", "").to_lower()
-				return artist_a < artist_b
+				var artist_a = _effective_artist(a).to_lower()
+				var artist_b = _effective_artist(b).to_lower()
+				if artist_a == artist_b:
+					return String(a.get("path","")) < String(b.get("path",""))
+				else:
+					return artist_a < artist_b
 			else:
 				return title_a < title_b
 		)
 	else:
 		arr.sort_custom(func(a, b):
-			var artist_a = a.get("artist", "").to_lower()
-			var artist_b = b.get("artist", "").to_lower()
+			var artist_a = _effective_artist(a).to_lower()
+			var artist_b = _effective_artist(b).to_lower()
 			if artist_a == artist_b:
-				var title_a = a.get("title", "").to_lower()
-				var title_b = b.get("title", "").to_lower()
-				return title_a < title_b
+				var title_a = _effective_title(a).to_lower()
+				var title_b = _effective_title(b).to_lower()
+				if title_a == title_b:
+					return String(a.get("path","")) < String(b.get("path",""))
+				else:
+					return title_a < title_b
 			else:
 				return artist_a < artist_b
 		)
@@ -477,12 +483,45 @@ func _render_grouped_data():
 			item_list.set_item_selectable(idx, false)
 		else:
 			var song_data = item_data.data
-			var text = song_data.get("artist", "Неизвестен") + " — " + song_data.get("title", "Без названия")
+			var text = _format_display_text(song_data)
 			var idx = item_list.add_item(text)
 			var song_path = String(song_data.get("path", ""))
 			if _notes_exist_for(song_path, current_instrument, current_mode, current_lanes):
 				item_list.set_item_custom_fg_color(idx, Color("#61C7BD"))
 
+func _format_display_text(song_data: Dictionary) -> String:
+	var artist = str(song_data.get("artist", "")).strip_edges()
+	var title = str(song_data.get("title", "")).strip_edges()
+	var path = String(song_data.get("path", ""))
+	var stem = path.get_file().get_basename() if path != "" else ""
+	var artist_invalid = (artist == "" or artist == "Неизвестен")
+	var title_invalid = (title == "" or title == "Без названия" or title == stem)
+	if artist_invalid and title_invalid:
+		return stem
+	if artist_invalid:
+		return title if title != "" else stem
+	if title_invalid:
+		return artist
+	return artist + " — " + title
+
+func _stem_for(song_data: Dictionary) -> String:
+	var path = String(song_data.get("path", ""))
+	if path == "":
+		return ""
+	return path.get_file().get_basename()
+
+func _effective_title(song_data: Dictionary) -> String:
+	var t = str(song_data.get("title", "")).strip_edges()
+	var stem = _stem_for(song_data)
+	if t == "" or t == "Без названия" or t == stem:
+		return stem
+	return t
+
+func _effective_artist(song_data: Dictionary) -> String:
+	var a = str(song_data.get("artist", "")).strip_edges()
+	if a == "" or a == "Неизвестен":
+		return _effective_title(song_data)
+	return a
 func _get_selected_song_path() -> String:
 	var selected = item_list.get_selected_items() if item_list else []
 	if selected.size() > 0:

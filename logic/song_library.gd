@@ -92,6 +92,11 @@ func load_songs():
 				if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
 					var path = BUILT_IN_FOLDER_PATH + file_name
 					var metadata = read_metadata(path)
+					if str(metadata.get("duration", "00:00")) == "00:00":
+						var dur = _compute_duration_str(path)
+						if dur != "00:00":
+							metadata["duration"] = dur
+							update_metadata(path, {"duration": dur})
 					var cached_metadata = get_metadata_for_song(path)
 					if cached_metadata.is_empty():
 						var fields_to_save = {
@@ -108,6 +113,19 @@ func load_songs():
 					songs.append(metadata)
 			file_name = dir.get_next()
 		dir.list_dir_end()
+	var user_root = _get_effective_user_songs_path()
+	for k in _metadata_cache.keys():
+		var p := String(k)
+		if p.begins_with(user_root):
+			if FileAccess.file_exists(p):
+				var md = read_metadata(p)
+				if str(md.get("duration", "00:00")) == "00:00":
+					var dur2 = _compute_duration_str(p)
+					if dur2 != "00:00":
+						md["duration"] = dur2
+						update_metadata(p, {"duration": dur2})
+				md["source"] = "user"
+				songs.append(md)
 	_start_id3_enrichment_if_needed()
 	emit_signal("songs_list_changed")
 
@@ -132,14 +150,29 @@ func scan_user_songs():
 						break
 				if not exists:
 					var metadata = read_metadata(path)
+					if str(metadata.get("duration", "00:00")) == "00:00":
+						var dur = _compute_duration_str(path)
+						if dur != "00:00":
+							metadata["duration"] = dur
+							update_metadata(path, {"duration": dur})
 					metadata["source"] = "user"
+					var cached_metadata = get_metadata_for_song(path)
+					if cached_metadata.is_empty():
+						var fields_to_save = {
+							"title": metadata.get("title", "Без названия"),
+							"artist": metadata.get("artist", "Неизвестен"),
+							"bpm": metadata.get("bpm", "Н/Д"),
+							"year": metadata.get("year", "Н/Д"),
+							"duration": metadata.get("duration", "00:00")
+						}
+						update_metadata(path, fields_to_save)
 					if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
 						_id3_queue.append(path)
-					songs.append(metadata)
 					songs.append(metadata)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	_start_id3_enrichment_if_needed()
+	emit_signal("songs_list_changed")
 
 func add_song(file_path: String) -> Dictionary:
 	var file_extension = file_path.get_extension().to_lower()
@@ -424,6 +457,53 @@ func _id3_worker(queue: Array):
 				call_deferred("_apply_id3_result", p, fields)
 		OS.delay_msec(5)
 	call_deferred("_finish_id3_worker")
+
+func _load_stream_for_duration(p: String) -> AudioStream:
+	var full = String(p)
+	if full.begins_with("res://"):
+		var s_res := load(full) as AudioStream
+		if s_res:
+			return s_res
+	var real_path = full
+	if full.begins_with("user://"):
+		real_path = full
+	elif not FileAccess.file_exists(full):
+		var g = ProjectSettings.globalize_path(full)
+		if FileAccess.file_exists(g):
+			real_path = g
+		else:
+			return null
+	var f = FileAccess.open(real_path, FileAccess.READ)
+	if not f:
+		return null
+	var bytes = f.get_buffer(f.get_length())
+	f.close()
+	var ext = real_path.get_extension().to_lower()
+	if ext == "mp3":
+		var s_mp3 := AudioStreamMP3.new()
+		s_mp3.data = bytes
+		return s_mp3
+	elif ext == "wav":
+		var s_wav := AudioStreamWAV.new()
+		s_wav.data = bytes
+		return s_wav
+	return null
+
+func _compute_duration_str(p: String) -> String:
+	var ext = p.get_extension().to_lower()
+	var stream = _load_stream_for_duration(p)
+	if stream == null:
+		if ext == "mp3":
+			stream = ResourceLoader.load(p, "AudioStreamMP3")
+		elif ext == "wav":
+			stream = ResourceLoader.load(p, "AudioStreamWAV")
+	if stream and stream is AudioStream:
+		var seconds = stream.get_length()
+		if seconds > 0:
+			var minutes_i = int(seconds) / 60
+			var seconds_i = int(seconds) % 60
+			return "%02d:%02d" % [minutes_i, seconds_i]
+	return "00:00"
 
 func _apply_id3_result(path: String, fields: Dictionary):
 	update_metadata(path, fields)

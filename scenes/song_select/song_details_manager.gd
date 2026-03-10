@@ -57,6 +57,37 @@ func setup_audio_player():
 	preview_player.finished.connect(_on_preview_finished)
 	add_child(preview_player)
 
+func _load_audio_stream_for_path(p: String) -> AudioStream:
+	var full = String(p)
+	if full.begins_with("res://"):
+		var s_res := load(full) as AudioStream
+		if s_res:
+			return s_res
+		return null
+	var real_path = full
+	if full.begins_with("user://"):
+		real_path = full
+	elif not FileAccess.file_exists(full):
+		var g = ProjectSettings.globalize_path(full)
+		if FileAccess.file_exists(g):
+			real_path = g
+		else:
+			return null
+	var f = FileAccess.open(real_path, FileAccess.READ)
+	if not f:
+		return null
+	var bytes = f.get_buffer(f.get_length())
+	f.close()
+	var ext = real_path.get_extension().to_lower()
+	if ext == "mp3":
+		var s_mp3 := AudioStreamMP3.new()
+		s_mp3.data = bytes
+		return s_mp3
+	elif ext == "wav":
+		var s_wav := AudioStreamWAV.new()
+		s_wav.data = bytes
+		return s_wav
+	return null
 func update_details(song_data: Dictionary):
 	
 	if title_label:
@@ -211,10 +242,6 @@ func play_song_preview(filepath: String):
 		printerr("SongDetailsManager.gd: Путь к файлу пуст, воспроизведение невозможно.")
 		return
 
-	if not FileAccess.file_exists(filepath):
-		printerr("SongDetailsManager.gd: Файл не найден: " + filepath)
-		return
-
 	var file_extension = filepath.get_extension().to_lower()
 	if file_extension != "mp3" and file_extension != "wav":
 		printerr("SongDetailsManager.gd: Неподдерживаемый формат файла для воспроизведения: " + file_extension)
@@ -223,11 +250,18 @@ func play_song_preview(filepath: String):
 	if preview_player.playing:
 		preview_player.stop()
 
-	var audio_stream = null
-	if file_extension == "mp3":
-		audio_stream = ResourceLoader.load(filepath, "AudioStreamMP3")
-	elif file_extension == "wav":
-		audio_stream = ResourceLoader.load(filepath, "AudioStreamWAV")
+	var audio_stream = _load_audio_stream_for_path(filepath)
+	if audio_stream == null:
+		if file_extension == "mp3":
+			audio_stream = ResourceLoader.load(filepath, "AudioStreamMP3")
+		elif file_extension == "wav":
+			audio_stream = ResourceLoader.load(filepath, "AudioStreamWAV")
+		if audio_stream == null:
+			var global_path = ProjectSettings.globalize_path(filepath)
+			if FileAccess.file_exists(global_path):
+				var s2 = _load_audio_stream_for_path(global_path)
+				if s2:
+					audio_stream = s2
 
 	if audio_stream:
 		preview_player.stream = audio_stream
@@ -256,11 +290,12 @@ func _update_duration_if_unknown(song_data: Dictionary) -> void:
 	if path == "":
 		return
 	var ext = path.get_extension().to_lower()
-	var stream = null
-	if ext == "mp3":
-		stream = ResourceLoader.load(path, "AudioStreamMP3")
-	elif ext == "wav":
-		stream = ResourceLoader.load(path, "AudioStreamWAV")
+	var stream = _load_audio_stream_for_path(path)
+	if stream == null:
+		if ext == "mp3":
+			stream = ResourceLoader.load(path, "AudioStreamMP3")
+		elif ext == "wav":
+			stream = ResourceLoader.load(path, "AudioStreamWAV")
 	if stream and stream is AudioStream:
 		var seconds = stream.get_length()
 		if seconds > 0:
@@ -283,13 +318,16 @@ func _apply_tags_if_needed(song_data: Dictionary) -> void:
 	var need_title := true
 	var need_artist := true
 	var need_year := true
+	var need_bpm := true
 	if not current_meta.is_empty():
 		var cur_title = str(current_meta.get("title", ""))
 		var cur_artist = str(current_meta.get("artist", "Неизвестен"))
 		var cur_year = str(current_meta.get("year", "Н/Д"))
+		var cur_bpm = str(current_meta.get("bpm", "Н/Д"))
 		need_title = (cur_title == "" or cur_title == stem or cur_title == "Без названия")
 		need_artist = (cur_artist == "" or cur_artist == "Неизвестен")
 		need_year = (cur_year == "" or cur_year == "Н/Д" or cur_year == "0")
+		need_bpm = (cur_bpm == "" or cur_bpm == "Н/Д" or cur_bpm == "-1" or cur_bpm == "0")
 	var global_path = ProjectSettings.globalize_path(path_for_tags)
 	if not FileAccess.file_exists(global_path):
 		return
@@ -314,6 +352,11 @@ func _apply_tags_if_needed(song_data: Dictionary) -> void:
 		if year_label and ("Год: " + y != year_label.text):
 			year_label.text = "Год: " + y
 		updated["year"] = y
+	if int(mm.bpm) > 0 and need_bpm:
+		var bpm_str = str(int(mm.bpm))
+		if bpm_label and ("BPM: " + bpm_str != bpm_label.text):
+			bpm_label.text = "BPM: " + bpm_str
+		updated["bpm"] = bpm_str
 	if not updated.is_empty():
 		_tag_sync_in_progress = true
 		var diff := {}
