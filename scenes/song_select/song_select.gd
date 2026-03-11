@@ -261,10 +261,6 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Ноты сгенерированы", false)
 	song_list_manager.refresh_highlight_for_current_settings()
-	
-	var game_engine = get_parent()
-	var achievement_system = game_engine.get_achievement_system()
-	achievement_system.on_notes_generated()
 
 func _on_notes_generation_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)

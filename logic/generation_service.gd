@@ -209,6 +209,10 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	var notes_path = "%s/%s" % [notes_dir, notes_filename]
 	JsonUtils.write_json(notes_path, notes_data, false, true)
 	notes_completed.emit(path, instrument_type, disp)
+	if _game_engine and _game_engine.has_method("get_achievement_system"):
+		var ach = _game_engine.get_achievement_system()
+		if ach and ach.has_method("on_notes_generated"):
+			ach.on_notes_generated()
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		var instr_code = "П" if instrument_type.to_lower() == "drums" else instrument_type.substr(0, 1).to_upper()
 		var mode_code = "Б" if gen_mode.to_lower() == "basic" else "У"
