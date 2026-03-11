@@ -50,6 +50,12 @@ func handle_pause_request():
 	and not game_screen.victory_delay_timer.is_stopped():
 		game_screen.victory_delay_timer.stop()
 	
+	if game_screen.restart_timer \
+	and is_instance_valid(game_screen.restart_timer) \
+	and not game_screen.restart_timer.is_stopped():
+		game_screen.restart_timer.stop()
+		game_screen.is_restart_held = false
+	
 	game_screen.input_enabled = false
 	
 	if not pause_menu_instance:

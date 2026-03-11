@@ -953,9 +953,7 @@ func restart_level():
 		return
 
 	if pauser and pauser.is_paused:
-		pauser.is_paused = false
-		if game_timer:
-			game_timer.start()
+		pauser.cleanup_on_game_end()
 
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
@@ -995,6 +993,8 @@ func _on_restart_confirmed():
 	is_restart_held = false
 	print("GameScreen: Рестарт подтверждён!")
 	MusicManager.play_restart_sound()
+	if pauser and pauser.is_paused:
+		pauser.cleanup_on_game_end()
 	restart_level()	
 	
 func _exit_to_song_select():

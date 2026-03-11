@@ -1,7 +1,7 @@
 [gd_scene load_steps=121 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
-[ext_resource type="Theme" uid="uid://cb6jac2ph1emr" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
