@@ -58,36 +58,7 @@ func setup_audio_player():
 	add_child(preview_player)
 
 func _load_audio_stream_for_path(p: String) -> AudioStream:
-	var full = String(p)
-	if full.begins_with("res://"):
-		var s_res := load(full) as AudioStream
-		if s_res:
-			return s_res
-		return null
-	var real_path = full
-	if full.begins_with("user://"):
-		real_path = full
-	elif not FileAccess.file_exists(full):
-		var g = ProjectSettings.globalize_path(full)
-		if FileAccess.file_exists(g):
-			real_path = g
-		else:
-			return null
-	var f = FileAccess.open(real_path, FileAccess.READ)
-	if not f:
-		return null
-	var bytes = f.get_buffer(f.get_length())
-	f.close()
-	var ext = real_path.get_extension().to_lower()
-	if ext == "mp3":
-		var s_mp3 := AudioStreamMP3.new()
-		s_mp3.data = bytes
-		return s_mp3
-	elif ext == "wav":
-		var s_wav := AudioStreamWAV.new()
-		s_wav.data = bytes
-		return s_wav
-	return null
+	return FilePathUtils.load_audio_stream_for_path(p)
 func update_details(song_data: Dictionary):
 	
 	if title_label:

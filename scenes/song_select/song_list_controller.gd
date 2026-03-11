@@ -83,13 +83,14 @@ func filter_items(filter_text: String):
 		return
 	var prev = _get_selected_song_path()
 	item_list.clear()
-	if filter_text.is_empty():
+	var q = _normalize_search_text(filter_text)
+	if q.is_empty():
 		current_grouped_data = _build_grouped_data(_sorted_songs(SongLibrary.get_songs_list()))
 	else:
 		var filtered = []
 		for song_data in SongLibrary.get_songs_list():
 			var display_text = _format_display_text(song_data)
-			if filter_text.to_lower() in display_text.to_lower():
+			if _normalize_search_text(display_text).find(q) != -1:
 				filtered.append(song_data)
 		current_grouped_data = _build_grouped_data(_sorted_songs(filtered))
 	_render_grouped_data()
@@ -109,6 +110,13 @@ func get_filter_field_value(song_data: Dictionary) -> String:
 		return _effective_title(song_data)
 	else:
 		return _effective_artist(song_data)
+
+func _normalize_search_text(text: String) -> String:
+	var s = String(text).to_lower().strip_edges()
+	s = s.replace("—", "-").replace("–", "-")
+	while s.find("  ") != -1:
+		s = s.replace("  ", " ")
+	return s
 
 func get_song_data_by_item_list_index(item_list_index: int) -> Dictionary:
 	if item_list_index >= 0 and item_list_index < current_grouped_data.size():
