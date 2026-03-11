@@ -202,7 +202,7 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	var disp = _active_notes_task.display
 	var gen_mode = _active_notes_task.mode
 	var lanes_val = _active_notes_task.lanes
-	var base_name = path.get_file().get_basename()
+	var base_name = FileUtils.sanitize_name_for_fs(path.get_file().get_basename())
 	var notes_filename = "%s_drums_%s_lanes%d.json" % [base_name, gen_mode.to_lower(), lanes_val]
 	var notes_dir = "user://notes/%s" % base_name
 	var dir = DirAccess.open("user://notes")

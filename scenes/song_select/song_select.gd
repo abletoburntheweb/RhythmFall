@@ -503,7 +503,8 @@ func _on_delete_pressed():
 		SongLibrary.remove_metadata(song_path)
 		results_manager.clear_results_for_song(song_path)
 		
-		var base_name = song_path.get_file().get_basename()
+		var base_name_raw = song_path.get_file().get_basename()
+		var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
 		var notes_dir_path = "user://notes/%s" % base_name
 		var user_dir = DirAccess.open("user://")
 		if user_dir and user_dir.dir_exists(notes_dir_path):
@@ -675,7 +676,8 @@ func _check_if_notes_exist_for_current_settings() -> bool:
 	if song_path == "":
 		return false
 
-	var base_name = song_path.get_file().get_basename()
+	var base_name_raw = song_path.get_file().get_basename()
+	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
 	var notes_filename = "%s_%s_%s_lanes%d.json" % [
 		base_name,
 		current_instrument,

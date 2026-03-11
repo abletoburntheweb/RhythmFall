@@ -38,10 +38,9 @@ func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes:
 		print("NoteManager: Путь к песне пуст, загрузка нот невозможна.")
 		return
 
-	var base_name = song_path.get_file().get_basename()
+	var base_name = FileUtils.sanitize_name_for_fs(song_path.get_file().get_basename())
 	var notes_filename = "%s_drums_%s_lanes%d.json" % [base_name, generation_mode.to_lower(), self.lanes]
 	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
-
 	var file_access = FileAccess.open(notes_path, FileAccess.READ)
 	if file_access:
 		var json_text = file_access.get_as_text()

@@ -556,7 +556,8 @@ func refresh_highlight_for_current_settings():
 func _notes_exist_for(song_path: String, instrument: String, mode: String, lanes: int) -> bool:
 	if song_path == "":
 		return false
-	var base_name = song_path.get_file().get_basename()
+	var base_name_raw = song_path.get_file().get_basename()
+	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
 	var notes_filename = "%s_%s_%s_lanes%d.json" % [
 		base_name,
 		instrument,

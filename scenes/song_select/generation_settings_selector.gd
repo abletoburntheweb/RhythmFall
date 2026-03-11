@@ -117,7 +117,8 @@ func _update_status_indicator():
 func _notes_exist_for_selection() -> bool:
 	if current_song_path == "":
 		return false
-	var base_name = current_song_path.get_file().get_basename()
+	var base_name_raw = current_song_path.get_file().get_basename()
+	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
 	var notes_filename = "%s_%s_%s_lanes%d.json" % [
 		base_name,
 		selected_instrument,
