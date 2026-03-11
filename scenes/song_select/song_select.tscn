@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
-[ext_resource type="Theme" uid="uid://bwsbwyyv550hv" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1325,6 +1325,7 @@ placeholder_text = "Поиск..."
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.0
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatButton"
 text = "Редактировать"
@@ -1333,6 +1334,7 @@ text = "Редактировать"
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.0
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatButton"
 text = "Настройки генерации"
@@ -1340,6 +1342,7 @@ text = "Настройки генерации"
 [node name="FilterByLetter" type="OptionButton" parent="MainVBox/TopBarHBox"]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"Dropdown"
 selected = 0
@@ -1364,6 +1367,7 @@ clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatButton"
 text = "Очистить результаты"
@@ -1454,6 +1458,7 @@ layout_mode = 2
 
 [node name="PlayButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+focus_mode = 0
 theme = SubResource("Theme_gqiy2")
 theme_type_variation = &"FlatPlayButton"
 theme_override_font_sizes/font_size = 20
@@ -1461,6 +1466,7 @@ text = "Играть"
 
 [node name="AnalyzeBPMButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatBpmButton"
 theme_override_font_sizes/font_size = 20
@@ -1468,6 +1474,7 @@ text = "Вычислить BPM"
 
 [node name="GenerateNotesButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatGenerateButton"
 theme_override_font_sizes/font_size = 20
@@ -1475,6 +1482,7 @@ text = "Сгенерировать ноты"
 
 [node name="DeleteButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+focus_mode = 0
 theme = SubResource("Theme_gqiy2")
 theme_type_variation = &"FlatExitButton"
 theme_override_font_sizes/font_size = 20
@@ -1482,6 +1490,7 @@ text = "Удалить"
 
 [node name="ResultsButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+focus_mode = 0
 theme = ExtResource("2_gqiy2")
 theme_type_variation = &"FlatResultsButton"
 theme_override_font_sizes/font_size = 20

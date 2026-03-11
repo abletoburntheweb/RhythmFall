@@ -51,6 +51,7 @@ var skip_rewind_seconds = 5.0
 
 var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
+var lane_highlight_enabled: bool = true
 
 var debug_menu = null
 var auto_play_enabled: bool = false 
@@ -95,6 +96,7 @@ func _ready():
 
 
 	var settings_for_player = SettingsManager.settings.duplicate(true)
+	lane_highlight_enabled = SettingsManager.get_lane_highlight_enabled()
 
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
@@ -365,6 +367,12 @@ func set_results_manager(results_mgr):
 	results_manager = results_mgr
 	
 func _on_lane_pressed_changed():
+	lane_highlight_enabled = SettingsManager.get_lane_highlight_enabled()
+	if not lane_highlight_enabled:
+		for i in range(lane_highlight_nodes.size()):
+			if lane_highlight_nodes[i]:
+				lane_highlight_nodes[i].visible = false
+		return
 	for i in range(lanes):
 		if i < lane_highlight_nodes.size() and i < player.lanes_state.size():
 			var is_pressed = player.lanes_state[i]

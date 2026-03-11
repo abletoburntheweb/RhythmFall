@@ -1,7 +1,7 @@
 [gd_scene load_steps=121 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
+[ext_resource type="Theme" uid="uid://bcndeclgbh7ig" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -2423,6 +2423,14 @@ max_value = 20.0
 step = 0.1
 value = 6.0
 
+[node name="LaneHighlightCheckBox" type="CheckBox" parent="ContentVBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme = SubResource("Theme_p28av")
+theme_override_font_sizes/font_size = 24
+text = "Включить подсветку линий"
+
 [connection signal="toggled" from="ContentVBox/FullscreenCheckBox" to="." method="_on_fullscreen_toggled"]
 [connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
 [connection signal="value_changed" from="ContentVBox/ScrollSpeed/ScrollSpeedSpin" to="." method="_on_scroll_speed_spin_changed"]
+[connection signal="toggled" from="ContentVBox/LaneHighlightCheckBox" to="." method="_on_lane_highlight_toggled"]

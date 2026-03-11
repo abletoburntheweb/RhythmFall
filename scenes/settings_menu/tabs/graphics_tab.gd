@@ -8,6 +8,7 @@ var game_engine = null
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
 @onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpin
+@onready var lane_highlight_checkbox: CheckBox = $ContentVBox/LaneHighlightCheckBox
 
 func _ready():
 	pass
@@ -32,6 +33,8 @@ func _setup_ui():
 	
 	var spd = SettingsManager.get_scroll_speed()
 	scroll_speed_spin.set_value_no_signal(spd)
+	
+	lane_highlight_checkbox.set_pressed_no_signal(SettingsManager.get_lane_highlight_enabled())
 
 
 func _on_fps_mode_selected(index: int):
@@ -49,6 +52,10 @@ func _on_fullscreen_toggled(enabled: bool):
 
 func refresh_ui():
 	_setup_ui()
+
+func _on_lane_highlight_toggled(enabled: bool):
+	SettingsManager.set_lane_highlight_enabled(enabled)
+	emit_signal("settings_changed")
 
 func _on_scroll_speed_spin_changed(value: float):
 	SettingsManager.set_scroll_speed(value)

@@ -4,18 +4,19 @@ extends Node
 const SETTINGS_PATH = "user://settings.json"
 const MAX_LANES = 5
 var default_settings = {
-	"music_volume": 50.0,
-	"menu_music_volume": 50.0,
-	"effects_volume": 50.0,
-	"hit_sounds_volume": 70.0,
+	"music_volume": 30.0,
+	"menu_music_volume": 30.0,
+	"effects_volume": 30.0,
+	"hit_sounds_volume": 30.0,
 	"metronome_volume": 30.0, 
-	"preview_volume": 70.0,
+	"preview_volume": 30.0,
 	"timing_offset_ms": 0,
 	"fps_mode": 0, 
 	"fullscreen": false,
 	"enable_debug_menu": false,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
+	"lane_highlight_enabled": true,
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,
@@ -142,7 +143,9 @@ func save_settings():
 	_save_settings()
 
 func reset_settings():
+	var prev_fullscreen = settings.get("fullscreen", false)
 	settings = default_settings.duplicate(true)
+	settings["fullscreen"] = prev_fullscreen
 	_save_settings()
 
 func get_music_volume() -> float:
@@ -214,6 +217,13 @@ func get_fullscreen() -> bool:
 
 func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
+	_save_settings()
+
+func get_lane_highlight_enabled() -> bool:
+	return bool(settings.get("lane_highlight_enabled", default_settings["lane_highlight_enabled"]))
+
+func set_lane_highlight_enabled(enabled: bool):
+	settings["lane_highlight_enabled"] = enabled
 	_save_settings()
 
 
@@ -321,11 +331,13 @@ static func is_service_key(scancode: int) -> bool:
 		or scancode == KEY_F12
 func reset_all_settings():
 	var current_controls = settings.get("controls_keymap", {}).duplicate(true)
+	var prev_fullscreen = settings.get("fullscreen", false)
 	
 	settings = default_settings.duplicate(true)
 	
 	if not current_controls.is_empty():
 		settings["controls_keymap"] = current_controls
+	settings["fullscreen"] = prev_fullscreen
 	
 	_apply_reset_settings()
 	_save_settings()
