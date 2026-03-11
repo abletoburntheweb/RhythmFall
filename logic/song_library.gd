@@ -77,7 +77,10 @@ func read_metadata(filepath: String) -> Dictionary:
 	if not user_metadata.is_empty():
 		for key in user_metadata.keys():
 			if metadata.has(key):
-				metadata[key] = user_metadata[key]
+				var val = user_metadata[key]
+				if _is_placeholder(key, val, filepath):
+					continue
+				metadata[key] = val
 	return metadata
 
 func load_songs():

@@ -654,11 +654,21 @@ func _on_song_metadata_updated(song_file_path: String):
 				song_details_manager.update_details(song)
 				break
 	if song_list_manager:
-		song_list_manager.populate_items_grouped()
+		var search_bar = $MainVBox/TopBarHBox/SearchBar
+		if search_bar:
+			var q = String(search_bar.text)
+			song_list_manager.filter_items(q)
+		else:
+			song_list_manager.populate_items_grouped()
 
 func _on_songs_list_changed_from_library():
 	if song_list_manager:
-		song_list_manager.populate_items_grouped()
+		var search_bar = $MainVBox/TopBarHBox/SearchBar
+		if search_bar:
+			var q = String(search_bar.text)
+			song_list_manager.filter_items(q)
+		else:
+			song_list_manager.populate_items_grouped()
 		_on_song_list_changed()
 
 func cleanup_before_exit():
