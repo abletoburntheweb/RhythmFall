@@ -99,7 +99,7 @@ func _input(event):
 		get_viewport().set_input_as_handled()
 
 func _get_key_string_from_scancode_for_display(scancode: int) -> String:
-	return SettingsManager._get_key_string_from_scancode(scancode)
+	return KeyInputUtils.get_key_string_from_scancode(scancode)
 
 func _on_reset_controls_pressed():
 	for i in range(5):
