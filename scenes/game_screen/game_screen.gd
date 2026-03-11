@@ -740,6 +740,8 @@ func _skip_intro_available() -> bool:
 		return false
 	if skip_used:
 		return false
+	if note_manager and note_manager.get_notes().size() > 0:
+		return false
 	if score_manager:
 		if score_manager.get_hit_notes_count() > 0:
 			return false
@@ -842,6 +844,8 @@ func skip_intro() -> bool:
 	if pauser.is_paused or game_finished or countdown_active:
 		return false
 	if skip_used:
+		return false
+	if note_manager and note_manager.get_notes().size() > 0:
 		return false
 
 	if game_time >= skip_time_threshold:
