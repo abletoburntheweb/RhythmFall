@@ -249,34 +249,26 @@ func _on_active_item_changed(category: String, item_id: String):
 	if category == "Kick":
 		var user_path = "user://shop_data.json"
 		var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
-		var shop_data_file = FileAccess.open(path, FileAccess.READ)
-		if shop_data_file:
-			var shop_data = JSON.parse_string(shop_data_file.get_as_text())
-			shop_data_file.close()
-			
-			for item in shop_data.get("items", []):
-				if item.get("item_id", "") == item_id:
-					var audio_path = item.get("audio", "")
-					if audio_path:
-						MusicManager.set_active_kick_sound(audio_path)
-					break
+		var shop_data: Dictionary = JsonUtils.read_json_dict(path)
+		for item in shop_data.get("items", []):
+			if item.get("item_id", "") == item_id:
+				var audio_path = item.get("audio", "")
+				if audio_path:
+					MusicManager.set_active_kick_sound(audio_path)
+				break
 
 func _update_active_sounds_from_player_data():
 	var active_kick_id = PlayerDataManager.get_active_item("Kick")
 
 	var user_path = "user://shop_data.json"
 	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
-	var shop_data_file = FileAccess.open(path, FileAccess.READ)
-	if shop_data_file:
-		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
-		shop_data_file.close()
-		
-		for item in shop_data.get("items", []):
-			if item.get("item_id", "") == active_kick_id:
-				var audio_path = item.get("audio", "")
-				if audio_path:
-					MusicManager.set_active_kick_sound(audio_path)
-				break
+	var shop_data: Dictionary = JsonUtils.read_json_dict(path)
+	for item in shop_data.get("items", []):
+		if item.get("item_id", "") == active_kick_id:
+			var audio_path = item.get("audio", "")
+			if audio_path:
+				MusicManager.set_active_kick_sound(audio_path)
+			break
 
 func _instantiate_debug_menu():
 	pass
@@ -321,36 +313,28 @@ func _load_lane_colors():
 	var active_lane_highlight_id = PlayerDataManager.get_active_item("LaneHighlight")
 	var user_path = "user://shop_data.json"
 	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
-	var shop_data_file = FileAccess.open(path, FileAccess.READ)
-	if shop_data_file:
-		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
-		shop_data_file.close()
-		
+	var shop_data: Dictionary = JsonUtils.read_json_dict(path)
+	if shop_data.is_empty():
+		_set_lane_highlight_colors(Color("#fec6e580"))
+	else:
 		for item in shop_data.get("items", []):
 			if item.get("item_id", "") == active_lane_highlight_id:
 				var color_hex = item.get("color_hex", "#fec6e580")
 				var lane_highlight_color = Color(color_hex)
 				_set_lane_highlight_colors(lane_highlight_color)
 				break
-	else:
-		var default_color = Color("#fec6e580")
-		_set_lane_highlight_colors(default_color)
 
 func _load_note_colors():
 	var active_notes_id = PlayerDataManager.get_active_item("Notes")
 	var user_path2 = "user://shop_data.json"
 	var path2 = user_path2 if FileAccess.file_exists(user_path2) else "res://data/shop_data.json"
-	var shop_data_file = FileAccess.open(path2, FileAccess.READ)
-	if shop_data_file:
-		var shop_data = JSON.parse_string(shop_data_file.get_as_text())
-		shop_data_file.close()
-		
-		for item in shop_data.get("items", []):
-			if item.get("item_id", "") == active_notes_id:
-				var colors = item.get("note_colors", [])
-				if not colors.is_empty():
-					note_manager.set_note_colors(colors)
-				break
+	var shop_data2: Dictionary = JsonUtils.read_json_dict(path2)
+	for item in shop_data2.get("items", []):
+		if item.get("item_id", "") == active_notes_id:
+			var colors = item.get("note_colors", [])
+			if not colors.is_empty():
+				note_manager.set_note_colors(colors)
+			break
 
 
 func _set_lane_highlight_colors(color: Color):

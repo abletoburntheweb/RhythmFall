@@ -205,13 +205,7 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	var base_name = NotesUtils.base_name_from_song_path(path)
 	var notes_filename = NotesUtils.notes_filename(base_name, "drums", gen_mode, lanes_val)
 	var notes_dir = NotesUtils.notes_dir(base_name)
-	var dir = DirAccess.open("user://notes")
-	if not dir:
-		DirAccess.make_dir_absolute("user://notes")
-		dir = DirAccess.open("user://notes")
-	if dir:
-		if not dir.dir_exists(notes_dir):
-			dir.make_dir(notes_dir)
+	DirectoryUtils.ensure_dir(notes_dir)
 	var notes_path = "%s/%s" % [notes_dir, notes_filename]
 	JsonUtils.write_json(notes_path, notes_data, false, true)
 	notes_completed.emit(path, instrument_type, disp)

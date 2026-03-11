@@ -231,19 +231,15 @@ func _update_active_sound_paths():
 func _get_sound_path_from_shop_data(item_id: String, category: String) -> String:
 	var user_path = "user://shop_data.json"
 	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
-	var shop_data_file = FileAccess.open(path, FileAccess.READ)
-	if shop_data_file:
-		var json_text = shop_data_file.get_as_text()
-		shop_data_file.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary and json_result.has("items"):
-			for item in json_result.items:
-				if item.get("item_id", "") == item_id:
-					var audio_path = item.get("audio", "")
-					if audio_path != "":
-						if not audio_path.begins_with("res://"):
-							audio_path = SHOP_SOUND_DIR + audio_path
-						return audio_path
+	var json_result: Dictionary = JsonUtils.read_json_dict(path)
+	if json_result is Dictionary and json_result.has("items"):
+		for item in json_result.items:
+			if item.get("item_id", "") == item_id:
+				var audio_path = item.get("audio", "")
+				if audio_path != "":
+					if not audio_path.begins_with("res://"):
+						audio_path = SHOP_SOUND_DIR + audio_path
+					return audio_path
 	return ""
 
 func set_active_kick_sound(path: String):

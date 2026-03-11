@@ -115,116 +115,107 @@ func _ready():
 		_save() 
 
 func _load():
-	var file_access = FileAccess.open(PLAYER_DATA_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			var loaded_currency = int(json_result.get("currency", 0))
-			var loaded_unlocked_item_ids = _to_packed_string_array(json_result.get("unlocked_item_ids", PackedStringArray()))
-			var loaded_active_items = json_result.get("active_items", {})
-			var loaded_last_login = json_result.get("last_login_date", "")
-			var loaded_login_streak = int(json_result.get("login_streak", 0))
-			var loaded_unlocked_achievement_ids = _to_packed_int_array(json_result.get("unlocked_achievement_ids", PackedInt32Array()))
-			var loaded_spent_currency = int(json_result.get("spent_currency", 0))
-			var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
-			var loaded_levels_completed = int(json_result.get("levels_completed", 0))
-			var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
-			var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
-			var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
-			var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
-			var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0))
-			var loaded_max_combo_ever = int(json_result.get("max_combo_ever", 0))
-			var loaded_max_drum_combo_ever = int(json_result.get("max_drum_combo_ever", 0))
-			var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
-			var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
-			var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
-			var loaded_total_score_ever = int(json_result.get("total_score_ever", 0))
-			var loaded_total_drum_score_ever = int(json_result.get("total_drum_score_ever", 0))
-			var loaded_total_xp = int(json_result.get("total_xp", 0))
-			var loaded_current_level = int(json_result.get("current_level", 1))
-			var loaded_xp_for_next_level = int(json_result.get("xp_for_next_level", 100))
+	var json_result: Dictionary = JsonUtils.read_json_dict(PLAYER_DATA_PATH)
+	if json_result is Dictionary and not json_result.is_empty():
+		var loaded_currency = int(json_result.get("currency", 0))
+		var loaded_unlocked_item_ids = _to_packed_string_array(json_result.get("unlocked_item_ids", PackedStringArray()))
+		var loaded_active_items = json_result.get("active_items", {})
+		var loaded_last_login = json_result.get("last_login_date", "")
+		var loaded_login_streak = int(json_result.get("login_streak", 0))
+		var loaded_unlocked_achievement_ids = _to_packed_int_array(json_result.get("unlocked_achievement_ids", PackedInt32Array()))
+		var loaded_spent_currency = int(json_result.get("spent_currency", 0))
+		var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
+		var loaded_levels_completed = int(json_result.get("levels_completed", 0))
+		var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
+		var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
+		var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
+		var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
+		var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0))
+		var loaded_max_combo_ever = int(json_result.get("max_combo_ever", 0))
+		var loaded_max_drum_combo_ever = int(json_result.get("max_drum_combo_ever", 0))
+		var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
+		var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
+		var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
+		var loaded_total_score_ever = int(json_result.get("total_score_ever", 0))
+		var loaded_total_drum_score_ever = int(json_result.get("total_drum_score_ever", 0))
+		var loaded_total_xp = int(json_result.get("total_xp", 0))
+		var loaded_current_level = int(json_result.get("current_level", 1))
+		var loaded_xp_for_next_level = int(json_result.get("xp_for_next_level", 100))
 
-			var loaded_favorite_track = json_result.get("favorite_track", "")
-			var loaded_favorite_track_play_count = int(json_result.get("favorite_track_play_count", 0))
-			var loaded_favorite_genre = json_result.get("favorite_genre", "unknown")
-			var loaded_grades = json_result.get("grades", {
-				"SS": 0,
-				"S": 0,
-				"A": 0,
-				"B": 0,
-				"C": 0,
-				"D": 0,
-				"F": 0
-			})
-			var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
-			var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
-			
-			
-			data["currency"] = clamp(loaded_currency, 0, CURRENCY_CAP)
-			data["unlocked_item_ids"] = loaded_unlocked_item_ids 
-			data["unlocked_achievement_ids"] = loaded_unlocked_achievement_ids 
-			data["spent_currency"] = max(0, loaded_spent_currency)
-			data["total_earned_currency"] = max(0, loaded_total_earned_currency)
-			data["levels_completed"] = loaded_levels_completed
-			data["drum_levels_completed"] = loaded_drum_levels_completed
-			data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
-			data["total_perfect_hits"] = loaded_total_perfect_hits
-			data["total_notes_hit"] = loaded_total_notes_hit
-			data["total_notes_missed"] = loaded_total_notes_missed
-			data["max_combo_ever"] = loaded_max_combo_ever
-			data["max_drum_combo_ever"] = loaded_max_drum_combo_ever
-			data["total_drum_hits"] = loaded_total_drum_hits
-			data["total_drum_misses"] = loaded_total_drum_misses
-			data["total_play_time"] = loaded_total_play_time 
-			data["total_score_ever"] = loaded_total_score_ever
-			data["total_drum_score_ever"] = loaded_total_drum_score_ever
-			data["grades"] = loaded_grades
-			data["total_xp"] = max(0, loaded_total_xp)
-			data["current_level"] = loaded_current_level
-			data["xp_for_next_level"] = max(1, loaded_xp_for_next_level)
+		var loaded_favorite_track = json_result.get("favorite_track", "")
+		var loaded_favorite_track_play_count = int(json_result.get("favorite_track_play_count", 0))
+		var loaded_favorite_genre = json_result.get("favorite_genre", "unknown")
+		var loaded_grades = json_result.get("grades", {
+			"SS": 0,
+			"S": 0,
+			"A": 0,
+			"B": 0,
+			"C": 0,
+			"D": 0,
+			"F": 0
+		})
+		var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
+		var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
+		
+		
+		data["currency"] = clamp(loaded_currency, 0, CURRENCY_CAP)
+		data["unlocked_item_ids"] = loaded_unlocked_item_ids 
+		data["unlocked_achievement_ids"] = loaded_unlocked_achievement_ids 
+		data["spent_currency"] = max(0, loaded_spent_currency)
+		data["total_earned_currency"] = max(0, loaded_total_earned_currency)
+		data["levels_completed"] = loaded_levels_completed
+		data["drum_levels_completed"] = loaded_drum_levels_completed
+		data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
+		data["total_perfect_hits"] = loaded_total_perfect_hits
+		data["total_notes_hit"] = loaded_total_notes_hit
+		data["total_notes_missed"] = loaded_total_notes_missed
+		data["max_combo_ever"] = loaded_max_combo_ever
+		data["max_drum_combo_ever"] = loaded_max_drum_combo_ever
+		data["total_drum_hits"] = loaded_total_drum_hits
+		data["total_drum_misses"] = loaded_total_drum_misses
+		data["total_play_time"] = loaded_total_play_time 
+		data["total_score_ever"] = loaded_total_score_ever
+		data["total_drum_score_ever"] = loaded_total_drum_score_ever
+		data["grades"] = loaded_grades
+		data["total_xp"] = max(0, loaded_total_xp)
+		data["current_level"] = loaded_current_level
+		data["xp_for_next_level"] = max(1, loaded_xp_for_next_level)
 
-			data["favorite_track"] = loaded_favorite_track
-			data["favorite_track_play_count"] = loaded_favorite_track_play_count
-			data["favorite_genre"] = loaded_favorite_genre
-			data["daily_quests"] = loaded_daily_quests
-			data["daily_quests_completed_total"] = loaded_daily_quests_completed_total
-			
-			data["last_login_date"] = loaded_last_login
-			data["login_streak"] = loaded_login_streak 
-			
-			var loaded_profile_created_date = str(json_result.get("profile_created_date", ""))
-			if loaded_profile_created_date == "":
-				if loaded_last_login != "":
-					data["profile_created_date"] = loaded_last_login
-				else:
-					data["profile_created_date"] = Time.get_date_string_from_system()
-				_save()
+		data["favorite_track"] = loaded_favorite_track
+		data["favorite_track_play_count"] = loaded_favorite_track_play_count
+		data["favorite_genre"] = loaded_favorite_genre
+		data["daily_quests"] = loaded_daily_quests
+		data["daily_quests_completed_total"] = loaded_daily_quests_completed_total
+		
+		data["last_login_date"] = loaded_last_login
+		data["login_streak"] = loaded_login_streak 
+		
+		var loaded_profile_created_date = str(json_result.get("profile_created_date", ""))
+		if loaded_profile_created_date == "":
+			if loaded_last_login != "":
+				data["profile_created_date"] = loaded_last_login
 			else:
-				data["profile_created_date"] = loaded_profile_created_date
-			
-			var loaded_active_items_dict = loaded_active_items.duplicate(true)
-			for category in DEFAULT_ACTIVE_ITEMS:
-				var loaded_value = loaded_active_items_dict.get(category, DEFAULT_ACTIVE_ITEMS[category])
-				if loaded_value == null:
-					loaded_value = DEFAULT_ACTIVE_ITEMS[category]
-				data["active_items"][category] = loaded_value
-			for category in loaded_active_items_dict:
-				if not DEFAULT_ACTIVE_ITEMS.has(category):
-					data["active_items"][category] = loaded_active_items_dict[category]
-			
-			if data["current_level"] > MAX_LEVEL:
-				data["current_level"] = MAX_LEVEL
-			_calculate_xp_for_next_level()
-			data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
-			
-			
+				data["profile_created_date"] = Time.get_date_string_from_system()
+			_save()
 		else:
-			printerr("PlayerDataManager.gd: Ошибка парсинга JSON или данные не являются словарём в ", PLAYER_DATA_PATH)
-			_save() 
+			data["profile_created_date"] = loaded_profile_created_date
+		
+		var loaded_active_items_dict = loaded_active_items.duplicate(true)
+		for category in DEFAULT_ACTIVE_ITEMS:
+			var loaded_value = loaded_active_items_dict.get(category, DEFAULT_ACTIVE_ITEMS[category])
+			if loaded_value == null:
+				loaded_value = DEFAULT_ACTIVE_ITEMS[category]
+			data["active_items"][category] = loaded_value
+		for category in loaded_active_items_dict:
+			if not DEFAULT_ACTIVE_ITEMS.has(category):
+				data["active_items"][category] = loaded_active_items_dict[category]
+		
+		if data["current_level"] > MAX_LEVEL:
+			data["current_level"] = MAX_LEVEL
+		_calculate_xp_for_next_level()
+		data["total_xp"] = min(data["total_xp"], data["xp_for_next_level"])
 	else:
-		printerr("PlayerDataManager.gd: Файл player_data.json не найден, создаем новый: ", PLAYER_DATA_PATH)
+		printerr("PlayerDataManager.gd: player_data.json не найден или пуст — инициализация по умолчанию: ", PLAYER_DATA_PATH)
 		data["profile_created_date"] = Time.get_date_string_from_system()
 		_save() 
 
@@ -262,13 +253,7 @@ func _write_to_disk():
 	var data_to_save = data.duplicate(true)
 	data_to_save.erase("best_grades_per_track")
 
-	var file_access = FileAccess.open(PLAYER_DATA_PATH, FileAccess.WRITE)
-	if file_access:
-		var json_text = JSON.stringify(data_to_save, "\t") 
-		file_access.store_string(json_text)
-		file_access.close()
-	else:
-		printerr("PlayerDataManager.gd: Ошибка при открытии файла для записи: ", PLAYER_DATA_PATH)
+	JsonUtils.write_json(PLAYER_DATA_PATH, data_to_save, true, true)
 
 func _save_best_grades():
 	if TrackStatsManager and TrackStatsManager.has_method("get_best_grades_map"):

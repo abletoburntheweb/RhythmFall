@@ -11,26 +11,12 @@ func load_results_for_song(song_path: String) -> Array:
 		return results
 	var song_file_name = song_path.get_file().get_basename()
 	var results_file_path = "user://results/%s_results.json" % song_file_name
-	if FileAccess.file_exists(results_file_path):
-		var file = FileAccess.open(results_file_path, FileAccess.READ)
-		if file:
-			var json_str = file.get_as_text()
-			var json_result = JSON.parse_string(json_str)
-			if json_result and json_result is Array:
-				results = json_result
-			file.close()
-	return results
+	var arr: Array = JsonUtils.read_json_array(results_file_path)
+	return arr
 
 func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = ""):
 	if song_path.is_empty():
 		return
-	var dir = DirAccess.open("user://")
-	if not dir:
-		return
-	if not dir.dir_exists("results"):
-		var mk = dir.make_dir("results")
-		if mk != OK:
-			return
 	var results = load_results_for_song(song_path)
 	var new_result = {
 		"score": score,
@@ -51,11 +37,7 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		results.resize(20)
 	var song_file_name = song_path.get_file().get_basename()
 	var results_file_path = "user://results/%s_results.json" % song_file_name
-	var file = FileAccess.open(results_file_path, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(results, "\t")
-		file.store_string(json_string)
-		file.close()
+	JsonUtils.write_json(results_file_path, results, true, true)
 
 func clear_results_for_song(song_path: String) -> bool:
 	if song_path.is_empty():
@@ -116,20 +98,11 @@ func clear_history():
 
 func _load_history() -> Array[Dictionary]:
 	var history: Array[Dictionary] = []
-	var file_access = FileAccess.open(SESSION_HISTORY_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Array:
-			for item in json_result:
-				if item is Dictionary and item.has("accuracy") and item.has("date"):
-					history.append(item)
+	var arr: Array = JsonUtils.read_json_array(SESSION_HISTORY_PATH)
+	for item in arr:
+		if item is Dictionary and item.has("accuracy") and item.has("date"):
+			history.append(item)
 	return history
 
 func _save_history(history: Array[Dictionary]):
-	var file_access = FileAccess.open(SESSION_HISTORY_PATH, FileAccess.WRITE)
-	if file_access:
-		var json_text = JSON.stringify(history, "\t")
-		file_access.store_string(json_text)
-		file_access.close()
+	JsonUtils.write_json(SESSION_HISTORY_PATH, history, true, true)

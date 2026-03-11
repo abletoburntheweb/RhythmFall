@@ -63,61 +63,48 @@ func _init():
 
 
 func _load_settings():
-	var file_access = FileAccess.open(SETTINGS_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			var loaded_settings = _merge_defaults_with_loaded(default_settings, json_result)
-			var controls_loaded = loaded_settings.get("controls_keymap", {})
-			var controls_updated = false
-
-			for i in range(MAX_LANES):
-				var lane_key = "lane_%d_key" % i
-				if not controls_loaded.has(lane_key):
-					controls_loaded[lane_key] = default_settings["controls_keymap"][lane_key]
+	var json_result: Dictionary = JsonUtils.read_json_dict(SETTINGS_PATH)
+	if not json_result.is_empty():
+		var loaded_settings = _merge_defaults_with_loaded(default_settings, json_result)
+		var controls_loaded = loaded_settings.get("controls_keymap", {})
+		var controls_updated = false
+		for i in range(MAX_LANES):
+			var lane_key = "lane_%d_key" % i
+			if not controls_loaded.has(lane_key):
+				controls_loaded[lane_key] = default_settings["controls_keymap"][lane_key]
+				controls_updated = true
+			else:
+				var value = controls_loaded.get(lane_key)
+				if value is float:
+					controls_loaded[lane_key] = int(value)
 					controls_updated = true
-				else:
-					var value = controls_loaded.get(lane_key)
-					if value is float:
-						controls_loaded[lane_key] = int(value)
-						controls_updated = true
-					elif value is String:
-						var scancode = _string_to_scancode(value)
-						if scancode != 0:
-							controls_loaded[lane_key] = scancode
-						else:
-							controls_loaded[lane_key] = default_settings["controls_keymap"][lane_key]
-						controls_updated = true
+				elif value is String:
+					var scancode = _string_to_scancode(value)
+					if scancode != 0:
+						controls_loaded[lane_key] = scancode
+					else:
+						controls_loaded[lane_key] = default_settings["controls_keymap"][lane_key]
+					controls_updated = true
 
-			if controls_updated:
-				pass
-			if loaded_settings.has("show_manual_track_input_on_generation"):
-				loaded_settings.erase("show_manual_track_input_on_generation")
-			settings = loaded_settings
+		if controls_updated:
+			pass
+		if loaded_settings.has("show_manual_track_input_on_generation"):
+			loaded_settings.erase("show_manual_track_input_on_generation")
+		settings = loaded_settings
 
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
-			if not settings.get("fullscreen", default_settings["fullscreen"]):
-				DisplayServer.window_set_size(Vector2i(1920, 1080))
-				DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-				var screen_size = DisplayServer.screen_get_size()
-				var window_size = Vector2i(1920, 1080)
-				DisplayServer.window_set_position((screen_size - window_size) / 2)
-		else:
-			_save_settings()
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
+		if not settings.get("fullscreen", default_settings["fullscreen"]):
+			DisplayServer.window_set_size(Vector2i(1920, 1080))
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+			var screen_size = DisplayServer.screen_get_size()
+			var window_size = Vector2i(1920, 1080)
+			DisplayServer.window_set_position((screen_size - window_size) / 2)
 	else:
 		_save_settings() 
 
 
 func _save_settings():
-	var file_access = FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
-	if file_access:
-		var json_text = JSON.stringify(settings, "\t")
-		file_access.store_string(json_text)
-		file_access.close()
-	else:
-		pass
+	JsonUtils.write_json(SETTINGS_PATH, settings, true, true)
 
 
 func _merge_defaults_with_loaded(defaults: Dictionary, loaded: Dictionary) -> Dictionary:

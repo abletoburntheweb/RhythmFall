@@ -14,20 +14,14 @@ func _init():
 	_load()
 
 func _load():
-	var file_access = FileAccess.open(TRACK_STATS_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			track_completion_counts = json_result.get("track_completion_counts", {})
-			genre_play_counts = json_result.get("genre_play_counts", {}) 
-			best_grades_per_track = json_result.get("best_grades_per_track", {})
-			_update_favorite_track()
-			_update_favorite_genre()  
-			print("TrackStatsManager: Загружены статы треков и жанров")
-		else:
-			_reset_data()
+	var json_result: Dictionary = JsonUtils.read_json_dict(TRACK_STATS_PATH)
+	if json_result is Dictionary and not json_result.is_empty():
+		track_completion_counts = json_result.get("track_completion_counts", {})
+		genre_play_counts = json_result.get("genre_play_counts", {}) 
+		best_grades_per_track = json_result.get("best_grades_per_track", {})
+		_update_favorite_track()
+		_update_favorite_genre()  
+		print("TrackStatsManager: Загружены статы треков и жанров")
 	else:
 		_reset_data()
 
@@ -44,14 +38,8 @@ func _save():
 		"genre_play_counts": genre_play_counts,
 		"best_grades_per_track": best_grades_per_track
 	}
-	var file_access = FileAccess.open(TRACK_STATS_PATH, FileAccess.WRITE)
-	if file_access:
-		var json_text = JSON.stringify(data_to_save, "\t")
-		file_access.store_string(json_text)
-		file_access.close()
-		print("TrackStatsManager: Статы треков и жанров сохранены")
-	else:
-		print("TrackStatsManager: Ошибка сохранения")
+	JsonUtils.write_json(TRACK_STATS_PATH, data_to_save, true, true)
+	print("TrackStatsManager: Статы треков и жанров сохранены")
 
 var _just_completed_level: bool = false  
 

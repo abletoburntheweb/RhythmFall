@@ -82,24 +82,8 @@ func _on_reset_all_settings_pressed():
 
 
 func _clear_all_results_internal():
-	var results_dir_path = "user://results"
-	var dir_access = DirAccess.open(results_dir_path)
-	if dir_access:
-		dir_access.list_dir_begin()
-		var file_name = dir_access.get_next()
-		while file_name != "":
-			if file_name != "." and file_name != "..":
-				if not dir_access.current_is_dir():
-					dir_access.remove(file_name)
-			file_name = dir_access.get_next()
-		dir_access.list_dir_end()
-
-	for file_name in FILES_TO_CLEAR:
-		var file_path = "user://".path_join(file_name)
-		var file_access = FileAccess.open(file_path, FileAccess.WRITE)
-		if file_access:
-			file_access.store_string("{}")  
-			file_access.close()
+	DirectoryUtils.delete_dir_recursive("user://results")
+	JsonUtils.write_json("user://session_history.json", [], true, true)
  
 	
 func _confirm_reset_profile_stats():

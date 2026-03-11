@@ -118,18 +118,14 @@ func _load_shop_item_ids() -> PackedStringArray:
 	var res : PackedStringArray
 	var user_path = "user://shop_data.json"
 	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"
-	var f = FileAccess.open(path, FileAccess.READ)
-	if f:
-		var txt = f.get_as_text()
-		f.close()
-		var json = JSON.parse_string(txt)
-		if json is Dictionary:
-			var items = json.get("items", [])
-			if items is Array:
-				for it in items:
-					var id = String(it.get("item_id", ""))
-					if id != "":
-						res.append(id)
+	var json: Dictionary = JsonUtils.read_json_dict(path)
+	if json is Dictionary:
+		var items = json.get("items", [])
+		if items is Array:
+			for it in items:
+				var id = String(it.get("item_id", ""))
+				if id != "":
+					res.append(id)
 	return res
 
  

@@ -294,35 +294,22 @@ func _update_song_in_list(song_file_path: String):
 				songs[index][key] = user_metadata[key]
 
 func _load_metadata():
-	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var parse_result = JSON.parse_string(json_text)
-		if parse_result is Dictionary:
-			_metadata_cache = parse_result
-			for key in _metadata_cache.keys():
-				_metadata_cache[key].erase("cover")
-				_metadata_cache[key].erase("metronome_offset")
-		else:
-			printerr("SongLibrary.gd: Ошибка парсинга JSON из %s или данные не являются словарём." % METADATA_FILE_PATH)
-			_metadata_cache = {}
+	var parse_result: Dictionary = JsonUtils.read_json_dict(METADATA_FILE_PATH)
+	if parse_result is Dictionary and not parse_result.is_empty():
+		_metadata_cache = parse_result
+		for key in _metadata_cache.keys():
+			_metadata_cache[key].erase("cover")
+			_metadata_cache[key].erase("metronome_offset")
 	else:
 		_metadata_cache = {}
 
 func _save_metadata():
-	var file_access = FileAccess.open(METADATA_FILE_PATH, FileAccess.WRITE)
-	if file_access:
-		var cache_to_save = {}
-		for path in _metadata_cache.keys():
-			var song_data_copy = _metadata_cache[path].duplicate(true)
-			song_data_copy.erase("cover")
-			cache_to_save[path] = song_data_copy
-		var json_text = JSON.stringify(cache_to_save, "\t")
-		file_access.store_string(json_text)
-		file_access.close()
-	else:
-		printerr("SongLibrary.gd: Ошибка открытия файла %s для записи!" % METADATA_FILE_PATH)
+	var cache_to_save = {}
+	for path in _metadata_cache.keys():
+		var song_data_copy = _metadata_cache[path].duplicate(true)
+		song_data_copy.erase("cover")
+		cache_to_save[path] = song_data_copy
+	JsonUtils.write_json(METADATA_FILE_PATH, cache_to_save, true, true)
 
 func _normalize_dir_path(p: String) -> String:
 	var res = String(p)
