@@ -83,6 +83,17 @@ func read_metadata(filepath: String) -> Dictionary:
 				metadata[key] = val
 	return metadata
 
+func _should_queue_id3_for(path: String, metadata: Dictionary) -> bool:
+	var title_s := str(metadata.get("title", ""))
+	var artist_s := str(metadata.get("artist", "Неизвестен"))
+	if artist_s == "Неизвестен":
+		return true
+	if title_s == path.get_file().get_basename():
+		return true
+	if title_s.find("_") != -1:
+		return true
+	return false
+
 func load_songs():
 	songs.clear()
 	var dir = DirAccess.open(BUILT_IN_FOLDER_PATH)
@@ -110,7 +121,7 @@ func load_songs():
 							"duration": metadata.get("duration", "00:00")
 						}
 						update_metadata(path, fields_to_save)
-					if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
+					if _should_queue_id3_for(path, metadata):
 						_id3_queue.append(path)
 					metadata["source"] = "built_in"
 					songs.append(metadata)
@@ -164,7 +175,7 @@ func scan_user_songs():
 							"duration": metadata.get("duration", "00:00")
 						}
 						update_metadata(path, fields_to_save)
-					if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == path.get_file().get_basename():
+					if _should_queue_id3_for(path, metadata):
 						_id3_queue.append(path)
 					songs.append(metadata)
 		file_name = dir.get_next()
@@ -200,7 +211,7 @@ func add_song(file_path: String) -> Dictionary:
 		"cover": metadata.get("cover", null)
 	}
 	update_metadata(dest_path, fields_to_save)
-	if str(metadata.get("artist", "Неизвестен")) == "Неизвестен" or str(metadata.get("title", "")) == dest_path.get_file().get_basename():
+	if _should_queue_id3_for(dest_path, metadata):
 		_id3_queue.append(dest_path)
 		_start_id3_enrichment_if_needed()
 	emit_signal("songs_list_changed")
