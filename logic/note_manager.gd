@@ -39,18 +39,12 @@ func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes:
 		return
 
 	var notes_path = NotesUtils.notes_path_by_song(song_path, "drums", generation_mode, self.lanes)
-	var file_access = FileAccess.open(notes_path, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Array:
-			note_spawn_queue = json_result.duplicate()
-			print("NoteManager: Загружено %d нот из %s" % [note_spawn_queue.size(), notes_path])
-		else:
-			print("NoteManager: Некорректный формат файла нот: %s" % notes_path)
+	var arr: Array = JsonUtils.read_json_array(notes_path)
+	if arr.size() > 0:
+		note_spawn_queue = arr.duplicate()
+		print("NoteManager: Загружено %d нот из %s" % [note_spawn_queue.size(), notes_path])
 	else:
-		print("NoteManager: Не удалось открыть файл нот: %s" % notes_path)
+		print("NoteManager: Не удалось открыть или распарсить файл нот: %s" % notes_path)
 
 func get_earliest_note_time() -> float:
 	if note_spawn_queue.is_empty():

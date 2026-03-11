@@ -213,10 +213,7 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 		if not dir.dir_exists(notes_dir):
 			dir.make_dir(notes_dir)
 	var notes_path = "%s/%s" % [notes_dir, notes_filename]
-	var fa = FileAccess.open(notes_path, FileAccess.WRITE)
-	if fa:
-		fa.store_string(JSON.stringify(notes_data))
-		fa.close()
+	JsonUtils.write_json(notes_path, notes_data, false, true)
 	notes_completed.emit(path, instrument_type, disp)
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		var instr_code = "П" if instrument_type.to_lower() == "drums" else instrument_type.substr(0, 1).to_upper()
