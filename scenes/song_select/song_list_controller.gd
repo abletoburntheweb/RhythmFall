@@ -556,17 +556,4 @@ func refresh_highlight_for_current_settings():
 func _notes_exist_for(song_path: String, instrument: String, mode: String, lanes: int) -> bool:
 	if song_path == "":
 		return false
-	var base_name_raw = song_path.get_file().get_basename()
-	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
-	var notes_filename = "%s_%s_%s_lanes%d.json" % [
-		base_name,
-		instrument,
-		mode.to_lower(),
-		lanes
-	]
-	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
-	var fa = FileAccess.open(notes_path, FileAccess.READ)
-	if fa:
-		fa.close()
-		return true
-	return false
+	return NotesUtils.notes_exist(song_path, instrument, mode, lanes)

@@ -503,12 +503,11 @@ func _on_delete_pressed():
 		SongLibrary.remove_metadata(song_path)
 		results_manager.clear_results_for_song(song_path)
 		
-		var base_name_raw = song_path.get_file().get_basename()
-		var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
-		var notes_dir_path = "user://notes/%s" % base_name
+		var base_name = NotesUtils.base_name_from_song_path(song_path)
+		var notes_dir_path = NotesUtils.notes_dir(base_name)
 		var user_dir = DirAccess.open("user://")
 		if user_dir and user_dir.dir_exists(notes_dir_path):
-			_delete_directory_recursive(notes_dir_path)
+			FileUtils.delete_dir_recursive(notes_dir_path)
 		
 		SongLibrary.load_songs()
 		
@@ -675,20 +674,5 @@ func _check_if_notes_exist_for_current_settings() -> bool:
 	var song_path = current_selected_song_data.get("path", "")
 	if song_path == "":
 		return false
-
-	var base_name_raw = song_path.get_file().get_basename()
-	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
-	var notes_filename = "%s_%s_%s_lanes%d.json" % [
-		base_name,
-		current_instrument,
-		current_generation_mode.to_lower(),
-		current_lanes
-	]
-	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
-
-	var file_access = FileAccess.open(notes_path, FileAccess.READ)
-	if file_access:
-		file_access.close()
-		return true
-	return false
+	return NotesUtils.notes_exist(song_path, current_instrument, current_generation_mode, current_lanes)
  

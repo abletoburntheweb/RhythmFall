@@ -65,28 +65,9 @@ func _on_clear_all_cache_pressed():
 	emit_signal("settings_changed")
 
 func _on_clear_notes_pressed():
-	_delete_directory_recursive("user://notes")
+	FileUtils.delete_dir_recursive("user://notes")
 	emit_signal("settings_changed")
 
-func _delete_directory_recursive(dir_path: String) -> void:
-	var dir = DirAccess.open(dir_path)
-	if not dir:
-		return
-	dir.list_dir_begin()
-	var name = dir.get_next()
-	while name != "":
-		if name != "." and name != "..":
-			var child_path = "%s/%s" % [dir_path, name]
-			if dir.current_is_dir():
-				_delete_directory_recursive(child_path)
-			var root = DirAccess.open("user://")
-			if root:
-				root.remove(child_path)
-		name = dir.get_next()
-	dir.list_dir_end()
-	var root2 = DirAccess.open("user://")
-	if root2:
-		root2.remove(dir_path)
 
 func _on_reset_profile_stats_pressed():
 	if reset_confirm_dialog:

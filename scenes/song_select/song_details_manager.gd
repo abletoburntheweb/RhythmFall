@@ -193,18 +193,7 @@ func _get_fallback_cover_texture():
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
 	if song_path == "":
 		return false
-	var base_name_raw = song_path.get_file().get_basename()
-	var base_name = FileUtils.sanitize_name_for_fs(base_name_raw)
-	var notes_filename = "%s_%s_%s_lanes%d.json" % [
-		base_name,
-		instrument,
-		current_generation_mode.to_lower(),
-		current_lanes
-	]
-	var notes_path = "user://notes/%s/%s" % [base_name, notes_filename]
-	
-	var notes_file_exists = FileAccess.file_exists(notes_path)
-	return notes_file_exists
+	return NotesUtils.notes_exist(song_path, instrument, current_generation_mode, current_lanes)
 
 func _update_play_button_state():
 	if play_button:
