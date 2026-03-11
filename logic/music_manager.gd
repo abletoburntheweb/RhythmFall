@@ -86,9 +86,37 @@ func _load_audio_stream(path: String, base_dir: String = "") -> AudioStream:
 	var full_path = (base_dir + path) if base_dir != "" else path
 	if _stream_cache.has(full_path):
 		return _stream_cache[full_path]
-	if not ResourceLoader.exists(full_path):
-		return null
-	var stream := load(full_path) as AudioStream
+	var stream: AudioStream = null
+	if full_path.begins_with("res://"):
+		if ResourceLoader.exists(full_path):
+			stream = load(full_path) as AudioStream
+	else:
+		var real_path = full_path
+		if full_path.begins_with("user://"):
+			real_path = full_path
+		elif not FileAccess.file_exists(full_path):
+			var g = ProjectSettings.globalize_path(full_path)
+			if FileAccess.file_exists(g):
+				real_path = g
+			else:
+				return null
+		var f = FileAccess.open(real_path, FileAccess.READ)
+		if f:
+			var bytes = f.get_buffer(f.get_length())
+			f.close()
+			var ext = real_path.get_extension().to_lower()
+			if ext == "mp3":
+				var s_mp3 := AudioStreamMP3.new()
+				s_mp3.data = bytes
+				stream = s_mp3
+			elif ext == "wav":
+				var s_wav := AudioStreamWAV.new()
+				s_wav.data = bytes
+				stream = s_wav
+			elif ext == "ogg":
+				var s_ogg := AudioStreamOggVorbis.new()
+				s_ogg.data = bytes
+				stream = s_ogg
 	if stream:
 		_stream_cache[full_path] = stream
 	return stream
