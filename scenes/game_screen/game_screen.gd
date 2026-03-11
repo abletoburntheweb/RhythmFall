@@ -602,6 +602,8 @@ func _check_song_end():
 					return
 
 func _on_victory_delay_timeout():
+	if pauser.is_paused:
+		return
 	end_game() 
 
 func end_game():
@@ -806,6 +808,8 @@ func _input(event):
 	if event is InputEventKey and event.pressed:
 		var keycode = event.keycode
 		if keycode == KEY_SPACE and not countdown_active:
+			if pauser.is_paused:
+				return
 			if notes_ended and not game_finished:
 				end_game()
 				return
