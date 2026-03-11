@@ -65,7 +65,7 @@ func _on_clear_all_cache_pressed():
 	emit_signal("settings_changed")
 
 func _on_clear_notes_pressed():
-	FileUtils.delete_dir_recursive("user://notes")
+	DirectoryUtils.delete_dir_recursive("user://notes")
 	emit_signal("settings_changed")
 
 

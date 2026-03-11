@@ -507,7 +507,7 @@ func _on_delete_pressed():
 		var notes_dir_path = NotesUtils.notes_dir(base_name)
 		var user_dir = DirAccess.open("user://")
 		if user_dir and user_dir.dir_exists(notes_dir_path):
-			FileUtils.delete_dir_recursive(notes_dir_path)
+			DirectoryUtils.delete_dir_recursive(notes_dir_path)
 		
 		SongLibrary.load_songs()
 		

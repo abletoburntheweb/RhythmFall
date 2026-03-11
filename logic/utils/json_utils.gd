@@ -2,13 +2,6 @@
 extends RefCounted
 class_name JsonUtils
 
-static func _ensure_dir_for_file(path: String) -> bool:
-	var dir_path := path.get_base_dir()
-	if dir_path == "" or dir_path == ".":
-		return true
-	var ok := DirAccess.make_dir_recursive_absolute(dir_path) == OK
-	return ok
-
 static func read_json(path: String, expected: String = "", default_value = null):
 	if not FileAccess.file_exists(path):
 		return default_value
@@ -37,7 +30,7 @@ static func read_json_array(path: String) -> Array:
 	return a if typeof(a) == TYPE_ARRAY else []
 
 static func write_json(path: String, value, pretty: bool = false, atomic: bool = true) -> bool:
-	if not _ensure_dir_for_file(path):
+	if not DirectoryUtils.ensure_dir_for_file(path):
 		return false
 	var indent := "  " if pretty else ""
 	var text := JSON.stringify(value, indent)
@@ -58,7 +51,6 @@ static func write_json(path: String, value, pretty: bool = false, atomic: bool =
 		DirAccess.remove_absolute(path)
 	var err := DirAccess.rename_absolute(tmp_path, path)
 	if err != OK:
-		# попытка отката: удалить tmp если осталось
 		if FileAccess.file_exists(tmp_path):
 			DirAccess.remove_absolute(tmp_path)
 		return false
