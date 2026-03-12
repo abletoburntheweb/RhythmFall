@@ -201,6 +201,7 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 		t = _last_notes_task
 	if not t.has("path"):
 		return
+	var is_followup := _active_notes_task.is_empty()
 	var path = t.path
 	var disp = t.display
 	var gen_mode = t.mode
@@ -224,11 +225,11 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 		var ach = _game_engine.get_achievement_system()
 		if ach and ach.has_method("on_notes_generated"):
 			ach.on_notes_generated()
-	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
+	if not is_followup and SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		var instr_code = "П" if instrument_type.to_lower() == "drums" else instrument_type.substr(0, 1).to_upper()
 		var mode_code = "Б" if gen_mode.to_lower() == "basic" else "У"
 		_game_engine.notifications_complete("notes", "%s: Генерация завершена: %s %s %d" % [disp, instr_code, mode_code, int(lanes_val)])
-	if MusicManager and MusicManager.has_method("play_analysis_success"):
+	if not is_followup and MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
 	_active_notes_task.clear()
 	if _notes_queue.size() > 0:

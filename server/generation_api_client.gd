@@ -174,18 +174,21 @@ func _check_notes():
 		elif _notes_res.has("notes") or _notes_res.has("notes_variants"):
 			if _notes_res.has("notes_variants"):
 				var variants = _notes_res.notes_variants
-				var lanes_order = ["3","4","5"]
-				for key in lanes_order:
-					if variants.has(key):
-						var arr = variants[key]
-						if arr is Array:
-							emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
-				for k in variants.keys():
-					if k in lanes_order:
+				var preferred = str(int(_notes_res.get("lanes", 4)))
+				var keys: Array = []
+				if variants.has(preferred):
+					keys.append(preferred)
+				for k in ["3","4","5"]:
+					if k != preferred and variants.has(k):
+						keys.append(k)
+				for k2 in variants.keys():
+					if k2 in keys:
 						continue
-					var arr2 = variants[k]
-					if arr2 is Array:
-						emit_signal("notes_completed", arr2, float(_notes_res.bpm), _notes_res.instrument_type)
+					keys.append(k2)
+				for key in keys:
+					var arr = variants.get(key, null)
+					if arr is Array:
+						emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
 			else:
 				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
 			if _notes_res.has("track_info"):
