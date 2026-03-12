@@ -171,8 +171,23 @@ func _check_notes():
 			_notes_status_queue.append("Требуется ручная идентификация трека")
 			var req = _notes_req
 			generate_notes(req.song_path, req.instrument_type, req.bpm, req.lanes, req.sync_tolerance, false, "Unknown", "Unknown", req.generation_mode)
-		elif _notes_res.has("notes"):
-			emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
+		elif _notes_res.has("notes") or _notes_res.has("notes_variants"):
+			if _notes_res.has("notes_variants"):
+				var variants = _notes_res.notes_variants
+				var lanes_order = ["3","4","5"]
+				for key in lanes_order:
+					if variants.has(key):
+						var arr = variants[key]
+						if arr is Array:
+							emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
+				for k in variants.keys():
+					if k in lanes_order:
+						continue
+					var arr2 = variants[k]
+					if arr2 is Array:
+						emit_signal("notes_completed", arr2, float(_notes_res.bpm), _notes_res.instrument_type)
+			else:
+				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
 			if _notes_res.has("track_info"):
 				var ti = _notes_res.track_info
 				var source = str(ti.get("genres_source", "")).strip_edges().to_lower()

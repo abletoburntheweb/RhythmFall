@@ -196,12 +196,23 @@ func _on_notes_started():
 			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s (1/%d)%s" % [disp, total, suffix], true, "cancel_notes")
 
 func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String):
-	if not _active_notes_task.has("path"):
+	var t = _active_notes_task
+	if t.is_empty():
+		t = _last_notes_task
+	if not t.has("path"):
 		return
-	var path = _active_notes_task.path
-	var disp = _active_notes_task.display
-	var gen_mode = _active_notes_task.mode
-	var lanes_val = _active_notes_task.lanes
+	var path = t.path
+	var disp = t.display
+	var gen_mode = t.mode
+	var lanes_val = int(t.get("lanes", 4))
+	if notes_data is Array and notes_data.size() > 0:
+		var max_lane := 0
+		for nd in notes_data:
+			if typeof(nd) == TYPE_DICTIONARY:
+				var l = int(nd.get("lane", 0))
+				if l > max_lane:
+					max_lane = l
+		lanes_val = clamp(max_lane + 1, 3, 5)
 	var base_name = NotesUtils.base_name_from_song_path(path)
 	var notes_filename = NotesUtils.notes_filename(base_name, "drums", gen_mode, lanes_val)
 	var notes_dir = NotesUtils.notes_dir(base_name)
