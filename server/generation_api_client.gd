@@ -495,14 +495,17 @@ func _notes_worker(data_dict: Dictionary):
 						local_error = "Отменено пользователем"
 					elif response_json.has("status") and str(response_json["status"]) == "requires_manual_input":
 						local_result = {"manual_identification_required": true, "song_path": song_path}
-					elif response_json.has("notes"):
-						local_result = {
-							"notes": response_json["notes"],
-							"bpm": response_json.get("bpm", bpm),
-							"lanes": response_json.get("lanes", lanes),
-							"instrument_type": response_json.get("instrument_type", instrument_type),
-							"track_info": response_json.get("track_info", {})
-						}
+					elif response_json.has("notes") or response_json.has("notes_variants"):
+						var result_dict := {}
+						if response_json.has("notes"):
+							result_dict["notes"] = response_json["notes"]
+						if response_json.has("notes_variants"):
+							result_dict["notes_variants"] = response_json["notes_variants"]
+						result_dict["bpm"] = response_json.get("bpm", bpm)
+						result_dict["lanes"] = response_json.get("lanes", lanes)
+						result_dict["instrument_type"] = response_json.get("instrument_type", instrument_type)
+						result_dict["track_info"] = response_json.get("track_info", {})
+						local_result = result_dict
 					else:
 						local_error = "Ответ не содержит нот"
 				else:
