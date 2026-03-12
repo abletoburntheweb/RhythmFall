@@ -198,6 +198,22 @@ func reset_achievements():
 
 	print("[AchievementManager] Все достижения сброшены.")
 
+func _load_shop_json() -> Dictionary:
+	var user_path = "user://shop_data.json"
+	var path = user_path if FileAccess.file_exists(user_path) else SHOP_JSON_PATH
+	if not FileAccess.file_exists(path):
+		var alt = "res://logic/shop_data.json"
+		path = alt if FileAccess.file_exists(alt) else path
+	var shop_file = FileAccess.open(path, FileAccess.READ)
+	if not shop_file:
+		return {}
+	var shop_json_text = shop_file.get_as_text()
+	shop_file.close()
+	var parsed = JSON.parse_string(shop_json_text)
+	if parsed is Dictionary and parsed.has("items"):
+		return parsed
+	return {}
+
 func check_first_purchase():
 	unlock_achievement_by_id(6)
 
@@ -227,15 +243,9 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 
 	if pdm:
 		var unlocked_items = pdm.get_items()
-
-		var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
-		if shop_file:
-			var shop_json_text = shop_file.get_as_text()
-			shop_file.close()
-
-			var shop_json_parse_result = JSON.parse_string(shop_json_text)
-			if shop_json_parse_result and shop_json_parse_result.has("items"):
-				for item in shop_json_parse_result.items:
+		var shop_json_parse_result = _load_shop_json()
+		if shop_json_parse_result and shop_json_parse_result.has("items"):
+			for item in shop_json_parse_result.items:
 					var item_id = item.get("item_id", "")
 					var price = int(item.get("price", 0))
 					var category_ru = item.get("category", "")
@@ -250,10 +260,8 @@ func check_style_hunter_achievement(player_data_mgr_override = null):
 						purchasable_categories[category_internal] = true
 						if unlocked_items.has(item_id):
 							categories[category_internal].append(item_id)
-			else:
-				printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")
 		else:
-			printerr("[AchievementManager] Не удалось открыть файл ", SHOP_JSON_PATH)
+			printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")
 
 	var categories_with_items = 0
 	for key in categories.keys():
@@ -330,15 +338,7 @@ func check_event_achievements():
 
 func check_collection_completed_achievement(player_data_mgr_override = null):
 	var pdm = _get_pdm(player_data_mgr_override)
-	var shop_file = FileAccess.open(SHOP_JSON_PATH, FileAccess.READ)
-	if not shop_file:
-		printerr("[AchievementManager] Не удалось открыть файл ", SHOP_JSON_PATH)
-		return
-
-	var shop_json_text = shop_file.get_as_text()
-	shop_file.close()
-
-	var shop_json_parse_result = JSON.parse_string(shop_json_text)
+	var shop_json_parse_result = _load_shop_json()
 	if not (shop_json_parse_result and shop_json_parse_result.has("items")):
 		printerr("[AchievementManager] Ошибка парсинга shop_data.json или отсутствие ключа 'items'.")
 		return
