@@ -71,8 +71,22 @@ func read_metadata(filepath: String) -> Dictionary:
 			if parts.size() == 2:
 				var first := parts[0].strip_edges()
 				var second := parts[1].strip_edges()
-				metadata["title"] = first
-				metadata["artist"] = second
+				metadata["artist"] = first
+				metadata["title"] = second
+		elif " — " in filename_stem:
+			var parts2 = filename_stem.split(" — ", false, 1)
+			if parts2.size() == 2:
+				var f2 := parts2[0].strip_edges()
+				var s2 := parts2[1].strip_edges()
+				metadata["artist"] = f2
+				metadata["title"] = s2
+		elif " – " in filename_stem:
+			var parts3 = filename_stem.split(" – ", false, 1)
+			if parts3.size() == 2:
+				var f3 := parts3[0].strip_edges()
+				var s3 := parts3[1].strip_edges()
+				metadata["artist"] = f3
+				metadata["title"] = s3
 	var user_metadata = get_metadata_for_song(filepath)
 	if not user_metadata.is_empty():
 		for key in user_metadata.keys():

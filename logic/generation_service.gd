@@ -68,8 +68,33 @@ func _init(game_engine_ref: Node = null):
 
 func _get_display_name(song_path: String) -> String:
 	var meta = SongLibrary.get_metadata_for_song(song_path)
-	var artist = meta.get("artist", "Неизвестен")
-	var title = meta.get("title", "Н/Д")
+	var artist = String(meta.get("artist", "Неизвестен")).strip_edges()
+	var title = String(meta.get("title", "Н/Д")).strip_edges()
+	if title == "" or title == "Н/Д" or title.to_lower() == "без названия":
+		var stem = song_path.get_file().get_basename()
+		if " - " in stem:
+			var parts = stem.split(" - ", false, 1)
+			if parts.size() == 2:
+				var a = parts[0].strip_edges()
+				var t = parts[1].strip_edges()
+				if a != "": artist = a
+				if t != "": title = t
+		elif " — " in stem:
+			var parts2 = stem.split(" — ", false, 1)
+			if parts2.size() == 2:
+				var a2 = parts2[0].strip_edges()
+				var t2 = parts2[1].strip_edges()
+				if a2 != "": artist = a2
+				if t2 != "": title = t2
+		elif " – " in stem:
+			var parts3 = stem.split(" – ", false, 1)
+			if parts3.size() == 2:
+				var a3 = parts3[0].strip_edges()
+				var t3 = parts3[1].strip_edges()
+				if a3 != "": artist = a3
+				if t3 != "": title = t3
+		if title == "" or title == "Н/Д" or title.to_lower() == "без названия":
+			title = song_path.get_file().get_basename()
 	return "%s - %s" % [artist, title]
 
 func start_bpm_analysis(song_path: String):
