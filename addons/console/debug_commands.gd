@@ -37,6 +37,10 @@ func _register(c):
 	c.add_command("game.score.add_1000", _game_score_add_1000, [], 0, "Добавить 1000 очков с множителем")
 	c.add_command("game.score.sub_1000", _game_score_sub_1000, [], 0, "Уменьшить счёт на 1000")
 	c.add_command("game.combo.add_10", _game_combo_add_10, [], 0, "Добавить 10 к комбо")
+	c.add_command("game.score.add", _game_score_add, ["amount"], 1, "Добавить очки с множителем")
+	c.add_command("game.score.sub", _game_score_sub, ["amount"], 1, "Уменьшить счёт на значение")
+	c.add_command("game.combo.add", _game_combo_add, ["amount"], 1, "Добавить к комбо")
+	c.add_command("game.combo.sub", _game_combo_sub, ["amount"], 1, "Уменьшить комбо")
 	c.add_command("game.seek_to_no_notes", _game_seek_to_no_notes, [], 0, "Переместиться к концу песни без нот")
 	c.add_command("game.seek", _game_seek_to_time, ["pos"], 1, "Переместиться к позиции (сек или MM:SS)")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
@@ -81,6 +85,10 @@ func _refresh_autocomplete(c):
 	c.add_command_autocomplete_list("stats.misses.add", PackedStringArray(["1","5","10","50"]))
 	c.add_command_autocomplete_list("stats.perfect.add", PackedStringArray(["1","5","10","50"]))
 	c.add_command_autocomplete_list("game.seek", PackedStringArray(["30","60","90","120","01:00","01:30","02:00"]))
+	c.add_command_autocomplete_list("game.score.add", PackedStringArray(["100","500","1000","5000"]))
+	c.add_command_autocomplete_list("game.score.sub", PackedStringArray(["100","500","1000","5000"]))
+	c.add_command_autocomplete_list("game.combo.add", PackedStringArray(["1","5","10","25"]))
+	c.add_command_autocomplete_list("game.combo.sub", PackedStringArray(["1","5","10","25"]))
 func _get_engine():
 	return get_tree().root.get_node_or_null("GameEngine")
  
@@ -192,6 +200,12 @@ func _player_add_currency(amount_str: String):
 	var c = get_tree().root.get_node_or_null("Console")
 	if c:
 		c.print_info("Добавлена валюта: " + str(amt) + (_clamped_suffix(amount_str, amt)))
+
+func _songs_dump_seed(path_opt := ""):
+	pass
+
+func _songs_apply_seed(path_opt := ""):
+	pass
 
 func _player_set_currency(amount_str: String):
 	var target = max(0, _parse_int_saturated(amount_str))
@@ -686,6 +700,79 @@ func _game_combo_add_10():
 	gs.score_manager.combo = new_combo
 	if new_combo > gs.score_manager.max_combo:
 		gs.score_manager.max_combo = new_combo
+	gs.score_manager.combo_multiplier = min(4.0, 1.0 + float(int(new_combo / 10)))
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		c.print_info("Комбо: %d | Макс.: %d | Множитель: x%.1f" % [gs.score_manager.combo, gs.score_manager.max_combo, gs.score_manager.combo_multiplier])
+
+func _game_score_add(amount_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs or not gs.score_manager:
+		if c: c.print_error("ScoreManager недоступен")
+		return
+	var amt = _parse_bounded_delta(amount_str)
+	if amt <= 0:
+		if c: c.print_error("Значение должно быть > 0")
+		return
+	var current_combo = gs.score_manager.combo
+	var multiplier = min(4.0, 1.0 + float(int(current_combo / 10)))
+	var actual_points = int(amt * multiplier)
+	gs.score_manager.score += actual_points
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		c.print_info("Добавлено очков: %d (x%.1f)" % [actual_points, multiplier])
+
+func _game_score_sub(amount_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs or not gs.score_manager:
+		if c: c.print_error("ScoreManager недоступен")
+		return
+	var amt = _parse_bounded_delta(amount_str)
+	if amt <= 0:
+		if c: c.print_error("Значение должно быть > 0")
+		return
+	gs.score_manager.score = max(0, gs.score_manager.score - amt)
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		c.print_info("Минус очков: %d | Текущий счёт: %d" % [amt, gs.score_manager.score])
+
+func _game_combo_add(amount_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs or not gs.score_manager:
+		if c: c.print_error("ScoreManager недоступен")
+		return
+	var amt = max(0, _parse_int(amount_str))
+	if amt <= 0:
+		if c: c.print_error("Значение должно быть > 0")
+		return
+	var new_combo = gs.score_manager.combo + amt
+	gs.score_manager.combo = new_combo
+	if new_combo > gs.score_manager.max_combo:
+		gs.score_manager.max_combo = new_combo
+	gs.score_manager.combo_multiplier = min(4.0, 1.0 + float(int(new_combo / 10)))
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		c.print_info("Комбо: %d | Макс.: %d | Множитель: x%.1f" % [gs.score_manager.combo, gs.score_manager.max_combo, gs.score_manager.combo_multiplier])
+
+func _game_combo_sub(amount_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if not gs or not gs.score_manager:
+		if c: c.print_error("ScoreManager недоступен")
+		return
+	var amt = max(0, _parse_int(amount_str))
+	if amt <= 0:
+		if c: c.print_error("Значение должно быть > 0")
+		return
+	var new_combo = max(0, gs.score_manager.combo - amt)
+	gs.score_manager.combo = new_combo
 	gs.score_manager.combo_multiplier = min(4.0, 1.0 + float(int(new_combo / 10)))
 	if gs.has_method("update_ui"):
 		gs.update_ui()

@@ -3,12 +3,17 @@ extends RefCounted
 class_name DirectoryUtils
 
 static func ensure_dir(path: String) -> bool:
-	return DirAccess.make_dir_recursive_absolute(path) == OK
+	var p := path
+	if p.begins_with("user://") or p.begins_with("res://"):
+		p = ProjectSettings.globalize_path(p)
+	return DirAccess.make_dir_recursive_absolute(p) == OK
 
 static func ensure_dir_for_file(path: String) -> bool:
 	var dir_path := path.get_base_dir()
 	if dir_path == "" or dir_path == ".":
 		return true
+	if dir_path.begins_with("user://") or dir_path.begins_with("res://"):
+		dir_path = ProjectSettings.globalize_path(dir_path)
 	return ensure_dir(dir_path)
 
 static func exists(path: String) -> bool:

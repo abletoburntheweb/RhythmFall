@@ -1,7 +1,7 @@
 [gd_scene load_steps=258 format=3 uid="uid://cflfv1lx6qcni"]
 
 [ext_resource type="Script" uid="uid://b72o0qprtpesv" path="res://scenes/settings_menu/tabs/misc_tab.gd" id="1_f8lbq"]
-[ext_resource type="Theme" uid="uid://cp610w3emfunm" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
+[ext_resource type="Theme" uid="uid://chxcu3wohb5fo" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -5200,6 +5200,14 @@ theme_type_variation = &"FlatExitButton"
 theme_override_font_sizes/font_size = 24
 text = "Сбросить статистику профиля"
 
+[node name="ClearUserPathsButton" type="Button" parent="ContentVBox"]
+custom_minimum_size = Vector2(0, 31)
+layout_mode = 2
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 24
+text = "Оставить только встроенные песни в метаданных"
+
 [node name="DebugMenuCheckBox" type="CheckBox" parent="ContentVBox"]
 layout_mode = 2
 theme = SubResource("Theme_p28av")
@@ -5299,6 +5307,7 @@ cancel_button_text = "Отмена"
 [connection signal="pressed" from="ContentVBox/ClearNotesButton" to="." method="_on_clear_notes_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetAllSettingsButton" to="." method="_on_reset_all_settings_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetProfileStatsButton" to="." method="_on_reset_profile_stats_pressed"]
+[connection signal="pressed" from="ContentVBox/ClearUserPathsButton" to="." method="_on_clear_user_paths_pressed"]
 [connection signal="toggled" from="ContentVBox/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]
 [connection signal="toggled" from="ContentVBox/EnableGenreDetectionCheckBox" to="." method="_on_enable_genre_detection_toggled"]
 [connection signal="toggled" from="ContentVBox/EnableStemsCheckBox" to="." method="_on_enable_stems_toggled"]

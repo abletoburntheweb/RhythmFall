@@ -800,13 +800,13 @@ func add_play_time_seconds(seconds_to_add: int):
 	var new_time_string = _play_time_seconds_to_string(_total_play_time_seconds)
 	data["total_play_time"] = new_time_string
 	emit_signal("total_play_time_changed", new_time_string)
-	_save()
 	_playtime_minutes_buffer_seconds += seconds_to_add
 	if _playtime_minutes_buffer_seconds >= 60:
 		var add_minutes = int(_playtime_minutes_buffer_seconds / 60)
 		_playtime_minutes_buffer_seconds = _playtime_minutes_buffer_seconds % 60
 		if add_minutes > 0:
 			increment_daily_progress("playtime_minutes", add_minutes, {})
+			_save()
 
 func get_total_play_time_formatted() -> String:
 	return data.get("total_play_time", "00:00")

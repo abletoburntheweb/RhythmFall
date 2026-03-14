@@ -117,3 +117,12 @@ func cleanup_before_exit():
 
 func save_settings():
 	SettingsManager.save_settings()
+
+func _input(event):
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			if MusicManager and MusicManager.has_method("play_cancel_sound"):
+				MusicManager.play_cancel_sound()
+			_execute_close_transition()
+			if get_viewport():
+				get_viewport().set_input_as_handled()

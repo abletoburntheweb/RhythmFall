@@ -38,7 +38,7 @@ func _on_settings_pressed():
 		printerr("PauseMenu.gd: transitions не установлен!")
 
 func _on_exit_to_menu_pressed():
-	MusicManager.play_select_sound()
+	MusicManager.play_cancel_sound()
 	if transitions:
 		transitions.exit_to_main_menu()
 	else:

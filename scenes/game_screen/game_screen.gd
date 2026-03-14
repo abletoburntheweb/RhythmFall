@@ -39,6 +39,51 @@ var notes_container: Node2D = null
 var judgement_label: Label = null
 var progress_bar: ProgressBar = null
 var hint_label: Label = null
+var _combo_pulse_tween: Tween = null
+var _last_combo_value: int = 0
+var _combo_reset_tween: Tween = null
+var _combo_original_position: Vector2 = Vector2.ZERO
+var _combo_default_modulate: Color = Color(1, 1, 1, 1)
+var _score_tween: Tween = null
+var _score_display_value_internal: float = 0.0
+var score_display_value: float:
+	set(value):
+		_score_display_value_internal = value
+		if score_label:
+			score_label.text = "Счёт: %d" % int(round(_score_display_value_internal))
+	get:
+		return _score_display_value_internal
+var _score_count_progress_internal: float = 0.0
+var score_count_start: float = 0.0
+var score_count_target: float = 0.0
+@export var score_count_progress: float:
+	set(value):
+		_score_count_progress_internal = value
+		var t = clamp(value, 0.0, 1.0)
+		score_display_value = lerp(score_count_start, score_count_target, t)
+	get:
+		return _score_count_progress_internal
+var animation_player: AnimationPlayer = null
+var score_animation_player: AnimationPlayer = null
+var accuracy_animation_player: AnimationPlayer = null
+var _accuracy_display_value_internal: float = 0.0
+var accuracy_display_value: float:
+	set(value):
+		_accuracy_display_value_internal = value
+		if accuracy_label:
+			accuracy_label.text = "%.2f%%" % value
+	get:
+		return _accuracy_display_value_internal
+var _accuracy_count_progress_internal: float = 0.0
+var accuracy_count_start: float = 0.0
+var accuracy_count_target: float = 0.0
+@export var accuracy_count_progress: float:
+	set(value):
+		_accuracy_count_progress_internal = value
+		var t = clamp(value, 0.0, 1.0)
+		accuracy_display_value = lerp(accuracy_count_start, accuracy_count_target, t)
+	get:
+		return _accuracy_count_progress_internal
 
 var game_timer: Timer
 var countdown_timer
@@ -51,7 +96,6 @@ var skip_rewind_seconds = 5.0
 
 var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
-var lane_highlight_enabled: bool = true
 
 var debug_menu = null
 var auto_play_enabled: bool = false 
@@ -77,6 +121,11 @@ var rhythm_notifier: RhythmNotifier = null
 
 const HIT_WINDOW_PERFECT: float = 0.05
 const HIT_WINDOW_GOOD: float = 0.15
+@export var judgement_color_perfect: Color = Color.YELLOW
+@export var judgement_color_good: Color = Color.CYAN
+@export var judgement_color_other: Color = Color.GRAY
+@export var combo_color_50: Color = Color(1.0, 0.75, 0.3, 1.0)
+@export var combo_color_100: Color = Color(1.0, 0.9, 0.1, 1.0)
 
 
 func _ready():
@@ -96,7 +145,6 @@ func _ready():
 
 
 	var settings_for_player = SettingsManager.settings.duplicate(true)
-	lane_highlight_enabled = SettingsManager.get_lane_highlight_enabled()
 
 	score_manager = ScoreManager.new(self)
 	note_manager = NoteManager.new(self)
@@ -277,9 +325,15 @@ func _find_ui_elements():
 	var ui_container_node = $UIContainer
 	if ui_container_node:
 		score_label = ui_container_node.get_node_or_null("StatsContainer/ScoreLabel") as Label
-		combo_label = ui_container_node.get_node_or_null("StatsContainer/ComboLabel") as Label
+		combo_label = ui_container_node.get_node_or_null("TopLeftCombo/ComboLabel") as Label
 		accuracy_label = ui_container_node.get_node_or_null("StatsContainer/AccuracyLabel") as Label
 		judgement_label = ui_container_node.get_node_or_null("JudgementLabel") as Label
+		if combo_label:
+			_combo_original_position = combo_label.position
+			_combo_default_modulate = combo_label.modulate
+		animation_player = ui_container_node.get_node_or_null("AnimationPlayer") as AnimationPlayer
+		score_animation_player = ui_container_node.get_node_or_null("ScoreAnimationPlayer") as AnimationPlayer
+		accuracy_animation_player = ui_container_node.get_node_or_null("AccuracyAnimationPlayer") as AnimationPlayer
 
 		var progress_container = ui_container_node.get_node_or_null("SongProgressContainer")
 		if progress_container:
@@ -340,7 +394,9 @@ func _load_note_colors():
 func _set_lane_highlight_colors(color: Color):
 	for lane_node in lane_highlight_nodes:
 		if lane_node and lane_node is ColorRect:
-			lane_node.color = color
+			var b = SettingsManager.get_lane_highlight_brightness() if SettingsManager.has_method("get_lane_highlight_brightness") else 100.0
+			var a = clamp(color.a * (b / 100.0), 0.0, 1.0)
+			lane_node.color = Color(color.r, color.g, color.b, a)
 
 func _on_player_hit(lane: int):
 	if pauser.is_paused:
@@ -351,12 +407,6 @@ func set_results_manager(results_mgr):
 	results_manager = results_mgr
 	
 func _on_lane_pressed_changed():
-	lane_highlight_enabled = SettingsManager.get_lane_highlight_enabled()
-	if not lane_highlight_enabled:
-		for i in range(lane_highlight_nodes.size()):
-			if lane_highlight_nodes[i]:
-				lane_highlight_nodes[i].visible = false
-		return
 	for i in range(lanes):
 		if i < lane_highlight_nodes.size() and i < player.lanes_state.size():
 			var is_pressed = player.lanes_state[i]
@@ -578,7 +628,14 @@ func _check_song_end():
 		_update_hint()
 		if victory_delay_timer.is_stopped():
 			victory_delay_timer.one_shot = true
-			victory_delay_timer.wait_time = VICTORY_DELAY_AFTER_NOTES
+			var wait_total: float = VICTORY_DELAY_AFTER_NOTES
+			var duration_seconds := 0.0
+			if selected_song_data and selected_song_data.has("duration"):
+				duration_seconds = _parse_duration_string(selected_song_data.get("duration", "0:00"))
+			if duration_seconds > 0.0:
+				var remaining_to_100: float = max(0.0, duration_seconds - clamp(game_time, 0.0, duration_seconds))
+				wait_total += remaining_to_100
+			victory_delay_timer.wait_time = wait_total
 			victory_delay_timer.start()
 
 	if selected_song_data and selected_song_data.has("duration"):
@@ -646,6 +703,7 @@ func end_game():
 	
 	var victory_song_info = selected_song_data.duplicate()
 	victory_song_info["instrument"] = current_instrument 
+	victory_song_info["mode"] = current_generation_mode
 	var debug_score = score_manager.get_score()
 	var debug_combo = score_manager.get_combo()
 	var debug_max_combo = score_manager.get_max_combo()
@@ -691,11 +749,46 @@ func end_game():
 
 func update_ui():
 	if score_label:
-		score_label.text = "Счёт: %d" % score_manager.get_score()
+		var target_score = score_manager.get_score()
+		if int(score_display_value) != target_score:
+			var ap := score_animation_player if score_animation_player != null else animation_player
+			if ap and ap.has_animation("ScoreCount"):
+				if ap.is_playing() and ap.current_animation == "ScoreCount":
+					score_count_target = float(target_score)
+				else:
+					score_count_start = score_display_value
+					score_count_target = float(target_score)
+					score_count_progress = 0.0
+					ap.play("ScoreCount")
+			else:
+				score_display_value = float(target_score)
 	if combo_label:
-		combo_label.text = "Комбо: %d (x%.1f)" % [score_manager.get_combo(), score_manager.get_combo_multiplier()]
+		var new_combo = score_manager.get_combo()
+		combo_label.text = "%d (x%.1f)" % [new_combo, score_manager.get_combo_multiplier()]
+		if new_combo > 0 and combo_label.modulate.a < 1.0:
+			combo_label.modulate = _combo_default_modulate
+		if new_combo > _last_combo_value:
+			if new_combo % 100 == 0 and new_combo > 0:
+				_combo_burst(1.3)
+			elif new_combo % 50 == 0 and new_combo > 0:
+				_combo_burst(1.25)
+			else:
+				_pulse_combo_label()
+		_last_combo_value = new_combo
 	if accuracy_label:
-		accuracy_label.text = "Точность: %.2f%%" % score_manager.get_accuracy()
+		var target_acc = score_manager.get_accuracy()
+		if absf(accuracy_display_value - target_acc) > 0.001:
+			var ap2 := accuracy_animation_player if accuracy_animation_player != null else score_animation_player if score_animation_player != null else animation_player
+			if ap2 and ap2.has_animation("AccuracyCount"):
+				if ap2.is_playing() and ap2.current_animation == "AccuracyCount":
+					accuracy_count_target = float(target_acc)
+				else:
+					accuracy_count_start = accuracy_display_value
+					accuracy_count_target = float(target_acc)
+					accuracy_count_progress = 0.0
+					ap2.play("AccuracyCount")
+			else:
+				accuracy_display_value = float(target_acc)
 	
 	if progress_bar and selected_song_data.has("duration"):
 		var duration_str = selected_song_data.get("duration", "0:00")
@@ -819,10 +912,14 @@ func _input(event):
 				_update_hint()
 				return
 		if not countdown_active:
+			if is_autoplay_enabled() and player and (keycode in player.keymap) and keycode != KEY_SPACE:
+				return
 			player.handle_key_press(keycode)
 
 	elif event is InputEventKey and not event.pressed:
 		var keycode = event.keycode
+		if is_autoplay_enabled() and player and (keycode in player.keymap) and keycode != KEY_SPACE:
+			return
 		player.handle_key_release(keycode)
 		
 func skip_countdown():
@@ -890,6 +987,7 @@ func check_hit(lane: int):
 			candidates.append(note)
 
 	if candidates.size() == 0:
+		_combo_shake_and_dim()
 		score_manager.reset_combo()
 		MusicManager.play_miss_hit_sound()
 		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо (без штрафа точности)" % lane)
@@ -933,16 +1031,17 @@ func check_hit(lane: int):
 		if judgement_label:
 			judgement_label.text = hit_type
 			if hit_type == "PERFECT":
-				judgement_label.modulate = Color.YELLOW
+				judgement_label.modulate = judgement_color_perfect
 			elif hit_type == "GOOD":
-				judgement_label.modulate = Color.CYAN
+				judgement_label.modulate = judgement_color_good
 			else:
-				judgement_label.modulate = Color.GRAY
+				judgement_label.modulate = judgement_color_other
 
 		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
 	else:
 		score_manager.add_miss_hit()
 		MusicManager.play_miss_hit_sound()
+		_combo_shake_and_dim()
 		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
 
 
@@ -974,6 +1073,7 @@ func restart_level():
 	score_manager.reset()
 	note_manager.clear_notes()
 	perfect_hits_this_level = 0
+	_last_combo_value = 0
 	game_time = 0.0
 	game_finished = false
 	notes_ended = false
@@ -1008,6 +1108,51 @@ func _exit_to_song_select():
 		var transitions = game_engine.get_transitions()
 		if transitions:
 			transitions.open_song_select()
+
+func _pulse_combo_label():
+	if combo_label == null:
+		return
+	combo_label.modulate = _combo_default_modulate
+	if animation_player and animation_player.has_animation("ComboPulse"):
+		animation_player.stop(true)
+		animation_player.play("ComboPulse")
+
+func _combo_burst(mult: float):
+	if combo_label == null:
+		return
+	if animation_player:
+		if mult >= 1.3 and animation_player.has_animation("ComboBurst100"):
+			animation_player.stop(true)
+			_flash_combo_label_color(combo_color_100, 0.45)
+			animation_player.play("ComboBurst100")
+		elif mult >= 1.25 and animation_player.has_animation("ComboBurst50"):
+			animation_player.stop(true)
+			_flash_combo_label_color(combo_color_50, 0.45)
+			animation_player.play("ComboBurst50")
+
+func _flash_combo_label_color(col: Color, duration: float):
+	if combo_label == null:
+		return
+	var prev := combo_label.get_theme_color("font_color", "Label")
+	combo_label.add_theme_color_override("font_color", col)
+	var t := Timer.new()
+	t.one_shot = true
+	t.wait_time = max(0.05, duration)
+	t.timeout.connect(func():
+		if is_instance_valid(combo_label):
+			combo_label.add_theme_color_override("font_color", prev)
+		if is_instance_valid(t) and t.get_parent() == self:
+			t.queue_free()
+	)
+	add_child(t)
+	t.start()
+
+func _combo_shake_and_dim():
+	if combo_label == null:
+		return
+	if animation_player and animation_player.has_animation("ComboMiss"):
+		animation_player.stop(true)
+		animation_player.play("ComboMiss")
 
 func _open_settings_from_pause():
 	pauser.cleanup_on_game_end()

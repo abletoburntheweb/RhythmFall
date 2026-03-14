@@ -140,10 +140,18 @@ func get_genres_for_manual_entry(artist: String, title: String):
 func cancel_bpm():
 	if _api:
 		_api.request_cancel_bpm()
+	if _active_bpm_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
+		var ach = _game_engine.get_achievement_system()
+		if ach and ach.has_method("on_analysis_canceled"):
+			ach.on_analysis_canceled()
 
 func cancel_notes():
 	if _api:
 		_api.request_cancel_notes()
+	if _active_notes_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
+		var ach = _game_engine.get_achievement_system()
+		if ach and ach.has_method("on_analysis_canceled"):
+			ach.on_analysis_canceled()
 
 func retry_bpm():
 	var t = _active_bpm_task
@@ -175,6 +183,10 @@ func _on_bpm_completed(bpm_value: int):
 	var disp = _active_bpm_task.display
 	SongLibrary.update_metadata(path, {"bpm": str(bpm_value)})
 	bpm_completed.emit(path, bpm_value, disp)
+	if _game_engine and _game_engine.has_method("get_achievement_system"):
+		var ach = _game_engine.get_achievement_system()
+		if ach and ach.has_method("on_bpm_computed"):
+			ach.on_bpm_computed()
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		_game_engine.notifications_complete("bpm", "BPM вычислен: %d для %s%s" % [bpm_value, disp, _suffix_from_settings()])
 	if MusicManager and MusicManager.has_method("play_analysis_success"):

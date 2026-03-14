@@ -39,6 +39,11 @@ func _populate():
 	var user_path = "user://genre_groups.json"
 	var res_path = "res://data/genre_groups.json"
 	var open_path = user_path if FileAccess.file_exists(user_path) else res_path
+	if not FileAccess.file_exists(open_path):
+		var exe_dir = OS.get_executable_path().get_base_dir()
+		var ext = exe_dir.path_join("data/genre_groups.json").replace("\\", "/")
+		if FileAccess.file_exists(ext):
+			open_path = ext
 	var fa = FileAccess.open(open_path, FileAccess.READ)
 	if fa:
 		var txt = fa.get_as_text()

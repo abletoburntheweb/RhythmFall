@@ -65,28 +65,6 @@ func read_metadata(filepath: String) -> Dictionary:
 	}
 
 	var filename_stem = filepath.get_file().get_basename()
-	if str(metadata["artist"]) == "Неизвестен" or str(metadata["title"]) == filename_stem:
-		if " - " in filename_stem:
-			var parts = filename_stem.split(" - ", false, 1)
-			if parts.size() == 2:
-				var first := parts[0].strip_edges()
-				var second := parts[1].strip_edges()
-				metadata["artist"] = first
-				metadata["title"] = second
-		elif " — " in filename_stem:
-			var parts2 = filename_stem.split(" — ", false, 1)
-			if parts2.size() == 2:
-				var f2 := parts2[0].strip_edges()
-				var s2 := parts2[1].strip_edges()
-				metadata["artist"] = f2
-				metadata["title"] = s2
-		elif " – " in filename_stem:
-			var parts3 = filename_stem.split(" – ", false, 1)
-			if parts3.size() == 2:
-				var f3 := parts3[0].strip_edges()
-				var s3 := parts3[1].strip_edges()
-				metadata["artist"] = f3
-				metadata["title"] = s3
 	var user_metadata = get_metadata_for_song(filepath)
 	if not user_metadata.is_empty():
 		for key in user_metadata.keys():
@@ -110,6 +88,7 @@ func _should_queue_id3_for(path: String, metadata: Dictionary) -> bool:
 
 func load_songs():
 	songs.clear()
+	var built_in_found := 0
 	var dir = DirAccess.open(BUILT_IN_FOLDER_PATH)
 	if dir:
 		dir.list_dir_begin()
@@ -117,7 +96,7 @@ func load_songs():
 		while file_name != "":
 			if not dir.current_is_dir():
 				var file_lower = file_name.to_lower()
-				if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
+				if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav") or file_lower.ends_with(".ogg"):
 					var path = BUILT_IN_FOLDER_PATH + file_name
 					var metadata = read_metadata(path)
 					if str(metadata.get("duration", "00:00")) == "00:00":
@@ -139,8 +118,33 @@ func load_songs():
 						_id3_queue.append(path)
 					metadata["source"] = "built_in"
 					songs.append(metadata)
+					built_in_found += 1
 			file_name = dir.get_next()
 		dir.list_dir_end()
+	if built_in_found == 0:
+		var exe_dir = OS.get_executable_path().get_base_dir()
+		var ext_root = exe_dir.path_join("bundled_songs").replace("\\", "/") + "/"
+		var d2 = DirAccess.open(ext_root)
+		if d2:
+			d2.list_dir_begin()
+			var f2 = d2.get_next()
+			while f2 != "":
+				if not d2.current_is_dir():
+					var fl = f2.to_lower()
+					if fl.ends_with(".mp3") or fl.ends_with(".wav") or fl.ends_with(".ogg"):
+						var p2 = ext_root + f2
+						var md2 = read_metadata(p2)
+						if str(md2.get("duration", "00:00")) == "00:00":
+							var dstr = _compute_duration_str(p2)
+							if dstr != "00:00":
+								md2["duration"] = dstr
+								update_metadata(p2, {"duration": dstr})
+						if _should_queue_id3_for(p2, md2):
+							_id3_queue.append(p2)
+						md2["source"] = "built_in_external"
+						songs.append(md2)
+				f2 = d2.get_next()
+			d2.list_dir_end()
 	var user_root = _get_effective_user_songs_path()
 	for k in _metadata_cache.keys():
 		var p := String(k)
@@ -149,8 +153,71 @@ func load_songs():
 				var md = read_metadata(p)
 				md["source"] = "user"
 				songs.append(md)
+	_apply_metadata_seed_if_present()
 	_start_id3_enrichment_if_needed()
 	emit_signal("songs_list_changed")
+
+func _apply_metadata_seed_if_present():
+	var seed := _try_load_seed_metadata()
+	if seed.is_empty():
+		return
+	var by_filename := {}
+	var by_path := {}
+	var exe_dir = OS.get_executable_path().get_base_dir()
+	var res_base := "res://bundled_songs/"
+	var ext_base := exe_dir.path_join("bundled_songs").replace("\\", "/") + "/"
+	for key in seed.keys():
+		var k := String(key).replace("\\", "/")
+		if k.find("/") != -1 or k.find("://") != -1 or k.find(":") != -1:
+			by_path[k] = seed[key]
+			if k.begins_with(res_base):
+				var tail = k.substr(res_base.length())
+				by_path[ext_base + tail] = seed[key]
+			elif k.find("/bundled_songs/") != -1:
+				var idx = k.find("/bundled_songs/")
+				var tail2 = k.substr(idx + 1 + String("bundled_songs/").length())
+				by_path[res_base + tail2] = seed[key]
+				by_path[ext_base + tail2] = seed[key]
+		else:
+			by_filename[k] = seed[key]
+	for s in songs:
+		var path := String(s.get("path", ""))
+		if path == "":
+			continue
+		var fname := path.get_file()
+		var fields := {}
+		if by_path.has(path):
+			fields = by_path[path]
+		elif by_filename.has(fname):
+			fields = by_filename[fname]
+		if fields is Dictionary and not fields.is_empty():
+			var to_save := {}
+			for f in ["title","artist","bpm","year","duration","primary_genre","genres"]:
+				if fields.has(f):
+					to_save[f] = fields[f]
+			if not to_save.is_empty():
+				update_metadata(path, to_save)
+
+func _try_load_seed_metadata() -> Dictionary:
+	var candidates := []
+	candidates.append("user://song_metadata_seed.json")
+	candidates.append("res://data/song_metadata_seed.json")
+	candidates.append("res://data/song_metadata.json")
+	var exe_dir = OS.get_executable_path().get_base_dir()
+	var ext1 = exe_dir.path_join("data/song_metadata_seed.json").replace("\\", "/")
+	candidates.append(ext1)
+	var ext2 = exe_dir.path_join("song_metadata_seed.json").replace("\\", "/")
+	candidates.append(ext2)
+	var ext3 = exe_dir.path_join("data/song_metadata.json").replace("\\", "/")
+	candidates.append(ext3)
+	var ext4 = exe_dir.path_join("song_metadata.json").replace("\\", "/")
+	candidates.append(ext4)
+	for p in candidates:
+		if FileAccess.file_exists(p):
+			var d: Dictionary = JsonUtils.read_json_dict(p)
+			if d is Dictionary and not d.is_empty():
+				return d
+	return {}
 
 func scan_user_songs():
 	var user_path = _get_effective_user_songs_path()
@@ -325,11 +392,64 @@ func _load_metadata():
 	var parse_result: Dictionary = JsonUtils.read_json_dict(METADATA_FILE_PATH)
 	if parse_result is Dictionary and not parse_result.is_empty():
 		_metadata_cache = parse_result
-		for key in _metadata_cache.keys():
-			_metadata_cache[key].erase("cover")
-			_metadata_cache[key].erase("metronome_offset")
 	else:
-		_metadata_cache = {}
+		var default_candidates := []
+		default_candidates.append("res://data/song_metadata.json")
+		var exe_dir = OS.get_executable_path().get_base_dir()
+		default_candidates.append(exe_dir.path_join("data/song_metadata.json").replace("\\", "/"))
+		for cand in default_candidates:
+			if FileAccess.file_exists(cand):
+				var d: Dictionary = JsonUtils.read_json_dict(cand)
+				if d is Dictionary and not d.is_empty():
+					JsonUtils.write_json(METADATA_FILE_PATH, d, true, true)
+					_metadata_cache = d
+					break
+		if _metadata_cache.is_empty():
+			_metadata_cache = {}
+	for key in _metadata_cache.keys():
+		_metadata_cache[key].erase("cover")
+		_metadata_cache[key].erase("metronome_offset")
+	_merge_defaults_into_user_cache()
+	_save_metadata()
+
+func _merge_defaults_into_user_cache():
+	var defaults := {}
+	var candidates := []
+	candidates.append("res://data/song_metadata.json")
+	var exe_dir = OS.get_executable_path().get_base_dir()
+	candidates.append(exe_dir.path_join("data/song_metadata.json").replace("\\", "/"))
+	for c in candidates:
+		if FileAccess.file_exists(c):
+			var d: Dictionary = JsonUtils.read_json_dict(c)
+			if d is Dictionary and not d.is_empty():
+				defaults = d
+				break
+	if defaults.is_empty():
+		return
+	var by_path := {}
+	var by_file := {}
+	for dk in defaults.keys():
+		var p := String(dk).replace("\\", "/")
+		by_path[p] = defaults[dk]
+		by_file[p.get_file()] = defaults[dk]
+	var changed := false
+	var fields := ["title","artist","bpm","year","duration","primary_genre","genres"]
+	for uk in _metadata_cache.keys():
+		var upath := String(uk).replace("\\", "/")
+		var fname := upath.get_file()
+		var src: Dictionary = {}
+		if by_path.has(upath):
+			src = by_path[upath]
+		elif by_file.has(fname):
+			src = by_file[fname]
+		if not src.is_empty():
+			for f in fields:
+				if src.has(f):
+					var cur_val = _metadata_cache[uk].get(f, "")
+					var def_val = src[f]
+					if _is_placeholder(f, cur_val, upath) and not _is_placeholder(f, def_val, upath):
+						_metadata_cache[uk][f] = def_val
+						changed = true
 
 func _save_metadata():
 	var cache_to_save = {}

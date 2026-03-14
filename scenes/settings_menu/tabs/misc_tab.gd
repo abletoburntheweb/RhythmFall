@@ -18,6 +18,7 @@ const FILES_TO_CLEAR := ["session_history.json"]
 @onready var songs_folder_line_edit: LineEdit = $ContentVBox/SongsFolderHBox/SongsFolderLineEdit
 @onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
 @onready var migrate_paths_dialog: ConfirmationDialog = $MigratePathsDialog
+@onready var clear_user_paths_button: Button = $ContentVBox/ClearUserPathsButton
 
 
 func _ready():
@@ -195,3 +196,21 @@ func _on_scan_songs_pressed():
 				)
 				add_child(dlg)
 				dlg.popup_centered()
+
+func _on_clear_user_paths_pressed():
+	if not song_metadata_manager:
+		return
+	var built_in_root = String(song_metadata_manager.BUILT_IN_FOLDER_PATH)
+	var exe_dir = OS.get_executable_path().get_base_dir()
+	var external_bundled_root = exe_dir.path_join("bundled_songs").replace("\\", "/") + "/"
+	var snapshot: Array = song_metadata_manager._metadata_cache.keys()
+	var changed := false
+	for k in snapshot:
+		var p := String(k)
+		if not p.begins_with(built_in_root) and not p.begins_with(external_bundled_root):
+			if song_metadata_manager._metadata_cache.erase(k):
+				changed = true
+	if changed:
+		song_metadata_manager._save_metadata()
+		song_metadata_manager.emit_signal("songs_list_changed")
+	emit_signal("settings_changed")

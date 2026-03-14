@@ -40,6 +40,11 @@ func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool =
 
 	if track_stats_manager: 
 		track_stats_manager.on_track_completed(song_path)
+		var meta = SongLibrary.get_metadata_for_song(song_path.replace("\\", "/").trim_suffix("/"))
+		if meta and typeof(meta) == TYPE_DICTIONARY and meta.has("primary_genre"):
+			var genre_val = str(meta["primary_genre"]).to_lower().strip_edges()
+			if genre_val != "":
+				PlayerDataManager.increment_daily_progress("play_genre_group", 1, {"genre": genre_val})
 		achievement_manager.check_replay_level_achievement(track_stats_manager.track_completion_counts)
 		achievement_manager.check_genre_achievements(track_stats_manager)
 		achievement_manager.check_unique_levels_completed_achievements(PlayerDataManager)
@@ -88,6 +93,14 @@ func on_notes_generated():
 	PlayerDataManager.increment_daily_progress("notes_generated", 1, {})
 	achievement_manager.check_note_researcher_achievement() 
 	achievement_manager.save_achievements() 
+	
+func on_bpm_computed():
+	achievement_manager.check_first_bpm_achievement()
+	achievement_manager.save_achievements()
+	
+func on_analysis_canceled():
+	achievement_manager.check_cancel_analysis_achievement()
+	achievement_manager.save_achievements()
 
 func on_perfect_hit_made():
 	var total_perfect_hits = PlayerDataManager.get_total_perfect_hits()

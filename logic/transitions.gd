@@ -4,6 +4,7 @@ var parent = null
 
 var main_menu_instance = null
 var _scene_cache: Dictionary = {}
+var _pending_scene: Dictionary = {}
 
 func _init(p_game_engine):
 	game_engine = p_game_engine
@@ -33,6 +34,34 @@ func _preload_scene(scene_path: String):
 		return scene_resource
 	return null
 
+func _preload_scene_threaded(scene_path: String):
+	var existing = _get_cached_packed(scene_path)
+	if existing:
+		return existing
+	if _pending_scene.has(scene_path):
+		return null
+	if not ResourceLoader.exists(scene_path):
+		return null
+	var ok = ResourceLoader.load_threaded_request(scene_path, "PackedScene")
+	if ok == OK:
+		_pending_scene[scene_path] = true
+		call_deferred("_poll_threaded_scene", scene_path)
+	return null
+
+func _poll_threaded_scene(scene_path: String):
+	var st = ResourceLoader.load_threaded_get_status(scene_path)
+	if st == ResourceLoader.THREAD_LOAD_LOADED:
+		var res = ResourceLoader.load_threaded_get(scene_path)
+		if res and (res is PackedScene):
+			_scene_cache[scene_path] = res
+		_pending_scene.erase(scene_path)
+	elif st == ResourceLoader.THREAD_LOAD_FAILED:
+		_pending_scene.erase(scene_path)
+	else:
+		if game_engine and game_engine.has_method("get_tree"):
+			await game_engine.get_tree().process_frame
+		call_deferred("_poll_threaded_scene", scene_path)
+
 func _warmup_heavy_scenes():
 	var to_prewarm := [
 		"res://scenes/main_menu/main_menu.tscn",
@@ -45,13 +74,14 @@ func _warmup_heavy_scenes():
 		"res://scenes/game_screen/game_screen.tscn",
 		"res://scenes/help/help_screen.tscn"
 	]
-	call_deferred("_prewarm_step", to_prewarm, 0)
+	for p in to_prewarm:
+		_preload_scene_threaded(String(p))
 
 func _prewarm_step(list: Array, index: int):
 	if index >= list.size():
 		return
 	var path = String(list[index])
-	_preload_scene(path)
+	_preload_scene_threaded(path)
 	if game_engine and game_engine.has_method("get_tree"):
 		await game_engine.get_tree().process_frame
 	call_deferred("_prewarm_step", list, index + 1)
@@ -146,6 +176,8 @@ func transition_open_song_select():
 	if new_screen:
 		if new_screen.has_method("set_transitions"):
 			new_screen.set_transitions(self) 
+		elif new_screen.has_method("setup_managers"):
+			new_screen.setup_managers(self)
 		else:
 			printerr("Transitions.gd: Новый экземпляр SongSelect не имеет метода set_transitions!")
 		_switch_to_screen_instance(new_screen)
@@ -336,12 +368,6 @@ func open_game_with_instrument(
 			return
 
 	open_game_with_song(selected_song_data, instrument, results_manager, generation_mode) 
-
-func open_game(start_level=null):
-	transition_open_game(start_level)
-
-func close_game():
-	transition_close_game()
 
 func open_song_select():
 	transition_open_song_select()

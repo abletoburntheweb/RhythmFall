@@ -14,7 +14,7 @@ func load_results_for_song(song_path: String) -> Array:
 	var arr: Array = JsonUtils.read_json_array(results_file_path)
 	return arr
 
-func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = ""):
+func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = ""):
 	if song_path.is_empty():
 		return
 	var results = load_results_for_song(song_path)
@@ -26,6 +26,8 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		"grade": grade,
 		"grade_color": { "r": grade_color.r, "g": grade_color.g, "b": grade_color.b, "a": grade_color.a },
 	}
+	if mode != "":
+		new_result["mode"] = mode
 	results.append(new_result)
 	results.sort_custom(func(a, b):
 		if a.get("score", 0) != b.get("score", 0):

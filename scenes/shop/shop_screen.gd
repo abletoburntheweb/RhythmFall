@@ -11,6 +11,8 @@ var current_category: String = "Все"
 
 var current_cover_gallery: Node = null
 var current_cover_item_data: Dictionary = {}
+var _scroll_step := 60
+var _page_step := 480
 
 func _ready():
 	var game_engine = get_parent()
@@ -22,6 +24,11 @@ func _ready():
 
 	var user_shop = "user://shop_data.json"
 	var file_path = (user_shop if FileAccess.file_exists(user_shop) else "res://data/shop_data.json")
+	if not FileAccess.file_exists(file_path):
+		var exe_dir = OS.get_executable_path().get_base_dir()
+		var ext = exe_dir.path_join("data/shop_data.json").replace("\\", "/")
+		if FileAccess.file_exists(ext):
+			file_path = ext
 	var file_access = FileAccess.open(file_path, FileAccess.READ)
 	if file_access:
 		var json_text = file_access.get_as_text()
@@ -36,6 +43,11 @@ func _ready():
 
 	var user_ach = "user://achievements_data.json"
 	var achievements_file_path = (user_ach if FileAccess.file_exists(user_ach) else "res://data/achievements_data.json")
+	if not FileAccess.file_exists(achievements_file_path):
+		var exe_dir2 = OS.get_executable_path().get_base_dir()
+		var ext2 = exe_dir2.path_join("data/achievements_data.json").replace("\\", "/")
+		if FileAccess.file_exists(ext2):
+			achievements_file_path = ext2
 	var achievements_file_access = FileAccess.open(achievements_file_path, FileAccess.READ)
 	if achievements_file_access:
 		var json_text = achievements_file_access.get_as_text()
@@ -84,6 +96,7 @@ func _ready():
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
 	_create_item_cards()
+	_set_buttons_focus_to_none()
 
 func _update_currency_label():
 	var main_vbox = $MainContent/MainVBox
@@ -403,6 +416,63 @@ func _execute_close_transition():
 		transitions.close_shop()
 	else:
 		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
+
+func _get_items_scroll() -> ScrollContainer:
+	var sc = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
+	return sc as ScrollContainer
+
+func _set_buttons_focus_to_none():
+	var stack: Array = [self]
+	while stack.size() > 0:
+		var cur = stack.pop_back()
+		for ch in cur.get_children():
+			stack.append(ch)
+			if ch is Button:
+				ch.focus_mode = Control.FOCUS_NONE
+
+func _scroll_to(pos: int):
+	var sc = _get_items_scroll()
+	if sc:
+		var max_val = 0
+		if sc.has_method("get_v_scroll_bar"):
+			var vbar = sc.get_v_scroll_bar()
+			if vbar:
+				max_val = int(vbar.max_value)
+		sc.scroll_vertical = clamp(pos, 0, max_val if max_val > 0 else pos)
+
+func _unhandled_input(event):
+	if event is InputEventKey and event.pressed:
+		var owner = get_viewport().gui_get_focus_owner()
+		if owner and (owner is LineEdit or owner is OptionButton):
+			return
+		var sc = _get_items_scroll()
+		if not sc:
+			return
+		match event.keycode:
+			KEY_UP:
+				_scroll_to(sc.scroll_vertical - _scroll_step)
+				accept_event()
+			KEY_DOWN:
+				_scroll_to(sc.scroll_vertical + _scroll_step)
+				accept_event()
+			KEY_PAGEUP:
+				_scroll_to(sc.scroll_vertical - _page_step)
+				accept_event()
+			KEY_PAGEDOWN:
+				_scroll_to(sc.scroll_vertical + _page_step)
+				accept_event()
+			KEY_HOME:
+				_scroll_to(0)
+				accept_event()
+			KEY_END:
+				if sc.has_method("get_v_scroll_bar"):
+					var vbar = sc.get_v_scroll_bar()
+					if vbar:
+						_scroll_to(int(vbar.max_value))
+						accept_event()
+				else:
+					_scroll_to(sc.scroll_vertical + 999999)
+					accept_event()
 
 func _find_item_by_id(item_id: String) -> Dictionary:
 	for item in shop_data.get("items", []):

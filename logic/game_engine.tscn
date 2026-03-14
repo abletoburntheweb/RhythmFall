@@ -1,10 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=14 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_hq7uf"]
 [ext_resource type="Script" uid="uid://bkldcmlwkw05g" path="res://ui/notification_ui.gd" id="4_358gi"]
-[ext_resource type="Theme" uid="uid://chxcu3wohb5fo" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
 shader = ExtResource("2_q8hsq")
@@ -14,6 +14,78 @@ shader_parameter/glow_color = Color(0.3, 0.6, 1, 0.2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q8hsq"]
 bg_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+
+[sub_resource type="Animation" id="Animation_leh8e"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("..:xp_anim_progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_oxvfc"]
+resource_name = "XPGain"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("..:xp_anim_progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_2la4k"]
+_data = {
+&"RESET": SubResource("Animation_leh8e"),
+&"XPGain": SubResource("Animation_oxvfc")
+}
+
+[sub_resource type="Animation" id="Animation_358gi"]
+resource_name = "CurrencyGain"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("..:currency_anim_progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+
+[sub_resource type="Animation" id="Animation_kb4m6"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("..:currency_anim_progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_oxvfc"]
+_data = {
+&"CurrencyGain": SubResource("Animation_358gi"),
+&"RESET": SubResource("Animation_kb4m6")
+}
 
 [node name="GameEngine" type="Control"]
 layout_mode = 3
@@ -58,13 +130,13 @@ theme_override_font_sizes/font_size = 12
 text = "FPS 140"
 
 [node name="VersionLabel" type="Label" parent="FPSLayer"]
-offset_left = 1682.0
+offset_left = 1762.0
 offset_top = 1063.0
 offset_right = 1920.0
 offset_bottom = 1080.0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.0.0-rc • Release Candidate (Build 370)"
+text = "v1.0.0 • Release (Build 400)"
 
 [node name="XPContainer" type="Control" parent="."]
 anchors_preset = 0
@@ -120,6 +192,16 @@ custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 texture = ExtResource("3_hq7uf")
 expand_mode = 1
+
+[node name="XpAnimationPlayer" type="AnimationPlayer" parent="XPContainer"]
+libraries = {
+&"": SubResource("AnimationLibrary_2la4k")
+}
+
+[node name="CurrencyAnimationPlayer" type="AnimationPlayer" parent="XPContainer"]
+libraries = {
+&"": SubResource("AnimationLibrary_oxvfc")
+}
 
 [node name="NotificationsLayer" type="CanvasLayer" parent="."]
 
