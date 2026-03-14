@@ -32,11 +32,16 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 		var formatted_date_str_top = "N/A"
 		if original_datetime_str_top != "N/A":
 			formatted_date_str_top = TimeUtils.format_iso_to_ddmmyyyy_hhmmss(original_datetime_str_top)
-		var display_text_top = "%s - %d очков (%.0f%%) [%s] - %s" % [
+		var mode_raw_top = str(top_result.get("mode", ""))
+		var mode_label_top = ""
+		if mode_raw_top != "":
+			mode_label_top = ", " + ("Базовый" if mode_raw_top.to_lower() == "basic" else "Усложненный")
+		var display_text_top = "%s - %d очков (%.0f%%) [%s%s] - %s" % [
 			formatted_date_str_top,
 			top_result.get("score", 0),
 			top_result.get("accuracy", 0.0),
 			top_result.get("instrument", "unknown"),
+			mode_label_top,
 			top_result.get("grade", "N/A")
 		]
 		var item_idx_top = results_list.add_item(display_text_top)
@@ -96,11 +101,16 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			if original_datetime_str != "N/A":
 				formatted_date_str = TimeUtils.format_iso_to_ddmmyyyy_hhmmss(original_datetime_str)
 
-			var display_text = "%s - %d очков (%.0f%%) [%s] - %s" % [
+			var mode_raw = str(result.get("mode", ""))
+			var mode_label = ""
+			if mode_raw != "":
+				mode_label = ", " + ("Базовый" if mode_raw.to_lower() == "basic" else "Усложненный")
+			var display_text = "%s - %d очков (%.0f%%) [%s%s] - %s" % [
 				formatted_date_str,            
 				result.get("score", 0),       
 				result.get("accuracy", 0.0),   
-				result.get("instrument", "unknown"), 
+				result.get("instrument", "unknown"),
+				mode_label,
 				result.get("grade", "N/A")    
 			]
 
@@ -127,8 +137,8 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 func load_results_for_song(song_path: String) -> Array:
 	return results_service.load_results_for_song(song_path)
 
-func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = ""):
-	results_service.save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime)
+func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = ""):
+	results_service.save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime, mode)
 	
 	var song_key = song_path 
 	var current_results = results_service.load_results_for_song(song_path)

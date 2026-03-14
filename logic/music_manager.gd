@@ -5,26 +5,30 @@ const MUSIC_DIR = "res://assets/audio/"
 const SHOP_SOUND_DIR = "res://assets/shop/sounds/"
 
 const DEFAULT_MENU_MUSIC = "Tycho - Awake.mp3"
-const DEFAULT_INTRO_MUSIC = "intro_music.mp3"
-const DEFAULT_SELECT_SOUND = "select_click.mp3"
-const DEFAULT_CANCEL_SOUND = "cancel_click.mp3"
+const DEFAULT_INTRO_MUSIC = "intro_music.wav"
+const DEFAULT_SELECT_SOUND = "select_click.wav"
+const DEFAULT_CANCEL_SOUND = "cancel_click.wav"
 const ANALYSIS_SUCCESS_SOUND = "analysis_success.wav"
 const ANALYSIS_ERROR_SOUND = "analysis_error.wav"
-const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.mp3"
+const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.wav"
 const SHOP_PURCHASE_SOUND = "shop_purchase.wav"
 const SHOP_APPLY_SOUND = "shop_apply.wav"
-const DEFAULT_SHOP_SOUND = "missing_sound.mp3"
+const DEFAULT_SHOP_SOUND = "missing_sound.wav"
 const DEFAULT_METRONOME_STRONG_SOUND = "metronome_strong.wav"
 const DEFAULT_METRONOME_WEAK_SOUND = "metronome_weak.wav"
 const DEFAULT_COVER_CLICK_SOUND = "page_flip.wav"
 const DEFAULT_LEVEL_START_SOUND = "level_start_ripple.wav"
+const DEFAULT_LEVEL_COMPLETE_SOUND = "level_complete.wav"
+const DEFAULT_LEVEL_UP_SOUND = "level_up.wav"
+const DEFAULT_SCORE_TICK_SOUND = "score_tick.wav"
+const DEFAULT_GRADE_POP_SOUND = "grade_pop.wav"
 const DEFAULT_MISS_HIT_SOUND_1 = "miss_hit1.wav"
 const DEFAULT_MISS_HIT_SOUND_2 = "miss_hit2.wav"
 const DEFAULT_MISS_HIT_SOUND_3 = "miss_hit3.wav"
 const DEFAULT_MISS_HIT_SOUND_4 = "miss_hit4.wav"
 const DEFAULT_MISS_HIT_SOUND_5 = "miss_hit5.wav"
 
-const DEFAULT_RESTART_SOUND = "restart_level.mp3"
+const DEFAULT_RESTART_SOUND = "restart_level.wav"
 const MODAL_POPUP_SOUND = "modal_popup.wav"
 
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
@@ -74,6 +78,8 @@ const PRELOAD_SFX := [
 	DEFAULT_METRONOME_WEAK_SOUND,
 	DEFAULT_COVER_CLICK_SOUND,
 	DEFAULT_LEVEL_START_SOUND,
+	DEFAULT_LEVEL_UP_SOUND,
+	DEFAULT_LEVEL_COMPLETE_SOUND,
 	DEFAULT_RESTART_SOUND,
 	DEFAULT_MISS_HIT_SOUND_1,
 	DEFAULT_MISS_HIT_SOUND_2,
@@ -279,15 +285,12 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 		push_error("MusicManager: Не удалось загрузить аудио для меню: " + full_path)
 		return
 
-	if stream is AudioStreamMP3:
-		stream.loop = true
-	elif stream is AudioStreamWAV:
-		stream.loop = true
-
 	if music_player and music_player.stream == stream and not restart:
 		if music_player.playing:
+			_connect_menu_loop()
 			return
 		music_player.play()
+		_connect_menu_loop()
 		return
 
 	if music_player:
@@ -295,6 +298,7 @@ func play_menu_music(music_file: String = DEFAULT_MENU_MUSIC, restart: bool = fa
 		current_game_music_file = ""
 		var menu_vol = SettingsManager.get_menu_music_volume() if SettingsManager.has_method("get_menu_music_volume") else _menu_music_volume_pct
 		_play_stream_on(music_player, stream, menu_vol, 0.0, true)
+		_connect_menu_loop()
 
 func play_game_music(music_file: String):
 	var stream = _load_audio_stream(music_file)
@@ -311,6 +315,7 @@ func play_game_music(music_file: String):
 		_play_stream_on(music_player, stream, game_vol, 0.0, true)
 		original_game_music_volume = db_to_linear(music_player.volume_db)
 		current_menu_music_file = ""
+		_disconnect_menu_loop()
 	else:
 		push_error("MusicManager.gd: music_player не установлен!")
 
@@ -335,6 +340,7 @@ func stop_music():
 		current_game_music_file = ""
 		was_menu_music_playing_before_shop = false
 		menu_music_position_before_shop = 0.0
+		_disconnect_menu_loop()
 
 func pause_music():
 	if music_player and music_player.playing:
@@ -409,8 +415,44 @@ func play_cover_click_sound():
 func play_level_start_sound():
 	play_sfx(DEFAULT_LEVEL_START_SOUND)
 
+func play_level_complete_sound():
+	var full_path = MUSIC_DIR + DEFAULT_LEVEL_COMPLETE_SOUND
+	if FileAccess.file_exists(full_path):
+		play_sfx(DEFAULT_LEVEL_COMPLETE_SOUND)
+
 func play_restart_sound():
 	play_sfx(DEFAULT_RESTART_SOUND)
+
+func play_level_up_sound():
+	var full_path = MUSIC_DIR + DEFAULT_LEVEL_UP_SOUND
+	if FileAccess.file_exists(full_path):
+		play_sfx(DEFAULT_LEVEL_UP_SOUND)
+
+func play_score_tick():
+	var full_path = MUSIC_DIR + DEFAULT_SCORE_TICK_SOUND
+	if FileAccess.file_exists(full_path):
+		play_sfx(DEFAULT_SCORE_TICK_SOUND)
+
+func play_grade_pop_sound():
+	var full_path = MUSIC_DIR + DEFAULT_GRADE_POP_SOUND
+	if FileAccess.file_exists(full_path):
+		play_sfx(DEFAULT_GRADE_POP_SOUND)
+
+func _connect_menu_loop():
+	if music_player:
+		var cb = Callable(self, "_on_menu_music_finished")
+		if not music_player.is_connected("finished", cb):
+			music_player.connect("finished", cb)
+
+func _disconnect_menu_loop():
+	if music_player:
+		var cb = Callable(self, "_on_menu_music_finished")
+		if music_player.is_connected("finished", cb):
+			music_player.disconnect("finished", cb)
+
+func _on_menu_music_finished():
+	if current_menu_music_file != "" and music_player:
+		music_player.play(0.0)
 
 func play_miss_hit_sound():
 	var random_index = randi() % 5

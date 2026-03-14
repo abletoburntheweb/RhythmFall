@@ -20,11 +20,6 @@ func set_transitions(transitions_instance):
 func _on_github_pressed():
 	OS.shell_open(github_url)
 
-func _on_play_pressed():
-	MusicManager.stop_music()
-	if transitions:
-		transitions.open_game()
-
 func _on_song_select_pressed():
 	MusicManager.play_select_sound()
 	MusicManager.pause_menu_music()

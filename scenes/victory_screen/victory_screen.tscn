@@ -1,7 +1,110 @@
-[gd_scene load_steps=3 format=3 uid="uid://wr4xw6kkexww"]
+[gd_scene load_steps=7 format=3 uid="uid://wr4xw6kkexww"]
 
 [ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
-[ext_resource type="Theme" uid="uid://dcpb5518mgt8y" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
+
+[sub_resource type="Animation" id="Animation_rygy8"]
+resource_name = "AllCountupsSeq"
+length = 6.0
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.9, 1.5, 2.1, 3, 3.6, 4.2, 5.1, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": ["score"],
+"method": &"set_count_kind"
+}, {
+"args": ["combo"],
+"method": &"set_count_kind"
+}, {
+"args": ["max_combo"],
+"method": &"set_count_kind"
+}, {
+"args": ["accuracy"],
+"method": &"set_count_kind"
+}, {
+"args": ["hit"],
+"method": &"set_count_kind"
+}, {
+"args": ["miss"],
+"method": &"set_count_kind"
+}, {
+"args": ["currency"],
+"method": &"set_count_kind"
+}, {
+"args": ["xp"],
+"method": &"set_count_kind"
+}, {
+"args": [],
+"method": &"_reveal_grade"
+}]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:count_progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.8999, 0.9, 1.4999, 1.5, 2.0999, 2.1, 2.9999, 3, 3.5999, 3.6, 4.1999, 4.2, 5.0999, 5.1, 5.9999, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0]
+}
+
+[sub_resource type="Animation" id="Animation_12ckx"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:count_progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_lxrx8"]
+resource_name = "VictoryIntro"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(0.3186403, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_12ckx"]
+_data = {
+&"AllCountupsSeq": SubResource("Animation_rygy8"),
+&"RESET": SubResource("Animation_12ckx"),
+&"VictoryIntro": SubResource("Animation_lxrx8")
+}
 
 [node name="VictoryScreen" type="Control"]
 layout_mode = 3
@@ -38,6 +141,8 @@ theme_override_colors/font_color = Color(0.8509804, 0.8784314, 0.9490196, 1)
 theme_override_font_sizes/font_size = 32
 text = "Название Песни"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 4
 
 [node name="StatsFrame" type="Panel" parent="."]
 layout_mode = 0
@@ -154,3 +259,12 @@ size_flags_horizontal = 4
 theme = ExtResource("2_rygy8")
 theme_type_variation = &"FlatButton"
 text = "К списку песен"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_12ckx")
+}
+
+[node name="CountupsDelayTimer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true

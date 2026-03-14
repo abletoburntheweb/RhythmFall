@@ -14,7 +14,7 @@ var results_history_service: ResultsHistoryService = null
 
 var _session_start_time_ticks: int = 0
 var _play_time_timer: SceneTreeTimer = null
-const PLAY_TIME_UPDATE_INTERVAL: float = 10.0 
+const PLAY_TIME_UPDATE_INTERVAL: float = 1.0 
 
 @onready var fps_label: Label = $FPSLayer/FPSLabel
 @onready var fps_background: ColorRect = $FPSLayer/FPSBackground
@@ -23,6 +23,52 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 10.0
 @onready var xp_progress_bar: ProgressBar = $XPContainer/XPProgressBar
 @onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
 @onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
+@onready var xp_anim_player: AnimationPlayer = $XPContainer/XpAnimationPlayer
+@onready var currency_anim_player: AnimationPlayer = $XPContainer/CurrencyAnimationPlayer
+@onready var level_layer: Control = $XPContainer
+
+var _currency_anim_progress_internal: float = 0.0
+var currency_anim_start: float = 0.0
+var currency_anim_target: float = 0.0
+var _last_int_currency_ui: int = -1
+var _last_tick_ms_currency: int = 0
+@export var currency_anim_progress: float:
+	set(value):
+		_currency_anim_progress_internal = value
+		var t = clamp(value, 0.0, 1.0)
+		var v = lerp(currency_anim_start, currency_anim_target, t)
+		if currency_label:
+			currency_label.text = str(int(round(v)))
+		var vi = int(round(v))
+		if vi > _last_int_currency_ui and (Time.get_ticks_msec() - _last_tick_ms_currency) >= 50:
+			_last_int_currency_ui = vi
+			_last_tick_ms_currency = Time.get_ticks_msec()
+			if MusicManager and MusicManager.has_method("play_score_tick"):
+				MusicManager.play_score_tick()
+	get:
+		return _currency_anim_progress_internal
+
+var _xp_anim_progress_internal: float = 0.0
+var xp_anim_start: float = 0.0
+var xp_anim_target: float = 0.0
+var xp_anim_max: int = 0
+var _xp_pending_remainder: int = -1
+var _xp_pending_next_max: int = 0
+var _xp_two_phase: bool = false
+var _cached_level: int = 0
+var _pending_currency_target: int = -1
+var _pending_level_up: bool = false
+@export var xp_anim_progress: float:
+	set(value):
+		_xp_anim_progress_internal = value
+		var t = clamp(value, 0.0, 1.0)
+		var v = lerp(xp_anim_start, xp_anim_target, t)
+		if xp_progress_bar:
+			xp_progress_bar.value = v
+		if xp_amount_label:
+			xp_amount_label.text = "%d / %d" % [int(round(v)), xp_anim_max]
+	get:
+		return _xp_anim_progress_internal
 
 var background_service: GenerationService = null
 @onready var notif_ui: Node = $NotificationsLayer/NotifHBox
@@ -38,6 +84,10 @@ func _ready():
 	_connect_level_signals()
 	_initialize_theme()
 	_update_currency_ui()
+	if level_layer:
+		level_layer.visibility_changed.connect(_on_level_layer_visibility_changed)
+	if xp_anim_player:
+		xp_anim_player.animation_finished.connect(_on_xp_anim_finished)
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
@@ -46,9 +96,46 @@ func _connect_level_signals():
 
 func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	level_label.text = "Уровень %d" % new_level
-	xp_progress_bar.max_value = xp_for_next_level
-	xp_progress_bar.value = new_xp
-	xp_amount_label.text = "%d / %d" % [new_xp, xp_for_next_level]
+	var level_up = new_level > _cached_level
+	if not level_layer or not level_layer.is_visible_in_tree():
+		_cached_level = new_level
+		_pending_level_up = level_up
+		if level_up:
+			_xp_pending_remainder = new_xp
+			_xp_pending_next_max = xp_for_next_level
+			_xp_two_phase = true
+		else:
+			_xp_pending_remainder = -1
+			_xp_pending_next_max = xp_for_next_level
+			_xp_two_phase = false
+		return
+	if xp_progress_bar:
+		var was_max = int(xp_progress_bar.max_value)
+		var current_val = float(xp_progress_bar.value)
+		if level_up and xp_anim_player and xp_anim_player.has_animation("XPGain"):
+			xp_anim_max = was_max
+			xp_anim_start = current_val
+			xp_anim_target = float(was_max)
+			xp_anim_progress = 0.0
+			_xp_pending_remainder = new_xp
+			_xp_pending_next_max = xp_for_next_level
+			_xp_two_phase = true
+			xp_anim_player.play("XPGain")
+		else:
+			if level_up and MusicManager and MusicManager.has_method("play_level_up_sound"):
+				MusicManager.play_level_up_sound()
+			xp_progress_bar.max_value = xp_for_next_level
+			xp_anim_max = xp_for_next_level
+			xp_anim_start = current_val
+			xp_anim_target = float(new_xp)
+			xp_anim_progress = 0.0
+			if xp_anim_player and xp_anim_player.has_animation("XPGain"):
+				xp_anim_player.play("XPGain")
+			else:
+				xp_progress_bar.value = new_xp
+				if xp_amount_label:
+					xp_amount_label.text = "%d / %d" % [new_xp, xp_for_next_level]
+	_cached_level = new_level
 	_update_currency_ui()
 
 func _update_level_ui():
@@ -60,6 +147,7 @@ func _update_level_ui():
 	xp_progress_bar.max_value = xp_for_next
 	xp_progress_bar.value = total_xp
 	xp_amount_label.text = "%d / %d" % [total_xp, xp_for_next]
+	_cached_level = level
 	_update_currency_ui()
 
 func _update_currency_ui():
@@ -67,7 +155,99 @@ func _update_currency_ui():
 		currency_label.text = str(PlayerDataManager.get_currency())
 
 func on_currency_changed():
-	_update_currency_ui()
+	if not level_layer or not level_layer.is_visible_in_tree():
+		_pending_currency_target = PlayerDataManager.get_currency()
+		return
+	var target = PlayerDataManager.get_currency()
+	var current_val = 0
+	if currency_label:
+		var txt = String(currency_label.text)
+		if txt.is_valid_int():
+			current_val = int(txt)
+	currency_anim_start = float(current_val)
+	currency_anim_target = float(target)
+	currency_anim_progress = 0.0
+	_last_int_currency_ui = int(round(currency_anim_start))
+	_last_tick_ms_currency = Time.get_ticks_msec()
+	if currency_anim_player and currency_anim_player.has_animation("CurrencyGain"):
+		currency_anim_player.play("CurrencyGain")
+	else:
+		_update_currency_ui()
+
+func _on_xp_anim_finished(anim_name: String):
+	if anim_name == "XPGain" and _xp_two_phase and _xp_pending_remainder >= 0:
+		if MusicManager and MusicManager.has_method("play_level_up_sound"):
+			MusicManager.play_level_up_sound()
+		if xp_progress_bar:
+			xp_progress_bar.max_value = _xp_pending_next_max
+			xp_anim_max = _xp_pending_next_max
+			xp_anim_start = 0.0
+			xp_anim_target = float(_xp_pending_remainder)
+			xp_anim_progress = 0.0
+		_xp_two_phase = false
+		_xp_pending_remainder = -1
+		if xp_anim_player and xp_anim_player.has_animation("XPGain"):
+			xp_anim_player.play("XPGain")
+
+func _on_level_layer_visibility_changed():
+	if not level_layer or not level_layer.is_visible_in_tree():
+		return
+	if _pending_level_up:
+		_pending_level_up = false
+	if _pending_currency_target >= 0:
+		var current_val = 0
+		if currency_label:
+			var txt = String(currency_label.text)
+			if txt.is_valid_int():
+				current_val = int(txt)
+		currency_anim_start = float(current_val)
+		currency_anim_target = float(_pending_currency_target)
+		currency_anim_progress = 0.0
+		_last_int_currency_ui = int(round(currency_anim_start))
+		_last_tick_ms_currency = Time.get_ticks_msec()
+		if currency_anim_player and currency_anim_player.has_animation("CurrencyGain"):
+			currency_anim_player.play("CurrencyGain")
+		else:
+			_update_currency_ui()
+		_pending_currency_target = -1
+	if _xp_pending_remainder >= 0:
+		var new_xp = _xp_pending_remainder
+		var next_max = _xp_pending_next_max
+		_xp_pending_remainder = -1
+		_xp_two_phase = false
+		if xp_progress_bar:
+			var was_max = int(xp_progress_bar.max_value)
+			var current_val = float(xp_progress_bar.value)
+			if xp_anim_player and xp_anim_player.has_animation("XPGain"):
+				xp_anim_max = was_max
+				xp_anim_start = current_val
+				xp_anim_target = float(was_max)
+				xp_anim_progress = 0.0
+				_xp_pending_remainder = new_xp
+				_xp_pending_next_max = next_max
+				_xp_two_phase = true
+				xp_anim_player.play("XPGain")
+			else:
+				xp_progress_bar.max_value = next_max
+				xp_progress_bar.value = new_xp
+				if xp_amount_label:
+					xp_amount_label.text = "%d / %d" % [new_xp, next_max]
+	else:
+		var cur_xp = PlayerDataManager.get_total_xp()
+		var next_max = PlayerDataManager.get_xp_for_next_level()
+		if xp_progress_bar:
+			var current_val = float(xp_progress_bar.value)
+			xp_progress_bar.max_value = next_max
+			xp_anim_max = next_max
+			xp_anim_start = current_val
+			xp_anim_target = float(cur_xp)
+			xp_anim_progress = 0.0
+		if xp_anim_player and xp_anim_player.has_animation("XPGain"):
+			xp_anim_player.play("XPGain")
+		else:
+			xp_progress_bar.value = cur_xp
+			if xp_amount_label:
+				xp_amount_label.text = "%d / %d" % [cur_xp, next_max]
 
 func _initialize_display_settings():
 	_apply_window_settings()
@@ -143,6 +323,7 @@ func _play_time_seconds_to_string(total_seconds: int) -> String:
 func initialize_logic():
 	if MusicManager.has_method("update_volumes_from_settings"):
 		MusicManager.update_volumes_from_settings()
+	_ensure_user_notes_seed()
 
 	achievement_manager = AchievementManager.new()
 	
@@ -167,6 +348,42 @@ func initialize_logic():
 	add_child(background_service)
 	
 
+func _ensure_user_notes_seed():
+	var src = "res://data/notes_template"
+	var dst = "user://notes"
+	var src_dir = DirAccess.open(src)
+	if src_dir == null:
+		return
+	var dst_dir = DirAccess.open(dst)
+	if dst_dir != null:
+		return
+	DirAccess.make_dir_recursive_absolute(dst)
+	_copy_dir_recursive(src, dst)
+
+func _copy_dir_recursive(src: String, dst: String):
+	var da = DirAccess.open(src)
+	if da == null:
+		return
+	DirAccess.make_dir_recursive_absolute(dst)
+	da.list_dir_begin()
+	var name = da.get_next()
+	while name != "":
+		if name != "." and name != "..":
+			var src_path = src + "/" + name
+			var dst_path = dst + "/" + name
+			if da.current_is_dir():
+				_copy_dir_recursive(src_path, dst_path)
+			else:
+				var f = FileAccess.open(src_path, FileAccess.READ)
+				if f:
+					var data = f.get_buffer(f.get_length())
+					f.close()
+					var out = FileAccess.open(dst_path, FileAccess.WRITE)
+					if out:
+						out.store_buffer(data)
+						out.close()
+		name = da.get_next()
+	da.list_dir_end()
 func _date_dict_to_string(date_dict: Dictionary) -> String:
 	if date_dict.has("year") and date_dict.has("month") and date_dict.has("day"):
 		return "%04d-%02d-%02d" % [date_dict.year, date_dict.month, date_dict.day]

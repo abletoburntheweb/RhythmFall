@@ -1,7 +1,7 @@
 [gd_scene load_steps=75 format=3 uid="uid://dj8l7fx26h51g"]
 
 [ext_resource type="Script" uid="uid://d1x5u2u7grlsv" path="res://scenes/achievements/achievement_card.gd" id="1_7c2k7"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="1_fsctk"]
+[ext_resource type="Theme" uid="uid://cxji6npa4lpg6" path="res://ui/theme/app_theme.tres" id="1_fsctk"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="3_cehhg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]

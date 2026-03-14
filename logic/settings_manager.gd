@@ -16,7 +16,8 @@ var default_settings = {
 	"enable_debug_menu": false,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
-	"lane_highlight_enabled": true,
+	"lane_highlight_brightness": 100.0,
+	"note_brightness": 100.0,
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,
@@ -182,11 +183,18 @@ func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
 	_save_settings()
 
-func get_lane_highlight_enabled() -> bool:
-	return bool(settings.get("lane_highlight_enabled", default_settings["lane_highlight_enabled"]))
+func get_lane_highlight_brightness() -> float:
+	return float(settings.get("lane_highlight_brightness", default_settings["lane_highlight_brightness"]))
 
-func set_lane_highlight_enabled(enabled: bool):
-	settings["lane_highlight_enabled"] = enabled
+func set_lane_highlight_brightness(value: float):
+	settings["lane_highlight_brightness"] = clampf(value, 0.0, 100.0)
+	_save_settings()
+
+func get_note_brightness() -> float:
+	return float(settings.get("note_brightness", default_settings["note_brightness"]))
+
+func set_note_brightness(value: float):
+	settings["note_brightness"] = clampf(value, 0.0, 100.0)
 	_save_settings()
 
 

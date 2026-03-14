@@ -4,6 +4,7 @@ extends Node
 signal daily_quests_updated()
 
 var pdm = null
+var _genre_group_map: Dictionary = {}
 
 func set_player_data_manager(pdm_ref):
 	pdm = pdm_ref
@@ -11,6 +12,7 @@ func set_player_data_manager(pdm_ref):
 func ensure_daily_quests_for_today():
 	if pdm == null:
 		return
+	_load_genre_group_map_if_needed()
 	var today = Time.get_date_string_from_system()
 	var current = pdm.data.get("daily_quests", {"date": "", "quests": []})
 	if current.get("date", "") != today:
@@ -75,6 +77,15 @@ func increment_daily_progress(event_name: String, value: int, context: Dictionar
 		var goal = int(q.get("goal", 1))
 		var progress = int(q.get("progress", 0))
 		match event_name:
+			"play_genre_group":
+				var target_group = str(q.get("target_group", "")).strip_edges()
+				var actual_group = str(context.get("group", "")).strip_edges()
+				if actual_group == "":
+					var canonical_genre = str(context.get("genre", "")).to_lower().strip_edges()
+					if canonical_genre != "":
+						actual_group = _genre_group_map.get(canonical_genre, "")
+				if actual_group != "" and target_group != "" and actual_group == target_group:
+					progress = min(goal, progress + value)
 			"accuracy_80":
 				var acc = float(context.get("accuracy", 0.0))
 				if acc >= 80.0:
@@ -130,3 +141,25 @@ func get_daily_quests_completed_total() -> int:
 	if pdm == null:
 		return 0
 	return int(pdm.data.get("daily_quests_completed_total", 0))
+
+func _load_genre_group_map_if_needed():
+	if not _genre_group_map.is_empty():
+		return
+	var user_path = "user://genre_groups.json"
+	var path = user_path if FileAccess.file_exists(user_path) else "res://data/genre_groups.json"
+	if not FileAccess.file_exists(path):
+		return
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return
+	var json_text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(json_text)
+	if not (parsed is Dictionary):
+		return
+	for group_name in parsed:
+		var genres = parsed[group_name]
+		if genres is Array:
+			for g in genres:
+				if g is String:
+					_genre_group_map[g.to_lower()] = group_name

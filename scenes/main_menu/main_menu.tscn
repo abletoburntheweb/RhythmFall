@@ -1,9 +1,8 @@
-[gd_scene load_steps=324 format=3 uid="uid://c8e1wfq8466sn"]
+[gd_scene load_steps=323 format=3 uid="uid://c8e1wfq8466sn"]
 
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
-[ext_resource type="Theme" uid="uid://dq1jeuco1akmf" path="res://ui/theme/app_theme.tres" id="3_uqeha"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -6475,19 +6474,12 @@ offset_right = 1085.0
 offset_bottom = 838.0
 theme_override_constants/separation = 20
 
-[node name="PlayButton" type="Button" parent="ButtonContainer"]
-custom_minimum_size = Vector2(250, 60)
-layout_mode = 2
-theme = ExtResource("3_uqeha")
-theme_type_variation = &"FlatPlayButton"
-text = "ИГРАТЬ"
-
 [node name="SongSelectButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
 layout_mode = 2
 theme = SubResource("Theme_1ur2m")
-theme_type_variation = &"FlatMenuSongButton"
-text = "ВЫБОР ПЕСНИ"
+theme_type_variation = &"FlatPlayButton"
+text = "ИГРАТЬ"
 
 [node name="AchievementsButton" type="Button" parent="ButtonContainer"]
 custom_minimum_size = Vector2(250, 60)
@@ -6621,7 +6613,6 @@ theme = SubResource("Theme_55cdj")
 theme_type_variation = &"DailyTasksProgressBar"
 rounded = true
 
-[connection signal="pressed" from="ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="ButtonContainer/SongSelectButton" to="." method="_on_song_select_pressed"]
 [connection signal="pressed" from="ButtonContainer/AchievementsButton" to="." method="_on_achievements_pressed"]
 [connection signal="pressed" from="ButtonContainer/ProfileButton" to="." method="_on_profile_pressed"]

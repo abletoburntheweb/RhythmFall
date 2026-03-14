@@ -7,11 +7,21 @@ var game_engine = null
 
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
 @onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
-@onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpin
-@onready var lane_highlight_checkbox: CheckBox = $ContentVBox/LaneHighlightCheckBox
+@onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpinBox
+@onready var lane_highlight_brightness_slider: HSlider = $ContentVBox/LaneHighlightBrightnessSlider
+@onready var note_brightness_slider: HSlider = $ContentVBox/NoteBrightnessSlider
 
 func _ready():
-	pass
+	if lane_highlight_brightness_slider:
+		lane_highlight_brightness_slider.min_value = 0.0
+		lane_highlight_brightness_slider.max_value = 100.0
+		lane_highlight_brightness_slider.step = 1.0
+		lane_highlight_brightness_slider.value_changed.connect(_on_lane_highlight_brightness_changed)
+	if note_brightness_slider:
+		note_brightness_slider.min_value = 0.0
+		note_brightness_slider.max_value = 100.0
+		note_brightness_slider.step = 1.0
+		note_brightness_slider.value_changed.connect(_on_note_brightness_changed)
 
 func _select_fps_by_id(id: int):
 	var count = fps_option_button.get_item_count()
@@ -25,7 +35,6 @@ func setup_ui_and_manager(game_engine_node = null):
 	_setup_ui()
 
 func _setup_ui():
-	
 	var current_fps_mode = SettingsManager.get_fps_mode()
 	_select_fps_by_id(current_fps_mode)
 	
@@ -34,7 +43,12 @@ func _setup_ui():
 	var spd = SettingsManager.get_scroll_speed()
 	scroll_speed_spin.set_value_no_signal(spd)
 	
-	lane_highlight_checkbox.set_pressed_no_signal(SettingsManager.get_lane_highlight_enabled())
+	if lane_highlight_brightness_slider:
+		var lh_b = SettingsManager.get_lane_highlight_brightness() if SettingsManager.has_method("get_lane_highlight_brightness") else 1.0
+		lane_highlight_brightness_slider.set_value_no_signal(lh_b)
+	if note_brightness_slider:
+		var n_b = SettingsManager.get_note_brightness() if SettingsManager.has_method("get_note_brightness") else 1.0
+		note_brightness_slider.set_value_no_signal(n_b)
 
 
 func _on_fps_mode_selected(index: int):
@@ -53,10 +67,14 @@ func _on_fullscreen_toggled(enabled: bool):
 func refresh_ui():
 	_setup_ui()
 
-func _on_lane_highlight_toggled(enabled: bool):
-	SettingsManager.set_lane_highlight_enabled(enabled)
-	emit_signal("settings_changed")
-
 func _on_scroll_speed_spin_changed(value: float):
 	SettingsManager.set_scroll_speed(value)
+	emit_signal("settings_changed")
+
+func _on_lane_highlight_brightness_changed(value: float):
+	SettingsManager.set_lane_highlight_brightness(value)
+	emit_signal("settings_changed")
+
+func _on_note_brightness_changed(value: float):
+	SettingsManager.set_note_brightness(value)
 	emit_signal("settings_changed")

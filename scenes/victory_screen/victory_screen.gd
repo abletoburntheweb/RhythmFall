@@ -19,6 +19,233 @@ var perfect_hits_this_level: int = 0
 var hit_notes_this_level: int = 0
 
 var results_manager = null
+var _score_tween: Tween = null
+var _score_display_value_internal: float = 0.0
+var score_display_value: float:
+	set(value):
+		_score_display_value_internal = value
+		if is_instance_valid(score_label):
+			score_label.text = "Счёт: %d" % int(round(_score_display_value_internal))
+	get:
+		return _score_display_value_internal
+var _victory_anim_tween: Tween = null
+var _combo_display_value_internal: float = 0.0
+var combo_display_value: float:
+	set(value):
+		_combo_display_value_internal = value
+		if is_instance_valid(combo_label):
+			combo_label.text = "Комбо: %d" % int(round(_combo_display_value_internal))
+	get:
+		return _combo_display_value_internal
+var _max_combo_display_value_internal: float = 0.0
+var max_combo_display_value: float:
+	set(value):
+		_max_combo_display_value_internal = value
+		if is_instance_valid(max_combo_label):
+			max_combo_label.text = "Макс. комбо: %d" % int(round(_max_combo_display_value_internal))
+	get:
+		return _max_combo_display_value_internal
+var _accuracy_display_value_internal: float = 0.0
+var accuracy_display_value: float:
+	set(value):
+		_accuracy_display_value_internal = value
+		if is_instance_valid(accuracy_label):
+			accuracy_label.text = "Точность: %.1f%%" % _accuracy_display_value_internal
+	get:
+		return _accuracy_display_value_internal
+var _currency_display_value_internal: float = 0.0
+var currency_display_value: float:
+	set(value):
+		_currency_display_value_internal = value
+		if is_instance_valid(currency_label):
+			currency_label.text = "Валюта за уровень: %d" % int(round(_currency_display_value_internal))
+	get:
+		return _currency_display_value_internal
+var _xp_display_value_internal: float = 0.0
+var xp_display_value: float:
+	set(value):
+		_xp_display_value_internal = value
+		if is_instance_valid(xp_label):
+			xp_label.text = "XP за уровень: %d" % int(round(_xp_display_value_internal))
+	get:
+		return _xp_display_value_internal
+var _hit_notes_display_value_internal: float = 0.0
+var hit_notes_display_value: float:
+	set(value):
+		_hit_notes_display_value_internal = value
+		if is_instance_valid(hit_notes_label):
+			hit_notes_label.text = "Попаданий: %d" % int(round(_hit_notes_display_value_internal))
+	get:
+		return _hit_notes_display_value_internal
+var _missed_notes_display_value_internal: float = 0.0
+var missed_notes_display_value: float:
+	set(value):
+		_missed_notes_display_value_internal = value
+		if is_instance_valid(missed_notes_label):
+			missed_notes_label.text = "Промахов: %d" % int(round(_missed_notes_display_value_internal))
+	get:
+		return _missed_notes_display_value_internal
+var _count_progress_internal: float = 0.0
+var count_kind: String = ""
+var count_start: float = 0.0
+var count_target: float = 0.0
+var _progress_owner_kind: String = ""
+var _prev_count_kind: String = ""
+var _last_tick_ms: int = 0
+var _last_int_score: int = -1
+var _last_int_currency: int = -1
+var _last_int_xp: int = -1
+var _last_int_combo: int = -1
+var _last_int_max_combo: int = -1
+var _last_int_hit: int = -1
+var _last_int_miss: int = -1
+var _last_acc_tenths: int = -1
+@export var count_progress: float:
+	set(value):
+		if count_kind != _progress_owner_kind:
+			_progress_owner_kind = count_kind
+			_count_progress_internal = value
+		else:
+			if value < _count_progress_internal:
+				value = _count_progress_internal
+			_count_progress_internal = value
+		var t = clamp(_count_progress_internal, 0.0, 1.0)
+		var v = lerp(count_start, count_target, t)
+		if t >= 0.999:
+			v = count_target
+		match count_kind:
+			"score":
+				score_display_value = v
+				var vi = int(round(v))
+				if vi > _last_int_score and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_score = vi
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"combo":
+				combo_display_value = v
+				var vc = int(round(v))
+				if vc > _last_int_combo and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_combo = vc
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"max_combo":
+				max_combo_display_value = v
+				var vm = int(round(v))
+				if vm > _last_int_max_combo and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_max_combo = vm
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"accuracy":
+				accuracy_display_value = v
+				var at = int(round(v * 10.0))
+				if at > _last_acc_tenths and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_acc_tenths = at
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"hit":
+				hit_notes_display_value = v
+				var vh = int(round(v))
+				if vh > _last_int_hit and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_hit = vh
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"miss":
+				missed_notes_display_value = v
+				var vm2 = int(round(v))
+				if vm2 > _last_int_miss and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_miss = vm2
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"currency":
+				currency_display_value = v
+				var vi2 = int(round(v))
+				if vi2 > _last_int_currency and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_currency = vi2
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+			"xp":
+				xp_display_value = v
+				var vi3 = int(round(v))
+				if vi3 > _last_int_xp and (Time.get_ticks_msec() - _last_tick_ms) >= 50:
+					_last_int_xp = vi3
+					_last_tick_ms = Time.get_ticks_msec()
+					if MusicManager and MusicManager.has_method("play_score_tick"):
+						MusicManager.play_score_tick()
+	get:
+		return _count_progress_internal
+func set_count_kind(kind: String) -> void:
+	if _prev_count_kind != "":
+		var prev_target := 0.0
+		match _prev_count_kind:
+			"score":
+				prev_target = float(score)
+				score_display_value = prev_target
+			"combo":
+				prev_target = float(combo)
+				combo_display_value = prev_target
+			"max_combo":
+				prev_target = float(max_combo)
+				max_combo_display_value = prev_target
+			"accuracy":
+				prev_target = float(accuracy)
+				accuracy_display_value = prev_target
+			"hit":
+				prev_target = float(hit_notes_this_level)
+				hit_notes_display_value = prev_target
+			"miss":
+				prev_target = float(calculated_missed_notes)
+				missed_notes_display_value = prev_target
+			"currency":
+				prev_target = float(earned_currency)
+				currency_display_value = prev_target
+			"xp":
+				prev_target = float(earned_xp)
+				xp_display_value = prev_target
+	count_kind = kind
+	match kind:
+		"score":
+			count_start = score_display_value
+			count_target = float(score)
+		"combo":
+			count_start = combo_display_value
+			count_target = float(combo)
+		"max_combo":
+			count_start = max_combo_display_value
+			count_target = float(max_combo)
+		"accuracy":
+			count_start = accuracy_display_value
+			count_target = float(accuracy)
+		"hit":
+			count_start = hit_notes_display_value
+			count_target = float(hit_notes_this_level)
+		"miss":
+			count_start = missed_notes_display_value
+			count_target = float(calculated_missed_notes)
+		"currency":
+			count_start = currency_display_value
+			count_target = float(earned_currency)
+		"xp":
+			count_start = xp_display_value
+			count_target = float(earned_xp)
+	_prev_count_kind = kind
+
+var victory_animation_player: AnimationPlayer = null
+
+@export var grade_color_SS: Color = Color("#F2B35A")
+@export var grade_color_S: Color = Color("#C8D2E6")
+@export var grade_color_A: Color = Color("#6B91D2")
+@export var grade_color_B: Color = Color("#59D1BE")
+@export var grade_color_C: Color = Color("#A58EDB")
+@export var grade_color_D: Color = Color("#D56B87")
+@export var grade_color_F: Color = Color("#8A2F39")
+@export var grade_color_SS_repeat: Color = Color("#2EE59D")
 
 @onready var background: ColorRect = $Background
 @onready var title_label: Label = $TitleLabel
@@ -35,11 +262,16 @@ var results_manager = null
 @onready var missed_notes_label: Label = $StatsFrame/MissedNotesLabel 
 @onready var replay_button: Button = $ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
+@onready var countups_delay_timer: Timer = $CountupsDelayTimer
 
 
 func _ready():
 	replay_button.pressed.connect(_on_replay_button_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
+	
+	victory_animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if victory_animation_player:
+		victory_animation_player.animation_finished.connect(_on_victory_anim_finished)
 	
 	if currency_label:
 		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -48,6 +280,9 @@ func _ready():
 	if xp_label:
 		xp_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		xp_label.gui_input.connect(_on_xp_label_clicked)
+	
+	if countups_delay_timer:
+		countups_delay_timer.timeout.connect(_on_countups_delay_timer_timeout)
 
 func _calculate_grade() -> String:
 	if accuracy == 100.0: 
@@ -67,14 +302,14 @@ func _calculate_grade() -> String:
 		
 func _get_grade_color(grade: String) -> Color:
 	match grade:
-		"SS": return Color("#F2B35A")
-		"S": return Color("#C8D2E6")
-		"A": return Color("#6B91D2")
-		"B": return Color("#59D1BE")
-		"C": return Color("#A58EDB")
-		"D": return Color("#D56B87")
-		"F": return Color("#8A2F39")
-		_: return Color("#FFFFFF")
+		"SS": return grade_color_SS
+		"S": return grade_color_S
+		"A": return grade_color_A
+		"B": return grade_color_B
+		"C": return grade_color_C
+		"D": return grade_color_D
+		"F": return grade_color_F
+		_: return Color.WHITE
 
 func _calculate_xp_new() -> int:
 	var base_xp = sqrt(float(score)) * 1.2 
@@ -231,21 +466,29 @@ func _calculate_currency_new() -> int:
 
 func _deferred_update_ui():
 	if is_instance_valid(song_label):
-		var artist = str(song_info.get("artist", "Неизвестен"))
-		var title = str(song_info.get("title", "Без названия"))
-		song_label.text = "%s — %s" % [artist, title]
+		var artist = String(song_info.get("artist", "Неизвестен"))
+		var title = String(song_info.get("title", "Без названия"))
+		artist = artist.strip_edges().replace("\r", " ").replace("\n", " ").replace("\t", " ").replace("\u200B", "").replace("\u2028", " ").replace("\u2029", " ")
+		title = title.strip_edges().replace("\r", " ").replace("\n", " ").replace("\t", " ").replace("\u200B", "").replace("\u2028", " ").replace("\u2029", " ")
+		artist = " ".join(artist.split(" ", false))
+		title = " ".join(title.split(" ", false))
+		song_label.text = "%s\u00A0—\u00A0%s" % [artist, title]
 	
 	if is_instance_valid(score_label):
-		score_label.text = "Счёт: %d" % score  
+		score_display_value = 0.0
+		_last_int_score = 0
 		
 	if is_instance_valid(combo_label):
-		combo_label.text = "Комбо: %d" % combo  
+		combo_display_value = 0.0
+		_last_int_combo = 0
 	
 	if is_instance_valid(max_combo_label):
-		max_combo_label.text = "Макс. комбо: %d" % max_combo 
+		max_combo_display_value = 0.0
+		_last_int_max_combo = 0
 	
 	if is_instance_valid(accuracy_label):
-		accuracy_label.text = "Точность: %.1f%%" % accuracy  
+		accuracy_display_value = 0.0
+		_last_acc_tenths = 0
 
 	if is_instance_valid(grade_label):
 		var grade = _calculate_grade()
@@ -257,20 +500,25 @@ func _deferred_update_ui():
 			var best_map = PlayerDataManager.data.get("best_grades_per_track", {})
 			var best_for_track = str(best_map.get(song_path_for_color, ""))
 			if best_for_track == "SS" and grade == "SS":
-				grade_label.modulate = Color("#2EE59D")
+				grade_label.modulate = grade_color_SS_repeat
+		grade_label.visible = false
 	
 	if is_instance_valid(currency_label):
-		currency_label.text = "Валюта за уровень: %d" % earned_currency
+		currency_display_value = 0.0
+		_last_int_currency = 0
 		currency_label.modulate = Color.GOLD
 
 	if is_instance_valid(xp_label):
-		xp_label.text = "XP за уровень: %d" % earned_xp
+		xp_display_value = 0.0
+		_last_int_xp = 0
 		xp_label.modulate = Color.CYAN  
 
 	if is_instance_valid(hit_notes_label):
-		hit_notes_label.text = "Попаданий: %d" % hit_notes_this_level 
+		hit_notes_display_value = 0.0
+		_last_int_hit = 0
 	if is_instance_valid(missed_notes_label):
-		missed_notes_label.text = "Промахов: %d" % calculated_missed_notes
+		missed_notes_display_value = 0.0
+		_last_int_miss = 0
 
 	PlayerDataManager.add_hit_notes(hit_notes_this_level)
 	PlayerDataManager.add_missed_notes(calculated_missed_notes)
@@ -310,6 +558,7 @@ func _deferred_update_ui():
 		var grade_for_result = _calculate_grade()
 		var grade_color_for_result = _get_grade_color(grade_for_result)
 		var result_datetime_for_result = Time.get_datetime_string_from_system(true, true)
+		var mode_for_result = str(song_info.get("mode", ""))
 		results_manager.save_result_for_song(
 			song_info.get("path", ""), 
 			instrument_for_result,          
@@ -317,7 +566,8 @@ func _deferred_update_ui():
 			accuracy,                  
 			grade_for_result,                   
 			grade_color_for_result,              
-			result_datetime_for_result           
+			result_datetime_for_result,
+			mode_for_result
 		)
 
 	var song_path = song_info.get("path", "")
@@ -379,3 +629,51 @@ func _deferred_update_ui():
 		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)
+	_start_all_countups_and_grade_reveal()
+
+func _start_all_countups_and_grade_reveal():
+	if MusicManager and MusicManager.has_method("play_level_complete_sound"):
+		MusicManager.play_level_complete_sound()
+	if victory_animation_player and victory_animation_player.has_animation("VictoryIntro"):
+		victory_animation_player.play("VictoryIntro")
+	if countups_delay_timer:
+		countups_delay_timer.start()
+	else:
+		_on_countups_delay_timer_timeout()
+
+func _on_countups_delay_timer_timeout():
+	if victory_animation_player and victory_animation_player.has_animation("AllCountupsSeq"):
+		victory_animation_player.play("AllCountupsSeq")
+	else:
+		score_display_value = float(score)
+		combo_display_value = float(combo)
+		max_combo_display_value = float(max_combo)
+		accuracy_display_value = float(accuracy)
+		hit_notes_display_value = float(hit_notes_this_level)
+		missed_notes_display_value = float(calculated_missed_notes)
+		currency_display_value = float(earned_currency)
+		xp_display_value = float(earned_xp)
+		_reveal_grade()
+
+func _reveal_grade():
+	if not is_instance_valid(grade_label):
+		return
+	grade_label.visible = true
+	if MusicManager and MusicManager.has_method("play_grade_pop_sound"):
+		MusicManager.play_grade_pop_sound()
+	if victory_animation_player and victory_animation_player.has_animation("GradePop"):
+		grade_label.scale = Vector2(1.0, 1.0)
+		victory_animation_player.play("GradePop")
+	else:
+		grade_label.scale = Vector2(1.0, 1.0)
+
+func _on_victory_anim_finished(anim_name: String):
+	if anim_name == "AllCountupsSeq":
+		score_display_value = float(score)
+		combo_display_value = float(combo)
+		max_combo_display_value = float(max_combo)
+		accuracy_display_value = float(accuracy)
+		hit_notes_display_value = float(hit_notes_this_level)
+		missed_notes_display_value = float(calculated_missed_notes)
+		currency_display_value = float(earned_currency)
+		xp_display_value = float(earned_xp)

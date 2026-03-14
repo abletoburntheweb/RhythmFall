@@ -92,7 +92,12 @@ func spawn_notes():
 			note_object = Note.new(lane, y_spawn, game_time, "DrumNote")
 		else:
 			note_object = Note.new(lane, y_spawn, game_time, "DefaultNote")
-		visual_rect.color = _get_color_for_note(lane, note_object.color)
+		var base_color = _get_color_for_note(lane, note_object.color)
+		var nb := 100.0
+		if SettingsManager and SettingsManager.has_method("get_note_brightness"):
+			nb = float(SettingsManager.get_note_brightness())
+		var adj_alpha = clamp(base_color.a * (nb / 100.0), 0.0, 1.0)
+		visual_rect.color = Color(base_color.r, base_color.g, base_color.b, adj_alpha)
 
 		if note_object:
 			note_object.time = note_time
@@ -124,6 +129,8 @@ func update_notes():
 			if game_screen.score_manager:
 				game_screen.score_manager.add_miss_hit()
 				MusicManager.play_miss_hit_sound()  
+				if game_screen and game_screen.has_method("_combo_shake_and_dim"):
+					game_screen._combo_shake_and_dim()
 			var current_accuracy = game_screen.score_manager.get_accuracy()
 			print("[NoteManager] Нота в линии %d пропущена (y=%.2f), вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, note.y, current_accuracy])
 

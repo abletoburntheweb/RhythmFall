@@ -72,6 +72,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 				if changed:
 					save_achievements(user_path)
 				new_mastery_achievements.clear()
+				_apply_achievement_migrations()
 			else:
 				printerr("[AchievementManager] Поле 'achievements' в JSON не является массивом.")
 				achievements = []
@@ -82,6 +83,31 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 		printerr("[AchievementManager] Не удалось открыть файл ", open_path)
 		achievements = []
 	_rebuild_index()
+
+func _apply_achievement_migrations():
+	var updates = {
+		39: 150000,
+		40: 300000,
+		41: 600000,
+		42: 1200000,
+		11: 5000,
+		12: 15000,
+		13: 50000,
+		14: 2000,
+		15: 5000,
+		16: 15000
+	}
+	for i in range(achievements.size()):
+		var a: Dictionary = achievements[i]
+		var id_val = int(a.get("id", -1))
+		if updates.has(id_val):
+			var new_total = int(updates[id_val])
+			var old_total = int(a.get("total", 1))
+			if new_total > old_total:
+				var cur = int(a.get("current", 0))
+				a.total = new_total
+				a.current = min(cur, new_total)
+				achievements[i] = a
 
 func save_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 	var user_path = "user://achievements_data.json"
@@ -447,6 +473,18 @@ func check_note_researcher_achievement():
 			_perform_unlock(achievement)
 			break 				
 			
+func check_first_bpm_achievement():
+	for achievement in achievements:
+		if achievement.id == 75 and not achievement.get("unlocked", false):
+			_perform_unlock(achievement)
+			break
+			
+func check_cancel_analysis_achievement():
+	for achievement in achievements:
+		if achievement.id == 76 and not achievement.get("unlocked", false):
+			_perform_unlock(achievement)
+			break
+			
 func reset_all_achievements_and_player_data(player_data_mgr_override = null):
 	var pdm = player_data_mgr_override if player_data_mgr_override != null else player_data_mgr
 	if not pdm:
@@ -694,7 +732,12 @@ func check_genre_achievements(track_stats_mgr = null):
 		"classical_orchestral": 0,
 		"jazz_soul": 0,
 		"folk_world": 0,
-		"industrial_noise": 0
+		"industrial_noise": 0,
+		"industrial": 0,
+		"reggae_dub": 0,
+		"blues": 0,
+		"folk": 0,
+		"dance_classics": 0
 	}
 
 	for canonical_genre in raw_counts:
@@ -713,7 +756,12 @@ func check_genre_achievements(track_stats_mgr = null):
 		71: "classical_orchestral",
 		72: "jazz_soul",
 		73: "folk_world",
-		74: "industrial_noise"
+		74: "industrial_noise",
+		77: "industrial",
+		78: "reggae_dub",
+		79: "blues",
+		80: "folk",
+		81: "dance_classics"
 	}
 
 	for ach_id in genre_achievements:
