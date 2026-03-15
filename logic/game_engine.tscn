@@ -130,13 +130,13 @@ theme_override_font_sizes/font_size = 12
 text = "FPS 140"
 
 [node name="VersionLabel" type="Label" parent="FPSLayer"]
-offset_left = 1762.0
+offset_left = 1768.0
 offset_top = 1063.0
 offset_right = 1920.0
 offset_bottom = 1080.0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.0.0 • Release (Build 400)"
+text = "v1.0.1 • Release (Build 401)"
 
 [node name="XPContainer" type="Control" parent="."]
 anchors_preset = 0

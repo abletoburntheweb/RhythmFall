@@ -1,7 +1,7 @@
 [gd_scene load_steps=239 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
-[ext_resource type="Theme" uid="uid://ctcvp3vub24wi" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -4778,10 +4778,10 @@ text = "Скорость движения нот"
 [node name="ScrollSpeedSpinBox" type="SpinBox" parent="ContentVBox/ScrollSpeed"]
 layout_mode = 2
 theme = ExtResource("2_gfom4")
-min_value = 1.0
+min_value = 6.0
 max_value = 20.0
 step = 0.1
-value = 6.0
+value = 10.0
 
 [node name="LaneHighlightBrightnessLabel" type="Label" parent="ContentVBox"]
 layout_mode = 2

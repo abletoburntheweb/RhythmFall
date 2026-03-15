@@ -83,6 +83,7 @@ func _ready():
 	_initialize_display_settings()
 	_connect_level_signals()
 	_initialize_theme()
+	_apply_console_state()
 	_update_currency_ui()
 	if level_layer:
 		level_layer.visibility_changed.connect(_on_level_layer_visibility_changed)
@@ -258,6 +259,16 @@ func _initialize_theme():
 	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
 	theme = app_theme
 	ResourceSaver.save(app_theme, theme_path)
+
+func _apply_console_state():
+	var console_node = get_tree().root.get_node_or_null("Console")
+	if console_node:
+		if SettingsManager.get_enable_debug_menu():
+			if console_node.has_method("enable"):
+				console_node.enable()
+		else:
+			if console_node.has_method("disable"):
+				console_node.disable()
 
 func _update_fps_visibility():
 	match SettingsManager.get_fps_mode():

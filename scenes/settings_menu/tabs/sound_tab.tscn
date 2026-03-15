@@ -2447,7 +2447,8 @@ text = "Калибровка аудио"
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Осталось 10 нажатий"
+text = "Осталось 10 нажатий
+Esc — выйти из калибровки"
 
 [node name="ResetCalibrationButton" type="Button" parent="ContentVBox"]
 layout_mode = 2
@@ -2472,10 +2473,10 @@ cancel_button_text = "Отмена"
 [connection signal="value_changed" from="ContentVBox/MenuMusicVolumeSlider" to="." method="_on_menu_music_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
 [connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_on_sfx_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
 [connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
+[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
 [connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
+[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
 [connection signal="value_changed" from="ContentVBox/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
 [connection signal="pressed" from="ContentVBox/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]

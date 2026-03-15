@@ -303,16 +303,14 @@ func _edit_bpm():
 	_edit_context["type"] = "bpm"
 	var dialog = AcceptDialog.new()
 	dialog.title = "Редактировать BPM"
-	dialog.dialog_text = "Введите новый BPM (60-200):"
-	var spin_box = SpinBox.new()
-	spin_box.set_min(60)
-	spin_box.set_max(200)
-	spin_box.set_step(1)
-	spin_box.value = old_bpm_int if old_bpm_int != -1 else 120
-	spin_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_edit_context["spin_box"] = spin_box
+	dialog.dialog_text = "Введите новый BPM (пусто — очистить; минимум 90):"
+	var line_edit = LineEdit.new()
+	line_edit.text = str(old_bpm_int) if old_bpm_int != -1 else ""
+	line_edit.placeholder_text = "Например: 120"
+	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_edit_context["line_edit"] = line_edit
 	var vbox_container = VBoxContainer.new()
-	vbox_container.add_child(spin_box)
+	vbox_container.add_child(line_edit)
 	dialog.add_child(vbox_container)
 	dialog.confirmed.connect(_on_edit_bpm_confirmed)
 	dialog.close_requested.connect(_on_dialog_closed)
@@ -389,7 +387,7 @@ func _on_genre_selected_from_picker(primary_genre: String, all_genres: Array):
 
 func _on_edit_bpm_confirmed():
 	var dialog = _edit_context["dialog"]
-	var spin_box = _edit_context["spin_box"]
+	var line_edit = _edit_context["line_edit"]
 	var song_data = _edit_context["song_data"]
 	var selected_item_list_index = _edit_context["selected_index"]
 	var old_bpm = song_data.get("bpm", "Н/Д")
@@ -398,15 +396,23 @@ func _on_edit_bpm_confirmed():
 		old_bpm_int = old_bpm
 	elif old_bpm is String and old_bpm.is_valid_int():
 		old_bpm_int = old_bpm.to_int()
-	if dialog and spin_box:
-		var new_bpm_int = int(spin_box.value)
-		if new_bpm_int != old_bpm_int:
-			var new_bpm_str = str(new_bpm_int)
-			song_data["bpm"] = new_bpm_str
-			var song_file_path = song_data["path"]
-			var fields_to_update = {"bpm": new_bpm_str}
-			SongLibrary.update_metadata(song_file_path, fields_to_update)
-			emit_signal("song_edited", song_data, selected_item_list_index)
+	if dialog and line_edit:
+		var text: String = String(line_edit.text).strip_edges()
+		var song_file_path = song_data.get("path", "")
+		if text == "":
+			if old_bpm != "Н/Д":
+				song_data["bpm"] = "Н/Д"
+				SongLibrary.update_metadata(song_file_path, {"bpm": "Н/Д"})
+				emit_signal("song_edited", song_data, selected_item_list_index)
+		elif text.is_valid_int():
+			var new_bpm_int = int(text)
+			if new_bpm_int < 90:
+				new_bpm_int = 90
+			if new_bpm_int != old_bpm_int:
+				var new_bpm_str = str(new_bpm_int)
+				song_data["bpm"] = new_bpm_str
+				SongLibrary.update_metadata(song_file_path, {"bpm": new_bpm_str})
+				emit_signal("song_edited", song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _cleanup_edit_context():

@@ -12,7 +12,7 @@ var default_settings = {
 	"preview_volume": 30.0,
 	"timing_offset_ms": 0,
 	"fps_mode": 0, 
-	"fullscreen": false,
+	"fullscreen": true,
 	"enable_debug_menu": false,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
@@ -29,7 +29,7 @@ var default_settings = {
 	"last_generation_mode": "basic",
 	"last_generation_lanes": 4,
 	"use_stems_in_generation": true,
-	"scroll_speed": 6.0
+	"scroll_speed": 10.0
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
@@ -149,10 +149,11 @@ func set_preview_volume(volume: float):
 	settings["preview_volume"] = clampf(volume, 0.0, 100.0) 
 
 func get_scroll_speed() -> float:
-	return float(settings.get("scroll_speed", default_settings["scroll_speed"]))
+	var v = float(settings.get("scroll_speed", default_settings["scroll_speed"]))
+	return clampf(v, 6.0, 20.0)
 
 func set_scroll_speed(value: float):
-	settings["scroll_speed"] = clampf(value, 1.0, 20.0)
+	settings["scroll_speed"] = clampf(value, 6.0, 20.0)
 	_save_settings()
 
 func get_timing_offset_ms() -> int:

@@ -346,6 +346,8 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 		if field_name == "cover":
 			continue
 		var new_val = updated_fields[field_name]
+		if typeof(new_val) == TYPE_STRING:
+			new_val = String(new_val).strip_edges()
 		var old_val = _metadata_cache[song_file_path].get(field_name, null)
 		if str(old_val) != str(new_val):
 			_metadata_cache[song_file_path][field_name] = new_val
@@ -409,6 +411,17 @@ func _load_metadata():
 	for key in _metadata_cache.keys():
 		_metadata_cache[key].erase("cover")
 		_metadata_cache[key].erase("metronome_offset")
+	var changed_local := false
+	for k in _metadata_cache.keys():
+		var rec: Dictionary = _metadata_cache[k]
+		for f in ["title","artist","year","duration","primary_genre","bpm","genres"]:
+			if rec.has(f) and typeof(rec[f]) == TYPE_STRING:
+				var v := String(rec[f]).strip_edges()
+				if v != rec[f]:
+					rec[f] = v
+					changed_local = true
+	if changed_local:
+		_save_metadata()
 	_merge_defaults_into_user_cache()
 	_save_metadata()
 

@@ -441,6 +441,10 @@ func _scroll_to(pos: int):
 		sc.scroll_vertical = clamp(pos, 0, max_val if max_val > 0 else pos)
 
 func _unhandled_input(event):
+	if ((event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) or event.is_action_pressed("ui_cancel")):
+		accept_event()
+		_on_back_pressed()
+		return
 	if event is InputEventKey and event.pressed:
 		var owner = get_viewport().gui_get_focus_owner()
 		if owner and (owner is LineEdit or owner is OptionButton):

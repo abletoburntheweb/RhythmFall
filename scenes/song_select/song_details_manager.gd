@@ -62,19 +62,19 @@ func _load_audio_stream_for_path(p: String) -> AudioStream:
 func update_details(song_data: Dictionary):
 	
 	if title_label:
-		title_label.text = "Название: " + song_data.get("title", "Н/Д")
+		title_label.text = "Название: " + String(song_data.get("title", "Н/Д")).strip_edges()
 	if artist_label:
-		artist_label.text = "Исполнитель: " + song_data.get("artist", "Н/Д")
+		artist_label.text = "Исполнитель: " + String(song_data.get("artist", "Н/Д")).strip_edges()
 	if year_label:
-		year_label.text = "Год: " + song_data.get("year", "Н/Д")
+		year_label.text = "Год: " + String(song_data.get("year", "Н/Д")).strip_edges()
 	if bpm_label:
-		bpm_label.text = "BPM: " + song_data.get("bpm", "Н/Д")
+		bpm_label.text = "BPM: " + String(song_data.get("bpm", "Н/Д")).strip_edges()
 	_update_duration_if_unknown(song_data)
 	if title_label or artist_label or year_label:
 		_apply_tags_if_needed(song_data)
 	
 	if primary_genre_label:
-		var genre = song_data.get("primary_genre", "Н/Д")
+		var genre = String(song_data.get("primary_genre", "Н/Д")).strip_edges()
 		if genre == "unknown":
 			genre = "Н/Д"
 		primary_genre_label.text = "Жанр: " + genre
@@ -132,32 +132,14 @@ func _get_fallback_cover_texture():
 	var random_index = rng.randi_range(1, 7)
 	var fallback_cover_filename = "cover%d.png" % random_index
 	var fallback_cover_path = "res://assets/shop/covers/%s/%s" % [folder_name, fallback_cover_filename]
-
-	if FileAccess.file_exists(fallback_cover_path):
-		var image = Image.new()
-		var error = image.load(fallback_cover_path)
-		if error == OK:
-			var texture = ImageTexture.create_from_image(image)
-			if texture:
-				return texture
-			else:
-				printerr("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для: " + fallback_cover_path)
-		else:
-			printerr("SongDetailsManager.gd: Ошибка загрузки Image из файла (%d) : %s" % [error, fallback_cover_path])
-	else:
-		printerr("SongDetailsManager.gd: Файл резервной обложки не найден: " + fallback_cover_path)
-		var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
-		if fallback_cover_path != fallback_fallback_path and FileAccess.file_exists(fallback_fallback_path):
-			var image_ff = Image.new()
-			var error_ff = image_ff.load(fallback_fallback_path)
-			if error_ff == OK:
-				var texture_ff = ImageTexture.create_from_image(image_ff)
-				if texture_ff:
-					return texture_ff
-				else:
-					printerr("SongDetailsManager.gd: Ошибка создания ImageTexture из Image для запасного файла: " + fallback_fallback_path)
-			else:
-				printerr("SongDetailsManager.gd: Ошибка загрузки Image из запасного файла (%d) : %s" % [error_ff, fallback_fallback_path])
+	var tex = ResourceLoader.load(fallback_cover_path)
+	if tex and tex is Texture2D:
+		return tex
+	var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
+	if fallback_cover_path != fallback_fallback_path:
+		var tex2 = ResourceLoader.load(fallback_fallback_path)
+		if tex2 and tex2 is Texture2D:
+			return tex2
 
 	return null
 

@@ -6,6 +6,7 @@ var transitions = null
 var is_game_open = false
 
 var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
+@onready var _exit_dialog: ConfirmationDialog = $ExitConfirmDialog
 
 func _ready():
 	MusicManager.play_menu_music()
@@ -105,3 +106,19 @@ func _render_daily_quests():
 			item.show() 
 		else:
 			item.hide()
+
+func _show_exit_dialog():
+	if _exit_dialog:
+		if MusicManager and MusicManager.has_method("play_cancel_sound"):
+			MusicManager.play_cancel_sound()
+		_exit_dialog.popup_centered()
+
+func _on_exit_confirmed():
+	if transitions:
+		MusicManager.stop_music()
+		transitions.exit_game()
+
+func _unhandled_input(event):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_show_exit_dialog()
+		get_viewport().set_input_as_handled()

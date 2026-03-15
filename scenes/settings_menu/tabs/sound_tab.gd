@@ -101,13 +101,15 @@ func _start_calibration():
 	_tap_offsets_ms.clear()
 	_taps_remaining = _taps_needed
 	calibration_status_label.visible = true
-	calibration_status_label.text = "Осталось %d нажатий" % _taps_remaining
+	_update_calibration_status_text()
 	_beat_index = 0
 	_metronome_start_time = Time.get_ticks_msec() / 1000.0
 	_calibration_timer.wait_time = _beat_interval
 	_calibration_timer.start()
 	_on_metronome_tick()
 	start_calibration_button.text = "Остановить калибровку"
+	start_calibration_button.release_focus()
+	start_calibration_button.focus_mode = Control.FOCUS_NONE
 
 	MusicManager.set_metronome_volume(SettingsManager.get_metronome_volume())
 	if MusicManager.has_method("pause_music"):
@@ -119,6 +121,7 @@ func _stop_calibration():
 		_calibration_timer.stop()
 	calibration_status_label.visible = false
 	start_calibration_button.text = "Калибровка аудио"
+	start_calibration_button.focus_mode = Control.FOCUS_ALL
 	if MusicManager.has_method("resume_music"):
 		MusicManager.resume_music()
 
@@ -128,6 +131,7 @@ func _finish_calibration():
 		_calibration_timer.stop()
 	calibration_status_label.visible = false
 	start_calibration_button.text = "Калибровка аудио"
+	start_calibration_button.focus_mode = Control.FOCUS_ALL
 	if _tap_offsets_ms.size() > 0:
 		_tap_offsets_ms.sort()
 		var trimmed = _tap_offsets_ms.duplicate()
@@ -205,6 +209,15 @@ func _input(event):
 	if not _is_calibrating:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_stop_calibration()
+			if get_viewport():
+				get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			if get_viewport():
+				get_viewport().set_input_as_handled()
+			return
 		if event.keycode != _lane0_scancode:
 			return
 		var now := Time.get_ticks_msec() / 1000.0
@@ -215,13 +228,21 @@ func _input(event):
 		var offset_ms := offset_sec * 1000.0
 		_tap_offsets_ms.append(offset_ms)
 		_taps_remaining = max(0, _taps_remaining - 1)
-		calibration_status_label.text = "Осталось %d нажатий" % _taps_remaining
+		_update_calibration_status_text()
 		if _taps_remaining <= 0:
 			_finish_calibration()
 
 func refresh_ui():
 	_setup_ui()
 	_apply_initial_volumes()
+
+func _update_calibration_status_text():
+	var key_text := ""
+	if SettingsManager and SettingsManager.has_method("get_key_text_for_lane"):
+		key_text = SettingsManager.get_key_text_for_lane(0)
+	else:
+		key_text = str(_lane0_scancode)
+	calibration_status_label.text = "Осталось %d нажатий\nНажимайте %s в такт метронома\nEsc — выйти из калибровки" % [_taps_remaining, key_text]
 
 func _on_reset_calibration_pressed():
 	if reset_calibration_confirm_dialog:

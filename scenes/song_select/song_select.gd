@@ -302,8 +302,14 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 				current_selected_song_data = song_data.duplicate(true)
 			else:
 				current_selected_song_data = persisted.duplicate(true)
+			var cur_bpm = String(current_selected_song_data.get("bpm", "")).strip_edges()
+			if cur_bpm == "":
+				current_selected_song_data["bpm"] = "Н/Д"
+				if path != "":
+					SongLibrary.update_metadata(path, {"bpm": "Н/Д"})
 			current_displayed_song_path = path
 			song_details_manager.update_details(current_selected_song_data)
+			_apply_bpm_dependent_ui()
 
 		if current_selected_song_data.get("path") == song_data.get("path"):
 			var song_path = song_data.get("path", "")
@@ -315,10 +321,38 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 						break
 			if latest.is_empty():
 				latest = song_data.duplicate(true)
+			var latest_bpm = String(latest.get("bpm", "")).strip_edges()
+			if latest_bpm == "":
+				latest["bpm"] = "Н/Д"
+				if song_path != "":
+					SongLibrary.update_metadata(song_path, {"bpm": "Н/Д"})
 			current_selected_song_data = latest
 			song_details_manager.update_details(latest)
+			_apply_bpm_dependent_ui()
 	else:
 		song_list_manager.populate_items_grouped()
+
+func _apply_bpm_dependent_ui():
+	var song_bpm = current_selected_song_data.get("bpm", "Н/Д")
+	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
+		analyze_bpm_button.text = "Вычислить BPM"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сначала вычислите BPM"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+		$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
+	else:
+		analyze_bpm_button.text = "BPM вычислен"
+		if _check_if_notes_exist_for_current_settings():
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+		if _check_if_notes_exist_for_current_settings():
+			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false
+			song_details_manager._update_play_button_state()
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = true
+			song_details_manager._update_play_button_state()
+	_apply_background_status_ui()
 
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	var enriched_song_data = song_data.duplicate()
@@ -330,6 +364,10 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		if not metadata.is_empty():
 			for key in metadata:
 				enriched_song_data[key] = metadata[key]
+		var bpm_val := str(enriched_song_data.get("bpm", "")).strip_edges()
+		if bpm_val == "":
+			enriched_song_data["bpm"] = "Н/Д"
+			SongLibrary.update_metadata(song_path, {"bpm": "Н/Д"})
 	
 	current_selected_song_data = enriched_song_data
 	song_details_manager.stop_preview()
