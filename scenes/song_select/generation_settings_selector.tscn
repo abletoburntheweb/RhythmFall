@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
 
 [ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
-[ext_resource type="Theme" uid="uid://dt7b2e8ljbcg4" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
+[ext_resource type="Theme" uid="uid://1c5ycmlq2y5o" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
 
 [node name="GenerationSettingsSelector" type="Control"]
 layout_mode = 3
@@ -53,6 +53,14 @@ size_flags_horizontal = 6
 theme = ExtResource("1_flxbb")
 theme_type_variation = &"FlatModalPrimaryButton"
 text = "Перкуссия"
+
+[node name="MelodyButton" type="Button" parent="Container/InstrumentButtons"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+size_flags_horizontal = 6
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Мелодия"
 
 [node name="ModeLabel" type="Label" parent="Container"]
 layout_mode = 2
@@ -135,6 +143,7 @@ text = "Подтвердить
 
 [connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="Container/InstrumentButtons/PercussionButton" to="." method="_on_percussion_selected"]
+[connection signal="pressed" from="Container/InstrumentButtons/MelodyButton" to="." method="_on_melody_selected"]
 [connection signal="pressed" from="Container/ModeButtons/BasicButton" to="." method="_on_basic_selected"]
 [connection signal="pressed" from="Container/ModeButtons/EnhancedButton" to="." method="_on_enhanced_selected"]
 [connection signal="pressed" from="Container/LanesButtons/Lanes3Button" to="." method="_on_lanes3_selected"]

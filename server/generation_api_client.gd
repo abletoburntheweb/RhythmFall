@@ -420,7 +420,10 @@ func _notes_worker(data_dict: Dictionary):
 			var closing_boundary = "\r\n--" + boundary + "--\r\n"
 			body.append_array(closing_boundary.to_utf8_buffer())
 			var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary, "X-Task-Id: " + task_id])
-			err = http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, body)
+			var endpoint = "/generate_drums"
+			if str(instrument_type).to_lower() == "melody":
+				endpoint = "/generate_melody"
+			err = http_client.request_raw(HTTPClient.METHOD_POST, endpoint, headers, body)
 			if err != OK:
 				local_error = "Ошибка отправки: " + str(err)
 			else:

@@ -673,7 +673,7 @@ func _apply_background_status_ui():
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
-	var inst_abbr = "П" if instrument == "drums" else "С"
+	var inst_abbr = "П" if instrument == "drums" else ("М" if instrument == "melody" else "?")
 	var mode_abbr = "Б" if mode == "basic" else "У"
 	return "Настройки генерации: %s %s %d" % [inst_abbr, mode_abbr, lanes]
 func _on_generation_settings_closed():

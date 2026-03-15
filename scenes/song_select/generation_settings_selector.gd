@@ -30,7 +30,7 @@ func _ready():
 
 	
 func _update_ui_from_selection():
-	for btn in [$Container/InstrumentButtons/PercussionButton]:
+	for btn in [$Container/InstrumentButtons/PercussionButton, $Container/InstrumentButtons/MelodyButton]:
 		btn.self_modulate = DEFAULT_COLOR
 	for btn in [$Container/ModeButtons/BasicButton, $Container/ModeButtons/EnhancedButton]:
 		btn.self_modulate = DEFAULT_COLOR
@@ -39,6 +39,8 @@ func _update_ui_from_selection():
 
 	if selected_instrument == "drums":
 		$Container/InstrumentButtons/PercussionButton.self_modulate = ACTIVE_COLOR
+	elif selected_instrument == "melody":
+		$Container/InstrumentButtons/MelodyButton.self_modulate = ACTIVE_COLOR
 
 	if selected_mode == "basic":
 		$Container/ModeButtons/BasicButton.self_modulate = ACTIVE_COLOR
@@ -54,6 +56,10 @@ func _update_ui_from_selection():
 func _on_percussion_selected():
 	selected_instrument = "drums"
 	_set_active_button($Container/InstrumentButtons/PercussionButton)
+
+func _on_melody_selected():
+	selected_instrument = "melody"
+	_set_active_button($Container/InstrumentButtons/MelodyButton)
 
 func _on_basic_selected():
 	selected_mode = "basic"
@@ -107,17 +113,36 @@ func _update_status_indicator():
 	if not status_label:
 		return
 	var exists = _notes_exist_for_selection()
+	var prefix = "%s %s %d" % [_instrument_letter(selected_instrument), _mode_letter(selected_mode), selected_lanes]
 	if exists:
-		status_label.text = "Ноты готовы"
+		status_label.text = "%s: Ноты готовы" % prefix
 		status_label.add_theme_color_override("font_color", Color("#61C7BD"))
 	else:
-		status_label.text = "Нет нот"
+		status_label.text = "%s: Нет нот" % prefix
 		status_label.add_theme_color_override("font_color", Color("#C99AE5"))
 	
 func _notes_exist_for_selection() -> bool:
 	if current_song_path == "":
 		return false
 	return NotesUtils.notes_exist(current_song_path, selected_instrument, selected_mode, selected_lanes)
+
+func _instrument_letter(instrument: String) -> String:
+	match instrument:
+		"drums":
+			return "П"
+		"melody":
+			return "М"
+		_:
+			return "?"
+
+func _mode_letter(mode: String) -> String:
+	match mode:
+		"basic":
+			return "Б"
+		"enhanced":
+			return "У"
+		_:
+			return "?"
 
 func _input(event: InputEvent):
 	if event.is_action_pressed("ui_cancel"):
