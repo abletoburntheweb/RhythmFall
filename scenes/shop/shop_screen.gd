@@ -23,13 +23,7 @@ func _ready():
 		printerr("ShopScreen.gd: Не удалось получить transitions через GameEngine.")
 
 	var user_shop = "user://shop_data.json"
-	var file_path = (user_shop if FileAccess.file_exists(user_shop) else "res://data/shop_data.json")
-	if not FileAccess.file_exists(file_path):
-		var exe_dir = OS.get_executable_path().get_base_dir()
-		var ext = exe_dir.path_join("data/shop_data.json").replace("\\", "/")
-		if FileAccess.file_exists(ext):
-			file_path = ext
-	var file_access = FileAccess.open(file_path, FileAccess.READ)
+	var file_access = FileAccess.open(user_shop, FileAccess.READ)
 	if file_access:
 		var json_text = file_access.get_as_text()
 		file_access.close()
@@ -39,16 +33,10 @@ func _ready():
 		else:
 			printerr("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
 	else:
-		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", file_path)
+		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", user_shop)
 
 	var user_ach = "user://achievements_data.json"
-	var achievements_file_path = (user_ach if FileAccess.file_exists(user_ach) else "res://data/achievements_data.json")
-	if not FileAccess.file_exists(achievements_file_path):
-		var exe_dir2 = OS.get_executable_path().get_base_dir()
-		var ext2 = exe_dir2.path_join("data/achievements_data.json").replace("\\", "/")
-		if FileAccess.file_exists(ext2):
-			achievements_file_path = ext2
-	var achievements_file_access = FileAccess.open(achievements_file_path, FileAccess.READ)
+	var achievements_file_access = FileAccess.open(user_ach, FileAccess.READ)
 	if achievements_file_access:
 		var json_text = achievements_file_access.get_as_text()
 		achievements_file_access.close()
@@ -58,7 +46,7 @@ func _ready():
 		else:
 			printerr("ShopScreen.gd: Ошибка парсинга achievements_data.json или данные не являются словарём.")
 	else:
-		printerr("ShopScreen.gd: Файл achievements_data.json не найден: ", achievements_file_path)
+		printerr("ShopScreen.gd: Файл achievements_data.json не найден: ", user_ach)
 
 	currency = PlayerDataManager.get_currency()  
 	_update_currency_label()
@@ -541,3 +529,4 @@ func _cleanup_gallery_internal():
 
 func _exit_tree():
 	_cleanup_gallery_internal()
+  

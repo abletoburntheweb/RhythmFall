@@ -200,8 +200,8 @@ func refresh_stats():
 		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
 
 	var total_perfect_hits = PlayerDataManager.get_total_perfect_hits()
-	total_notes_hit_label.text = "Точных попаданий: %d" % total_notes_hit
-	total_drum_hits_label.text = "Точных попаданий: %d" % total_drum_hits
+	total_notes_hit_label.text = "Точных попаданий: %d" % total_perfect_hits
+	total_drum_hits_label.text = "Попаданий: %d" % total_drum_hits
 	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
 	total_drum_misses_label.text = "Промахов: %d" % total_drum_misses
 	
@@ -330,11 +330,10 @@ func _update_recent_achievements():
 	for child in achievements_list_vbox.get_children():
 		achievements_list_vbox.remove_child(child)
 		child.queue_free()
-	var file = FileAccess.open(ACHIEVEMENTS_JSON_PATH, FileAccess.READ)
-	if not file:
-		var user_path = "user://achievements_data.json"
-		if FileAccess.file_exists(user_path):
-			file = FileAccess.open(user_path, FileAccess.READ)
+	var file = null
+	var user_path = "user://achievements_data.json"
+	if FileAccess.file_exists(user_path):
+		file = FileAccess.open(user_path, FileAccess.READ)
 	if not file:
 		if achievements_empty_label:
 			achievements_empty_label.visible = true

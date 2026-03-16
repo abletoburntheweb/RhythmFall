@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
+[ext_resource type="Theme" uid="uid://dxemly8gbsqol" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1307,20 +1307,6 @@ size_flags_horizontal = 0
 theme = ExtResource("2_bjeu6")
 theme_type_variation = &"FlatButton"
 text = "Назад	"
-
-[node name="ResetAllSettingsConfirmDialog" type="ConfirmationDialog" parent="MainContent/MainVBox/BackButton"]
-oversampling_override = 1.0
-title = "Сброс профиля"
-initial_position = 2
-size = Vector2i(505, 113)
-visible = true
-borderless = true
-theme = ExtResource("2_bjeu6")
-theme_type_variation = &"ConfirmationDialogDanger"
-ok_button_text = "ОК"
-dialog_text = "Это удалит результаты и статистику профиля. 
-Продолжить?"
-cancel_button_text = "Отмена"
 
 [node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)

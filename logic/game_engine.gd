@@ -394,10 +394,7 @@ func _seed_json_if_missing(file_name: String):
 	if FileAccess.file_exists(user_path):
 		var text := FileAccess.open(user_path, FileAccess.READ).get_as_text()
 		var parsed = JSON.parse_string(text)
-		if parsed is Dictionary and not parsed.is_empty():
-			need_copy = false
-		elif parsed is Array and parsed.size() > 0:
-			need_copy = false
+		need_copy = _is_json_effectively_empty(file_name, parsed)
 	if not need_copy:
 		return
 	var candidates := []
@@ -416,6 +413,27 @@ func _seed_json_if_missing(file_name: String):
 					out.store_buffer(data)
 					out.close()
 			break
+
+func _is_json_effectively_empty(file_name: String, parsed) -> bool:
+	if parsed == null:
+		return true
+	if parsed is Dictionary:
+		if parsed.is_empty():
+			return true
+		if file_name == "achievements_data.json":
+			var arr = parsed.get("achievements", [])
+			if arr is Array:
+				return arr.size() == 0
+			return true
+		if file_name == "shop_data.json":
+			var arr2 = parsed.get("items", [])
+			if arr2 is Array:
+				return arr2.size() == 0
+			return true
+		return false
+	elif parsed is Array:
+		return parsed.size() == 0
+	return true
 
 func _copy_dir_recursive(src: String, dst: String):
 	var da = DirAccess.open(src)

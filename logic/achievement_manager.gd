@@ -525,6 +525,8 @@ func check_rhythm_master_achievement(total_notes_hit: int):
 		a.current = total_notes_hit
 		if total_notes_hit >= 1000:
 			_perform_unlock(a)
+		else:
+			save_achievements()
 
 func check_drum_level_achievements(player_data_mgr_override = null, accuracy: float = 0.0, total_drum_levels: int = 0):
 	var pdm = _get_pdm(player_data_mgr_override)
