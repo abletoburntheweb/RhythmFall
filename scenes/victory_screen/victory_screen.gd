@@ -42,7 +42,7 @@ var max_combo_display_value: float:
 	set(value):
 		_max_combo_display_value_internal = value
 		if is_instance_valid(max_combo_label):
-			max_combo_label.text = "Макс. комбо: %d" % int(round(_max_combo_display_value_internal))
+			max_combo_label.text = "Максимальное комбо: %d" % int(round(_max_combo_display_value_internal))
 	get:
 		return _max_combo_display_value_internal
 var _accuracy_display_value_internal: float = 0.0

@@ -3,6 +3,7 @@ extends BaseScreen
 
 const GenerationService = preload("res://logic/generation_service.gd")
 const GenerationSettingsSelectorScene = preload("res://scenes/song_select/generation_settings_selector.tscn")
+const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
 
 var background_service: GenerationService = null
 var song_list_manager: SongListController = preload("res://scenes/song_select/song_list_controller.gd").new()
@@ -102,6 +103,10 @@ func _ready():
 	analyze_bpm_button.disabled = true
 	results_button.disabled = true
 	clear_results_button.disabled = true
+	call_deferred("_apply_filter_option_popup_font")
+
+func _apply_filter_option_popup_font() -> void:
+	_OptionButtonPopupUtils.apply_popup_font_size(filter_by_letter, 24)
 
 func _connect_ui_signals():
 	_update_edit_button_style()
@@ -169,43 +174,64 @@ func _on_notes_started(_path, _disp):
 	if not background_service:
 		return
 	var t: Dictionary = background_service.get_active_notes_task()
-	var same: bool = (
-		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
-		and String(t.get("instrument", "")) == current_instrument
+	if not t.has("path") or String(t.get("path", "")) != current_displayed_song_path:
+		return
+	var exact: bool = (
+		String(t.get("instrument", "")) == current_instrument
 		and String(t.get("mode", "")) == current_generation_mode
 		and int(t.get("lanes", 0)) == current_lanes
 	)
-	if same:
+	if exact:
 		_on_notes_generation_started()
- 
-func _on_notes_completed(_path, instr, _disp):
+	else:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+
+func _notes_emit_task_dict() -> Dictionary:
+	var t: Dictionary = background_service.get_active_notes_task()
+	if t.is_empty():
+		t = background_service.get_last_notes_task()
+	return t
+
+func _song_path_key(p: String) -> String:
+	return String(p).replace("\\", "/").trim_suffix("/")
+
+func _on_notes_completed(path: String, instr: String, _disp: String):
 	if not background_service:
 		return
-	var t: Dictionary = background_service.get_active_notes_task()
-	var same: bool = (
+	if _song_path_key(path) == _song_path_key(current_displayed_song_path):
+		var t: Dictionary = _notes_emit_task_dict()
+		var exact: bool = (
+			t.has("path")
+			and String(t.get("instrument", "")) == current_instrument
+			and String(t.get("mode", "")) == current_generation_mode
+			and int(t.get("lanes", 0)) == current_lanes
+		)
+		if exact:
+			_on_notes_generation_completed([], 0.0, instr)
+		else:
+			_apply_background_status_ui()
+	call_deferred("_deferred_refresh_generation_notes_highlights")
+
+func _deferred_refresh_generation_notes_highlights():
+	refresh_generation_notes_highlights()
+
+func _on_notes_error(path: String, msg: String, _disp: String):
+	if not background_service:
+		return
+	if _song_path_key(path) != _song_path_key(current_displayed_song_path):
+		return
+	var t: Dictionary = _notes_emit_task_dict()
+	var exact: bool = (
 		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
 		and String(t.get("instrument", "")) == current_instrument
 		and String(t.get("mode", "")) == current_generation_mode
 		and int(t.get("lanes", 0)) == current_lanes
 	)
-	if same:
-		_on_notes_generation_completed([], 0.0, instr)
- 
-func _on_notes_error(_path, msg, _disp):
-	if not background_service:
-		return
-	var t: Dictionary = background_service.get_active_notes_task()
-	var same: bool = (
-		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
-		and String(t.get("instrument", "")) == current_instrument
-		and String(t.get("mode", "")) == current_generation_mode
-		and int(t.get("lanes", 0)) == current_lanes
-	)
-	if same:
+	if exact:
 		_on_notes_generation_error(msg)
+	else:
+		_apply_background_status_ui()
 func _on_notes_progress(_path: String, _k: int, _total: int, _status: String):
 	_apply_background_status_ui()
 	
@@ -260,7 +286,6 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Ноты сгенерированы", false)
-	song_list_manager.refresh_highlight_for_current_settings()
 
 func _on_notes_generation_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)
@@ -455,6 +480,32 @@ func _update_edit_button_style():
 func _on_generate_pressed():
 	_generate_notes_for_current_song()
 
+func _collect_missing_generation_jobs(song_path: String) -> Array:
+	var scope := int(SettingsManager.get_setting("generation_notes_ready_scope", 0))
+	var inst := current_instrument
+	var jobs: Array = []
+	match scope:
+		0:
+			for ln in NotesUtils.LANE_COUNTS:
+				if not NotesUtils.notes_exist(song_path, inst, current_generation_mode, ln):
+					jobs.append({"mode": current_generation_mode, "lanes": ln})
+		1:
+			if not NotesUtils.notes_exist(song_path, inst, current_generation_mode, current_lanes):
+				jobs.append({"mode": current_generation_mode, "lanes": current_lanes})
+		2:
+			for m in NotesUtils.GENERATION_MODES:
+				for ln in NotesUtils.LANE_COUNTS:
+					if not NotesUtils.notes_exist(song_path, inst, m, ln):
+						jobs.append({"mode": m, "lanes": ln})
+		3:
+			for m in NotesUtils.GENERATION_MODES:
+				if not NotesUtils.notes_exist(song_path, inst, m, current_lanes):
+					jobs.append({"mode": m, "lanes": current_lanes})
+		_:
+			if not NotesUtils.notes_exist(song_path, inst, current_generation_mode, current_lanes):
+				jobs.append({"mode": current_generation_mode, "lanes": current_lanes})
+	return jobs
+
 func _generate_notes_for_current_song():
 	var song_path = current_selected_song_data.get("path", "")
 	if song_path == "": return
@@ -474,49 +525,39 @@ func _generate_notes_for_current_song():
 		has_genres = (pg != "" and pg != "unknown")
 	var enable_genre_detection = SettingsManager.get_setting("enable_genre_detection", true)
 
-	if has_genres and background_service:
-		background_service.start_notes_generation(
-			song_path,
-			current_instrument,
-			float(song_bpm),
-			current_lanes,
-			0.2,
-			false,
-			"", 
-			"",  
-			current_generation_mode
-		)
-		_apply_background_status_ui()
+	var auto_identify := true
+	var manual_artist := ""
+	var manual_title := ""
+	if has_genres:
+		auto_identify = false
+	elif not enable_genre_detection:
+		auto_identify = false
+		manual_artist = "Unknown"
+		manual_title = "Unknown"
+
+	if not background_service:
 		return
 
-	if not enable_genre_detection and background_service:
-		background_service.start_notes_generation(
-			song_path,
-			current_instrument,
-			float(song_bpm),
-			current_lanes,
-			0.2,
-			false,
-			"Unknown",
-			"Unknown",
-			current_generation_mode
-		)
-		_apply_background_status_ui()
-		return
+	var jobs: Array = _collect_missing_generation_jobs(song_path)
+	if jobs.is_empty():
+		jobs.append({"mode": current_generation_mode, "lanes": current_lanes})
 
-	if background_service:
+	var bpm_f := float(song_bpm)
+	for job in jobs:
+		var mode: String = str(job.get("mode", current_generation_mode))
+		var lanes: int = int(job.get("lanes", current_lanes))
 		background_service.start_notes_generation(
 			song_path,
 			current_instrument,
-			float(song_bpm),
-			current_lanes,
+			bpm_f,
+			lanes,
 			0.2,
-			true,
-			"",
-			"",
-			current_generation_mode
+			auto_identify,
+			manual_artist,
+			manual_title,
+			mode
 		)
-		_apply_background_status_ui()
+	_apply_background_status_ui()
 
 func _on_delete_pressed():
 	var selected_items = song_item_list_ref.get_selected_items()
@@ -657,11 +698,18 @@ func _apply_background_status_ui():
 		analyze_bpm_button.text = "В очереди (%d)" % pos_bpm
 		analyze_bpm_button.disabled = true
 	var pos_notes = background_service.get_notes_queue_position(current_displayed_song_path, current_instrument, current_generation_mode, current_lanes)
+	var pos_notes_song = background_service.get_notes_queue_position_for_song(current_displayed_song_path)
 	if pos_notes == 1:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 	elif pos_notes > 1:
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "В очереди (%d)" % pos_notes
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	elif pos_notes_song == 1:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	elif pos_notes_song > 1:
+		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "В очереди (%d)" % pos_notes_song
 		$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
 	else:
 		var song_bpm_val = current_selected_song_data.get("bpm", "Н/Д")
@@ -673,8 +721,19 @@ func _apply_background_status_ui():
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
-	var inst_abbr = "П" if instrument == "drums" else "С"
-	var mode_abbr = "Б" if mode == "basic" else "У"
+	var inst_abbr: String
+	match instrument:
+		"drums": inst_abbr = "П"
+		"fullmix": inst_abbr = "О"
+		_: inst_abbr = instrument.substr(0, 1).to_upper()
+	var mode_abbr: String
+	match mode:
+		"basic": mode_abbr = "Б"
+		"enhanced": mode_abbr = "У"
+		"minimal": mode_abbr = "М"
+		"natural": mode_abbr = "Н"
+		"custom": mode_abbr = "П"
+		_: mode_abbr = mode.substr(0, 1).to_upper()
 	return "Настройки генерации: %s %s %d" % [inst_abbr, mode_abbr, lanes]
 func _on_generation_settings_closed():
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
@@ -718,5 +777,15 @@ func _check_if_notes_exist_for_current_settings() -> bool:
 	var song_path = current_selected_song_data.get("path", "")
 	if song_path == "":
 		return false
-	return NotesUtils.notes_exist(song_path, current_instrument, current_generation_mode, current_lanes)
+	return NotesUtils.notes_ready_for_scope(song_path, current_instrument, current_generation_mode, current_lanes)
+
+func refresh_generation_notes_highlights():
+	song_list_manager.refresh_highlight_for_current_settings()
+	song_details_manager._update_play_button_state()
+	song_details_manager._update_generation_status()
+	if current_displayed_song_path != "":
+		if _check_if_notes_exist_for_current_settings():
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
+		else:
+			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
  

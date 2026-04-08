@@ -33,6 +33,7 @@ const MODAL_POPUP_SOUND = "modal_popup.wav"
 
 const DEFAULT_DRUMS_SELECT_SOUND = "drums_select.wav" 
 const DEFAULT_STANDARD_SELECT_SOUND = "standard_select.wav"
+const DEFAULT_FULLMIX_SELECT_SOUND = "drums_select.wav"
 
 var was_menu_music_playing_before_shop: bool = false
 var menu_music_position_before_shop: float = 0.0
@@ -532,6 +533,8 @@ func play_instrument_select_sound(instrument_type: String):
 			sound_file_name = DEFAULT_DRUMS_SELECT_SOUND
 		"standard": 
 			sound_file_name = DEFAULT_STANDARD_SELECT_SOUND
+		"fullmix":
+			sound_file_name = DEFAULT_FULLMIX_SELECT_SOUND
 		_:
 			printerr("MusicManager: Неизвестный тип инструмента для звука: ", instrument_type)
 			return 

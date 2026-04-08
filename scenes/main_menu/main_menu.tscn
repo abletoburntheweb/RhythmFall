@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
-[ext_resource type="Theme" uid="uid://burlmi5qqsdnl" path="res://ui/theme/app_theme.tres" id="4_uqeha"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="4_uqeha"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -6516,6 +6516,15 @@ layout_mode = 2
 theme_type_variation = &"FlatExitButton"
 text = "ВЫЙТИ"
 
+[node name="HelpButton" type="Button" parent="."]
+layout_mode = 0
+offset_top = 1040.0
+offset_right = 41.0
+offset_bottom = 1080.0
+theme = SubResource("Theme_1ur2m")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "?"
+
 [node name="GitHubButton" type="TextureButton" parent="."]
 layout_mode = 0
 offset_left = 1851.0
@@ -6631,4 +6640,5 @@ cancel_button_text = "Отмена"
 [connection signal="pressed" from="ButtonContainer/ShopButton" to="." method="_on_shop_pressed"]
 [connection signal="pressed" from="ButtonContainer/SettingsButton" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="HelpButton" to="." method="_on_help_pressed"]
 [connection signal="confirmed" from="ExitConfirmDialog" to="." method="_on_exit_confirmed"]

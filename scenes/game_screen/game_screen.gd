@@ -121,6 +121,7 @@ var rhythm_notifier: RhythmNotifier = null
 
 const HIT_WINDOW_PERFECT: float = 0.05
 const HIT_WINDOW_GOOD: float = 0.15
+const AUDIO_SYNC_DRIFT_THRESHOLD_SEC: float = 0.02
 @export var judgement_color_perfect: Color = Color.YELLOW
 @export var judgement_color_good: Color = Color.CYAN
 @export var judgement_color_other: Color = Color.GRAY
@@ -238,36 +239,64 @@ func set_autoplay_enabled(enabled: bool):
 func is_autoplay_enabled() -> bool:
 	return auto_play_enabled
 
+func _hit_time_for_judgement() -> float:
+	var user_off_sec := 0.0
+	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
+		user_off_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
+	var lat := AudioServer.get_output_latency()
+	if MusicManager.is_music_playing() and MusicManager.current_game_music_file != "":
+		return MusicManager.get_game_music_position() + user_off_sec - lat
+	return game_time + user_off_sec - lat
+
+func _sync_game_time_with_game_music():
+	if game_time < 0.0:
+		return
+	if not MusicManager.is_music_playing():
+		return
+	if MusicManager.current_game_music_file == "":
+		return
+	var target = MusicManager.get_game_music_position()
+	var drift = target - game_time
+	if abs(drift) > AUDIO_SYNC_DRIFT_THRESHOLD_SEC:
+		game_time = target
+
 func _auto_play_simulate():
 	if pauser and pauser.is_paused:
 		return
 	if not notes_loaded:
 		return
 	var hit_zone_y_float = float(hit_zone_y)
-	var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA)
-	var offset_sec := 0.0
-	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
-		offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
-	var current_time_adjusted = game_time + offset_sec
-	var lanes_to_hit := {}
+	var lane_crossing_distance := {}
+	var frame_travel_px: float = max(1.0, speed)
+	var lane_hit_tolerance_px: float = max(2.0, frame_travel_px * 0.25)
 	for note in note_manager.get_notes():
 		if note.is_missed:
 			continue
-		var note_time = note.spawn_time + (hit_zone_y_float - note.spawn_y) / pixels_per_sec
-		var delta = note_time - current_time_adjusted
-		if abs(delta) <= (GAME_UPDATE_DELTA * 0.5):
-			var ln_idx := int(note.lane)
-			if ln_idx >= 0 and ln_idx < lanes:
-				lanes_to_hit[ln_idx] = true
-	for lane in lanes_to_hit.keys():
+		var ln_idx := int(note.lane)
+		if ln_idx < 0 or ln_idx >= lanes:
+			continue
+		var dist_to_hit_zone: float = hit_zone_y_float - float(note.y)
+		var is_in_hit_zone_now: bool = absf(dist_to_hit_zone) <= lane_hit_tolerance_px
+		var crosses_hit_zone_this_frame: bool = dist_to_hit_zone >= 0.0 and dist_to_hit_zone <= frame_travel_px
+		if is_in_hit_zone_now or crosses_hit_zone_this_frame:
+			var abs_dist: float = absf(dist_to_hit_zone)
+			var prev_best: float = float(lane_crossing_distance.get(ln_idx, 9999.0))
+			if abs_dist < prev_best:
+				lane_crossing_distance[ln_idx] = abs_dist
+	for lane in lane_crossing_distance.keys():
 		var ln := int(lane)
 		if ln < 0 or ln >= lanes:
 			continue
-		check_hit(ln)
+		_check_hit_for_autoplay(ln)
 		var until_time = game_time + 0.08
 		var prev_until = _autoplay_press_until.get(ln, 0.0)
 		_autoplay_press_until[ln] = max(prev_until, until_time)
 	_autoplay_update_lane_highlights()
+
+func _check_hit_for_autoplay(lane: int):
+	if pauser.is_paused or not notes_loaded:
+		return
+	check_hit(lane, true)
 
 func _reset_autoplay_state():
 	_autoplay_press_until.clear()
@@ -594,8 +623,9 @@ func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
 		return  
 	
-	game_time += GAME_UPDATE_DELTA 
-	
+	game_time += GAME_UPDATE_DELTA
+	_sync_game_time_with_game_music()
+
 	if not countdown_active: 
 		note_manager.spawn_notes() 
 		_update_hint()
@@ -968,17 +998,13 @@ func skip_intro() -> bool:
 	skip_used = true
 	return true
 
-func check_hit(lane: int):
+func check_hit(lane: int, force_perfect: bool = false):
 	if pauser.is_paused:
 		return
 	if not notes_loaded:
 		return
 
-	var current_time = game_time
-	var offset_sec := 0.0
-	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
-		offset_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
-	var current_time_adjusted = current_time + offset_sec
+	var current_time_adjusted = _hit_time_for_judgement()
 	var hit_zone_y_float = float(hit_zone_y)
 	var candidates = []
 
@@ -987,6 +1013,8 @@ func check_hit(lane: int):
 			candidates.append(note)
 
 	if candidates.size() == 0:
+		if force_perfect:
+			return
 		_combo_shake_and_dim()
 		score_manager.reset_combo()
 		MusicManager.play_miss_hit_sound()
@@ -1008,7 +1036,12 @@ func check_hit(lane: int):
 	var hit_type = "miss"
 	var judgement_successful = false
 
-	if time_diff <= HIT_WINDOW_PERFECT:
+	if force_perfect:
+		score_manager.add_perfect_hit()
+		hit_type = "PERFECT"
+		judgement_successful = true
+		perfect_hits_this_level += 1
+	elif time_diff <= HIT_WINDOW_PERFECT:
 		score_manager.add_perfect_hit()
 		hit_type = "PERFECT"
 		judgement_successful = true

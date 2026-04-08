@@ -6,6 +6,22 @@ var achievement_system = null
 var replay_achievement_sent_for_song: Dictionary = {}
 var results_service: ResultsHistoryService = preload("res://logic/results_history_service.gd").new()
 
+func _mode_label(mode_raw: String) -> String:
+	var mode = mode_raw.to_lower()
+	match mode:
+		"minimal":
+			return "Минимал"
+		"basic":
+			return "Базовый"
+		"enhanced":
+			return "Усложненный"
+		"natural":
+			return "Натуральный"
+		"custom":
+			return "Пользовательский"
+		_:
+			return mode_raw
+
 func set_achievement_system(ach_sys):
 	achievement_system = ach_sys
 
@@ -35,7 +51,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 		var mode_raw_top = str(top_result.get("mode", ""))
 		var mode_label_top = ""
 		if mode_raw_top != "":
-			mode_label_top = ", " + ("Базовый" if mode_raw_top.to_lower() == "basic" else "Усложненный")
+			mode_label_top = ", " + _mode_label(mode_raw_top)
 		var display_text_top = "%s - %d очков (%.0f%%) [%s%s] - %s" % [
 			formatted_date_str_top,
 			top_result.get("score", 0),
@@ -104,7 +120,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			var mode_raw = str(result.get("mode", ""))
 			var mode_label = ""
 			if mode_raw != "":
-				mode_label = ", " + ("Базовый" if mode_raw.to_lower() == "basic" else "Усложненный")
+				mode_label = ", " + _mode_label(mode_raw)
 			var display_text = "%s - %d очков (%.0f%%) [%s%s] - %s" % [
 				formatted_date_str,            
 				result.get("score", 0),       

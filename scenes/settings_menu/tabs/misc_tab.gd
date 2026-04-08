@@ -5,15 +5,15 @@ signal settings_changed
 
 var song_metadata_manager = SongLibrary 
 const FILES_TO_CLEAR := ["session_history.json"]
+const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
 
 @onready var reset_confirm_dialog: ConfirmationDialog = $"ResetProfileStatsConfirmDialog"
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
 @onready var reset_all_settings_button: Button = $ContentVBox/ResetAllSettingsButton
 @onready var reset_profile_stats_button: Button = $ContentVBox/ResetProfileStatsButton
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
-@onready var enable_genre_detection_checkbox: CheckBox = $ContentVBox/EnableGenreDetectionCheckBox 
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
-@onready var enable_stems_checkbox: CheckBox = $ContentVBox/EnableStemsCheckBox
+@onready var generation_notes_scope_option: OptionButton = $ContentVBox/GenerationNotesScopeOption
 @onready var songs_folder_line_edit: LineEdit = $ContentVBox/SongsFolderHBox/SongsFolderLineEdit
 @onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
 @onready var migrate_paths_dialog: ConfirmationDialog = $MigratePathsDialog
@@ -22,22 +22,36 @@ const FILES_TO_CLEAR := ["session_history.json"]
 @onready var clear_notes_confirm_dialog: ConfirmationDialog = $"ClearNotesConfirmDialog"
 @onready var reset_bpm_batch_confirm_dialog: ConfirmationDialog = $"ResetBPMBatchConfirmDialog"
 @onready var clear_user_paths_confirm_dialog: ConfirmationDialog = $"ClearUserPathsConfirmDialog"
+@onready var change_songs_folder_confirm_dialog: ConfirmationDialog = $"ChangeSongsFolderConfirmDialog"
+@onready var change_songs_folder_delete_notes_checkbox: CheckBox = $"ChangeSongsFolderConfirmDialog/ChangeSongsFolderDeleteNotesCheckBox"
+@onready var scan_songs_result_dialog: AcceptDialog = $"ScanSongsResultDialog"
+
+var _pending_new_folder_path: String = ""
 
 
 func _ready():
 	call_deferred("_apply_initial_settings")
+	call_deferred("_setup_generation_notes_scope_popup_font")
+	call_deferred("_setup_change_songs_folder_dialog")
+
+
+func _setup_change_songs_folder_dialog() -> void:
+	if change_songs_folder_confirm_dialog:
+		change_songs_folder_confirm_dialog.add_button("Удалить из метаданных", false, "prune")
+
+func _setup_generation_notes_scope_popup_font() -> void:
+	_OptionButtonPopupUtils.apply_popup_font_size(generation_notes_scope_option, 24)
 
 func _apply_initial_settings():
 	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
-	
-	var enable_genre = SettingsManager.get_setting("enable_genre_detection", true)
-	enable_genre_detection_checkbox.set_pressed_no_signal(enable_genre)  
-	
 	var show_notifs = SettingsManager.get_setting("show_generation_notifications", true)
 	show_gen_notifs_checkbox.set_pressed_no_signal(show_notifs)
-	
-	var use_stems = SettingsManager.get_setting("use_stems_in_generation", true)
-	enable_stems_checkbox.set_pressed_no_signal(use_stems)
+	if generation_notes_scope_option and generation_notes_scope_option.item_count > 0:
+		var max_idx = generation_notes_scope_option.item_count - 1
+		var scope = int(clamp(int(SettingsManager.get_setting("generation_notes_ready_scope", 0)), 0, max_idx))
+		generation_notes_scope_option.set_block_signals(true)
+		generation_notes_scope_option.select(scope)
+		generation_notes_scope_option.set_block_signals(false)
 	
 	var p = String(SettingsManager.get_setting("user_songs_path", ""))
 	if p == "":
@@ -144,17 +158,27 @@ func _refresh_sound_tab_ui_if_present():
 		var sound_tab = tabs.get_node_or_null("SoundTab")
 		if sound_tab and sound_tab.has_method("refresh_ui"):
 			sound_tab.refresh_ui()
-func _on_enable_genre_detection_toggled(enabled: bool):
-	SettingsManager.set_setting("enable_genre_detection", enabled)
+func _on_generation_notes_scope_selected(index: int):
+	var max_idx = (generation_notes_scope_option.item_count - 1) if generation_notes_scope_option else 3
+	SettingsManager.set_setting("generation_notes_ready_scope", int(clamp(index, 0, max_idx)))
 	SettingsManager.save_settings()
+	emit_signal("settings_changed")
+	_refresh_song_select_notes_highlights()
+
+func _refresh_song_select_notes_highlights():
+	var root = get_tree().root
+	_call_refresh_notes_highlights_recursive(root)
+
+func _call_refresh_notes_highlights_recursive(node: Node):
+	if node == null:
+		return
+	if node.has_method("refresh_generation_notes_highlights"):
+		node.refresh_generation_notes_highlights()
+	for child in node.get_children():
+		_call_refresh_notes_highlights_recursive(child)
 
 func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
-	SettingsManager.save_settings()
-	emit_signal("settings_changed")
-
-func _on_enable_stems_toggled(enabled: bool):
-	SettingsManager.set_setting("use_stems_in_generation", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
 
@@ -163,20 +187,74 @@ func _on_choose_songs_folder_pressed():
 		songs_folder_dialog.current_dir = "user://"
 		songs_folder_dialog.popup_centered()
 
+
+func _normalize_songs_folder_path(p: String) -> String:
+	var s := String(p)
+	if s == "":
+		s = "user://Songs/"
+	if not s.ends_with("/"):
+		s += "/"
+	return s
+
+
 func _on_songs_folder_dir_selected(path: String):
-	var old_path = String(SettingsManager.get_setting("user_songs_path", ""))
-	if old_path == "":
-		old_path = "user://Songs/"
-	if not old_path.ends_with("/"):
-		old_path += "/"
-	var new_path = String(path)
-	if not new_path.ends_with("/"):
-		new_path += "/"
+	var old_path := _normalize_songs_folder_path(String(SettingsManager.get_setting("user_songs_path", "")))
+	var new_path := _normalize_songs_folder_path(String(path))
+	if songs_folder_line_edit:
+		songs_folder_line_edit.text = new_path
+	if old_path == new_path:
+		return
+	_pending_new_folder_path = new_path
+	if change_songs_folder_delete_notes_checkbox:
+		change_songs_folder_delete_notes_checkbox.button_pressed = false
+	if change_songs_folder_confirm_dialog:
+		change_songs_folder_confirm_dialog.popup_centered()
+	else:
+		_apply_new_songs_folder_path(new_path, false, false)
+
+
+func _apply_new_songs_folder_path(new_path: String, prune: bool, delete_notes: bool) -> void:
 	SettingsManager.set_setting("user_songs_path", new_path)
 	SettingsManager.save_settings()
 	if songs_folder_line_edit:
 		songs_folder_line_edit.text = new_path
+	if prune and SongLibrary and SongLibrary.has_method("prune_user_metadata_not_under_root"):
+		SongLibrary.prune_user_metadata_not_under_root(new_path, delete_notes)
+	if SongLibrary:
+		SongLibrary.load_songs()
+	_pending_new_folder_path = ""
 	emit_signal("settings_changed")
+
+
+func _on_change_songs_folder_keep_confirmed() -> void:
+	if _pending_new_folder_path == "":
+		return
+	_apply_new_songs_folder_path(_pending_new_folder_path, false, false)
+
+
+func _on_change_songs_folder_canceled() -> void:
+	_pending_new_folder_path = ""
+	if songs_folder_line_edit:
+		songs_folder_line_edit.text = _normalize_songs_folder_path(String(SettingsManager.get_setting("user_songs_path", "")))
+
+
+func _on_change_songs_folder_custom_action(action: StringName) -> void:
+	if action != "prune":
+		return
+	if _pending_new_folder_path == "":
+		return
+	var delete_notes := change_songs_folder_delete_notes_checkbox.button_pressed if change_songs_folder_delete_notes_checkbox else false
+	_apply_new_songs_folder_path(_pending_new_folder_path, true, delete_notes)
+
+
+func _russian_song_word_form(n: int) -> String:
+	var n10 := n % 10
+	var n100 := n % 100
+	if n10 == 1 and n100 != 11:
+		return "песня"
+	if n10 >= 2 and n10 <= 4 and (n100 < 10 or n100 > 20):
+		return "песни"
+	return "песен"
 
 var _pending_migration_map: Dictionary = {}
 var _pending_old_user_path: String = ""
@@ -213,32 +291,39 @@ func _confirm_clear_user_paths():
 	emit_signal("settings_changed")
 
 func _on_scan_songs_pressed():
-	if SongLibrary and SongLibrary.has_method("scan_user_songs"):
-		SongLibrary.scan_user_songs()
-		var current_root = String(SettingsManager.get_setting("user_songs_path", ""))
-		if current_root == "":
-			current_root = "user://Songs/"
-		if not current_root.ends_with("/"):
-			current_root += "/"
-		if SongLibrary.has_method("prepare_dedupe_for_user_root"):
-			var prep = SongLibrary.prepare_dedupe_for_user_root(current_root)
-			var matches: Dictionary = prep.get("matches", {})
-			if matches.size() > 0:
-				var dlg = ConfirmationDialog.new()
-				dlg.title = "Объединение метаданных"
-				dlg.dialog_text = "Найдено %d совпадений по именам файлов.\nОбъединить метаданные со старых путей в новую папку?" % matches.size()
-				dlg.confirmed.connect(func():
-					if SongLibrary and SongLibrary.has_method("apply_dedupe_for_user_root"):
-						SongLibrary.apply_dedupe_for_user_root(current_root)
-					if is_instance_valid(dlg):
-						dlg.queue_free()
-				)
-				dlg.canceled.connect(func():
-					if is_instance_valid(dlg):
-						dlg.queue_free()
-				)
-				add_child(dlg)
-				dlg.popup_centered()
+	if not SongLibrary or not SongLibrary.has_method("scan_user_songs"):
+		return
+	var added: int = SongLibrary.scan_user_songs()
+	if scan_songs_result_dialog:
+		if added > 0:
+			scan_songs_result_dialog.dialog_text = "Добавлено %d %s." % [added, _russian_song_word_form(added)]
+		else:
+			scan_songs_result_dialog.dialog_text = "Новых песен не найдено."
+		scan_songs_result_dialog.popup_centered()
+	var current_root = String(SettingsManager.get_setting("user_songs_path", ""))
+	if current_root == "":
+		current_root = "user://Songs/"
+	if not current_root.ends_with("/"):
+		current_root += "/"
+	if SongLibrary.has_method("prepare_dedupe_for_user_root"):
+		var prep = SongLibrary.prepare_dedupe_for_user_root(current_root)
+		var matches: Dictionary = prep.get("matches", {})
+		if matches.size() > 0:
+			var dlg = ConfirmationDialog.new()
+			dlg.title = "Объединение метаданных"
+			dlg.dialog_text = "Найдено %d совпадений по именам файлов.\nОбъединить метаданные со старых путей в новую папку?" % matches.size()
+			dlg.confirmed.connect(func():
+				if SongLibrary and SongLibrary.has_method("apply_dedupe_for_user_root"):
+					SongLibrary.apply_dedupe_for_user_root(current_root)
+				if is_instance_valid(dlg):
+					dlg.queue_free()
+			)
+			dlg.canceled.connect(func():
+				if is_instance_valid(dlg):
+					dlg.queue_free()
+			)
+			add_child(dlg)
+			dlg.popup_centered()
 
 func _on_clear_user_paths_pressed():
 	if clear_user_paths_confirm_dialog:

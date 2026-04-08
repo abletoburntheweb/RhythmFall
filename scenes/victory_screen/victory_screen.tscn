@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://wr4xw6kkexww"]
 
 [ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
 
 [sub_resource type="Animation" id="Animation_rygy8"]
 resource_name = "AllCountupsSeq"
@@ -176,7 +176,7 @@ offset_right = 1920.0
 offset_bottom = 83.0
 theme_override_colors/font_color = Color(0.58431375, 0.7176471, 0.92156863, 1)
 theme_override_font_sizes/font_size = 24
-text = "Макс. комбо: 0"
+text = "Максимальное комбо: 0"
 horizontal_alignment = 1
 
 [node name="AccuracyLabel" type="Label" parent="StatsFrame"]

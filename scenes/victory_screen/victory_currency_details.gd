@@ -36,12 +36,12 @@ func show_details(p_score: int, p_max_combo: int, p_accuracy: float, p_total_not
 
 	var multiplier_bonus = (p_combo_multiplier - 1.0) * 2.0
 
-	score_label.text = "Счёт: %.1f" % base_currency
-	combo_label.text = "Макс. комбо: %.1f" % combo_bonus
-	accuracy_label.text = "Точность: %.1f" % accuracy_bonus
-	full_combo_label.text = "Полное комбо: %.1f" % full_combo_bonus
+	score_label.text = "Базовый валюта (от счёта): %.1f" % base_currency
+	combo_label.text = "Бонус за максимальное комбо: %.1f" % combo_bonus
+	accuracy_label.text = "Бонус за точность: %.1f" % accuracy_bonus
+	full_combo_label.text = "Бонус за полное комбо: %.1f" % full_combo_bonus
 	multiplier_label.text = "Бонус за множитель: %.1f" % multiplier_bonus
-	total_label.text = "Валюта: %d" % total_currency
+	total_label.text = "Итого валюты: %d" % total_currency
 	
 	visible = true
 	grab_focus()

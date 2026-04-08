@@ -43,6 +43,11 @@ func _on_profile_pressed():
 	if transitions:
 		transitions.open_profile()
 
+func _on_help_pressed():
+	MusicManager.play_select_sound()
+	if transitions:
+		transitions.open_help()
+
 func _on_settings_pressed():
 	MusicManager.play_select_sound()
 	if transitions:

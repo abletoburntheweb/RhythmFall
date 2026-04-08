@@ -219,19 +219,20 @@ func _try_load_seed_metadata() -> Dictionary:
 				return d
 	return {}
 
-func scan_user_songs():
+func scan_user_songs() -> int:
+	var added := 0
 	var user_path = _get_effective_user_songs_path()
 	_ensure_user_dir_exists()
 	var dir = DirAccess.open(user_path)
 	if not dir:
 		printerr("SongLibrary.gd: Ошибка открытия папки пользователя: " + user_path)
-		return
+		return 0
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir():
 			var file_lower = file_name.to_lower()
-			if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav"):
+			if file_lower.ends_with(".mp3") or file_lower.ends_with(".wav") or file_lower.ends_with(".ogg"):
 				var path = user_path + file_name
 				var exists := false
 				for s in songs:
@@ -259,9 +260,42 @@ func scan_user_songs():
 					if _should_queue_id3_for(path, metadata):
 						_id3_queue.append(path)
 					songs.append(metadata)
+					added += 1
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	_start_id3_enrichment_if_needed()
+	emit_signal("songs_list_changed")
+	return added
+
+
+func prune_user_metadata_not_under_root(new_root: String, delete_notes_for_removed: bool) -> void:
+	var new_r = _normalize_dir_path(new_root).replace("\\", "/")
+	var built_in_root = String(BUILT_IN_FOLDER_PATH).replace("\\", "/")
+	var exe_dir = OS.get_executable_path().get_base_dir()
+	var external_bundled_root = exe_dir.path_join("bundled_songs").replace("\\", "/") + "/"
+	var snapshot: Array = _metadata_cache.keys()
+	var to_remove: Array[String] = []
+	for k in snapshot:
+		var p := String(k).replace("\\", "/")
+		if p.begins_with(built_in_root) or p.begins_with(external_bundled_root):
+			continue
+		if p.begins_with(new_r):
+			continue
+		to_remove.append(p)
+	var changed := false
+	for k in to_remove:
+		if _metadata_cache.erase(k):
+			changed = true
+	if delete_notes_for_removed:
+		for p in to_remove:
+			var ps := String(p).replace("\\", "/")
+			if ps.begins_with(built_in_root) or ps.begins_with(external_bundled_root):
+				continue
+			var base_name = NotesUtils.base_name_from_song_path(ps)
+			var notes_path = NotesUtils.notes_dir(base_name)
+			DirectoryUtils.delete_dir_recursive(notes_path)
+	if changed:
+		_save_metadata()
 	emit_signal("songs_list_changed")
 
 func add_song(file_path: String) -> Dictionary:

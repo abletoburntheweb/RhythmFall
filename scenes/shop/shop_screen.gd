@@ -2,6 +2,7 @@
 extends BaseScreen
 
 const ITEM_CARD_SCENE := preload("res://scenes/shop/item_card.tscn")
+const _SHOP_ITEM_CELL_HEIGHT := 350
 
 var currency: int = 0
 var shop_data: Dictionary = {}
@@ -83,7 +84,7 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
-	_create_item_cards()
+	await _create_item_cards()
 	_set_buttons_focus_to_none()
 
 func _update_currency_label():
@@ -154,7 +155,7 @@ func _update_category_buttons(selected: String):
 	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
 	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
 
-func _create_item_cards():
+func _create_item_cards() -> void:
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
@@ -166,6 +167,23 @@ func _create_item_cards():
 	if not grid_container:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
 		return
+
+	var valid_n: int = 0
+	for item in items:
+		if item is Dictionary and item.has("item_id"):
+			valid_n += 1
+	var cols: int = int(grid_container.columns)
+	if cols < 1:
+		cols = 5
+	var rows: int = int(ceil(float(valid_n) / float(cols))) if valid_n > 0 else 0
+	var vs: int = int(grid_container.get_theme_constant("v_separation", "GridContainer"))
+	if vs < 0:
+		vs = 30
+	if rows > 0:
+		grid_container.custom_minimum_size.y = float(rows * _SHOP_ITEM_CELL_HEIGHT + max(0, rows - 1) * vs)
+	else:
+		grid_container.custom_minimum_size.y = 0.0
+
 	var batch_size = 24
 	var i = 0
 	while i < items.size():
@@ -208,10 +226,21 @@ func _create_item_cards():
 			item_cards.append(new_card)
 		await get_tree().process_frame
 		i = end
+	call_deferred("_shop_grid_clear_min_height")
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
 		items_scroll.scroll_horizontal = 0
+
+
+func _shop_grid_clear_min_height() -> void:
+	var main_vbox = $MainContent/MainVBox
+	if not main_vbox:
+		return
+	var grid_container = main_vbox.find_child("ItemsGrid", true, false)
+	if grid_container and is_instance_valid(grid_container):
+		grid_container.custom_minimum_size.y = 0.0
+
 
 func _get_category_map() -> Dictionary:
 	return {

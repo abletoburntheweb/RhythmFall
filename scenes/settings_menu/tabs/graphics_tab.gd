@@ -3,6 +3,8 @@ extends Control
 
 signal settings_changed
 
+const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
+
 var game_engine = null 
 
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
@@ -16,12 +18,14 @@ func _ready():
 		lane_highlight_brightness_slider.min_value = 0.0
 		lane_highlight_brightness_slider.max_value = 100.0
 		lane_highlight_brightness_slider.step = 1.0
-		lane_highlight_brightness_slider.value_changed.connect(_on_lane_highlight_brightness_changed)
 	if note_brightness_slider:
 		note_brightness_slider.min_value = 0.0
 		note_brightness_slider.max_value = 100.0
 		note_brightness_slider.step = 1.0
-		note_brightness_slider.value_changed.connect(_on_note_brightness_changed)
+	call_deferred("_apply_fps_option_popup_font")
+
+func _apply_fps_option_popup_font() -> void:
+	_OptionButtonPopupUtils.apply_popup_font_size(fps_option_button, 24)
 
 func _select_fps_by_id(id: int):
 	var count = fps_option_button.get_item_count()

@@ -76,6 +76,10 @@ func _warmup_heavy_scenes():
 	]
 	for p in to_prewarm:
 		_preload_scene_threaded(String(p))
+	call_deferred("_warmup_screen_textures")
+
+func _warmup_screen_textures():
+	ScreenTexturePreload.warmup_all()
 
 func _prewarm_step(list: Array, index: int):
 	if index >= list.size():

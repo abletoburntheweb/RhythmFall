@@ -3,6 +3,7 @@ extends BaseScreen
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
+const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
 var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
 
 @onready var back_button: Button = $MainVBox/BackButton
@@ -41,7 +42,11 @@ func _ready():
 
 	_load_achievements_data()
 	_filter_achievements_internal(search_bar.text)
-	
+	call_deferred("_apply_filter_box_popup_font")
+
+
+func _apply_filter_box_popup_font() -> void:
+	_OptionButtonPopupUtils.apply_popup_font_size(filter_box, 24)
 
 
 func _load_achievements_data():

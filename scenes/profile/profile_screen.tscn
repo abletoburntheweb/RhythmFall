@@ -1,7 +1,7 @@
 [gd_scene load_steps=194 format=3 uid="uid://c4tpd08i2ypaq"]
 
 [ext_resource type="Script" uid="uid://bqa01mcntirud" path="res://scenes/profile/profile_screen.gd" id="1_1k4fv"]
-[ext_resource type="Theme" uid="uid://cdinfq4ym26wv" path="res://ui/theme/app_theme.tres" id="2_or3b4"]
+[ext_resource type="Theme" uid="uid://ebqkecuajs4p" path="res://ui/theme/app_theme.tres" id="2_or3b4"]
 [ext_resource type="Script" uid="uid://d1x5u2u7grlsv" path="res://scenes/achievements/achievement_card.gd" id="3_uuq6e"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="4_chjtg"]
 
@@ -3756,7 +3756,7 @@ autowrap_mode = 2
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
-text = "Точных попаданий: 0"
+text = "Попаданий: 0"
 autowrap_mode = 2
 
 [node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
@@ -3935,7 +3935,7 @@ autowrap_mode = 2
 custom_minimum_size = Vector2(312, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
-text = "Точных попаданий: 0"
+text = "Попаданий: 0"
 autowrap_mode = 2
 
 [node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]

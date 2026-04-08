@@ -11,6 +11,12 @@ var game_screen = null
 @onready var hit_sounds_volume_slider: HSlider = $ContentVBox/HitSoundsVolumeSlider
 @onready var metronome_volume_slider: HSlider = $ContentVBox/MetronomeVolumeSlider
 @onready var preview_volume_slider: HSlider = $ContentVBox/PreviewVolumeSlider
+@onready var music_volume_label: Label = $ContentVBox/MusicVolumeLabel
+@onready var menu_music_volume_label: Label = $ContentVBox/MenuMusicVolumeLabel
+@onready var sfx_volume_label: Label = $ContentVBox/SFXVolumeLabel
+@onready var hit_sounds_volume_label: Label = $ContentVBox/HitSoundsVolumeLabel
+@onready var metronome_volume_label: Label = $ContentVBox/MetronomeVolumeLabel
+@onready var preview_volume_label: Label = $ContentVBox/PreviewVolumeLabel
 @onready var timing_offset_value_label: Label = $ContentVBox/TimingOffsetValueLabel
 @onready var start_calibration_button: Button = $ContentVBox/StartCalibrationButton
 @onready var calibration_status_label: Label = $ContentVBox/CalibrationStatusLabel
@@ -18,6 +24,12 @@ var game_screen = null
 
 var _last_test_sound_time: float = 0.0
 const TEST_SOUND_COOLDOWN: float = 0.2 
+const MUSIC_VOLUME_LABEL_BASE := "Громкость музыки"
+const MENU_MUSIC_VOLUME_LABEL_BASE := "Громкость музыки в меню"
+const SFX_VOLUME_LABEL_BASE := "Громкость звуков"
+const HIT_SOUNDS_VOLUME_LABEL_BASE := "Громкость нажатий"
+const METRONOME_VOLUME_LABEL_BASE := "Громкость метронома"
+const PREVIEW_VOLUME_LABEL_BASE := "Громкость предпросмотра"
 
 var _is_calibrating: bool = false
 var _calibration_bpm: float = 120.0
@@ -25,7 +37,9 @@ var _beat_interval: float = 0.5
 var _calibration_timer: Timer
 var _beat_index: int = 0
 var _metronome_start_time: float = 0.0
-var _taps_needed: int = 10
+const CALIBRATION_TOTAL_TAPS: int = 20
+const CALIBRATION_WARMUP_DISCARD: int = 4
+var _taps_needed: int = CALIBRATION_TOTAL_TAPS
 var _taps_remaining: int = 0
 var _tap_offsets_ms: Array = []
 var _lane0_scancode: int = KEY_A
@@ -42,6 +56,7 @@ func _setup_ui():
 	hit_sounds_volume_slider.set_value_no_signal(SettingsManager.get_hit_sounds_volume())
 	metronome_volume_slider.set_value_no_signal(SettingsManager.get_metronome_volume())
 	preview_volume_slider.set_value_no_signal(SettingsManager.get_preview_volume())
+	_update_volume_labels()
 	_update_timing_offset_label()
 	_update_lane0_scancode()
 	_init_calibration_timer()
@@ -133,19 +148,32 @@ func _finish_calibration():
 	start_calibration_button.text = "Калибровка аудио"
 	start_calibration_button.focus_mode = Control.FOCUS_ALL
 	if _tap_offsets_ms.size() > 0:
-		_tap_offsets_ms.sort()
-		var trimmed = _tap_offsets_ms.duplicate()
-		if _tap_offsets_ms.size() >= 6:
-			trimmed = _tap_offsets_ms.slice(1, _tap_offsets_ms.size() - 2)
-		var sum := 0.0
-		for v in trimmed:
-			sum += float(v)
-		var avg := sum / float(max(1, trimmed.size()))
-		var ms := int(clamp(avg, -200.0, 200.0))
-		if SettingsManager and SettingsManager.has_method("set_timing_offset_ms"):
-			SettingsManager.set_timing_offset_ms(ms)
-			SettingsManager.save_settings()
-		_update_timing_offset_label()
+		var samples: Array = _tap_offsets_ms.duplicate()
+		if samples.size() > CALIBRATION_WARMUP_DISCARD:
+			samples = samples.slice(CALIBRATION_WARMUP_DISCARD, samples.size())
+		samples.sort()
+		var trimmed: Array = samples
+		var n := samples.size()
+		if n >= 8:
+			var cut := maxi(1, int(round(n * 0.15)))
+			trimmed = samples.slice(cut, n - cut)
+		elif n >= 4:
+			trimmed = samples.slice(1, n - 1)
+		if trimmed.is_empty():
+			trimmed = samples
+		trimmed.sort()
+		var tsize := trimmed.size()
+		if tsize > 0:
+			var ms_float: float
+			if tsize % 2 == 1:
+				ms_float = float(trimmed[tsize / 2])
+			else:
+				ms_float = (float(trimmed[tsize / 2 - 1]) + float(trimmed[tsize / 2])) / 2.0
+			var ms := int(clamp(round(ms_float), -500.0, 500.0))
+			if SettingsManager and SettingsManager.has_method("set_timing_offset_ms"):
+				SettingsManager.set_timing_offset_ms(ms)
+				SettingsManager.save_settings()
+			_update_timing_offset_label()
 	if MusicManager.has_method("resume_music"):
 		MusicManager.resume_music()
 
@@ -177,33 +205,53 @@ func _play_test_metronome_sound(_value_unused = null):
 func _on_music_volume_changed(value: float):
 	SettingsManager.set_music_volume(int(value))
 	MusicManager.set_music_volume(value)  
+	_update_volume_labels()
 	emit_signal("settings_changed") 
 
 func _on_menu_music_volume_changed(value: float):
 	SettingsManager.set_menu_music_volume(int(value))
 	MusicManager.set_menu_music_volume(value)
+	_update_volume_labels()
 	emit_signal("settings_changed")
 
 func _on_sfx_volume_changed(value: float):
 	SettingsManager.set_effects_volume(int(value))
 	MusicManager.set_sfx_volume(value) 
+	_update_volume_labels()
 	emit_signal("settings_changed")
 
 func _on_hit_sounds_volume_changed(value: float):
 	SettingsManager.set_hit_sounds_volume(int(value))
 	MusicManager.set_hit_sounds_volume(value)  
+	_update_volume_labels()
 	emit_signal("settings_changed")
 
 func _on_metronome_volume_changed(value: float):
 	SettingsManager.set_metronome_volume(int(value))
 	MusicManager.set_metronome_volume(value)  
+	_update_volume_labels()
 	emit_signal("settings_changed")
 
 func _on_preview_volume_changed(value: float):
 	SettingsManager.set_preview_volume(int(value))
+	_update_volume_labels()
 	emit_signal("settings_changed")
 	if game_screen and game_screen.has_method("set_preview_volume"):
 		game_screen.set_preview_volume(value)
+
+func _update_volume_labels():
+	if music_volume_label:
+		music_volume_label.text = "%s (%d%%)" % [MUSIC_VOLUME_LABEL_BASE, int(round(music_volume_slider.value))]
+	if menu_music_volume_label:
+		menu_music_volume_label.text = "%s (%d%%)" % [MENU_MUSIC_VOLUME_LABEL_BASE, int(round(menu_music_volume_slider.value))]
+	if sfx_volume_label:
+		sfx_volume_label.text = "%s (%d%%)" % [SFX_VOLUME_LABEL_BASE, int(round(sfx_volume_slider.value))]
+	if hit_sounds_volume_label:
+		hit_sounds_volume_label.text = "%s (%d%%)" % [HIT_SOUNDS_VOLUME_LABEL_BASE, int(round(hit_sounds_volume_slider.value))]
+	if metronome_volume_label:
+		metronome_volume_label.text = "%s (%d%%)" % [METRONOME_VOLUME_LABEL_BASE, int(round(metronome_volume_slider.value))]
+	if preview_volume_label:
+		preview_volume_label.text = "%s (%d%%)" % [PREVIEW_VOLUME_LABEL_BASE, int(round(preview_volume_slider.value))]
 
 func _input(event):
 	if not _is_calibrating:
@@ -223,7 +271,7 @@ func _input(event):
 		var now := Time.get_ticks_msec() / 1000.0
 		var rel := (now - _metronome_start_time) / _beat_interval
 		var nearest_index := int(round(rel))
-		var expected := _metronome_start_time + float(nearest_index) * _beat_interval
+		var expected := _metronome_start_time + float(nearest_index) * _beat_interval + AudioServer.get_output_latency()
 		var offset_sec := now - expected
 		var offset_ms := offset_sec * 1000.0
 		_tap_offsets_ms.append(offset_ms)

@@ -42,7 +42,9 @@ var _NOTES_STAGES := [
 	"Детекция ударных...",
 	"Назначение линий...",
 	"Сохранение нот...",
-	"Формирование ответа..."
+	"Формирование ответа...",
+	"Получение ответа",
+	"Обработка ответа"
 ]
 
 func _stage_index_for(status: String, stages: Array) -> int:
@@ -226,10 +228,10 @@ func _on_notes_started():
 		notes_started.emit(_active_notes_task.path, disp)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
 			var total := 1 + _notes_queue.size()
-			var instr_code = "П" if String(_active_notes_task.get("instrument","drums")).to_lower() == "drums" else String(_active_notes_task.get("instrument","")).substr(0, 1).to_upper()
-			var mode_code = "Б" if String(_active_notes_task.get("mode","basic")).to_lower() == "basic" else "У"
+			var instr_s = String(_active_notes_task.get("instrument", "drums"))
+			var mode_s = String(_active_notes_task.get("mode", "basic"))
 			var lanes_val = int(_active_notes_task.get("lanes", 4))
-			var suffix = " (%s %s %d)" % [instr_code, mode_code, lanes_val]
+			var suffix = _notes_notification_suffix(instr_s, mode_s, lanes_val)
 			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s (1/%d)%s" % [disp, total, suffix], true, "cancel_notes")
 
 func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String):
@@ -243,29 +245,21 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	var disp = t.display
 	var gen_mode = t.mode
 	var lanes_val = int(t.get("lanes", 4))
-	if notes_data is Array and notes_data.size() > 0:
-		var max_lane := 0
-		for nd in notes_data:
-			if typeof(nd) == TYPE_DICTIONARY:
-				var l = int(nd.get("lane", 0))
-				if l > max_lane:
-					max_lane = l
-		lanes_val = clamp(max_lane + 1, 3, 5)
+	var save_instrument = instrument_type if instrument_type != "" else String(t.get("instrument", "drums"))
 	var base_name = NotesUtils.base_name_from_song_path(path)
-	var notes_filename = NotesUtils.notes_filename(base_name, "drums", gen_mode, lanes_val)
+	var notes_filename = NotesUtils.notes_filename(base_name, save_instrument, gen_mode, lanes_val)
 	var notes_dir = NotesUtils.notes_dir(base_name)
 	DirectoryUtils.ensure_dir(notes_dir)
 	var notes_path = "%s/%s" % [notes_dir, notes_filename]
 	JsonUtils.write_json(notes_path, notes_data, false, true)
-	notes_completed.emit(path, instrument_type, disp)
+	notes_completed.emit(path, save_instrument, disp)
 	if _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()
 		if ach and ach.has_method("on_notes_generated"):
 			ach.on_notes_generated()
 	if not is_followup and SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
-		var instr_code = "П" if instrument_type.to_lower() == "drums" else instrument_type.substr(0, 1).to_upper()
-		var mode_code = "Б" if gen_mode.to_lower() == "basic" else "У"
-		_game_engine.notifications_complete("notes", "%s: Генерация завершена: %s %s %d" % [disp, instr_code, mode_code, int(lanes_val)])
+		var done_suffix = _notes_notification_suffix(save_instrument, gen_mode, lanes_val)
+		_game_engine.notifications_complete("notes", "%s: Генерация завершена%s" % [disp, done_suffix])
 	if not is_followup and MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
 	_active_notes_task.clear()
@@ -278,10 +272,10 @@ func _on_notes_error(message: String):
 	var disp = _active_notes_task.display
 	notes_error.emit(_active_notes_task.path, message, disp)
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_error"):
-		var instr_code = "П" if String(_active_notes_task.get("instrument","drums")).to_lower() == "drums" else String(_active_notes_task.get("instrument","")).substr(0, 1).to_upper()
-		var mode_code = "Б" if String(_active_notes_task.get("mode","basic")).to_lower() == "basic" else "У"
+		var ei = String(_active_notes_task.get("instrument", "drums"))
+		var em = String(_active_notes_task.get("mode", "basic"))
 		var lanes_val = int(_active_notes_task.get("lanes", 4))
-		var suffix = " (%s %s %d)" % [instr_code, mode_code, lanes_val]
+		var suffix = _notes_notification_suffix(ei, em, lanes_val)
 		var show_msg = "%s: Ошибка %s%s" % [disp, message, suffix]
 		_game_engine.notifications_error("notes", show_msg, "retry_notes", "cancel_notes")
 	if MusicManager and MusicManager.has_method("play_analysis_error"):
@@ -297,10 +291,10 @@ func _on_notes_status(status: String):
 		var k := _stage_index_for(status, _NOTES_STAGES)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
 			var stage_info := ("(%d/%d)" % [k, _NOTES_STAGES.size()]) if k > 0 else ""
-			var instr_code = "П" if String(_active_notes_task.get("instrument","drums")).to_lower() == "drums" else String(_active_notes_task.get("instrument","")).substr(0, 1).to_upper()
-			var mode_code = "Б" if String(_active_notes_task.get("mode","basic")).to_lower() == "basic" else "У"
+			var si = String(_active_notes_task.get("instrument", "drums"))
+			var sm = String(_active_notes_task.get("mode", "basic"))
 			var lanes_val = int(_active_notes_task.get("lanes", 4))
-			var suffix = " (%s %s %d)" % [instr_code, mode_code, lanes_val]
+			var suffix = _notes_notification_suffix(si, sm, lanes_val)
 			_game_engine.notifications_add_or_update("notes", "%s (1/%d) %s: %s%s" % [disp, total, stage_info, status, suffix], true, "cancel_notes")
 		notes_progress.emit(_active_notes_task.path, k, _NOTES_STAGES.size(), status)
 
@@ -326,6 +320,9 @@ func get_active_bpm_task() -> Dictionary:
 
 func get_active_notes_task() -> Dictionary:
 	return _active_notes_task.duplicate(true)
+
+func get_last_notes_task() -> Dictionary:
+	return _last_notes_task.duplicate(true)
 
 func _get_queue_delay_seconds() -> float:
 	return float(SettingsManager.get_setting("generation_queue_delay_seconds", 5.0))
@@ -360,12 +357,22 @@ func get_notes_queue_position(song_path: String, instrument: String, mode: Strin
 			return i + 2
 	return 0
 
+func get_notes_queue_position_for_song(song_path: String) -> int:
+	if song_path == "":
+		return 0
+	if _active_notes_task.has("path") and String(_active_notes_task.get("path", "")) == song_path:
+		return 1
+	for i in range(_notes_queue.size()):
+		if String(_notes_queue[i].get("path", "")) == song_path:
+			return i + 2
+	return 0
+
 func _suffix_from_settings() -> String:
 	var instrument = String(SettingsManager.get_setting("last_generation_instrument", "drums"))
 	var mode = String(SettingsManager.get_setting("last_generation_mode", "basic"))
 	var lanes = int(SettingsManager.get_setting("last_generation_lanes", 4))
-	var instr_code = "П" if instrument.to_lower() == "drums" else instrument.substr(0, 1).to_upper()
-	var mode_code = "Б" if mode.to_lower() == "basic" else "У"
+	var instr_code = _instr_code(instrument)
+	var mode_code = _mode_code(mode)
 	return " (%s %s %d)" % [instr_code, mode_code, lanes]
 
 func _start_next_bpm_delayed():
@@ -409,3 +416,26 @@ func _on_notes_delay_timeout():
 		next.get("title", ""),
 		next.get("mode", "basic")
 	)
+
+func _instr_code(instrument: String) -> String:
+	match instrument.to_lower():
+		"drums": return "П"
+		"fullmix": return "О"
+		_: return instrument.substr(0, 1).to_upper()
+
+func _mode_code(mode: String) -> String:
+	match mode.to_lower():
+		"basic": return "Б"
+		"enhanced": return "У"
+		"minimal": return "М"
+		"natural": return "Н"
+		"custom": return "П"
+		_: return mode.substr(0, 1).to_upper()
+
+func _notes_notification_suffix(instr: String, mode: String, lanes_val: int) -> String:
+	var scope := int(SettingsManager.get_setting("generation_notes_ready_scope", 0))
+	var ic := _instr_code(instr)
+	var mc := _mode_code(mode)
+	if scope == 0 or scope == 2:
+		return " (%s %s)" % [ic, mc]
+	return " (%s %s %d)" % [ic, mc, int(lanes_val)]

@@ -43,7 +43,7 @@ offset_right = 1920.0
 offset_bottom = 23.0
 theme_override_colors/font_color = Color(0.5254902, 0.7254902, 0.9529412, 1)
 theme_override_font_sizes/font_size = 24
-text = "Счёт: 0"
+text = "Базовый валюта (от счёта): 0"
 horizontal_alignment = 1
 
 [node name="ComboLabel" type="Label" parent="StatsFrame"]
@@ -53,7 +53,7 @@ offset_right = 1920.0
 offset_bottom = 53.0
 theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
 theme_override_font_sizes/font_size = 24
-text = "Макс. комбо: 0"
+text = "Бонус за максимальное комбо: 0"
 horizontal_alignment = 1
 
 [node name="AccuracyLabel" type="Label" parent="StatsFrame"]
@@ -63,7 +63,7 @@ offset_right = 1920.0
 offset_bottom = 83.0
 theme_override_colors/font_color = Color(0.4745098, 0.8901961, 0.8352941, 1)
 theme_override_font_sizes/font_size = 24
-text = "Точность: 0"
+text = "Бонус за точность: 0"
 horizontal_alignment = 1
 
 [node name="FullComboLabel" type="Label" parent="StatsFrame"]
@@ -73,7 +73,7 @@ offset_right = 1920.0
 offset_bottom = 113.0
 theme_override_colors/font_color = Color(0.5568628, 0.83137256, 0.6156863, 1)
 theme_override_font_sizes/font_size = 24
-text = "Полное комбо: 0"
+text = "Бонус за полное комбо: 0"
 horizontal_alignment = 1
 
 [node name="MultiplierLabel" type="Label" parent="StatsFrame"]

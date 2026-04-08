@@ -2,6 +2,10 @@
 extends Node
 class_name GenerationApiClient
 
+const _API_HOST := "127.0.0.1"
+const _API_PORT := 5000
+const _CONNECT_TIMEOUT_MS := 20000
+
 signal bpm_started
 signal bpm_completed(bpm_value: int)
 signal bpm_error(error_message: String)
@@ -105,6 +109,19 @@ func request_cancel_bpm():
 func request_cancel_notes():
 	_cancel_notes = true
 
+
+func _poll_until_http_connected(http_client: HTTPClient, cancel_getter: Callable) -> bool:
+	var start_ms := Time.get_ticks_msec()
+	while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
+		http_client.poll()
+		OS.delay_msec(10)
+		if Time.get_ticks_msec() - start_ms > _CONNECT_TIMEOUT_MS:
+			return false
+		if cancel_getter.is_valid() and cancel_getter.call():
+			return false
+	return http_client.get_status() == HTTPClient.STATUS_CONNECTED
+
+
 func _start_timer(cb: Callable):
 	var t = Timer.new()
 	t.wait_time = 0.1
@@ -154,9 +171,8 @@ func _check_genres():
 
 func _check_notes():
 	if _notes_status_queue.size() > 0:
-		for s in _notes_status_queue:
-			emit_signal("notes_status", s)
-		_notes_status_queue.clear()
+		emit_signal("notes_status", _notes_status_queue.pop_front())
+		return
 	if _notes_done:
 		var t = get_child(get_child_count() - 1)
 		if t and t is Timer:
@@ -174,21 +190,19 @@ func _check_notes():
 		elif _notes_res.has("notes") or _notes_res.has("notes_variants"):
 			if _notes_res.has("notes_variants"):
 				var variants = _notes_res.notes_variants
-				var preferred = str(int(_notes_res.get("lanes", 4)))
-				var keys: Array = []
-				if variants.has(preferred):
-					keys.append(preferred)
-				for k in ["3","4","5"]:
-					if k != preferred and variants.has(k):
-						keys.append(k)
-				for k2 in variants.keys():
-					if k2 in keys:
-						continue
-					keys.append(k2)
-				for key in keys:
-					var arr = variants.get(key, null)
-					if arr is Array:
-						emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
+				var requested_lanes = int(_notes_req.get("lanes", 4))
+				var key = str(requested_lanes)
+				var arr = variants.get(key, null)
+				if arr == null:
+					for fallback_k in [key, "4", "3", "5"]:
+						if variants.has(fallback_k):
+							arr = variants[fallback_k]
+							break
+					if arr == null and variants.size() > 0:
+						var first_k = variants.keys()[0]
+						arr = variants[first_k]
+				if arr is Array:
+					emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
 			else:
 				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
 			if _notes_res.has("track_info"):
@@ -221,19 +235,18 @@ func _bpm_worker(data_dict: Dictionary):
 		return
 	_bpm_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
-	_notes_status_queue.append("Подключение к серверу...")
-	var err = http_client.connect_to_host("localhost", 5000)
+	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
-		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
-			http_client.poll()
-			OS.delay_msec(100)
+		if not _poll_until_http_connected(http_client, func(): return _cancel_bpm):
 			if _cancel_bpm:
 				_bpm_res = {"error": "Операция отменена"}
-				http_client.close()
-				_bpm_done = true
-				return
+			else:
+				_bpm_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]}
+			http_client.close()
+			_bpm_done = true
+			return
 		_bpm_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
@@ -295,13 +308,16 @@ func _genres_worker(data_dict: Dictionary):
 		return
 	_genres_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
-	var err = http_client.connect_to_host("localhost", 5000)
+	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
-		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
-			http_client.poll()
-			OS.delay_msec(100)
+		if not _poll_until_http_connected(http_client, Callable()):
+			local_error = "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]
+			http_client.close()
+			_genres_res = {"error": local_error}
+			_genres_done = true
+			return
 		_genres_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
@@ -352,18 +368,18 @@ func _notes_worker(data_dict: Dictionary):
 	var manual_title = data_dict.get("manual_title", "")
 	var generation_mode = data_dict.get("generation_mode", "basic")
 	var http_client = HTTPClient.new()
-	var err = http_client.connect_to_host("localhost", 5000)
+	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
-		while http_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
-			http_client.poll()
-			OS.delay_msec(100)
+		if not _poll_until_http_connected(http_client, func(): return _cancel_notes):
 			if _cancel_notes:
 				_notes_res = {"error": "Отменено пользователем"}
-				http_client.close()
-				_notes_done = true
-				return
+			else:
+				_notes_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]}
+			http_client.close()
+			_notes_done = true
+			return
 		_notes_status_queue.append("Соединение установлено")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
@@ -408,7 +424,13 @@ func _notes_worker(data_dict: Dictionary):
 				"manual_artist": manual_artist,
 				"manual_title": manual_title,
 				"progress_delay_seconds": 2.0,
-				"use_stems": bool(SettingsManager.get_setting("use_stems_in_generation", true)),
+				"use_stems": false if instrument_type == "fullmix" else bool(SettingsManager.get_setting("use_stems_in_generation", true)),
+				"fill": int(SettingsManager.get_setting("generation_fill", 30)),
+				"groove": int(SettingsManager.get_setting("generation_groove", 50)),
+				"density": int(SettingsManager.get_setting("generation_density", 50)),
+				"grid_snap_strength": int(SettingsManager.get_setting("generation_grid_snap_strength", 80)),
+				"accent_strong_beats": bool(SettingsManager.get_setting("generation_accent_strong_beats", true)),
+				"genre_template_strength": int(SettingsManager.get_setting("generation_genre_template_strength", 60)),
 				"genres": client_genres_arr,
 				"primary_genre": client_primary_genre
 			})
@@ -425,18 +447,15 @@ func _notes_worker(data_dict: Dictionary):
 				local_error = "Ошибка отправки: " + str(err)
 			else:
 				http_client.poll()
-				var last_poll := Time.get_ticks_msec()
+				var last_poll := Time.get_ticks_msec() - 1000
 				var last_count := 0
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 					http_client.poll()
 					OS.delay_msec(100)
 					if Time.get_ticks_msec() - last_poll >= 800:
 						var poll_client = HTTPClient.new()
-						var perr = poll_client.connect_to_host("localhost", 5000)
-						if perr == OK:
-							while poll_client.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
-								poll_client.poll()
-								OS.delay_msec(50)
+						var perr = poll_client.connect_to_host(_API_HOST, _API_PORT)
+						if perr == OK and _poll_until_http_connected(poll_client, Callable()):
 							if poll_client.get_status() == HTTPClient.STATUS_CONNECTED:
 								var q: String = "/task_status?task_id=" + task_id
 								poll_client.request_raw(HTTPClient.METHOD_GET, q, PackedStringArray(), PackedByteArray())
@@ -462,11 +481,8 @@ func _notes_worker(data_dict: Dictionary):
 						last_poll = Time.get_ticks_msec()
 					if _cancel_notes:
 						var canc = HTTPClient.new()
-						var cerr = canc.connect_to_host("localhost", 5000)
-						if cerr == OK:
-							while canc.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
-								canc.poll()
-								OS.delay_msec(50)
+						var cerr = canc.connect_to_host(_API_HOST, _API_PORT)
+						if cerr == OK and _poll_until_http_connected(canc, Callable()):
 							if canc.get_status() == HTTPClient.STATUS_CONNECTED:
 								var cq = "/cancel_task?task_id=" + task_id
 								canc.request_raw(HTTPClient.METHOD_GET, cq, PackedStringArray(), PackedByteArray())

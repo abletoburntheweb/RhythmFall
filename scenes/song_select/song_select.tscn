@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
+[ext_resource type="Theme" uid="uid://dahdrq5xdlh6v" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1455,6 +1455,7 @@ text = "Лучшая оценка:"
 
 [node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
+color = Color(1, 1, 1, 0)
 
 [node name="PlayButton" type="Button" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2

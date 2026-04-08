@@ -7,7 +7,7 @@ extends Control
 @export var progress_text: String = "0 / 10"
 @export var is_unlocked: bool = false
 @export var unlock_date_text: String = ""
-@export var icon_texture: ImageTexture = null
+@export var icon_texture: Texture2D = null
 
 var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
 var TimeUtils = preload("res://logic/utils/time_utils.gd")

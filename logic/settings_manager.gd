@@ -13,7 +13,7 @@ var default_settings = {
 	"timing_offset_ms": 0,
 	"fps_mode": 0, 
 	"fullscreen": true,
-	"enable_debug_menu": false,
+	"enable_debug_menu": true,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
 	"lane_highlight_brightness": 100.0,
@@ -29,7 +29,22 @@ var default_settings = {
 	"last_generation_mode": "basic",
 	"last_generation_lanes": 4,
 	"use_stems_in_generation": true,
-	"scroll_speed": 10.0
+	"scroll_speed": 10.0,
+	"generation_fill": 50,
+	"generation_groove": 50,
+	"generation_density": 50,
+	"generation_grid_snap_strength": 80,
+	"generation_accent_strong_beats": true,
+	"generation_genre_template_strength": 60,
+	"generation_custom_fill": 50,
+	"generation_custom_groove": 50,
+	"generation_custom_density": 50,
+	"generation_custom_grid_snap_strength": 50,
+	"generation_custom_accent_strong_beats": false,
+	"generation_custom_genre_template_strength": 50,
+	"generation_custom_enable_genre_detection": false,
+	"generation_custom_use_stems_in_generation": false,
+	"generation_notes_ready_scope": 1
 }
 
 var settings: Dictionary = default_settings.duplicate(true)

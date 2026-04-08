@@ -502,6 +502,8 @@ func _render_grouped_data():
 			var song_path = String(song_data.get("path", ""))
 			if _notes_exist_for(song_path, current_instrument, current_mode, current_lanes):
 				item_list.set_item_custom_fg_color(idx, Color("#61C7BD"))
+			else:
+				item_list.set_item_custom_fg_color(idx, Color.WHITE)
 
 func _format_display_text(song_data: Dictionary) -> String:
 	var artist = str(song_data.get("artist", "")).strip_edges()
