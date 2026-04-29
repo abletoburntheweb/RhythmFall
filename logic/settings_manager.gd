@@ -3,6 +3,7 @@ extends Node
 
 const SETTINGS_PATH = "user://settings.json"
 const MAX_LANES = 5
+const DEFAULT_WINDOW_SIZE := Vector2i(1920, 1080)
 var default_settings = {
 	"music_volume": 30.0,
 	"menu_music_volume": 30.0,
@@ -13,6 +14,7 @@ var default_settings = {
 	"timing_offset_ms": 0,
 	"fps_mode": 0, 
 	"fullscreen": true,
+	"graphics_quality": 1,
 	"enable_debug_menu": true,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
@@ -86,10 +88,10 @@ func _load_settings():
 
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
 		if not settings.get("fullscreen", default_settings["fullscreen"]):
-			DisplayServer.window_set_size(Vector2i(1920, 1080))
+			var window_size = get_window_size()
+			DisplayServer.window_set_size(window_size)
 			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
 			var screen_size = DisplayServer.screen_get_size()
-			var window_size = Vector2i(1920, 1080)
 			DisplayServer.window_set_position((screen_size - window_size) / 2)
 	else:
 		_save_settings() 
@@ -199,6 +201,17 @@ func set_fullscreen(enabled: bool):
 	settings["fullscreen"] = enabled
 	_save_settings()
 
+func get_window_size() -> Vector2i:
+	return DEFAULT_WINDOW_SIZE
+
+func get_graphics_quality() -> int:
+	var quality := int(settings.get("graphics_quality", default_settings["graphics_quality"]))
+	return int(clamp(quality, 0, 2))
+
+func set_graphics_quality(quality: int):
+	settings["graphics_quality"] = int(clamp(quality, 0, 2))
+	_save_settings()
+
 func get_lane_highlight_brightness() -> float:
 	return float(settings.get("lane_highlight_brightness", default_settings["lane_highlight_brightness"]))
 
@@ -298,10 +311,10 @@ func _apply_reset_settings():
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", false) else DisplayServer.WINDOW_MODE_WINDOWED)
 	
 	if not settings.get("fullscreen", false):
-		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		var window_size = get_window_size()
+		DisplayServer.window_set_size(window_size)
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
 		var screen_size = DisplayServer.screen_get_size()
-		var window_size = Vector2i(1920, 1080)
 		DisplayServer.window_set_position((screen_size - window_size) / 2)
 	
 	pass

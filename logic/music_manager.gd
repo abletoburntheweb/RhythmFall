@@ -64,11 +64,20 @@ var _menu_music_volume_pct: float = 50.0
 var _game_music_volume_pct: float = 50.0
 
 var _stream_cache: Dictionary = {}
+var _async_audio_threads: Dictionary = {}
+var _async_audio_callbacks: Dictionary = {}
+var _async_audio_started_ms: Dictionary = {}
+var _custom_hit_request_id: int = 0
 const SFX_POOL_SIZE := 8
 var _sfx_pool: Array[AudioStreamPlayer] = []
+const PERF_LOG_THRESHOLD_MS := 50
 const PRELOAD_SFX := [
 	DEFAULT_SELECT_SOUND,
 	DEFAULT_CANCEL_SOUND,
+	DEFAULT_COVER_CLICK_SOUND,
+	DEFAULT_SCORE_TICK_SOUND
+]
+const DEFERRED_PRELOAD_SFX := [
 	ANALYSIS_SUCCESS_SOUND,
 	ANALYSIS_ERROR_SOUND,
 	DEFAULT_ACHIEVEMENT_SOUND,
@@ -77,7 +86,6 @@ const PRELOAD_SFX := [
 	DEFAULT_SHOP_SOUND,
 	DEFAULT_METRONOME_STRONG_SOUND,
 	DEFAULT_METRONOME_WEAK_SOUND,
-	DEFAULT_COVER_CLICK_SOUND,
 	DEFAULT_LEVEL_START_SOUND,
 	DEFAULT_LEVEL_UP_SOUND,
 	DEFAULT_LEVEL_COMPLETE_SOUND,
@@ -93,10 +101,70 @@ func _load_audio_stream(path: String, base_dir: String = "") -> AudioStream:
 	var full_path = (base_dir + path) if base_dir != "" else path
 	if _stream_cache.has(full_path):
 		return _stream_cache[full_path]
+	var started_ms := Time.get_ticks_msec()
 	var stream: AudioStream = FilePathUtils.load_audio_stream_for_path(full_path)
+	_log_perf("audio sync load " + full_path, started_ms)
 	if stream:
 		_stream_cache[full_path] = stream
 	return stream
+
+func _log_perf(label: String, started_ms: int, threshold_ms: int = PERF_LOG_THRESHOLD_MS) -> void:
+	var elapsed := Time.get_ticks_msec() - started_ms
+	if elapsed >= threshold_ms:
+		print("[Perf] MusicManager %s: %d ms" % [label, elapsed])
+
+func load_audio_stream_async(path: String, base_dir: String = "", callback: Callable = Callable()) -> void:
+	var full_path = (base_dir + path) if base_dir != "" else path
+	if _stream_cache.has(full_path):
+		if callback.is_valid():
+			callback.call_deferred(_stream_cache[full_path])
+		return
+	if _async_audio_threads.has(full_path):
+		if callback.is_valid():
+			var callbacks: Array = _async_audio_callbacks.get(full_path, [])
+			callbacks.append(callback)
+			_async_audio_callbacks[full_path] = callbacks
+		return
+	var thread := Thread.new()
+	if callback.is_valid():
+		_async_audio_callbacks[full_path] = [callback]
+	else:
+		_async_audio_callbacks[full_path] = []
+	_async_audio_started_ms[full_path] = Time.get_ticks_msec()
+	var err := thread.start(Callable(self, "_load_audio_stream_worker").bind(full_path))
+	if err != OK:
+		_async_audio_callbacks.erase(full_path)
+		_async_audio_started_ms.erase(full_path)
+		if callback.is_valid():
+			callback.call_deferred(null)
+		printerr("MusicManager: Не удалось запустить поток загрузки аудио: " + str(err))
+		return
+	_async_audio_threads[full_path] = thread
+	call_deferred("_poll_async_audio", full_path)
+
+func _load_audio_stream_worker(full_path: String) -> AudioStream:
+	return FilePathUtils.load_audio_stream_for_path(full_path)
+
+func _poll_async_audio(full_path: String) -> void:
+	if not _async_audio_threads.has(full_path):
+		return
+	var thread: Thread = _async_audio_threads[full_path]
+	if thread and thread.is_alive():
+		await get_tree().process_frame
+		call_deferred("_poll_async_audio", full_path)
+		return
+	var stream = thread.wait_to_finish() if thread else null
+	if stream and stream is AudioStream:
+		_stream_cache[full_path] = stream
+	var callbacks: Array = _async_audio_callbacks.get(full_path, [])
+	var started_ms := int(_async_audio_started_ms.get(full_path, Time.get_ticks_msec()))
+	_log_perf("audio async load " + full_path, started_ms, 1)
+	_async_audio_threads.erase(full_path)
+	_async_audio_callbacks.erase(full_path)
+	_async_audio_started_ms.erase(full_path)
+	for cb in callbacks:
+		if cb is Callable and cb.is_valid():
+			cb.call_deferred(stream)
 
 func _play_stream_on(player: AudioStreamPlayer, stream: AudioStream, volume_pct: float, position: float = 0.0, restart_if_playing: bool = true):
 	if not player or not stream:
@@ -491,7 +559,20 @@ func _get_free_hit_player() -> AudioStreamPlayer:
 
 func play_custom_hit_sound(sound_path: String):
 	var full_path = sound_path
-	var stream = _load_audio_stream(full_path)
+	_custom_hit_request_id += 1
+	var request_id := _custom_hit_request_id
+	if not _stream_cache.has(full_path):
+		load_audio_stream_async(full_path, "", func(stream): _on_custom_hit_sound_loaded(full_path, request_id, stream))
+		return
+	var stream = _stream_cache[full_path]
+	_play_custom_hit_stream(full_path, stream)
+
+func _on_custom_hit_sound_loaded(full_path: String, request_id: int, stream: AudioStream) -> void:
+	if request_id != _custom_hit_request_id:
+		return
+	_play_custom_hit_stream(full_path, stream)
+
+func _play_custom_hit_stream(full_path: String, stream: AudioStream) -> void:
 	if stream:
 		if hit_sound_player:
 			hit_sound_player.stream = stream
@@ -566,5 +647,15 @@ func _get_free_sfx_player() -> AudioStreamPlayer:
 	return null
 
 func _preload_common_sfx():
+	var started_ms := Time.get_ticks_msec()
 	for file_name in PRELOAD_SFX:
 		_load_audio_stream(file_name, MUSIC_DIR)
+	_log_perf("critical SFX preload", started_ms, 1)
+	call_deferred("_preload_deferred_sfx_step", 0)
+
+func _preload_deferred_sfx_step(index: int) -> void:
+	if index >= DEFERRED_PRELOAD_SFX.size():
+		return
+	_load_audio_stream(DEFERRED_PRELOAD_SFX[index], MUSIC_DIR)
+	await get_tree().process_frame
+	call_deferred("_preload_deferred_sfx_step", index + 1)

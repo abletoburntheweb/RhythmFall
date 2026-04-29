@@ -16,6 +16,16 @@ var play_button: Button = null
 var preview_player: AudioStreamPlayer = null
 
 var _current_preview_file_path: String = ""
+var _preview_request_id: int = 0
+var _cover_loader: ThreadedTextureLoader = null
+var _cover_loader_connected: bool = false
+var _cover_request_id: int = 0
+var _sidecar_cover_thread: Thread = null
+var _sidecar_cover_request_id: int = 0
+var _embedded_cover_thread: Thread = null
+var _embedded_cover_request_id: int = 0
+static var _sidecar_cover_cache: Dictionary = {}
+static var _embedded_cover_cache: Dictionary = {}
 
 var current_instrument: String = "standard"
 var current_generation_mode: String = "basic"
@@ -116,6 +126,14 @@ func update_details(song_data: Dictionary):
 	_update_generation_status() 
 
 func _get_fallback_cover_texture():
+	var path := _get_fallback_cover_path()
+	if path != "" and _cover_loader:
+		var cached := _cover_loader.get_cached(path)
+		if cached:
+			return cached
+	return null
+
+func _get_fallback_cover_path() -> String:
 	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
 
 	var folder_name_map = {
@@ -132,16 +150,13 @@ func _get_fallback_cover_texture():
 	var random_index = rng.randi_range(1, 7)
 	var fallback_cover_filename = "cover%d.png" % random_index
 	var fallback_cover_path = "res://assets/shop/covers/%s/%s" % [folder_name, fallback_cover_filename]
-	var tex = ResourceLoader.load(fallback_cover_path)
-	if tex and tex is Texture2D:
-		return tex
+	if FileAccess.file_exists(fallback_cover_path):
+		return fallback_cover_path
 	var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
-	if fallback_cover_path != fallback_fallback_path:
-		var tex2 = ResourceLoader.load(fallback_fallback_path)
-		if tex2 and tex2 is Texture2D:
-			return tex2
+	if fallback_cover_path != fallback_fallback_path and FileAccess.file_exists(fallback_fallback_path):
+		return fallback_fallback_path
 
-	return null
+	return ""
 
 func _has_notes_for_instrument(song_path: String, instrument: String) -> bool:
 	if song_path == "":
@@ -181,6 +196,7 @@ func _on_preview_finished():
 		pass
 
 func play_song_preview(filepath: String):
+	var started_ms := Time.get_ticks_msec()
 	if filepath == "":
 		printerr("SongDetailsManager.gd: Путь к файлу пуст, воспроизведение невозможно.")
 		return
@@ -193,26 +209,22 @@ func play_song_preview(filepath: String):
 	if preview_player.playing:
 		preview_player.stop()
 
-	var audio_stream = _load_audio_stream_for_path(filepath)
-	if audio_stream == null:
-		if file_extension == "mp3":
-			audio_stream = ResourceLoader.load(filepath, "AudioStreamMP3")
-		elif file_extension == "wav":
-			audio_stream = ResourceLoader.load(filepath, "AudioStreamWAV")
-		if audio_stream == null:
-			var global_path = ProjectSettings.globalize_path(filepath)
-			if FileAccess.file_exists(global_path):
-				var s2 = _load_audio_stream_for_path(global_path)
-				if s2:
-					audio_stream = s2
+	_preview_request_id += 1
+	var request_id := _preview_request_id
+	_current_preview_file_path = filepath
+	if MusicManager and MusicManager.has_method("load_audio_stream_async"):
+		MusicManager.load_audio_stream_async(filepath, "", func(audio_stream): _on_preview_stream_loaded(filepath, request_id, audio_stream))
+	else:
+		printerr("SongDetailsManager.gd: MusicManager не поддерживает асинхронную загрузку preview.")
+	print("[Perf] SongDetails preview request: %d ms" % [Time.get_ticks_msec() - started_ms])
 
+func _on_preview_stream_loaded(filepath: String, request_id: int, audio_stream: AudioStream) -> void:
+	if request_id != _preview_request_id or filepath != _current_preview_file_path:
+		return
 	if audio_stream:
 		preview_player.stream = audio_stream
-		_current_preview_file_path = filepath
-
 		var preview_volume_percent = SettingsManager.get_preview_volume()
 		preview_player.volume_db = linear_to_db(preview_volume_percent / 100.0)
-
 		preview_player.play()
 	else:
 		printerr("SongDetailsManager.gd: Не удалось загрузить аудио поток из: " + filepath)
@@ -232,21 +244,8 @@ func _update_duration_if_unknown(song_data: Dictionary) -> void:
 	var path = song_data.get("path", "")
 	if path == "":
 		return
-	var ext = path.get_extension().to_lower()
-	var stream = _load_audio_stream_for_path(path)
-	if stream == null:
-		if ext == "mp3":
-			stream = ResourceLoader.load(path, "AudioStreamMP3")
-		elif ext == "wav":
-			stream = ResourceLoader.load(path, "AudioStreamWAV")
-	if stream and stream is AudioStream:
-		var seconds = stream.get_length()
-		if seconds > 0:
-			var minutes_i = int(seconds) / 60
-			var seconds_i = int(seconds) % 60
-			var dur_str = "%02d:%02d" % [minutes_i, seconds_i]
-			duration_label.text = "Длительность: " + dur_str
-			SongLibrary.update_metadata(path, {"duration": dur_str})
+	if SongLibrary and SongLibrary.has_method("request_duration_update"):
+		SongLibrary.request_duration_update(path)
 
 var _tag_sync_in_progress := false
 
@@ -274,41 +273,9 @@ func _apply_tags_if_needed(song_data: Dictionary) -> void:
 	var global_path = ProjectSettings.globalize_path(path_for_tags)
 	if not FileAccess.file_exists(global_path):
 		return
-	var fa = FileAccess.open(global_path, FileAccess.READ)
-	if not fa:
-		return
-	var buf = fa.get_buffer(fa.get_length())
-	fa.close()
-	var mm = MusicMetadata.new()
-	mm.set_from_data(buf)
-	var updated = {}
-	if mm.title != "" and need_title:
-		if title_label and ("Название: " + mm.title != title_label.text):
-			title_label.text = "Название: " + mm.title
-		updated["title"] = mm.title
-	if mm.artist != "" and need_artist:
-		if artist_label and ("Исполнитель: " + mm.artist != artist_label.text):
-			artist_label.text = "Исполнитель: " + mm.artist
-		updated["artist"] = mm.artist
-	if mm.year != 0 and need_year:
-		var y = str(mm.year)
-		if year_label and ("Год: " + y != year_label.text):
-			year_label.text = "Год: " + y
-		updated["year"] = y
-	if int(mm.bpm) > 0 and need_bpm:
-		var bpm_str = str(int(mm.bpm))
-		if bpm_label and ("BPM: " + bpm_str != bpm_label.text):
-			bpm_label.text = "BPM: " + bpm_str
-		updated["bpm"] = bpm_str
-	if not updated.is_empty():
-		_tag_sync_in_progress = true
-		var diff := {}
-		for k in updated.keys(): 
-			if not current_meta.has(k) or str(current_meta[k]) != str(updated[k]):
-				diff[k] = updated[k]
-		if not diff.is_empty():
-			SongLibrary.update_metadata(path_for_tags, diff)
-		_tag_sync_in_progress = false
+	if need_title or need_artist or need_year or need_bpm:
+		if SongLibrary and SongLibrary.has_method("request_id3_update"):
+			SongLibrary.request_id3_update(path_for_tags)
 
 func _apply_cover_texture(song_data: Dictionary) -> void:
 	var cover_texture = song_data.get("cover", null)
@@ -316,45 +283,170 @@ func _apply_cover_texture(song_data: Dictionary) -> void:
 		cover_texture_rect.texture = cover_texture
 		return
 	var path_for_cover = song_data.get("path", "")
-	var applied = false
+	_cover_request_id += 1
+	var request_id := _cover_request_id
 	if path_for_cover != "":
 		var global_path = ProjectSettings.globalize_path(path_for_cover)
-		if FileAccess.file_exists(global_path):
-			var fa = FileAccess.open(global_path, FileAccess.READ)
-			if fa:
-				var buf = fa.get_buffer(fa.get_length())
-				fa.close()
-				var mm = MusicMetadata.new()
-				mm.set_from_data(buf)
-				if mm.cover and mm.cover is ImageTexture:
-					cover_texture_rect.texture = mm.cover
-					applied = true
-			if not applied:
-				var base_dir = global_path.get_base_dir()
-				var stem = path_for_cover.get_file().get_basename()
-				var candidates = [
-					base_dir + "/" + stem + ".jpg",
-					base_dir + "/" + stem + ".png",
-					base_dir + "/cover.jpg",
-					base_dir + "/cover.png"
-				]
-				for img_path in candidates:
-					if FileAccess.file_exists(img_path):
-						var img_file = FileAccess.open(img_path, FileAccess.READ)
-						if img_file:
-							var img_buf = img_file.get_buffer(img_file.get_length())
-							img_file.close()
-							var image = Image.new()
-							var ok = image.load_png_from_buffer(img_buf)
-							if ok != OK:
-								ok = image.load_jpg_from_buffer(img_buf)
-							if ok == OK:
-								var tex = ImageTexture.create_from_image(image)
-								cover_texture_rect.texture = tex
-								applied = true
-								break
-	if applied:
+		if _embedded_cover_cache.has(global_path):
+			cover_texture_rect.texture = _embedded_cover_cache[global_path]
+			return
+		if _sidecar_cover_cache.has(global_path):
+			cover_texture_rect.texture = _sidecar_cover_cache[global_path]
+			return
+		_start_embedded_cover_load(global_path, request_id)
+		_start_sidecar_cover_load(global_path, request_id)
+	_request_fallback_cover_texture(request_id)
+
+func _start_embedded_cover_load(global_audio_path: String, request_id: int) -> void:
+	if _embedded_cover_thread and _embedded_cover_thread.is_alive():
 		return
-	var fallback_texture = _get_fallback_cover_texture()
-	if fallback_texture:
-		cover_texture_rect.texture = fallback_texture
+	if not FileAccess.file_exists(global_audio_path):
+		return
+	_embedded_cover_request_id = request_id
+	_embedded_cover_thread = Thread.new()
+	var err := _embedded_cover_thread.start(Callable(self, "_embedded_cover_worker").bind(global_audio_path))
+	if err != OK:
+		_embedded_cover_thread = null
+		return
+	call_deferred("_poll_embedded_cover_thread")
+
+func _embedded_cover_worker(global_audio_path: String) -> Dictionary:
+	var buf := _read_id3_tag_blob(global_audio_path)
+	if buf.is_empty():
+		var fa := FileAccess.open(global_audio_path, FileAccess.READ)
+		if not fa:
+			return {}
+		buf = fa.get_buffer(fa.get_length())
+		fa.close()
+	var mm := MusicMetadata.new()
+	mm.set_from_data(buf)
+	if mm.cover and mm.cover is ImageTexture:
+		var img := mm.cover.get_image()
+		if img:
+			return {"audio_path": global_audio_path, "image": img}
+	return {}
+
+func _read_id3_tag_blob(global_audio_path: String) -> PackedByteArray:
+	var fa := FileAccess.open(global_audio_path, FileAccess.READ)
+	if not fa:
+		return PackedByteArray()
+	var header := fa.get_buffer(10)
+	if header.size() < 10:
+		fa.close()
+		return PackedByteArray()
+	var is_id3 := header.slice(0, 3).get_string_from_ascii() == "ID3"
+	if not is_id3:
+		fa.close()
+		return PackedByteArray()
+	var size_bytes := header.slice(6, 10)
+	var size := 0
+	for b in size_bytes:
+		size = (size << 7) | int(b & 0x7f)
+	var tag := fa.get_buffer(size)
+	fa.close()
+	var data := PackedByteArray()
+	data.append_array(header)
+	data.append_array(tag)
+	return data
+
+
+func _poll_embedded_cover_thread() -> void:
+	if not _embedded_cover_thread:
+		return
+	if _embedded_cover_thread.is_alive():
+		await get_tree().process_frame
+		call_deferred("_poll_embedded_cover_thread")
+		return
+	var result = _embedded_cover_thread.wait_to_finish()
+	_embedded_cover_thread = null
+	if not result is Dictionary or result.is_empty():
+		return
+	if _embedded_cover_request_id != _cover_request_id:
+		return
+	var image = result.get("image", null)
+	var audio_path := str(result.get("audio_path", ""))
+	if image and image is Image:
+		var tex := ImageTexture.create_from_image(image)
+		_embedded_cover_cache[audio_path] = tex
+		if cover_texture_rect:
+			cover_texture_rect.texture = tex
+
+func _start_sidecar_cover_load(global_audio_path: String, request_id: int) -> void:
+	if _sidecar_cover_thread and _sidecar_cover_thread.is_alive():
+		return
+	var candidates := _get_sidecar_cover_candidates(global_audio_path)
+	if candidates.is_empty():
+		return
+	_sidecar_cover_request_id = request_id
+	_sidecar_cover_thread = Thread.new()
+	var err := _sidecar_cover_thread.start(Callable(self, "_sidecar_cover_worker").bind(global_audio_path, candidates))
+	if err != OK:
+		_sidecar_cover_thread = null
+		return
+	call_deferred("_poll_sidecar_cover_thread")
+
+func _get_sidecar_cover_candidates(global_audio_path: String) -> Array:
+	var base_dir = global_audio_path.get_base_dir()
+	var stem = global_audio_path.get_file().get_basename()
+	var candidates := [
+		base_dir + "/" + stem + ".jpg",
+		base_dir + "/" + stem + ".png",
+		base_dir + "/cover.jpg",
+		base_dir + "/cover.png"
+	]
+	var existing := []
+	for img_path in candidates:
+		if FileAccess.file_exists(img_path):
+			existing.append(img_path)
+	return existing
+
+func _sidecar_cover_worker(global_audio_path: String, candidates: Array) -> Dictionary:
+	for img_path in candidates:
+		var image := Image.new()
+		var err := image.load(String(img_path))
+		if err == OK:
+			return {"audio_path": global_audio_path, "image": image}
+	return {}
+
+func _poll_sidecar_cover_thread() -> void:
+	if not _sidecar_cover_thread:
+		return
+	if _sidecar_cover_thread.is_alive():
+		await get_tree().process_frame
+		call_deferred("_poll_sidecar_cover_thread")
+		return
+	var result = _sidecar_cover_thread.wait_to_finish()
+	_sidecar_cover_thread = null
+	if not result is Dictionary or result.is_empty():
+		return
+	if _sidecar_cover_request_id != _cover_request_id:
+		return
+	var image = result.get("image", null)
+	var audio_path := str(result.get("audio_path", ""))
+	if image and image is Image:
+		var tex := ImageTexture.create_from_image(image)
+		_sidecar_cover_cache[audio_path] = tex
+		if cover_texture_rect:
+			cover_texture_rect.texture = tex
+
+func _request_fallback_cover_texture(request_id: int) -> void:
+	var fallback_path := _get_fallback_cover_path()
+	if fallback_path == "":
+		return
+	if _cover_loader == null:
+		_cover_loader = ThreadedTextureLoader.get_instance()
+	if _cover_loader == null:
+		return
+	if not _cover_loader_connected:
+		_cover_loader.loaded.connect(_on_fallback_cover_loaded)
+		_cover_loader_connected = true
+	var cached := _cover_loader.get_cached(fallback_path)
+	if cached:
+		cover_texture_rect.texture = cached
+		return
+	_cover_loader.request(fallback_path)
+
+func _on_fallback_cover_loaded(path: String, tex: Texture2D) -> void:
+	if not cover_texture_rect or tex == null:
+		return
+	cover_texture_rect.texture = tex

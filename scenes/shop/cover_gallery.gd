@@ -48,6 +48,7 @@ func _exit_tree():
 
 
 func _load_images_threaded():
+	var started_ms := Time.get_ticks_msec()
 	var ph: Texture2D = _slot_placeholder_texture()
 	for i in range(cover_image_rects.size()):
 		var image_rect = cover_image_rects[i]
@@ -76,6 +77,9 @@ func _load_images_threaded():
 			_path_to_rect[image_path] = cover_image_rects[i]
 			if _loader:
 				_loader.request(image_path)
+		if i % 2 == 1:
+			await get_tree().process_frame
+	print("[Perf] CoverGallery load image requests: %d ms, count=%d" % [Time.get_ticks_msec() - started_ms, images_count])
 
 
 func _on_loader_loaded(path: String, tex: Texture2D) -> void:

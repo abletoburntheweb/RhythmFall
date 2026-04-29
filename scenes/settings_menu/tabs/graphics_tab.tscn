@@ -1,7 +1,7 @@
 [gd_scene load_steps=239 format=3 uid="uid://dk7vdwevkwjod"]
 
 [ext_resource type="Script" uid="uid://drgo4eer061ns" path="res://scenes/settings_menu/tabs/graphics_tab.gd" id="1_dnxrn"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_gfom4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -4744,6 +4744,29 @@ theme = SubResource("Theme_p28av")
 theme_override_font_sizes/font_size = 24
 text = "Полноэкранный режим"
 
+[node name="GraphicsQuality" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="GraphicsQualityLabel" type="Label" parent="ContentVBox/GraphicsQuality"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Качество графики:"
+
+[node name="GraphicsQualityOptionButton" type="OptionButton" parent="ContentVBox/GraphicsQuality"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme = ExtResource("2_gfom4")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 24
+selected = 1
+item_count = 3
+popup/item_0/text = "Низкие"
+popup/item_0/id = 0
+popup/item_1/text = "Средние"
+popup/item_1/id = 1
+popup/item_2/text = "Высокие"
+popup/item_2/id = 2
+
 [node name="FPS" type="HBoxContainer" parent="ContentVBox"]
 layout_mode = 2
 
@@ -4802,6 +4825,7 @@ layout_mode = 2
 theme = SubResource("Theme_gfom4")
 
 [connection signal="toggled" from="ContentVBox/FullscreenCheckBox" to="." method="_on_fullscreen_toggled"]
+[connection signal="item_selected" from="ContentVBox/GraphicsQuality/GraphicsQualityOptionButton" to="." method="_on_graphics_quality_selected"]
 [connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
 [connection signal="value_changed" from="ContentVBox/ScrollSpeed/ScrollSpeedSpinBox" to="." method="_on_scroll_speed_spin_changed"]
 [connection signal="value_changed" from="ContentVBox/LaneHighlightBrightnessSlider" to="." method="_on_lane_highlight_brightness_changed"]

@@ -18,6 +18,8 @@ const ACHIEVEMENT_ICON_PATHS: PackedStringArray = [
 	"res://assets/achievements/default.png",
 ]
 
+const STARTUP_SHOP_TEXTURE_LIMIT := 12
+
 
 static func _load_shop_data() -> Dictionary:
 	for path in [SHOP_USER, SHOP_RES]:
@@ -43,23 +45,32 @@ static func _request_path(loader: ThreadedTextureLoader, path: String, seen: Dic
 	loader.request(path)
 
 
-static func warmup_shop_textures() -> void:
+static func warmup_shop_textures(limit: int = -1) -> void:
 	var loader: ThreadedTextureLoader = ThreadedTextureLoader.get_instance()
 	if loader == null:
 		return
 	var seen: Dictionary = {}
 	var data := _load_shop_data()
 	var items: Array = data.get("items", []) as Array
+	var requested := 0
 	for item in items:
 		if not item is Dictionary:
 			continue
 		var ip := str(item.get("image", ""))
 		_request_path(loader, ip, seen)
+		if not ip.is_empty() and seen.has(ip):
+			requested += 1
+		if limit > 0 and requested >= limit:
+			return
 		var folder := str(item.get("images_folder", ""))
 		var cnt := int(item.get("images_count", 0))
 		for i in range(1, cnt + 1):
 			var cp := "%s/cover%d.png" % [folder, i]
 			_request_path(loader, cp, seen)
+			if seen.has(cp):
+				requested += 1
+			if limit > 0 and requested >= limit:
+				return
 
 
 static func warmup_achievement_icons() -> void:
@@ -89,4 +100,9 @@ static func warmup_active_cover_pack() -> void:
 static func warmup_all() -> void:
 	warmup_shop_textures()
 	warmup_achievement_icons()
+	warmup_active_cover_pack()
+
+
+static func warmup_startup_light() -> void:
+	warmup_shop_textures(STARTUP_SHOP_TEXTURE_LIMIT)
 	warmup_active_cover_pack()

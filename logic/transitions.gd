@@ -74,18 +74,21 @@ func _warmup_heavy_scenes():
 		"res://scenes/game_screen/game_screen.tscn",
 		"res://scenes/help/help_screen.tscn"
 	]
-	for p in to_prewarm:
-		_preload_scene_threaded(String(p))
-	call_deferred("_warmup_screen_textures")
+	call_deferred("_prewarm_step", to_prewarm, 0)
 
 func _warmup_screen_textures():
-	ScreenTexturePreload.warmup_all()
+	ScreenTexturePreload.warmup_startup_light()
 
 func _prewarm_step(list: Array, index: int):
 	if index >= list.size():
+		call_deferred("_warmup_screen_textures")
 		return
+	var started_ms := Time.get_ticks_msec()
 	var path = String(list[index])
 	_preload_scene_threaded(path)
+	var elapsed := Time.get_ticks_msec() - started_ms
+	if elapsed >= 10:
+		print("[Perf] Transitions warmup request %s: %d ms" % [path, elapsed])
 	if game_engine and game_engine.has_method("get_tree"):
 		await game_engine.get_tree().process_frame
 	call_deferred("_prewarm_step", list, index + 1)

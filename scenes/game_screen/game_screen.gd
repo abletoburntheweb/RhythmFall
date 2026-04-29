@@ -1033,27 +1033,27 @@ func check_hit(lane: int, force_perfect: bool = false):
 	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
 	var time_diff = abs(current_time_adjusted - note_time)
 
-	var hit_type = "miss"
+	var hit_type = "ПРОМАХ"
 	var judgement_successful = false
 
 	if force_perfect:
 		score_manager.add_perfect_hit()
-		hit_type = "PERFECT"
+		hit_type = "ИДЕАЛЬНО"
 		judgement_successful = true
 		perfect_hits_this_level += 1
 	elif time_diff <= HIT_WINDOW_PERFECT:
 		score_manager.add_perfect_hit()
-		hit_type = "PERFECT"
+		hit_type = "ИДЕАЛЬНО"
 		judgement_successful = true
 		perfect_hits_this_level += 1
 	elif time_diff <= HIT_WINDOW_GOOD:
 		score_manager.add_good_hit()
-		hit_type = "GOOD"
+		hit_type = "ХОРОШО"
 		judgement_successful = true
 
 	if judgement_successful:
 		var points = closest_note.on_hit()
-		if current_instrument == "drums" and hit_type == "PERFECT":
+		if current_instrument == "drums" and hit_type == "ИДЕАЛЬНО":
 			PlayerDataManager.add_total_drum_perfect_hit()
 		PlayerDataManager.increment_daily_progress("hit_notes", 1, {})
 
@@ -1063,9 +1063,9 @@ func check_hit(lane: int, force_perfect: bool = false):
 
 		if judgement_label:
 			judgement_label.text = hit_type
-			if hit_type == "PERFECT":
+			if hit_type == "ИДЕАЛЬНО":
 				judgement_label.modulate = judgement_color_perfect
-			elif hit_type == "GOOD":
+			elif hit_type == "ХОРОШО":
 				judgement_label.modulate = judgement_color_good
 			else:
 				judgement_label.modulate = judgement_color_other

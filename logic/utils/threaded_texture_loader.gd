@@ -5,6 +5,7 @@ signal loaded(path: String, texture: Texture2D)
 signal failed(path: String)
 var _pending: Dictionary = {}
 var _cache: Dictionary = {}
+const MAX_COMPLETIONS_PER_FRAME := 4
 static var _instance: ThreadedTextureLoader = null
 static func get_instance() -> ThreadedTextureLoader:
 	if _instance == null:
@@ -26,25 +27,24 @@ func request(path: String) -> void:
 		_pending[path] = true
 		set_process(true)
 	else:
-		var tex = ResourceLoader.load(path, "Texture2D")
-		if tex and tex is Texture2D:
-			_cache[path] = tex
-			emit_signal("loaded", path, tex)
-		else:
-			emit_signal("failed", path)
+		call_deferred("emit_signal", "failed", path)
 func get_cached(path: String) -> Texture2D:
 	return _cache.get(path, null)
 func clear_cache() -> void:
 	_cache.clear()
 func _process(_delta: float) -> void:
 	var done := []
+	var completions := 0
 	for path in _pending.keys():
+		if completions >= MAX_COMPLETIONS_PER_FRAME:
+			break
 		var st = ResourceLoader.load_threaded_get_status(path)
 		if st == ResourceLoader.THREAD_LOAD_LOADED:
 			var tex = ResourceLoader.load_threaded_get(path)
 			if tex and tex is Texture2D:
 				_cache[path] = tex
 				emit_signal("loaded", path, tex)
+				completions += 1
 			else:
 				emit_signal("failed", path)
 			done.append(path)

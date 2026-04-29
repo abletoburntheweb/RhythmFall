@@ -74,6 +74,7 @@ var background_service: GenerationService = null
 @onready var notif_ui: Node = $NotificationsLayer/NotifHBox
 
 func _ready():
+	var started_ms := Time.get_ticks_msec()
 	initialize_logic()
 	initialize_screens()
 	show_intro()
@@ -89,6 +90,7 @@ func _ready():
 		level_layer.visibility_changed.connect(_on_level_layer_visibility_changed)
 	if xp_anim_player:
 		xp_anim_player.animation_finished.connect(_on_xp_anim_finished)
+	print("[Perf] GameEngine ready: %d ms" % [Time.get_ticks_msec() - started_ms])
 
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
@@ -251,14 +253,44 @@ func _on_level_layer_visibility_changed():
 				xp_amount_label.text = "%d / %d" % [cur_xp, next_max]
 
 func _initialize_display_settings():
+	_apply_runtime_render_settings()
 	_apply_window_settings()
 	_update_fps_visibility()
 
 func _initialize_theme():
-	var theme_path = "res://ui/theme/app_theme.tres"
+	var started_ms := Time.get_ticks_msec()
 	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
 	theme = app_theme
-	ResourceSaver.save(app_theme, theme_path)
+	print("[Perf] GameEngine theme build: %d ms" % [Time.get_ticks_msec() - started_ms])
+
+func _apply_runtime_render_settings() -> void:
+	var quality := 0
+	if SettingsManager.has_method("get_graphics_quality"):
+		quality = SettingsManager.get_graphics_quality()
+	var msaa_2d := Viewport.MSAA_DISABLED
+	var screen_space_aa := Viewport.SCREEN_SPACE_AA_DISABLED
+	var anisotropic_level := 0
+	match quality:
+		2:
+			msaa_2d = Viewport.MSAA_8X
+			screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
+			anisotropic_level = 4
+		1:
+			msaa_2d = Viewport.MSAA_2X
+			screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+			anisotropic_level = 2
+		_:
+			msaa_2d = Viewport.MSAA_DISABLED
+			screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+			anisotropic_level = 0
+	ProjectSettings.set_setting("rendering/anti_aliasing/quality/msaa_2d", int(msaa_2d))
+	ProjectSettings.set_setting("rendering/anti_aliasing/quality/screen_space_aa", int(screen_space_aa))
+	ProjectSettings.set_setting("rendering/textures/default_filters/anisotropic_filtering_level", anisotropic_level)
+	var viewport := get_viewport()
+	if viewport:
+		viewport.msaa_2d = msaa_2d
+		viewport.screen_space_aa = screen_space_aa
+	print("[Graphics] applied quality=%d msaa_2d=%d screen_space_aa=%d anisotropic=%d" % [quality, int(msaa_2d), int(screen_space_aa), anisotropic_level])
 
 func _apply_console_state():
 	var console_node = get_tree().root.get_node_or_null("Console")
@@ -291,6 +323,7 @@ func _process(delta):
 			fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 
 func update_display_settings():
+	_apply_runtime_render_settings()
 	_apply_window_settings()
 	_update_fps_visibility()
 
@@ -299,10 +332,10 @@ func _apply_window_settings():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_size(Vector2i(1920, 1080))
+		var window_size = SettingsManager.get_window_size() if SettingsManager.has_method("get_window_size") else Vector2i(1920, 1080)
+		DisplayServer.window_set_size(window_size)
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
 		var screen_size = DisplayServer.screen_get_size()
-		var window_size = Vector2i(1920, 1080)
 		DisplayServer.window_set_position((screen_size - window_size) / 2)
 
 func _start_play_time_timer():

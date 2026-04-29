@@ -38,7 +38,7 @@ func _generate_daily_quests_for_date(date_str: String):
 	if quest_pool.is_empty():
 		quest_pool = [
 			{"id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50},
-			{"id": "perfect_hits", "title": "Сделай PERFECT попадания (30)", "event": "perfect_hits", "goal": 30, "reward_currency": 40},
+			{"id": "perfect_hits", "title": "Сделай ИДЕАЛЬНЫЕ попадания (30)", "event": "perfect_hits", "goal": 30, "reward_currency": 40},
 			{"id": "accuracy_80", "title": "Заверши уровень с точностью ≥ 80%", "event": "accuracy_80", "goal": 1, "reward_currency": 30},
 			{"id": "play_drum", "title": "Сыграй уровень на барабанах", "event": "play_drum_level", "goal": 1, "reward_currency": 30},
 			{"id": "combo_30", "title": "Достигни комбо ≥ 30", "event": "combo_reached", "goal": 1, "reward_currency": 20},

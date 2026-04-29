@@ -16,6 +16,7 @@ var _scroll_step := 60
 var _page_step := 480
 
 func _ready():
+	var started_ms := Time.get_ticks_msec()
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var trans = game_engine.get_transitions()
@@ -86,6 +87,7 @@ func _ready():
 
 	await _create_item_cards()
 	_set_buttons_focus_to_none()
+	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
 
 func _update_currency_label():
 	var main_vbox = $MainContent/MainVBox
@@ -156,6 +158,7 @@ func _update_category_buttons(selected: String):
 	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
 
 func _create_item_cards() -> void:
+	var started_ms := Time.get_ticks_msec()
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
@@ -184,7 +187,7 @@ func _create_item_cards() -> void:
 	else:
 		grid_container.custom_minimum_size.y = 0.0
 
-	var batch_size = 24
+	var batch_size = 8
 	var i = 0
 	while i < items.size():
 		var end = min(i + batch_size, items.size())
@@ -231,6 +234,7 @@ func _create_item_cards() -> void:
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
 		items_scroll.scroll_horizontal = 0
+	print("[Perf] ShopScreen create cards: %d ms, items=%d, batch=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size(), batch_size])
 
 
 func _shop_grid_clear_min_height() -> void:
@@ -365,17 +369,21 @@ func _on_item_preview_pressed(item_id: String):
 		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина для предпросмотра.")
 
 func _preview_sound(item: Dictionary):
+	var started_ms := Time.get_ticks_msec()
 	var audio_path = item.get("audio", "")
 	if audio_path != "" and FileAccess.file_exists(audio_path):
+		print("ShopScreen.gd: Загрузка предпросмотра звука...")
 		MusicManager.play_custom_hit_sound(audio_path)
 	else:
 		MusicManager.play_default_shop_sound()
+	print("[Perf] ShopScreen preview_sound request: %d ms" % [Time.get_ticks_msec() - started_ms])
 
 func _on_cover_click_pressed(item_data: Dictionary):
 	MusicManager.play_cover_click_sound()
 	_open_cover_gallery(item_data)
 
 func _open_cover_gallery(item_data: Dictionary):
+	var started_ms := Time.get_ticks_msec()
 	if current_cover_gallery:
 		if is_instance_valid(current_cover_gallery):
 			current_cover_gallery.queue_free()
@@ -398,6 +406,7 @@ func _open_cover_gallery(item_data: Dictionary):
 		if is_instance_valid(current_cover_gallery):
 			current_cover_gallery.queue_free()
 		current_cover_item_data = {}
+	print("[Perf] ShopScreen open cover gallery request: %d ms" % [Time.get_ticks_msec() - started_ms])
 
 func _deferred_add_child(gallery_node: Node):
 	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(gallery_node):

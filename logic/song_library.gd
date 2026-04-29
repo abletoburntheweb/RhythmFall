@@ -15,6 +15,9 @@ var _metadata_cache: Dictionary = {}
 var _id3_thread: Thread = null
 var _id3_queue: Array = []
 var _id3_running: bool = false
+var _duration_thread: Thread = null
+var _duration_queue: Array = []
+var _duration_running: bool = false
 
 func _init():
 	_load_metadata()
@@ -87,6 +90,7 @@ func _should_queue_id3_for(path: String, metadata: Dictionary) -> bool:
 	return false
 
 func load_songs():
+	var started_ms := Time.get_ticks_msec()
 	songs.clear()
 	var built_in_found := 0
 	var dir = DirAccess.open(BUILT_IN_FOLDER_PATH)
@@ -100,10 +104,7 @@ func load_songs():
 					var path = BUILT_IN_FOLDER_PATH + file_name
 					var metadata = read_metadata(path)
 					if str(metadata.get("duration", "00:00")) == "00:00":
-						var dur = _compute_duration_str(path)
-						if dur != "00:00":
-							metadata["duration"] = dur
-							update_metadata(path, {"duration": dur})
+						_queue_duration_if_needed(path)
 					var cached_metadata = get_metadata_for_song(path)
 					if cached_metadata.is_empty():
 						var fields_to_save = {
@@ -135,10 +136,7 @@ func load_songs():
 						var p2 = ext_root + f2
 						var md2 = read_metadata(p2)
 						if str(md2.get("duration", "00:00")) == "00:00":
-							var dstr = _compute_duration_str(p2)
-							if dstr != "00:00":
-								md2["duration"] = dstr
-								update_metadata(p2, {"duration": dstr})
+							_queue_duration_if_needed(p2)
 						if _should_queue_id3_for(p2, md2):
 							_id3_queue.append(p2)
 						md2["source"] = "built_in_external"
@@ -154,8 +152,11 @@ func load_songs():
 				md["source"] = "user"
 				songs.append(md)
 	_apply_metadata_seed_if_present()
+	_start_duration_enrichment_if_needed()
 	_start_id3_enrichment_if_needed()
 	emit_signal("songs_list_changed")
+	var elapsed := Time.get_ticks_msec() - started_ms
+	print("[Perf] SongLibrary load_songs: %d ms, songs=%d, duration_queue=%d, id3_queue=%d" % [elapsed, songs.size(), _duration_queue.size(), _id3_queue.size()])
 
 func _apply_metadata_seed_if_present():
 	var seed := _try_load_seed_metadata()
@@ -242,10 +243,7 @@ func scan_user_songs() -> int:
 				if not exists:
 					var metadata = read_metadata(path)
 					if str(metadata.get("duration", "00:00")) == "00:00":
-						var dur = _compute_duration_str(path)
-						if dur != "00:00":
-							metadata["duration"] = dur
-							update_metadata(path, {"duration": dur})
+						_queue_duration_if_needed(path)
 					metadata["source"] = "user"
 					var cached_metadata = get_metadata_for_song(path)
 					if cached_metadata.is_empty():
@@ -329,6 +327,9 @@ func add_song(file_path: String) -> Dictionary:
 	if _should_queue_id3_for(dest_path, metadata):
 		_id3_queue.append(dest_path)
 		_start_id3_enrichment_if_needed()
+	if str(metadata.get("duration", "00:00")) == "00:00":
+		_queue_duration_if_needed(dest_path)
+		_start_duration_enrichment_if_needed()
 	emit_signal("songs_list_changed")
 	return metadata
 
@@ -337,6 +338,18 @@ func get_songs_list() -> Array[Dictionary]:
 
 func get_song_count() -> int:
 	return songs.size()
+
+func request_duration_update(path: String) -> void:
+	if path == "":
+		return
+	_queue_duration_if_needed(path)
+	_start_duration_enrichment_if_needed()
+
+func request_id3_update(path: String) -> void:
+	if path == "" or _id3_queue.has(path):
+		return
+	_id3_queue.append(path)
+	_start_id3_enrichment_if_needed()
 
 func get_metadata_for_song(song_file_path: String) -> Dictionary:
 	if _metadata_cache.has(song_file_path):
@@ -659,6 +672,45 @@ func apply_dedupe_for_user_root(current_root: String):
 	_dedupe_metadata_for_user_root(current_root)
 	emit_signal("songs_list_changed")
 
+func _queue_duration_if_needed(path: String) -> void:
+	if path == "" or _duration_queue.has(path):
+		return
+	_duration_queue.append(path)
+
+func _start_duration_enrichment_if_needed() -> void:
+	if _duration_running:
+		return
+	if _duration_queue.is_empty():
+		return
+	_duration_running = true
+	_duration_thread = Thread.new()
+	var queue := _duration_queue.duplicate()
+	_duration_queue.clear()
+	var err = _duration_thread.start(func(): _duration_worker(queue))
+	if err != OK:
+		_duration_queue.append_array(queue)
+		_duration_running = false
+		_duration_thread = null
+		printerr("SongLibrary.gd: Не удалось запустить поток длительности: " + str(err))
+
+func _duration_worker(queue: Array) -> void:
+	for p in queue:
+		var dur := _compute_duration_str(String(p))
+		if dur != "00:00":
+			call_deferred("_apply_duration_result", String(p), dur)
+		OS.delay_msec(5)
+	call_deferred("_finish_duration_worker")
+
+func _apply_duration_result(path: String, duration: String) -> void:
+	update_metadata(path, {"duration": duration})
+
+func _finish_duration_worker() -> void:
+	if _duration_thread:
+		_duration_thread.wait_to_finish()
+		_duration_thread = null
+	_duration_running = false
+	_start_duration_enrichment_if_needed()
+
 func _start_id3_enrichment_if_needed():
 	if _id3_running:
 		return
@@ -667,8 +719,11 @@ func _start_id3_enrichment_if_needed():
 	emit_signal("id3_scan_started")
 	_id3_running = true
 	_id3_thread = Thread.new()
-	var err = _id3_thread.start(func(): _id3_worker(_id3_queue.duplicate()))
+	var queue := _id3_queue.duplicate()
+	_id3_queue.clear()
+	var err = _id3_thread.start(func(): _id3_worker(queue))
 	if err != OK:
+		_id3_queue.append_array(queue)
 		_id3_running = false
 		_id3_thread = null
 		printerr("SongLibrary.gd: Не удалось запустить поток ID3: " + str(err))
@@ -736,6 +791,6 @@ func _finish_id3_worker():
 	if _id3_thread:
 		_id3_thread.wait_to_finish()
 		_id3_thread = null
-	_id3_queue.clear()
 	_id3_running = false
 	emit_signal("id3_scan_finished")
+	_start_id3_enrichment_if_needed()
