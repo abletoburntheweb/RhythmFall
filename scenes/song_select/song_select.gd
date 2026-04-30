@@ -480,23 +480,45 @@ func _update_edit_button_style():
 func _on_generate_pressed():
 	_generate_notes_for_current_song()
 
+func _pick_representative_lanes(song_path: String, instrument: String, mode: String) -> int:
+	if not NotesUtils.notes_exist(song_path, instrument, mode, current_lanes):
+		return current_lanes
+	for ln in NotesUtils.LANE_COUNTS:
+		if not NotesUtils.notes_exist(song_path, instrument, mode, ln):
+			return ln
+	return current_lanes
+
 func _collect_missing_generation_jobs(song_path: String) -> Array:
 	var scope := int(SettingsManager.get_setting("generation_notes_ready_scope", 0))
 	var inst := current_instrument
 	var jobs: Array = []
 	match scope:
 		0:
+			var needs_mode := false
 			for ln in NotesUtils.LANE_COUNTS:
 				if not NotesUtils.notes_exist(song_path, inst, current_generation_mode, ln):
-					jobs.append({"mode": current_generation_mode, "lanes": ln})
+					needs_mode = true
+					break
+			if needs_mode:
+				jobs.append({
+					"mode": current_generation_mode,
+					"lanes": _pick_representative_lanes(song_path, inst, current_generation_mode)
+				})
 		1:
 			if not NotesUtils.notes_exist(song_path, inst, current_generation_mode, current_lanes):
 				jobs.append({"mode": current_generation_mode, "lanes": current_lanes})
 		2:
 			for m in NotesUtils.GENERATION_MODES:
+				var mode_missing := false
 				for ln in NotesUtils.LANE_COUNTS:
 					if not NotesUtils.notes_exist(song_path, inst, m, ln):
-						jobs.append({"mode": m, "lanes": ln})
+						mode_missing = true
+						break
+				if mode_missing:
+					jobs.append({
+						"mode": m,
+						"lanes": _pick_representative_lanes(song_path, inst, m)
+					})
 		3:
 			for m in NotesUtils.GENERATION_MODES:
 				if not NotesUtils.notes_exist(song_path, inst, m, current_lanes):

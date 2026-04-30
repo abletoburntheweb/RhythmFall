@@ -42,9 +42,12 @@ static func load_audio_stream_for_path(path: String, base_dir: String = "") -> A
 					s_mp3a.data = data1
 					return s_mp3a
 				elif ext1 == "wav":
-					var s_wava := AudioStreamWAV.new()
-					s_wava.data = data1
-					return s_wava
+					var s_wava := AudioStreamWAV.load_from_file(gres)
+					if s_wava:
+						return s_wava
+					var fallback_wava := AudioStreamWAV.new()
+					fallback_wava.data = data1
+					return fallback_wava
 				elif ext1 == "ogg":
 					var s_ogga := AudioStreamOggVorbis.new()
 					s_ogga.data = data1
@@ -64,9 +67,12 @@ static func load_audio_stream_for_path(path: String, base_dir: String = "") -> A
 		s_mp3.data = bytes
 		return s_mp3
 	elif ext == "wav":
-		var s_wav := AudioStreamWAV.new()
-		s_wav.data = bytes
-		return s_wav
+		var s_wav := AudioStreamWAV.load_from_file(real_path)
+		if s_wav:
+			return s_wav
+		var fallback_wav := AudioStreamWAV.new()
+		fallback_wav.data = bytes
+		return fallback_wav
 	elif ext == "ogg":
 		var s_ogg := AudioStreamOggVorbis.new()
 		s_ogg.data = bytes
