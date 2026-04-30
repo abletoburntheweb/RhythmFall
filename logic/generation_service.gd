@@ -234,7 +234,7 @@ func _on_notes_started():
 			var suffix = _notes_notification_suffix(instr_s, mode_s, lanes_val)
 			_game_engine.notifications_add_or_update("notes", "Генерация нот для %s (1/%d)%s" % [disp, total, suffix], true, "cancel_notes")
 
-func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String):
+func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: String, notes_variants: Dictionary):
 	var t = _active_notes_task
 	if t.is_empty():
 		t = _last_notes_task
@@ -247,11 +247,25 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 	var lanes_val = int(t.get("lanes", 4))
 	var save_instrument = instrument_type if instrument_type != "" else String(t.get("instrument", "drums"))
 	var base_name = NotesUtils.base_name_from_song_path(path)
-	var notes_filename = NotesUtils.notes_filename(base_name, save_instrument, gen_mode, lanes_val)
 	var notes_dir = NotesUtils.notes_dir(base_name)
 	DirectoryUtils.ensure_dir(notes_dir)
-	var notes_path = "%s/%s" % [notes_dir, notes_filename]
-	JsonUtils.write_json(notes_path, notes_data, false, true)
+	var saved_any_variant := false
+	if notes_variants is Dictionary and notes_variants.size() > 0:
+		for lane_key in notes_variants.keys():
+			var variant_notes = notes_variants.get(lane_key, null)
+			if not (variant_notes is Array):
+				continue
+			var variant_lanes = int(str(lane_key))
+			if variant_lanes <= 0:
+				continue
+			var variant_filename = NotesUtils.notes_filename(base_name, save_instrument, gen_mode, variant_lanes)
+			var variant_path = "%s/%s" % [notes_dir, variant_filename]
+			JsonUtils.write_json(variant_path, variant_notes, false, true)
+			saved_any_variant = true
+	if not saved_any_variant:
+		var notes_filename = NotesUtils.notes_filename(base_name, save_instrument, gen_mode, lanes_val)
+		var notes_path = "%s/%s" % [notes_dir, notes_filename]
+		JsonUtils.write_json(notes_path, notes_data, false, true)
 	notes_completed.emit(path, save_instrument, disp)
 	if _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()

@@ -15,7 +15,7 @@ signal genres_completed(artist: String, title: String, genres: Array)
 signal genres_error(error_message: String)
 
 signal notes_started
-signal notes_completed(notes_data: Array, bpm_value: float, instrument_type: String)
+signal notes_completed(notes_data: Array, bpm_value: float, instrument_type: String, notes_variants: Dictionary)
 signal notes_error(error_message: String)
 signal bpm_status(status: String)
 signal genres_status(status: String)
@@ -202,9 +202,9 @@ func _check_notes():
 						var first_k = variants.keys()[0]
 						arr = variants[first_k]
 				if arr is Array:
-					emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type)
+					emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type, variants)
 			else:
-				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type)
+				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type, {})
 			if _notes_res.has("track_info"):
 				var ti = _notes_res.track_info
 				var source = str(ti.get("genres_source", "")).strip_edges().to_lower()
@@ -413,27 +413,31 @@ func _notes_worker(data_dict: Dictionary):
 			var client_primary_genre = str(client_meta.get("primary_genre", ""))
 			if client_primary_genre.strip_edges() == "" and client_genres_arr.size() > 0:
 				client_primary_genre = str(client_genres_arr[0])
-			var metadata_json = JSON.stringify({
+			var preset_id = generation_mode
+			var metadata := {
 				"original_filename": song_path.get_file(),
 				"bpm": bpm,
 				"lanes": lanes,
 				"instrument_type": instrument_type,
 				"sync_tolerance": sync_tolerance,
 				"generation_mode": generation_mode,
+				"preset_id": preset_id,
 				"auto_identify_track": auto_identify,
 				"manual_artist": manual_artist,
 				"manual_title": manual_title,
 				"progress_delay_seconds": 2.0,
 				"use_stems": false if instrument_type == "fullmix" else bool(SettingsManager.get_setting("use_stems_in_generation", true)),
-				"fill": int(SettingsManager.get_setting("generation_fill", 30)),
-				"groove": int(SettingsManager.get_setting("generation_groove", 50)),
-				"density": int(SettingsManager.get_setting("generation_density", 50)),
-				"grid_snap_strength": int(SettingsManager.get_setting("generation_grid_snap_strength", 80)),
-				"accent_strong_beats": bool(SettingsManager.get_setting("generation_accent_strong_beats", true)),
-				"genre_template_strength": int(SettingsManager.get_setting("generation_genre_template_strength", 60)),
 				"genres": client_genres_arr,
 				"primary_genre": client_primary_genre
-			})
+			}
+			if generation_mode == "custom":
+				metadata["fill"] = int(SettingsManager.get_setting("generation_fill", 30))
+				metadata["groove"] = int(SettingsManager.get_setting("generation_groove", 50))
+				metadata["density"] = int(SettingsManager.get_setting("generation_density", 50))
+				metadata["grid_snap_strength"] = int(SettingsManager.get_setting("generation_grid_snap_strength", 80))
+				metadata["accent_strong_beats"] = bool(SettingsManager.get_setting("generation_accent_strong_beats", true))
+				metadata["genre_template_strength"] = int(SettingsManager.get_setting("generation_genre_template_strength", 60))
+			var metadata_json = JSON.stringify(metadata)
 			var metadata_part = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"metadata\"\r\n" + "Content-Type: application/json\r\n\r\n" + metadata_json + "\r\n"
 			body.append_array(metadata_part.to_utf8_buffer())
 			var file_part_header = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"upload.mp3\"\r\n" + "Content-Type: audio/mpeg\r\n\r\n"
