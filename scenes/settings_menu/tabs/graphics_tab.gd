@@ -4,6 +4,7 @@ extends Control
 signal settings_changed
 
 const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
+const _SpinBoxUtils = preload("res://logic/utils/spin_box_utils.gd")
 
 var game_engine = null 
 
@@ -13,6 +14,7 @@ var game_engine = null
 @onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpinBox
 @onready var lane_highlight_brightness_slider: HSlider = $ContentVBox/LaneHighlightBrightnessSlider
 @onready var note_brightness_slider: HSlider = $ContentVBox/NoteBrightnessSlider
+@onready var note_approach_hint_option: OptionButton = $ContentVBox/NoteApproachHint/NoteApproachHintOptionButton
 
 func _ready():
 	if lane_highlight_brightness_slider:
@@ -25,12 +27,31 @@ func _ready():
 		note_brightness_slider.step = 1.0
 	call_deferred("_apply_fps_option_popup_font")
 	call_deferred("_apply_graphics_quality_popup_font")
+	call_deferred("_apply_note_approach_popup_font")
+	call_deferred("_apply_scroll_speed_spin_font")
+
+func _apply_scroll_speed_spin_font() -> void:
+	if scroll_speed_spin:
+		_SpinBoxUtils.apply_value_font_size(scroll_speed_spin, 24)
 
 func _apply_fps_option_popup_font() -> void:
 	_OptionButtonPopupUtils.apply_popup_font_size(fps_option_button, 24)
 
 func _apply_graphics_quality_popup_font() -> void:
 	_OptionButtonPopupUtils.apply_popup_font_size(graphics_quality_option, 24)
+
+func _apply_note_approach_popup_font() -> void:
+	if note_approach_hint_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(note_approach_hint_option, 24)
+
+func _select_note_approach_hint_by_id(id: int) -> void:
+	if not note_approach_hint_option:
+		return
+	var count := note_approach_hint_option.get_item_count()
+	for i in range(count):
+		if note_approach_hint_option.get_item_id(i) == id:
+			note_approach_hint_option.select(i)
+			return
 
 func _select_fps_by_id(id: int):
 	var count = fps_option_button.get_item_count()
@@ -67,6 +88,17 @@ func _setup_ui():
 	if note_brightness_slider:
 		var n_b = SettingsManager.get_note_brightness() if SettingsManager.has_method("get_note_brightness") else 1.0
 		note_brightness_slider.set_value_no_signal(n_b)
+	if note_approach_hint_option and SettingsManager.has_method("get_note_approach_hint"):
+		_select_note_approach_hint_by_id(SettingsManager.get_note_approach_hint())
+
+
+func _on_note_approach_hint_selected(index: int) -> void:
+	if not note_approach_hint_option:
+		return
+	var id := note_approach_hint_option.get_item_id(index)
+	if SettingsManager.has_method("set_note_approach_hint"):
+		SettingsManager.set_note_approach_hint(id)
+	emit_signal("settings_changed")
 
 
 func _on_fps_mode_selected(index: int):

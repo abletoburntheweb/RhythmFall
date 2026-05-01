@@ -36,8 +36,12 @@ func _ready():
 
 
 func _setup_change_songs_folder_dialog() -> void:
-	if change_songs_folder_confirm_dialog:
-		change_songs_folder_confirm_dialog.add_button("Удалить из метаданных", false, "prune")
+	if change_songs_folder_confirm_dialog == null:
+		return
+	var prune_btn: Button = change_songs_folder_confirm_dialog.add_button("Удалить из метаданных", false, "")
+	if prune_btn:
+		prune_btn.pressed.connect(_on_change_songs_folder_prune_pressed)
+
 
 func _setup_generation_notes_scope_popup_font() -> void:
 	_OptionButtonPopupUtils.apply_popup_font_size(generation_notes_scope_option, 24)
@@ -238,13 +242,13 @@ func _on_change_songs_folder_canceled() -> void:
 		songs_folder_line_edit.text = _normalize_songs_folder_path(String(SettingsManager.get_setting("user_songs_path", "")))
 
 
-func _on_change_songs_folder_custom_action(action: StringName) -> void:
-	if action != "prune":
-		return
+func _on_change_songs_folder_prune_pressed() -> void:
 	if _pending_new_folder_path == "":
 		return
 	var delete_notes := change_songs_folder_delete_notes_checkbox.button_pressed if change_songs_folder_delete_notes_checkbox else false
 	_apply_new_songs_folder_path(_pending_new_folder_path, true, delete_notes)
+	if change_songs_folder_confirm_dialog:
+		change_songs_folder_confirm_dialog.hide()
 
 
 func _russian_song_word_form(n: int) -> String:

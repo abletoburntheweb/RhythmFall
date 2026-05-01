@@ -11,7 +11,8 @@ var time: float = 0.0
 var visual_node: Variant 
 var note_type: String = "BaseNote" 
 var was_hit: bool = false 
-var is_missed: bool = false 
+var is_missed: bool = false
+var lane_palette_color: Color = Color.WHITE
 
 func _init(p_lane: int, p_y: float, p_spawn_time: float = 0.0):
 	lane = p_lane

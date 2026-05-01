@@ -4824,9 +4824,35 @@ text = "Яркость нот"
 layout_mode = 2
 theme = SubResource("Theme_gfom4")
 
+[node name="NoteApproachHint" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="NoteApproachHintLabel" type="Label" parent="ContentVBox/NoteApproachHint"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Акцент у линии: "
+
+[node name="NoteApproachHintOptionButton" type="OptionButton" parent="ContentVBox/NoteApproachHint"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme = ExtResource("2_gfom4")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 24
+selected = 3
+item_count = 4
+popup/item_0/text = "Нет"
+popup/item_0/id = 0
+popup/item_1/text = "Светлее"
+popup/item_1/id = 1
+popup/item_2/text = "Темнее"
+popup/item_2/id = 2
+popup/item_3/text = "Насыщеннее"
+popup/item_3/id = 3
+
 [connection signal="toggled" from="ContentVBox/FullscreenCheckBox" to="." method="_on_fullscreen_toggled"]
 [connection signal="item_selected" from="ContentVBox/GraphicsQuality/GraphicsQualityOptionButton" to="." method="_on_graphics_quality_selected"]
 [connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
 [connection signal="value_changed" from="ContentVBox/ScrollSpeed/ScrollSpeedSpinBox" to="." method="_on_scroll_speed_spin_changed"]
 [connection signal="value_changed" from="ContentVBox/LaneHighlightBrightnessSlider" to="." method="_on_lane_highlight_brightness_changed"]
 [connection signal="value_changed" from="ContentVBox/NoteBrightnessSlider" to="." method="_on_note_brightness_changed"]
+[connection signal="item_selected" from="ContentVBox/NoteApproachHint/NoteApproachHintOptionButton" to="." method="_on_note_approach_hint_selected"]

@@ -20,6 +20,7 @@ var default_settings = {
 	"user_songs_path": "",
 	"lane_highlight_brightness": 100.0,
 	"note_brightness": 100.0,
+	"note_approach_hint": 3,
 	"controls_keymap": {
 		"lane_0_key": KEY_A,
 		"lane_1_key": KEY_S,
@@ -224,6 +225,15 @@ func get_note_brightness() -> float:
 
 func set_note_brightness(value: float):
 	settings["note_brightness"] = clampf(value, 0.0, 100.0)
+	_save_settings()
+
+
+func get_note_approach_hint() -> int:
+	return int(clamp(int(settings.get("note_approach_hint", default_settings["note_approach_hint"])), 0, 3))
+
+
+func set_note_approach_hint(mode: int):
+	settings["note_approach_hint"] = int(clamp(mode, 0, 3))
 	_save_settings()
 
 

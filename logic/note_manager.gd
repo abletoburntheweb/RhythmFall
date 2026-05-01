@@ -12,8 +12,67 @@ var note_colors: Array = []
 var BaseNote = preload("res://scenes/game_screen/notes/base_note.gd")
 var Note = preload("res://scenes/game_screen/notes/note.gd")
 
+const NOTE_PROXIMITY_BAND_PX := 220.0
+const NOTE_APPROACH_NONE := 0
+const NOTE_APPROACH_LIGHTER := 1
+const NOTE_APPROACH_DARKER := 2
+const NOTE_APPROACH_SATURATED := 3
+const NOTE_PROXIMITY_LIGHTEN_AMOUNT := 0.42
+const NOTE_PROXIMITY_DARKEN_AMOUNT := 0.38
+const NOTE_PROXIMITY_SATURATION_GAIN := 0.5
+
 func _init(screen):
 	game_screen = screen
+
+
+func _note_approach_mode() -> int:
+	if SettingsManager and SettingsManager.has_method("get_note_approach_hint"):
+		return SettingsManager.get_note_approach_hint()
+	return NOTE_APPROACH_SATURATED
+
+
+func _proximity_t(note, hit_zone_y: float) -> float:
+	var dist_top_to_line: float = float(hit_zone_y) - float(note.y)
+	var t: float = 1.0 - clamp(dist_top_to_line / NOTE_PROXIMITY_BAND_PX, 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+
+func _rgb_boost_saturation(c: Color, t: float) -> Color:
+	var lum: float = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+	var k: float = 1.0 + NOTE_PROXIMITY_SATURATION_GAIN * t
+	return Color(
+		clamp(lum + (c.r - lum) * k, 0.0, 1.0),
+		clamp(lum + (c.g - lum) * k, 0.0, 1.0),
+		clamp(lum + (c.b - lum) * k, 0.0, 1.0),
+		1.0
+	)
+
+
+func _note_color_with_proximity(note, hit_zone_y: float) -> Color:
+	var base: Color = note.lane_palette_color
+	var nb := 100.0
+	if SettingsManager and SettingsManager.has_method("get_note_brightness"):
+		nb = float(SettingsManager.get_note_brightness())
+	var out_a: float = clamp(base.a * (nb / 100.0), 0.0, 1.0)
+
+	var mode := _note_approach_mode()
+	if mode == NOTE_APPROACH_NONE:
+		return Color(base.r, base.g, base.b, out_a)
+
+	var t: float = _proximity_t(note, hit_zone_y)
+	var rgb := Color(base.r, base.g, base.b, 1.0)
+	var tinted_rgb: Color = rgb
+	match mode:
+		NOTE_APPROACH_LIGHTER:
+			tinted_rgb = rgb.lerp(Color.WHITE, NOTE_PROXIMITY_LIGHTEN_AMOUNT * t)
+		NOTE_APPROACH_DARKER:
+			tinted_rgb = rgb.lerp(Color.BLACK, NOTE_PROXIMITY_DARKEN_AMOUNT * t)
+		NOTE_APPROACH_SATURATED:
+			tinted_rgb = _rgb_boost_saturation(rgb, t)
+		_:
+			tinted_rgb = rgb
+
+	return Color(tinted_rgb.r, tinted_rgb.g, tinted_rgb.b, out_a)
 
 func set_note_colors(colors: Array):
 	note_colors = colors
@@ -93,11 +152,7 @@ func spawn_notes():
 		else:
 			note_object = Note.new(lane, y_spawn, game_time, "DefaultNote")
 		var base_color = _get_color_for_note(lane, note_object.color)
-		var nb := 100.0
-		if SettingsManager and SettingsManager.has_method("get_note_brightness"):
-			nb = float(SettingsManager.get_note_brightness())
-		var adj_alpha = clamp(base_color.a * (nb / 100.0), 0.0, 1.0)
-		visual_rect.color = Color(base_color.r, base_color.g, base_color.b, adj_alpha)
+		note_object.lane_palette_color = base_color
 
 		if note_object:
 			note_object.time = note_time
@@ -111,6 +166,7 @@ func spawn_notes():
 				visual_rect.size = Vector2(lane_width, default_note_height)
 
 			visual_rect.position = Vector2(start_x + lane * lane_width, y_spawn)
+			visual_rect.color = _note_color_with_proximity(note_object, hit_zone_y)
 			
 			game_screen.notes_container.add_child(visual_rect)
 			notes.append(note_object)
@@ -123,6 +179,9 @@ func update_notes():
 	for i in range(notes.size() - 1, -1, -1): 
 		var note = notes[i]
 		note.update(speed)
+
+		if note.visual_node is ColorRect and note.active:
+			note.visual_node.color = _note_color_with_proximity(note, hit_zone_y)
 
 		if note.y > hit_zone_y + miss_threshold and not note.was_hit and not note.is_missed:
 			note.is_missed = true 

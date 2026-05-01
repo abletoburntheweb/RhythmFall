@@ -1,7 +1,7 @@
 [gd_scene load_steps=258 format=3 uid="uid://cflfv1lx6qcni"]
 
 [ext_resource type="Script" uid="uid://b72o0qprtpesv" path="res://scenes/settings_menu/tabs/misc_tab.gd" id="1_f8lbq"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_k8h85"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -5360,8 +5360,7 @@ borderless = true
 theme = ExtResource("2_k8h85")
 theme_type_variation = &"ConfirmationDialogPrimary"
 ok_button_text = "Сохранить в метаданных"
-dialog_text = "Сохранить записи о пользовательских
-треках из предыдущей папки в метаданных?"
+dialog_text = "Сохранить записи о пользовательских треках из предыдущей папки в метаданных?"
 cancel_button_text = "Отмена"
 
 [node name="ChangeSongsFolderDeleteNotesCheckBox" type="CheckBox" parent="ChangeSongsFolderConfirmDialog"]
@@ -5403,4 +5402,3 @@ dialog_text = "Новых песен не найдено."
 [connection signal="confirmed" from="MigratePathsDialog" to="." method="_on_migrate_paths_confirmed"]
 [connection signal="canceled" from="ChangeSongsFolderConfirmDialog" to="." method="_on_change_songs_folder_canceled"]
 [connection signal="confirmed" from="ChangeSongsFolderConfirmDialog" to="." method="_on_change_songs_folder_keep_confirmed"]
-[connection signal="custom_action" from="ChangeSongsFolderConfirmDialog" to="." method="_on_change_songs_folder_custom_action"]
