@@ -48,6 +48,10 @@ func _register(c):
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
 	c.add_command("game.autoplay", _game_autoplay_toggle, [], 0, "Переключить автоигру")
 	c.add_command("diag.verify_data", _diag_verify_data, [], 0, "Проверить целостность пользовательских данных")
+	c.add_command("timing.debug.status", _timing_debug_status, [], 0, "Флаги отладки тайминга (только до перезапуска игры, не в settings.json)")
+	c.add_command("timing.debug.log", _timing_debug_log_toggle, [], 0, "Переключить CSV user://timing_hit_debug.csv и [TimingDebug] (сессия)")
+	c.add_command("timing.debug.overlay", _timing_debug_overlay_toggle, [], 0, "Переключить оверлей latency/drift (сессия)")
+	c.add_command("timing.autoplay.windows", _timing_autoplay_windows_toggle, [], 0, "Автоплей с теми же окнами ±мс, что и игрок (сессия)")
 func _remove_aliases(c):
 	c.remove_command("ach.unlock")
 	c.remove_command("ach.show")
@@ -894,6 +898,56 @@ func _game_autoplay_toggle():
 		if c: c.print_info("Автоигра: " + ("ВКЛ." if (not st) else "ВЫКЛ."))
 	else:
 		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
+
+func _timing_debug_status():
+	var c = get_tree().root.get_node_or_null("Console")
+	if SettingsManager == null:
+		if c:
+			c.print_error("SettingsManager недоступен")
+		return
+	var log_on := SettingsManager.get_timing_debug_log_hits()
+	var ov_on := SettingsManager.get_timing_debug_overlay()
+	var apw := SettingsManager.get_autoplay_respects_hit_windows()
+	if c:
+		c.print_info("(Только до выхода из игры; не сохраняется в settings.json)")
+		c.print_info("Лог попаданий (CSV + консоль): " + ("ВКЛ." if log_on else "ВЫКЛ."))
+		c.print_info("Оверлей на игровом экране: " + ("ВКЛ." if ov_on else "ВЫКЛ."))
+		c.print_info("Автоплей с окнами судьи как у человека: " + ("ВКЛ." if apw else "ВЫКЛ."))
+		c.print_info("Файл CSV: user://timing_hit_debug.csv")
+
+func _timing_debug_log_toggle():
+	var c = get_tree().root.get_node_or_null("Console")
+	if SettingsManager == null or not SettingsManager.has_method("set_timing_debug_log_hits"):
+		if c:
+			c.print_error("SettingsManager: нет поддержки лога тайминга")
+		return
+	var v := not SettingsManager.get_timing_debug_log_hits()
+	SettingsManager.set_timing_debug_log_hits(v)
+	if c:
+		c.print_info("timing.debug.log: " + ("ВКЛ." if v else "ВЫКЛ."))
+
+func _timing_debug_overlay_toggle():
+	var c = get_tree().root.get_node_or_null("Console")
+	if SettingsManager == null or not SettingsManager.has_method("set_timing_debug_overlay"):
+		if c:
+			c.print_error("SettingsManager: нет поддержки оверлея")
+		return
+	var v := not SettingsManager.get_timing_debug_overlay()
+	SettingsManager.set_timing_debug_overlay(v)
+	if c:
+		c.print_info("timing.debug.overlay: " + ("ВКЛ." if v else "ВЫКЛ."))
+
+func _timing_autoplay_windows_toggle():
+	var c = get_tree().root.get_node_or_null("Console")
+	if SettingsManager == null or not SettingsManager.has_method("set_autoplay_respects_hit_windows"):
+		if c:
+			c.print_error("SettingsManager: нет поддержки режима автоплея")
+		return
+	var v := not SettingsManager.get_autoplay_respects_hit_windows()
+	SettingsManager.set_autoplay_respects_hit_windows(v)
+	if c:
+		c.print_info("timing.autoplay.windows: " + ("ВКЛ." if v else "ВЫКЛ."))
+
 func _parse_int(s: String) -> int:
 	var out := ""
 	var seen_sign := false

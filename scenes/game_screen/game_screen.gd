@@ -13,7 +13,7 @@ var pauser: GameScreenPauser = null
 var game_time: float = 0.0
 var countdown_remaining: int = 5
 var countdown_active: bool = true
-var delayed_music_timer: Timer = null
+var pending_game_music_path: String = ""
 var game_finished: bool = false
 var input_enabled: bool = false
 
@@ -122,6 +122,12 @@ var rhythm_notifier: RhythmNotifier = null
 const HIT_WINDOW_PERFECT: float = 0.05
 const HIT_WINDOW_GOOD: float = 0.15
 const AUDIO_SYNC_DRIFT_THRESHOLD_SEC: float = 0.02
+const TIMING_DEBUG_CSV_PATH := "user://timing_hit_debug.csv"
+const TIMING_DEBUG_RING_MAX := 36
+
+var timing_debug_overlay_label: Label = null
+var _timing_debug_session_start_unix: int = 0
+var _timing_signed_delta_ring_ms: Array[float] = []
 @export var judgement_color_perfect: Color = Color.YELLOW
 @export var judgement_color_good: Color = Color.CYAN
 @export var judgement_color_other: Color = Color.GRAY
@@ -256,6 +262,183 @@ func _hit_time_for_judgement() -> float:
 		return MusicManager.get_game_music_position() + user_off_sec - lat
 	return game_time + user_off_sec - lat
 
+func _autoplay_force_perfect() -> bool:
+	if SettingsManager and SettingsManager.has_method("get_autoplay_respects_hit_windows"):
+		return not SettingsManager.get_autoplay_respects_hit_windows()
+	return true
+
+func _timing_debug_log_ok() -> bool:
+	return SettingsManager and SettingsManager.has_method("get_timing_debug_log_hits") and SettingsManager.get_timing_debug_log_hits()
+
+func _timing_debug_overlay_ok() -> bool:
+	return SettingsManager and SettingsManager.has_method("get_timing_debug_overlay") and SettingsManager.get_timing_debug_overlay()
+
+func _timing_debug_clear_ring() -> void:
+	_timing_signed_delta_ring_ms.clear()
+
+func _timing_debug_push_signed_ms(signed_ms: float) -> void:
+	if _timing_signed_delta_ring_ms.size() >= TIMING_DEBUG_RING_MAX:
+		_timing_signed_delta_ring_ms.pop_front()
+	_timing_signed_delta_ring_ms.append(signed_ms)
+
+func _timing_debug_mean_signed_ms() -> float:
+	if _timing_signed_delta_ring_ms.is_empty():
+		return 0.0
+	var s := 0.0
+	for x in _timing_signed_delta_ring_ms:
+		s += x
+	return s / float(_timing_signed_delta_ring_ms.size())
+
+func _timing_debug_last_signed_ms() -> float:
+	if _timing_signed_delta_ring_ms.is_empty():
+		return 0.0
+	return _timing_signed_delta_ring_ms[_timing_signed_delta_ring_ms.size() - 1]
+
+func _timing_debug_ensure_overlay() -> void:
+	if timing_debug_overlay_label != null and is_instance_valid(timing_debug_overlay_label):
+		return
+	var ui := get_node_or_null("UIContainer") as Control
+	if ui == null:
+		return
+	var lbl := Label.new()
+	lbl.name = "TimingDebugOverlay"
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	lbl.offset_left = -460.0
+	lbl.offset_right = -12.0
+	lbl.offset_top = 72.0
+	lbl.offset_bottom = 260.0
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("shadow_offset_x", 1)
+	lbl.add_theme_constant_override("shadow_offset_y", 1)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55, 0.98))
+	lbl.add_theme_font_size_override("font_size", 15)
+	ui.add_child(lbl)
+	timing_debug_overlay_label = lbl
+
+func _timing_debug_update_overlay() -> void:
+	if not _timing_debug_overlay_ok():
+		if timing_debug_overlay_label:
+			timing_debug_overlay_label.visible = false
+		return
+	_timing_debug_ensure_overlay()
+	var lbl := timing_debug_overlay_label
+	if lbl == null:
+		return
+	var show_os := gameplay_started and not game_finished and not countdown_active and not pauser.is_paused
+	lbl.visible = show_os
+	if not show_os:
+		return
+	var lat_ms := AudioServer.get_output_latency() * 1000.0
+	var music_on := MusicManager.is_music_playing() and MusicManager.current_game_music_file != ""
+	var music_pos := MusicManager.get_game_music_position() if music_on else -1.0
+	var drift_ms := (music_pos - game_time) * 1000.0 if music_pos >= 0.0 else 0.0
+	var n := _timing_signed_delta_ring_ms.size()
+	var avg := _timing_debug_mean_signed_ms()
+	var last := _timing_debug_last_signed_ms()
+	lbl.text = (
+		"Тайминг [отладка]\n"
+		+ "Задержка вывода: %.1f мс\n" % lat_ms
+		+ "music − game_time: %.1f мс\n" % drift_ms
+		+ "avg(hit−note): %.1f мс (n=%d)\n" % [avg, n]
+		+ "последн.: %.1f мс\n" % last
+		+ "<0 раньше чарта, >0 позже"
+	)
+
+func _timing_debug_emit_row(
+	lane_idx: int,
+	chart_t_json: float,
+	note_t_geom: float,
+	hit_t_adj: float,
+	signed_ms: float,
+	abs_ms: float,
+	outcome: String,
+	autoplay_forced: bool
+) -> void:
+	var music_on := MusicManager.is_music_playing() and MusicManager.current_game_music_file != ""
+	var music_pos := MusicManager.get_game_music_position() if music_on else -1.0
+	var drift_ms_val := (music_pos - game_time) * 1000.0 if music_pos >= 0.0 else 0.0
+	var user_ms := int(SettingsManager.get_timing_offset_ms()) if SettingsManager.has_method("get_timing_offset_ms") else 0
+	var audio_file := String(MusicManager.current_game_music_file if MusicManager else "")
+
+	if _timing_debug_log_ok() or _timing_debug_overlay_ok():
+		print("[TimingDebug] lane=%d chart=%.4f geom=%.4f hit_adj=%.4f signed_ms=%.1f abs_ms=%.1f %s autoplay_fp=%s lat_ms=%.1f music=%s drift_ms=%s"
+			% [lane_idx, chart_t_json, note_t_geom, hit_t_adj, signed_ms, abs_ms, outcome, str(autoplay_forced),
+				AudioServer.get_output_latency() * 1000.0, "on" if music_on else "off",
+				("%.1f" % drift_ms_val) if music_pos >= 0.0 else "n/a"])
+
+	if _timing_debug_overlay_ok() and outcome != "empty_zone":
+		_timing_debug_push_signed_ms(signed_ms)
+
+	if not _timing_debug_log_ok():
+		return
+
+	var path := TIMING_DEBUG_CSV_PATH
+	var is_new := not FileAccess.file_exists(path)
+	var f: FileAccess = null
+	if is_new:
+		f = FileAccess.open(path, FileAccess.WRITE)
+	else:
+		f = FileAccess.open(path, FileAccess.READ_WRITE)
+	if f == null:
+		return
+	if not is_new:
+		f.seek_end()
+	if is_new:
+		f.store_csv_line(PackedStringArray([
+			"session_unix", "lane", "chart_time_json", "note_time_geom", "hit_time_adj",
+			"signed_delta_ms", "abs_delta_ms", "outcome", "autoplay_forced", "music_playing",
+			"output_latency_ms", "user_offset_ms", "game_time", "music_pos", "music_minus_game_ms", "audio_file",
+		]))
+	var row := PackedStringArray([
+		str(_timing_debug_session_start_unix),
+		str(lane_idx),
+		"%f" % chart_t_json,
+		"%f" % note_t_geom,
+		"%f" % hit_t_adj,
+		"%f" % signed_ms,
+		"%f" % abs_ms,
+		outcome,
+		"1" if autoplay_forced else "0",
+		"1" if music_on else "0",
+		"%f" % (AudioServer.get_output_latency() * 1000.0),
+		str(user_ms),
+		"%f" % game_time,
+		("%f" % music_pos) if music_pos >= 0.0 else "",
+		("%f" % drift_ms_val) if music_pos >= 0.0 else "",
+		audio_file,
+	])
+	f.store_csv_line(row)
+	f.close()
+
+func _timing_debug_log_session_start(song_path: String) -> void:
+	if not _timing_debug_log_ok():
+		return
+	var path := TIMING_DEBUG_CSV_PATH
+	var is_new := not FileAccess.file_exists(path)
+	var f: FileAccess = null
+	if is_new:
+		f = FileAccess.open(path, FileAccess.WRITE)
+	else:
+		f = FileAccess.open(path, FileAccess.READ_WRITE)
+	if f == null:
+		return
+	if not is_new:
+		f.seek_end()
+	if is_new:
+		f.store_csv_line(PackedStringArray([
+			"session_unix", "lane", "chart_time_json", "note_time_geom", "hit_time_adj",
+			"signed_delta_ms", "abs_delta_ms", "outcome", "autoplay_forced", "music_playing",
+			"output_latency_ms", "user_offset_ms", "game_time", "music_pos", "music_minus_game_ms", "audio_file",
+		]))
+	f.store_csv_line(PackedStringArray([
+		str(_timing_debug_session_start_unix),
+		"", "", "", "", "", "", "SESSION_START", "", "",
+		"", "", "", "", "", song_path,
+	]))
+	f.close()
+	print("[TimingDebug] SESSION_START unix=%d song=%s" % [_timing_debug_session_start_unix, song_path])
+
 func _sync_game_time_with_game_music():
 	if game_time < 0.0:
 		return
@@ -304,7 +487,7 @@ func _auto_play_simulate():
 func _check_hit_for_autoplay(lane: int):
 	if pauser.is_paused or not notes_loaded:
 		return
-	check_hit(lane, true)
+	check_hit(lane, _autoplay_force_perfect())
 
 func _reset_autoplay_state():
 	_autoplay_press_until.clear()
@@ -625,6 +808,8 @@ func start_gameplay():
 
 	gameplay_started = true
 	speed = SettingsManager.get_scroll_speed()
+	_timing_debug_session_start_unix = int(Time.get_unix_time_from_system())
+	_timing_debug_clear_ring()
 	_reset_autoplay_state()
 
 	var song_to_load = selected_song_data
@@ -659,47 +844,38 @@ func start_gameplay():
 			should_delay_music = true
 			pre_delay = time_to_reach_hit_zone - earliest_note_time
 
-	if should_delay_music:
+	pending_game_music_path = ""
+	if should_delay_music and pre_delay > 1e-4:
 		game_time = -pre_delay
+		pending_game_music_path = selected_song_data.get("path", "")
+	elif should_delay_music:
+		game_time = 0.0
 	else:
 		game_time = 0.0
 
 	MusicManager.play_level_start_sound()
-	
-	
+
 	var song_path = selected_song_data.get("path", "")
-
-	if should_delay_music:
-		if delayed_music_timer and is_instance_valid(delayed_music_timer):
-			delayed_music_timer.queue_free()
-			delayed_music_timer = null
-
-		delayed_music_timer = Timer.new()
-		delayed_music_timer.name = "DelayedMusicTimer"
-		delayed_music_timer.wait_time = max(0.0, pre_delay)
-		delayed_music_timer.one_shot = true
-
-		delayed_music_timer.timeout.connect(func():
-			game_time = 0.0
-			MusicManager.play_game_music(song_path)
-			if is_instance_valid(delayed_music_timer) and delayed_music_timer.get_parent() == self:
-				delayed_music_timer.queue_free()
-				delayed_music_timer = null
-		)
-
-		add_child(delayed_music_timer)
-		delayed_music_timer.start()
-	else:
+	if pending_game_music_path != "":
+		pass
+	elif song_path != "":
 		MusicManager.play_game_music(song_path)
 
 	check_song_end_timer.start()
 	_update_hint()
+	_timing_debug_log_session_start(String(song_to_load.get("path", "")))
 
 func _update_game():
 	if pauser.is_paused or game_finished or countdown_active:  
 		return  
 	
 	game_time += GAME_UPDATE_DELTA
+
+	if pending_game_music_path != "" and game_time >= 0.0:
+		var p := pending_game_music_path
+		pending_game_music_path = ""
+		MusicManager.play_game_music(p)
+
 	_sync_game_time_with_game_music()
 
 	if not countdown_active: 
@@ -715,6 +891,8 @@ func _update_game():
 	
 	if auto_play_enabled:
 		_auto_play_simulate()
+
+	_timing_debug_update_overlay()
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
@@ -1091,6 +1269,7 @@ func check_hit(lane: int, force_perfect: bool = false):
 	if candidates.size() == 0:
 		if force_perfect:
 			return
+		_timing_debug_emit_row(lane, -1.0, -1.0, current_time_adjusted, 0.0, 0.0, "empty_zone", force_perfect)
 		_combo_shake_and_dim()
 		score_manager.reset_combo()
 		MusicManager.play_miss_hit_sound()
@@ -1106,8 +1285,21 @@ func check_hit(lane: int, force_perfect: bool = false):
 			closest_distance = dist
 
 	var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA) 
-	var note_time = closest_note.spawn_time + (hit_zone_y_float - closest_note.spawn_y) / pixels_per_sec
-	var time_diff = abs(current_time_adjusted - note_time)
+	var note_time: float = float(closest_note.spawn_time) + (hit_zone_y_float - float(closest_note.spawn_y)) / pixels_per_sec
+	var hit_adj: float = float(current_time_adjusted)
+	var time_diff: float = absf(hit_adj - note_time)
+	var chart_json: float = float(closest_note.time)
+	var signed_ms: float = (hit_adj - note_time) * 1000.0
+
+	var outcome := "miss_timing"
+	if force_perfect:
+		outcome = "perfect_forced"
+	elif time_diff <= HIT_WINDOW_PERFECT:
+		outcome = "perfect"
+	elif time_diff <= HIT_WINDOW_GOOD:
+		outcome = "good"
+
+	_timing_debug_emit_row(lane, chart_json, note_time, current_time_adjusted, signed_ms, time_diff * 1000.0, outcome, force_perfect)
 
 	var hit_type = "ПРОМАХ"
 	var judgement_successful = false
@@ -1171,12 +1363,11 @@ func restart_level():
 		check_song_end_timer.stop()
 	if victory_delay_timer and not victory_delay_timer.is_stopped():
 		victory_delay_timer.stop()
-	if delayed_music_timer and is_instance_valid(delayed_music_timer):
-		delayed_music_timer.queue_free()
-		delayed_music_timer = null
+	pending_game_music_path = ""
 
 	MusicManager.stop_game_music()
 
+	_timing_debug_clear_ring()
 	_reset_autoplay_state()
 	player.reset()
 	score_manager.reset()

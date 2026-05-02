@@ -40,11 +40,6 @@ func handle_pause_request():
 	if game_timer and not game_timer.is_stopped():
 		game_timer.stop()
 	
-	if game_screen.delayed_music_timer \
-	and is_instance_valid(game_screen.delayed_music_timer) \
-	and not game_screen.delayed_music_timer.is_stopped():
-		game_screen.delayed_music_timer.stop()
-	
 	if game_screen.victory_delay_timer \
 	and is_instance_valid(game_screen.victory_delay_timer) \
 	and not game_screen.victory_delay_timer.is_stopped():
@@ -101,8 +96,8 @@ func handle_resume_request():
 	
 	MusicManager.set_music_volume_multiplier(original_music_volume)
 
-	if game_screen.delayed_music_timer and is_instance_valid(game_screen.delayed_music_timer) and game_screen.delayed_music_timer.is_stopped():
-		game_screen.delayed_music_timer.start()
+	if game_screen.pending_game_music_path != "":
+		pass
 	else:
 		var song_path = game_screen.selected_song_data.get("path", "")
 		if MusicManager.has_method("play_game_music_at_position"):
@@ -126,10 +121,9 @@ func cleanup_on_game_end():
 		pause_menu_instance.queue_free()
 		pause_menu_instance = null
 	
-	if game_screen.delayed_music_timer and is_instance_valid(game_screen.delayed_music_timer):
-		game_screen.delayed_music_timer.queue_free()
-		game_screen.delayed_music_timer = null
-	
+	if game_screen:
+		game_screen.pending_game_music_path = ""
+
 	is_paused = false
 	original_music_volume = 1.0
 	paused_music_position = 0.0

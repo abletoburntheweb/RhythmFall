@@ -54,6 +54,9 @@ var default_settings = {
 
 var settings: Dictionary = default_settings.duplicate(true)
 
+var _runtime_timing_debug_log_hits: bool = false
+var _runtime_timing_debug_overlay: bool = false
+var _runtime_autoplay_respects_hit_windows: bool = false
 
 func _init():
 	_load_settings()
@@ -87,7 +90,13 @@ func _load_settings():
 			pass
 		if loaded_settings.has("show_manual_track_input_on_generation"):
 			loaded_settings.erase("show_manual_track_input_on_generation")
+		var stripped_timing := false
+		for k in ["timing_debug_log_hits", "timing_debug_overlay", "autoplay_respects_hit_windows"]:
+			if loaded_settings.erase(k):
+				stripped_timing = true
 		settings = loaded_settings
+		if stripped_timing:
+			_save_settings()
 		apply_window_mode()
 	else:
 		_save_settings()
@@ -286,6 +295,24 @@ func get_timing_offset_ms() -> int:
 func set_timing_offset_ms(value: int):
 	settings["timing_offset_ms"] = clamp(value, -500, 500)
 	_save_settings()
+
+func get_timing_debug_log_hits() -> bool:
+	return _runtime_timing_debug_log_hits
+
+func set_timing_debug_log_hits(enabled: bool):
+	_runtime_timing_debug_log_hits = enabled
+
+func get_timing_debug_overlay() -> bool:
+	return _runtime_timing_debug_overlay
+
+func set_timing_debug_overlay(enabled: bool):
+	_runtime_timing_debug_overlay = enabled
+
+func get_autoplay_respects_hit_windows() -> bool:
+	return _runtime_autoplay_respects_hit_windows
+
+func set_autoplay_respects_hit_windows(enabled: bool):
+	_runtime_autoplay_respects_hit_windows = enabled
 
 func get_fps_mode() -> int:
 	return settings.get("fps_mode", default_settings["fps_mode"])

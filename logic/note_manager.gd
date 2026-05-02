@@ -101,16 +101,21 @@ func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes:
 	var arr: Array = JsonUtils.read_json_array(notes_path)
 	if arr.size() > 0:
 		note_spawn_queue = arr.duplicate()
+		note_spawn_queue.sort_custom(func(a, b) -> bool:
+			return float(a.get("time", 0.0)) < float(b.get("time", 0.0))
+		)
 		print("NoteManager: Загружено %d нот из %s" % [note_spawn_queue.size(), notes_path])
 	else:
 		print("NoteManager: Не удалось открыть или распарсить файл нот: %s" % notes_path)
 
 func get_earliest_note_time() -> float:
 	if note_spawn_queue.is_empty():
-		return -1.0 
-	if note_spawn_queue.size() > 0:
-		return note_spawn_queue[0].get("time", 0.0)
-	return -1.0
+		return -1.0
+	var best := INF
+	for item in note_spawn_queue:
+		if item is Dictionary:
+			best = minf(best, float(item.get("time", INF)))
+	return best if best != INF else -1.0
 	
 func spawn_notes():
 	var game_time = game_screen.game_time

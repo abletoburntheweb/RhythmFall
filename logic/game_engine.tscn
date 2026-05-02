@@ -138,12 +138,12 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -154.0
-offset_top = -17.0
+offset_top = -15.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.1.4 • Release (Build 407)"
+text = "v1.1.5 • Release (Build 408)"
 
 [node name="XPContainer" type="Control" parent="."]
 layout_mode = 1
