@@ -116,10 +116,12 @@ grow_vertical = 2
 script = ExtResource("1_rgl4p")
 
 [node name="Background" type="ColorRect" parent="."]
-custom_minimum_size = Vector2(400, 550)
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="TitleLabel" type="Label" parent="."]
@@ -145,10 +147,13 @@ clip_text = true
 text_overrun_behavior = 4
 
 [node name="StatsFrame" type="Panel" parent="."]
-layout_mode = 0
-offset_top = 145.0
-offset_right = 1920.0
-offset_bottom = 1080.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 135.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="ScoreLabel" type="Label" parent="StatsFrame"]
 layout_mode = 0

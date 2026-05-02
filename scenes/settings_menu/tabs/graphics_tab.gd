@@ -10,7 +10,8 @@ var game_engine = null
 
 @onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
 @onready var graphics_quality_option: OptionButton = $ContentVBox/GraphicsQuality/GraphicsQualityOptionButton
-@onready var fullscreen_checkbox: CheckBox = $ContentVBox/FullscreenCheckBox 
+@onready var window_mode_option: OptionButton = $ContentVBox/WindowMode/WindowModeOptionButton
+@onready var window_resolution_option: OptionButton = $ContentVBox/WindowResolution/WindowResolutionOptionButton
 @onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpinBox
 @onready var lane_highlight_brightness_slider: HSlider = $ContentVBox/LaneHighlightBrightnessSlider
 @onready var note_brightness_slider: HSlider = $ContentVBox/NoteBrightnessSlider
@@ -29,6 +30,8 @@ func _ready():
 	call_deferred("_apply_graphics_quality_popup_font")
 	call_deferred("_apply_note_approach_popup_font")
 	call_deferred("_apply_scroll_speed_spin_font")
+	call_deferred("_apply_window_mode_popup_font")
+	call_deferred("_apply_window_resolution_popup_font")
 
 func _apply_scroll_speed_spin_font() -> void:
 	if scroll_speed_spin:
@@ -43,6 +46,14 @@ func _apply_graphics_quality_popup_font() -> void:
 func _apply_note_approach_popup_font() -> void:
 	if note_approach_hint_option:
 		_OptionButtonPopupUtils.apply_popup_font_size(note_approach_hint_option, 24)
+
+func _apply_window_mode_popup_font() -> void:
+	if window_mode_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(window_mode_option, 24)
+
+func _apply_window_resolution_popup_font() -> void:
+	if window_resolution_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(window_resolution_option, 24)
 
 func _select_note_approach_hint_by_id(id: int) -> void:
 	if not note_approach_hint_option:
@@ -67,6 +78,31 @@ func _select_graphics_quality_by_id(id: int):
 			graphics_quality_option.select(i)
 			return
 
+func _select_window_mode_by_id(id: int) -> void:
+	if not window_mode_option:
+		return
+	var count := window_mode_option.get_item_count()
+	for i in range(count):
+		if window_mode_option.get_item_id(i) == id:
+			window_mode_option.select(i)
+			return
+
+func _select_window_resolution_by_id(id: int) -> void:
+	if not window_resolution_option:
+		return
+	var count := window_resolution_option.get_item_count()
+	for i in range(count):
+		if window_resolution_option.get_item_id(i) == id:
+			window_resolution_option.select(i)
+			return
+
+func _update_window_resolution_control_enabled() -> void:
+	if not window_resolution_option:
+		return
+	var borderless: bool = SettingsManager.get_window_mode() == 2
+	window_resolution_option.disabled = borderless
+	window_resolution_option.focus_mode = Control.FOCUS_NONE if borderless else Control.FOCUS_ALL
+
 func setup_ui_and_manager(game_engine_node = null):
 	game_engine = game_engine_node 
 	_setup_ui()
@@ -77,8 +113,12 @@ func _setup_ui():
 	if SettingsManager.has_method("get_graphics_quality"):
 		_select_graphics_quality_by_id(SettingsManager.get_graphics_quality())
 	
-	fullscreen_checkbox.set_pressed_no_signal(SettingsManager.get_fullscreen())
-	
+	if window_mode_option:
+		_select_window_mode_by_id(SettingsManager.get_window_mode())
+	if window_resolution_option:
+		_select_window_resolution_by_id(SettingsManager.get_window_resolution())
+	_update_window_resolution_control_enabled()
+
 	var spd = SettingsManager.get_scroll_speed()
 	scroll_speed_spin.set_value_no_signal(spd)
 	
@@ -118,8 +158,20 @@ func _on_graphics_quality_selected(index: int):
 	emit_signal("settings_changed")
 	_apply_display_settings()
 
-func _on_fullscreen_toggled(enabled: bool):
-	SettingsManager.set_fullscreen(enabled)
+func _on_window_mode_selected(index: int) -> void:
+	if not window_mode_option:
+		return
+	var id := window_mode_option.get_item_id(index)
+	SettingsManager.set_window_mode(id)
+	_update_window_resolution_control_enabled()
+	emit_signal("settings_changed")
+	_apply_display_settings()
+
+func _on_window_resolution_selected(index: int) -> void:
+	if not window_resolution_option:
+		return
+	var id := window_resolution_option.get_item_id(index)
+	SettingsManager.set_window_resolution(id)
 	emit_signal("settings_changed")
 	_apply_display_settings()
 

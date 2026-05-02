@@ -1,7 +1,7 @@
 [gd_scene load_steps=121 format=3 uid="uid://cc6iriedb1tay"]
 
 [ext_resource type="Script" uid="uid://dyeo7dkc76xu5" path="res://scenes/settings_menu/tabs/sound_tab.gd" id="1_5oswl"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_lf0cr"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_lf0cr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lf0cr"]
 content_margin_left = 16.0
@@ -2373,7 +2373,7 @@ grow_vertical = 2
 script = ExtResource("1_5oswl")
 
 [node name="ContentVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
 offset_right = 40.0
 offset_bottom = 40.0
 
@@ -2473,10 +2473,10 @@ cancel_button_text = "Отмена"
 [connection signal="value_changed" from="ContentVBox/MenuMusicVolumeSlider" to="." method="_on_menu_music_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
 [connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_on_sfx_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
-[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
+[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
+[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
 [connection signal="value_changed" from="ContentVBox/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
 [connection signal="pressed" from="ContentVBox/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
 [connection signal="pressed" from="ContentVBox/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]

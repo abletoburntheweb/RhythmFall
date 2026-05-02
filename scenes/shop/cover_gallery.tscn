@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://bol4h51pj023o"]
 
 [ext_resource type="Script" uid="uid://ctdry0wop3fss" path="res://scenes/shop/cover_gallery.gd" id="1_hwq2b"]
-[ext_resource type="Theme" uid="uid://de4oa6dre67r" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_ot1as"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_hwq2b"]
 
@@ -27,10 +27,12 @@ grow_vertical = 2
 script = ExtResource("1_hwq2b")
 
 [node name="Background" type="ColorRect" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="GalleryContainer" type="VBoxContainer" parent="."]

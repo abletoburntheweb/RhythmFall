@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="4_uqeha"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="4_uqeha"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -6517,31 +6517,45 @@ theme_type_variation = &"FlatExitButton"
 text = "ВЫЙТИ"
 
 [node name="HelpButton" type="Button" parent="."]
-layout_mode = 0
-offset_top = 1040.0
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
 offset_right = 41.0
-offset_bottom = 1080.0
+grow_vertical = 0
 theme = SubResource("Theme_1ur2m")
 theme_type_variation = &"FlatModalPrimaryButton"
 text = "?"
 
 [node name="GitHubButton" type="TextureButton" parent="."]
-layout_mode = 0
-offset_left = 1851.0
-offset_top = 1012.0
-offset_right = 2081.0
-offset_bottom = 1237.0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -69.0
+offset_top = -68.0
+offset_right = 161.0
+offset_bottom = 157.0
+grow_horizontal = 0
+grow_vertical = 0
 scale = Vector2(0.3, 0.3)
 texture_normal = ExtResource("2_0ebjn")
 
 [node name="DailyQuestsPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
-anchor_right = 0.010000001
-offset_left = 1564.0
-offset_top = 298.0
-offset_right = 1890.8
-offset_bottom = 838.0
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -326.80005
+offset_top = -270.0
+offset_bottom = 270.0
+grow_horizontal = 0
+grow_vertical = 2
 theme = SubResource("Theme_wem23")
 theme_type_variation = &"CardDefault"
 
@@ -6641,4 +6655,5 @@ cancel_button_text = "Отмена"
 [connection signal="pressed" from="ButtonContainer/SettingsButton" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]
 [connection signal="pressed" from="HelpButton" to="." method="_on_help_pressed"]
+[connection signal="pressed" from="GitHubButton" to="." method="_on_github_pressed"]
 [connection signal="confirmed" from="ExitConfirmDialog" to="." method="_on_exit_confirmed"]

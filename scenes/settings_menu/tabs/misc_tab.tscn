@@ -5151,7 +5151,7 @@ theme = SubResource("Theme_k8h85")
 script = ExtResource("1_f8lbq")
 
 [node name="ContentVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
 offset_right = 40.0
 offset_bottom = 40.0
 

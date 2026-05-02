@@ -32,6 +32,9 @@ DebugCommands="*res://addons/console/debug_commands.gd"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/size/mode=1
+window/size/resizable=false
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 

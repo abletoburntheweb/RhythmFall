@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
-[ext_resource type="Theme" uid="uid://dahdrq5xdlh6v" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1291,10 +1291,12 @@ grow_vertical = 2
 script = ExtResource("1_yyygw")
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
@@ -1373,15 +1375,15 @@ theme_type_variation = &"FlatButton"
 text = "Очистить результаты"
 
 [node name="ContentHBox" type="HBoxContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(1920, 100)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="SongListVBox" type="Control" parent="MainVBox/ContentHBox"]
-custom_minimum_size = Vector2(1400, 600)
+custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
 
 [node name="SongItemList" type="ItemList" parent="MainVBox/ContentHBox/SongListVBox"]
-custom_minimum_size = Vector2(1300, 600)
+custom_minimum_size = Vector2(1400, 600)
 layout_mode = 0
 offset_right = 1400.0
 offset_bottom = 884.0
@@ -1398,7 +1400,7 @@ theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 
 [node name="DetailsVBox" type="VBoxContainer" parent="MainVBox/ContentHBox"]
-layout_direction = 3
+custom_minimum_size = Vector2(400, 400)
 layout_mode = 2
 
 [node name="CoverTextureRect" type="TextureRect" parent="MainVBox/ContentHBox/DetailsVBox"]
@@ -1411,6 +1413,7 @@ custom_minimum_size = Vector2(0, 23)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Название"
+horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 max_lines_visible = 1
@@ -1419,6 +1422,7 @@ max_lines_visible = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Исполнитель"
+horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 max_lines_visible = 1
@@ -1427,31 +1431,37 @@ max_lines_visible = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Год"
+horizontal_alignment = 2
 
 [node name="BpmLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "BPM"
+horizontal_alignment = 2
 
 [node name="DurationLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Длительность"
+horizontal_alignment = 2
 
 [node name="PrimaryGenreLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Жанр"
+horizontal_alignment = 2
 
 [node name="PlayCountLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Сыгран: 0 раз"
+horizontal_alignment = 2
 
 [node name="BestGradeLabel" type="Label" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Лучшая оценка:"
+horizontal_alignment = 2
 
 [node name="Separator" type="ColorRect" parent="MainVBox/ContentHBox/DetailsVBox"]
 layout_mode = 2

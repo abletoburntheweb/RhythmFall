@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c1fahaip3uwgq"]
 
 [ext_resource type="Script" uid="uid://x4rp1r7pakd6" path="res://scenes/settings_menu/tabs/controls_tab.gd" id="1_unoo2"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_704fg"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_704fg"]
 
 [node name="ControlsTab" type="Control"]
 layout_mode = 3
@@ -13,7 +13,7 @@ grow_vertical = 2
 script = ExtResource("1_unoo2")
 
 [node name="ContentVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
 
 [node name="DescLabel" type="Label" parent="ContentVBox"]
 custom_minimum_size = Vector2(1920, 0)

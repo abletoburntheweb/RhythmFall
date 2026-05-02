@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://b0u5mhsmh2wdx"]
 
 [ext_resource type="Script" uid="uid://dlrclp0p36h56" path="res://scenes/achievements/achievements_screen.gd" id="1_n2eex"]
-[ext_resource type="Theme" uid="uid://8gcndopfw0p6" path="res://ui/theme/app_theme.tres" id="1_v157i"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="1_v157i"]
 
 [node name="AchievementsScreen" type="Control"]
 layout_mode = 3
@@ -14,9 +14,13 @@ theme = ExtResource("1_v157i")
 script = ExtResource("1_n2eex")
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 184.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
@@ -29,14 +33,12 @@ text = "Назад	"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Достижения"
 horizontal_alignment = 1
 
 [node name="CounterLabel" type="Label" parent="MainVBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 0.8, 1)
 theme_override_font_sizes/font_size = 32
@@ -47,8 +49,9 @@ horizontal_alignment = 1
 layout_mode = 2
 
 [node name="SearchBar" type="LineEdit" parent="MainVBox/SearchAndFilterHBox"]
-custom_minimum_size = Vector2(1700, 50)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("1_v157i")
 theme_type_variation = &"SearchField"
 theme_override_font_sizes/font_size = 20
@@ -89,8 +92,8 @@ popup/item_12/text = "Уровень"
 popup/item_12/id = 12
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(1920, 1080)
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/margin_left = 40
 theme_override_constants/margin_top = 25
 theme_override_constants/margin_bottom = 40
@@ -101,10 +104,12 @@ horizontal_scroll_mode = 0
 
 [node name="BottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 160
 
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin"]
-custom_minimum_size = Vector2(1840, 0)
 layout_mode = 2
 
 [connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]

@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1291,10 +1291,12 @@ grow_vertical = 2
 script = ExtResource("1_bjeu6")
 
 [node name="MainContent" type="MarginContainer" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="MainVBox" type="VBoxContainer" parent="MainContent"]
 layout_mode = 2
@@ -1310,14 +1312,12 @@ text = "Назад	"
 
 [node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Магазин"
 horizontal_alignment = 1
 
 [node name="CounterLabel" type="Label" parent="MainContent/MainVBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 0.8, 1)
 theme_override_font_sizes/font_size = 32
@@ -1374,11 +1374,11 @@ size_flags_horizontal = 3
 
 [node name="ItemsScroll" type="ScrollContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox"]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="ItemsListContainer" type="VBoxContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-alignment = 1
 
 [node name="ItemsGridCenter" type="CenterContainer" parent="MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll/ItemsListContainer"]
 layout_mode = 2

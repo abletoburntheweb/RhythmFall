@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bpb227su36cld"]
 
 [ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/generation_settings_selector.gd" id="1_3dj4v"]
-[ext_resource type="Theme" uid="uid://8gcndopfw0p6" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="1_flxbb"]
 
 [node name="GenerationSettingsSelector" type="Control"]
 layout_mode = 3
@@ -14,10 +14,12 @@ theme = ExtResource("1_flxbb")
 script = ExtResource("1_3dj4v")
 
 [node name="Background" type="ColorRect" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="Container" type="VBoxContainer" parent="."]

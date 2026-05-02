@@ -22,7 +22,7 @@ func _init(p_lane: int, p_y: float, p_spawn_time: float = 0.0, p_kind: String = 
 		duration = p_hold_time_ms / 1000.0
 	note_type = note_kind
 
-func update(speed: float):
+func update(speed: float, despawn_y: float):
 	if note_kind == "HoldNote":
 		var current_fall_speed = speed if speed != 0 else fall_speed
 		if is_being_held and not captured:
@@ -35,10 +35,10 @@ func update(speed: float):
 			y += current_fall_speed
 			if visual_node:
 				visual_node.position.y = y
-		if y > 1080 and not captured:
+		if y > despawn_y and not captured:
 			active = false
 	else:
-		super.update(speed)
+		super.update(speed, despawn_y)
 
 func on_hit():
 	if note_kind == "HoldNote":

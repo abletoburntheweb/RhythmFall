@@ -328,15 +328,7 @@ func update_display_settings():
 	_update_fps_visibility()
 
 func _apply_window_settings():
-	if SettingsManager.get_fullscreen():
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		var window_size = SettingsManager.get_window_size() if SettingsManager.has_method("get_window_size") else Vector2i(1920, 1080)
-		DisplayServer.window_set_size(window_size)
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-		var screen_size = DisplayServer.screen_get_size()
-		DisplayServer.window_set_position((screen_size - window_size) / 2)
+	SettingsManager.apply_window_mode()
 
 func _start_play_time_timer():
 	_play_time_timer = get_tree().create_timer(PLAY_TIME_UPDATE_INTERVAL)

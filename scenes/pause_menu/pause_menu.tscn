@@ -1,7 +1,7 @@
 [gd_scene load_steps=71 format=3 uid="uid://hbupjp838y2b"]
 
 [ext_resource type="Script" uid="uid://dcjmvp0dga6d2" path="res://scenes/pause_menu/pause_menu.gd" id="1_5bgjm"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_qcmsd"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_qcmsd"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vwq7"]
 content_margin_left = 16.0
@@ -1291,19 +1291,23 @@ grow_vertical = 2
 script = ExtResource("1_5bgjm")
 
 [node name="Background" type="ColorRect" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="MenuContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="TitleLabel" type="Label" parent="MenuContainer"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 32

@@ -30,7 +30,7 @@ const SECTION_GAMEPLAY := "Геймплей и настройки"
 const SECTION_LIBRARY := "Библиотека треков"
 const SECTION_PROGRESS := "Прогресс и магазин"
 
-@onready var help_list: VBoxContainer = $ContentContainer/HelpScroll/ScrollBottomMargin/HelpList
+@onready var help_list: VBoxContainer = $MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin/HelpList
 @onready var back_button = $MainVBox/BackButton
 
 var help_card_template: HelpCard

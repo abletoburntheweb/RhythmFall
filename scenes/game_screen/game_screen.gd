@@ -1,5 +1,5 @@
 # scenes/game_screen/game_screen.gd
-extends Node2D
+extends Control
 
 const ScoreManager = preload("res://logic/score_manager.gd")
 const NoteManager = preload("res://logic/note_manager.gd")
@@ -155,6 +155,9 @@ func _ready():
 	player.lane_pressed_changed.connect(_on_lane_pressed_changed) 
 
 	_find_ui_elements()
+	var playfield_root := get_node_or_null("Playfield") as Control
+	if playfield_root:
+		playfield_root.resized.connect(_on_playfield_resized)
 	_instantiate_debug_menu()
 	_load_lane_colors()
 	_load_note_colors()
@@ -195,7 +198,12 @@ func _ready():
 	restart_timer.wait_time = 1.5  
 	restart_timer.timeout.connect(_on_restart_confirmed)
 	add_child(restart_timer)
-	
+
+	call_deferred("_update_lane_layout")
+
+func _on_playfield_resized():
+	call_deferred("_update_lane_layout")
+
 func _init_rhythm_notifier():
 	rhythm_notifier = RhythmNotifier.new()
 	add_child(rhythm_notifier)
@@ -375,7 +383,7 @@ func _find_ui_elements():
 		countdown_label = get_node_or_null("CountdownLabel") as Label
 	notes_container = get_node_or_null("Playfield/NotesContainer") as Node2D
 
-	var lanes_container_node = get_node_or_null("Playfield/LanesContainer")
+	var lanes_container_node = get_node_or_null("Playfield/LanesContainer") as Control
 	if lanes_container_node:
 		lane_highlight_nodes = [
 			lanes_container_node.get_node_or_null("Lane0Highlight") as ColorRect,
@@ -436,11 +444,16 @@ func set_results_manager(results_mgr):
 	results_manager = results_mgr
 	
 func _on_lane_pressed_changed():
-	for i in range(lanes):
-		if i < lane_highlight_nodes.size() and i < player.lanes_state.size():
-			var is_pressed = player.lanes_state[i]
-			if lane_highlight_nodes[i]:
-				lane_highlight_nodes[i].visible = is_pressed
+	if not player:
+		return
+	for i in range(lane_highlight_nodes.size()):
+		var hl = lane_highlight_nodes[i]
+		if not hl:
+			continue
+		if i >= lanes or i >= player.lanes_state.size():
+			hl.visible = false
+		else:
+			hl.visible = player.lanes_state[i]
 
 func start_countdown():
 	countdown_active = true
@@ -494,51 +507,114 @@ func _set_lanes(lane_count: int):
 	print("GameScreen.gd: Установлено количество линий: ", lanes)
 	_update_lane_layout()
 
+
+func _lane_left_edges_px(playfield_w: float, lane_count: int) -> PackedFloat32Array:
+	var ln: int = maxi(lane_count, 1)
+	var edges := PackedFloat32Array()
+	edges.resize(ln + 1)
+	var total_px: int = maxi(int(round(playfield_w)), ln)
+	var base_w: int = total_px / ln
+	var rem: int = total_px % ln
+	var cum: int = 0
+	edges[0] = 0.0
+	for i in range(ln):
+		cum += base_w + (1 if i < rem else 0)
+		edges[i + 1] = float(cum)
+	edges[ln] = playfield_w
+	return edges
+
+
 func _update_lane_layout():
 	var hit_zone = get_node_or_null("Playfield/HitZone") as ColorRect
-	if not hit_zone:
-		return
 	var playfield = get_node_or_null("Playfield") as Control
-	var start_x = 0.0
-	var playfield_width = hit_zone.size.x
-	var playfield_height = playfield.size.y if playfield else 1080.0
-	var lane_width = playfield_width / lanes
+	var lanes_parent := get_node_or_null("Playfield/LanesContainer") as Control
+	if not hit_zone or not playfield:
+		return
+	var start_x := 0.0
+	var playfield_width: float = maxf(playfield.size.x, hit_zone.size.x)
+	var playfield_height: float = playfield.size.y
+	var lane_y: float = hit_zone.position.y
+	if lanes_parent:
+		lane_y = hit_zone.global_position.y - lanes_parent.global_position.y
 
-	for i in range(5): 
-		var is_active = (i < lanes)
+	var lane_edges := _lane_left_edges_px(playfield_width, lanes)
+
+	for i in range(5):
+		var is_active := (i < lanes)
+		var x0 := 0.0
+		var lw := 0.0
+		if is_active:
+			x0 = start_x + lane_edges[i]
+			lw = lane_edges[i + 1] - lane_edges[i]
 
 		if i < lane_nodes.size():
 			var lane_node = lane_nodes[i]
 			if lane_node:
 				lane_node.visible = is_active
 				if is_active:
-					lane_node.position.x = start_x + i * lane_width
-					lane_node.size.x = lane_width
-					lane_node.position.y = hit_zone.position.y
+					lane_node.position.x = x0
+					lane_node.size.x = lw
+					lane_node.position.y = lane_y
 					lane_node.size.y = hit_zone.size.y
 
 		if i < lane_highlight_nodes.size():
 			var highlight_node = lane_highlight_nodes[i]
 			if highlight_node:
-				highlight_node.visible = false
 				if is_active:
-					highlight_node.position.x = start_x + i * lane_width
-					highlight_node.size.x = lane_width
+					highlight_node.position.x = x0
+					highlight_node.size.x = lw
 					highlight_node.position.y = 0.0
 					highlight_node.size.y = playfield_height
+				else:
+					highlight_node.visible = false
 
-	hit_zone_y = int(hit_zone.position.y)
+	hit_zone_y = int(hit_zone.global_position.y - playfield.global_position.y)
+
+	if player:
+		_on_lane_pressed_changed()
 	
 func get_playfield_width() -> float:
+	var pf = get_node_or_null("Playfield") as Control
 	var hz = get_node_or_null("Playfield/HitZone") as ColorRect
-	return float(hz.size.x) if hz else 600.0
+	var w: float = 0.0
+	if pf:
+		w = pf.size.x
+	if hz:
+		w = maxf(w, hz.size.x)
+	return w if w > 1.0 else 600.0
 
 func get_lane_width() -> float:
-	return get_playfield_width() / float(lanes)
+	return get_playfield_width() / float(maxi(lanes, 1))
+
+
+func get_lane_left_x(lane: int) -> float:
+	var w: float = get_playfield_width()
+	var lane_clamped: int = clampi(lane, 0, maxi(lanes, 1) - 1)
+	var edges := _lane_left_edges_px(w, lanes)
+	return edges[lane_clamped]
+
+
+func get_lane_width_at(lane: int) -> float:
+	var w: float = get_playfield_width()
+	var lane_clamped: int = clampi(lane, 0, maxi(lanes, 1) - 1)
+	var edges := _lane_left_edges_px(w, lanes)
+	return edges[lane_clamped + 1] - edges[lane_clamped]
 
 func get_playfield_start_x() -> float:
 	return 0.0
-	
+
+
+func get_playfield_height_for_notes() -> float:
+	var playfield = get_node_or_null("Playfield") as Control
+	if playfield:
+		return maxf(playfield.size.y, 1.0)
+	return maxf(float(get_viewport_rect().size.y), 400.0)
+
+
+func get_note_despawn_y() -> float:
+	return get_playfield_height_for_notes() + 80.0
+
+
 func _set_generation_mode(mode: String): 
 	current_generation_mode = mode
 	print("GameScreen.gd: Режим генерации установлен: ", mode)
@@ -1206,3 +1282,4 @@ func _exit_to_main_menu():
 func _exit_tree() -> void:
 	Engine.max_fps = original_max_fps
 	DisplayServer.window_set_vsync_mode(original_vsync_mode)
+ 

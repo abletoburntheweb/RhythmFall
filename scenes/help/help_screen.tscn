@@ -1,18 +1,25 @@
 [gd_scene load_steps=4 format=3 uid="uid://cm0cwu0mvp3yq"]
 
 [ext_resource type="Script" uid="uid://be44itwxsmmgf" path="res://scenes/help/help_screen.gd" id="1_87tvd"]
-[ext_resource type="Theme" uid="uid://dwilly6n1bnfm" path="res://ui/theme/app_theme.tres" id="1_x4o1d"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="1_x4o1d"]
 [ext_resource type="Script" uid="uid://da1tvl1igewy4" path="res://scenes/help/help_card.gd" id="3_fablb"]
 
 [node name="HelpScreen" type="Control"]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_87tvd")
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
@@ -25,29 +32,30 @@ text = "Назад	"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
+size_flags_vertical = 1
 theme_override_font_sizes/font_size = 32
 text = "Справка"
 horizontal_alignment = 1
 
-[node name="ContentContainer" type="MarginContainer" parent="."]
-layout_mode = 0
-offset_top = 131.0
-offset_right = 1920.0
-offset_bottom = 1080.0
+[node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
 
-[node name="HelpScroll" type="ScrollContainer" parent="ContentContainer"]
+[node name="HelpScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="ScrollBottomMargin" type="MarginContainer" parent="ContentContainer/HelpScroll"]
+[node name="ScrollBottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/HelpScroll"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/margin_bottom = 20
 
-[node name="HelpList" type="VBoxContainer" parent="ContentContainer/HelpScroll/ScrollBottomMargin"]
-custom_minimum_size = Vector2(1840, 0)
+[node name="HelpList" type="VBoxContainer" parent="MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin"]
 layout_mode = 2
 
 [node name="HelpCard" type="VBoxContainer" parent="."]

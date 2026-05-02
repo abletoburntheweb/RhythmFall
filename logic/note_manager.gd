@@ -126,9 +126,6 @@ func spawn_notes():
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
 
-	var lane_width = game_screen.get_lane_width()
-	var start_x = 0.0
-
 	while note_spawn_queue.size() > 0 and note_spawn_queue[0].get("time", 0.0) <= spawn_threshold_time:
 		var note_info = note_spawn_queue.pop_front()
 		var lane = note_info.get("lane", 0)
@@ -137,7 +134,8 @@ func spawn_notes():
 		var time_diff = note_time - game_time
 		var y_spawn = hit_zone_y - time_diff * pixels_per_sec
 
-		if y_spawn > game_screen.get_viewport_rect().size.y + 20:
+		var playfield_h: float = game_screen.get_playfield_height_for_notes()
+		if y_spawn > playfield_h + 20.0:
 			continue
 
 		var note_object = null
@@ -158,14 +156,16 @@ func spawn_notes():
 			note_object.time = note_time
 			note_object.visual_node = visual_rect
 
-			var default_note_height = 20.0 
+			var default_note_height = 20.0
+			var lane_w = game_screen.get_lane_width_at(lane)
+			var lane_x = game_screen.get_lane_left_x(lane)
 
 			if note_object.note_kind == "HoldNote":
-				visual_rect.size = Vector2(lane_width, note_object.height)
+				visual_rect.size = Vector2(lane_w, note_object.height)
 			else:
-				visual_rect.size = Vector2(lane_width, default_note_height)
+				visual_rect.size = Vector2(lane_w, default_note_height)
 
-			visual_rect.position = Vector2(start_x + lane * lane_width, y_spawn)
+			visual_rect.position = Vector2(lane_x, y_spawn)
 			visual_rect.color = _note_color_with_proximity(note_object, hit_zone_y)
 			
 			game_screen.notes_container.add_child(visual_rect)
@@ -176,9 +176,10 @@ func update_notes():
 	var hit_zone_y = game_screen.hit_zone_y
 	var miss_threshold: float = 40 
 
+	var despawn_y: float = game_screen.get_note_despawn_y()
 	for i in range(notes.size() - 1, -1, -1): 
 		var note = notes[i]
-		note.update(speed)
+		note.update(speed, despawn_y)
 
 		if note.visual_node is ColorRect and note.active:
 			note.visual_node.color = _note_color_with_proximity(note, hit_zone_y)

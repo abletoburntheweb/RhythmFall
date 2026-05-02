@@ -1,7 +1,7 @@
 [gd_scene load_steps=194 format=3 uid="uid://c4tpd08i2ypaq"]
 
 [ext_resource type="Script" uid="uid://bqa01mcntirud" path="res://scenes/profile/profile_screen.gd" id="1_1k4fv"]
-[ext_resource type="Theme" uid="uid://ebqkecuajs4p" path="res://ui/theme/app_theme.tres" id="2_or3b4"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_or3b4"]
 [ext_resource type="Script" uid="uid://d1x5u2u7grlsv" path="res://scenes/achievements/achievement_card.gd" id="3_uuq6e"]
 [ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="4_chjtg"]
 
@@ -3675,9 +3675,13 @@ grow_vertical = 2
 script = ExtResource("1_1k4fv")
 
 [node name="MainContent" type="MarginContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 2.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="MainVBox" type="VBoxContainer" parent="MainContent"]
 layout_mode = 2
@@ -3692,7 +3696,6 @@ theme_type_variation = &"FlatButton"
 text = "Назад	"
 
 [node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
 theme_override_font_sizes/font_size = 32
@@ -3988,12 +3991,10 @@ text = "Любимый жанр: Н/Д"
 
 [node name="AchievementsColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
 layout_mode = 2
-size_flags_horizontal = 8
 
 [node name="RecentAchievementsCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn"]
 custom_minimum_size = Vector2(650, 0)
 layout_mode = 2
-size_flags_horizontal = 8
 theme = SubResource("Theme_p28av")
 
 [node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard"]

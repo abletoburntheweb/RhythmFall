@@ -8,7 +8,7 @@ signal song_select_requested
 signal settings_requested
 signal exit_to_menu_requested
 
-var game_screen: Node2D = null
+var game_screen: Node = null
 var game_timer: Timer = null
 
 var pause_menu_instance = null

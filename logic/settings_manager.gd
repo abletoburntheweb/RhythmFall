@@ -4,6 +4,7 @@ extends Node
 const SETTINGS_PATH = "user://settings.json"
 const MAX_LANES = 5
 const DEFAULT_WINDOW_SIZE := Vector2i(1920, 1080)
+
 var default_settings = {
 	"music_volume": 30.0,
 	"menu_music_volume": 30.0,
@@ -12,8 +13,9 @@ var default_settings = {
 	"metronome_volume": 30.0, 
 	"preview_volume": 30.0,
 	"timing_offset_ms": 0,
-	"fps_mode": 0, 
-	"fullscreen": true,
+	"fps_mode": 0,
+	"window_mode": 2,
+	"window_resolution": 2,
 	"graphics_quality": 1,
 	"enable_debug_menu": true,
 	"enable_genre_detection": true,
@@ -86,20 +88,122 @@ func _load_settings():
 		if loaded_settings.has("show_manual_track_input_on_generation"):
 			loaded_settings.erase("show_manual_track_input_on_generation")
 		settings = loaded_settings
-
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", default_settings["fullscreen"]) else DisplayServer.WINDOW_MODE_WINDOWED)
-		if not settings.get("fullscreen", default_settings["fullscreen"]):
-			var window_size = get_window_size()
-			DisplayServer.window_set_size(window_size)
-			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-			var screen_size = DisplayServer.screen_get_size()
-			DisplayServer.window_set_position((screen_size - window_size) / 2)
+		apply_window_mode()
 	else:
-		_save_settings() 
+		_save_settings()
+		apply_window_mode()
 
 
 func _save_settings():
 	JsonUtils.write_json(SETTINGS_PATH, settings, true, true)
+
+
+func apply_window_mode() -> void:
+	var mode_id := get_window_mode()
+	var sz := get_window_resolution_pixels()
+	var tree := Engine.get_main_loop() as SceneTree
+	var root_window: Window = tree.root if tree else null
+
+	match mode_id:
+		2:
+			_apply_display_mode_fullscreen(sz, root_window)
+		1:
+			_apply_display_mode_exclusive_fullscreen(sz, root_window)
+		0:
+			_apply_display_mode_windowed(sz, root_window)
+
+
+func _apply_display_mode_fullscreen(sz: Vector2i, root_window: Window) -> void:
+	DisplayServer.window_set_size(sz)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	if root_window:
+		root_window.mode = Window.MODE_FULLSCREEN
+		root_window.size = sz
+
+
+func _apply_display_mode_exclusive_fullscreen(sz: Vector2i, root_window: Window) -> void:
+	DisplayServer.window_set_size(sz)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	if root_window:
+		root_window.size = sz
+		root_window.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
+
+
+func _apply_display_mode_windowed(sz: Vector2i, root_window: Window) -> void:
+	var prev := DisplayServer.window_get_mode()
+	if prev == DisplayServer.WINDOW_MODE_FULLSCREEN:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+		call_deferred("_finish_display_mode_windowed_transition", sz)
+		return
+	_finish_display_mode_windowed_transition(sz)
+
+
+func _finish_display_mode_windowed_transition(sz: Vector2i) -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var root_window: Window = tree.root if tree else null
+	DisplayServer.window_set_title("RhythmFall")
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	var usable := DisplayServer.screen_get_usable_rect()
+	var fit := Vector2i(
+		mini(sz.x, usable.size.x),
+		mini(sz.y, usable.size.y)
+	)
+	fit.x = maxi(fit.x, 64)
+	fit.y = maxi(fit.y, 64)
+	DisplayServer.window_set_size(fit)
+	var pos := usable.position + (usable.size - fit) / 2
+	pos.x = clampi(pos.x, usable.position.x, usable.position.x + maxi(0, usable.size.x - fit.x))
+	pos.y = clampi(pos.y, usable.position.y, usable.position.y + maxi(0, usable.size.y - fit.y))
+	DisplayServer.window_set_position(pos)
+	if root_window:
+		root_window.mode = Window.MODE_WINDOWED
+		root_window.size = fit
+		root_window.borderless = false
+		root_window.unresizable = true
+		root_window.title = "RhythmFall"
+
+
+func get_window_mode() -> int:
+	var v = settings.get("window_mode", default_settings["window_mode"])
+	if v is int:
+		return clampi(v, 0, 2)
+	if v is float:
+		return clampi(int(v), 0, 2)
+	return int(default_settings["window_mode"])
+
+
+func set_window_mode(mode_id: int) -> void:
+	settings["window_mode"] = clampi(mode_id, 0, 2)
+	_save_settings()
+	apply_window_mode()
+
+
+func get_window_resolution() -> int:
+	var v = settings.get("window_resolution", default_settings["window_resolution"])
+	if v is int:
+		return clampi(v, 0, 2)
+	if v is float:
+		return clampi(int(v), 0, 2)
+	return int(default_settings["window_resolution"])
+
+
+func get_window_resolution_pixels() -> Vector2i:
+	match get_window_resolution():
+		0:
+			return Vector2i(1280, 720)
+		1:
+			return Vector2i(1600, 900)
+		2:
+			return Vector2i(1920, 1080)
+		_:
+			return Vector2i(1920, 1080)
+
+
+func set_window_resolution(res_id: int) -> void:
+	settings["window_resolution"] = clampi(res_id, 0, 2)
+	_save_settings()
+	apply_window_mode()
 
 
 func _merge_defaults_with_loaded(defaults: Dictionary, loaded: Dictionary) -> Dictionary:
@@ -125,9 +229,11 @@ func save_settings():
 	_save_settings()
 
 func reset_settings():
-	var prev_fullscreen = settings.get("fullscreen", false)
+	var prev_wm := get_window_mode()
+	var prev_wr := get_window_resolution()
 	settings = default_settings.duplicate(true)
-	settings["fullscreen"] = prev_fullscreen
+	settings["window_mode"] = prev_wm
+	settings["window_resolution"] = prev_wr
 	_save_settings()
 
 func get_music_volume() -> float:
@@ -195,15 +301,15 @@ func set_show_fps(enabled: bool):
 	settings["fps_mode"] = 1 if enabled else 0
 	_save_settings() 
 
-func get_fullscreen() -> bool:
-	return settings.get("fullscreen", default_settings["fullscreen"])
-
-func set_fullscreen(enabled: bool):
-	settings["fullscreen"] = enabled
-	_save_settings()
-
 func get_window_size() -> Vector2i:
-	return DEFAULT_WINDOW_SIZE
+	var usable_rect := DisplayServer.screen_get_usable_rect()
+	var usable_size := usable_rect.size
+	if usable_size.x <= 0 or usable_size.y <= 0:
+		usable_size = DisplayServer.screen_get_size()
+	var target := usable_size - Vector2i(160, 120)
+	target.x = clampi(target.x, 960, DEFAULT_WINDOW_SIZE.x)
+	target.y = clampi(target.y, 540, DEFAULT_WINDOW_SIZE.y)
+	return target
 
 func get_graphics_quality() -> int:
 	var quality := int(settings.get("graphics_quality", default_settings["graphics_quality"]))
@@ -306,25 +412,18 @@ static func is_service_key(scancode: int) -> bool:
 	return KeyInputUtils.is_service_key(scancode)
 func reset_all_settings():
 	var current_controls = settings.get("controls_keymap", {}).duplicate(true)
-	var prev_fullscreen = settings.get("fullscreen", false)
-	
+	var prev_window_mode := get_window_mode()
+	var prev_resolution := get_window_resolution()
+
 	settings = default_settings.duplicate(true)
-	
+
 	if not current_controls.is_empty():
 		settings["controls_keymap"] = current_controls
-	settings["fullscreen"] = prev_fullscreen
-	
+	settings["window_mode"] = prev_window_mode
+	settings["window_resolution"] = prev_resolution
+
 	_apply_reset_settings()
 	_save_settings()
 
 func _apply_reset_settings():
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if settings.get("fullscreen", false) else DisplayServer.WINDOW_MODE_WINDOWED)
-	
-	if not settings.get("fullscreen", false):
-		var window_size = get_window_size()
-		DisplayServer.window_set_size(window_size)
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
-		var screen_size = DisplayServer.screen_get_size()
-		DisplayServer.window_set_position((screen_size - window_size) / 2)
-	
-	pass
+	apply_window_mode()

@@ -20,6 +20,8 @@ var _preview_request_id: int = 0
 var _cover_loader: ThreadedTextureLoader = null
 var _cover_loader_connected: bool = false
 var _cover_request_id: int = 0
+var _real_cover_applied_for_request_id: int = -1
+var _fallback_applies_to_request_id: int = -1
 var _sidecar_cover_thread: Thread = null
 var _sidecar_cover_request_id: int = 0
 var _embedded_cover_thread: Thread = null
@@ -285,13 +287,16 @@ func _apply_cover_texture(song_data: Dictionary) -> void:
 	var path_for_cover = song_data.get("path", "")
 	_cover_request_id += 1
 	var request_id := _cover_request_id
+	_real_cover_applied_for_request_id = -1
 	if path_for_cover != "":
 		var global_path = ProjectSettings.globalize_path(path_for_cover)
 		if _embedded_cover_cache.has(global_path):
 			cover_texture_rect.texture = _embedded_cover_cache[global_path]
+			_real_cover_applied_for_request_id = request_id
 			return
 		if _sidecar_cover_cache.has(global_path):
 			cover_texture_rect.texture = _sidecar_cover_cache[global_path]
+			_real_cover_applied_for_request_id = request_id
 			return
 		_start_embedded_cover_load(global_path, request_id)
 		_start_sidecar_cover_load(global_path, request_id)
@@ -370,6 +375,7 @@ func _poll_embedded_cover_thread() -> void:
 		_embedded_cover_cache[audio_path] = tex
 		if cover_texture_rect:
 			cover_texture_rect.texture = tex
+			_real_cover_applied_for_request_id = _cover_request_id
 
 func _start_sidecar_cover_load(global_audio_path: String, request_id: int) -> void:
 	if _sidecar_cover_thread and _sidecar_cover_thread.is_alive():
@@ -428,8 +434,10 @@ func _poll_sidecar_cover_thread() -> void:
 		_sidecar_cover_cache[audio_path] = tex
 		if cover_texture_rect:
 			cover_texture_rect.texture = tex
+			_real_cover_applied_for_request_id = _cover_request_id
 
 func _request_fallback_cover_texture(request_id: int) -> void:
+	_fallback_applies_to_request_id = request_id
 	var fallback_path := _get_fallback_cover_path()
 	if fallback_path == "":
 		return
@@ -442,6 +450,10 @@ func _request_fallback_cover_texture(request_id: int) -> void:
 		_cover_loader_connected = true
 	var cached := _cover_loader.get_cached(fallback_path)
 	if cached:
+		if request_id != _cover_request_id:
+			return
+		if _real_cover_applied_for_request_id == request_id:
+			return
 		cover_texture_rect.texture = cached
 		return
 	_cover_loader.request(fallback_path)
@@ -449,4 +461,9 @@ func _request_fallback_cover_texture(request_id: int) -> void:
 func _on_fallback_cover_loaded(path: String, tex: Texture2D) -> void:
 	if not cover_texture_rect or tex == null:
 		return
+	if _fallback_applies_to_request_id != _cover_request_id:
+		return
+	if _real_cover_applied_for_request_id == _cover_request_id:
+		return
 	cover_texture_rect.texture = tex
+  

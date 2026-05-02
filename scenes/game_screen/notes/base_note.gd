@@ -21,12 +21,12 @@ func _init(p_lane: int, p_y: float, p_spawn_time: float = 0.0):
 	spawn_y = p_y
 	visual_node = null
 
-func update(speed: float):
+func update(speed: float, despawn_y: float):
 	y += speed
 	if visual_node:
 		visual_node.position.y = y
-	if y > 1080: 
-		active = false 
+	if y > despawn_y:
+		active = false
 
 func on_hit():
 	was_hit = true

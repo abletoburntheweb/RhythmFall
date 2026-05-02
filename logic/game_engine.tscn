@@ -89,7 +89,11 @@ _data = {
 
 [node name="GameEngine" type="Control"]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_w1ht0")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -97,8 +101,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 1920.0
-offset_bottom = 1080.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.067, 0.067, 0.086, 1)
@@ -130,33 +132,47 @@ theme_override_font_sizes/font_size = 12
 text = "FPS 140"
 
 [node name="VersionLabel" type="Label" parent="FPSLayer"]
-offset_left = 1766.0
-offset_top = 1063.0
-offset_right = 1920.0
-offset_bottom = 1080.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -154.0
+offset_top = -17.0
+grow_horizontal = 0
+grow_vertical = 0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.1.3 • Release (Build 406)"
+text = "v1.1.4 • Release (Build 407)"
 
 [node name="XPContainer" type="Control" parent="."]
-anchors_preset = 0
-offset_left = 1598.0
-offset_right = 1598.0
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -324.0
+offset_right = -320.0
 
 [node name="XPProgressBar" type="ProgressBar" parent="XPContainer"]
-layout_mode = 0
-offset_left = -9.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 80.0
+anchor_right = 80.0
+offset_left = -329.0
 offset_top = 31.0
-offset_right = 320.0
 offset_bottom = 84.0
+grow_horizontal = 0
+grow_vertical = 2
 theme_override_styles/fill = SubResource("StyleBoxFlat_q8hsq")
 show_percentage = false
 
 [node name="LevelLabel" type="Label" parent="XPContainer"]
-layout_mode = 0
-offset_left = -7.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 79.25
+anchor_right = 79.25
+offset_left = -324.0
 offset_top = 4.0
-offset_right = 317.0
 offset_bottom = 38.0
 theme_override_font_sizes/font_size = 24
 text = "Уровень 1"
@@ -164,10 +180,12 @@ horizontal_alignment = 2
 vertical_alignment = 2
 
 [node name="XPAmountLabel" type="Label" parent="XPContainer"]
-layout_mode = 0
-offset_left = -9.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 80.0
+anchor_right = 80.0
+offset_left = -329.0
 offset_top = 31.0
-offset_right = 320.0
 offset_bottom = 83.0
 theme_override_font_sizes/font_size = 24
 text = "0/200"

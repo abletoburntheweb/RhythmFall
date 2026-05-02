@@ -1,7 +1,7 @@
 [gd_scene load_steps=125 format=3 uid="uid://jsjmtg1mfq15"]
 
 [ext_resource type="Script" uid="uid://b1w623ds2gg8i" path="res://scenes/settings_menu/settings_menu.gd" id="1_j78aw"]
-[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_p28av"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_p28av"]
 [ext_resource type="PackedScene" uid="uid://cc6iriedb1tay" path="res://scenes/settings_menu/tabs/sound_tab.tscn" id="3_bsihy"]
 [ext_resource type="PackedScene" uid="uid://dk7vdwevkwjod" path="res://scenes/settings_menu/tabs/graphics_tab.tscn" id="4_rcdfy"]
 [ext_resource type="PackedScene" uid="uid://c1fahaip3uwgq" path="res://scenes/settings_menu/tabs/controls_tab.tscn" id="5_pdrua"]
@@ -2377,14 +2377,21 @@ grow_vertical = 2
 script = ExtResource("1_j78aw")
 
 [node name="Background" type="ColorRect" parent="."]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 20
 
 [node name="BackButton" type="Button" parent="MainVBox"]
@@ -2398,9 +2405,9 @@ text = "Назад	"
 
 [node name="TitleHBox" type="HBoxContainer" parent="MainVBox"]
 layout_mode = 2
+alignment = 1
 
 [node name="TitleLabel" type="Label" parent="MainVBox/TitleHBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
 theme_override_font_sizes/font_size = 32
@@ -2408,7 +2415,6 @@ text = "Настройки"
 horizontal_alignment = 1
 
 [node name="TabsHBox" type="HBoxContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
@@ -2438,7 +2444,6 @@ theme_type_variation = &"FlatMenuAchievementsButton"
 text = "Прочее"
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
 theme_override_constants/margin_left = 40
 theme_override_constants/margin_top = 40
@@ -2448,10 +2453,11 @@ theme_override_constants/margin_bottom = 40
 [node name="SettingsTabContainer" type="TabContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
 tab_alignment = 1
-current_tab = 0
+current_tab = 2
 tabs_visible = false
 
 [node name="SoundTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("3_bsihy")]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -2461,7 +2467,6 @@ layout_mode = 2
 metadata/_tab_index = 1
 
 [node name="ControlsTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("5_pdrua")]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
