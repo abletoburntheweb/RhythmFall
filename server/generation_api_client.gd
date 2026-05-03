@@ -2,9 +2,25 @@
 extends Node
 class_name GenerationApiClient
 
-const _API_HOST := "127.0.0.1"
-const _API_PORT := 5000
 const _CONNECT_TIMEOUT_MS := 20000
+
+
+func _api_host() -> String:
+	if SettingsManager:
+		if bool(SettingsManager.get_setting("generation_server_use_lan_host", false)):
+			var lan := str(SettingsManager.get_setting("generation_server_lan_host", "")).strip_edges()
+			return lan if not lan.is_empty() else "127.0.0.1"
+		return "127.0.0.1"
+	var h := str(ProjectSettings.get_setting("rhythmfall/generation_api/host", "127.0.0.1")).strip_edges()
+	return h if not h.is_empty() else "127.0.0.1"
+
+
+func _api_port() -> int:
+	if SettingsManager:
+		var p = SettingsManager.get_setting("generation_server_port", null)
+		if p != null:
+			return clampi(int(p), 1, 65535)
+	return clampi(int(ProjectSettings.get_setting("rhythmfall/generation_api/port", 5000)), 1, 65535)
 
 signal bpm_started
 signal bpm_completed(bpm_value: int)
@@ -235,7 +251,7 @@ func _bpm_worker(data_dict: Dictionary):
 		return
 	_bpm_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
-	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
+	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
@@ -243,7 +259,7 @@ func _bpm_worker(data_dict: Dictionary):
 			if _cancel_bpm:
 				_bpm_res = {"error": "Операция отменена"}
 			else:
-				_bpm_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]}
+				_bpm_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_api_host(), _api_port()]}
 			http_client.close()
 			_bpm_done = true
 			return
@@ -308,12 +324,12 @@ func _genres_worker(data_dict: Dictionary):
 		return
 	_genres_status_queue.append("Подключение к серверу...")
 	var http_client = HTTPClient.new()
-	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
+	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
 		if not _poll_until_http_connected(http_client, Callable()):
-			local_error = "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]
+			local_error = "Таймаут подключения к серверу (%s:%d)" % [_api_host(), _api_port()]
 			http_client.close()
 			_genres_res = {"error": local_error}
 			_genres_done = true
@@ -368,7 +384,7 @@ func _notes_worker(data_dict: Dictionary):
 	var manual_title = data_dict.get("manual_title", "")
 	var generation_mode = data_dict.get("generation_mode", "basic")
 	var http_client = HTTPClient.new()
-	var err = http_client.connect_to_host(_API_HOST, _API_PORT)
+	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
@@ -376,7 +392,7 @@ func _notes_worker(data_dict: Dictionary):
 			if _cancel_notes:
 				_notes_res = {"error": "Отменено пользователем"}
 			else:
-				_notes_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_API_HOST, _API_PORT]}
+				_notes_res = {"error": "Таймаут подключения к серверу (%s:%d)" % [_api_host(), _api_port()]}
 			http_client.close()
 			_notes_done = true
 			return
@@ -458,7 +474,7 @@ func _notes_worker(data_dict: Dictionary):
 					OS.delay_msec(100)
 					if Time.get_ticks_msec() - last_poll >= 800:
 						var poll_client = HTTPClient.new()
-						var perr = poll_client.connect_to_host(_API_HOST, _API_PORT)
+						var perr = poll_client.connect_to_host(_api_host(), _api_port())
 						if perr == OK and _poll_until_http_connected(poll_client, Callable()):
 							if poll_client.get_status() == HTTPClient.STATUS_CONNECTED:
 								var q: String = "/task_status?task_id=" + task_id
@@ -485,7 +501,7 @@ func _notes_worker(data_dict: Dictionary):
 						last_poll = Time.get_ticks_msec()
 					if _cancel_notes:
 						var canc = HTTPClient.new()
-						var cerr = canc.connect_to_host(_API_HOST, _API_PORT)
+						var cerr = canc.connect_to_host(_api_host(), _api_port())
 						if cerr == OK and _poll_until_http_connected(canc, Callable()):
 							if canc.get_status() == HTTPClient.STATUS_CONNECTED:
 								var cq = "/cancel_task?task_id=" + task_id
