@@ -143,7 +143,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.1.5 • Release (Build 408)"
+text = "v1.1.6 • Release (Build 409)"
 
 [node name="XPContainer" type="Control" parent="."]
 layout_mode = 1
@@ -152,6 +152,7 @@ anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -324.0
 offset_right = -320.0
+grow_horizontal = 0
 
 [node name="XPProgressBar" type="ProgressBar" parent="XPContainer"]
 layout_mode = 1

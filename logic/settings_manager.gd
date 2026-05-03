@@ -49,7 +49,10 @@ var default_settings = {
 	"generation_custom_genre_template_strength": 50,
 	"generation_custom_enable_genre_detection": false,
 	"generation_custom_use_stems_in_generation": false,
-	"generation_notes_ready_scope": 1
+	"generation_notes_ready_scope": 1,
+	"generation_server_use_lan_host": false,
+	"generation_server_lan_host": "",
+	"generation_server_port": 5000
 }
 
 var settings: Dictionary = default_settings.duplicate(true)

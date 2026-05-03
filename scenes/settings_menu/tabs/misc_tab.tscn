@@ -5263,6 +5263,60 @@ theme_type_variation = &"FlatMenuSettingsButton"
 theme_override_font_sizes/font_size = 24
 text = "Сканировать песни"
 
+[node name="GenerationServerLocation" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="GenerationServerLocationLabel" type="Label" parent="ContentVBox/GenerationServerLocation"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Сервер генерации (Flask):"
+
+[node name="GenerationServerLocationOption" type="OptionButton" parent="ContentVBox/GenerationServerLocation"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 24
+selected = 0
+item_count = 2
+popup/item_0/text = "На этом компьютере (localhost)"
+popup/item_0/id = 0
+popup/item_1/text = "Другой ПК в локальной сети"
+popup/item_1/id = 1
+
+[node name="GenerationServerLanHostHBox" type="HBoxContainer" parent="ContentVBox"]
+visible = false
+layout_mode = 2
+
+[node name="GenerationServerLanHostLabel" type="Label" parent="ContentVBox/GenerationServerLanHostHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "IP или имя хоста:"
+
+[node name="GenerationServerLanHostLineEdit" type="LineEdit" parent="ContentVBox/GenerationServerLanHostHBox"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+placeholder_text = "192.168.1.42"
+alignment = 1
+max_length = 253
+
+[node name="GenerationServerPortHBox" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+
+[node name="GenerationServerPortLabel" type="Label" parent="ContentVBox/GenerationServerPortHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Порт сервера:"
+
+[node name="GenerationServerPortSpin" type="SpinBox" parent="ContentVBox/GenerationServerPortHBox"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+min_value = 1.0
+max_value = 65535.0
+value = 5000.0
+alignment = 1
+
 [node name="ResetBPMBatchConfirmDialog" type="ConfirmationDialog" parent="."]
 oversampling_override = 1.0
 title = "Сброс профиля"
@@ -5393,6 +5447,10 @@ dialog_text = "Новых песен не найдено."
 [connection signal="toggled" from="ContentVBox/ShowGenNotifsCheckBox" to="." method="_on_show_gen_notifs_toggled"]
 [connection signal="pressed" from="ContentVBox/SongsFolderHBox/ChooseSongsFolderButton" to="." method="_on_choose_songs_folder_pressed"]
 [connection signal="pressed" from="ContentVBox/ScanSongsButton" to="." method="_on_scan_songs_pressed"]
+[connection signal="item_selected" from="ContentVBox/GenerationServerLocation/GenerationServerLocationOption" to="." method="_on_generation_server_location_selected"]
+[connection signal="focus_exited" from="ContentVBox/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_focus_exited"]
+[connection signal="text_submitted" from="ContentVBox/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_submitted"]
+[connection signal="value_changed" from="ContentVBox/GenerationServerPortHBox/GenerationServerPortSpin" to="." method="_on_generation_server_port_changed"]
 [connection signal="confirmed" from="ResetBPMBatchConfirmDialog" to="." method="_confirm_reset_bpm_batch"]
 [connection signal="confirmed" from="ClearNotesConfirmDialog" to="." method="_confirm_clear_notes"]
 [connection signal="confirmed" from="ResetAllSettingsConfirmDialog" to="." method="_confirm_reset_all_settings"]

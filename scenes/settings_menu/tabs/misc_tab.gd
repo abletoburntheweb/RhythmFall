@@ -6,6 +6,8 @@ signal settings_changed
 var song_metadata_manager = SongLibrary 
 const FILES_TO_CLEAR := ["session_history.json"]
 const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_utils.gd")
+const _SpinBoxUtils = preload("res://logic/utils/spin_box_utils.gd")
+const _StringCharUtils = preload("res://logic/utils/string_char_utils.gd")
 
 @onready var reset_confirm_dialog: ConfirmationDialog = $"ResetProfileStatsConfirmDialog"
 @onready var reset_bpm_batch_button: Button = $ContentVBox/ResetBPMBatchButton
@@ -14,6 +16,10 @@ const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_u
 @onready var debug_menu_checkbox: CheckBox = $ContentVBox/DebugMenuCheckBox
 @onready var show_gen_notifs_checkbox: CheckBox = $ContentVBox/ShowGenNotifsCheckBox
 @onready var generation_notes_scope_option: OptionButton = $ContentVBox/GenerationNotesScopeOption
+@onready var generation_server_location_option: OptionButton = $ContentVBox/GenerationServerLocation/GenerationServerLocationOption
+@onready var generation_server_lan_host_hbox: HBoxContainer = $ContentVBox/GenerationServerLanHostHBox
+@onready var generation_server_lan_host_line_edit: LineEdit = $ContentVBox/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit
+@onready var generation_server_port_spin: SpinBox = $ContentVBox/GenerationServerPortHBox/GenerationServerPortSpin
 @onready var songs_folder_line_edit: LineEdit = $ContentVBox/SongsFolderHBox/SongsFolderLineEdit
 @onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
 @onready var migrate_paths_dialog: ConfirmationDialog = $MigratePathsDialog
@@ -27,11 +33,24 @@ const _OptionButtonPopupUtils = preload("res://logic/utils/option_button_popup_u
 @onready var scan_songs_result_dialog: AcceptDialog = $"ScanSongsResultDialog"
 
 var _pending_new_folder_path: String = ""
+var _lan_host_ipv4_format_lock: bool = false
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_VISIBILITY_CHANGED:
+		return
+	if not is_visible_in_tree():
+		return
+	call_deferred("_sync_generation_server_lan_row_visibility")
 
 
 func _ready():
+	if generation_server_lan_host_line_edit:
+		generation_server_lan_host_line_edit.text_changed.connect(_on_generation_server_lan_host_text_changed)
 	call_deferred("_apply_initial_settings")
 	call_deferred("_setup_generation_notes_scope_popup_font")
+	call_deferred("_setup_generation_server_location_popup_font")
+	call_deferred("_setup_generation_server_port_spin_font")
 	call_deferred("_setup_change_songs_folder_dialog")
 
 
@@ -45,6 +64,28 @@ func _setup_change_songs_folder_dialog() -> void:
 
 func _setup_generation_notes_scope_popup_font() -> void:
 	_OptionButtonPopupUtils.apply_popup_font_size(generation_notes_scope_option, 24)
+
+
+func _setup_generation_server_location_popup_font() -> void:
+	_OptionButtonPopupUtils.apply_popup_font_size(generation_server_location_option, 24)
+
+
+func _setup_generation_server_port_spin_font() -> void:
+	if generation_server_port_spin:
+		_SpinBoxUtils.apply_value_font_size(generation_server_port_spin, 24)
+
+
+func _apply_generation_server_lan_visibility(use_lan: bool) -> void:
+	if generation_server_lan_host_hbox:
+		generation_server_lan_host_hbox.visible = use_lan
+
+
+func _sync_generation_server_lan_row_visibility() -> void:
+	if generation_server_lan_host_hbox == null:
+		return
+	var use_lan := bool(SettingsManager.get_setting("generation_server_use_lan_host", false))
+	generation_server_lan_host_hbox.visible = use_lan
+
 
 func _apply_initial_settings():
 	debug_menu_checkbox.set_pressed_no_signal(SettingsManager.get_enable_debug_menu())
@@ -61,6 +102,23 @@ func _apply_initial_settings():
 	if p == "":
 		p = "user://Songs"
 	songs_folder_line_edit.text = p
+
+	if generation_server_location_option:
+		var use_lan := bool(SettingsManager.get_setting("generation_server_use_lan_host", false))
+		generation_server_location_option.set_block_signals(true)
+		generation_server_location_option.select(1 if use_lan else 0)
+		generation_server_location_option.set_block_signals(false)
+		_apply_generation_server_lan_visibility(use_lan)
+	if generation_server_lan_host_line_edit:
+		_lan_host_ipv4_format_lock = true
+		generation_server_lan_host_line_edit.text = String(SettingsManager.get_setting("generation_server_lan_host", ""))
+		_lan_host_ipv4_format_lock = false
+	if generation_server_port_spin:
+		var pv := clampi(int(SettingsManager.get_setting("generation_server_port", 5000)), 1, 65535)
+		generation_server_port_spin.set_block_signals(true)
+		generation_server_port_spin.value = pv
+		generation_server_port_spin.set_block_signals(false)
+
 	_apply_console_state_from_settings()
 
 
@@ -185,6 +243,122 @@ func _on_show_gen_notifs_toggled(enabled: bool):
 	SettingsManager.set_setting("show_generation_notifications", enabled)
 	SettingsManager.save_settings()
 	emit_signal("settings_changed")
+
+
+func _on_generation_server_location_selected(index: int) -> void:
+	var use_lan := index == 1
+	SettingsManager.set_setting("generation_server_use_lan_host", use_lan)
+	SettingsManager.save_settings()
+	_apply_generation_server_lan_visibility(use_lan)
+	emit_signal("settings_changed")
+
+
+func _generation_server_insert_ipv4_dots(text: String) -> String:
+	var cur := text
+	var guard := 0
+	while guard < 16:
+		guard += 1
+		var parts := cur.split(".")
+		if parts.is_empty():
+			break
+		var last: String = parts[parts.size() - 1]
+		if last.length() < 4 or not last.is_valid_int():
+			break
+		var oct := last.substr(0, 3)
+		var rest := last.substr(3)
+		if not oct.is_valid_int() or int(oct) > 255:
+			break
+		var rebuilt: PackedStringArray = []
+		for i in range(parts.size() - 1):
+			rebuilt.append(parts[i])
+		rebuilt.append(oct + "." + rest)
+		cur = ".".join(rebuilt)
+	return cur
+
+
+func _generation_server_join_dot_segments(parts: Array) -> String:
+	var r := ""
+	for i in parts.size():
+		if i > 0:
+			r += "."
+		r += str(parts[i])
+	return r
+
+
+func _generation_server_sanitize_digit_dot_ipv4(s: String) -> String:
+	if s.is_empty():
+		return s
+	var parts: Array = Array(s.split("."))
+	if parts.is_empty():
+		return s
+	if parts.size() > 4:
+		var trailing_dot := String(parts[parts.size() - 1]) == ""
+		if trailing_dot and parts.size() == 5:
+			pass
+		elif trailing_dot:
+			var head: Array = parts.slice(0, 4)
+			head.append("")
+			parts = head
+		else:
+			parts = parts.slice(0, 4)
+	for i in parts.size():
+		var seg := String(parts[i])
+		if seg.is_empty():
+			continue
+		if seg.is_valid_int():
+			parts[i] = str(clampi(int(seg), 0, 255))
+	return _generation_server_join_dot_segments(parts)
+
+
+func _on_generation_server_lan_host_text_changed(new_text: String) -> void:
+	if _lan_host_ipv4_format_lock or generation_server_lan_host_line_edit == null:
+		return
+	var result := new_text
+	if _StringCharUtils.is_decimal_digit_dot_only(result):
+		result = _generation_server_insert_ipv4_dots(result)
+		result = _generation_server_sanitize_digit_dot_ipv4(result)
+	if result == new_text:
+		return
+	var caret := generation_server_lan_host_line_edit.caret_column
+	var delta := result.length() - new_text.length()
+	_lan_host_ipv4_format_lock = true
+	generation_server_lan_host_line_edit.text = result
+	var new_caret := caret + delta
+	if new_caret < 0:
+		new_caret = 0
+	generation_server_lan_host_line_edit.caret_column = mini(result.length(), new_caret)
+	_lan_host_ipv4_format_lock = false
+
+
+func _save_generation_server_lan_host() -> void:
+	if generation_server_lan_host_line_edit == null:
+		return
+	var raw := generation_server_lan_host_line_edit.text
+	var t := raw.strip_edges()
+	if _StringCharUtils.is_decimal_digit_dot_only(t):
+		t = _generation_server_sanitize_digit_dot_ipv4(_generation_server_insert_ipv4_dots(t))
+	if t != raw:
+		_lan_host_ipv4_format_lock = true
+		generation_server_lan_host_line_edit.text = t
+		_lan_host_ipv4_format_lock = false
+	SettingsManager.set_setting("generation_server_lan_host", t)
+	SettingsManager.save_settings()
+	emit_signal("settings_changed")
+
+
+func _on_generation_server_lan_host_submitted(_new_text: String) -> void:
+	_save_generation_server_lan_host()
+
+
+func _on_generation_server_lan_host_focus_exited() -> void:
+	_save_generation_server_lan_host()
+
+
+func _on_generation_server_port_changed(value: float) -> void:
+	SettingsManager.set_setting("generation_server_port", clampi(int(value), 1, 65535))
+	SettingsManager.save_settings()
+	emit_signal("settings_changed")
+
 
 func _on_choose_songs_folder_pressed():
 	if songs_folder_dialog:
