@@ -58,6 +58,7 @@ var _notes_done: bool = false
 
 var _cancel_bpm: bool = false
 var _cancel_notes: bool = false
+var _notes_active_task_id: String = ""
 
 func analyze_bpm(song_path: String):
 	if _bpm_thread:
@@ -95,6 +96,7 @@ func detect_genres(artist: String, title: String):
 func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int, sync_tolerance: float, auto_identify: bool, manual_artist: String, manual_title: String, generation_mode: String):
 	if _notes_thread:
 		return
+	_notes_active_task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
 	_notes_req = {
 		"song_path": song_path,
 		"instrument_type": instrument_type,
@@ -104,7 +106,8 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		"auto_identify": auto_identify,
 		"manual_artist": manual_artist,
 		"manual_title": manual_title,
-		"generation_mode": generation_mode
+		"generation_mode": generation_mode,
+		"task_id": _notes_active_task_id
 	}
 	_notes_res = {}
 	_notes_done = false
@@ -124,6 +127,10 @@ func request_cancel_bpm():
 
 func request_cancel_notes():
 	_cancel_notes = true
+	var task_id := _notes_active_task_id
+	if task_id != "":
+		var cancel_thread := Thread.new()
+		cancel_thread.start(func(): _send_cancel_task_request(task_id))
 
 
 func _poll_until_http_connected(http_client: HTTPClient, cancel_getter: Callable) -> bool:
@@ -136,6 +143,116 @@ func _poll_until_http_connected(http_client: HTTPClient, cancel_getter: Callable
 		if cancel_getter.is_valid() and cancel_getter.call():
 			return false
 	return http_client.get_status() == HTTPClient.STATUS_CONNECTED
+
+
+func _read_http_response_body(http_client: HTTPClient) -> PackedByteArray:
+	var response_body := PackedByteArray()
+	while http_client.get_status() == HTTPClient.STATUS_BODY:
+		http_client.poll()
+		var chunk = http_client.read_response_body_chunk()
+		if chunk.size() > 0:
+			response_body.append_array(chunk)
+		else:
+			OS.delay_msec(10)
+	return response_body
+
+
+func _uses_remote_generation_server() -> bool:
+	return SettingsManager and bool(SettingsManager.get_setting("generation_server_use_lan_host", false))
+
+
+func _http_get_json(path: String, cancel_getter: Callable) -> Dictionary:
+	var out := {"ok": false, "code": 0, "json": null}
+	var http_client = HTTPClient.new()
+	if http_client.connect_to_host(_api_host(), _api_port()) != OK:
+		return out
+	if not _poll_until_http_connected(http_client, cancel_getter):
+		http_client.close()
+		return out
+	http_client.request_raw(HTTPClient.METHOD_GET, path, PackedStringArray(), PackedByteArray())
+	while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+		http_client.poll()
+		OS.delay_msec(10)
+		if cancel_getter.is_valid() and cancel_getter.call():
+			http_client.close()
+			return out
+	out.code = http_client.get_response_code()
+	var response_body = _read_http_response_body(http_client)
+	http_client.close()
+	var response_json = JSON.parse_string(response_body.get_string_from_utf8())
+	if response_json != null:
+		out.json = response_json
+		out.ok = true
+	return out
+
+
+func _notes_payload_from_json(response_json: Variant, song_path: String, bpm: float, lanes: int, instrument_type: String) -> Dictionary:
+	if not response_json is Dictionary:
+		return {"error": "Некорректный ответ сервера"}
+	if str(response_json.get("status", "")) == "processing":
+		return {"pending": true}
+	if response_json.has("status") and str(response_json["status"]) == "cancelled_by_user":
+		return {"error": "Отменено пользователем"}
+	if response_json.has("status") and str(response_json["status"]) == "requires_manual_input":
+		return {"result": {"manual_identification_required": true, "song_path": song_path}}
+	if response_json.has("status") and str(response_json["status"]) == "error":
+		return {"error": str(response_json.get("error", "Ошибка сервера"))}
+	if response_json.has("error") and not response_json.has("notes") and not response_json.has("notes_variants"):
+		return {"error": str(response_json["error"])}
+	if response_json.has("notes") or response_json.has("notes_variants"):
+		var result_dict := {}
+		if response_json.has("notes"):
+			result_dict["notes"] = response_json["notes"]
+		if response_json.has("notes_variants"):
+			result_dict["notes_variants"] = response_json["notes_variants"]
+		result_dict["bpm"] = response_json.get("bpm", bpm)
+		result_dict["lanes"] = response_json.get("lanes", lanes)
+		result_dict["instrument_type"] = response_json.get("instrument_type", instrument_type)
+		result_dict["track_info"] = response_json.get("track_info", {})
+		return {"result": result_dict}
+	return {"error": "Ответ не содержит нот"}
+
+
+func _try_notes_task_result(task_id: String, song_path: String, bpm: float, lanes: int, instrument_type: String, cancel_getter: Callable) -> Dictionary:
+	var http_resp = _http_get_json("/task_result?task_id=" + task_id, cancel_getter)
+	if not http_resp.ok or http_resp.json == null:
+		return {}
+	return _notes_payload_from_json(http_resp.json, song_path, bpm, lanes, instrument_type)
+
+
+func _send_cancel_task_request(task_id: String) -> void:
+	if task_id == "":
+		return
+	var http_client = HTTPClient.new()
+	if http_client.connect_to_host(_api_host(), _api_port()) != OK:
+		return
+	if not _poll_until_http_connected(http_client, Callable()):
+		http_client.close()
+		return
+	http_client.request_raw(
+		HTTPClient.METHOD_GET,
+		"/cancel_task?task_id=" + task_id,
+		PackedStringArray(),
+		PackedByteArray()
+	)
+	while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+		http_client.poll()
+		OS.delay_msec(10)
+	http_client.close()
+
+
+func _fetch_notes_task_result(task_id: String, song_path: String, bpm: float, lanes: int, instrument_type: String, cancel_getter: Callable) -> Dictionary:
+	var start_ms := Time.get_ticks_msec()
+	var timeout_ms := 600000
+	while Time.get_ticks_msec() - start_ms < timeout_ms:
+		if cancel_getter.is_valid() and cancel_getter.call():
+			_send_cancel_task_request(task_id)
+			return {"error": "Отменено пользователем"}
+		var parsed = _try_notes_task_result(task_id, song_path, bpm, lanes, instrument_type, cancel_getter)
+		if parsed.has("result") or parsed.has("error"):
+			return parsed
+		OS.delay_msec(500)
+	return {"error": "Таймаут ожидания результата с сервера"}
 
 
 func _start_timer(cb: Callable):
@@ -197,6 +314,7 @@ func _check_notes():
 		if _notes_thread:
 			_notes_thread.wait_to_finish()
 			_notes_thread = null
+		_notes_active_task_id = ""
 		if _notes_res.has("error"):
 			emit_signal("notes_error", _notes_res.error)
 		elif _notes_res.has("manual_identification_required"):
@@ -295,13 +413,7 @@ func _bpm_worker(data_dict: Dictionary):
 						return
 				_bpm_status_queue.append("Получение ответа")
 				var response_code = http_client.get_response_code()
-				var response_body = PackedByteArray()
-				while http_client.get_status() == HTTPClient.STATUS_BODY:
-					var chunk = http_client.read_response_body_chunk()
-					if chunk.size() == 0:
-						break
-					response_body.append_array(chunk)
-					http_client.poll()
+				var response_body = _read_http_response_body(http_client)
 				_bpm_status_queue.append("Обработка ответа")
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
@@ -348,13 +460,7 @@ func _genres_worker(data_dict: Dictionary):
 				OS.delay_msec(100)
 			_genres_status_queue.append("Получение ответа")
 			var response_code = http_client.get_response_code()
-			var response_body = PackedByteArray()
-			while http_client.get_status() == HTTPClient.STATUS_BODY:
-				var chunk = http_client.read_response_body_chunk()
-				if chunk.size() == 0:
-					break
-				response_body.append_array(chunk)
-				http_client.poll()
+			var response_body = _read_http_response_body(http_client)
 			_genres_status_queue.append("Обработка ответа")
 			var response_text = response_body.get_string_from_utf8()
 			var response_json = JSON.parse_string(response_text)
@@ -409,7 +515,10 @@ func _notes_worker(data_dict: Dictionary):
 			var audio_data = file_access.get_buffer(file_access.get_length())
 			file_access.close()
 			var boundary = "notes_boundary_" + str(randi())
-			var task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
+			var task_id = str(data_dict.get("task_id", ""))
+			if task_id == "":
+				task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
+				_notes_active_task_id = task_id
 			var body = PackedByteArray()
 			var client_meta = SongLibrary.get_metadata_for_song(song_path)
 			var client_genres_arr: Array = []
@@ -467,8 +576,11 @@ func _notes_worker(data_dict: Dictionary):
 				local_error = "Ошибка отправки: " + str(err)
 			else:
 				http_client.poll()
+				var use_remote := _uses_remote_generation_server()
 				var last_poll := Time.get_ticks_msec() - 1000
+				var last_result_poll := Time.get_ticks_msec() - 2000
 				var last_count := 0
+				var task_result_done := false
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 					http_client.poll()
 					OS.delay_msec(100)
@@ -482,13 +594,7 @@ func _notes_worker(data_dict: Dictionary):
 								while poll_client.get_status() == HTTPClient.STATUS_REQUESTING:
 									poll_client.poll()
 									OS.delay_msec(50)
-								var response_body = PackedByteArray()
-								while poll_client.get_status() == HTTPClient.STATUS_BODY:
-									var chunk = poll_client.read_response_body_chunk()
-									if chunk.size() == 0:
-										break
-									response_body.append_array(chunk)
-									poll_client.poll()
+								var response_body = _read_http_response_body(poll_client)
 								var txt = response_body.get_string_from_utf8()
 								var js = JSON.parse_string(txt)
 								if js and js.has("statuses"):
@@ -499,56 +605,64 @@ func _notes_worker(data_dict: Dictionary):
 										last_count = statuses.size()
 						poll_client.close()
 						last_poll = Time.get_ticks_msec()
+					if use_remote and Time.get_ticks_msec() - last_result_poll >= 1500:
+						last_result_poll = Time.get_ticks_msec()
+						var remote_parsed = _try_notes_task_result(
+							task_id, song_path, bpm, lanes, instrument_type, func(): return _cancel_notes
+						)
+						if remote_parsed.has("result"):
+							local_result = remote_parsed.result
+							task_result_done = true
+							break
+						if remote_parsed.has("error"):
+							local_error = remote_parsed.error
+							task_result_done = true
+							break
 					if _cancel_notes:
-						var canc = HTTPClient.new()
-						var cerr = canc.connect_to_host(_api_host(), _api_port())
-						if cerr == OK and _poll_until_http_connected(canc, Callable()):
-							if canc.get_status() == HTTPClient.STATUS_CONNECTED:
-								var cq = "/cancel_task?task_id=" + task_id
-								canc.request_raw(HTTPClient.METHOD_GET, cq, PackedStringArray(), PackedByteArray())
-								while canc.get_status() == HTTPClient.STATUS_REQUESTING:
-									canc.poll()
-									OS.delay_msec(50)
-						canc.close()
+						_send_cancel_task_request(task_id)
 						_notes_res = {"error": "Отменено пользователем"}
 						http_client.close()
 						_notes_done = true
 						return
-				_notes_status_queue.append("Получение ответа")
-				var response_code = http_client.get_response_code()
-				var response_body = PackedByteArray()
-				while http_client.get_status() == HTTPClient.STATUS_BODY:
-					var chunk = http_client.read_response_body_chunk()
-					if chunk.size() == 0:
-						break
-					response_body.append_array(chunk)
-					http_client.poll()
-				_notes_status_queue.append("Обработка ответа")
-				var response_text = response_body.get_string_from_utf8()
-				var response_json = JSON.parse_string(response_text)
-				if response_code == 200 and response_json is Dictionary:
-					if response_json.has("status") and str(response_json["status"]) == "cancelled_by_user":
-						local_error = "Отменено пользователем"
-					elif response_json.has("status") and str(response_json["status"]) == "requires_manual_input":
-						local_result = {"manual_identification_required": true, "song_path": song_path}
-					elif response_json.has("notes") or response_json.has("notes_variants"):
-						var result_dict := {}
-						if response_json.has("notes"):
-							result_dict["notes"] = response_json["notes"]
-						if response_json.has("notes_variants"):
-							result_dict["notes_variants"] = response_json["notes_variants"]
-						result_dict["bpm"] = response_json.get("bpm", bpm)
-						result_dict["lanes"] = response_json.get("lanes", lanes)
-						result_dict["instrument_type"] = response_json.get("instrument_type", instrument_type)
-						result_dict["track_info"] = response_json.get("track_info", {})
-						local_result = result_dict
+				if not task_result_done:
+					if use_remote:
+						_notes_status_queue.append("Получение результата с сервера")
+						var fetched = _fetch_notes_task_result(
+							task_id, song_path, bpm, lanes, instrument_type, func(): return _cancel_notes
+						)
+						if fetched.has("result"):
+							local_result = fetched.result
+						elif fetched.has("error"):
+							local_error = fetched.error
 					else:
-						local_error = "Ответ не содержит нот"
-				else:
-					if response_code == 499:
-						local_error = "Отменено пользователем"
-					else:
-						local_error = "Ошибка: " + str(response_code)
-	http_client.close()
+						_notes_status_queue.append("Получение ответа")
+						var response_code = http_client.get_response_code()
+						var response_body = _read_http_response_body(http_client)
+						_notes_status_queue.append("Обработка ответа")
+						var response_json = JSON.parse_string(response_body.get_string_from_utf8())
+						if response_code == 200 and response_json != null:
+							var parsed = _notes_payload_from_json(
+								response_json, song_path, bpm, lanes, instrument_type
+							)
+							if parsed.has("result"):
+								local_result = parsed.result
+							elif parsed.has("error"):
+								local_error = parsed.error
+						elif response_code == 499:
+							local_error = "Отменено пользователем"
+						elif response_code == 200:
+							local_error = "Ответ сервера обрезан или повреждён (%d байт)" % response_body.size()
+						else:
+							local_error = "Ошибка: " + str(response_code)
+						if local_error != "" or local_result.is_empty():
+							var fetched = _fetch_notes_task_result(
+								task_id, song_path, bpm, lanes, instrument_type, func(): return _cancel_notes
+							)
+							if fetched.has("result"):
+								local_result = fetched.result
+								local_error = ""
+							elif fetched.has("error") and local_error == "":
+								local_error = fetched.error
+				http_client.close()
 	_notes_res = local_result if local_error == "" else {"error": local_error}
 	_notes_done = true

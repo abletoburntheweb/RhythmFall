@@ -48,10 +48,36 @@ var _NOTES_STAGES := [
 ]
 
 func _stage_index_for(status: String, stages: Array) -> int:
+	var s := String(status).strip_edges()
 	for i in range(stages.size()):
-		if status.begins_with(stages[i]):
+		var stage := String(stages[i]).strip_edges()
+		if s.begins_with(stage):
+			return i + 1
+		var core := stage.trim_suffix("...").strip_edges()
+		if core != "" and s.findn(core) != -1:
 			return i + 1
 	return 0
+
+
+func _progress_percent(stage_index: int, total_stages: int) -> int:
+	if total_stages <= 0 or stage_index <= 0:
+		return 0
+	return clampi(int(round(100.0 * float(stage_index) / float(total_stages))), 1, 100)
+
+
+func _progress_label(stage_index: int, total_stages: int) -> String:
+	var percent := _progress_percent(stage_index, total_stages)
+	if percent <= 0:
+		return ""
+	var width := 10
+	var filled := clampi(int(round(float(percent) / 100.0 * width)), 0, width)
+	return "[%s%s] %d%%" % ["█".repeat(filled), "░".repeat(width - filled), percent]
+
+
+func _stage_progress_label(stage_index: int, total_stages: int) -> String:
+	if stage_index <= 0:
+		return ""
+	return "(%d/%d) %s " % [stage_index, total_stages, _progress_label(stage_index, total_stages)]
 
 func _init(game_engine_ref: Node = null):
 	_game_engine = game_engine_ref
@@ -142,18 +168,30 @@ func get_genres_for_manual_entry(artist: String, title: String):
 func cancel_bpm():
 	if _api:
 		_api.request_cancel_bpm()
+	_bpm_queue.clear()
 	if _active_bpm_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()
 		if ach and ach.has_method("on_analysis_canceled"):
 			ach.on_analysis_canceled()
+	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
+		_game_engine.notifications_complete("bpm", "Вычисление BPM отменено")
 
 func cancel_notes():
 	if _api:
 		_api.request_cancel_notes()
+	if _active_notes_task.has("path"):
+		var cancelled_key := _song_path_key(_active_notes_task.path)
+		var remaining: Array[Dictionary] = []
+		for item in _notes_queue:
+			if _song_path_key(item.get("path", "")) != cancelled_key:
+				remaining.append(item)
+		_notes_queue = remaining
 	if _active_notes_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()
 		if ach and ach.has_method("on_analysis_canceled"):
 			ach.on_analysis_canceled()
+	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
+		_game_engine.notifications_complete("notes", "Генерация отменена")
 
 func retry_bpm():
 	var t = _active_bpm_task
@@ -176,7 +214,7 @@ func _on_bpm_started():
 		bpm_started.emit(path, disp)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
 			var total := 1 + _bpm_queue.size()
-			_game_engine.notifications_add_or_update("bpm", "Вычисление BPM для %s (1/%d)%s" % [disp, total, _suffix_from_settings()], true, "cancel_bpm")
+			_game_engine.notifications_add_or_update("bpm", "Вычисление BPM для %s (1/%d)" % [disp, total], true, "cancel_bpm")
 
 func _on_bpm_completed(bpm_value: int):
 	if not _active_bpm_task.has("path"):
@@ -184,16 +222,16 @@ func _on_bpm_completed(bpm_value: int):
 	var path = _active_bpm_task.path
 	var disp = _active_bpm_task.display
 	SongLibrary.update_metadata(path, {"bpm": str(bpm_value)})
+	_active_bpm_task.clear()
 	bpm_completed.emit(path, bpm_value, disp)
 	if _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()
 		if ach and ach.has_method("on_bpm_computed"):
 			ach.on_bpm_computed()
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
-		_game_engine.notifications_complete("bpm", "BPM вычислен: %d для %s%s" % [bpm_value, disp, _suffix_from_settings()])
+		_game_engine.notifications_complete("bpm", "BPM вычислен: %d для %s" % [bpm_value, disp])
 	if MusicManager and MusicManager.has_method("play_analysis_success"):
 		MusicManager.play_analysis_success()
-	_active_bpm_task.clear()
 	if _bpm_queue.size() > 0:
 		_start_next_bpm_delayed()
 
@@ -202,13 +240,14 @@ func _on_bpm_error(message: String):
 		return
 	var disp = _active_bpm_task.display
 	var path = _active_bpm_task.path
+	var cancelled := String(message).to_lower().find("отмен") != -1
+	_active_bpm_task.clear()
 	bpm_error.emit(path, message, disp)
-	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_error"):
+	if not cancelled and SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_error"):
 		var show_msg = "Ошибка вычисления BPM: %s" % message
 		_game_engine.notifications_error("bpm", show_msg, "retry_bpm", "cancel_bpm")
 	if MusicManager and MusicManager.has_method("play_analysis_error"):
 		MusicManager.play_analysis_error()
-	_active_bpm_task.clear()
 	if _bpm_queue.size() > 0:
 		_start_next_bpm_delayed()
 
@@ -218,8 +257,8 @@ func _on_bpm_status(status: String):
 		var total := 1 + _bpm_queue.size()
 		var k := _stage_index_for(status, _BPM_STAGES)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			var stage_info := ("(%d/%d)" % [k, _BPM_STAGES.size()]) if k > 0 else ""
-			_game_engine.notifications_add_or_update("bpm", "%s (1/%d) %s: %s%s" % [disp, total, stage_info, status, _suffix_from_settings()], true, "cancel_bpm")
+			var stage_progress := _stage_progress_label(k, _BPM_STAGES.size())
+			_game_engine.notifications_add_or_update("bpm", "%s (1/%d) %s%s" % [disp, total, stage_progress, status], true, "cancel_bpm")
 		bpm_progress.emit(_active_bpm_task.path, k, _BPM_STAGES.size(), status)
 
 func _on_notes_started():
@@ -284,7 +323,14 @@ func _on_notes_error(message: String):
 	if not _active_notes_task.has("path"):
 		return
 	var disp = _active_notes_task.display
-	notes_error.emit(_active_notes_task.path, message, disp)
+	var path = _active_notes_task.path
+	var cancelled := String(message).to_lower().find("отмен") != -1
+	notes_error.emit(path, message, disp)
+	if cancelled:
+		_active_notes_task.clear()
+		if _notes_queue.size() > 0:
+			_start_next_notes_delayed()
+		return
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_error"):
 		var ei = String(_active_notes_task.get("instrument", "drums"))
 		var em = String(_active_notes_task.get("mode", "basic"))
@@ -304,12 +350,12 @@ func _on_notes_status(status: String):
 		var total := 1 + _notes_queue.size()
 		var k := _stage_index_for(status, _NOTES_STAGES)
 		if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_add_or_update"):
-			var stage_info := ("(%d/%d)" % [k, _NOTES_STAGES.size()]) if k > 0 else ""
+			var stage_progress := _stage_progress_label(k, _NOTES_STAGES.size())
 			var si = String(_active_notes_task.get("instrument", "drums"))
 			var sm = String(_active_notes_task.get("mode", "basic"))
 			var lanes_val = int(_active_notes_task.get("lanes", 4))
 			var suffix = _notes_notification_suffix(si, sm, lanes_val)
-			_game_engine.notifications_add_or_update("notes", "%s (1/%d) %s: %s%s" % [disp, total, stage_info, status, suffix], true, "cancel_notes")
+			_game_engine.notifications_add_or_update("notes", "%s (1/%d) %s%s%s" % [disp, total, stage_progress, status, suffix], true, "cancel_notes")
 		notes_progress.emit(_active_notes_task.path, k, _NOTES_STAGES.size(), status)
 
 func _on_genres_status(status: String):
@@ -342,17 +388,23 @@ func _get_queue_delay_seconds() -> float:
 	return float(SettingsManager.get_setting("generation_queue_delay_seconds", 5.0))
 
 func get_bpm_queue_position(song_path: String) -> int:
-	if _active_bpm_task.has("path") and _active_bpm_task.path == song_path:
+	var key := _song_path_key(song_path)
+	if key == "":
+		return 0
+	if _active_bpm_task.has("path") and _song_path_key(_active_bpm_task.path) == key:
 		return 1
 	for i in range(_bpm_queue.size()):
-		if _bpm_queue[i] == song_path:
+		if _song_path_key(_bpm_queue[i]) == key:
 			return i + 2
 	return 0
 
 func get_notes_queue_position(song_path: String, instrument: String, mode: String, lanes: int) -> int:
+	var key := _song_path_key(song_path)
+	if key == "":
+		return 0
 	if _active_notes_task.has("path"):
 		var same_active: bool = (
-			String(_active_notes_task.get("path", "")) == song_path
+			_song_path_key(_active_notes_task.get("path", "")) == key
 			and String(_active_notes_task.get("instrument", "")) == instrument
 			and String(_active_notes_task.get("mode", "")) == mode
 			and int(_active_notes_task.get("lanes", 0)) == lanes
@@ -362,7 +414,7 @@ func get_notes_queue_position(song_path: String, instrument: String, mode: Strin
 	for i in range(_notes_queue.size()):
 		var item: Dictionary = _notes_queue[i]
 		var same_queued: bool = (
-			item.has("path") and String(item.get("path", "")) == song_path
+			item.has("path") and _song_path_key(item.get("path", "")) == key
 			and String(item.get("instrument", "")) == instrument
 			and String(item.get("mode", "")) == mode
 			and int(item.get("lanes", 0)) == lanes
@@ -372,22 +424,36 @@ func get_notes_queue_position(song_path: String, instrument: String, mode: Strin
 	return 0
 
 func get_notes_queue_position_for_song(song_path: String) -> int:
-	if song_path == "":
+	var key := _song_path_key(song_path)
+	if key == "":
 		return 0
-	if _active_notes_task.has("path") and String(_active_notes_task.get("path", "")) == song_path:
+	if _active_notes_task.has("path") and _song_path_key(_active_notes_task.get("path", "")) == key:
 		return 1
 	for i in range(_notes_queue.size()):
-		if String(_notes_queue[i].get("path", "")) == song_path:
+		if _song_path_key(_notes_queue[i].get("path", "")) == key:
 			return i + 2
 	return 0
 
-func _suffix_from_settings() -> String:
-	var instrument = String(SettingsManager.get_setting("last_generation_instrument", "drums"))
-	var mode = String(SettingsManager.get_setting("last_generation_mode", "basic"))
-	var lanes = int(SettingsManager.get_setting("last_generation_lanes", 4))
-	var instr_code = _instr_code(instrument)
-	var mode_code = _mode_code(mode)
-	return " (%s %s %d)" % [instr_code, mode_code, lanes]
+
+func _song_path_key(path: String) -> String:
+	return String(path).replace("\\", "/").strip_edges()
+
+
+func is_song_metadata_edit_locked(song_path: String) -> bool:
+	var key := _song_path_key(song_path)
+	if key == "":
+		return false
+	if _active_bpm_task.has("path") and _song_path_key(_active_bpm_task.path) == key:
+		return true
+	for queued_path in _bpm_queue:
+		if _song_path_key(queued_path) == key:
+			return true
+	if _active_notes_task.has("path") and _song_path_key(_active_notes_task.path) == key:
+		return true
+	for queued_task in _notes_queue:
+		if _song_path_key(queued_task.get("path", "")) == key:
+			return true
+	return false
 
 func _start_next_bpm_delayed():
 	if _bpm_delay_timer == null:

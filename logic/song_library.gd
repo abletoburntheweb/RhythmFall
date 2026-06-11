@@ -193,8 +193,12 @@ func _apply_metadata_seed_if_present():
 			fields = by_filename[fname]
 		if fields is Dictionary and not fields.is_empty():
 			var to_save := {}
+			var existing := get_metadata_for_song(path)
 			for f in ["title","artist","bpm","year","duration","primary_genre","genres"]:
-				if fields.has(f):
+				if not fields.has(f):
+					continue
+				var cur_val = existing.get(f, s.get(f, ""))
+				if _is_placeholder(f, cur_val, path):
 					to_save[f] = fields[f]
 			if not to_save.is_empty():
 				update_metadata(path, to_save)
@@ -351,15 +355,48 @@ func request_id3_update(path: String) -> void:
 	_id3_queue.append(path)
 	_start_id3_enrichment_if_needed()
 
+func _normalize_song_path(path: String) -> String:
+	return String(path).replace("\\", "/").strip_edges()
+
+
+func _metadata_cache_key(path: String) -> String:
+	var norm := _normalize_song_path(path)
+	if _metadata_cache.has(norm):
+		return norm
+	for k in _metadata_cache.keys():
+		if _normalize_song_path(k) == norm:
+			return k
+	return norm
+
+
+func _song_index_for_path(song_file_path: String) -> int:
+	var norm := _normalize_song_path(song_file_path)
+	for i in range(songs.size()):
+		if _normalize_song_path(songs[i].get("path", "")) == norm:
+			return i
+	return -1
+
+
 func get_metadata_for_song(song_file_path: String) -> Dictionary:
-	if _metadata_cache.has(song_file_path):
-		return _metadata_cache[song_file_path].duplicate(true)
+	var cache_key := _metadata_cache_key(song_file_path)
+	if _metadata_cache.has(cache_key):
+		return _metadata_cache[cache_key].duplicate(true)
 	return {}
 
+
+func get_display_metadata_for_song(song_file_path: String) -> Dictionary:
+	var meta := get_metadata_for_song(song_file_path)
+	if meta.is_empty():
+		return {}
+	meta["path"] = _normalize_song_path(song_file_path)
+	return meta
+
+
 func update_metadata(song_file_path: String, updated_fields: Dictionary):
-	if not _metadata_cache.has(song_file_path):
-		_metadata_cache[song_file_path] = {
-			"path": song_file_path,
+	var cache_key := _metadata_cache_key(song_file_path)
+	if not _metadata_cache.has(cache_key):
+		_metadata_cache[cache_key] = {
+			"path": cache_key,
 			"title": "Без названия",
 			"artist": "Неизвестен",
 			"bpm": "Н/Д",
@@ -369,22 +406,22 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 			"genres": "",
 			"primary_genre": "unknown"
 		}
-	if _metadata_cache.has(song_file_path) and not _metadata_cache[song_file_path].has("file_mtime"):
-		_metadata_cache[song_file_path]["file_mtime"] = int(FileAccess.get_modified_time(song_file_path))
+	if not _metadata_cache[cache_key].has("file_mtime"):
+		_metadata_cache[cache_key]["file_mtime"] = int(FileAccess.get_modified_time(cache_key))
 	var any_changed := false
 	var had_genres := updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY
 	if had_genres:
 		var genres_array = updated_fields["genres"]
 		var genres_str = ", ".join(genres_array)
-		var old_genres = _metadata_cache[song_file_path].get("genres", "")
+		var old_genres = _metadata_cache[cache_key].get("genres", "")
 		if str(old_genres) != str(genres_str):
 			any_changed = true
-		_metadata_cache[song_file_path]["genres"] = genres_str
-		var old_pg = _metadata_cache[song_file_path].get("primary_genre", "unknown")
+		_metadata_cache[cache_key]["genres"] = genres_str
+		var old_pg = _metadata_cache[cache_key].get("primary_genre", "unknown")
 		var new_pg = "unknown"
 		if !genres_array.is_empty():
 			new_pg = str(genres_array[0])
-		_metadata_cache[song_file_path]["primary_genre"] = new_pg
+		_metadata_cache[cache_key]["primary_genre"] = new_pg
 		if str(old_pg) != str(new_pg):
 			any_changed = true
 		updated_fields = updated_fields.duplicate()
@@ -395,28 +432,25 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 		var new_val = updated_fields[field_name]
 		if typeof(new_val) == TYPE_STRING:
 			new_val = String(new_val).strip_edges()
-		var old_val = _metadata_cache[song_file_path].get(field_name, null)
+		var old_val = _metadata_cache[cache_key].get(field_name, null)
 		if str(old_val) != str(new_val):
-			_metadata_cache[song_file_path][field_name] = new_val
+			_metadata_cache[cache_key][field_name] = new_val
 			any_changed = true
 	if any_changed:
 		_save_metadata()
 		_update_song_in_list(song_file_path)
-		emit_signal("metadata_updated", song_file_path)
+		emit_signal("metadata_updated", cache_key)
 	else:
 		pass
 
 func remove_metadata(song_file_path: String):
-	if _metadata_cache.erase(song_file_path):
+	var cache_key := _metadata_cache_key(song_file_path)
+	if _metadata_cache.erase(cache_key):
 		_save_metadata()
 	_update_song_in_list(song_file_path)
 
 func _update_song_in_list(song_file_path: String):
-	var index = -1
-	for i in range(songs.size()):
-		if songs[i]["path"] == song_file_path:
-			index = i
-			break
+	var index := _song_index_for_path(song_file_path)
 	if index != -1:
 		var user_metadata = get_metadata_for_song(song_file_path)
 		for key in user_metadata.keys():
@@ -785,7 +819,13 @@ func _compute_duration_str(p: String) -> String:
 	return "00:00"
 
 func _apply_id3_result(path: String, fields: Dictionary):
-	update_metadata(path, fields)
+	var existing := get_metadata_for_song(path)
+	var filtered := {}
+	for field_name in fields.keys():
+		if existing.is_empty() or _is_placeholder(field_name, existing.get(field_name, ""), path):
+			filtered[field_name] = fields[field_name]
+	if not filtered.is_empty():
+		update_metadata(path, filtered)
 
 func _finish_id3_worker():
 	if _id3_thread:

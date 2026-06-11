@@ -14,6 +14,7 @@ var current_mode: String = "basic"
 var current_lanes: int = 4
 
 var edit_mode: bool = false
+var _metadata_edit_lock_checker: Callable
 var _edit_context = {
 	"dialog": null,
 	"line_edit": null,
@@ -140,12 +141,18 @@ func update_song_at_index(item_list_index: int, new_song_data: Dictionary) -> bo
 func set_edit_mode(enabled: bool):
 	edit_mode = enabled
 
+func set_metadata_edit_lock_checker(checker: Callable) -> void:
+	_metadata_edit_lock_checker = checker
+
 func is_edit_mode_active() -> bool:
 	return edit_mode
 
-func start_editing(field_type: String, song_data: Dictionary, selected_item_list_index: int):
+func start_editing(field_type: String, song_data: Dictionary, selected_item_list_index: int) -> bool:
 	if not edit_mode:
-		return
+		return false
+	var song_path := str(song_data.get("path", ""))
+	if _metadata_edit_lock_checker.is_valid() and _metadata_edit_lock_checker.call(song_path):
+		return false
 	_edit_context["song_data"] = song_data.duplicate(true)
 	_edit_context["selected_index"] = selected_item_list_index
 	_edit_context["field_name"] = field_type
@@ -164,7 +171,8 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 		"cover":
 			_edit_cover_stub()
 		_:
-			pass
+			return false
+	return true
 
 func _edit_primary_genre():
 	var song_data = _edit_context["song_data"]
@@ -238,7 +246,7 @@ func _on_edit_year_confirmed():
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"year": new_year_str}
 			SongLibrary.update_metadata(song_file_path, fields_to_update)
-			emit_signal("song_edited", song_data, selected_item_list_index)
+			_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _edit_title():
@@ -324,6 +332,13 @@ func _edit_bpm():
 func _edit_cover_stub():
 	pass
 
+func _emit_song_edited_after_save(song_file_path: String, fallback: Dictionary, item_list_index: int) -> void:
+	var persisted := SongLibrary.get_display_metadata_for_song(song_file_path)
+	if persisted.is_empty():
+		emit_signal("song_edited", fallback.duplicate(true), item_list_index)
+	else:
+		emit_signal("song_edited", persisted, item_list_index)
+
 func _on_edit_title_confirmed():
 	var dialog = _edit_context["dialog"]
 	var line_edit = _edit_context["line_edit"]
@@ -337,7 +352,7 @@ func _on_edit_title_confirmed():
 			var song_file_path = song_data["path"]
 			var fields_to_update = {"title": new_title}
 			SongLibrary.update_metadata(song_file_path, fields_to_update)
-			emit_signal("song_edited", song_data, selected_item_list_index)
+			_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _on_edit_field_confirmed():
@@ -354,7 +369,7 @@ func _on_edit_field_confirmed():
 			var song_file_path = song_data["path"]
 			var fields_to_update = {field_name: new_value}
 			SongLibrary.update_metadata(song_file_path, fields_to_update)
-			emit_signal("song_edited", song_data, selected_item_list_index)
+			_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 
@@ -375,14 +390,7 @@ func _on_genre_selected_from_picker(primary_genre: String, all_genres: Array):
 	elif all_genres and all_genres is Array and all_genres.size() > 0:
 		fields_to_update["genres"] = all_genres
 	SongLibrary.update_metadata(song_file_path, fields_to_update)
-	var persisted = SongLibrary.get_metadata_for_song(song_file_path)
-	if persisted.is_empty():
-		song_data["primary_genre"] = primary_genre
-		if all_genres and all_genres is Array and all_genres.size() > 0:
-			song_data["genres"] = all_genres
-		emit_signal("song_edited", song_data, selected_item_list_index)
-	else:
-		emit_signal("song_edited", persisted, selected_item_list_index)
+	_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _on_edit_bpm_confirmed():
@@ -403,7 +411,7 @@ func _on_edit_bpm_confirmed():
 			if old_bpm != "Н/Д":
 				song_data["bpm"] = "Н/Д"
 				SongLibrary.update_metadata(song_file_path, {"bpm": "Н/Д"})
-				emit_signal("song_edited", song_data, selected_item_list_index)
+				_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 		elif text.is_valid_int():
 			var new_bpm_int = int(text)
 			if new_bpm_int < 90:
@@ -412,7 +420,7 @@ func _on_edit_bpm_confirmed():
 				var new_bpm_str = str(new_bpm_int)
 				song_data["bpm"] = new_bpm_str
 				SongLibrary.update_metadata(song_file_path, {"bpm": new_bpm_str})
-				emit_signal("song_edited", song_data, selected_item_list_index)
+				_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
 	_cleanup_edit_context()
 
 func _cleanup_edit_context():

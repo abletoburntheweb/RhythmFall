@@ -43,6 +43,7 @@ func _ready():
 	
 	add_child(song_list_manager)
 	song_list_manager.set_item_list(song_item_list_ref)
+	song_list_manager.set_metadata_edit_lock_checker(_is_song_metadata_edit_locked)
 	song_list_manager.song_selected.connect(_on_song_item_selected_from_manager)
 	song_list_manager.song_list_changed.connect(_on_song_list_changed)
 	song_list_manager.populate_items_grouped()
@@ -137,38 +138,21 @@ func _connect_ui_signals():
 	if not primary_genre_label.gui_input.is_connected(_on_gui_input_for_label):
 		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
  
-func _on_bpm_started(_path, _disp):
-	if not background_service:
-		return
-	var t: Dictionary = background_service.get_active_bpm_task()
-	var same: bool = (
-		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
-	)
-	if same:
+func _on_bpm_started(path, _disp):
+	if _song_path_key(path) == _song_path_key(current_displayed_song_path):
 		_on_bpm_analysis_started()
  
-func _on_bpm_completed(_path, bpm_value, _disp):
-	if not background_service:
-		return
-	var t: Dictionary = background_service.get_active_bpm_task()
-	var same: bool = (
-		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
-	)
-	if same:
+func _on_bpm_completed(path, bpm_value, _disp):
+	if _song_path_key(path) == _song_path_key(current_displayed_song_path):
 		_on_bpm_analysis_completed(bpm_value)
  
-func _on_bpm_error(_path, msg, _disp):
-	if not background_service:
+func _on_bpm_error(path, msg, _disp):
+	if _song_path_key(path) != _song_path_key(current_displayed_song_path):
 		return
-	var t: Dictionary = background_service.get_active_bpm_task()
-	var same: bool = (
-		t.has("path")
-		and String(t.get("path", "")) == current_displayed_song_path
-	)
-	if same:
-		_on_bpm_analysis_error(msg)
+	if _is_cancel_message(msg):
+		_apply_bpm_dependent_ui()
+		return
+	_on_bpm_analysis_error(msg)
  
 func _on_notes_started(_path, _disp):
 	if not background_service:
@@ -216,10 +200,17 @@ func _on_notes_completed(path: String, instr: String, _disp: String):
 func _deferred_refresh_generation_notes_highlights():
 	refresh_generation_notes_highlights()
 
+func _is_cancel_message(msg: String) -> bool:
+	var lower := String(msg).to_lower()
+	return lower.find("отмен") != -1
+
 func _on_notes_error(path: String, msg: String, _disp: String):
 	if not background_service:
 		return
 	if _song_path_key(path) != _song_path_key(current_displayed_song_path):
+		return
+	if _is_cancel_message(msg):
+		_on_notes_generation_cancelled()
 		return
 	var t: Dictionary = _notes_emit_task_dict()
 	var exact: bool = (
@@ -238,47 +229,28 @@ func _on_notes_progress(_path: String, _k: int, _total: int, _status: String):
 func _on_bpm_analysis_started():
 	analyze_bpm_button.text = "Вычисление..."
 	analyze_bpm_button.disabled = true
+	_update_metadata_edit_availability()
 
 func _on_bpm_analysis_completed(bpm_value: int):
-	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + str(bpm_value)
-	analyze_bpm_button.text = "BPM вычислен"
-	analyze_bpm_button.disabled = false
-	
-	var selected_items = song_item_list_ref.get_selected_items()
-	if selected_items.size() > 0:
-		var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_items[0])
-		var song_path = selected_song_data.get("path", "")
-		
-		if song_path != "":
-			var metadata = SongLibrary.get_metadata_for_song(song_path)
-			if metadata.is_empty():
-				metadata = {
-					"title": selected_song_data.get("title", "Без названия"),
-					"artist": selected_song_data.get("artist", "Неизвестен"),
-					"bpm": str(bpm_value),
-					"year": selected_song_data.get("year", "Н/Д"),
-					"duration": selected_song_data.get("duration", "00:00")
-				}
-			else:
-				metadata["bpm"] = str(bpm_value)
-			SongLibrary.update_metadata(song_path, metadata)
-			
-			if current_selected_song_data.get("path", "") == song_path:
-				if _check_if_notes_exist_for_current_settings():
-					$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
-				else:
-					$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
-				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	var bpm_str := str(bpm_value)
+	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + bpm_str
+	current_selected_song_data["bpm"] = bpm_str
+	var song_path := String(current_selected_song_data.get("path", ""))
+	if song_path != "":
+		SongLibrary.update_metadata(song_path, {"bpm": bpm_str})
+	_apply_bpm_dependent_ui()
 
 func _on_bpm_analysis_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка BPM анализа: " + error_message)
 	$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: Ошибка"
 	analyze_bpm_button.text = "Ошибка вычисления"
 	analyze_bpm_button.disabled = false
+	_update_metadata_edit_availability()
 	
 func _on_notes_generation_started():
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Генерация..."
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = true
+	_update_metadata_edit_availability()
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ноты сгенерированы"
@@ -286,12 +258,19 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	$MainVBox/ContentHBox/DetailsVBox/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Ноты сгенерированы", false)
+	_update_metadata_edit_availability()
 
 func _on_notes_generation_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Ошибка генерации"
 	$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
 	song_details_manager.set_generation_status("Ошибка: %s" % error_message, true)
+	_update_metadata_edit_availability()
+
+func _on_notes_generation_cancelled():
+	_apply_background_status_ui()
+	song_details_manager.set_generation_status("", false)
+	_update_metadata_edit_availability()
 	
 func _on_filter_by_letter_selected(index: int):
 	if song_list_manager.is_edit_mode_active():
@@ -313,20 +292,18 @@ func _update_filters_visibility():
 	var is_edit_mode = song_list_manager.is_edit_mode_active()
 
 func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
-	var was_selected = false
-	var selected_indices = song_item_list_ref.get_selected_items()
-	if selected_indices.has(item_list_index):
-		was_selected = true
-
-	if song_list_manager.update_song_at_index(item_list_index, song_data):
-		if was_selected:
-			song_item_list_ref.select(item_list_index, true)
-			var path = String(song_data.get("path", ""))
-			var persisted = SongLibrary.get_metadata_for_song(path)
-			if persisted.is_empty():
-				current_selected_song_data = song_data.duplicate(true)
-			else:
-				current_selected_song_data = persisted.duplicate(true)
+	var path := String(song_data.get("path", ""))
+	var display_data := song_data.duplicate(true)
+	if path != "":
+		var persisted := SongLibrary.get_display_metadata_for_song(path)
+		if not persisted.is_empty():
+			display_data = persisted
+	if song_list_manager.update_song_at_index(item_list_index, display_data):
+		var selected_indices = song_item_list_ref.get_selected_items()
+		if selected_indices.has(item_list_index) or current_displayed_song_path == path:
+			if selected_indices.has(item_list_index):
+				song_item_list_ref.select(item_list_index, true)
+			current_selected_song_data = display_data.duplicate(true)
 			var cur_bpm = String(current_selected_song_data.get("bpm", "")).strip_edges()
 			if cur_bpm == "":
 				current_selected_song_data["bpm"] = "Н/Д"
@@ -334,25 +311,6 @@ func _on_song_edited_from_manager(song_data: Dictionary, item_list_index: int):
 					SongLibrary.update_metadata(path, {"bpm": "Н/Д"})
 			current_displayed_song_path = path
 			song_details_manager.update_details(current_selected_song_data)
-			_apply_bpm_dependent_ui()
-
-		if current_selected_song_data.get("path") == song_data.get("path"):
-			var song_path = song_data.get("path", "")
-			var latest = {}
-			if song_path != "":
-				for s in SongLibrary.get_songs_list():
-					if s.get("path", "") == song_path:
-						latest = s.duplicate(true)
-						break
-			if latest.is_empty():
-				latest = song_data.duplicate(true)
-			var latest_bpm = String(latest.get("bpm", "")).strip_edges()
-			if latest_bpm == "":
-				latest["bpm"] = "Н/Д"
-				if song_path != "":
-					SongLibrary.update_metadata(song_path, {"bpm": "Н/Д"})
-			current_selected_song_data = latest
-			song_details_manager.update_details(latest)
 			_apply_bpm_dependent_ui()
 	else:
 		song_list_manager.populate_items_grouped()
@@ -451,6 +409,29 @@ func _open_generation_settings_selector():
 		generation_settings_selector.set_current_song_path(current_displayed_song_path)
 	get_parent().add_child(generation_settings_selector)
 
+func _is_song_metadata_edit_locked(song_path: String) -> bool:
+	if not background_service:
+		return false
+	return background_service.is_song_metadata_edit_locked(song_path)
+
+func _editable_metadata_label_nodes() -> Array:
+	return [
+		$MainVBox/ContentHBox/DetailsVBox/TitleLabel,
+		$MainVBox/ContentHBox/DetailsVBox/ArtistLabel,
+		$MainVBox/ContentHBox/DetailsVBox/YearLabel,
+		$MainVBox/ContentHBox/DetailsVBox/BpmLabel,
+		$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel,
+		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect
+	]
+
+func _update_metadata_edit_availability() -> void:
+	var locked := _is_song_metadata_edit_locked(current_displayed_song_path)
+	var dim := song_list_manager.is_edit_mode_active() and locked
+	var tint := Color(0.55, 0.55, 0.55, 1.0) if dim else Color(1.0, 1.0, 1.0, 1.0)
+	for node in _editable_metadata_label_nodes():
+		if node:
+			node.self_modulate = tint
+
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
 		if song_list_manager.is_edit_mode_active():
@@ -463,6 +444,7 @@ func _on_gui_input_for_label(event: InputEvent, field_type: String):
 func _toggle_edit_mode():
 	song_list_manager.set_edit_mode(!song_list_manager.is_edit_mode_active())
 	_update_edit_button_style()
+	_update_metadata_edit_availability()
 	_update_filters_visibility()
 	var search_bar = $MainVBox/TopBarHBox/SearchBar
 	if search_bar:
@@ -533,7 +515,12 @@ func _generate_notes_for_current_song():
 	if song_path == "": return
 	
 	var song_bpm = current_selected_song_data.get("bpm", -1)
-	if str(song_bpm) == "-1" or song_bpm == "Н/Д": return
+	if str(song_bpm) == "-1" or song_bpm == "Н/Д":
+		var meta_bpm = SongLibrary.get_metadata_for_song(song_path).get("bpm", "Н/Д")
+		if str(meta_bpm) == "-1" or str(meta_bpm) == "Н/Д":
+			return
+		song_bpm = str(meta_bpm)
+		current_selected_song_data["bpm"] = song_bpm
 
 	var metadata = SongLibrary.get_metadata_for_song(song_path)
 	var has_genres := false
@@ -719,6 +706,13 @@ func _apply_background_status_ui():
 	elif pos_bpm > 1:
 		analyze_bpm_button.text = "В очереди (%d)" % pos_bpm
 		analyze_bpm_button.disabled = true
+	else:
+		var song_bpm_for_btn = current_selected_song_data.get("bpm", "Н/Д")
+		if str(song_bpm_for_btn) == "-1" or song_bpm_for_btn == "Н/Д":
+			analyze_bpm_button.text = "Вычислить BPM"
+		else:
+			analyze_bpm_button.text = "BPM вычислен"
+		analyze_bpm_button.disabled = current_displayed_song_path == ""
 	var pos_notes = background_service.get_notes_queue_position(current_displayed_song_path, current_instrument, current_generation_mode, current_lanes)
 	var pos_notes_song = background_service.get_notes_queue_position_for_song(current_displayed_song_path)
 	if pos_notes == 1:
@@ -741,7 +735,8 @@ func _apply_background_status_ui():
 			else:
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
-	
+	_update_metadata_edit_availability()
+
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:
 	var inst_abbr: String
 	match instrument:
@@ -763,7 +758,9 @@ func _on_generation_settings_closed():
 		generation_settings_selector = null
 		
 func _on_song_metadata_updated(song_file_path: String):
-	if current_displayed_song_path == song_file_path:
+	var norm_path := String(song_file_path).replace("\\", "/")
+	var norm_current := String(current_displayed_song_path).replace("\\", "/")
+	if norm_current == norm_path:
 		for song in SongLibrary.get_songs_list():
 			if song.path == song_file_path:
 				song_details_manager.update_details(song)
