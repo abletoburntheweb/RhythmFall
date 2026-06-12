@@ -12,144 +12,190 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_unoo2")
 
-[node name="ContentVBox" type="VBoxContainer" parent="."]
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
 
-[node name="DescLabel" type="Label" parent="ContentVBox"]
-custom_minimum_size = Vector2(1920, 0)
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(640, 0)
+theme_override_constants/separation = 16
+
+[node name="SectionHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Привязка клавиш"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
 text = "Нажмите на клавишу, чтобы изменить её назначение."
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ContentVBox"]
-custom_minimum_size = Vector2(1920, 0)
+[node name="KeysPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 
-[node name="ActionsHeaderLabel" type="Label" parent="ContentVBox/HBoxContainer"]
+[node name="KeysPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Действия"
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
 
-[node name="KeysHeaderLabel" type="Label" parent="ContentVBox/HBoxContainer"]
+[node name="KeysPanelVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Клавиши"
+theme_override_constants/separation = 10
 
-[node name="KeysContainer" type="VBoxContainer" parent="ContentVBox"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="Lane1Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
+[node name="ActionsHeaderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 22
+text = "Действие"
 
-[node name="MarginContainer" type="MarginContainer" parent="ContentVBox/KeysContainer/Lane1Row"]
+[node name="KeysHeaderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/HBoxContainer"]
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
-
-[node name="LineLabel" type="Label" parent="ContentVBox/KeysContainer/Lane1Row/MarginContainer"]
-custom_minimum_size = Vector2(95, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Линия 1"
-
-[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane1Row"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 24
-text = "A"
-
-[node name="Lane2Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="ContentVBox/KeysContainer/Lane2Row"]
-layout_mode = 2
-
-[node name="LineLabel" type="Label" parent="ContentVBox/KeysContainer/Lane2Row/MarginContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Линия 2"
-
-[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane2Row"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 24
-text = "S"
-
-[node name="Lane3Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="ContentVBox/KeysContainer/Lane3Row"]
-layout_mode = 2
-
-[node name="LineLabel" type="Label" parent="ContentVBox/KeysContainer/Lane3Row/MarginContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Линия 3"
-
-[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane3Row"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 24
-text = "D"
-
-[node name="Lane4Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="ContentVBox/KeysContainer/Lane4Row"]
-layout_mode = 2
-
-[node name="LineLabel" type="Label" parent="ContentVBox/KeysContainer/Lane4Row/MarginContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Линия 4"
-
-[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane4Row"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 24
-text = "F"
-
-[node name="Lane5Row" type="HBoxContainer" parent="ContentVBox/KeysContainer"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="ContentVBox/KeysContainer/Lane5Row"]
-layout_mode = 2
-
-[node name="LineLabel" type="Label" parent="ContentVBox/KeysContainer/Lane5Row/MarginContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Линия 5"
-
-[node name="KeyButton" type="Button" parent="ContentVBox/KeysContainer/Lane5Row"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 24
-text = "G"
-
-[node name="ResetControlsButton" type="Button" parent="ContentVBox"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-theme = ExtResource("2_704fg")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Сбросить"
-
-[node name="HintLabel" type="Label" parent="ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6156863, 0.6156863, 0.6156863, 1)
-theme_override_font_sizes/font_size = 24
-text = "Нажмите ESC, чтобы отменить переназначение клавиши"
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 22
+text = "Клавиша"
 horizontal_alignment = 1
 
-[connection signal="pressed" from="ContentVBox/KeysContainer/Lane1Row/KeyButton" to="." method="_on_key_button_pressed" binds= [0]]
-[connection signal="pressed" from="ContentVBox/KeysContainer/Lane2Row/KeyButton" to="." method="_on_key_button_pressed" binds= [1]]
-[connection signal="pressed" from="ContentVBox/KeysContainer/Lane3Row/KeyButton" to="." method="_on_key_button_pressed" binds= [2]]
-[connection signal="pressed" from="ContentVBox/KeysContainer/Lane4Row/KeyButton" to="." method="_on_key_button_pressed" binds= [3]]
-[connection signal="pressed" from="ContentVBox/KeysContainer/Lane5Row/KeyButton" to="." method="_on_key_button_pressed" binds= [4]]
-[connection signal="pressed" from="ContentVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]
+[node name="HeaderSep" type="HSeparator" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+layout_mode = 2
+
+[node name="KeysContainer" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Lane1Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Линия 1"
+
+[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 22
+text = "A"
+
+[node name="Lane2Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Линия 2"
+
+[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 22
+text = "S"
+
+[node name="Lane3Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Линия 3"
+
+[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 22
+text = "D"
+
+[node name="Lane4Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Линия 4"
+
+[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 22
+text = "F"
+
+[node name="Lane5Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Линия 5"
+
+[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme = ExtResource("2_704fg")
+theme_override_font_sizes/font_size = 22
+text = "G"
+
+[node name="ResetControlsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("2_704fg")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Сбросить"
+
+[node name="HintLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6156863, 0.6156863, 0.6156863, 1)
+theme_override_font_sizes/font_size = 18
+text = "Нажмите ESC, чтобы отменить переназначение клавиши"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row/KeyButton" to="." method="_on_key_button_pressed" binds= [0]]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row/KeyButton" to="." method="_on_key_button_pressed" binds= [1]]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row/KeyButton" to="." method="_on_key_button_pressed" binds= [2]]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row/KeyButton" to="." method="_on_key_button_pressed" binds= [3]]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row/KeyButton" to="." method="_on_key_button_pressed" binds= [4]]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]

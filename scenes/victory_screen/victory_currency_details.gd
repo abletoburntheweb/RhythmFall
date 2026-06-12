@@ -2,14 +2,14 @@
 extends Control
 
 @onready var background: ColorRect = $Background
-@onready var title_label: Label = $TitleLabel
-@onready var score_label: Label = $StatsFrame/ScoreLabel
-@onready var combo_label: Label = $StatsFrame/ComboLabel
-@onready var accuracy_label: Label = $StatsFrame/AccuracyLabel
-@onready var full_combo_label: Label = $StatsFrame/FullComboLabel
-@onready var multiplier_label: Label = $StatsFrame/MultiplierLabel
-@onready var total_label: Label = $StatsFrame/TotalLabel
-@onready var back_button: Button = $ButtonsContainer/BackButton
+@onready var title_label: Label = $CenterWrap/DialogVBox/TitleLabel
+@onready var score_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/ScoreLabel
+@onready var combo_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/ComboLabel
+@onready var accuracy_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/AccuracyLabel
+@onready var full_combo_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/FullComboLabel
+@onready var multiplier_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/MultiplierLabel
+@onready var total_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/TotalLabel
+@onready var back_button: Button = $CenterWrap/DialogVBox/ButtonsContainer/BackButton
 
 signal details_closed
 

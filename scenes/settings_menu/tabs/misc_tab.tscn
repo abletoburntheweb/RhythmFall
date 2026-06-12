@@ -5150,62 +5150,60 @@ grow_vertical = 2
 theme = SubResource("Theme_k8h85")
 script = ExtResource("1_f8lbq")
 
-[node name="ContentVBox" type="VBoxContainer" parent="."]
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
 layout_mode = 1
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
 
-[node name="ResetBPMBatchButton" type="Button" parent="ContentVBox"]
-clip_contents = true
-custom_minimum_size = Vector2(140, 0)
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
 layout_mode = 2
-size_flags_horizontal = 0
-theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Сбросить кэш BPM"
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="ClearNotesButton" type="Button" parent="ContentVBox"]
-clip_contents = true
-custom_minimum_size = Vector2(140, 0)
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
 layout_mode = 2
-size_flags_horizontal = 0
-theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Очистить папку с нотами"
+custom_minimum_size = Vector2(820, 0)
+theme_override_constants/separation = 20
 
-[node name="ResetAllSettingsButton" type="Button" parent="ContentVBox"]
+[node name="GenerationHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Сбросить все настройки"
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Генерация"
 
-[node name="ResetProfileStatsButton" type="Button" parent="ContentVBox"]
-custom_minimum_size = Vector2(0, 31)
+[node name="GenerationPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Сбросить статистику профиля"
 
-[node name="ClearUserPathsButton" type="Button" parent="ContentVBox"]
-custom_minimum_size = Vector2(0, 31)
+[node name="GenerationPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel"]
 layout_mode = 2
-theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Оставить только встроенные песни в метаданных"
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
 
-[node name="Label" type="Label" parent="ContentVBox"]
+[node name="GenerationRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Настройка генерации только для выбранной линии"
+theme_override_constants/separation = 14
 
-[node name="GenerationNotesScopeOption" type="OptionButton" parent="ContentVBox"]
+[node name="GenerationNotesScopeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="GenerationNotesScopeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationNotesScopeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Область генерации нот"
+
+[node name="GenerationNotesScopeOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationNotesScopeRow"]
+custom_minimum_size = Vector2(360, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
 selected = 0
 item_count = 4
 popup/item_0/text = "Для всех линий текущего режима"
@@ -5217,66 +5215,29 @@ popup/item_2/id = 2
 popup/item_3/text = "Для выбранной линии всех режимов"
 popup/item_3/id = 3
 
-[node name="DebugMenuCheckBox" type="CheckBox" parent="ContentVBox"]
-visible = false
+[node name="ShowGenNotifsCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows"]
 layout_mode = 2
 theme = SubResource("Theme_p28av")
-theme_override_font_sizes/font_size = 24
-text = "Включить консоль"
-
-[node name="ShowGenNotifsCheckBox" type="CheckBox" parent="ContentVBox"]
-layout_mode = 2
-theme = SubResource("Theme_p28av")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "Показывать уведомления о генерации и расчёте BPM"
 
-[node name="SongsFolderHBox" type="HBoxContainer" parent="ContentVBox"]
+[node name="GenerationServerLocation" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="SongsFolderLabel" type="Label" parent="ContentVBox/SongsFolderHBox"]
+[node name="GenerationServerLocationLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLocation"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Папка песен:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Сервер генерации (Flask)"
 
-[node name="SongsFolderLineEdit" type="LineEdit" parent="ContentVBox/SongsFolderHBox"]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-
-[node name="ChooseSongsFolderButton" type="Button" parent="ContentVBox/SongsFolderHBox"]
-clip_contents = true
-custom_minimum_size = Vector2(140, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-theme = ExtResource("2_k8h85")
-theme_type_variation = &"FlatGenerateButton"
-theme_override_font_sizes/font_size = 24
-text = "Выбрать…"
-
-[node name="ScanSongsButton" type="Button" parent="ContentVBox"]
-clip_contents = true
-custom_minimum_size = Vector2(140, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-theme = ExtResource("2_k8h85")
-theme_type_variation = &"FlatMenuSettingsButton"
-theme_override_font_sizes/font_size = 24
-text = "Сканировать песни"
-
-[node name="GenerationServerLocation" type="HBoxContainer" parent="ContentVBox"]
-layout_mode = 2
-
-[node name="GenerationServerLocationLabel" type="Label" parent="ContentVBox/GenerationServerLocation"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Сервер генерации (Flask):"
-
-[node name="GenerationServerLocationOption" type="OptionButton" parent="ContentVBox/GenerationServerLocation"]
-custom_minimum_size = Vector2(0, 50)
+[node name="GenerationServerLocationOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLocation"]
+custom_minimum_size = Vector2(360, 50)
 layout_mode = 2
 theme = ExtResource("2_k8h85")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 0
 item_count = 2
 popup/item_0/text = "На этом компьютере (localhost)"
@@ -5284,38 +5245,175 @@ popup/item_0/id = 0
 popup/item_1/text = "Другой ПК в локальной сети"
 popup/item_1/id = 1
 
-[node name="GenerationServerLanHostHBox" type="HBoxContainer" parent="ContentVBox"]
+[node name="GenerationServerLanHostHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows"]
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="GenerationServerLanHostLabel" type="Label" parent="ContentVBox/GenerationServerLanHostHBox"]
+[node name="GenerationServerLanHostLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLanHostHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "IP или имя хоста:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "IP или имя хоста"
 
-[node name="GenerationServerLanHostLineEdit" type="LineEdit" parent="ContentVBox/GenerationServerLanHostHBox"]
-custom_minimum_size = Vector2(220, 50)
+[node name="GenerationServerLanHostLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLanHostHBox"]
+custom_minimum_size = Vector2(360, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 placeholder_text = "192.168.1.42"
 alignment = 1
 max_length = 253
 
-[node name="GenerationServerPortHBox" type="HBoxContainer" parent="ContentVBox"]
+[node name="GenerationServerPortHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="GenerationServerPortLabel" type="Label" parent="ContentVBox/GenerationServerPortHBox"]
+[node name="GenerationServerPortLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerPortHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Порт сервера:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Порт сервера"
 
-[node name="GenerationServerPortSpin" type="SpinBox" parent="ContentVBox/GenerationServerPortHBox"]
-custom_minimum_size = Vector2(220, 50)
+[node name="GenerationServerPortSpin" type="SpinBox" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerPortHBox"]
+custom_minimum_size = Vector2(360, 50)
 layout_mode = 2
 min_value = 1.0
 max_value = 65535.0
 value = 5000.0
 alignment = 1
+
+[node name="SongsHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Песни"
+
+[node name="SongsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+
+[node name="SongsPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="SongsRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SongsFolderHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SongsFolderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows/SongsFolderHBox"]
+layout_mode = 2
+size_flags_vertical = 1
+custom_minimum_size = Vector2(140, 0)
+theme_override_font_sizes/font_size = 22
+text = "Папка песен"
+
+[node name="SongsFolderLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows/SongsFolderHBox"]
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="ChooseSongsFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows/SongsFolderHBox"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 22
+text = "Выбрать…"
+
+[node name="ScanSongsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("2_k8h85")
+theme_type_variation = &"FlatMenuSettingsButton"
+theme_override_font_sizes/font_size = 22
+text = "Сканировать песни"
+
+[node name="DataHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.4, 0.42, 1)
+theme_override_font_sizes/font_size = 26
+text = "Данные и сброс"
+
+[node name="DataPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+
+[node name="DataPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="DataRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DataButtonsGrid" type="GridContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="ResetBPMBatchButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Сбросить кэш BPM"
+
+[node name="ClearNotesButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Очистить папку с нотами"
+
+[node name="ResetAllSettingsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Сбросить все настройки"
+
+[node name="ResetProfileStatsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Сбросить статистику профиля"
+
+[node name="ClearUserPathsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = SubResource("Theme_p28av")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 22
+text = "Только встроенные песни"
+
+[node name="DebugMenuCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows"]
+visible = false
+layout_mode = 2
+theme = SubResource("Theme_p28av")
+theme_override_font_sizes/font_size = 22
+text = "Включить консоль"
 
 [node name="ResetBPMBatchConfirmDialog" type="ConfirmationDialog" parent="."]
 oversampling_override = 1.0
@@ -5437,20 +5535,20 @@ theme = ExtResource("2_k8h85")
 theme_type_variation = &"AcceptDialogSuccess"
 dialog_text = "Новых песен не найдено."
 
-[connection signal="pressed" from="ContentVBox/ResetBPMBatchButton" to="." method="_on_reset_bpm_batch_pressed"]
-[connection signal="pressed" from="ContentVBox/ClearNotesButton" to="." method="_on_clear_notes_pressed"]
-[connection signal="pressed" from="ContentVBox/ResetAllSettingsButton" to="." method="_on_reset_all_settings_pressed"]
-[connection signal="pressed" from="ContentVBox/ResetProfileStatsButton" to="." method="_on_reset_profile_stats_pressed"]
-[connection signal="pressed" from="ContentVBox/ClearUserPathsButton" to="." method="_on_clear_user_paths_pressed"]
-[connection signal="item_selected" from="ContentVBox/GenerationNotesScopeOption" to="." method="_on_generation_notes_scope_selected"]
-[connection signal="toggled" from="ContentVBox/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]
-[connection signal="toggled" from="ContentVBox/ShowGenNotifsCheckBox" to="." method="_on_show_gen_notifs_toggled"]
-[connection signal="pressed" from="ContentVBox/SongsFolderHBox/ChooseSongsFolderButton" to="." method="_on_choose_songs_folder_pressed"]
-[connection signal="pressed" from="ContentVBox/ScanSongsButton" to="." method="_on_scan_songs_pressed"]
-[connection signal="item_selected" from="ContentVBox/GenerationServerLocation/GenerationServerLocationOption" to="." method="_on_generation_server_location_selected"]
-[connection signal="focus_exited" from="ContentVBox/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_focus_exited"]
-[connection signal="text_submitted" from="ContentVBox/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_submitted"]
-[connection signal="value_changed" from="ContentVBox/GenerationServerPortHBox/GenerationServerPortSpin" to="." method="_on_generation_server_port_changed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid/ResetBPMBatchButton" to="." method="_on_reset_bpm_batch_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid/ClearNotesButton" to="." method="_on_clear_notes_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid/ResetAllSettingsButton" to="." method="_on_reset_all_settings_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid/ResetProfileStatsButton" to="." method="_on_reset_profile_stats_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DataButtonsGrid/ClearUserPathsButton" to="." method="_on_clear_user_paths_pressed"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationNotesScopeRow/GenerationNotesScopeOption" to="." method="_on_generation_notes_scope_selected"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/DataPanel/DataPanelMargin/DataRows/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/ShowGenNotifsCheckBox" to="." method="_on_show_gen_notifs_toggled"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows/SongsFolderHBox/ChooseSongsFolderButton" to="." method="_on_choose_songs_folder_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/SongsPanel/SongsPanelMargin/SongsRows/ScanSongsButton" to="." method="_on_scan_songs_pressed"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLocation/GenerationServerLocationOption" to="." method="_on_generation_server_location_selected"]
+[connection signal="focus_exited" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_focus_exited"]
+[connection signal="text_submitted" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_submitted"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel/GenerationPanelMargin/GenerationRows/GenerationServerPortHBox/GenerationServerPortSpin" to="." method="_on_generation_server_port_changed"]
 [connection signal="confirmed" from="ResetBPMBatchConfirmDialog" to="." method="_confirm_reset_bpm_batch"]
 [connection signal="confirmed" from="ClearNotesConfirmDialog" to="." method="_confirm_clear_notes"]
 [connection signal="confirmed" from="ResetAllSettingsConfirmDialog" to="." method="_confirm_reset_all_settings"]

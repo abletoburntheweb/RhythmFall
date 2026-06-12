@@ -2372,90 +2372,205 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_5oswl")
 
-[node name="ContentVBox" type="VBoxContainer" parent="."]
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
 layout_mode = 1
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
 
-[node name="MusicVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="VolumeHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Громкость"
+
+[node name="VolumePanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+
+[node name="VolumePanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VolumeRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MusicVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="MusicVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MusicVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость музыки"
 
-[node name="MusicVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="MusicVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MusicVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="MenuMusicVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="MenuMusicVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="MenuMusicVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MenuMusicVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость музыки в меню"
 
-[node name="MenuMusicVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="MenuMusicVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MenuMusicVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="SFXVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="SFXVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="SFXVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/SFXVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость звуков"
 
-[node name="SFXVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="SFXVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/SFXVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="HitSoundsVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="HitSoundsVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="HitSoundsVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/HitSoundsVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость нажатий"
 
-[node name="HitSoundsVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="HitSoundsVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/HitSoundsVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="MetronomeVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="MetronomeVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="MetronomeVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MetronomeVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость метронома"
 
-[node name="MetronomeVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="MetronomeVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MetronomeVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="PreviewVolumeLabel" type="Label" parent="ContentVBox"]
+[node name="PreviewVolumeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 16
+
+[node name="PreviewVolumeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/PreviewVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Громкость предпросмотра"
 
-[node name="PreviewVolumeSlider" type="HSlider" parent="ContentVBox"]
+[node name="PreviewVolumeSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/PreviewVolumeRow"]
+custom_minimum_size = Vector2(320, 28)
 layout_mode = 2
+size_flags_vertical = 4
 theme = SubResource("Theme_p28av")
 
-[node name="TimingOffsetValueLabel" type="Label" parent="ContentVBox"]
+[node name="CalibrationHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Оффсет: 0 мс"
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Калибровка тайминга"
 
-[node name="StartCalibrationButton" type="Button" parent="ContentVBox"]
+[node name="CalibrationPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
+
+[node name="CalibrationPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="CalibrationVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TimingOffsetValueLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Оффсет: 0 мс"
+horizontal_alignment = 1
+
+[node name="CalibrationButtonsRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="StartCalibrationButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox/CalibrationButtonsRow"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_lf0cr")
 theme_type_variation = &"FlatGenerateButton"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "Калибровка аудио"
 
-[node name="CalibrationStatusLabel" type="Label" parent="ContentVBox"]
-visible = false
+[node name="ResetCalibrationButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox/CalibrationButtonsRow"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Осталось 10 нажатий
-Esc — выйти из калибровки"
-
-[node name="ResetCalibrationButton" type="Button" parent="ContentVBox"]
-layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_lf0cr")
 theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 24
-text = "Сбросить калибровку аудио"
+theme_override_font_sizes/font_size = 22
+text = "Сбросить калибровку"
+
+[node name="CalibrationStatusLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
+text = "Осталось 10 нажатий
+Esc — выйти из калибровки"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ResetCalibrationConfirmDialog" type="ConfirmationDialog" parent="."]
 oversampling_override = 1.0
@@ -2469,15 +2584,15 @@ ok_button_text = "Сбросить"
 dialog_text = "Сбросить тайминговый оффсет к 0 мс?"
 cancel_button_text = "Отмена"
 
-[connection signal="value_changed" from="ContentVBox/MusicVolumeSlider" to="." method="_on_music_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/MenuMusicVolumeSlider" to="." method="_on_menu_music_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
-[connection signal="value_changed" from="ContentVBox/SFXVolumeSlider" to="." method="_on_sfx_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
-[connection signal="value_changed" from="ContentVBox/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
-[connection signal="value_changed" from="ContentVBox/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
-[connection signal="value_changed" from="ContentVBox/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
-[connection signal="pressed" from="ContentVBox/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
-[connection signal="pressed" from="ContentVBox/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MusicVolumeRow/MusicVolumeSlider" to="." method="_on_music_volume_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MenuMusicVolumeRow/MenuMusicVolumeSlider" to="." method="_on_menu_music_volume_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/SFXVolumeRow/SFXVolumeSlider" to="." method="_play_test_sfx_sound"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/SFXVolumeRow/SFXVolumeSlider" to="." method="_on_sfx_volume_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/HitSoundsVolumeRow/HitSoundsVolumeSlider" to="." method="_play_test_hit_sound"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/HitSoundsVolumeRow/HitSoundsVolumeSlider" to="." method="_on_hit_sounds_volume_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MetronomeVolumeRow/MetronomeVolumeSlider" to="." method="_play_test_metronome_sound"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/MetronomeVolumeRow/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/VolumePanel/VolumePanelMargin/VolumeRows/PreviewVolumeRow/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox/CalibrationButtonsRow/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox/CalibrationButtonsRow/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]
 [connection signal="confirmed" from="ResetCalibrationConfirmDialog" to="." method="_confirm_reset_calibration"]

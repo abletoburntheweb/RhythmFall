@@ -5,21 +5,25 @@ signal settings_changed
 
 var game_screen = null 
 
-@onready var music_volume_slider: HSlider = $ContentVBox/MusicVolumeSlider
-@onready var menu_music_volume_slider: HSlider = $ContentVBox/MenuMusicVolumeSlider
-@onready var sfx_volume_slider: HSlider = $ContentVBox/SFXVolumeSlider
-@onready var hit_sounds_volume_slider: HSlider = $ContentVBox/HitSoundsVolumeSlider
-@onready var metronome_volume_slider: HSlider = $ContentVBox/MetronomeVolumeSlider
-@onready var preview_volume_slider: HSlider = $ContentVBox/PreviewVolumeSlider
-@onready var music_volume_label: Label = $ContentVBox/MusicVolumeLabel
-@onready var menu_music_volume_label: Label = $ContentVBox/MenuMusicVolumeLabel
-@onready var sfx_volume_label: Label = $ContentVBox/SFXVolumeLabel
-@onready var hit_sounds_volume_label: Label = $ContentVBox/HitSoundsVolumeLabel
-@onready var metronome_volume_label: Label = $ContentVBox/MetronomeVolumeLabel
-@onready var preview_volume_label: Label = $ContentVBox/PreviewVolumeLabel
-@onready var timing_offset_value_label: Label = $ContentVBox/TimingOffsetValueLabel
-@onready var start_calibration_button: Button = $ContentVBox/StartCalibrationButton
-@onready var calibration_status_label: Label = $ContentVBox/CalibrationStatusLabel
+const _CONTENT := "ScrollWrap/CenterWrap/ContentVBox"
+const _VOLUME := "%s/VolumePanel/VolumePanelMargin/VolumeRows" % _CONTENT
+const _CALIBRATION := "%s/CalibrationPanel/CalibrationPanelMargin/CalibrationVBox" % _CONTENT
+
+@onready var music_volume_slider: HSlider = get_node("%s/MusicVolumeRow/MusicVolumeSlider" % _VOLUME)
+@onready var menu_music_volume_slider: HSlider = get_node("%s/MenuMusicVolumeRow/MenuMusicVolumeSlider" % _VOLUME)
+@onready var sfx_volume_slider: HSlider = get_node("%s/SFXVolumeRow/SFXVolumeSlider" % _VOLUME)
+@onready var hit_sounds_volume_slider: HSlider = get_node("%s/HitSoundsVolumeRow/HitSoundsVolumeSlider" % _VOLUME)
+@onready var metronome_volume_slider: HSlider = get_node("%s/MetronomeVolumeRow/MetronomeVolumeSlider" % _VOLUME)
+@onready var preview_volume_slider: HSlider = get_node("%s/PreviewVolumeRow/PreviewVolumeSlider" % _VOLUME)
+@onready var music_volume_label: Label = get_node("%s/MusicVolumeRow/MusicVolumeLabel" % _VOLUME)
+@onready var menu_music_volume_label: Label = get_node("%s/MenuMusicVolumeRow/MenuMusicVolumeLabel" % _VOLUME)
+@onready var sfx_volume_label: Label = get_node("%s/SFXVolumeRow/SFXVolumeLabel" % _VOLUME)
+@onready var hit_sounds_volume_label: Label = get_node("%s/HitSoundsVolumeRow/HitSoundsVolumeLabel" % _VOLUME)
+@onready var metronome_volume_label: Label = get_node("%s/MetronomeVolumeRow/MetronomeVolumeLabel" % _VOLUME)
+@onready var preview_volume_label: Label = get_node("%s/PreviewVolumeRow/PreviewVolumeLabel" % _VOLUME)
+@onready var timing_offset_value_label: Label = get_node("%s/TimingOffsetValueLabel" % _CALIBRATION)
+@onready var start_calibration_button: Button = get_node("%s/CalibrationButtonsRow/StartCalibrationButton" % _CALIBRATION)
+@onready var calibration_status_label: Label = get_node("%s/CalibrationStatusLabel" % _CALIBRATION)
 @onready var reset_calibration_confirm_dialog: ConfirmationDialog = $ResetCalibrationConfirmDialog
 
 var _last_test_sound_time: float = 0.0

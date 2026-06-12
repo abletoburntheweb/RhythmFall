@@ -217,6 +217,9 @@ func _try_notes_task_result(task_id: String, song_path: String, bpm: float, lane
 	var http_resp = _http_get_json("/task_result?task_id=" + task_id, cancel_getter)
 	if not http_resp.ok or http_resp.json == null:
 		return {}
+	var code := int(http_resp.code)
+	if code == 404 or code == 202:
+		return {}
 	return _notes_payload_from_json(http_resp.json, song_path, bpm, lanes, instrument_type)
 
 

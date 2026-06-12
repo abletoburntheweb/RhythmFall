@@ -2,14 +2,14 @@
 extends Control
 
 @onready var background: ColorRect = $Background
-@onready var title_label: Label = $TitleLabel
-@onready var base_xp_label: Label = $StatsFrame/BaseXPLabel
-@onready var accuracy_bonus_label: Label = $StatsFrame/AccuracyBonusLabel
-@onready var combo_bonus_label: Label = $StatsFrame/ComboBonusLabel
-@onready var grade_bonus_label: Label = $StatsFrame/GradeBonusLabel
-@onready var full_combo_bonus_label: Label = $StatsFrame/FullComboBonusLabel
-@onready var total_xp_label: Label = $StatsFrame/TotalXPLabel
-@onready var back_button: Button = $ButtonsContainer/BackButton
+@onready var title_label: Label = $CenterWrap/DialogVBox/TitleLabel
+@onready var base_xp_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/BaseXPLabel
+@onready var accuracy_bonus_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/AccuracyBonusLabel
+@onready var combo_bonus_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/ComboBonusLabel
+@onready var grade_bonus_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/GradeBonusLabel
+@onready var full_combo_bonus_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/FullComboBonusLabel
+@onready var total_xp_label: Label = $CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox/TotalXPLabel
+@onready var back_button: Button = $CenterWrap/DialogVBox/ButtonsContainer/BackButton
 
 signal details_closed
 

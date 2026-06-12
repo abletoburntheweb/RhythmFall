@@ -9,13 +9,15 @@ var _remap_target_lane: int = -1
 var _remap_old_scancode: int = 0
 
 var game_screen = null
-@onready var keys_container: VBoxContainer = $ContentVBox/KeysContainer
+const _KEYS_BASE := "ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"
+
+@onready var keys_container: VBoxContainer = $"ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"
 @onready var lane_buttons := [
-	$ContentVBox/KeysContainer/Lane1Row/KeyButton,
-	$ContentVBox/KeysContainer/Lane2Row/KeyButton,
-	$ContentVBox/KeysContainer/Lane3Row/KeyButton,
-	$ContentVBox/KeysContainer/Lane4Row/KeyButton,
-	$ContentVBox/KeysContainer/Lane5Row/KeyButton
+	get_node("%s/Lane1Row/KeyButton" % _KEYS_BASE),
+	get_node("%s/Lane2Row/KeyButton" % _KEYS_BASE),
+	get_node("%s/Lane3Row/KeyButton" % _KEYS_BASE),
+	get_node("%s/Lane4Row/KeyButton" % _KEYS_BASE),
+	get_node("%s/Lane5Row/KeyButton" % _KEYS_BASE)
 ]
  
 

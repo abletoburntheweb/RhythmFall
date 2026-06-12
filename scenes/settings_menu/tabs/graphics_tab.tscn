@@ -2372,25 +2372,62 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dnxrn")
 
-[node name="ContentVBox" type="VBoxContainer" parent="."]
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
 layout_mode = 1
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
 
-[node name="GraphicsQuality" type="HBoxContainer" parent="ContentVBox"]
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="DisplayHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Дисплей"
+
+[node name="DisplayPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 
-[node name="GraphicsQualityLabel" type="Label" parent="ContentVBox/GraphicsQuality"]
+[node name="DisplayPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Качество графики:"
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
 
-[node name="GraphicsQualityOptionButton" type="OptionButton" parent="ContentVBox/GraphicsQuality"]
-custom_minimum_size = Vector2(0, 50)
+[node name="DisplayRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="GraphicsQuality" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GraphicsQualityLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/GraphicsQuality"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Качество графики"
+
+[node name="GraphicsQualityOptionButton" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/GraphicsQuality"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 1
 item_count = 3
 popup/item_0/text = "Низкие"
@@ -2400,20 +2437,23 @@ popup/item_1/id = 1
 popup/item_2/text = "Высокие"
 popup/item_2/id = 2
 
-[node name="WindowMode" type="HBoxContainer" parent="ContentVBox"]
+[node name="WindowMode" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="WindowModeLabel" type="Label" parent="ContentVBox/WindowMode"]
+[node name="WindowModeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowMode"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Режим окна:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Режим окна"
 
-[node name="WindowModeOptionButton" type="OptionButton" parent="ContentVBox/WindowMode"]
-custom_minimum_size = Vector2(0, 50)
+[node name="WindowModeOptionButton" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowMode"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 2
 item_count = 3
 popup/item_0/text = "Оконный"
@@ -2423,20 +2463,23 @@ popup/item_1/id = 1
 popup/item_2/text = "Безрамочный"
 popup/item_2/id = 2
 
-[node name="WindowResolution" type="HBoxContainer" parent="ContentVBox"]
+[node name="WindowResolution" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="WindowResolutionLabel" type="Label" parent="ContentVBox/WindowResolution"]
+[node name="WindowResolutionLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowResolution"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Разрешение экрана:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Разрешение экрана"
 
-[node name="WindowResolutionOptionButton" type="OptionButton" parent="ContentVBox/WindowResolution"]
-custom_minimum_size = Vector2(150, 50)
+[node name="WindowResolutionOptionButton" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowResolution"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 2
 item_count = 3
 popup/item_0/text = "1280×720"
@@ -2446,20 +2489,23 @@ popup/item_1/id = 1
 popup/item_2/text = "1920×1080"
 popup/item_2/id = 2
 
-[node name="FPS" type="HBoxContainer" parent="ContentVBox"]
+[node name="FPS" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="Label" type="Label" parent="ContentVBox/FPS"]
+[node name="Label" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/FPS"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "FPS:"
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Счётчик FPS"
 
-[node name="FPSOptionButton" type="OptionButton" parent="ContentVBox/FPS"]
-custom_minimum_size = Vector2(0, 50)
+[node name="FPSOptionButton" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/FPS"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 0
 item_count = 3
 popup/item_0/text = "Нет"
@@ -2469,15 +2515,39 @@ popup/item_1/id = 1
 popup/item_2/text = "Контрастный"
 popup/item_2/id = 2
 
-[node name="ScrollSpeed" type="HBoxContainer" parent="ContentVBox"]
+[node name="GameplayHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_override_font_sizes/font_size = 26
+text = "Игровой процесс"
+
+[node name="GameplayPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 
-[node name="ScrollSpeedLabel" type="Label" parent="ContentVBox/ScrollSpeed"]
+[node name="GameplayPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="GameplayRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ScrollSpeed" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ScrollSpeedLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ScrollSpeed"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
 text = "Скорость движения нот"
 
-[node name="ScrollSpeedSpinBox" type="SpinBox" parent="ContentVBox/ScrollSpeed"]
+[node name="ScrollSpeedSpinBox" type="SpinBox" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ScrollSpeed"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 min_value = 6.0
@@ -2485,38 +2555,23 @@ max_value = 20.0
 step = 0.1
 value = 10.0
 
-[node name="LaneHighlightBrightnessLabel" type="Label" parent="ContentVBox"]
+[node name="NoteApproachHint" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Яркость подсветки линий"
+theme_override_constants/separation = 16
 
-[node name="LaneHighlightBrightnessSlider" type="HSlider" parent="ContentVBox"]
+[node name="NoteApproachHintLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteApproachHint"]
 layout_mode = 2
-theme = SubResource("Theme_gfom4")
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Акцент у линии"
 
-[node name="NoteBrightnessLabel" type="Label" parent="ContentVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Яркость нот"
-
-[node name="NoteBrightnessSlider" type="HSlider" parent="ContentVBox"]
-layout_mode = 2
-theme = SubResource("Theme_gfom4")
-
-[node name="NoteApproachHint" type="HBoxContainer" parent="ContentVBox"]
-layout_mode = 2
-
-[node name="NoteApproachHintLabel" type="Label" parent="ContentVBox/NoteApproachHint"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Акцент у линии: "
-
-[node name="NoteApproachHintOptionButton" type="OptionButton" parent="ContentVBox/NoteApproachHint"]
-custom_minimum_size = Vector2(0, 50)
+[node name="NoteApproachHintOptionButton" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteApproachHint"]
+custom_minimum_size = Vector2(260, 50)
 layout_mode = 2
 theme = ExtResource("2_gfom4")
 theme_type_variation = &"Dropdown"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 selected = 3
 item_count = 4
 popup/item_0/text = "Нет"
@@ -2528,11 +2583,45 @@ popup/item_2/id = 2
 popup/item_3/text = "Насыщеннее"
 popup/item_3/id = 3
 
-[connection signal="item_selected" from="ContentVBox/GraphicsQuality/GraphicsQualityOptionButton" to="." method="_on_graphics_quality_selected"]
-[connection signal="item_selected" from="ContentVBox/WindowMode/WindowModeOptionButton" to="." method="_on_window_mode_selected"]
-[connection signal="item_selected" from="ContentVBox/WindowResolution/WindowResolutionOptionButton" to="." method="_on_window_resolution_selected"]
-[connection signal="item_selected" from="ContentVBox/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
-[connection signal="value_changed" from="ContentVBox/ScrollSpeed/ScrollSpeedSpinBox" to="." method="_on_scroll_speed_spin_changed"]
-[connection signal="value_changed" from="ContentVBox/LaneHighlightBrightnessSlider" to="." method="_on_lane_highlight_brightness_changed"]
-[connection signal="value_changed" from="ContentVBox/NoteBrightnessSlider" to="." method="_on_note_brightness_changed"]
-[connection signal="item_selected" from="ContentVBox/NoteApproachHint/NoteApproachHintOptionButton" to="." method="_on_note_approach_hint_selected"]
+[node name="LaneHighlightBrightnessRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LaneHighlightBrightnessLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/LaneHighlightBrightnessRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Яркость подсветки линий"
+
+[node name="LaneHighlightBrightnessSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/LaneHighlightBrightnessRow"]
+custom_minimum_size = Vector2(320, 28)
+layout_mode = 2
+size_flags_vertical = 4
+theme = SubResource("Theme_gfom4")
+
+[node name="NoteBrightnessRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="NoteBrightnessLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteBrightnessRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+text = "Яркость нот"
+
+[node name="NoteBrightnessSlider" type="HSlider" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteBrightnessRow"]
+custom_minimum_size = Vector2(320, 28)
+layout_mode = 2
+size_flags_vertical = 4
+theme = SubResource("Theme_gfom4")
+
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/GraphicsQuality/GraphicsQualityOptionButton" to="." method="_on_graphics_quality_selected"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowMode/WindowModeOptionButton" to="." method="_on_window_mode_selected"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/WindowResolution/WindowResolutionOptionButton" to="." method="_on_window_resolution_selected"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows/FPS/FPSOptionButton" to="." method="_on_fps_mode_selected"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ScrollSpeed/ScrollSpeedSpinBox" to="." method="_on_scroll_speed_spin_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/LaneHighlightBrightnessRow/LaneHighlightBrightnessSlider" to="." method="_on_lane_highlight_brightness_changed"]
+[connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteBrightnessRow/NoteBrightnessSlider" to="." method="_on_note_brightness_changed"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/NoteApproachHint/NoteApproachHintOptionButton" to="." method="_on_note_approach_hint_selected"]

@@ -1,8 +1,31 @@
-[gd_scene load_steps=3 format=3 uid="uid://c2p87b8j3164d"]
+[gd_scene load_steps=5 format=3 uid="uid://c2p87b8j3164d"]
 
 [ext_resource type="Script" uid="uid://yqvuau56ualj" path="res://scenes/victory_screen/victory_currency_details.gd" id="1_8e8ra"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_v5b8k"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.108, 0.118, 0.158, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_sep"]
+content_margin_top = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(1, 1, 1, 0.1)
 [node name="VictoryCurrencyDetails" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -19,96 +42,99 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.84705883)
+color = Color(0.031373, 0.039216, 0.066667, 0.88)
 
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 0
-offset_top = 6.0
-offset_right = 1920.0
-offset_bottom = 73.0
-theme_override_colors/font_color = Color(0.9463605, 0.69717664, 0.34345874, 1)
-theme_override_font_sizes/font_size = 48
-text = "Детализация валюты"
-horizontal_alignment = 1
-
-[node name="StatsFrame" type="Panel" parent="."]
+[node name="CenterWrap" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 70.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ScoreLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 23.0
-theme_override_colors/font_color = Color(0.5254902, 0.7254902, 0.9529412, 1)
-theme_override_font_sizes/font_size = 24
+[node name="DialogVBox" type="VBoxContainer" parent="CenterWrap"]
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="CenterWrap/DialogVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.946361, 0.697177, 0.343459, 1)
+theme_override_font_sizes/font_size = 40
+text = "Детализация валюты"
+horizontal_alignment = 1
+
+[node name="StatsFrame" type="PanelContainer" parent="CenterWrap/DialogVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterWrap/DialogVBox/StatsFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="ContentVBox" type="VBoxContainer" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ScoreLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52549, 0.72549, 0.952941, 1)
+theme_override_font_sizes/font_size = 22
 text = "Базовый валюта (от счёта): 0"
 horizontal_alignment = 1
 
-[node name="ComboLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 30.0
-offset_right = 1920.0
-offset_bottom = 53.0
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-theme_override_font_sizes/font_size = 24
+[node name="ComboLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
+theme_override_font_sizes/font_size = 22
 text = "Бонус за максимальное комбо: 0"
 horizontal_alignment = 1
 
-[node name="AccuracyLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 60.0
-offset_right = 1920.0
-offset_bottom = 83.0
-theme_override_colors/font_color = Color(0.4745098, 0.8901961, 0.8352941, 1)
-theme_override_font_sizes/font_size = 24
+[node name="AccuracyLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.47451, 0.890196, 0.835294, 1)
+theme_override_font_sizes/font_size = 22
 text = "Бонус за точность: 0"
 horizontal_alignment = 1
 
-[node name="FullComboLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 90.0
-offset_right = 1920.0
-offset_bottom = 113.0
-theme_override_colors/font_color = Color(0.5568628, 0.83137256, 0.6156863, 1)
-theme_override_font_sizes/font_size = 24
+[node name="FullComboLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.556863, 0.831373, 0.615686, 1)
+theme_override_font_sizes/font_size = 22
 text = "Бонус за полное комбо: 0"
 horizontal_alignment = 1
 
-[node name="MultiplierLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 120.0
-offset_right = 1920.0
-offset_bottom = 143.0
-theme_override_colors/font_color = Color(0.58431375, 0.7176471, 0.92156863, 1)
-theme_override_font_sizes/font_size = 24
+[node name="MultiplierLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 22
 text = "Бонус за множитель: 0"
 horizontal_alignment = 1
 
-[node name="TotalLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 150.0
-offset_right = 1920.0
-offset_bottom = 184.0
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
-theme_override_font_sizes/font_size = 24
+[node name="Separator" type="HSeparator" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_victory_sep")
+
+[node name="TotalLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 28
 text = "Итого валюты: 0"
 horizontal_alignment = 1
 
-[node name="ButtonsContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
-
-[node name="BackButton" type="Button" parent="ButtonsContainer"]
-clip_contents = true
-custom_minimum_size = Vector2(140, 31)
+[node name="ButtonsContainer" type="HBoxContainer" parent="CenterWrap/DialogVBox"]
 layout_mode = 2
-size_flags_horizontal = 0
+alignment = 1
+
+[node name="BackButton" type="Button" parent="CenterWrap/DialogVBox/ButtonsContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
 theme = ExtResource("2_v5b8k")
 theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 18
 text = "Назад"

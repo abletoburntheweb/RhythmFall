@@ -4,49 +4,84 @@ extends BaseScreen
 
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
+const TimeUtils = preload("res://logic/utils/time_utils.gd")
 
-@onready var back_button: Button = $MainContent/MainVBox/BackButton
-@onready var levels_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/LevelsCompletedLabel
-@onready var drum_levels_completed_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumLevelsCompletedLabel
-@onready var unique_levels_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/UniqueLevelsCompletedLabel
-@onready var overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/OverallAccuracyLabel
-@onready var drum_overall_accuracy_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/DrumOverallAccuracyLabel
-@onready var play_time_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/PlayTimeLabel
-@onready var start_date_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/StartDateLabel")
-@onready var total_notes_hit_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesHitLabel 
-@onready var total_drum_hits_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumHitsLabel
-@onready var total_notes_missed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalNotesMissedLabel
-@onready var total_drum_misses_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumMissesLabel
-@onready var max_hit_streak_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/MaxHitStreakLabel
-@onready var max_drum_hit_streak_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/MaxDrumHitStreakLabel
-@onready var total_earned_currency_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox/TotalEarnedCurrencyLabel
-@onready var spent_currency_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox/SpentCurrencyLabel
-@onready var total_score_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/TotalScoreLabel
-@onready var total_drum_score_label: Label = $MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox/TotalDrumScoreLabel
-@onready var level_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/LevelLabel
-@onready var xp_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/XPLabel
-@onready var xp_progress_label: Label = $MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox/XPProgressLabel
+const _ROOT := "MainVBox/ProfileRoot"
+const _FAVORITE := "%s/FavoriteTrackCard/MarginContainer/HBoxContainer" % _ROOT
+const _HIGHLIGHTS := "%s/HighlightsRow" % _ROOT
+const _LEFT := "%s/BodyRow/LeftStack" % _ROOT
+const _RIGHT := "%s/BodyRow/RightStack" % _ROOT
 
-@onready var ss_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/SSLabel
-@onready var s_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/SLabel
-@onready var a_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/ALabel
-@onready var b_label: Label = $MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox/BLabel
-@onready var daily_quests_completed_label: Label = $MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox/DailyQuestsCompletedLabel
+const _TILE_VALUE_COLORS := {
+	"notes_hit": Color(0.38039216, 0.78039217, 0.7411765),
+	"notes_miss": Color(0.8980392, 0.4509804, 0.4509804),
+	"max_streak": Color(0.9490196, 0.7019608, 0.3529412),
+	"earned": Color(0.38039216, 0.78039217, 0.7411765),
+	"spent": Color(0.8980392, 0.4509804, 0.4509804),
+	"total_score": Color(0.78431374, 0.8235294, 0.9019608),
+}
 
-@onready var accuracy_chart_line: Line2D = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartLine
-@onready var accuracy_chart_points: Control = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartPoints
-@onready var chart_background: ColorRect = $MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground
-@onready var tooltip_label: RichTextLabel = get_node_or_null(NodePath("MainContent/MainVBox/ChartCard/ChartContainer/TooltipLabel")) as RichTextLabel
+const _STAT_TILE_SPECS: Array = [
+	["unique_tracks", "Уникальных треков"],
+	["total_score", "Очков всего"],
+	["notes_hit", "Попаданий"],
+	["notes_miss", "Промахов"],
+	["max_streak", "Серия"],
+	["daily_quests", "Квестов"],
+	["member_since", "В игре с"],
+	["earned", "Заработано"],
+	["spent", "Потрачено"],
+]
 
-@onready var favorite_track_card: PanelContainer = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard")
-@onready var favorite_cover_texture_rect: TextureRect = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteCoverTextureRect")
-@onready var favorite_title_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteTitleLabel")
-@onready var favorite_artist_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteArtistLabel")
-@onready var favorite_genre_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox/FavoriteGenreLabel")
+const _GRADE_TILE_SPECS: Array = [
+	["SS", "SS"],
+	["S", "S"],
+	["A", "A"],
+	["B", "B"],
+]
 
-@onready var achievements_list_vbox: VBoxContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox")
-@onready var achievements_empty_label: Label = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/AchievementsListVBox/EmptyLabel")
-@onready var achievement_card_template: PanelContainer = get_node_or_null("MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard")
+const _GRADE_VALUE_COLORS := {
+	"SS": Color(0.92, 0.78, 0.42),
+	"S": Color(0.78, 0.82, 0.90),
+	"A": Color(0.62, 0.72, 0.88),
+	"B": Color(0.72, 0.74, 0.82),
+}
+
+const STAT_VALUE_FONT_SIZE := 26
+const STAT_CAPTION_FONT_SIZE := 12
+const STAT_MEMBER_SINCE_FONT_SIZE := 17
+const GRADE_VALUE_FONT_SIZE := 24
+const GRADE_CAPTION_FONT_SIZE := 12
+
+var _stat_tiles: Dictionary = {}
+var _grade_tiles: Dictionary = {}
+var _profile_tiles_ready: bool = false
+var _grades_styled: bool = false
+
+@onready var back_button: Button = get_node_or_null("MainVBox/BackButton") as Button
+@onready var level_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/LevelLabel" % _HIGHLIGHTS) as Label
+@onready var xp_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPLabel" % _HIGHLIGHTS) as Label
+@onready var xp_progress_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressLabel" % _HIGHLIGHTS) as Label
+@onready var xp_progress_bar: ProgressBar = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressBar" % _HIGHLIGHTS) as ProgressBar
+
+@onready var highlight_play_time_value: Label = get_node_or_null("%s/PlayTimeHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
+@onready var highlight_accuracy_value: Label = get_node_or_null("%s/AccuracyHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
+@onready var highlight_levels_value: Label = get_node_or_null("%s/LevelsHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
+
+@onready var accuracy_chart_line: Line2D = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartLine") as Line2D
+@onready var accuracy_chart_points: Control = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartPoints") as Control
+@onready var chart_background: ColorRect = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground") as ColorRect
+@onready var tooltip_label: RichTextLabel = get_node_or_null("MainVBox/ChartCard/ChartContainer/TooltipLabel") as RichTextLabel
+
+@onready var favorite_track_card: PanelContainer = get_node_or_null("%s/FavoriteTrackCard" % _ROOT)
+@onready var favorite_cover_texture_rect: TextureRect = get_node_or_null("%s/FavoriteCoverTextureRect" % _FAVORITE)
+@onready var favorite_title_label: Label = get_node_or_null("%s/InfoVBox/FavoriteTitleLabel" % _FAVORITE)
+@onready var favorite_artist_label: Label = get_node_or_null("%s/InfoVBox/FavoriteArtistLabel" % _FAVORITE)
+@onready var favorite_genre_label: Label = get_node_or_null("%s/InfoVBox/FavoriteGenreLabel" % _FAVORITE)
+
+@onready var achievements_list_vbox: VBoxContainer = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/AchievementsListVBox" % _RIGHT)
+@onready var achievements_empty_label: Label = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/AchievementsListVBox/EmptyLabel" % _RIGHT)
+@onready var achievement_card_template: PanelContainer = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard" % _RIGHT)
 
 var session_history_manager = null
 var results_history_service = null
@@ -59,6 +94,7 @@ func _play_time_string_to_seconds(time_str: String) -> int:
 		var minutes = parts[1].to_int()
 		return (hours * 3600) + (minutes * 60)
 	return 0
+
 func _format_play_time_ru(time_str: String) -> String:
 	var parts = time_str.split(":")
 	var hours = 0
@@ -74,13 +110,10 @@ func _format_play_time_ru(time_str: String) -> String:
 
 func _ready():
 	var game_engine = get_parent()
-	if game_engine and \
-	   game_engine.has_method("get_transitions"):
-		
+	if game_engine and game_engine.has_method("get_transitions"):
 		var trans = game_engine.get_transitions()
-		
-		setup_managers(trans)  
-		
+		setup_managers(trans)
+
 		var session_hist_mgr = null
 		if game_engine.has_method("get_results_history_service"):
 			results_history_service = game_engine.get_results_history_service()
@@ -100,33 +133,156 @@ func _ready():
 	else:
 		printerr("ProfileScreen.gd: Не удалось получить transitions через GameEngine.")
 
+	_setup_profile_tiles()
+	_setup_grade_tiles()
 	refresh_stats()
 
 	if back_button == null:
 		printerr("ProfileScreen: Кнопка back_button не найдена!")
 
 func _on_total_play_time_changed(new_time: String):
-	if play_time_label:
-		play_time_label.text = "Времени в игре: %s" % _format_play_time_ru(new_time)
+	_update_highlight_tiles()
 
 func setup_session_history_manager(session_history_mgr):
 	session_history_manager = session_history_mgr
 	results_history_service = session_history_mgr
 	refresh_stats()
 
+func _setup_profile_tiles() -> void:
+	if _profile_tiles_ready:
+		return
+	_profile_tiles_ready = true
+
+	var content := get_node_or_null("%s/GeneralStatsCard/ContentVBox" % _LEFT) as VBoxContainer
+	if content == null:
+		return
+
+	if content.get_node_or_null("StatsGrid"):
+		return
+
+	var grid := GridContainer.new()
+	grid.name = "StatsGrid"
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	for spec in _STAT_TILE_SPECS:
+		grid.add_child(_create_stat_tile(str(spec[0]), str(spec[1])))
+
+	content.add_child(grid)
+
+func _create_stat_tile(tile_key: String, caption: String) -> PanelContainer:
+	var tile_style := StyleBoxFlat.new()
+	tile_style.bg_color = Color(0.094118, 0.094118, 0.121569, 1)
+	tile_style.border_color = Color(1, 1, 1, 0.08)
+	tile_style.set_border_width_all(1)
+	tile_style.set_corner_radius_all(8)
+	tile_style.content_margin_left = 10.0
+	tile_style.content_margin_top = 8.0
+	tile_style.content_margin_right = 10.0
+	tile_style.content_margin_bottom = 8.0
+
+	var tile := PanelContainer.new()
+	tile.name = "%sTile" % tile_key
+	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tile.custom_minimum_size = Vector2(0, 80)
+	tile.add_theme_stylebox_override("panel", tile_style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	tile.add_child(vbox)
+
+	var value_label := Label.new()
+	value_label.text = "—"
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var value_font_size := STAT_MEMBER_SINCE_FONT_SIZE if tile_key == "member_since" else STAT_VALUE_FONT_SIZE
+	value_label.add_theme_font_size_override("font_size", value_font_size)
+	var value_color: Color = _TILE_VALUE_COLORS.get(tile_key, Color(0.95, 0.95, 0.97))
+	value_label.add_theme_color_override("font_color", value_color)
+	vbox.add_child(value_label)
+
+	var caption_label := Label.new()
+	caption_label.text = caption
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	caption_label.add_theme_font_size_override("font_size", STAT_CAPTION_FONT_SIZE)
+	caption_label.add_theme_color_override("font_color", Color(0.654902, 0.654902, 0.678431))
+	vbox.add_child(caption_label)
+
+	_stat_tiles[tile_key] = value_label
+	return tile
+
+func _setup_grade_tiles() -> void:
+	if _grades_styled:
+		return
+	_grades_styled = true
+
+	var grades_hbox := get_node_or_null("%s/GradesCard/MainVBox/ContentHBox" % _RIGHT) as HBoxContainer
+	if grades_hbox == null:
+		return
+
+	grades_hbox.add_theme_constant_override("separation", 8)
+	for child in grades_hbox.get_children():
+		child.queue_free()
+
+	for spec in _GRADE_TILE_SPECS:
+		grades_hbox.add_child(_create_grade_tile(str(spec[0]), str(spec[1])))
+
+func _create_grade_tile(tile_key: String, caption: String) -> PanelContainer:
+	var tile_style := StyleBoxFlat.new()
+	tile_style.bg_color = Color(0.094118, 0.094118, 0.121569, 1)
+	tile_style.border_color = Color(1, 1, 1, 0.08)
+	tile_style.set_border_width_all(1)
+	tile_style.set_corner_radius_all(8)
+	tile_style.content_margin_left = 10.0
+	tile_style.content_margin_top = 8.0
+	tile_style.content_margin_right = 10.0
+	tile_style.content_margin_bottom = 8.0
+
+	var tile := PanelContainer.new()
+	tile.name = "%sGradeTile" % tile_key
+	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tile.custom_minimum_size = Vector2(0, 72)
+	tile.add_theme_stylebox_override("panel", tile_style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	tile.add_child(vbox)
+
+	var value_label := Label.new()
+	value_label.text = "0"
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", GRADE_VALUE_FONT_SIZE)
+	var value_color: Color = _GRADE_VALUE_COLORS.get(tile_key, Color(0.95, 0.95, 0.97))
+	value_label.add_theme_color_override("font_color", value_color)
+	vbox.add_child(value_label)
+
+	var caption_label := Label.new()
+	caption_label.text = caption
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.add_theme_font_size_override("font_size", GRADE_CAPTION_FONT_SIZE)
+	caption_label.add_theme_color_override("font_color", Color(0.654902, 0.654902, 0.678431))
+	vbox.add_child(caption_label)
+
+	_grade_tiles[tile_key] = value_label
+	return tile
+
+func _set_grade_tile(key: String, value: int) -> void:
+	if _grade_tiles.has(key):
+		(_grade_tiles[key] as Label).text = str(value)
+
+func _set_stat_tile(key: String, value: String) -> void:
+	if _stat_tiles.has(key):
+		(_stat_tiles[key] as Label).text = value
+
 func refresh_stats():
-	levels_completed_label.text = "Завершено уровней: %d" % PlayerDataManager.get_levels_completed()
-	
-	unique_levels_completed_label.text = "Пройдено уникальных треков: %d" % PlayerDataManager.get_unique_levels_completed()
-	
-	drum_levels_completed_label.text = "Завершено уровней: %d" % PlayerDataManager.get_drum_levels_completed()
-	
 	var favorite_track_path = PlayerDataManager.data.get("favorite_track", "")
 	var favorite_track_count = PlayerDataManager.data.get("favorite_track_play_count", 0)
 	if favorite_track_path == "" or favorite_track_count == 0:
 		favorite_track_path = TrackStatsManager.get_favorite_track()
 		favorite_track_count = TrackStatsManager.get_favorite_track_count()
-	
+
 	if favorite_track_card:
 		var title_text = "Н/Д"
 		var artist_text = "Н/Д"
@@ -153,9 +309,9 @@ func refresh_stats():
 					if fallback_texture:
 						favorite_cover_texture_rect.texture = fallback_texture
 		if favorite_title_label:
-			favorite_title_label.text = "Название: " + title_text
+			favorite_title_label.text = title_text
 		if favorite_artist_label:
-			favorite_artist_label.text = "Исполнитель: " + artist_text
+			favorite_artist_label.text = artist_text
 		if favorite_genre_label:
 			var fav_genre = str(PlayerDataManager.data.get("favorite_genre", "unknown"))
 			if fav_genre == "unknown" or fav_genre == "":
@@ -163,72 +319,39 @@ func refresh_stats():
 			if fav_genre == "unknown" or fav_genre == "":
 				fav_genre = "Н/Д"
 			favorite_genre_label.text = "Любимый жанр: %s" % fav_genre
-	
+
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
 	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
 	var total_notes_played = total_notes_hit + total_notes_missed
 	var overall_accuracy = 0.0
 	if total_notes_played > 0:
 		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
-	else:
-		if results_history_service:
-			var hist = results_history_service.get_history()
-			if hist.size() > 0:
-				var sum_acc = 0.0
-				for item in hist:
-					sum_acc += float(item.get("accuracy", 0.0))
-				overall_accuracy = sum_acc / float(hist.size())
-	overall_accuracy_label.text = "Общая точность: %.2f%%" % overall_accuracy
-	
-	var total_drum_hits = PlayerDataManager.data.get("total_drum_hits", 0)
-	var total_drum_misses = PlayerDataManager.data.get("total_drum_misses", 0)
-	var total_drum_notes = total_drum_hits + total_drum_misses
-	var drum_accuracy = 0.0
-	if total_drum_notes > 0:
-		drum_accuracy = (float(total_drum_hits) / float(total_drum_notes)) * 100.0
-	drum_overall_accuracy_label.text = "Точность: %.2f%%" % drum_accuracy
-	
-	var play_time_formatted = PlayerDataManager.get_total_play_time_formatted()
-	var play_time_ru = _format_play_time_ru(play_time_formatted)
-	play_time_label.text = "Времени в игре: %s" % play_time_ru 
-	if start_date_label:
-		var created_str = str(PlayerDataManager.data.get("profile_created_date", ""))
-		var TimeUtils = preload("res://logic/utils/time_utils.gd")
-		var display = TimeUtils.format_iso_date_ru(created_str)
-		start_date_label.text = "В RhythmFall с %s" % display
-	if daily_quests_completed_label:
-		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
+	elif results_history_service:
+		var hist = results_history_service.get_history()
+		if hist.size() > 0:
+			var sum_acc = 0.0
+			for item in hist:
+				sum_acc += float(item.get("accuracy", 0.0))
+			overall_accuracy = sum_acc / float(hist.size())
 
-	total_notes_hit_label.text = "Попаданий: %d" % total_notes_hit
-	total_drum_hits_label.text = "Попаданий: %d" % total_drum_hits
-	total_notes_missed_label.text = "Промахов: %d" % total_notes_missed
-	total_drum_misses_label.text = "Промахов: %d" % total_drum_misses
-	
 	var max_streak = PlayerDataManager.data.get("max_combo_ever", 0)
-	var max_drum_streak = PlayerDataManager.data.get("max_drum_combo_ever", 0)
-	max_hit_streak_label.text = "Рекордная серия попаданий подряд: %d" % max_streak
-	max_drum_hit_streak_label.text = "Рекордная серия попаданий подряд: %d" % max_drum_streak
-
-	total_earned_currency_label.text = "Заработано всего: %d" % PlayerDataManager.data.get("total_earned_currency", 0)
-	spent_currency_label.text = "Потрачено: %d" % PlayerDataManager.data.get("spent_currency", 0)
-
 	var total_score = PlayerDataManager.data.get("total_score_ever", 0)
-	var total_drum_score = PlayerDataManager.data.get("total_drum_score_ever", 0)
-	if total_score_label:
-		total_score_label.text = "Всего очков: %d" % total_score
-	if total_drum_score_label:
-		total_drum_score_label.text = "Очков: %d" % total_drum_score
+
+	_set_stat_tile("unique_tracks", str(PlayerDataManager.get_unique_levels_completed()))
+	_set_stat_tile("total_score", str(total_score))
+	_set_stat_tile("notes_hit", str(total_notes_hit))
+	_set_stat_tile("notes_miss", str(total_notes_missed))
+	_set_stat_tile("max_streak", str(max_streak))
+	_set_stat_tile("daily_quests", str(PlayerDataManager.get_daily_quests_completed_total()))
+	_set_stat_tile("member_since", TimeUtils.format_iso_date_ru(str(PlayerDataManager.data.get("profile_created_date", ""))))
+	_set_stat_tile("earned", str(PlayerDataManager.data.get("total_earned_currency", 0)))
+	_set_stat_tile("spent", str(PlayerDataManager.data.get("spent_currency", 0)))
 
 	var grades = PlayerDataManager.data.get("grades", {})
-	var ss_count = grades.get("SS", 0)
-	var s_count = grades.get("S", 0)
-	var a_count = grades.get("A", 0)
-	var b_count = grades.get("B", 0)
-
-	ss_label.text = "SS: %d" % ss_count
-	s_label.text = "S: %d" % s_count
-	a_label.text = "A: %d" % a_count
-	b_label.text = "B: %d" % b_count
+	_set_grade_tile("SS", int(grades.get("SS", 0)))
+	_set_grade_tile("S", int(grades.get("S", 0)))
+	_set_grade_tile("A", int(grades.get("A", 0)))
+	_set_grade_tile("B", int(grades.get("B", 0)))
 
 	if level_label:
 		level_label.text = "Уровень: %d" % PlayerDataManager.get_current_level()
@@ -237,14 +360,43 @@ func refresh_stats():
 	if xp_progress_label:
 		var progress_percent = PlayerDataManager.get_xp_progress() * 100.0
 		xp_progress_label.text = "Прогресс: %.1f%%" % progress_percent
+	if xp_progress_bar:
+		xp_progress_bar.value = PlayerDataManager.get_xp_progress()
+
+	_update_highlight_tiles(overall_accuracy)
 
 	if results_history_service:
 		_update_accuracy_chart()
 	_update_recent_achievements()
 
+func _update_highlight_tiles(overall_accuracy: float = -1.0) -> void:
+	if overall_accuracy < 0.0:
+		var total_notes_hit = PlayerDataManager.get_total_notes_hit()
+		var total_notes_missed = PlayerDataManager.get_total_notes_missed()
+		var total_notes_played = total_notes_hit + total_notes_missed
+		if total_notes_played > 0:
+			overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
+		elif results_history_service:
+			var hist = results_history_service.get_history()
+			if hist.size() > 0:
+				var sum_acc = 0.0
+				for item in hist:
+					sum_acc += float(item.get("accuracy", 0.0))
+				overall_accuracy = sum_acc / float(hist.size())
+			else:
+				overall_accuracy = 0.0
+		else:
+			overall_accuracy = 0.0
+
+	if highlight_play_time_value:
+		highlight_play_time_value.text = _format_play_time_ru(PlayerDataManager.get_total_play_time_formatted())
+	if highlight_accuracy_value:
+		highlight_accuracy_value.text = "%.1f%%" % overall_accuracy
+	if highlight_levels_value:
+		highlight_levels_value.text = str(PlayerDataManager.get_levels_completed())
+
 func _on_daily_quests_updated():
-	if daily_quests_completed_label:
-		daily_quests_completed_label.text = "Выполнено ежедневных заданий: %d" % PlayerDataManager.get_daily_quests_completed_total()
+	_set_stat_tile("daily_quests", str(PlayerDataManager.get_daily_quests_completed_total()))
 
 func _read_basic_metadata(filepath: String) -> Dictionary:
 	var result = {
@@ -349,7 +501,7 @@ func _update_recent_achievements():
 		if item is Dictionary and item.get("unlocked", false) and item.get("unlock_date", null) != null:
 			unlocked_list.append(item)
 	unlocked_list.sort_custom(Callable(self, "_sort_by_unlock_date_desc"))
-	var to_display = unlocked_list.slice(0, min(5, unlocked_list.size()))
+	var to_display = unlocked_list.slice(0, min(3, unlocked_list.size()))
 	if achievements_empty_label:
 		achievements_empty_label.visible = to_display.size() == 0
 	for ach in to_display:
@@ -365,7 +517,6 @@ func _update_recent_achievements():
 		card.apply_achievement(ach, achievement_manager)
 
 func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
-	var TimeUtils = preload("res://logic/utils/time_utils.gd")
 	var ka = TimeUtils.unlock_date_key(str(a.get("unlock_date", "")))
 	var kb = TimeUtils.unlock_date_key(str(b.get("unlock_date", "")))
 	if ka[0] != kb[0]:
@@ -377,8 +528,6 @@ func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
 	if ka[3] != kb[3]:
 		return ka[3] > kb[3]
 	return ka[4] > kb[4]
-
- 
 
 func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
 	var category = str(ach.get("category", ""))
@@ -396,7 +545,6 @@ func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
 	dummy_image.set_pixel(0, 0, Color.WHITE)
 	return ImageTexture.create_from_image(dummy_image)
 
-
 func _update_accuracy_chart():
 	if accuracy_chart_line == null or accuracy_chart_points == null or chart_background == null:
 		return
@@ -413,7 +561,6 @@ func _update_accuracy_chart():
 
 	var history = results_history_service.get_history()
 	if history.size() == 0:
-		print("ProfileScreen: Нет истории сессий для отображения.")
 		if accuracy_chart_line:
 			accuracy_chart_line.points = []
 		if accuracy_chart_points:
@@ -422,7 +569,7 @@ func _update_accuracy_chart():
 		if tooltip_label:
 			tooltip_label.visible = false
 		return
-	
+
 	if chart_background.size.x <= 0 or chart_background.size.y <= 0:
 		call_deferred("_update_accuracy_chart")
 		return
@@ -445,7 +592,7 @@ func _update_accuracy_chart():
 		else:
 			session = {
 				"accuracy": 0.0,
-				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0} 
+				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
 			}
 
 		var accuracy = session.get("accuracy", 0.0)
@@ -484,20 +631,15 @@ func _update_accuracy_chart():
 		var point_control = point_control_script.new()
 
 		point_control.set_tooltip_text(tooltip_text)
-
 		point_control.point_color = color
 		point_control.point_radius = 6.0
 		point_control.border_width = 1.5
 		point_control.border_color = Color.BLACK
-		
 		point_control._ready()
-
 		point_control.position = point_position - point_control.size / 2
 		point_control.name = "Point%d" % i
-
 		point_control.point_hovered.connect(_on_point_hovered.bind(i))
 		point_control.point_unhovered.connect(_on_point_unhovered)
-
 		accuracy_chart_points.add_child(point_control)
 
 func _on_point_hovered(global_pos: Vector2, tooltip_text: String, index: int):
@@ -505,19 +647,18 @@ func _on_point_hovered(global_pos: Vector2, tooltip_text: String, index: int):
 		tooltip_label.text = tooltip_text
 		tooltip_label.visible = true
 		var local_pos = accuracy_chart_points.to_local(global_pos)
-		tooltip_label.position = local_pos + Vector2(-tooltip_label.size.x / 2, -tooltip_label.size.y - 15) 
+		tooltip_label.position = local_pos + Vector2(-tooltip_label.size.x / 2, -tooltip_label.size.y - 15)
 
 func _on_point_unhovered():
 	if tooltip_label:
 		tooltip_label.visible = false
-		
+
 func _on_chart_background_resized():
 	_update_accuracy_chart()
 
 func _execute_close_transition():
 	if transitions:
 		transitions.close_profile()
-		
 	if is_instance_valid(self):
 		if PlayerDataManager.is_connected("total_play_time_changed", _on_total_play_time_changed):
 			PlayerDataManager.total_play_time_changed.disconnect(_on_total_play_time_changed)

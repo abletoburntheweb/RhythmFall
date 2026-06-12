@@ -248,20 +248,20 @@ var victory_animation_player: AnimationPlayer = null
 @export var grade_color_SS_repeat: Color = Color("#2EE59D")
 
 @onready var background: ColorRect = $Background
-@onready var title_label: Label = $TitleLabel
-@onready var song_label: Label = $SongLabel
-@onready var stats_frame: Panel = $StatsFrame
-@onready var score_label: Label = $StatsFrame/ScoreLabel
-@onready var combo_label: Label = $StatsFrame/ComboLabel
-@onready var max_combo_label: Label = $StatsFrame/MaxComboLabel
-@onready var accuracy_label: Label = $StatsFrame/AccuracyLabel
-@onready var grade_label: Label = $StatsFrame/GradeLabel
-@onready var currency_label: Label = $StatsFrame/CurrencyLabel
-@onready var xp_label: Label = $StatsFrame/XPLabel 
-@onready var hit_notes_label: Label = $StatsFrame/HitNotesLabel 
-@onready var missed_notes_label: Label = $StatsFrame/MissedNotesLabel 
-@onready var replay_button: Button = $ButtonsContainer/ReplayButton
-@onready var song_select_button: Button = $ButtonsContainer/SongSelectButton
+@onready var title_label: Label = $MainMargin/MainVBox/HeaderVBox/TitleLabel
+@onready var song_label: Label = $MainMargin/MainVBox/HeaderVBox/SongLabel
+@onready var stats_frame: PanelContainer = $MainMargin/MainVBox/StatsFrame
+@onready var score_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/ScoreLabel
+@onready var combo_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/ComboLabel
+@onready var max_combo_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/MaxComboLabel
+@onready var accuracy_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/AccuracyLabel
+@onready var grade_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/GradeLabel
+@onready var currency_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/CurrencyLabel
+@onready var xp_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/XPLabel 
+@onready var hit_notes_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/HitNotesLabel 
+@onready var missed_notes_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/MissedNotesLabel 
+@onready var replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/ReplayButton
+@onready var song_select_button: Button = $MainMargin/MainVBox/ButtonsContainer/SongSelectButton
 @onready var countups_delay_timer: Timer = $CountupsDelayTimer
 
 
@@ -351,7 +351,9 @@ func _on_replay_button_pressed():
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_game_with_song"):
 			var instrument_to_use = song_info.get("instrument", "standard")
-			transitions.open_game_with_song(song_info, instrument_to_use, results_manager)
+			var mode_to_use = str(song_info.get("mode", "basic"))
+			var lanes_to_use = int(song_info.get("lanes", 4))
+			transitions.open_game_with_song(song_info, instrument_to_use, results_manager, mode_to_use, lanes_to_use)
 	
 	queue_free()
 

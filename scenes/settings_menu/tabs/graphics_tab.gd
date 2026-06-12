@@ -8,14 +8,17 @@ const _SpinBoxUtils = preload("res://logic/utils/spin_box_utils.gd")
 
 var game_engine = null 
 
-@onready var fps_option_button: OptionButton = $ContentVBox/FPS/FPSOptionButton
-@onready var graphics_quality_option: OptionButton = $ContentVBox/GraphicsQuality/GraphicsQualityOptionButton
-@onready var window_mode_option: OptionButton = $ContentVBox/WindowMode/WindowModeOptionButton
-@onready var window_resolution_option: OptionButton = $ContentVBox/WindowResolution/WindowResolutionOptionButton
-@onready var scroll_speed_spin: SpinBox = $ContentVBox/ScrollSpeed/ScrollSpeedSpinBox
-@onready var lane_highlight_brightness_slider: HSlider = $ContentVBox/LaneHighlightBrightnessSlider
-@onready var note_brightness_slider: HSlider = $ContentVBox/NoteBrightnessSlider
-@onready var note_approach_hint_option: OptionButton = $ContentVBox/NoteApproachHint/NoteApproachHintOptionButton
+const _DISPLAY := "ScrollWrap/CenterWrap/ContentVBox/DisplayPanel/DisplayPanelMargin/DisplayRows"
+const _GAMEPLAY := "ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"
+
+@onready var fps_option_button: OptionButton = get_node("%s/FPS/FPSOptionButton" % _DISPLAY)
+@onready var graphics_quality_option: OptionButton = get_node("%s/GraphicsQuality/GraphicsQualityOptionButton" % _DISPLAY)
+@onready var window_mode_option: OptionButton = get_node("%s/WindowMode/WindowModeOptionButton" % _DISPLAY)
+@onready var window_resolution_option: OptionButton = get_node("%s/WindowResolution/WindowResolutionOptionButton" % _DISPLAY)
+@onready var scroll_speed_spin: SpinBox = get_node("%s/ScrollSpeed/ScrollSpeedSpinBox" % _GAMEPLAY)
+@onready var lane_highlight_brightness_slider: HSlider = get_node("%s/LaneHighlightBrightnessRow/LaneHighlightBrightnessSlider" % _GAMEPLAY)
+@onready var note_brightness_slider: HSlider = get_node("%s/NoteBrightnessRow/NoteBrightnessSlider" % _GAMEPLAY)
+@onready var note_approach_hint_option: OptionButton = get_node("%s/NoteApproachHint/NoteApproachHintOptionButton" % _GAMEPLAY)
 
 func _ready():
 	if lane_highlight_brightness_slider:

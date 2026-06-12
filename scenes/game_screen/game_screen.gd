@@ -1024,6 +1024,7 @@ func end_game():
 	var victory_song_info = selected_song_data.duplicate()
 	victory_song_info["instrument"] = current_instrument 
 	victory_song_info["mode"] = current_generation_mode
+	victory_song_info["lanes"] = lanes
 	var debug_score = score_manager.get_score()
 	var debug_combo = score_manager.get_combo()
 	var debug_max_combo = score_manager.get_max_combo()

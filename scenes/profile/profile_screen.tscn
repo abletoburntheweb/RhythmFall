@@ -1,4 +1,4 @@
-[gd_scene load_steps=194 format=3 uid="uid://c4tpd08i2ypaq"]
+[gd_scene load_steps=197 format=3 uid="uid://c4tpd08i2ypaq"]
 
 [ext_resource type="Script" uid="uid://bqa01mcntirud" path="res://scenes/profile/profile_screen.gd" id="1_1k4fv"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_or3b4"]
@@ -2365,6 +2365,36 @@ VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_v2x1c")
 XPAmountLabel/base_type = &"Label"
 XPAmountLabel/colors/font_color = Color(1, 1, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_bg"]
+bg_color = Color(1, 1, 1, 0.12)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_fill"]
+bg_color = Color(0.117647, 0.72549, 0.376471, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tile"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.094118, 0.094118, 0.121569, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dwf4b"]
 content_margin_left = 16.0
 content_margin_top = 10.0
@@ -3674,19 +3704,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_1k4fv")
 
-[node name="MainContent" type="MarginContainer" parent="."]
+[node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 2
 
-[node name="MainVBox" type="VBoxContainer" parent="MainContent"]
-layout_mode = 2
-
-[node name="BackButton" type="Button" parent="MainContent/MainVBox"]
+[node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
@@ -3695,347 +3722,286 @@ theme = SubResource("Theme_p28av")
 theme_type_variation = &"FlatButton"
 text = "Назад	"
 
-[node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
+[node name="Separator" type="ColorRect" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+color = Color(0.9411765, 0.9411765, 0.9411765, 0)
+
+[node name="TitleLabel" type="Label" parent="MainVBox"]
+modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Профиль"
 horizontal_alignment = 1
 
-[node name="Separator" type="ColorRect" parent="MainContent/MainVBox"]
-custom_minimum_size = Vector2(0, 20)
+[node name="ProfileRoot" type="VBoxContainer" parent="MainVBox"]
 layout_mode = 2
-color = Color(0.9411765, 0.9411765, 0.9411765, 0)
+size_flags_vertical = 0
+theme_override_constants/separation = 8
 
-[node name="TopSection" type="HBoxContainer" parent="MainContent/MainVBox"]
+[node name="FavoriteTrackCard" type="PanelContainer" parent="MainVBox/ProfileRoot"]
+custom_minimum_size = Vector2(0, 108)
 layout_mode = 2
-
-[node name="LeftColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
-layout_mode = 2
-
-[node name="GeneralStatsCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/LeftColumn"]
-custom_minimum_size = Vector2(300, 400)
-layout_mode = 2
+size_flags_horizontal = 3
 theme = SubResource("Theme_p28av")
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard"]
-custom_minimum_size = Vector2(300, 400)
+[node name="MarginContainer" type="MarginContainer" parent="MainVBox/ProfileRoot/FavoriteTrackCard"]
 layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="HBoxContainer" type="HBoxContainer" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.8235294, 1)
-text = "Общая статистика"
-horizontal_alignment = 1
-autowrap_mode = 2
+theme_override_constants/separation = 14
 
-[node name="LevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="FavoriteCoverTextureRect" type="TextureRect" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
-text = "Завершено уровней: 0"
-autowrap_mode = 2
+expand_mode = 1
+stretch_mode = 6
 
-[node name="UniqueLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="InfoVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = "Уникальных песен сыграно: 0"
-autowrap_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
-[node name="OverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="CardTitle" type="Label" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer/InfoVBox"]
 layout_mode = 2
-text = "Общая точность: 0.00%"
-autowrap_mode = 2
+theme_override_colors/font_color = Color(0.8235294, 0.41960785, 0.5686275, 1)
+text = "Любимый трек"
 
-[node name="TotalScoreLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="FavoriteTitleLabel" type="Label" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer/InfoVBox"]
 layout_mode = 2
-text = "Всего очков: 0"
-autowrap_mode = 2
+text = "Название песни"
+text_overrun_behavior = 4
 
-[node name="TotalNotesHitLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="FavoriteArtistLabel" type="Label" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer/InfoVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
-text = "Попаданий: 0"
-autowrap_mode = 2
+text = "Название артиста"
 
-[node name="TotalNotesMissedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="FavoriteGenreLabel" type="Label" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer/InfoVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
-text = "Промахов: 0"
-autowrap_mode = 2
+text = "Любимый жанр: Н/Д"
 
-[node name="MaxHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="HighlightsRow" type="HBoxContainer" parent="MainVBox/ProfileRoot"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
-text = "Рекордная серия попаданий подряд: 0"
-autowrap_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
-[node name="DailyQuestsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
+[node name="LevelXPCard" type="PanelContainer" parent="MainVBox/ProfileRoot/HighlightsRow"]
 layout_mode = 2
-text = "Выполнено ежедневных заданий: 0"
-autowrap_mode = 2
-
-[node name="PlayTimeLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-text = "Времени в игре: 00ч:00м"
-autowrap_mode = 2
-
-[node name="StartDateLabel" type="Label" parent="MainContent/MainVBox/TopSection/LeftColumn/GeneralStatsCard/ContentVBox"]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-text = "В RhythmFall с 30 сен. 2025"
-autowrap_mode = 2
-
-[node name="CenterColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
-layout_mode = 2
-
-[node name="LevelXPCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/CenterColumn"]
-layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.15
 theme = SubResource("Theme_p28av")
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard"]
-custom_minimum_size = Vector2(160, 0)
+[node name="ContentVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard"]
 layout_mode = 2
+theme_override_constants/separation = 4
 
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
-custom_minimum_size = Vector2(160, 0)
+[node name="CardTitle" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard/ContentVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5568628, 0.47843137, 0.9372549, 1)
 text = "Уровень"
 horizontal_alignment = 1
-autowrap_mode = 2
 
-[node name="LevelLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
-custom_minimum_size = Vector2(160, 0)
+[node name="LevelLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard/ContentVBox"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Уровень: 1"
 autowrap_mode = 2
 
-[node name="XPLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
+[node name="XPProgressBar" type="ProgressBar" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard/ContentVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_xp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_xp_fill")
+max_value = 1.0
+show_percentage = false
+
+[node name="XPLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard/ContentVBox"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "XP: 0 / 100"
 autowrap_mode = 2
 
-[node name="XPProgressLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/LevelXPCard/ContentVBox"]
+[node name="XPProgressLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelXPCard/ContentVBox"]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Прогресс: 0.0%"
 autowrap_mode = 2
 
-[node name="EconomyCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/CenterColumn"]
+[node name="PlayTimeHighlight" type="PanelContainer" parent="MainVBox/ProfileRoot/HighlightsRow"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_tile")
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/HighlightsRow/PlayTimeHighlight"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="ValueLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/PlayTimeHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
+theme_override_font_sizes/font_size = 28
+text = "—"
+
+[node name="CaptionLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/PlayTimeHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
+theme_override_font_sizes/font_size = 13
+text = "Время в игре"
+
+[node name="AccuracyHighlight" type="PanelContainer" parent="MainVBox/ProfileRoot/HighlightsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_tile")
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/HighlightsRow/AccuracyHighlight"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="ValueLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/AccuracyHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
+theme_override_font_sizes/font_size = 28
+text = "—"
+
+[node name="CaptionLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/AccuracyHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
+theme_override_font_sizes/font_size = 13
+text = "Точность"
+
+[node name="LevelsHighlight" type="PanelContainer" parent="MainVBox/ProfileRoot/HighlightsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_tile")
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/HighlightsRow/LevelsHighlight"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="ValueLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelsHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
+theme_override_font_sizes/font_size = 28
+text = "—"
+
+[node name="CaptionLabel" type="Label" parent="MainVBox/ProfileRoot/HighlightsRow/LevelsHighlight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
+theme_override_font_sizes/font_size = 13
+text = "Уровней пройдено"
+
+[node name="BodyRow" type="HBoxContainer" parent="MainVBox/ProfileRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 10
+
+[node name="LeftStack" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.35
+theme_override_constants/separation = 6
+
+[node name="GeneralStatsCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme = SubResource("Theme_p28av")
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard"]
-custom_minimum_size = Vector2(160, 0)
+[node name="ContentVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack/GeneralStatsCard"]
 layout_mode = 2
+theme_override_constants/separation = 4
 
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
-custom_minimum_size = Vector2(160, 0)
+[node name="CardTitle" type="Label" parent="MainVBox/ProfileRoot/BodyRow/LeftStack/GeneralStatsCard/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-text = "Экономика"
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.8235294, 1)
+text = "Общая статистика"
 horizontal_alignment = 1
 
-[node name="TotalEarnedCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
-text = "Заработано всего: 0"
-
-[node name="SpentCurrencyLabel" type="Label" parent="MainContent/MainVBox/TopSection/CenterColumn/EconomyCard/ContentVBox"]
-custom_minimum_size = Vector2(160, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
-text = "Потрачено: 0"
-
-[node name="RightColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
-layout_mode = 2
-
-[node name="GradesCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/RightColumn"]
-custom_minimum_size = Vector2(310, 0)
+[node name="EconomyCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack"]
+visible = false
 layout_mode = 2
 theme = SubResource("Theme_p28av")
 
-[node name="MainVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard"]
-custom_minimum_size = Vector2(310, 0)
+[node name="ContentVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack/EconomyCard"]
 layout_mode = 2
 
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+[node name="PercussionCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack"]
+visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
+theme = SubResource("Theme_p28av")
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/LeftStack/PercussionCard"]
+layout_mode = 2
+
+[node name="RightStack" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GradesCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = SubResource("Theme_p28av")
+
+[node name="MainVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/GradesCard"]
+layout_mode = 2
+
+[node name="CardTitle" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/GradesCard/MainVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.8235294, 1)
 text = "Оценки"
 horizontal_alignment = 1
 
-[node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox"]
+[node name="ContentHBox" type="HBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/GradesCard/MainVBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="SSLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
+[node name="RecentAchievementsCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack"]
+clip_contents = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
-text = "SS: 0"
-
-[node name="SLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
-text = "S: 0"
-
-[node name="ALabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.8235294, 1)
-text = "A: 0"
-
-[node name="BLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/GradesCard/MainVBox/ContentHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-text = "B: 0"
-
-[node name="PercussionCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/RightColumn"]
-layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme = SubResource("Theme_p28av")
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard"]
-custom_minimum_size = Vector2(312, 0)
+[node name="ContentVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard"]
 layout_mode = 2
 
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.5411765, 0.39607844, 1)
-text = "Перкуссия"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="DrumLevelsCompletedLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
-text = "Завершено уровней: 0"
-autowrap_mode = 2
-
-[node name="DrumOverallAccuracyLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-text = "Точность: 0.00%"
-autowrap_mode = 2
-
-[node name="TotalDrumScoreLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-text = "Очков: 0"
-autowrap_mode = 2
-
-[node name="TotalDrumHitsLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.38039216, 0.78039217, 0.7411765, 1)
-text = "Попаданий: 0"
-autowrap_mode = 2
-
-[node name="TotalDrumMissesLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8980392, 0.4509804, 0.4509804, 1)
-text = "Промахов: 0"
-autowrap_mode = 2
-
-[node name="MaxDrumHitStreakLabel" type="Label" parent="MainContent/MainVBox/TopSection/RightColumn/PercussionCard/ContentVBox"]
-custom_minimum_size = Vector2(312, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
-text = "Рекордная серия попаданий подряд: 0"
-autowrap_mode = 2
-
-[node name="FavoriteTrackColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
-layout_mode = 2
-
-[node name="FavoriteTrackCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn"]
-layout_mode = 2
-theme = SubResource("Theme_p28av")
-
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard"]
-layout_mode = 2
-
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8235294, 0.41960785, 0.5686275, 1)
-text = "Любимый трек"
-horizontal_alignment = 1
-
-[node name="FavoriteCoverTextureRect" type="TextureRect" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
-custom_minimum_size = Vector2(400, 400)
-layout_mode = 2
-expand_mode = 1
-
-[node name="FavoriteTitleLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
-layout_mode = 2
-text = "Название песни"
-text_overrun_behavior = 4
-
-[node name="FavoriteArtistLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
-layout_mode = 2
-text = "Название артиста"
-
-[node name="FavoriteGenreLabel" type="Label" parent="MainContent/MainVBox/TopSection/FavoriteTrackColumn/FavoriteTrackCard/ContentVBox"]
-layout_mode = 2
-text = "Любимый жанр: Н/Д"
-
-[node name="AchievementsColumn" type="VBoxContainer" parent="MainContent/MainVBox/TopSection"]
-layout_mode = 2
-
-[node name="RecentAchievementsCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn"]
-custom_minimum_size = Vector2(650, 0)
-layout_mode = 2
-theme = SubResource("Theme_p28av")
-
-[node name="ContentVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard"]
-layout_mode = 2
-theme = SubResource("Theme_p28av")
-
-[node name="CardTitle" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox"]
+[node name="CardTitle" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
 text = "Последние достижения"
 horizontal_alignment = 1
 
-[node name="TemplateAchievementCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox"]
+[node name="TemplateAchievementCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox"]
 visible = false
 layout_mode = 2
 
-[node name="AchievementCard" type="PanelContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard"]
+[node name="AchievementCard" type="PanelContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard"]
 clip_contents = true
 layout_mode = 2
 theme = ExtResource("2_or3b4")
 theme_type_variation = &"CardLocked"
 script = ExtResource("3_uuq6e")
 
-[node name="MarginContainer" type="MarginContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard"]
-layout_mode = 2
-theme = SubResource("Theme_fsctk")
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
-
-[node name="ContentContainer" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard"]
 layout_mode = 2
 theme = SubResource("Theme_fsctk")
 
-[node name="TopRowContainer" type="HBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer"]
+[node name="ContentContainer" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer"]
+layout_mode = 2
+theme = SubResource("Theme_fsctk")
+
+[node name="TopRowContainer" type="HBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer"]
 layout_mode = 2
 theme = SubResource("Theme_fsctk")
 theme_override_constants/separation = 10
 
-[node name="IconTexture" type="TextureRect" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
+[node name="IconTexture" type="TextureRect" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
 z_as_relative = false
 texture_filter = 4
 material = SubResource("ShaderMaterial_fkpat")
@@ -4046,10 +4012,10 @@ texture = SubResource("ImageTexture_chjtg")
 expand_mode = 3
 stretch_mode = 5
 
-[node name="InfoVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
+[node name="InfoVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="TitleLabel" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
 custom_minimum_size = Vector2(500, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
@@ -4057,20 +4023,20 @@ theme_override_font_sizes/font_size = 32
 text = "Название Ачивки"
 text_overrun_behavior = 3
 
-[node name="DescriptionLabel" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="DescriptionLabel" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0.827451, 0.827451, 1)
 theme_override_font_sizes/font_size = 18
 text = "Описание ачивки"
 text_overrun_behavior = 4
 
-[node name="UnlockDateLabel" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
+[node name="UnlockDateLabel" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 16
 
-[node name="ProgressLabel" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
+[node name="ProgressLabel" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard/MarginContainer/ContentContainer/TopRowContainer"]
 visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
@@ -4081,49 +4047,50 @@ text = "0 / 10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="AchievementsListVBox" type="VBoxContainer" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox"]
+[node name="AchievementsListVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox"]
 layout_mode = 2
 
-[node name="EmptyLabel" type="Label" parent="MainContent/MainVBox/TopSection/AchievementsColumn/RecentAchievementsCard/ContentVBox"]
+[node name="EmptyLabel" type="Label" parent="MainVBox/ProfileRoot/BodyRow/RightStack/RecentAchievementsCard/ContentVBox/AchievementsListVBox"]
 visible = false
 layout_mode = 2
 text = "Нет недавно открытых достижений"
 
-[node name="ChartCard" type="PanelContainer" parent="MainContent/MainVBox"]
+[node name="ChartCard" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
+size_flags_vertical = 3
 theme = ExtResource("2_or3b4")
 
-[node name="ChartContainer" type="VBoxContainer" parent="MainContent/MainVBox/ChartCard"]
+[node name="ChartContainer" type="VBoxContainer" parent="MainVBox/ChartCard"]
 layout_mode = 2
 
-[node name="ChartTitleLabel" type="Label" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
+[node name="ChartTitleLabel" type="Label" parent="MainVBox/ChartCard/ChartContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
 text = "Точность за последние 20 сессий"
 horizontal_alignment = 1
 
-[node name="ChartBackground" type="ColorRect" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
-custom_minimum_size = Vector2(1920, 300)
+[node name="ChartBackground" type="ColorRect" parent="MainVBox/ChartCard/ChartContainer"]
+custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
 size_flags_vertical = 3
 color = Color(0, 0, 0, 0.7058824)
 
-[node name="AccuracyChartLine" type="Line2D" parent="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground"]
-points = PackedVector2Array(252, -296)
-width = 4.0
-default_color = Color(1, 1, 1, 0.5019608)
+[node name="AccuracyChartLine" type="Line2D" parent="MainVBox/ChartCard/ChartContainer/ChartBackground"]
+width = 3.0
+default_color = Color(0.117647, 0.72549, 0.376471, 1)
 joint_mode = 2
 begin_cap_mode = 2
 end_cap_mode = 2
 round_precision = 32
 antialiased = true
 
-[node name="AccuracyChartPoints" type="Control" parent="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground"]
+[node name="AccuracyChartPoints" type="Control" parent="MainVBox/ChartCard/ChartContainer/ChartBackground"]
 anchors_preset = 0
 
-[node name="ChartXAxisLabel" type="Label" parent="MainContent/MainVBox/ChartCard/ChartContainer"]
+[node name="ChartXAxisLabel" type="Label" parent="MainVBox/ChartCard/ChartContainer"]
 layout_mode = 2
 text = "Сессии (1 → 20)"
 
-[connection signal="pressed" from="MainContent/MainVBox/BackButton" to="." method="_on_back_pressed"]
-[connection signal="resized" from="MainContent/MainVBox/ChartCard/ChartContainer/ChartBackground" to="." method="_on_chart_background_resized"]
+[connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
+[connection signal="resized" from="MainVBox/ChartCard/ChartContainer/ChartBackground" to="." method="_on_chart_background_resized"]

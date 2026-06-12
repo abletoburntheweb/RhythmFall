@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://wr4xw6kkexww"]
+[gd_scene load_steps=9 format=3 uid="uid://wr4xw6kkexww"]
 
 [ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
@@ -106,6 +106,29 @@ _data = {
 &"VictoryIntro": SubResource("Animation_lxrx8")
 }
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.108, 0.118, 0.158, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_sep"]
+content_margin_top = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(1, 1, 1, 0.1)
 [node name="VictoryScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -122,147 +145,169 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.7058824)
+color = Color(0.047059, 0.054902, 0.090196, 0.94)
 
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 0
-offset_top = 6.0
-offset_right = 1920.0
-offset_bottom = 73.0
-theme_override_colors/font_color = Color(0.6830741, 0.756592, 1, 1)
-theme_override_font_sizes/font_size = 48
-text = "ПОБЕДА "
-horizontal_alignment = 1
-
-[node name="SongLabel" type="Label" parent="."]
-layout_mode = 0
-offset_top = 87.0
-offset_right = 1920.0
-offset_bottom = 132.0
-theme_override_colors/font_color = Color(0.8509804, 0.8784314, 0.9490196, 1)
-theme_override_font_sizes/font_size = 32
-text = "Название Песни"
-horizontal_alignment = 1
-clip_text = true
-text_overrun_behavior = 4
-
-[node name="StatsFrame" type="Panel" parent="."]
+[node name="MainMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 135.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 56
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 56
+theme_override_constants/margin_bottom = 40
 
-[node name="ScoreLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 23.0
-theme_override_colors/font_color = Color(0.58431375, 0.7176471, 0.92156863, 1)
-theme_override_font_sizes/font_size = 24
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="HeaderVBox" type="VBoxContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.683074, 0.756592, 1, 1)
+theme_override_font_sizes/font_size = 52
+text = "ПОБЕДА"
+horizontal_alignment = 1
+
+[node name="SongLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
+custom_minimum_size = Vector2(720, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85098, 0.878431, 0.94902, 1)
+theme_override_font_sizes/font_size = 28
+text = "Название песни"
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 4
+
+[node name="StatsFrame" type="PanelContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMargin/MainVBox/StatsFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GradeLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+theme_override_font_sizes/font_size = 72
+text = "Оценка: S"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxFlat_victory_sep")
+
+[node name="StatsGrid" type="GridContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="ScoreLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 22
 text = "Счёт: 0"
 horizontal_alignment = 1
 
-[node name="ComboLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 30.0
-offset_right = 1920.0
-offset_bottom = 53.0
-theme_override_colors/font_color = Color(0.58431375, 0.7176471, 0.92156863, 1)
-theme_override_font_sizes/font_size = 24
+[node name="ComboLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 22
 text = "Комбо: 0"
 horizontal_alignment = 1
 
-[node name="MaxComboLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 60.0
-offset_right = 1920.0
-offset_bottom = 83.0
-theme_override_colors/font_color = Color(0.58431375, 0.7176471, 0.92156863, 1)
-theme_override_font_sizes/font_size = 24
+[node name="MaxComboLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
+theme_override_font_sizes/font_size = 22
 text = "Максимальное комбо: 0"
 horizontal_alignment = 1
 
-[node name="AccuracyLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 90.0
-offset_right = 1920.0
-offset_bottom = 113.0
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-theme_override_font_sizes/font_size = 24
+[node name="AccuracyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 22
 text = "Точность: 0"
 horizontal_alignment = 1
 
-[node name="HitNotesLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 120.0
-offset_right = 1920.0
-offset_bottom = 154.0
-theme_override_colors/font_color = Color(0.78431374, 0.8235294, 0.9019608, 1)
-theme_override_font_sizes/font_size = 24
-text = "Всего нот: 0"
+[node name="HitNotesLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
+theme_override_font_sizes/font_size = 22
+text = "Попаданий: 0"
 horizontal_alignment = 1
 
-[node name="MissedNotesLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 150.0
-offset_right = 1920.0
-offset_bottom = 184.0
-theme_override_colors/font_color = Color(0.88235295, 0.41568628, 0.46666667, 1)
-theme_override_font_sizes/font_size = 24
+[node name="MissedNotesLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.882353, 0.415686, 0.466667, 1)
+theme_override_font_sizes/font_size = 22
 text = "Промахов: 0"
 horizontal_alignment = 1
 
-[node name="CurrencyLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 180.0
-offset_right = 1920.0
-offset_bottom = 214.0
-theme_override_colors/font_color = Color(0.9490196, 0.7019608, 0.3529412, 1)
-theme_override_font_sizes/font_size = 24
-text = "Валюта: 0"
+[node name="CurrencyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 22
+text = "Валюта за уровень: 0"
 horizontal_alignment = 1
 
-[node name="XPLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 210.0
-offset_right = 1920.0
-offset_bottom = 244.0
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-theme_override_font_sizes/font_size = 24
-text = "Опыт: 0"
+[node name="XPLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 22
+text = "XP за уровень: 0"
 horizontal_alignment = 1
 
-[node name="GradeLabel" type="Label" parent="StatsFrame"]
-layout_mode = 0
-offset_top = 240.0
-offset_right = 1920.0
-offset_bottom = 274.0
-theme_override_font_sizes/font_size = 24
-text = "Оценка: S"
-horizontal_alignment = 1
-
-[node name="ButtonsContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_top = 419.0
-offset_right = 1920.0
-offset_bottom = 1193.0
-
-[node name="ReplayButton" type="Button" parent="ButtonsContainer"]
-modulate = Color(0, 0.62806845, 0.1154759, 1)
+[node name="ButtonsContainer" type="HBoxContainer" parent="MainMargin/MainVBox"]
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="ReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
 theme = ExtResource("2_rygy8")
-theme_type_variation = &"FlatButton"
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 20
 text = "Повторить"
 
-[node name="SongSelectButton" type="Button" parent="ButtonsContainer"]
-modulate = Color(0.40640846, 0.5073241, 1.0039686, 1)
+[node name="SongSelectButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(220, 52)
 layout_mode = 2
-size_flags_horizontal = 4
 theme = ExtResource("2_rygy8")
-theme_type_variation = &"FlatButton"
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 20
 text = "К списку песен"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
