@@ -3,6 +3,9 @@ extends Node
 
 signal daily_quests_updated()
 
+const DAILY_QUESTS_USER_PATH := "user://daily_quests.json"
+const DAILY_QUESTS_DEFAULT_PATH := "res://data/daily_quests.json"
+
 var pdm = null
 var _genre_group_map: Dictionary = {}
 
@@ -20,31 +23,59 @@ func ensure_daily_quests_for_today():
 		pdm._save()
 		emit_signal("daily_quests_updated")
 
+func _default_daily_quests_path() -> String:
+	if FileAccess.file_exists(DAILY_QUESTS_DEFAULT_PATH):
+		return DAILY_QUESTS_DEFAULT_PATH
+	var exe_dir := OS.get_executable_path().get_base_dir()
+	var ext := exe_dir.path_join("data/daily_quests.json").replace("\\", "/")
+	if FileAccess.file_exists(ext):
+		return ext
+	return ""
+
+func _ensure_user_daily_quests() -> void:
+	if FileAccess.file_exists(DAILY_QUESTS_USER_PATH):
+		return
+	var default_path := _default_daily_quests_path()
+	if default_path == "":
+		return
+	var src := FileAccess.open(default_path, FileAccess.READ)
+	if src == null:
+		return
+	var txt := src.get_as_text()
+	src.close()
+	var dst := FileAccess.open(DAILY_QUESTS_USER_PATH, FileAccess.WRITE)
+	if dst == null:
+		push_warning("DailyQuests: не удалось создать daily_quests.json в user://")
+		return
+	dst.store_string(txt)
+	dst.close()
+
+func _load_quest_pool() -> Array:
+	_ensure_user_daily_quests()
+	var path := DAILY_QUESTS_USER_PATH if FileAccess.file_exists(DAILY_QUESTS_USER_PATH) else _default_daily_quests_path()
+	if path == "" or not FileAccess.file_exists(path):
+		push_warning("DailyQuests: не найден файл daily_quests.json")
+		return []
+	var file = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_warning("DailyQuests: не удалось открыть daily_quests.json: " + path)
+		return []
+	var json_text = file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(json_text)
+	if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
+		return parsed["quests"]
+	push_warning("DailyQuests: некорректный формат daily_quests.json: " + path)
+	return []
+
 func _generate_daily_quests_for_date(date_str: String):
 	if pdm == null:
 		return
 	var quests_for_day: Array = []
-	var quest_pool: Array = []
-	var user_path = "user://daily_quests.json"
-	var res_path = "res://data/daily_quests.json"
-	var open_path = user_path if FileAccess.file_exists(user_path) else res_path
-	var file = FileAccess.open(open_path, FileAccess.READ)
-	if file:
-		var json_text = file.get_as_text()
-		file.close()
-		var parsed = JSON.parse_string(json_text)
-		if parsed is Dictionary and parsed.has("quests") and (parsed["quests"] is Array):
-			quest_pool = parsed["quests"]
+	var quest_pool: Array = _load_quest_pool()
 	if quest_pool.is_empty():
-		quest_pool = [
-			{"id": "complete_levels", "title": "Заверши уровни (3)", "event": "levels_completed", "goal": 3, "reward_currency": 50},
-			{"id": "perfect_hits", "title": "Сделай ИДЕАЛЬНЫЕ попадания (30)", "event": "perfect_hits", "goal": 30, "reward_currency": 40},
-			{"id": "accuracy_80", "title": "Заверши уровень с точностью ≥ 80%", "event": "accuracy_80", "goal": 1, "reward_currency": 30},
-			{"id": "play_drum", "title": "Сыграй уровень на барабанах", "event": "play_drum_level", "goal": 1, "reward_currency": 30},
-			{"id": "combo_30", "title": "Достигни комбо ≥ 30", "event": "combo_reached", "goal": 1, "reward_currency": 20},
-			{"id": "missless", "title": "Пройди без промахов", "event": "missless", "goal": 1, "reward_currency": 50},
-			{"id": "notes_generated", "title": "Сгенерируй ноты для трека", "event": "notes_generated", "goal": 1, "reward_currency": 10}
-		]
+		pdm.data["daily_quests"] = {"date": date_str, "quests": []}
+		return
 	var count_per_day = 3
 	var indices: Array = []
 	for i in range(quest_pool.size()):
