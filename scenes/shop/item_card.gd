@@ -28,6 +28,8 @@ var _loader: ThreadedTextureLoader = null
 var _loader_connected: bool = false
 var _current_image_path: String = ""
 
+@onready var _card_anim: AnimationPlayer = get_node_or_null("CardAnim")
+
 func _ready():
 	if not item_data.has("item_id"):
 		visible = false
@@ -37,6 +39,19 @@ func _ready():
 	_setup_item()
 
 	custom_minimum_size = Vector2(280, 350)
+
+	_update_card_pivot()
+	if not resized.is_connected(_update_card_pivot):
+		resized.connect(_update_card_pivot)
+
+func _update_card_pivot() -> void:
+	pivot_offset = size * 0.5
+
+func _play_card_anim(anim_name: String) -> void:
+	if _card_anim and _card_anim.has_animation(anim_name):
+		_update_card_pivot()
+		_card_anim.stop()
+		_card_anim.play(anim_name)
 
 
 func _on_image_rect_gui_input(event: InputEvent):
@@ -279,10 +294,12 @@ func _update_buttons_and_status():
 
 func _on_buy_pressed():
 	var item_id_str = item_data.get("item_id", "")
+	_play_card_anim("buy_pop")
 	emit_signal("buy_pressed", item_id_str)
 
 func _on_use_pressed():
 	var item_id_str = item_data.get("item_id", "")
+	_play_card_anim("buy_pop")
 	emit_signal("use_pressed", item_id_str)
 
 func _on_preview_pressed():

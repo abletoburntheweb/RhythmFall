@@ -89,6 +89,28 @@ func _ready():
 	_set_buttons_focus_to_none()
 	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
 
+func _get_currency_label() -> Label:
+	var main_vbox = $MainContent/MainVBox
+	if main_vbox:
+		var v_box_container = main_vbox.get_node_or_null("VBoxContainer")
+		if v_box_container:
+			var lbl = v_box_container.find_child("CurrencyLabel", true, false)
+			if lbl and lbl is Label:
+				return lbl
+	return null
+
+func _pulse_currency_label() -> void:
+	var lbl := _get_currency_label()
+	if not lbl:
+		return
+	lbl.pivot_offset = lbl.size * 0.5
+	lbl.scale = Vector2(1.25, 1.25)
+	lbl.modulate = Color(1.4, 1.4, 1.4, 1.0)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(lbl, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(lbl, "modulate", Color(1, 1, 1, 1), 0.25)
+
 func _update_currency_label():
 	var main_vbox = $MainContent/MainVBox
 	if main_vbox:
@@ -302,6 +324,10 @@ func _get_achievement_name_by_id(achievement_id: String) -> String:
 func _on_item_buy_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
 	if item_data:
+		if PlayerDataManager.is_item_unlocked(item_id):
+			_update_item_card_state(item_id, true, false)
+			return
+
 		var price = item_data.get("price", 0)
 		var current_currency = PlayerDataManager.get_currency()
 
@@ -312,6 +338,7 @@ func _on_item_buy_pressed(item_id: String):
 			MusicManager.play_shop_purchase()  
 			
 			_update_currency_label()
+			_pulse_currency_label()
 			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
 		else:

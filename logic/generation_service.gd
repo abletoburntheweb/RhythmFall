@@ -126,6 +126,8 @@ func _get_display_name(song_path: String) -> String:
 	return "%s - %s" % [artist, title]
 
 func start_bpm_analysis(song_path: String):
+	if get_bpm_queue_position(song_path) > 0:
+		return
 	if _active_bpm_task.has("path"):
 		_bpm_queue.append(song_path)
 		return
@@ -134,6 +136,8 @@ func start_bpm_analysis(song_path: String):
 	_api.analyze_bpm(song_path)
 
 func start_notes_generation(song_path: String, instrument: String, bpm: float, lanes: int, tolerance: float, auto_identify: bool, artist: String, title: String, mode: String):
+	if get_notes_queue_position(song_path, instrument, mode, lanes) > 0:
+		return
 	if _active_notes_task.has("path"):
 		_notes_queue.append({
 			"path": song_path,
@@ -168,30 +172,50 @@ func get_genres_for_manual_entry(artist: String, title: String):
 func cancel_bpm():
 	if _api:
 		_api.request_cancel_bpm()
-	_bpm_queue.clear()
-	if _active_bpm_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
-		var ach = _game_engine.get_achievement_system()
-		if ach and ach.has_method("on_analysis_canceled"):
-			ach.on_analysis_canceled()
+	var cancelled_path := ""
+	var cancelled_disp := ""
+	if _active_bpm_task.has("path"):
+		cancelled_path = _active_bpm_task.path
+		cancelled_disp = _active_bpm_task.display
+		var cancelled_key := _song_path_key(_active_bpm_task.path)
+		var remaining: Array[String] = []
+		for queued_path in _bpm_queue:
+			if _song_path_key(queued_path) != cancelled_key:
+				remaining.append(queued_path)
+		_bpm_queue = remaining
+		if _game_engine and _game_engine.has_method("get_achievement_system"):
+			var ach = _game_engine.get_achievement_system()
+			if ach and ach.has_method("on_analysis_canceled"):
+				ach.on_analysis_canceled()
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		_game_engine.notifications_complete("bpm", "Вычисление BPM отменено")
+	if cancelled_path != "":
+		_active_bpm_task.clear()
+		bpm_error.emit(cancelled_path, "Вычисление BPM отменено", cancelled_disp)
 
 func cancel_notes():
 	if _api:
 		_api.request_cancel_notes()
+	var cancelled_path := ""
+	var cancelled_disp := ""
 	if _active_notes_task.has("path"):
+		cancelled_path = _active_notes_task.path
+		cancelled_disp = _active_notes_task.display
 		var cancelled_key := _song_path_key(_active_notes_task.path)
 		var remaining: Array[Dictionary] = []
 		for item in _notes_queue:
 			if _song_path_key(item.get("path", "")) != cancelled_key:
 				remaining.append(item)
 		_notes_queue = remaining
-	if _active_notes_task.has("path") and _game_engine and _game_engine.has_method("get_achievement_system"):
-		var ach = _game_engine.get_achievement_system()
-		if ach and ach.has_method("on_analysis_canceled"):
-			ach.on_analysis_canceled()
+		if _game_engine and _game_engine.has_method("get_achievement_system"):
+			var ach = _game_engine.get_achievement_system()
+			if ach and ach.has_method("on_analysis_canceled"):
+				ach.on_analysis_canceled()
 	if SettingsManager.get_setting("show_generation_notifications", true) and _game_engine and _game_engine.has_method("notifications_complete"):
 		_game_engine.notifications_complete("notes", "Генерация отменена")
+	if cancelled_path != "":
+		_active_notes_task.clear()
+		notes_error.emit(cancelled_path, "Генерация отменена", cancelled_disp)
 
 func retry_bpm():
 	var t = _active_bpm_task
@@ -237,6 +261,8 @@ func _on_bpm_completed(bpm_value: int):
 
 func _on_bpm_error(message: String):
 	if not _active_bpm_task.has("path"):
+		if _bpm_queue.size() > 0:
+			_start_next_bpm_delayed()
 		return
 	var disp = _active_bpm_task.display
 	var path = _active_bpm_task.path
@@ -321,6 +347,8 @@ func _on_notes_completed(notes_data: Array, bpm_value: float, instrument_type: S
 
 func _on_notes_error(message: String):
 	if not _active_notes_task.has("path"):
+		if _notes_queue.size() > 0:
+			_start_next_notes_delayed()
 		return
 	var disp = _active_notes_task.display
 	var path = _active_notes_task.path

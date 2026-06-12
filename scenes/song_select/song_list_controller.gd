@@ -158,21 +158,51 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 	_edit_context["field_name"] = field_type
 	_edit_context["type"] = "field"
 	match field_type:
-		"title":
-			_edit_title()
-		"artist":
-			_edit_field("artist")
-		"year":
-			_edit_year()
-		"bpm":
-			_edit_bpm()
-		"primary_genre":
-			_edit_primary_genre()
+		"title", "artist", "year", "bpm", "primary_genre":
+			_open_metadata_editor(field_type)
 		"cover":
 			_edit_cover_stub()
 		_:
 			return false
 	return true
+
+func _open_metadata_editor(focus_field: String) -> void:
+	var song_data = _edit_context["song_data"]
+	var song_path := str(song_data.get("path", ""))
+	if song_path != "":
+		var raw := SongLibrary.get_metadata_for_song(song_path)
+		if not raw.is_empty():
+			var merged := raw.duplicate(true)
+			merged["path"] = song_path
+			song_data = merged
+			_edit_context["song_data"] = song_data
+	_edit_context["type"] = "metadata_editor"
+	var dlg_scene = load("res://scenes/song_select/metadata_edit_dialog.tscn")
+	if not dlg_scene:
+		_cleanup_edit_context()
+		return
+	var dlg = dlg_scene.instantiate()
+	_edit_context["dialog"] = dlg
+	if dlg.has_method("setup"):
+		dlg.setup(song_data, focus_field)
+	dlg.metadata_saved.connect(_on_metadata_saved)
+	dlg.cancelled.connect(_on_dialog_closed)
+	if get_parent():
+		get_parent().add_child(dlg)
+	else:
+		add_child(dlg)
+
+func _on_metadata_saved(fields_to_update: Dictionary) -> void:
+	var song_data = _edit_context["song_data"]
+	var selected_item_list_index = _edit_context["selected_index"]
+	if song_data and fields_to_update is Dictionary and fields_to_update.size() > 0:
+		var song_file_path = str(song_data.get("path", ""))
+		if song_file_path != "":
+			for key in fields_to_update.keys():
+				song_data[key] = fields_to_update[key]
+			SongLibrary.update_metadata(song_file_path, fields_to_update)
+			_emit_song_edited_after_save(song_file_path, song_data, selected_item_list_index)
+	_cleanup_edit_context()
 
 func _edit_primary_genre():
 	var song_data = _edit_context["song_data"]
@@ -424,15 +454,16 @@ func _on_edit_bpm_confirmed():
 	_cleanup_edit_context()
 
 func _cleanup_edit_context():
-	if _edit_context["dialog"] and is_instance_valid(_edit_context["dialog"]):
-		_edit_context["dialog"].queue_free()
-		_edit_context["dialog"] = null
-		_edit_context["line_edit"] = null
-		_edit_context["spin_box"] = null
-		_edit_context["song_data"] = null
-		_edit_context["field_name"] = null
-		_edit_context["selected_index"] = -1
-		_edit_context["type"] = ""
+	var dlg = _edit_context["dialog"]
+	if dlg and is_instance_valid(dlg) and not dlg.is_queued_for_deletion():
+		dlg.queue_free()
+	_edit_context["dialog"] = null
+	_edit_context["line_edit"] = null
+	_edit_context["spin_box"] = null
+	_edit_context["song_data"] = null
+	_edit_context["field_name"] = null
+	_edit_context["selected_index"] = -1
+	_edit_context["type"] = ""
 
 func _on_dialog_closed():
 	_cleanup_edit_context()

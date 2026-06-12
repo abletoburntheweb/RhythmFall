@@ -131,6 +131,8 @@ var _timing_signed_delta_ring_ms: Array[float] = []
 @export var judgement_color_perfect: Color = Color.YELLOW
 @export var judgement_color_good: Color = Color.CYAN
 @export var judgement_color_other: Color = Color.GRAY
+@export var judgement_color_miss: Color = Color(0.85, 0.3, 0.34, 1.0)
+var _judgement_tween: Tween = null
 @export var combo_color_50: Color = Color(1.0, 0.75, 0.3, 1.0)
 @export var combo_color_100: Color = Color(1.0, 0.9, 0.1, 1.0)
 
@@ -228,6 +230,35 @@ func _on_any_beat(_i):
 func _on_strong_beat(_i):
 	_pulse_hit_zone(true)
 
+func _spawn_hit_particles(lane: int, base_color: Color, perfect: bool) -> void:
+	if not notes_container or not is_instance_valid(notes_container):
+		return
+	var p := CPUParticles2D.new()
+	p.emitting = false
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = 18
+	p.lifetime = 0.45
+	p.direction = Vector2(0, -1)
+	p.spread = 120.0
+	p.gravity = Vector2(0, 700)
+	p.initial_velocity_min = 200.0
+	p.initial_velocity_max = 420.0
+	p.scale_amount_min = 3.0
+	p.scale_amount_max = 6.0
+	p.damping_min = 40.0
+	p.damping_max = 80.0
+	var col := base_color
+	if perfect:
+		col = base_color.lerp(Color.WHITE, 0.5)
+	p.color = col
+	var lane_w := get_lane_width_at(lane)
+	var lane_x := get_lane_left_x(lane)
+	p.position = Vector2(lane_x + lane_w * 0.5, float(hit_zone_y))
+	notes_container.add_child(p)
+	p.emitting = true
+	p.finished.connect(p.queue_free)
+
 func _pulse_hit_zone(strong: bool):
 	var hit_zone = get_node_or_null("Playfield/HitZone") as ColorRect
 	if not hit_zone:
@@ -253,14 +284,19 @@ func set_autoplay_enabled(enabled: bool):
 func is_autoplay_enabled() -> bool:
 	return auto_play_enabled
 
+func get_song_time() -> float:
+	if MusicManager.is_music_playing() and MusicManager.current_game_music_file != "":
+		return MusicManager.get_game_music_position_precise() - AudioServer.get_output_latency()
+	return game_time
+
+func get_note_pixels_per_sec() -> float:
+	return speed * (1.0 / GAME_UPDATE_DELTA)
+
 func _hit_time_for_judgement() -> float:
 	var user_off_sec := 0.0
 	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
 		user_off_sec = float(SettingsManager.get_timing_offset_ms()) / 1000.0
-	var lat := AudioServer.get_output_latency()
-	if MusicManager.is_music_playing() and MusicManager.current_game_music_file != "":
-		return MusicManager.get_game_music_position() + user_off_sec - lat
-	return game_time + user_off_sec - lat
+	return get_song_time() + user_off_sec
 
 func _autoplay_force_perfect() -> bool:
 	if SettingsManager and SettingsManager.has_method("get_autoplay_respects_hit_windows"):
@@ -1110,6 +1146,20 @@ func _update_hint():
 	hint_label.text = text
 	hint_label.visible = (text != "")
 
+func _is_before_first_note() -> bool:
+	if not note_manager:
+		return false
+	if score_manager:
+		if score_manager.get_hit_notes_count() > 0 or score_manager.get_missed_notes_count() > 0:
+			return false
+	if note_manager.get_notes().size() > 0:
+		return false
+	var spawn_queue = note_manager.get_spawn_queue()
+	if not spawn_queue or spawn_queue.size() == 0:
+		return false
+	var first_note_time = spawn_queue[0].get("time", 0.0)
+	return first_note_time > game_time
+
 func _skip_intro_available() -> bool:
 	if game_time < 0:
 		return false
@@ -1263,11 +1313,13 @@ func check_hit(lane: int, force_perfect: bool = false):
 	var candidates = []
 
 	for note in note_manager.get_notes():
-		if note.lane == lane and abs(note.y - hit_zone_y_float) < 50:
+		if note.lane == lane and not note.was_hit and not note.is_missed and abs(note.y - hit_zone_y_float) < 50:
 			candidates.append(note)
 
 	if candidates.size() == 0:
 		if force_perfect:
+			return
+		if _is_before_first_note():
 			return
 		_timing_debug_emit_row(lane, -1.0, -1.0, current_time_adjusted, 0.0, 0.0, "empty_zone", force_perfect)
 		_combo_shake_and_dim()
@@ -1284,8 +1336,7 @@ func check_hit(lane: int, force_perfect: bool = false):
 			closest_note = note
 			closest_distance = dist
 
-	var pixels_per_sec = speed * (1.0 / GAME_UPDATE_DELTA) 
-	var note_time: float = float(closest_note.spawn_time) + (hit_zone_y_float - float(closest_note.spawn_y)) / pixels_per_sec
+	var note_time: float = float(closest_note.time)
 	var hit_adj: float = float(current_time_adjusted)
 	var time_diff: float = absf(hit_adj - note_time)
 	var chart_json: float = float(closest_note.time)
@@ -1329,20 +1380,22 @@ func check_hit(lane: int, force_perfect: bool = false):
 		var use_kick = true
 		MusicManager.play_hit_sound(use_kick)
 
-		if judgement_label:
-			judgement_label.text = hit_type
-			if hit_type == "ИДЕАЛЬНО":
-				judgement_label.modulate = judgement_color_perfect
-			elif hit_type == "ХОРОШО":
-				judgement_label.modulate = judgement_color_good
-			else:
-				judgement_label.modulate = judgement_color_other
+		_spawn_hit_particles(lane, closest_note.lane_palette_color, hit_type == "ИДЕАЛЬНО")
+
+		var jcolor := judgement_color_other
+		if hit_type == "ИДЕАЛЬНО":
+			jcolor = judgement_color_perfect
+		elif hit_type == "ХОРОШО":
+			jcolor = judgement_color_good
+		_show_judgement(hit_type, jcolor)
 
 		print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_type, time_diff])
 	else:
+		closest_note.is_missed = true
 		score_manager.add_miss_hit()
 		MusicManager.play_miss_hit_sound()
 		_combo_shake_and_dim()
+		_show_judgement("ПРОМАХ", judgement_color_miss)
 		print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
 
 
@@ -1446,6 +1499,27 @@ func _flash_combo_label_color(col: Color, duration: float):
 	)
 	add_child(t)
 	t.start()
+
+func _show_judgement(text: String, color: Color) -> void:
+	if not judgement_label or not is_instance_valid(judgement_label):
+		return
+	if _judgement_tween and _judgement_tween.is_valid():
+		_judgement_tween.kill()
+	judgement_label.text = text
+	var c := color
+	c.a = 1.0
+	judgement_label.modulate = c
+	judgement_label.pivot_offset = judgement_label.size * 0.5
+	judgement_label.scale = Vector2(1.4, 1.4)
+	_judgement_tween = create_tween()
+	_judgement_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_judgement_tween.tween_property(judgement_label, "scale", Vector2.ONE, 0.18)
+	_judgement_tween.tween_interval(0.22)
+	_judgement_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_judgement_tween.tween_property(judgement_label, "modulate:a", 0.0, 0.3)
+
+func show_miss_judgement() -> void:
+	_show_judgement("ПРОМАХ", judgement_color_miss)
 
 func _combo_shake_and_dim():
 	if combo_label == null:

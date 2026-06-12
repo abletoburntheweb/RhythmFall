@@ -1,4 +1,4 @@
-[gd_scene load_steps=127 format=3 uid="uid://6mo443yk7t5j"]
+[gd_scene load_steps=131 format=3 uid="uid://6mo443yk7t5j"]
 
 [ext_resource type="Script" uid="uid://bmqrkwg0bhrko" path="res://scenes/shop/item_card.gd" id="1_re5xs"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_ha41t"]
@@ -2375,6 +2375,97 @@ shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 8
 shadow_offset = Vector2(0, 3)
 
+[sub_resource type="Animation" id="Animation_hover_in"]
+resource_name = "hover_in"
+length = 0.12
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.12),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.05, 1.05)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.12),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1.12, 1.12, 1.12, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_hover_out"]
+resource_name = "hover_out"
+length = 0.12
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.12),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1.05, 1.05), Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.12),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1.12, 1.12, 1.12, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_buy_pop"]
+resource_name = "buy_pop"
+length = 0.34
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.12, 0.34),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.16, 1.16), Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.08, 0.34),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1.5, 1.5, 1.5, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_card"]
+_data = {
+&"buy_pop": SubResource("Animation_buy_pop"),
+&"hover_in": SubResource("Animation_hover_in"),
+&"hover_out": SubResource("Animation_hover_out")
+}
+
 [node name="ItemCard" type="PanelContainer"]
 custom_minimum_size = Vector2(280, 350)
 offset_left = 928.0
@@ -2383,6 +2474,11 @@ offset_right = 1208.0
 offset_bottom = 999.0
 theme = ExtResource("2_ha41t")
 script = ExtResource("1_re5xs")
+
+[node name="CardAnim" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_card")
+}
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2

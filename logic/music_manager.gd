@@ -242,6 +242,11 @@ func get_game_music_position() -> float:
 			return 0.0
 	return 0.0
 
+func get_game_music_position_precise() -> float:
+	if music_player and music_player.stream and current_game_music_file != "" and music_player.playing:
+		return music_player.get_playback_position() + AudioServer.get_time_since_last_mix()
+	return 0.0
+
 func stop_game_music():
 	if music_player and music_player.stream and current_game_music_file != "":
 		if music_player.playing:

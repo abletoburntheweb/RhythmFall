@@ -72,9 +72,24 @@ static func write_json(path: String, value, pretty: bool = false, atomic: bool =
 		fa_tmp.store_string(text)
 		fa_tmp.close()
 	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(path)
-	var err := DirAccess.rename_absolute(tmp_path, path)
-	if err != OK:
+		var bak_path := "%s.bak" % path
+		if FileAccess.file_exists(bak_path):
+			DirAccess.remove_absolute(bak_path)
+		if DirAccess.rename_absolute(path, bak_path) != OK:
+			if FileAccess.file_exists(tmp_path):
+				DirAccess.remove_absolute(tmp_path)
+			return false
+		var err := DirAccess.rename_absolute(tmp_path, path)
+		if err != OK:
+			DirAccess.rename_absolute(bak_path, path)
+			if FileAccess.file_exists(tmp_path):
+				DirAccess.remove_absolute(tmp_path)
+			return false
+		if FileAccess.file_exists(bak_path):
+			DirAccess.remove_absolute(bak_path)
+		return true
+	var rename_err := DirAccess.rename_absolute(tmp_path, path)
+	if rename_err != OK:
 		if FileAccess.file_exists(tmp_path):
 			DirAccess.remove_absolute(tmp_path)
 		return false

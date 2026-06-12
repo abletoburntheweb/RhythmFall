@@ -26,6 +26,7 @@ var current_generation_mode: String = "basic"
 var current_lanes: int = 4
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
+var _details_tween: Tween = null
 
 func _ready():
 	var game_engine = get_parent()
@@ -150,7 +151,12 @@ func _on_bpm_error(path, msg, _disp):
 	if _song_path_key(path) != _song_path_key(current_displayed_song_path):
 		return
 	if _is_cancel_message(msg):
+		var prev_bpm := String(current_selected_song_data.get("bpm", "Н/Д")).strip_edges()
+		if prev_bpm == "" or prev_bpm == "-1":
+			prev_bpm = "Н/Д"
+		$MainVBox/ContentHBox/DetailsVBox/BpmLabel.text = "BPM: " + prev_bpm
 		_apply_bpm_dependent_ui()
+		_apply_background_status_ui()
 		return
 	_on_bpm_analysis_error(msg)
  
@@ -239,6 +245,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	if song_path != "":
 		SongLibrary.update_metadata(song_path, {"bpm": bpm_str})
 	_apply_bpm_dependent_ui()
+	_pop_button(analyze_bpm_button)
 
 func _on_bpm_analysis_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка BPM анализа: " + error_message)
@@ -259,6 +266,7 @@ func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrum
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status("Ноты сгенерированы", false)
 	_update_metadata_edit_availability()
+	_pop_button($MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton)
 
 func _on_notes_generation_error(error_message: String):
 	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)
@@ -337,6 +345,24 @@ func _apply_bpm_dependent_ui():
 			song_details_manager._update_play_button_state()
 	_apply_background_status_ui()
 
+func _play_details_transition() -> void:
+	var details = $MainVBox/ContentHBox/DetailsVBox
+	if not details:
+		return
+	if _details_tween and _details_tween.is_valid():
+		_details_tween.kill()
+	details.modulate.a = 0.25
+	_details_tween = create_tween()
+	_details_tween.tween_property(details, "modulate:a", 1.0, 0.18)
+
+func _pop_button(btn: Button) -> void:
+	if not btn or not is_instance_valid(btn):
+		return
+	btn.pivot_offset = btn.size * 0.5
+	btn.scale = Vector2(1.12, 1.12)
+	var tw := create_tween()
+	tw.tween_property(btn, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
 func _on_song_item_selected_from_manager(song_data: Dictionary):
 	var enriched_song_data = song_data.duplicate()
 	
@@ -355,6 +381,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 	current_selected_song_data = enriched_song_data
 	song_details_manager.stop_preview()
 	song_details_manager.update_details(enriched_song_data)
+	_play_details_transition()
 	
 	var song_file_path = enriched_song_data.get("path", "")
 	if song_file_path != "":
@@ -420,14 +447,17 @@ func _editable_metadata_label_nodes() -> Array:
 		$MainVBox/ContentHBox/DetailsVBox/ArtistLabel,
 		$MainVBox/ContentHBox/DetailsVBox/YearLabel,
 		$MainVBox/ContentHBox/DetailsVBox/BpmLabel,
-		$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel,
-		$MainVBox/ContentHBox/DetailsVBox/CoverTextureRect
+		$MainVBox/ContentHBox/DetailsVBox/PrimaryGenreLabel
 	]
 
 func _update_metadata_edit_availability() -> void:
+	var edit_active := song_list_manager.is_edit_mode_active()
 	var locked := _is_song_metadata_edit_locked(current_displayed_song_path)
-	var dim := song_list_manager.is_edit_mode_active() and locked
-	var tint := Color(0.55, 0.55, 0.55, 1.0) if dim else Color(1.0, 1.0, 1.0, 1.0)
+	var tint := Color(1.0, 1.0, 1.0, 1.0)
+	if edit_active and locked:
+		tint = Color(0.55, 0.55, 0.55, 1.0)
+	elif edit_active:
+		tint = Color(0.68235296, 0.75686276, 1.0, 1.0)
 	for node in _editable_metadata_label_nodes():
 		if node:
 			node.self_modulate = tint
@@ -580,6 +610,9 @@ func _on_delete_pressed():
 
 	var song_path = selected_song_data.get("path", "")
 	if song_path == "":
+		return
+
+	if _is_song_metadata_edit_locked(song_path):
 		return
 
 	var dir = DirAccess.open("res://")
@@ -735,6 +768,10 @@ func _apply_background_status_ui():
 			else:
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
+	var delete_button = $MainVBox/ContentHBox/DetailsVBox/DeleteButton
+	if delete_button:
+		var gen_active := _is_song_metadata_edit_locked(current_displayed_song_path)
+		delete_button.disabled = gen_active or current_displayed_song_path == ""
 	_update_metadata_edit_availability()
 
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:

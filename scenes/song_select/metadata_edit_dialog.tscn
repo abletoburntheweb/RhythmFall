@@ -1,0 +1,169 @@
+[gd_scene load_steps=3 format=3 uid="uid://c2mtaeditdlg01"]
+
+[ext_resource type="Script" path="res://scenes/song_select/metadata_edit_dialog.gd" id="1_meta"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="MetadataEdit" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_meta")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7058824)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 31)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Назад	"
+
+[node name="TitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = "Редактирование метаданных"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FormMargin" type="MarginContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 200
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 200
+theme_override_constants/margin_bottom = 40
+
+[node name="Form" type="VBoxContainer" parent="Container/FormMargin"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 24
+
+[node name="TitleRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TitleFieldLabel" type="Label" parent="Container/FormMargin/Form/TitleRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Название"
+vertical_alignment = 1
+
+[node name="TitleEdit" type="LineEdit" parent="Container/FormMargin/Form/TitleRow"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+placeholder_text = "Название трека"
+
+[node name="ArtistRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ArtistFieldLabel" type="Label" parent="Container/FormMargin/Form/ArtistRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Исполнитель"
+vertical_alignment = 1
+
+[node name="ArtistEdit" type="LineEdit" parent="Container/FormMargin/Form/ArtistRow"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+placeholder_text = "Имя исполнителя"
+
+[node name="YearRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="YearFieldLabel" type="Label" parent="Container/FormMargin/Form/YearRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Год"
+vertical_alignment = 1
+
+[node name="YearSpin" type="SpinBox" parent="Container/FormMargin/Form/YearRow"]
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+min_value = 1900.0
+max_value = 2100.0
+step = 1.0
+value = 2020.0
+
+[node name="BpmRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BpmFieldLabel" type="Label" parent="Container/FormMargin/Form/BpmRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "BPM"
+vertical_alignment = 1
+
+[node name="BpmSpin" type="SpinBox" parent="Container/FormMargin/Form/BpmRow"]
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+min_value = 90.0
+max_value = 400.0
+step = 1.0
+value = 120.0
+
+[node name="GenreRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="GenreFieldLabel" type="Label" parent="Container/FormMargin/Form/GenreRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Жанр"
+vertical_alignment = 1
+
+[node name="GenreButton" type="Button" parent="Container/FormMargin/Form/GenreRow"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 22
+text = "не указан"
+
+[node name="SaveButton" type="Button" parent="Container"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Сохранить"
+
+[connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="Container/FormMargin/Form/GenreRow/GenreButton" to="." method="_on_genre_button_pressed"]
+[connection signal="pressed" from="Container/SaveButton" to="." method="_on_save_button_pressed"]

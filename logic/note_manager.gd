@@ -118,7 +118,7 @@ func get_earliest_note_time() -> float:
 	return best if best != INF else -1.0
 	
 func spawn_notes():
-	var game_time = game_screen.game_time
+	var game_time = game_screen.get_song_time()
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.hit_zone_y
 	var initial_y_offset_from_top = -20
@@ -126,7 +126,7 @@ func spawn_notes():
 	if note_spawn_queue.size() == 0:
 		return
 		
-	var pixels_per_sec = speed * 60.0
+	var pixels_per_sec = game_screen.get_note_pixels_per_sec()
 	var distance_to_travel = hit_zone_y - initial_y_offset_from_top
 	var time_to_reach_hit_zone = distance_to_travel / pixels_per_sec
 	var spawn_threshold_time = game_time + time_to_reach_hit_zone
@@ -182,9 +182,18 @@ func update_notes():
 	var miss_threshold: float = 40 
 
 	var despawn_y: float = game_screen.get_note_despawn_y()
+	var song_time: float = game_screen.get_song_time()
+	var pixels_per_sec: float = game_screen.get_note_pixels_per_sec()
 	for i in range(notes.size() - 1, -1, -1): 
 		var note = notes[i]
-		note.update(speed, despawn_y)
+		if note.note_kind == "HoldNote":
+			note.update(speed, despawn_y)
+		else:
+			note.y = float(hit_zone_y) - (float(note.time) - song_time) * pixels_per_sec
+			if note.visual_node:
+				note.visual_node.position.y = note.y
+			if note.y > despawn_y and not note.is_being_held:
+				note.active = false
 
 		if note.visual_node is ColorRect and note.active:
 			note.visual_node.color = _note_color_with_proximity(note, hit_zone_y)
@@ -196,6 +205,8 @@ func update_notes():
 				MusicManager.play_miss_hit_sound()  
 				if game_screen and game_screen.has_method("_combo_shake_and_dim"):
 					game_screen._combo_shake_and_dim()
+				if game_screen and game_screen.has_method("show_miss_judgement"):
+					game_screen.show_miss_judgement()
 			var current_accuracy = game_screen.score_manager.get_accuracy()
 			print("[NoteManager] Нота в линии %d пропущена (y=%.2f), вызван add_miss_hit. Текущая точность: %.2f%%" % [note.lane, note.y, current_accuracy])
 
