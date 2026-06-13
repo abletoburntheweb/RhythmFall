@@ -1,17 +1,20 @@
 # scenes/help/help_card.gd
 class_name HelpCard
-extends VBoxContainer
+extends PanelContainer
+
+const DEFAULT_HEADER_FONT_SIZE := 28
+const DEFAULT_BODY_FONT_SIZE := 28
 
 @export var collapsed_prefix: String = "> "
 @export var expanded_prefix: String = "v "
-@export var title_modulate_expanded: Color = Color(0.42, 0.57, 0.82)
+@export var title_modulate_expanded: Color = Color(0.419608, 0.568627, 0.819608, 1.0)
 @export var title_modulate_collapsed: Color = Color.WHITE
 
 var _accordion_title: String = ""
 
-@onready var _header_button: Button = $HeaderButton
-@onready var _content_margin: MarginContainer = $ContentMargin
-@onready var _content_label: RichTextLabel = $ContentMargin/ContentLabel
+@onready var _header_button: Button = $InnerVBox/HeaderButton
+@onready var _content_margin: MarginContainer = $InnerVBox/ContentMargin
+@onready var _content_label: RichTextLabel = $InnerVBox/ContentMargin/ContentLabel
 
 
 func setup(title: String, content: String) -> void:
@@ -21,6 +24,10 @@ func setup(title: String, content: String) -> void:
 	_content_label.text = content
 	_header_button.text = collapsed_prefix + title
 	_header_button.set_pressed_no_signal(false)
+	_header_button.add_theme_font_size_override("font_size", DEFAULT_HEADER_FONT_SIZE)
+	_content_label.add_theme_font_size_override("normal_font_size", DEFAULT_BODY_FONT_SIZE)
+	_content_label.add_theme_color_override("default_color", Color(0.92, 0.93, 0.96, 1.0))
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_content_margin.visible = false
 	_content_label.custom_minimum_size = Vector2.ZERO
 	_apply_header_visual(false)
@@ -49,7 +56,7 @@ func _update_richtext_layout() -> void:
 			_content_label.custom_minimum_size.x = mw
 		var h: float = _content_label.get_content_height()
 		if h >= 1.0:
-			_content_label.custom_minimum_size.y = maxf(h, 24.0)
+			_content_label.custom_minimum_size.y = maxf(h, 28.0)
 			_content_label.custom_minimum_size.x = 0.0
 			return
 	_content_label.custom_minimum_size.x = 0.0

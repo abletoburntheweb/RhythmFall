@@ -20,33 +20,39 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="Container" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
-mouse_filter = 0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
 
 [node name="BackButton" type="Button" parent="Container"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 31)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("1_flxbb")
 theme_type_variation = &"FlatBackButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="InstrumentLabel" type="Label" parent="Container"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
+theme_override_font_sizes/font_size = 30
 text = "Выберите инструмент"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="InstrumentButtons" type="HBoxContainer" parent="Container"]
 layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
 
 [node name="PercussionButton" type="Button" parent="Container/InstrumentButtons"]
 custom_minimum_size = Vector2(250, 60)
@@ -68,16 +74,16 @@ text = "Общий микс"
 [node name="SlidersLabel" type="Label" parent="Container"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4745098, 0.8901961, 0.8352941, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
 text = "Параметры генерации"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ModeOptionButton" type="OptionButton" parent="Container"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(280, 44)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 alignment = 1
 selected = 0
 item_count = 5
@@ -95,13 +101,15 @@ popup/item_4/id = 3
 [node name="LanesLabel" type="Label" parent="Container"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4745098, 0.8901961, 0.8352941, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
 text = "Количество линий"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LanesButtons" type="HBoxContainer" parent="Container"]
 layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
 
 [node name="Lanes3Button" type="Button" parent="Container/LanesButtons"]
 custom_minimum_size = Vector2(250, 60)
@@ -129,21 +137,26 @@ text = "5"
 
 [node name="AdvancedSection" type="VBoxContainer" parent="Container"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="AdvancedToggleButton" type="Button" parent="Container/AdvancedSection"]
-custom_minimum_size = Vector2(500, 0)
+custom_minimum_size = Vector2(500, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-theme_override_font_sizes/font_size = 32
+theme = ExtResource("1_flxbb")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 28
 toggle_mode = true
 text = "> Расширенные настройки"
 
 [node name="SlidersContainer" type="VBoxContainer" parent="Container/AdvancedSection"]
+visible = false
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_override_constants/separation = 8
 
 [node name="FillRow" type="VBoxContainer" parent="Container/AdvancedSection/SlidersContainer"]
 layout_mode = 2
@@ -226,35 +239,35 @@ layout_mode = 2
 [node name="AccentStrongBeatsCheckBox" type="CheckBox" parent="Container/AdvancedSection/SlidersContainer/CheckboxesContainer"]
 layout_mode = 2
 theme = ExtResource("1_flxbb")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "Акцент сильной доли"
 
 [node name="EnableGenreDetectionCheckBox" type="CheckBox" parent="Container/AdvancedSection/SlidersContainer/CheckboxesContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "Включить определение жанров"
 
 [node name="EnableStemsCheckBox" type="CheckBox" parent="Container/AdvancedSection/SlidersContainer/CheckboxesContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "Включить разделение на stem'ы"
 
 [node name="StatusLabel" type="Label" parent="Container"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
+theme_override_font_sizes/font_size = 26
 text = "Нет нот"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ConfirmButton" type="Button" parent="Container"]
 clip_contents = true
-custom_minimum_size = Vector2(400, 60)
+custom_minimum_size = Vector2(400, 56)
 layout_mode = 2
 size_flags_horizontal = 4
 theme = ExtResource("1_flxbb")
 theme_type_variation = &"FlatBpmButton"
-text = "Подтвердить
-"
+text = "Подтвердить"
 
 [connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="Container/InstrumentButtons/PercussionButton" to="." method="_on_percussion_selected"]

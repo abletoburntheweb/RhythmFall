@@ -1308,7 +1308,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("2_bjeu6")
 theme_type_variation = &"FlatButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="TitleLabel" type="Label" parent="MainContent/MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)

@@ -262,6 +262,11 @@ func _initialize_theme():
 	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
 	theme = app_theme
 	print("[Perf] GameEngine theme build: %d ms" % [Time.get_ticks_msec() - started_ms])
+	call_deferred("_apply_ui_interactions_to_tree", self)
+
+
+func _apply_ui_interactions_to_tree(root: Node) -> void:
+	UiInteractionApplier.apply_from_engine(root)
 
 func _apply_runtime_render_settings() -> void:
 	var quality := 0

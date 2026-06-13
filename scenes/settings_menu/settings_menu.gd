@@ -4,12 +4,20 @@ extends BaseScreen
 var game_screen = null
 var achievement_manager = null
 
-@onready var btn_sound: Button = $MainVBox/TabsHBox/BtnSound
-@onready var btn_graphics: Button = $MainVBox/TabsHBox/BtnGraphics
-@onready var btn_controls: Button = $MainVBox/TabsHBox/BtnControls
-@onready var btn_misc: Button = $MainVBox/TabsHBox/BtnMisc
-@onready var tab_container: TabContainer = $MainVBox/ContentContainer/SettingsTabContainer
+@onready var btn_sound: Button = $MainVBox/TabsBarCard/TabsBarMargin/TabsHBox/BtnSound
+@onready var btn_graphics: Button = $MainVBox/TabsBarCard/TabsBarMargin/TabsHBox/BtnGraphics
+@onready var btn_controls: Button = $MainVBox/TabsBarCard/TabsBarMargin/TabsHBox/BtnControls
+@onready var btn_misc: Button = $MainVBox/TabsBarCard/TabsBarMargin/TabsHBox/BtnMisc
+@onready var tab_container: TabContainer = $MainVBox/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer
 @onready var back_button: Button = $MainVBox/BackButton
+
+const _TAB_BUTTONS: Array[StringName] = [
+	&"FlatPlayButton",
+	&"FlatMenuSongButton",
+	&"FlatExitButton",
+	&"FlatMenuAchievementsButton",
+]
+const _TAB_IDLE: StringName = &"FlatMenuSettingsButton"
 
 func _ready():
 	var parent_node = get_parent()
@@ -45,6 +53,7 @@ func _ready():
 
 	if tab_container.get_tab_count() > 0:
 		tab_container.current_tab = 0
+	_refresh_tab_buttons(0)
 
 func _setup_tabs():
 	var song_metadata_mgr = null
@@ -89,6 +98,20 @@ func _connect_signals():
 func _switch_tab(index: int):
 	if tab_container:
 		tab_container.current_tab = index
+	_refresh_tab_buttons(index)
+
+func _refresh_tab_buttons(active_index: int) -> void:
+	var buttons: Array[Button] = [btn_sound, btn_graphics, btn_controls, btn_misc]
+	for i in range(buttons.size()):
+		var btn := buttons[i]
+		if btn == null:
+			continue
+		if i == active_index:
+			btn.theme_type_variation = _TAB_BUTTONS[i]
+			btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		else:
+			btn.theme_type_variation = _TAB_IDLE
+			btn.modulate = Color(0.88, 0.9, 0.94, 0.92)
 
 func _on_sound_tab_pressed():
 	_switch_tab(0)

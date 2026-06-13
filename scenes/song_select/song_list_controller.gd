@@ -191,6 +191,7 @@ func _open_metadata_editor(focus_field: String) -> void:
 		get_parent().add_child(dlg)
 	else:
 		add_child(dlg)
+	UiInteractionApplier.apply_from_engine(dlg)
 
 func _on_metadata_saved(fields_to_update: Dictionary) -> void:
 	var song_data = _edit_context["song_data"]
@@ -219,6 +220,7 @@ func _edit_primary_genre():
 			get_parent().add_child(dlg)
 		else:
 			add_child(dlg)
+		UiInteractionApplier.apply_from_engine(dlg)
 
 func _edit_year():
 	var song_data = _edit_context["song_data"]

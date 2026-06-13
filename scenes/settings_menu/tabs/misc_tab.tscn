@@ -5171,11 +5171,12 @@ theme_override_constants/separation = 20
 
 [node name="GenerationHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderBlue"
 theme_override_font_sizes/font_size = 26
 text = "Генерация"
 
 [node name="GenerationPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelBlue"
 layout_mode = 2
 
 [node name="GenerationPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenerationPanel"]
@@ -5286,11 +5287,12 @@ alignment = 1
 
 [node name="SongsHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderPink"
 theme_override_font_sizes/font_size = 26
 text = "Песни"
 
 [node name="SongsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelPink"
 layout_mode = 2
 
 [node name="SongsPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsPanel"]
@@ -5339,11 +5341,12 @@ text = "Сканировать песни"
 
 [node name="DataHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.4, 0.42, 1)
+theme_type_variation = &"SectionHeaderDanger"
 theme_override_font_sizes/font_size = 26
 text = "Данные и сброс"
 
 [node name="DataPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelDanger"
 layout_mode = 2
 
 [node name="DataPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DataPanel"]

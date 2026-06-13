@@ -1,6 +1,6 @@
 # scenes/achievements/achievement_card.gd
 @tool
-extends Control
+extends PanelContainer
 
 @export var title: String = "Название Ачивки"
 @export var description: String = "Описание ачивки"

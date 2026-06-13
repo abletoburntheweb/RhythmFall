@@ -1,6 +1,85 @@
 extends Object
 class_name AppTheme
 
+static func _make_accent_section_panel(accent: Color) -> StyleBoxFlat:
+	var base_bg := Color(0.0935, 0.102, 0.136, 1.0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = base_bg.lerp(accent.darkened(0.62), 0.14)
+	sb.border_color = Color(accent.r, accent.g, accent.b, 0.52)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.corner_radius_top_left = 12
+	sb.corner_radius_top_right = 12
+	sb.corner_radius_bottom_right = 12
+	sb.corner_radius_bottom_left = 12
+	sb.content_margin_left = 16.0
+	sb.content_margin_top = 10.0
+	sb.content_margin_right = 16.0
+	sb.content_margin_bottom = 10.0
+	return sb
+
+
+static func _make_cover_gallery_slot(accent: Color, hover: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	var base_bg := Color(0.088, 0.092, 0.118, 0.96)
+	sb.bg_color = base_bg.lerp(accent.darkened(0.62), 0.12)
+	sb.border_color = Color(accent.r, accent.g, accent.b, 0.78 if hover else 0.52)
+	if hover:
+		sb.bg_color = sb.bg_color.lerp(accent.lightened(0.18), 0.14)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.corner_radius_top_left = 12
+	sb.corner_radius_top_right = 12
+	sb.corner_radius_bottom_right = 12
+	sb.corner_radius_bottom_left = 12
+	sb.content_margin_left = 6.0
+	sb.content_margin_top = 6.0
+	sb.content_margin_right = 6.0
+	sb.content_margin_bottom = 6.0
+	sb.shadow_color = Color(0, 0, 0, 0.22)
+	sb.shadow_size = 4
+	sb.shadow_offset = Vector2(0, 2)
+	return sb
+
+
+static func _register_section_theme(theme: Theme, prefix: String, accent: Color) -> void:
+	var header_name := "SectionHeader%s" % prefix
+	var panel_name := "SectionPanel%s" % prefix
+	theme.set_type_variation(header_name, "Label")
+	theme.set_color("font_color", header_name, accent)
+	theme.set_type_variation(panel_name, "PanelContainer")
+	theme.set_stylebox("panel", panel_name, _make_accent_section_panel(accent))
+
+
+static func _apply_interaction_cursors(theme: Theme) -> void:
+	var hand := Control.CURSOR_POINTING_HAND
+	var ibeam := Control.CURSOR_IBEAM
+	var move := Control.CURSOR_MOVE
+	var hand_types := [
+		"Button", "CheckBox", "CheckButton", "LinkButton", "MenuBar", "MenuButton",
+		"OptionButton", "Dropdown", "TabBar", "ColorPickerButton", "Tree", "ItemList", "SpinBox",
+	]
+	for type_name in hand_types:
+		theme.set_constant("cursor_shape", type_name, hand)
+	theme.set_constant("cursor_shape", "LineEdit", ibeam)
+	theme.set_constant("cursor_shape", "TextEdit", ibeam)
+	theme.set_constant("cursor_shape", "CodeEdit", ibeam)
+	theme.set_constant("cursor_shape", "HSlider", move)
+	theme.set_constant("cursor_shape", "VSlider", move)
+
+
+static func _make_button_hover_box(border_col: Color, bg_alpha: float = 0.06) -> StyleBoxFlat:
+	var hover_bg := Color(1, 1, 1, bg_alpha).lerp(border_col, 0.08)
+	var sb := _make_button_box(hover_bg, border_col.lightened(0.12), true, 2)
+	sb.shadow_size = 7
+	sb.shadow_color = Color(0, 0, 0, 0.4)
+	return sb
+
+
 static func _make_button_box(bg: Color, border_col: Color, draw_center := true, border_w := 0) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -51,7 +130,7 @@ static func build_theme() -> Theme:
 	var transparent := Color(0, 0, 0, 0)
 
 	var btn_outline_normal := _make_button_box(transparent, outline, false, 2)
-	var btn_outline_hover := _make_button_box(transparent, outline, false, 2)
+	var btn_outline_hover := _make_button_hover_box(outline)
 	var btn_outline_pressed := _make_button_box(transparent, outline.darkened(0.2), true, 2)
 	var btn_outline_disabled := _make_button_box(transparent, outline.darkened(0.5), false, 2)
 	var btn_outline_focus := _make_button_box(transparent, outline, false, 3)
@@ -79,7 +158,7 @@ static func build_theme() -> Theme:
 
 	var play_outline := theme.get_color("accent_teal", "Palette")
 	var fb_play_normal := _make_button_box(transparent, play_outline, false, 2)
-	var fb_play_hover := _make_button_box(transparent, play_outline, false, 2)
+	var fb_play_hover := _make_button_hover_box(play_outline)
 	var fb_play_pressed := _make_button_box(transparent, play_outline.darkened(0.2), true, 2)
 	var fb_play_disabled := _make_button_box(transparent, play_outline.darkened(0.5), false, 2)
 	var fb_play_focus := _make_button_box(transparent, play_outline, false, 3)
@@ -96,7 +175,7 @@ static func build_theme() -> Theme:
 
 	var exit_outline := theme.get_color("accent_pink", "Palette")
 	var fb_exit_normal := _make_button_box(transparent, exit_outline, false, 2)
-	var fb_exit_hover := _make_button_box(transparent, exit_outline, false, 2)
+	var fb_exit_hover := _make_button_hover_box(exit_outline)
 	var fb_exit_pressed := _make_button_box(transparent, exit_outline.darkened(0.2), true, 2)
 	var fb_exit_disabled := _make_button_box(transparent, exit_outline.darkened(0.5), false, 2)
 	var fb_exit_focus := _make_button_box(transparent, exit_outline, false, 3)
@@ -535,8 +614,22 @@ static func build_theme() -> Theme:
 	grabber_area.content_margin_top = 6
 	grabber_area.content_margin_bottom = 6
 
+	var grabber := StyleBoxFlat.new()
+	grabber.bg_color = blue
+	grabber.corner_radius_top_left = 6
+	grabber.corner_radius_top_right = 6
+	grabber.corner_radius_bottom_right = 6
+	grabber.corner_radius_bottom_left = 6
+	grabber.content_margin_top = 2
+	grabber.content_margin_bottom = 2
+	var grabber_highlight := grabber.duplicate()
+	grabber_highlight.bg_color = blue.lightened(0.18)
+
 	theme.set_stylebox("slider", "HSlider", slider_box)
 	theme.set_stylebox("grabber_area", "HSlider", grabber_area)
+	theme.set_stylebox("grabber", "HSlider", grabber)
+	theme.set_stylebox("grabber_highlight", "HSlider", grabber_highlight)
+	theme.set_stylebox("grabber_pressed", "HSlider", grabber_highlight.duplicate())
 
 	var le_normal := StyleBoxFlat.new()
 	le_normal.bg_color = Color(0.12, 0.13, 0.17, 1.0)
@@ -777,7 +870,8 @@ static func build_theme() -> Theme:
 	il_panel.border_width_top = 1
 	il_panel.border_width_bottom = 1
 	var il_hovered := il_panel.duplicate()
-	il_hovered.bg_color = il_panel.bg_color.lightened(0.04)
+	il_hovered.bg_color = il_panel.bg_color.lightened(0.07)
+	il_hovered.border_color = Color(1, 1, 1, 0.24)
 	var il_selected := il_panel.duplicate()
 	il_selected.bg_color = Color(0.18, 0.20, 0.26, 1.0)
 	il_selected.border_color = blue
@@ -1034,5 +1128,21 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("fill", "DailyTasksProgressBar", dt_pb_fill)
 	theme.set_color("font_color", "DailyTasksProgressBar", Color.WHITE)
 	theme.set_constant("outline_size", "DailyTasksProgressBar", 0)
+
+	_register_section_theme(theme, "Blue", blue)
+	_register_section_theme(theme, "Teal", theme.get_color("accent_teal", "Palette"))
+	_register_section_theme(theme, "Sky", theme.get_color("accent_sky", "Palette"))
+	_register_section_theme(theme, "Mint", theme.get_color("accent_mint", "Palette"))
+	_register_section_theme(theme, "Purple", theme.get_color("accent_purple", "Palette"))
+	_register_section_theme(theme, "Pink", theme.get_color("accent_pink", "Palette"))
+	_register_section_theme(theme, "Danger", theme.get_color("danger", "Palette"))
+
+	var cover_accent := theme.get_color("accent_pink", "Palette")
+	theme.set_type_variation("CoverGallerySlot", "PanelContainer")
+	theme.set_stylebox("panel", "CoverGallerySlot", _make_cover_gallery_slot(cover_accent, false))
+	theme.set_type_variation("CoverGallerySlotHover", "PanelContainer")
+	theme.set_stylebox("panel", "CoverGallerySlotHover", _make_cover_gallery_slot(cover_accent, true))
+
+	_apply_interaction_cursors(theme)
 
 	return theme

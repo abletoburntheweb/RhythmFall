@@ -3720,7 +3720,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme = SubResource("Theme_p28av")
 theme_type_variation = &"FlatButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="Separator" type="ColorRect" parent="MainVBox"]
 custom_minimum_size = Vector2(0, 30)

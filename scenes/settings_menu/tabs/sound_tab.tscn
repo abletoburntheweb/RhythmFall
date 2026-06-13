@@ -2393,11 +2393,12 @@ theme_override_constants/separation = 20
 
 [node name="VolumeHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderTeal"
 theme_override_font_sizes/font_size = 26
 text = "Громкость"
 
 [node name="VolumePanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelTeal"
 layout_mode = 2
 
 [node name="VolumePanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/VolumePanel"]
@@ -2515,11 +2516,12 @@ theme = SubResource("Theme_p28av")
 
 [node name="CalibrationHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderSky"
 theme_override_font_sizes/font_size = 26
 text = "Калибровка тайминга"
 
 [node name="CalibrationPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelSky"
 layout_mode = 2
 
 [node name="CalibrationPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel"]

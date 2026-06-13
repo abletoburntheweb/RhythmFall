@@ -30,6 +30,7 @@ func resync_all():
 	achievement_manager.check_unique_levels_completed_achievements(PlayerDataManager)
 	achievement_manager.check_accuracy_95_achievements(PlayerDataManager)
 	achievement_manager.check_absolute_precision_achievements(PlayerDataManager)
+	achievement_manager.sync_unlocked_achievements_to_player_data()
 	achievement_manager.save_achievements()
 
 func on_level_completed(accuracy: float, song_path: String, is_drum_mode: bool = false, grade: String = ""):

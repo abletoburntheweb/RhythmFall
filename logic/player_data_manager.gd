@@ -696,7 +696,21 @@ func unlock_achievement(achievement_id: int) -> void:
 	
 
 func is_achievement_unlocked(achievement_id: int) -> bool:
-	return data["unlocked_achievement_ids"].has(achievement_id)
+	if data["unlocked_achievement_ids"].has(achievement_id):
+		return true
+	if achievement_manager:
+		var a = achievement_manager.get_achievement_by_id(achievement_id)
+		if a == null:
+			return false
+		if a.get("unlocked", false):
+			unlock_achievement(achievement_id)
+			return true
+		var cur = float(a.get("current", 0.0))
+		var tot = float(a.get("total", 1.0))
+		if tot > 0.0 and cur >= tot:
+			achievement_manager.unlock_achievement_by_id(achievement_id)
+			return data["unlocked_achievement_ids"].has(achievement_id)
+	return false
 
 func add_completed_level():
 	var current_count = int(data.get("levels_completed", 0))

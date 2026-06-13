@@ -263,6 +263,7 @@ var victory_animation_player: AnimationPlayer = null
 @onready var replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $MainMargin/MainVBox/ButtonsContainer/SongSelectButton
 @onready var countups_delay_timer: Timer = $CountupsDelayTimer
+@onready var hint_label: Label = $MainMargin/MainVBox/HintLabel
 
 
 func _ready():
@@ -275,14 +276,18 @@ func _ready():
 	
 	if currency_label:
 		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		currency_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		currency_label.gui_input.connect(_on_currency_label_clicked)
 	
 	if xp_label:
 		xp_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		xp_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		xp_label.gui_input.connect(_on_xp_label_clicked)
 	
 	if countups_delay_timer:
 		countups_delay_timer.timeout.connect(_on_countups_delay_timer_timeout)
+	if hint_label:
+		hint_label.visible = false
 
 func _calculate_grade() -> String:
 	if accuracy == 100.0: 
@@ -658,6 +663,8 @@ func _on_countups_delay_timer_timeout():
 		_reveal_grade()
 
 func _reveal_grade():
+	if hint_label:
+		hint_label.visible = true
 	if not is_instance_valid(grade_label):
 		return
 	grade_label.visible = true

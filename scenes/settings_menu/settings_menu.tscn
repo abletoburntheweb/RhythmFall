@@ -1,4 +1,4 @@
-[gd_scene load_steps=125 format=3 uid="uid://jsjmtg1mfq15"]
+[gd_scene load_steps=127 format=3 uid="uid://jsjmtg1mfq15"]
 
 [ext_resource type="Script" uid="uid://b1w623ds2gg8i" path="res://scenes/settings_menu/settings_menu.gd" id="1_j78aw"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_p28av"]
@@ -2367,6 +2367,22 @@ VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_v2x1c")
 XPAmountLabel/base_type = &"Label"
 XPAmountLabel/colors/font_color = Color(1, 1, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_tabs"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0, 0, 0, 0)
+draw_center = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_shell"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0, 0, 0, 0)
+draw_center = false
+
 [node name="SettingsMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -2383,6 +2399,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
@@ -2392,90 +2409,116 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 8
 
 [node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatButton"
-text = "Назад	"
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
 
-[node name="TitleHBox" type="HBoxContainer" parent="MainVBox"]
+[node name="TitleLabel" type="Label" parent="MainVBox"]
 layout_mode = 2
-alignment = 1
-
-[node name="TitleLabel" type="Label" parent="MainVBox/TitleHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
+theme_override_font_sizes/font_size = 34
 text = "Настройки"
 horizontal_alignment = 1
 
-[node name="TabsHBox" type="HBoxContainer" parent="MainVBox"]
+[node name="SubtitleLabel" type="Label" parent="MainVBox"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 0.78)
+theme_override_font_sizes/font_size = 18
+text = "Звук, графика, управление и параметры генерации"
+horizontal_alignment = 1
+
+[node name="TabsBarCard" type="PanelContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_tabs")
+
+[node name="TabsBarMargin" type="MarginContainer" parent="MainVBox/TabsBarCard"]
+layout_mode = 2
+
+[node name="TabsHBox" type="HBoxContainer" parent="MainVBox/TabsBarCard/TabsBarMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
 alignment = 1
 
-[node name="BtnSound" type="Button" parent="MainVBox/TabsHBox"]
+[node name="BtnSound" type="Button" parent="MainVBox/TabsBarCard/TabsBarMargin/TabsHBox"]
+custom_minimum_size = Vector2(130, 44)
 layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_p28av")
 theme_type_variation = &"FlatPlayButton"
+theme_override_font_sizes/font_size = 17
 text = "Звук"
 
-[node name="BtnGraphics" type="Button" parent="MainVBox/TabsHBox"]
+[node name="BtnGraphics" type="Button" parent="MainVBox/TabsBarCard/TabsBarMargin/TabsHBox"]
+custom_minimum_size = Vector2(130, 44)
 layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_p28av")
-theme_type_variation = &"FlatMenuSongButton"
+theme_type_variation = &"FlatMenuSettingsButton"
+theme_override_font_sizes/font_size = 17
 text = "Графика"
 
-[node name="BtnControls" type="Button" parent="MainVBox/TabsHBox"]
+[node name="BtnControls" type="Button" parent="MainVBox/TabsBarCard/TabsBarMargin/TabsHBox"]
+custom_minimum_size = Vector2(130, 44)
 layout_mode = 2
+size_flags_horizontal = 3
 theme = ExtResource("2_p28av")
-theme_type_variation = &"FlatExitButton"
+theme_type_variation = &"FlatMenuSettingsButton"
+theme_override_font_sizes/font_size = 17
 text = "Управление"
 
-[node name="BtnMisc" type="Button" parent="MainVBox/TabsHBox"]
+[node name="BtnMisc" type="Button" parent="MainVBox/TabsBarCard/TabsBarMargin/TabsHBox"]
+custom_minimum_size = Vector2(130, 44)
 layout_mode = 2
+size_flags_horizontal = 3
 theme = SubResource("Theme_p28av")
-theme_type_variation = &"FlatMenuAchievementsButton"
+theme_type_variation = &"FlatMenuSettingsButton"
+theme_override_font_sizes/font_size = 17
 text = "Прочее"
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/margin_left = 48
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 48
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_top = 4
 
-[node name="SettingsTabContainer" type="TabContainer" parent="MainVBox/ContentContainer"]
+[node name="ContentCard" type="PanelContainer" parent="MainVBox/ContentContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_shell")
+
+[node name="ContentCardMargin" type="MarginContainer" parent="MainVBox/ContentContainer/ContentCard"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SettingsTabContainer" type="TabContainer" parent="MainVBox/ContentContainer/ContentCard/ContentCardMargin"]
 layout_mode = 2
 size_flags_vertical = 3
 tab_alignment = 1
 current_tab = 0
 tabs_visible = false
 
-[node name="SoundTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("3_bsihy")]
+[node name="SoundTab" parent="MainVBox/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer" instance=ExtResource("3_bsihy")]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="GraphicsTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("4_rcdfy")]
+[node name="GraphicsTab" parent="MainVBox/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer" instance=ExtResource("4_rcdfy")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="ControlsTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("5_pdrua")]
+[node name="ControlsTab" parent="MainVBox/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer" instance=ExtResource("5_pdrua")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="MiscTab" parent="MainVBox/ContentContainer/SettingsTabContainer" instance=ExtResource("6_faeuo")]
+[node name="MiscTab" parent="MainVBox/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer" instance=ExtResource("6_faeuo")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
-
-[connection signal="pressed" from="MainVBox/TabsHBox/BtnSound" to="." method="_on_btn_sound_pressed"]
-[connection signal="pressed" from="MainVBox/TabsHBox/BtnGraphics" to="." method="_on_btn_graphics_pressed"]

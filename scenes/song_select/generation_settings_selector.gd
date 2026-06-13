@@ -62,7 +62,7 @@ func _ready():
 	if background:
 		background.color = Color(0, 0, 0, 180.0 / 255.0)
 		background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		
+
 	selected_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
 	selected_mode = SettingsManager.get_setting("last_generation_mode", "basic")
 	selected_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
@@ -151,10 +151,11 @@ func _ready():
 	_update_ui_from_selection()
 	_update_status_indicator()
 	call_deferred("_apply_mode_option_popup_font")
+	UiInteractionApplier.apply_from_engine(self)
 
 func _apply_mode_option_popup_font() -> void:
 	var mode_btn := $Container/ModeOptionButton as OptionButton
-	_OptionButtonPopupUtils.apply_popup_font_size(mode_btn, 24)
+	_OptionButtonPopupUtils.apply_popup_font_size(mode_btn, 26)
 
 func _update_ui_from_selection():
 	for btn in [$Container/InstrumentButtons/PercussionButton, $Container/InstrumentButtons/FullMixButton]:
@@ -172,7 +173,7 @@ func _update_ui_from_selection():
 		4: $Container/LanesButtons/Lanes4Button.self_modulate = ACTIVE_COLOR
 		5: $Container/LanesButtons/Lanes5Button.self_modulate = ACTIVE_COLOR
 	_update_status_indicator()
-		
+
 func _on_percussion_selected():
 	selected_instrument = "drums"
 	_set_active_button($Container/InstrumentButtons/PercussionButton)
@@ -298,7 +299,7 @@ func _set_active_button(active_btn: Button):
 	for child in group_container.get_children():
 		if child is Button:
 			child.self_modulate = DEFAULT_COLOR
-	
+
 	active_btn.self_modulate = ACTIVE_COLOR
 	_update_status_indicator()
 
@@ -406,20 +407,20 @@ func _on_confirm_pressed():
 	if selected_mode == "custom":
 		_persist_custom_preset_to_settings()
 	SettingsManager.save_settings()
-	
+
 	MusicManager.play_instrument_select_sound(selected_instrument)
-	
+
 	emit_signal("generation_settings_confirmed", selected_instrument, selected_mode, selected_lanes)
 	emit_signal("selector_closed")
 
 func _on_back_button_pressed():
 	MusicManager.play_cancel_sound()
 	emit_signal("selector_closed")
-	
+
 func set_current_song_path(path: String):
 	current_song_path = path
 	_update_status_indicator()
-	
+
 func _update_status_indicator():
 	if not status_label:
 		return
@@ -430,7 +431,7 @@ func _update_status_indicator():
 	else:
 		status_label.text = "Нет нот"
 		status_label.add_theme_color_override("font_color", Color("#C99AE5"))
-	
+
 func _notes_exist_for_selection() -> bool:
 	if current_song_path == "":
 		return false

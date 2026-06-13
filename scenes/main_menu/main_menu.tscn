@@ -6437,10 +6437,12 @@ theme = SubResource("Theme_uqeha")
 script = ExtResource("1_06t4h")
 
 [node name="HeaderGroup" type="VBoxContainer" parent="."]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
 offset_top = 11.0
-offset_right = 1920.0
 offset_bottom = 298.0
+grow_horizontal = 2
 
 [node name="LogoImage" type="TextureRect" parent="HeaderGroup"]
 custom_minimum_size = Vector2(300, 200)
@@ -6451,28 +6453,31 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="TitleLabel" type="Label" parent="HeaderGroup"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 32
 text = "RhythmFall"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="HeaderGroup"]
-custom_minimum_size = Vector2(1920, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.6156863, 0.6156863, 0.6156863, 1)
 theme_override_font_sizes/font_size = 24
-text = "A desktop rhythm game experience"
+text = "Ритм-игра с генерацией нот под ваши треки"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ButtonContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
-offset_left = 835.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -125.0
+offset_right = 125.0
 offset_top = 298.0
-offset_right = 1085.0
-offset_bottom = 838.0
+grow_horizontal = 2
 theme_override_constants/separation = 20
 
 [node name="SongSelectButton" type="Button" parent="ButtonContainer"]

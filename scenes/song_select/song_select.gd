@@ -138,6 +138,7 @@ func _connect_ui_signals():
 		cover_rect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
 	if not primary_genre_label.gui_input.is_connected(_on_gui_input_for_label):
 		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
+	_update_metadata_edit_availability()
  
 func _on_bpm_started(path, _disp):
 	if _song_path_key(path) == _song_path_key(current_displayed_song_path):
@@ -435,6 +436,7 @@ func _open_generation_settings_selector():
 	if current_displayed_song_path != "":
 		generation_settings_selector.set_current_song_path(current_displayed_song_path)
 	get_parent().add_child(generation_settings_selector)
+	UiInteractionApplier.apply_from_engine(generation_settings_selector)
 
 func _is_song_metadata_edit_locked(song_path: String) -> bool:
 	if not background_service:
@@ -454,13 +456,35 @@ func _update_metadata_edit_availability() -> void:
 	var edit_active := song_list_manager.is_edit_mode_active()
 	var locked := _is_song_metadata_edit_locked(current_displayed_song_path)
 	var tint := Color(1.0, 1.0, 1.0, 1.0)
+	var editable := edit_active and not locked
 	if edit_active and locked:
 		tint = Color(0.55, 0.55, 0.55, 1.0)
 	elif edit_active:
 		tint = Color(0.68235296, 0.75686276, 1.0, 1.0)
 	for node in _editable_metadata_label_nodes():
-		if node:
-			node.self_modulate = tint
+		if node == null:
+			continue
+		node.self_modulate = tint
+		if editable:
+			node.set_meta("ui_force_cursor", Control.CURSOR_POINTING_HAND)
+			node.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			node.tooltip_text = "Двойной клик — редактировать"
+		else:
+			if node.has_meta("ui_force_cursor"):
+				node.remove_meta("ui_force_cursor")
+			node.mouse_default_cursor_shape = Control.CURSOR_ARROW
+			node.tooltip_text = ""
+	var cover_rect = $MainVBox/ContentHBox/DetailsVBox/CoverTextureRect
+	if cover_rect:
+		if editable:
+			cover_rect.set_meta("ui_force_cursor", Control.CURSOR_POINTING_HAND)
+			cover_rect.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			cover_rect.tooltip_text = "Двойной клик — редактировать"
+		else:
+			if cover_rect.has_meta("ui_force_cursor"):
+				cover_rect.remove_meta("ui_force_cursor")
+			cover_rect.mouse_default_cursor_shape = Control.CURSOR_ARROW
+			cover_rect.tooltip_text = ""
 
 func _on_gui_input_for_label(event: InputEvent, field_type: String):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:

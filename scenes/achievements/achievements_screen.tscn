@@ -18,7 +18,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_bottom = 184.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -29,7 +28,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("1_v157i")
 theme_type_variation = &"FlatButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
 modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
@@ -96,10 +95,13 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 40
 theme_override_constants/margin_top = 25
-theme_override_constants/margin_bottom = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
 
 [node name="AchievementsScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
 [node name="BottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
@@ -107,7 +109,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 160
+theme_override_constants/margin_bottom = 16
 
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin"]
 layout_mode = 2

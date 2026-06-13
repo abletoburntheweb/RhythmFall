@@ -87,7 +87,11 @@ func _setup_item():
 
 	if image_rect:
 		image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		image_rect.visible = true 
+		image_rect.visible = true
+		if item_data.get("category", "") == "Обложки":
+			image_rect.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		else:
+			image_rect.mouse_default_cursor_shape = Control.CURSOR_ARROW
 
 	if name_label:
 		_set_name_label(name_label)

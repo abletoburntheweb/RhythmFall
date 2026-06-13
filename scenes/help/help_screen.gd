@@ -7,6 +7,9 @@ const HELP_CONTENT_DEFAULT_PATH := "res://data/help_content.json"
 @onready var help_list: VBoxContainer = $MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin/HelpList
 @onready var back_button = $MainVBox/BackButton
 
+const SECTION_HEADER_FONT_SIZE := 28
+const SECTION_ACCENT := Color(0.419608, 0.568627, 0.819608, 1.0)
+
 var help_card_template: HelpCard
 
 
@@ -118,27 +121,31 @@ func _resolve_colors(text: String, colors: Dictionary) -> String:
 func _add_help_category(section_title: String) -> VBoxContainer:
 	var wrap := VBoxContainer.new()
 	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wrap.add_theme_constant_override("separation", 4)
 	help_list.add_child(wrap)
 
 	var header := Button.new()
 	header.toggle_mode = true
 	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	header.custom_minimum_size.y = 72
-	header.add_theme_font_size_override("font_size", 30)
+	header.custom_minimum_size.y = 50
+	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_theme_font_size_override("font_size", SECTION_HEADER_FONT_SIZE)
+	if back_button and back_button.theme:
+		header.theme = back_button.theme
+	header.theme_type_variation = &"FlatMenuSongButton"
 	header.text = "> " + section_title
+	header.modulate = Color.WHITE
 
 	var inner := VBoxContainer.new()
 	inner.visible = false
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("separation", 4)
 
 	var title_ref := section_title
 	header.toggled.connect(func(pressed: bool):
 		inner.visible = pressed
 		header.text = ("v " if pressed else "> ") + title_ref
-		if pressed:
-			header.modulate = Color(0.42, 0.57, 0.82)
-		else:
-			header.modulate = Color.WHITE
+		header.modulate = SECTION_ACCENT if pressed else Color.WHITE
 	)
 
 	wrap.add_child(header)

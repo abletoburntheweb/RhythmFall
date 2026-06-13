@@ -310,6 +310,14 @@ theme_type_variation = &"FlatMenuSongButton"
 theme_override_font_sizes/font_size = 20
 text = "К списку песен"
 
+[node name="HintLabel" type="Label" parent="MainMargin/MainVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 0.88)
+theme_override_font_sizes/font_size = 17
+text = "Нажмите на валюту или XP, чтобы посмотреть детальный расчёт"
+horizontal_alignment = 1
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 &"": SubResource("AnimationLibrary_12ckx")

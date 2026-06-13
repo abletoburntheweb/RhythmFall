@@ -13,6 +13,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_87tvd")
 
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.7058824)
+
 [node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -20,33 +30,41 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 6
 
 [node name="BackButton" type="Button" parent="MainVBox"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("1_x4o1d")
-theme_type_variation = &"FlatButton"
-text = "Назад	"
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
-modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
 layout_mode = 2
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
+theme_override_font_sizes/font_size = 34
 text = "Справка"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="MainVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 0.82)
+theme_override_font_sizes/font_size = 19
+text = "Ответы на частые вопросы по игре и генерации нот"
 horizontal_alignment = 1
 
 [node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 40
-theme_override_constants/margin_right = 40
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
 
 [node name="HelpScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
 [node name="ScrollBottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/HelpScroll"]
@@ -57,28 +75,44 @@ theme_override_constants/margin_bottom = 20
 
 [node name="HelpList" type="VBoxContainer" parent="MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
-[node name="HelpCard" type="VBoxContainer" parent="."]
+[node name="HelpCard" type="PanelContainer" parent="."]
 visible = false
 layout_mode = 0
-offset_left = 34.0
-offset_top = 108.0
-offset_right = 371.0
-offset_bottom = 286.0
+offset_left = 40.0
+offset_top = 120.0
+offset_right = 520.0
+offset_bottom = 280.0
 script = ExtResource("3_fablb")
 
-[node name="HeaderButton" type="Button" parent="HelpCard"]
+[node name="InnerVBox" type="VBoxContainer" parent="HelpCard"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
+theme_override_constants/separation = 2
+
+[node name="HeaderButton" type="Button" parent="HelpCard/InnerVBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_x4o1d")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 28
 toggle_mode = true
+text = "Заголовок"
 
-[node name="ContentMargin" type="MarginContainer" parent="HelpCard"]
+[node name="ContentMargin" type="MarginContainer" parent="HelpCard/InnerVBox"]
 layout_mode = 2
-theme_override_constants/margin_left = 50
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
-[node name="ContentLabel" type="RichTextLabel" parent="HelpCard/ContentMargin"]
+[node name="ContentLabel" type="RichTextLabel" parent="HelpCard/InnerVBox/ContentMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 2
+theme_override_colors/default_color = Color(0.92, 0.93, 0.96, 1)
 theme_override_font_sizes/normal_font_size = 28
 bbcode_enabled = true
 fit_content = true

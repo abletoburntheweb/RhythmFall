@@ -143,7 +143,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.1.9 • Release (Build 412)"
+text = "v1.1.10 • Release (Build 413)"
 
 [node name="XPContainer" type="Control" parent="."]
 layout_mode = 1

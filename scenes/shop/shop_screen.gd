@@ -85,9 +85,21 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
+	_sync_achievement_rewards()
 	await _create_item_cards()
 	_set_buttons_focus_to_none()
 	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
+
+func _sync_achievement_rewards() -> void:
+	var game_engine = get_parent()
+	if not game_engine or not game_engine.has_method("get_achievement_system"):
+		return
+	var ach_sys = game_engine.get_achievement_system()
+	if not ach_sys or not ach_sys.achievement_manager:
+		return
+	var am = ach_sys.achievement_manager
+	am.check_playtime_achievements(PlayerDataManager)
+	am.sync_unlocked_achievements_to_player_data()
 
 func _get_currency_label() -> Label:
 	var main_vbox = $MainContent/MainVBox
@@ -256,7 +268,12 @@ func _create_item_cards() -> void:
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
 		items_scroll.scroll_horizontal = 0
+	call_deferred("_apply_shop_ui_interactions")
 	print("[Perf] ShopScreen create cards: %d ms, items=%d, batch=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size(), batch_size])
+
+
+func _apply_shop_ui_interactions() -> void:
+	UiInteractionApplier.apply_from_engine(self)
 
 
 func _shop_grid_clear_min_height() -> void:
@@ -423,6 +440,7 @@ func _open_cover_gallery(item_data: Dictionary):
 
 	current_cover_gallery.images_folder = item_data.get("images_folder", "")
 	current_cover_gallery.images_count = item_data.get("images_count", 0)
+	current_cover_gallery.item_title = str(item_data.get("title", item_data.get("name", "")))
 
 	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
 	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)
@@ -438,6 +456,7 @@ func _open_cover_gallery(item_data: Dictionary):
 func _deferred_add_child(gallery_node: Node):
 	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(gallery_node):
 		add_child(gallery_node)
+		UiInteractionApplier.apply_from_engine(gallery_node)
 		gallery_node.grab_focus()
 	else:
 		if is_instance_valid(gallery_node):
