@@ -36,6 +36,15 @@ func _execute_close_transition() -> void:
 func cleanup_before_exit() -> void:
 	pass
 
+
+func _enter_tree() -> void:
+	call_deferred("_apply_ui_interactions")
+
+
+func _apply_ui_interactions() -> void:
+	UiInteractionApplier.apply_from_engine(self)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed) or event.is_action_pressed("ui_cancel"):
 		accept_event()

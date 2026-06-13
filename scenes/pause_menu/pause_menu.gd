@@ -10,7 +10,10 @@ signal exit_to_menu_requested
 var transitions = null
 
 func _ready():
-	pass
+	call_deferred("_apply_pause_ui_interactions")
+
+func _apply_pause_ui_interactions() -> void:
+	UiInteractionApplier.apply_from_engine(self)
 
 func set_transitions(transitions_instance):
 	transitions = transitions_instance

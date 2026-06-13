@@ -66,13 +66,16 @@ var data: Dictionary = {
 		"quests": []
 	},
 	"daily_quests_completed_total": 0,
-	"profile_created_date": ""
+	"profile_created_date": "",
+	"seen_shop_reward_item_ids": PackedStringArray(),
+	"shop_reward_notifications_initialized": false
 }
 
 signal total_play_time_changed(new_time_formatted: String)
 signal level_changed(new_level: int, new_xp: int, xp_for_next_level: int)  
 signal daily_quests_updated()
 signal profile_statistics_reset()
+signal shop_new_rewards_changed()
 
 var _total_play_time_seconds: int = 0
 
@@ -103,7 +106,10 @@ func _ready():
 
 	daily_quests_mgr = preload("res://logic/daily_quests_manager.gd").new()
 	daily_quests_mgr.set_player_data_manager(self)
-	daily_quests_mgr.daily_quests_updated.connect(func(): emit_signal("daily_quests_updated"))
+	daily_quests_mgr.daily_quests_updated.connect(func():
+		emit_signal("daily_quests_updated")
+		emit_signal("shop_new_rewards_changed")
+	)
 
 	var default_items = DEFAULT_UNLOCKED_ITEMS
 	var items_changed = false
@@ -113,6 +119,60 @@ func _ready():
 			items_changed = true
 	if items_changed:
 		_save() 
+	ensure_shop_reward_notifications_migrated()
+
+func ensure_shop_reward_notifications_migrated(shop_items: Array = []) -> void:
+	if data.get("shop_reward_notifications_initialized", false):
+		return
+	if shop_items.is_empty():
+		shop_items = ShopRewardNotifications.load_shop_items()
+	for item in shop_items:
+		if not (item is Dictionary):
+			continue
+		if not ShopRewardNotifications.is_reward_available(item):
+			continue
+		var item_id := str(item.get("item_id", ""))
+		if item_id != "" and not data["seen_shop_reward_item_ids"].has(item_id):
+			data["seen_shop_reward_item_ids"].append(item_id)
+	data["shop_reward_notifications_initialized"] = true
+	_save()
+
+func get_unseen_shop_reward_ids(shop_items: Array = []) -> PackedStringArray:
+	ensure_shop_reward_notifications_migrated(shop_items)
+	if shop_items.is_empty():
+		shop_items = ShopRewardNotifications.load_shop_items()
+	var unseen := PackedStringArray()
+	for item in shop_items:
+		if not (item is Dictionary):
+			continue
+		if not ShopRewardNotifications.is_reward_available(item):
+			continue
+		var item_id := str(item.get("item_id", ""))
+		if item_id == "":
+			continue
+		if not data["seen_shop_reward_item_ids"].has(item_id):
+			unseen.append(item_id)
+	return unseen
+
+func get_unseen_shop_reward_count(shop_items: Array = []) -> int:
+	return get_unseen_shop_reward_ids(shop_items).size()
+
+func is_shop_reward_unseen(item_id: String, shop_items: Array = []) -> bool:
+	item_id = item_id.strip_edges()
+	if item_id == "":
+		return false
+	return get_unseen_shop_reward_ids(shop_items).has(item_id)
+
+func mark_shop_reward_seen(item_id: String) -> void:
+	item_id = item_id.strip_edges()
+	if item_id == "":
+		return
+	ensure_shop_reward_notifications_migrated()
+	if data["seen_shop_reward_item_ids"].has(item_id):
+		return
+	data["seen_shop_reward_item_ids"].append(item_id)
+	_save()
+	emit_signal("shop_new_rewards_changed")
 
 func _load():
 	var json_result: Dictionary = JsonUtils.read_json_dict(PLAYER_DATA_PATH)
@@ -156,6 +216,8 @@ func _load():
 		})
 		var loaded_daily_quests = json_result.get("daily_quests", {"date": "", "quests": []})
 		var loaded_daily_quests_completed_total = int(json_result.get("daily_quests_completed_total", 0))
+		var loaded_seen_shop_reward_item_ids = _to_packed_string_array(json_result.get("seen_shop_reward_item_ids", PackedStringArray()))
+		var loaded_shop_reward_notifications_initialized = bool(json_result.get("shop_reward_notifications_initialized", false))
 		
 		
 		data["currency"] = clamp(loaded_currency, 0, CURRENCY_CAP)
@@ -186,6 +248,8 @@ func _load():
 		data["favorite_genre"] = loaded_favorite_genre
 		data["daily_quests"] = loaded_daily_quests
 		data["daily_quests_completed_total"] = loaded_daily_quests_completed_total
+		data["seen_shop_reward_item_ids"] = loaded_seen_shop_reward_item_ids
+		data["shop_reward_notifications_initialized"] = loaded_shop_reward_notifications_initialized
 		
 		data["last_login_date"] = loaded_last_login
 		data["login_streak"] = loaded_login_streak 
@@ -369,6 +433,7 @@ func check_level_up() -> bool:
 			achievement_system.on_player_level_changed(new_level)
 		
 		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
+		emit_signal("shop_new_rewards_changed")
 		increment_daily_progress("profile_level_up", 1, {})
 		_save()
 	if data["current_level"] >= MAX_LEVEL and data["total_xp"] > data["xp_for_next_level"]:
@@ -693,10 +758,24 @@ func unlock_achievement(achievement_id: int) -> void:
 	if not data["unlocked_achievement_ids"].has(achievement_id):  
 		data["unlocked_achievement_ids"].append(achievement_id) 
 		_save()
-	
+		emit_signal("shop_new_rewards_changed")
 
 func is_achievement_unlocked(achievement_id: int) -> bool:
-	return data["unlocked_achievement_ids"].has(achievement_id)
+	if data["unlocked_achievement_ids"].has(achievement_id):
+		return true
+	if achievement_manager:
+		var a = achievement_manager.get_achievement_by_id(achievement_id)
+		if a == null:
+			return false
+		if a.get("unlocked", false):
+			unlock_achievement(achievement_id)
+			return true
+		var cur = float(a.get("current", 0.0))
+		var tot = float(a.get("total", 1.0))
+		if tot > 0.0 and cur >= tot:
+			achievement_manager.unlock_achievement_by_id(achievement_id)
+			return data["unlocked_achievement_ids"].has(achievement_id)
+	return false
 
 func add_completed_level():
 	var current_count = int(data.get("levels_completed", 0))

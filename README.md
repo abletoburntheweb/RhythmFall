@@ -22,10 +22,22 @@ RhythmFall is a Godot‑based rhythm game that analyzes any track you choose and
 - Fully local workflow (talks to localhost)
 
 ## Quick Start
-- Start the local server (see the separate server repository for setup).
+- Start the local server ([RhythmFallServer](https://github.com/abletoburntheweb/RhythmFallServer)).
 - Launch the Godot client and open the game.
 - Generate notes: choose drums, mode (basic/enhanced), and lanes; pick a song.
 - Play the newly generated level.
+
+## Windows download (v1.1.10)
+
+Download **`RhythmFall-1.1.10-setup.exe`** from [GitHub Releases](https://github.com/abletoburntheweb/RhythmFall/releases). A portable ZIP (folder with `RhythmFall.exe`) may also be provided.
+
+**Install:** run setup.exe → choose a folder (default: Program Files or Local Programs) → Start menu shortcut, optional desktop icon.
+
+**Uninstall after setup:** Settings → Apps → RhythmFall → **Uninstall** (or “Uninstall RhythmFall” in the Start menu). Windows runs the installer’s own uninstaller — it removes game files from the install folder and deletes shortcuts. It then asks whether to delete saves in `%APPDATA%\RhythmFall\` (default: keep them). `Uninstall-RhythmFall.bat` is not included in the setup; it is only for the portable ZIP.
+
+**Saves and settings** live outside the install folder: `%APPDATA%\RhythmFall\` (progress, generated notes, shop purchases, etc.). Installing a newer setup.exe over an older install keeps your saves.
+
+**Note generation still requires the local Python server** — the downloadable client is the game only.
 
 ## Notes
 - Your music stays on your machine and is not part of the repository.

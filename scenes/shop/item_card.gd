@@ -1,5 +1,5 @@
 # scenes/shop/item_card.gd
-extends Control
+extends PanelContainer
 
 signal cover_click_pressed(item_data: Dictionary)
 signal buy_pressed(item_id: String)
@@ -23,6 +23,16 @@ var level_unlocked: bool = false
 var is_daily_reward: bool = false
 var required_daily_completed: int = 0
 var daily_unlocked: bool = false
+var is_new_reward: bool = false
+const NEW_REWARD_BORDER_COLOR := Color("#F2B35A")
+
+const _ACCENT_BY_CATEGORY := {
+	"Кик": Color(0.38, 0.78, 0.74),
+	"Обложки": Color(0.86, 0.52, 0.72),
+	"Ноты": Color(0.52, 0.76, 0.92),
+	"Подсветка линий": Color(0.62, 0.86, 0.72),
+	"Все": Color(0.42, 0.57, 0.82),
+}
 var _achievements_data_cache = null
 var _loader: ThreadedTextureLoader = null
 var _loader_connected: bool = false
@@ -43,6 +53,70 @@ func _ready():
 	_update_card_pivot()
 	if not resized.is_connected(_update_card_pivot):
 		resized.connect(_update_card_pivot)
+	_update_new_reward_visuals()
+
+
+func set_new_reward_highlight(enabled: bool) -> void:
+	is_new_reward = enabled
+	if is_node_ready():
+		_update_new_reward_visuals()
+
+func _get_use_button() -> Button:
+	return get_node_or_null("MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton") as Button
+
+func _get_open_reward_button() -> Button:
+	return get_node_or_null("MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/OpenRewardButton") as Button
+
+func _is_reward_type_item() -> bool:
+	return is_achievement_reward or is_level_reward or is_daily_reward
+
+func _is_reward_unlocked_and_usable() -> bool:
+	if is_level_reward:
+		return level_unlocked
+	if is_achievement_reward:
+		return achievement_unlocked
+	if is_daily_reward:
+		return daily_unlocked
+	return false
+
+func _should_show_open_button() -> bool:
+	return is_new_reward and _is_reward_type_item() and _is_reward_unlocked_and_usable() and not is_active
+
+func _update_new_reward_visuals() -> void:
+	if is_new_reward:
+		var outline := StyleBoxFlat.new()
+		outline.bg_color = Color(1.0, 0.97, 0.88, 0.08)
+		outline.border_color = NEW_REWARD_BORDER_COLOR
+		outline.set_border_width_all(3)
+		outline.set_corner_radius_all(12)
+		add_theme_stylebox_override("panel", outline)
+	else:
+		remove_theme_stylebox_override("panel")
+	_apply_open_reward_button_state()
+	if is_node_ready():
+		_apply_card_style()
+
+func _apply_open_reward_button_state() -> void:
+	var use_button := _get_use_button()
+	var open_button := _get_open_reward_button()
+	if open_button == null:
+		return
+	if _should_show_open_button():
+		open_button.visible = true
+		if use_button:
+			use_button.visible = false
+	else:
+		open_button.visible = false
+
+func _maybe_mark_new_reward_seen() -> void:
+	if not is_new_reward:
+		return
+	var item_id := str(item_data.get("item_id", ""))
+	if item_id == "":
+		return
+	PlayerDataManager.mark_shop_reward_seen(item_id)
+	set_new_reward_highlight(false)
+	_update_buttons_and_status()
 
 func _update_card_pivot() -> void:
 	pivot_offset = size * 0.5
@@ -87,7 +161,11 @@ func _setup_item():
 
 	if image_rect:
 		image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		image_rect.visible = true 
+		image_rect.visible = true
+		if item_data.get("category", "") == "Обложки":
+			image_rect.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		else:
+			image_rect.mouse_default_cursor_shape = Control.CURSOR_ARROW
 
 	if name_label:
 		_set_name_label(name_label)
@@ -291,6 +369,92 @@ func _update_buttons_and_status():
 		else:
 			_set_status(status_hbox, status_label, false, "")
 
+	_apply_open_reward_button_state()
+	_update_new_reward_visuals()
+	_apply_card_style()
+
+
+func _is_locked_reward_state() -> bool:
+	if is_level_reward:
+		return not level_unlocked
+	if is_achievement_reward:
+		return not achievement_unlocked
+	if is_daily_reward:
+		return not daily_unlocked
+	return false
+
+
+func _category_accent() -> Color:
+	var category := str(item_data.get("category", ""))
+	return _ACCENT_BY_CATEGORY.get(category, _ACCENT_BY_CATEGORY["Все"])
+
+
+func _apply_card_style() -> void:
+	if is_new_reward:
+		_apply_preview_frame(_category_accent())
+		return
+	var accent := _category_accent()
+	if is_active:
+		theme_type_variation = &"CardActive"
+		add_theme_stylebox_override("panel", _build_card_shell_style(accent, true))
+	elif _is_locked_reward_state() and not is_purchased and not is_default:
+		theme_type_variation = &"CardLocked"
+		remove_theme_stylebox_override("panel")
+	else:
+		theme_type_variation = &"CardDefault"
+		remove_theme_stylebox_override("panel")
+	_apply_preview_frame(accent)
+	_apply_status_label_style()
+
+
+func _build_card_shell_style(accent: Color, active: bool) -> StyleBoxFlat:
+	var shell := StyleBoxFlat.new()
+	shell.bg_color = Color(0.13, 0.15, 0.19) if active else Color(0.11, 0.12, 0.16)
+	shell.border_color = accent.lightened(0.08 if active else 0.0)
+	shell.set_border_width_all(2 if active else 1)
+	shell.set_corner_radius_all(12)
+	shell.shadow_color = Color(accent.r, accent.g, accent.b, 0.22 if active else 0.0)
+	shell.shadow_size = 8 if active else 0
+	shell.shadow_offset = Vector2(0, 3)
+	return shell
+
+
+func _apply_preview_frame(accent: Color) -> void:
+	var wrapper := get_node_or_null("MarginContainer/ContentContainer/ImageWrapper") as PanelContainer
+	if wrapper == null:
+		return
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = Color(0.05, 0.06, 0.09)
+	frame.border_color = Color(accent.r, accent.g, accent.b, 0.45)
+	frame.border_width_top = 3
+	frame.border_width_left = 1
+	frame.border_width_right = 1
+	frame.border_width_bottom = 1
+	frame.set_corner_radius_all(10)
+	frame.content_margin_left = 4.0
+	frame.content_margin_top = 4.0
+	frame.content_margin_right = 4.0
+	frame.content_margin_bottom = 4.0
+	wrapper.add_theme_stylebox_override("panel", frame)
+	var image := wrapper.get_node_or_null("ImageRect") as TextureRect
+	if image:
+		image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+
+
+func _apply_status_label_style() -> void:
+	var label := get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox/StatusLabel") as Label
+	var hbox := get_node_or_null("MarginContainer/ContentContainer/StatusDefaultHBox") as HBoxContainer
+	if label == null or hbox == null or not hbox.visible:
+		return
+	if is_active:
+		label.add_theme_color_override("font_color", Color(0.55, 0.92, 0.86))
+		label.add_theme_color_override("font_outline_color", Color(0.12, 0.28, 0.24))
+		label.add_theme_constant_override("outline_size", 4)
+	elif is_default:
+		label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.96))
+		label.add_theme_color_override("font_outline_color", Color(0.14, 0.2, 0.32))
+		label.add_theme_constant_override("outline_size", 4)
+
 
 func _on_buy_pressed():
 	var item_id_str = item_data.get("item_id", "")
@@ -301,6 +465,12 @@ func _on_use_pressed():
 	var item_id_str = item_data.get("item_id", "")
 	_play_card_anim("buy_pop")
 	emit_signal("use_pressed", item_id_str)
+
+func _on_open_reward_pressed():
+	if MusicManager and MusicManager.has_method("play_shop_apply"):
+		MusicManager.play_shop_apply()
+	_play_card_anim("buy_pop")
+	_maybe_mark_new_reward_seen()
 
 func _on_preview_pressed():
 	var item_id_str = item_data.get("item_id", "") 
@@ -400,6 +570,7 @@ func _exit_tree():
 	if _loader and _loader_connected:
 		_loader.loaded.disconnect(_on_loader_loaded)
 		_loader_connected = false
+
 func _set_name_label(lbl: Label) -> void:
 	var item_name = item_data.get("name", "Без названия")
 	lbl.text = item_name
@@ -407,9 +578,12 @@ func _set_name_label(lbl: Label) -> void:
 
 func _set_use_button(btn: Button, visible: bool) -> void:
 	if btn:
-		btn.visible = visible
-		if visible:
-			btn.text = "Использовать"
+		if _should_show_open_button():
+			btn.visible = false
+		else:
+			btn.visible = visible
+			if visible:
+				btn.text = "Использовать"
 
 func _set_status(hbox: HBoxContainer, lbl: Label, visible: bool, text: String) -> void:
 	if hbox:

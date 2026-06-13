@@ -142,14 +142,67 @@ func _load_shop_item_ids() -> PackedStringArray:
 
  
 func _ach_unlock(id_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	if not id_str.is_valid_int():
+		if c:
+			c.print_error("Неверный id достижения: " + id_str)
+		return
+	var ach_id := int(id_str)
+	if not PlayerDataManager.is_achievement_unlocked(ach_id):
+		PlayerDataManager.unlock_achievement(ach_id)
+	var synced_runtime := false
 	var ge = _get_engine()
 	if ge and ge.has_method("get_achievement_manager"):
 		var am = ge.get_achievement_manager()
 		if am:
-			am.unlock_achievement_by_id(int(id_str))
-	var c = get_tree().root.get_node_or_null("Console")
+			if am.player_data_mgr == null:
+				am.player_data_mgr = PlayerDataManager
+			am.unlock_achievement_by_id(ach_id)
+			synced_runtime = true
+	if not synced_runtime:
+		_unlock_achievement_in_user_json(ach_id)
 	if c:
-		c.print_info("Достижение разблокировано: " + id_str)
+		if PlayerDataManager.is_achievement_unlocked(ach_id):
+			c.print_info("Достижение разблокировано: " + id_str)
+		else:
+			c.print_error("Не удалось разблокировать достижение: " + id_str)
+
+func _unlock_achievement_in_user_json(achievement_id: int) -> bool:
+	var paths := [
+		"user://achievements_data.json",
+		"res://data/achievements_data.json",
+		"res://scenes/achievements_data.json",
+	]
+	var source_path := ""
+	for path in paths:
+		if FileAccess.file_exists(path):
+			source_path = path
+			break
+	if source_path == "":
+		return false
+	var parsed: Dictionary = JsonUtils.read_json_dict(source_path)
+	if not parsed.has("achievements") or not (parsed["achievements"] is Array):
+		return false
+	var changed := false
+	for item in parsed["achievements"]:
+		if not (item is Dictionary):
+			continue
+		if int(item.get("id", -1)) != achievement_id:
+			continue
+		if bool(item.get("unlocked", false)):
+			return true
+		item["unlocked"] = true
+		item["current"] = item.get("total", 1)
+		var date = Time.get_date_dict_from_system()
+		var time = Time.get_time_dict_from_system()
+		var TimeUtils = preload("res://logic/utils/time_utils.gd")
+		var date_text = TimeUtils.format_date_parts_ru(int(date.day), int(date.month), int(date.year))
+		item["unlock_date"] = "%s, %02d:%02d" % [date_text, int(time.hour), int(time.minute)]
+		changed = true
+		break
+	if not changed:
+		return false
+	return JsonUtils.write_json("user://achievements_data.json", parsed, true, true)
 
 func _ach_show(id_str: String):
 	var ge = _get_engine()
@@ -355,8 +408,27 @@ func _daily_progress(token: String, val_str: String):
 	if v <= 0:
 		if c: c.print_error("Значение должно быть > 0")
 		return
-	PlayerDataManager.increment_daily_progress(ev, v, {})
+	PlayerDataManager.increment_daily_progress(ev, v, _daily_context_for_quest(q))
 	if c: c.print_info("Прогресс обновлён")
+
+func _daily_context_for_quest(q: Dictionary) -> Dictionary:
+	var ev := String(q.get("event", ""))
+	match ev:
+		"accuracy_80", "accuracy_90", "accuracy_95":
+			return {"accuracy": 100.0}
+		"combo_reached", "combo_reached_60", "combo_reached_100":
+			return {"max_combo": 100}
+		"missless":
+			return {"missed_notes": 0}
+		"play_drum_level":
+			return {"is_drum_mode": true}
+		"play_genre_group":
+			var target_group := str(q.get("target_group", "")).strip_edges()
+			if target_group != "":
+				return {"group": target_group}
+			return {}
+		_:
+			return {}
 
 func _daily_complete(token: String):
 	var c = get_tree().root.get_node_or_null("Console")
@@ -365,19 +437,7 @@ func _daily_complete(token: String):
 		if c: c.print_error("Ежедневка не найдена: " + token)
 		return
 	var ev = String(q.get("event",""))
-	var ctx := {}
-	match ev:
-		"accuracy_80", "accuracy_90", "accuracy_95":
-			ctx = {"accuracy": 100.0}
-		"combo_reached", "combo_reached_60", "combo_reached_100":
-			ctx = {"max_combo": 100}
-		"missless":
-			ctx = {"missed_notes": 0}
-		"play_drum_level":
-			ctx = {"is_drum_mode": true}
-		_:
-			ctx = {}
-	PlayerDataManager.increment_daily_progress(ev, 999999, ctx)
+	PlayerDataManager.increment_daily_progress(ev, 999999, _daily_context_for_quest(q))
 	if c: c.print_info("Ежедневка завершена")
 	
 func _daily_complete_all():
@@ -388,19 +448,7 @@ func _daily_complete_all():
 		return
 	for q in qs:
 		var ev = String(q.get("event",""))
-		var ctx := {}
-		match ev:
-			"accuracy_80", "accuracy_90", "accuracy_95":
-				ctx = {"accuracy": 100.0}
-			"combo_reached", "combo_reached_60", "combo_reached_100":
-				ctx = {"max_combo": 100}
-			"missless":
-				ctx = {"missed_notes": 0}
-			"play_drum_level":
-				ctx = {"is_drum_mode": true}
-			_:
-				ctx = {}
-		PlayerDataManager.increment_daily_progress(ev, 999999, ctx)
+		PlayerDataManager.increment_daily_progress(ev, 999999, _daily_context_for_quest(q))
 	if c: c.print_info("Все текущие ежедневки завершены")
 
 func _game_seek_to_no_notes():

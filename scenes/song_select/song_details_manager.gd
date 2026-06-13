@@ -2,6 +2,8 @@
 class_name SongDetailsManager
 extends Node
 
+const GradeDisplay = preload("res://logic/utils/grade_display.gd")
+
 var title_label: Label = null
 var artist_label: Label = null
 var year_label: Label = null
@@ -101,22 +103,18 @@ func update_details(song_data: Dictionary):
 		var best_grade_text = "Лучшая оценка: Н/Д"
 		var color_to_apply = Color.WHITE
 		if song_path != "":
-			var svc = ResultsHistoryService.new()
-			var top = svc.get_top_result_for_song(song_path)
-			if top and top is Dictionary and not top.is_empty():
-				var grade_str = str(top.get("grade", "Н/Д"))
+			var grade_str := GradeDisplay.best_grade_for_track(song_path)
+			if grade_str == "":
+				var svc = ResultsHistoryService.new()
+				var top = svc.get_top_result_for_song(song_path)
+				if top and top is Dictionary and not top.is_empty():
+					grade_str = str(top.get("grade", ""))
+			if grade_str != "" and grade_str != "N/A" and grade_str != "Н/Д":
 				best_grade_text = "Лучшая оценка: " + grade_str
 				if grade_str == "SS":
-					color_to_apply = Color("#F2B35A")
+					color_to_apply = GradeDisplay.color_for_track_best(song_path)
 				else:
-					var saved_color = top.get("grade_color", null)
-					if saved_color and saved_color is Dictionary and saved_color.has("r"):
-						color_to_apply = Color(
-							float(saved_color.get("r", 1.0)),
-							float(saved_color.get("g", 1.0)),
-							float(saved_color.get("b", 1.0)),
-							float(saved_color.get("a", 1.0))
-						)
+					color_to_apply = GradeDisplay.grade_color(grade_str)
 		best_grade_label.text = best_grade_text
 		best_grade_label.self_modulate = color_to_apply
 

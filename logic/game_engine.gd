@@ -19,7 +19,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 1.0
 @onready var fps_label: Label = $FPSLayer/FPSLabel
 @onready var fps_background: ColorRect = $FPSLayer/FPSBackground
 
-@onready var level_label: Label = $XPContainer/LevelLabel
+@onready var level_label: Label = $XPContainer/LevelRow/LevelLabel
 @onready var xp_progress_bar: ProgressBar = $XPContainer/XPProgressBar
 @onready var xp_amount_label: Label = $XPContainer/XPAmountLabel
 @onready var currency_label: Label = $XPContainer/CurrencyContainer/CurrencyLabel
@@ -262,6 +262,11 @@ func _initialize_theme():
 	var app_theme = preload("res://ui/theme/app_theme.gd").build_theme()
 	theme = app_theme
 	print("[Perf] GameEngine theme build: %d ms" % [Time.get_ticks_msec() - started_ms])
+	call_deferred("_apply_ui_interactions_to_tree", self)
+
+
+func _apply_ui_interactions_to_tree(root: Node) -> void:
+	UiInteractionApplier.apply_from_engine(root)
 
 func _apply_runtime_render_settings() -> void:
 	var quality := 0

@@ -48,6 +48,7 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 						if seen_ids.has(ach_id):
 							continue
 						seen_ids[ach_id] = true
+						item.id = ach_id
 						if item.has("image"):
 							item.erase("image")
 							changed = true
@@ -60,6 +61,8 @@ func load_achievements(json_path: String = ACHIEVEMENTS_JSON_PATH):
 						var cur_val = item.get("current", 0)
 						if typeof(cur_val) == TYPE_NIL:
 							item.current = 0
+						elif category == "playtime":
+							item.current = float(cur_val)
 						else:
 							item.current = int(cur_val)
 						item.unlocked = bool(item.get("unlocked", false))
@@ -187,7 +190,7 @@ func _perform_unlock(achievement: Dictionary):
 	save_achievements()
 
 	if player_data_mgr:
-		player_data_mgr.unlock_achievement(achievement.id)
+		player_data_mgr.unlock_achievement(int(achievement.get("id", -1)))
 
 
 	var category = achievement.get("category", "")
@@ -587,38 +590,62 @@ func check_replay_level_achievement(track_completion_counts: Dictionary):
 		_perform_unlock(a)
 		save_achievements() 
 
+func _parse_play_time_to_seconds(time_formatted: String) -> int:
+	var time_parts = time_formatted.split(":")
+	if time_parts.size() == 2:
+		return int(time_parts[0]) * 3600 + int(time_parts[1]) * 60
+	if time_parts.size() == 3:
+		return int(time_parts[0]) * 3600 + int(time_parts[1]) * 60 + int(time_parts[2])
+	printerr("[AchievementManager] Неизвестный формат времени: ", time_formatted)
+	return 0
+
 func check_playtime_achievements(player_data_mgr_override = null):
 	var pdm = _get_pdm(player_data_mgr_override)
 	if not pdm:
 		return
 
-	var total_play_time_formatted = pdm.data.get("total_play_time", "00:00")
-
-	var time_parts = total_play_time_formatted.split(":")
 	var total_play_time_seconds = 0
-
-	if time_parts.size() == 2: 
-		var hours = int(time_parts[0])
-		var minutes = int(time_parts[1])
-		total_play_time_seconds = (hours * 3600) + (minutes * 60)
+	if pdm.has_method("get_total_play_time_seconds"):
+		total_play_time_seconds = int(pdm.get_total_play_time_seconds())
 	else:
-		printerr("[AchievementManager] Неизвестный формат времени: ", total_play_time_formatted)
-		return
+		total_play_time_seconds = _parse_play_time_to_seconds(str(pdm.data.get("total_play_time", "00:00")))
 
 	var total_play_time_hours = total_play_time_seconds / 3600.0
 	var total_play_time_hours_rounded = roundf(total_play_time_hours * 100.0) / 100.0
 
 	for achievement in achievements:
 		if achievement.get("category", "") == "playtime":
-			var achievement_id = achievement.id
-			var required_hours = achievement.get("total", 0.0)
-
+			var required_hours = float(achievement.get("total", 0.0))
 			achievement.current = total_play_time_hours_rounded
-
 			if not achievement.get("unlocked", false):
 				if total_play_time_hours_rounded >= required_hours:
 					_perform_unlock(achievement)
-				
+
+	save_achievements()
+
+func is_achievement_unlocked(achievement_id: int) -> bool:
+	var a = get_achievement_by_id(achievement_id)
+	return a != null and a.get("unlocked", false)
+
+func _is_achievement_requirement_met(achievement: Dictionary) -> bool:
+	if achievement.get("unlocked", false):
+		return true
+	var cur = float(achievement.get("current", 0.0))
+	var tot = float(achievement.get("total", 1.0))
+	return tot > 0.0 and cur >= tot
+
+func sync_unlocked_achievements_to_player_data() -> void:
+	if not player_data_mgr:
+		return
+	for achievement in achievements:
+		var ach_id = int(achievement.get("id", -1))
+		if ach_id < 0:
+			continue
+		if achievement.get("unlocked", false):
+			player_data_mgr.unlock_achievement(ach_id)
+		elif _is_achievement_requirement_met(achievement):
+			unlock_achievement_by_id(ach_id)
+
 func get_formatted_achievement_progress(achievement_id: int) -> Dictionary:
 	for a in achievements:
 		if a.id == achievement_id:

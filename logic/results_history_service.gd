@@ -14,7 +14,7 @@ func load_results_for_song(song_path: String) -> Array:
 	var arr: Array = JsonUtils.read_json_array(results_file_path)
 	return arr
 
-func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = ""):
+func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = "", ss_repeat: bool = false):
 	if song_path.is_empty():
 		return
 	var results = load_results_for_song(song_path)
@@ -26,6 +26,8 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 		"grade": grade,
 		"grade_color": { "r": grade_color.r, "g": grade_color.g, "b": grade_color.b, "a": grade_color.a },
 	}
+	if grade == "SS":
+		new_result["ss_repeat"] = ss_repeat
 	if mode != "":
 		new_result["mode"] = mode
 	results.append(new_result)
@@ -63,7 +65,7 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 	)
 	return results[0]
 
-func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int, artist: String = "N/A", title: String = "N/A"):
+func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int, artist: String = "N/A", title: String = "N/A", ss_repeat: bool = false):
 	var new_result = {
 		"accuracy": accuracy,
 		"date": date_str,
@@ -79,6 +81,8 @@ func add_session_result(accuracy: float, date_str: String, grade: String, grade_
 		"artist": artist,
 		"title": title
 	}
+	if grade == "SS":
+		new_result["ss_repeat"] = ss_repeat
 	var history = _load_history()
 	history.push_front(new_result)
 	if history.size() > MAX_SESSIONS:

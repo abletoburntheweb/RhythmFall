@@ -101,6 +101,7 @@ var debug_menu = null
 var auto_play_enabled: bool = false 
 var _autoplay_press_until := {}
 const AUTOPLAY_NO_PRESS_TIME: float = -1000000000.0
+const AUTOPLAY_LINE_TOLERANCE_MIN_PX: float = 10.0
 
 var perfect_hits_this_level: int = 0
 
@@ -128,6 +129,7 @@ const TIMING_DEBUG_RING_MAX := 36
 var timing_debug_overlay_label: Label = null
 var _timing_debug_session_start_unix: int = 0
 var _timing_signed_delta_ring_ms: Array[float] = []
+var _timing_visual_delta_ring_ms: Array[float] = []
 @export var judgement_color_perfect: Color = Color.YELLOW
 @export var judgement_color_good: Color = Color.CYAN
 @export var judgement_color_other: Color = Color.GRAY
@@ -311,11 +313,30 @@ func _timing_debug_overlay_ok() -> bool:
 
 func _timing_debug_clear_ring() -> void:
 	_timing_signed_delta_ring_ms.clear()
+	_timing_visual_delta_ring_ms.clear()
 
 func _timing_debug_push_signed_ms(signed_ms: float) -> void:
 	if _timing_signed_delta_ring_ms.size() >= TIMING_DEBUG_RING_MAX:
 		_timing_signed_delta_ring_ms.pop_front()
 	_timing_signed_delta_ring_ms.append(signed_ms)
+
+func _timing_debug_push_visual_ms(visual_ms: float) -> void:
+	if _timing_visual_delta_ring_ms.size() >= TIMING_DEBUG_RING_MAX:
+		_timing_visual_delta_ring_ms.pop_front()
+	_timing_visual_delta_ring_ms.append(visual_ms)
+
+func _timing_debug_mean_visual_ms() -> float:
+	if _timing_visual_delta_ring_ms.is_empty():
+		return 0.0
+	var s := 0.0
+	for x in _timing_visual_delta_ring_ms:
+		s += x
+	return s / float(_timing_visual_delta_ring_ms.size())
+
+func _timing_debug_last_visual_ms() -> float:
+	if _timing_visual_delta_ring_ms.is_empty():
+		return 0.0
+	return _timing_visual_delta_ring_ms[_timing_visual_delta_ring_ms.size() - 1]
 
 func _timing_debug_mean_signed_ms() -> float:
 	if _timing_signed_delta_ring_ms.is_empty():
@@ -372,13 +393,21 @@ func _timing_debug_update_overlay() -> void:
 	var n := _timing_signed_delta_ring_ms.size()
 	var avg := _timing_debug_mean_signed_ms()
 	var last := _timing_debug_last_signed_ms()
+	var ap_line := ""
+	if auto_play_enabled:
+		ap_line = "autoplay: avg по линии (без offset)\n"
+		var avg_v := _timing_debug_mean_visual_ms()
+		var last_v := _timing_debug_last_visual_ms()
+		ap_line += "avg(линия): %.1f мс  посл.: %.1f мс\n" % [avg_v, last_v]
 	lbl.text = (
 		"Тайминг [отладка]\n"
 		+ "Задержка вывода: %.1f мс\n" % lat_ms
 		+ "music − game_time: %.1f мс\n" % drift_ms
 		+ "avg(hit−note): %.1f мс (n=%d)\n" % [avg, n]
 		+ "последн.: %.1f мс\n" % last
-		+ "<0 раньше чарта, >0 позже"
+		+ ap_line
+		+ "<0 раньше чарта, >0 позже\n"
+		+ "hit−note = с учётом offset в настройках"
 	)
 
 func _timing_debug_emit_row(
@@ -487,43 +516,89 @@ func _sync_game_time_with_game_music():
 	if abs(drift) > AUDIO_SYNC_DRIFT_THRESHOLD_SEC:
 		game_time = target
 
+func _autoplay_line_tolerance_px() -> float:
+	return maxf(AUTOPLAY_LINE_TOLERANCE_MIN_PX, speed * 1.8)
+
+func _autoplay_note_at_hit_line(note) -> bool:
+	return absf(float(note.y) - float(hit_zone_y)) <= _autoplay_line_tolerance_px()
+
+func _autoplay_chart_now() -> float:
+	return get_song_time()
+
+func _autoplay_now() -> float:
+	return _hit_time_for_judgement()
+
 func _auto_play_simulate():
 	if pauser and pauser.is_paused:
 		return
 	if not notes_loaded:
 		return
-	var hit_zone_y_float = float(hit_zone_y)
-	var lane_crossing_distance := {}
-	var frame_travel_px: float = max(1.0, speed)
-	var lane_hit_tolerance_px: float = max(2.0, frame_travel_px * 0.25)
+
+	var chart_now := _autoplay_chart_now()
+	var tick := GAME_UPDATE_DELTA
+	var force_perfect := _autoplay_force_perfect()
+	var late_limit := tick * 4.0 if force_perfect else HIT_WINDOW_GOOD
+
+	var pending: Array = []
 	for note in note_manager.get_notes():
 		if note.is_missed:
 			continue
-		var ln_idx := int(note.lane)
-		if ln_idx < 0 or ln_idx >= lanes:
+		var lane_idx := int(note.lane)
+		if lane_idx < 0 or lane_idx >= lanes:
 			continue
-		var dist_to_hit_zone: float = hit_zone_y_float - float(note.y)
-		var is_in_hit_zone_now: bool = absf(dist_to_hit_zone) <= lane_hit_tolerance_px
-		var crosses_hit_zone_this_frame: bool = dist_to_hit_zone >= 0.0 and dist_to_hit_zone <= frame_travel_px
-		if is_in_hit_zone_now or crosses_hit_zone_this_frame:
-			var abs_dist: float = absf(dist_to_hit_zone)
-			var prev_best: float = float(lane_crossing_distance.get(ln_idx, 9999.0))
-			if abs_dist < prev_best:
-				lane_crossing_distance[ln_idx] = abs_dist
-	for lane in lane_crossing_distance.keys():
-		var ln := int(lane)
-		if ln < 0 or ln >= lanes:
+		if note.note_kind != "HoldNote" and note.was_hit:
 			continue
-		_check_hit_for_autoplay(ln)
-		var until_time = game_time + 0.08
-		var prev_until = _autoplay_press_until.get(ln, 0.0)
-		_autoplay_press_until[ln] = max(prev_until, until_time)
+		if note.note_kind == "HoldNote" and note.captured:
+			continue
+		pending.append(note)
+
+	pending.sort_custom(func(a, b): return float(a.time) < float(b.time))
+
+	for note in pending:
+		var lane_idx := int(note.lane)
+		var note_time := float(note.time)
+
+		if note.note_kind == "HoldNote" and note.is_being_held:
+			var hold_until := note_time + float(note.duration) + 0.05
+			_autoplay_press_until[lane_idx] = maxf(
+				float(_autoplay_press_until.get(lane_idx, AUTOPLAY_NO_PRESS_TIME)),
+				hold_until
+			)
+			continue
+
+		if chart_now > note_time + late_limit:
+			continue
+
+		var ready := false
+		if note.note_kind == "HoldNote":
+			ready = chart_now >= note_time - tick * 0.25 and chart_now <= note_time + late_limit
+		else:
+			ready = _autoplay_note_at_hit_line(note)
+
+		if not ready:
+			continue
+
+		_check_hit_for_autoplay(lane_idx, note)
+
+		if note.note_kind == "HoldNote":
+			var hold_until := note_time + float(note.duration) + 0.05
+			_autoplay_press_until[lane_idx] = maxf(
+				float(_autoplay_press_until.get(lane_idx, AUTOPLAY_NO_PRESS_TIME)),
+				hold_until
+			)
+		else:
+			var tap_until := chart_now + 0.08
+			_autoplay_press_until[lane_idx] = maxf(
+				float(_autoplay_press_until.get(lane_idx, AUTOPLAY_NO_PRESS_TIME)),
+				tap_until
+			)
+
 	_autoplay_update_lane_highlights()
 
-func _check_hit_for_autoplay(lane: int):
+func _check_hit_for_autoplay(lane: int, note = null):
 	if pauser.is_paused or not notes_loaded:
 		return
-	check_hit(lane, _autoplay_force_perfect())
+	check_hit(lane, _autoplay_force_perfect(), note)
 
 func _reset_autoplay_state():
 	_autoplay_press_until.clear()
@@ -539,8 +614,9 @@ func _autoplay_update_lane_highlights():
 	if not player or player.lanes_state.is_empty():
 		return
 	var changed := false
+	var now := _autoplay_chart_now()
 	for i in range(lanes):
-		var should_pressed = _autoplay_press_until.get(i, AUTOPLAY_NO_PRESS_TIME) > game_time
+		var should_pressed = _autoplay_press_until.get(i, AUTOPLAY_NO_PRESS_TIME) > now
 		if i < player.lanes_state.size() and player.lanes_state[i] != should_pressed:
 			player.lanes_state[i] = should_pressed
 			changed = true
@@ -924,7 +1000,9 @@ func _update_game():
 		rhythm_notifier.bpm = bpm
 		if rhythm_notifier.audio_stream_player == null:
 			rhythm_notifier.current_position = MusicManager.get_current_music_position()
-	
+
+	note_manager.update_notes()
+
 	if auto_play_enabled:
 		_auto_play_simulate()
 
@@ -932,9 +1010,6 @@ func _update_game():
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
-	
-	note_manager.update_notes()
-
 
 func _check_song_end():
 	if pauser.is_paused or game_finished:
@@ -1303,7 +1378,7 @@ func skip_intro() -> bool:
 	skip_used = true
 	return true
 
-func check_hit(lane: int, force_perfect: bool = false):
+func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 	if pauser.is_paused:
 		return
 	if not notes_loaded:
@@ -1311,31 +1386,37 @@ func check_hit(lane: int, force_perfect: bool = false):
 
 	var current_time_adjusted = _hit_time_for_judgement()
 	var hit_zone_y_float = float(hit_zone_y)
-	var candidates = []
+	var closest_note = null
 
-	for note in note_manager.get_notes():
-		if note.lane == lane and not note.was_hit and not note.is_missed and abs(note.y - hit_zone_y_float) < 50:
-			candidates.append(note)
-
-	if candidates.size() == 0:
-		if force_perfect:
+	if autoplay_target != null:
+		if autoplay_target.lane != lane or autoplay_target.was_hit or autoplay_target.is_missed:
 			return
-		if _is_before_first_note():
-			return
-		_timing_debug_emit_row(lane, -1.0, -1.0, current_time_adjusted, 0.0, 0.0, "empty_zone", force_perfect)
-		_combo_shake_and_dim()
-		score_manager.reset_combo()
-		MusicManager.play_miss_hit_sound()
-		print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо (без штрафа точности)" % lane)
-		return
+		closest_note = autoplay_target
+	else:
+		var candidates = []
+		for note in note_manager.get_notes():
+			if note.lane == lane and not note.was_hit and not note.is_missed and abs(note.y - hit_zone_y_float) < 50:
+				candidates.append(note)
 
-	var closest_note = candidates[0]
-	var closest_distance = abs(closest_note.y - hit_zone_y_float)
-	for note in candidates:
-		var dist = abs(note.y - hit_zone_y_float)
-		if dist < closest_distance:
-			closest_note = note
-			closest_distance = dist
+		if candidates.size() == 0:
+			if force_perfect:
+				return
+			if _is_before_first_note():
+				return
+			_timing_debug_emit_row(lane, -1.0, -1.0, current_time_adjusted, 0.0, 0.0, "empty_zone", force_perfect)
+			_combo_shake_and_dim()
+			score_manager.reset_combo()
+			MusicManager.play_miss_hit_sound()
+			print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо (без штрафа точности)" % lane)
+			return
+
+		closest_note = candidates[0]
+		var closest_distance = abs(closest_note.y - hit_zone_y_float)
+		for note in candidates:
+			var dist = abs(note.y - hit_zone_y_float)
+			if dist < closest_distance:
+				closest_note = note
+				closest_distance = dist
 
 	var note_time: float = float(closest_note.time)
 	var hit_adj: float = float(current_time_adjusted)
@@ -1352,6 +1433,9 @@ func check_hit(lane: int, force_perfect: bool = false):
 		outcome = "good"
 
 	_timing_debug_emit_row(lane, chart_json, note_time, current_time_adjusted, signed_ms, time_diff * 1000.0, outcome, force_perfect)
+
+	if autoplay_target != null and _timing_debug_overlay_ok():
+		_timing_debug_push_visual_ms((_autoplay_chart_now() - note_time) * 1000.0)
 
 	var hit_type = "ПРОМАХ"
 	var judgement_successful = false

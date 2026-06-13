@@ -37,6 +37,7 @@ func _ready():
 	SpinBoxUtils.apply_value_font_size(_bpm_spin, 22)
 	_apply_song_data()
 	_focus_initial_field()
+	UiInteractionApplier.apply_from_engine(self)
 
 func setup(song_data: Dictionary, focus_field: String = "") -> void:
 	_song_data = song_data.duplicate(true)
@@ -117,6 +118,7 @@ func _on_genre_button_pressed() -> void:
 	dlg.genre_selected.connect(_on_genre_selected_from_picker)
 	dlg.tree_exited.connect(func(): _genre_picker = null)
 	add_child(dlg)
+	UiInteractionApplier.apply_from_engine(dlg)
 
 func _on_genre_selected_from_picker(primary_genre: String, all_genres: Array) -> void:
 	_genre_changed = true

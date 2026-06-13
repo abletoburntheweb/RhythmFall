@@ -33,6 +33,7 @@ func _ready():
 			_list.select_mode = ItemList.SELECT_MULTI
 		else:
 			_list.select_mode = ItemList.SELECT_SINGLE
+	UiInteractionApplier.apply_from_engine(self)
 
 func _populate():
 	_all = []

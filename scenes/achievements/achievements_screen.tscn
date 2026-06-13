@@ -1,7 +1,37 @@
-[gd_scene load_steps=3 format=3 uid="uid://b0u5mhsmh2wdx"]
+[gd_scene load_steps=6 format=3 uid="uid://b0u5mhsmh2wdx"]
 
 [ext_resource type="Script" uid="uid://dlrclp0p36h56" path="res://scenes/achievements/achievements_screen.gd" id="1_n2eex"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="1_v157i"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_track"]
+bg_color = Color(0.09, 0.1, 0.14, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.66, 0.58, 0.86, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_filter_panel"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.09, 0.1, 0.14, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="AchievementsScreen" type="Control"]
 layout_mode = 3
@@ -18,7 +48,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_bottom = 184.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -29,26 +58,39 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("1_v157i")
 theme_type_variation = &"FlatButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="TitleLabel" type="Label" parent="MainVBox"]
-modulate = Color(0.41960785, 0.5686275, 0.81960785, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
 text = "Достижения"
 horizontal_alignment = 1
 
 [node name="CounterLabel" type="Label" parent="MainVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.85, 0.8, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.72, 0.82, 0.92, 1)
+theme_override_font_sizes/font_size = 18
 text = "Открыто: 0 / 10"
 horizontal_alignment = 1
 
-[node name="SearchAndFilterHBox" type="HBoxContainer" parent="MainVBox"]
+[node name="UnlockProgressBar" type="ProgressBar" parent="MainVBox"]
+custom_minimum_size = Vector2(280, 10)
 layout_mode = 2
+size_flags_horizontal = 4
+show_percentage = false
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_track")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
 
-[node name="SearchBar" type="LineEdit" parent="MainVBox/SearchAndFilterHBox"]
+[node name="FilterBarPanel" type="PanelContainer" parent="MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_filter_panel")
+
+[node name="SearchAndFilterHBox" type="HBoxContainer" parent="MainVBox/FilterBarPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SearchBar" type="LineEdit" parent="MainVBox/FilterBarPanel/SearchAndFilterHBox"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -57,7 +99,7 @@ theme_type_variation = &"SearchField"
 theme_override_font_sizes/font_size = 20
 placeholder_text = "Поиск достижений..."
 
-[node name="FilterBox" type="OptionButton" parent="MainVBox/SearchAndFilterHBox"]
+[node name="FilterBox" type="OptionButton" parent="MainVBox/FilterBarPanel/SearchAndFilterHBox"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 theme = ExtResource("1_v157i")
@@ -96,10 +138,13 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 40
 theme_override_constants/margin_top = 25
-theme_override_constants/margin_bottom = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
 
 [node name="AchievementsScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
 [node name="BottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/AchievementsScroll"]
@@ -107,11 +152,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 160
+theme_override_constants/margin_bottom = 16
 
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin"]
 layout_mode = 2
 
 [connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
-[connection signal="text_changed" from="MainVBox/SearchAndFilterHBox/SearchBar" to="." method="_on_search_text_changed"]
-[connection signal="item_selected" from="MainVBox/SearchAndFilterHBox/FilterBox" to="." method="_on_filter_selected"]
+[connection signal="text_changed" from="MainVBox/FilterBarPanel/SearchAndFilterHBox/SearchBar" to="." method="_on_search_text_changed"]
+[connection signal="item_selected" from="MainVBox/FilterBarPanel/SearchAndFilterHBox/FilterBox" to="." method="_on_filter_selected"]

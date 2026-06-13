@@ -1,6 +1,6 @@
 # scenes/achievements/achievement_card.gd
 @tool
-extends Control
+extends PanelContainer
 
 @export var title: String = "Название Ачивки"
 @export var description: String = "Описание ачивки"
@@ -9,10 +9,27 @@ extends Control
 @export var unlock_date_text: String = ""
 @export var icon_texture: Texture2D = null
 
+var achievement_category: String = ""
+
+const _ACCENT_BY_CATEGORY := {
+	"mastery": Color(0.66, 0.58, 0.86),
+	"drums": Color(0.38, 0.78, 0.74),
+	"genres": Color(0.86, 0.52, 0.72),
+	"system": Color(0.8, 0.86, 0.94),
+	"shop": Color(0.52, 0.76, 0.92),
+	"economy": Color(0.95, 0.78, 0.35),
+	"daily": Color(0.62, 0.86, 0.72),
+	"playtime": Color(0.42, 0.57, 0.82),
+	"events": Color(0.95, 0.55, 0.45),
+	"level": Color(0.55, 0.92, 0.65),
+	"default": Color(0.42, 0.57, 0.82),
+}
+
 var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
 var TimeUtils = preload("res://logic/utils/time_utils.gd")
 
-@onready var icon_texture_rect: TextureRect = $MarginContainer/ContentContainer/TopRowContainer/IconTexture
+@onready var icon_frame: PanelContainer = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconFrame")
+@onready var icon_texture_rect: TextureRect = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconFrame/IconTexture")
 @onready var title_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/TitleLabel
 @onready var description_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/DescriptionLabel
 @onready var unlock_date_label: Label = $MarginContainer/ContentContainer/TopRowContainer/InfoVBox/UnlockDateLabel
@@ -36,7 +53,9 @@ func _ensure_nodes():
 	if progress_label == null:
 		progress_label = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/ProgressLabel")
 	if icon_texture_rect == null:
-		icon_texture_rect = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconTexture")
+		icon_texture_rect = find_child("IconTexture", true, false) as TextureRect
+	if icon_frame == null:
+		icon_frame = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconFrame") as PanelContainer
 
 func _update_display():
 	_ensure_nodes()
@@ -73,6 +92,58 @@ func _update_display():
 		title_label.add_theme_color_override("font_color", Color.GRAY)
 		description_label.add_theme_color_override("font_color", Color.LIGHT_GRAY)
 		unlock_date_label.add_theme_color_override("font_color", Color.GRAY)
+	_apply_card_style()
+
+
+func _category_accent() -> Color:
+	return _ACCENT_BY_CATEGORY.get(achievement_category, _ACCENT_BY_CATEGORY["default"])
+
+
+func _apply_card_style() -> void:
+	var accent := _category_accent()
+	if is_unlocked:
+		theme_type_variation = &"CardDefault"
+		add_theme_stylebox_override("panel", _build_card_shell_style(accent, true))
+	else:
+		theme_type_variation = &"CardLocked"
+		remove_theme_stylebox_override("panel")
+	_apply_icon_frame(accent)
+	if progress_label and is_unlocked:
+		progress_label.add_theme_constant_override("outline_size", 3)
+		progress_label.add_theme_color_override("font_outline_color", Color(0.12, 0.28, 0.24))
+
+
+func _build_card_shell_style(accent: Color, unlocked: bool) -> StyleBoxFlat:
+	var shell := StyleBoxFlat.new()
+	shell.bg_color = Color(0.13, 0.15, 0.19) if unlocked else Color(0.11, 0.12, 0.16)
+	shell.border_color = accent.lightened(0.12 if unlocked else 0.0)
+	shell.set_border_width_all(2 if unlocked else 1)
+	shell.set_corner_radius_all(12)
+	shell.shadow_color = Color(accent.r, accent.g, accent.b, 0.24 if unlocked else 0.0)
+	shell.shadow_size = 8 if unlocked else 0
+	shell.shadow_offset = Vector2(0, 3)
+	return shell
+
+
+func _apply_icon_frame(accent: Color) -> void:
+	_ensure_nodes()
+	if icon_frame == null:
+		return
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = Color(0.05, 0.06, 0.09)
+	frame.border_color = Color(accent.r, accent.g, accent.b, 0.5)
+	frame.border_width_top = 3
+	frame.border_width_left = 1
+	frame.border_width_right = 1
+	frame.border_width_bottom = 1
+	frame.set_corner_radius_all(10)
+	frame.content_margin_left = 6.0
+	frame.content_margin_top = 6.0
+	frame.content_margin_right = 6.0
+	frame.content_margin_bottom = 6.0
+	icon_frame.add_theme_stylebox_override("panel", frame)
+	if icon_texture_rect:
+		icon_texture_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 func apply_achievement(ach: Dictionary, achievement_manager: AchievementManager = null) -> void:
 	title = str(ach.get("title", ""))
@@ -84,6 +155,7 @@ func apply_achievement(ach: Dictionary, achievement_manager: AchievementManager 
 	else:
 		unlock_date_text = ""
 	icon_texture = AchievementsUtils.load_icon_texture_for_category(str(ach.get("category", "")))
+	achievement_category = str(ach.get("category", ""))
 	progress_text = _compute_progress_text(ach, achievement_manager)
 	_update_display()
 

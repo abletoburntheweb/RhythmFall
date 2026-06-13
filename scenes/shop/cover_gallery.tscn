@@ -33,102 +33,315 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 0.7058824)
 
 [node name="GalleryContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
-mouse_filter = 0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
 
 [node name="BackButton" type="Button" parent="GalleryContainer"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 31)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("2_ot1as")
 theme_type_variation = &"FlatBackButton"
-text = "Назад	"
+text = "Назад"
 
-[node name="GridMargin" type="MarginContainer" parent="GalleryContainer"]
+[node name="TitleLabel" type="Label" parent="GalleryContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
+theme_override_font_sizes/font_size = 34
+text = "Галерея обложек"
+horizontal_alignment = 1
 
-[node name="Content" type="GridContainer" parent="GalleryContainer/GridMargin"]
+[node name="SubtitleLabel" type="Label" parent="GalleryContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "Варианты обложки товара"
+horizontal_alignment = 1
+
+[node name="GalleryScroll" type="ScrollContainer" parent="GalleryContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="GridCenter" type="CenterContainer" parent="GalleryContainer/GalleryScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GridMargin" type="MarginContainer" parent="GalleryContainer/GalleryScroll/GridCenter"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="GridContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin"]
+layout_mode = 2
 theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 30
 columns = 4
 
-[node name="CoverImage1" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="CoverSlot1" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody1" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot1"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage1" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot1/SlotBody1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_hwq2b")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage2" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge1" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot1/SlotBody1"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "1"
+
+[node name="CoverSlot2" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody2" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot2"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage2" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot2/SlotBody2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_ot1as")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage3" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge2" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot2/SlotBody2"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "2"
+
+[node name="CoverSlot3" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody3" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot3"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage3" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot3/SlotBody3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_qnkv8")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage4" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge3" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot3/SlotBody3"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "3"
+
+[node name="CoverSlot4" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody4" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot4"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage4" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot4/SlotBody4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_wt38h")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage5" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge4" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot4/SlotBody4"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "4"
+
+[node name="CoverSlot5" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody5" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot5"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage5" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot5/SlotBody5"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_5a4q6")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage6" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge5" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot5/SlotBody5"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "5"
+
+[node name="CoverSlot6" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody6" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot6"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage6" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot6/SlotBody6"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_15g8r")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CoverImage7" type="TextureRect" parent="GalleryContainer/GridMargin/Content"]
+[node name="IndexBadge6" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot6/SlotBody6"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "6"
+
+[node name="CoverSlot7" type="PanelContainer" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+theme_type_variation = &"CoverGallerySlot"
+
+[node name="SlotBody7" type="Control" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot7"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoverImage7" type="TextureRect" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot7/SlotBody7"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("CanvasTexture_mbixv")
 expand_mode = 1
 stretch_mode = 6
 
+[node name="IndexBadge7" type="Label" parent="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot7/SlotBody7"]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 36.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(0.96, 0.94, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "7"
+
+[node name="HintLabel" type="Label" parent="GalleryContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 0.88)
+theme_override_font_sizes/font_size = 17
+text = "Нажмите «Назад» или Esc, чтобы вернуться в магазин"
+horizontal_alignment = 1
+
 [connection signal="pressed" from="GalleryContainer/BackButton" to="." method="_on_back_button_pressed"]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage1" to="." method="_on_texture_rect_gui_input" binds= [0]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage2" to="." method="_on_texture_rect_gui_input" binds= [1]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage3" to="." method="_on_texture_rect_gui_input" binds= [2]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage4" to="." method="_on_texture_rect_gui_input" binds= [3]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage5" to="." method="_on_texture_rect_gui_input" binds= [4]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage6" to="." method="_on_texture_rect_gui_input" binds= [5]]
-[connection signal="gui_input" from="GalleryContainer/GridMargin/Content/CoverImage7" to="." method="_on_texture_rect_gui_input" binds= [6]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot1" to="." method="_on_cover_slot_gui_input" binds= [0]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot2" to="." method="_on_cover_slot_gui_input" binds= [1]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot3" to="." method="_on_cover_slot_gui_input" binds= [2]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot4" to="." method="_on_cover_slot_gui_input" binds= [3]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot5" to="." method="_on_cover_slot_gui_input" binds= [4]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot6" to="." method="_on_cover_slot_gui_input" binds= [5]]
+[connection signal="gui_input" from="GalleryContainer/GalleryScroll/GridCenter/GridMargin/Content/CoverSlot7" to="." method="_on_cover_slot_gui_input" binds= [6]]

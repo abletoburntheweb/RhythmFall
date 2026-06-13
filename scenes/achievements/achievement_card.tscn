@@ -1333,7 +1333,10 @@ layout_mode = 2
 theme = SubResource("Theme_fsctk")
 theme_override_constants/separation = 10
 
-[node name="IconTexture" type="TextureRect" parent="MarginContainer/ContentContainer/TopRowContainer"]
+[node name="IconFrame" type="PanelContainer" parent="MarginContainer/ContentContainer/TopRowContainer"]
+layout_mode = 2
+
+[node name="IconTexture" type="TextureRect" parent="MarginContainer/ContentContainer/TopRowContainer/IconFrame"]
 z_as_relative = false
 texture_filter = 4
 material = SubResource("ShaderMaterial_fkpat")
@@ -1348,7 +1351,7 @@ stretch_mode = 5
 layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
 theme_override_font_sizes/font_size = 32
@@ -1357,21 +1360,21 @@ text = "Название Ачивки"
 [node name="DescriptionLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0.827451, 0.827451, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Описание ачивки"
 
 [node name="UnlockDateLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer/InfoVBox"]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.74509805, 0.74509805, 0.74509805, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 
 [node name="ProgressLabel" type="Label" parent="MarginContainer/ContentContainer/TopRowContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 size_flags_horizontal = 10
 theme_override_colors/font_color = Color(0.81960785, 0.81960785, 0.81960785, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
 text = "0 / 10"
 horizontal_alignment = 2
 vertical_alignment = 1

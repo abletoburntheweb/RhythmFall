@@ -169,6 +169,8 @@ func _confirm_reset_profile_stats():
 	PlayerDataManager.reset_login_streak()
 	TrackStatsManager.reset_stats()
 	_clear_all_results_internal()
+	if SettingsManager and SettingsManager.has_method("set_seen_server_setup_notice"):
+		SettingsManager.set_seen_server_setup_notice(false)
 	_refresh_profile_ui_if_visible()
 	emit_signal("settings_changed")
 

@@ -6,6 +6,7 @@ const TRACK_STATS_PATH = "user://track_stats.json"
 var track_completion_counts: Dictionary = {}
 var genre_play_counts: Dictionary = {}  
 var best_grades_per_track: Dictionary = {}
+var ss_clear_count_per_track: Dictionary = {}
 var favorite_track: String = ""
 var favorite_track_play_count: int = 0
 var favorite_genre: String = "unknown"  
@@ -19,6 +20,8 @@ func _load():
 		track_completion_counts = json_result.get("track_completion_counts", {})
 		genre_play_counts = json_result.get("genre_play_counts", {}) 
 		best_grades_per_track = json_result.get("best_grades_per_track", {})
+		ss_clear_count_per_track = json_result.get("ss_clear_count_per_track", {})
+		_migrate_ss_counts_from_best_grades()
 		_update_favorite_track()
 		_update_favorite_genre()  
 		print("TrackStatsManager: Загружены статы треков и жанров")
@@ -29,6 +32,7 @@ func _reset_data():
 	track_completion_counts = {}
 	genre_play_counts = {}
 	best_grades_per_track = {}
+	ss_clear_count_per_track = {}
 	_update_favorite_track()
 	_update_favorite_genre()
 
@@ -36,7 +40,8 @@ func _save():
 	var data_to_save = {
 		"track_completion_counts": track_completion_counts,
 		"genre_play_counts": genre_play_counts,
-		"best_grades_per_track": best_grades_per_track
+		"best_grades_per_track": best_grades_per_track,
+		"ss_clear_count_per_track": ss_clear_count_per_track,
 	}
 	JsonUtils.write_json(TRACK_STATS_PATH, data_to_save, true, true)
 	print("TrackStatsManager: Статы треков и жанров сохранены")
@@ -114,6 +119,26 @@ func set_best_grade_for_track(track_path: String, grade: String):
 
 func get_best_grades_map() -> Dictionary:
 	return best_grades_per_track.duplicate(true)
+
+func get_ss_count(track_path: String) -> int:
+	if track_path.is_empty():
+		return 0
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	return int(ss_clear_count_per_track.get(normalized, 0))
+
+func record_ss_clear(track_path: String) -> void:
+	if track_path.is_empty():
+		return
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	ss_clear_count_per_track[normalized] = get_ss_count(normalized) + 1
+	_save()
+
+func _migrate_ss_counts_from_best_grades() -> void:
+	for path in best_grades_per_track.keys():
+		if str(best_grades_per_track[path]) != "SS":
+			continue
+		if not ss_clear_count_per_track.has(path):
+			ss_clear_count_per_track[path] = 1
 
 func reset_stats():
 	_reset_data()

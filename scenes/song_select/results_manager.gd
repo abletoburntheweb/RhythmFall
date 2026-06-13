@@ -2,6 +2,8 @@
 class_name ResultsManager
 extends Node
 
+const GradeDisplay = preload("res://logic/utils/grade_display.gd")
+
 var achievement_system = null
 var replay_achievement_sent_for_song: Dictionary = {}
 var results_service: ResultsHistoryService = preload("res://logic/results_history_service.gd").new()
@@ -61,20 +63,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			top_result.get("grade", "N/A")
 		]
 		var item_idx_top = results_list.add_item(display_text_top)
-		var saved_color_data_top = top_result.get("grade_color", null)
-		var grade_top = str(top_result.get("grade", "N/A"))
-		if grade_top == "SS":
-			results_list.set_item_custom_fg_color(item_idx_top, Color("#F2B35A"))
-		elif saved_color_data_top and saved_color_data_top is Dictionary and saved_color_data_top.has("r"):
-			var saved_grade_color_top = Color(
-				saved_color_data_top.get("r", 1.0),
-				saved_color_data_top.get("g", 1.0),
-				saved_color_data_top.get("b", 1.0),
-				saved_color_data_top.get("a", 1.0)
-			)
-			results_list.set_item_custom_fg_color(item_idx_top, saved_grade_color_top)
-		else:
-			results_list.set_item_custom_fg_color(item_idx_top, Color.WHITE)
+		results_list.set_item_custom_fg_color(item_idx_top, GradeDisplay.color_from_saved_result(top_result))
 
 	var grouped_results = {}
 	for result in results:
@@ -131,21 +120,7 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 			]
 
 			var item_index = results_list.add_item(display_text)
-
-			var saved_color_data = result.get("grade_color", null)
-			var grade_item = str(result.get("grade", "N/A"))
-			if grade_item == "SS":
-				results_list.set_item_custom_fg_color(item_index, Color("#F2B35A"))
-			elif saved_color_data and saved_color_data is Dictionary and saved_color_data.has("r"):
-				var saved_grade_color = Color(
-					saved_color_data.get("r", 1.0),
-					saved_color_data.get("g", 1.0),
-					saved_color_data.get("b", 1.0),
-					saved_color_data.get("a", 1.0)
-				)
-				results_list.set_item_custom_fg_color(item_index, saved_grade_color)
-			else:
-				results_list.set_item_custom_fg_color(item_index, Color.WHITE)
+			results_list.set_item_custom_fg_color(item_index, GradeDisplay.color_from_saved_result(result))
 	
 	if results.size() == 0:
 		results_list.add_item("Нет результатов для этой песни")
@@ -153,8 +128,8 @@ func show_results_for_song(song_data: Dictionary, results_list: ItemList):
 func load_results_for_song(song_path: String) -> Array:
 	return results_service.load_results_for_song(song_path)
 
-func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = ""):
-	results_service.save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime, mode)
+func save_result_for_song(song_path: String, instrument_type: String, score: int, accuracy: float, grade: String = "N/A", grade_color: Color = Color.WHITE, result_datetime: String = "", mode: String = "", ss_repeat: bool = false):
+	results_service.save_result_for_song(song_path, instrument_type, score, accuracy, grade, grade_color, result_datetime, mode, ss_repeat)
 	
 	var song_key = song_path 
 	var current_results = results_service.load_results_for_song(song_path)

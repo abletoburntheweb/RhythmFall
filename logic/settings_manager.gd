@@ -52,7 +52,8 @@ var default_settings = {
 	"generation_notes_ready_scope": 1,
 	"generation_server_use_lan_host": false,
 	"generation_server_lan_host": "",
-	"generation_server_port": 5000
+	"generation_server_port": 5000,
+	"seen_server_setup_notice": false
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
@@ -294,6 +295,13 @@ func set_scroll_speed(value: float):
 
 func get_timing_offset_ms() -> int:
 	return int(settings.get("timing_offset_ms", default_settings["timing_offset_ms"]))
+
+func get_seen_server_setup_notice() -> bool:
+	return bool(settings.get("seen_server_setup_notice", default_settings["seen_server_setup_notice"]))
+
+func set_seen_server_setup_notice(seen: bool) -> void:
+	settings["seen_server_setup_notice"] = seen
+	_save_settings()
 
 func set_timing_offset_ms(value: int):
 	settings["timing_offset_ms"] = clamp(value, -500, 500)

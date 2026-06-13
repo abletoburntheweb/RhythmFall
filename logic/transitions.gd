@@ -110,6 +110,7 @@ func _switch_to_screen_instance(instance):
 		game_engine.current_screen.queue_free()
 	game_engine.add_child(instance)
 	game_engine.current_screen = instance
+	UiInteractionApplier.apply_to_tree(instance, game_engine.theme)
 
 func _return_to_main_menu():
 	transition_open_main_menu()
@@ -216,6 +217,8 @@ func transition_open_main_menu():
 			MusicManager.play_menu_music()  
 		else:
 			printerr("Transitions.gd: ОШИБКА! Не удалось создать новый экземпляр MainMenu!")
+	if main_menu_instance and main_menu_instance.has_method("refresh_shop_badge"):
+		main_menu_instance.refresh_shop_badge()
 
 func transition_open_achievements():
 	
@@ -285,8 +288,10 @@ func transition_open_settings(_from_pause=false):
 			game_engine.current_screen.add_child(new_screen)
 		else:
 			printerr("Transitions.gd: Нет активного экрана для паузы!")
+			return
 	else:
 		game_engine.add_child(new_screen)
+	UiInteractionApplier.apply_to_tree(new_screen, game_engine.theme)
 
 func transition_close_settings(_from_pause=false):
 	if _from_pause:

@@ -3720,7 +3720,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 theme = SubResource("Theme_p28av")
 theme_type_variation = &"FlatButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="Separator" type="ColorRect" parent="MainVBox"]
 custom_minimum_size = Vector2(0, 30)
@@ -3759,8 +3759,9 @@ theme_override_constants/separation = 14
 [node name="FavoriteCoverTextureRect" type="TextureRect" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
+texture_filter = 4
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="InfoVBox" type="VBoxContainer" parent="MainVBox/ProfileRoot/FavoriteTrackCard/MarginContainer/HBoxContainer"]
 layout_mode = 2

@@ -2393,11 +2393,12 @@ theme_override_constants/separation = 20
 
 [node name="DisplayHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderBlue"
 theme_override_font_sizes/font_size = 26
 text = "Дисплей"
 
 [node name="DisplayPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelBlue"
 layout_mode = 2
 
 [node name="DisplayPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/DisplayPanel"]
@@ -2517,11 +2518,12 @@ popup/item_2/id = 2
 
 [node name="GameplayHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
+theme_type_variation = &"SectionHeaderMint"
 theme_override_font_sizes/font_size = 26
 text = "Игровой процесс"
 
 [node name="GameplayPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+theme_type_variation = &"SectionPanelMint"
 layout_mode = 2
 
 [node name="GameplayPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel"]

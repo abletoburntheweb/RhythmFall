@@ -5,6 +5,7 @@ extends BaseScreen
 const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
 const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
 const TimeUtils = preload("res://logic/utils/time_utils.gd")
+const GradeDisplay = preload("res://logic/utils/grade_display.gd")
 
 const _ROOT := "MainVBox/ProfileRoot"
 const _FAVORITE := "%s/FavoriteTrackCard/MarginContainer/HBoxContainer" % _ROOT
@@ -617,8 +618,7 @@ func _update_accuracy_chart():
 			var accuracy = session.get("accuracy", 0.0) if session else 0.0
 			tooltip_text = "Н/Д - Н/Д\n(%.2f%%)" % accuracy
 
-		var grade_color_dict = session.get("grade_color", {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}) if session else {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
-		var color = Color(grade_color_dict["r"], grade_color_dict["g"], grade_color_dict["b"], grade_color_dict["a"])
+		var color = GradeDisplay.color_from_saved_result(session) if session else Color(0.5, 0.5, 0.5, 1.0)
 
 		var bg_width = chart_background.size.x
 		var bg_height = chart_background.size.y

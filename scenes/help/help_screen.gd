@@ -7,6 +7,9 @@ const HELP_CONTENT_DEFAULT_PATH := "res://data/help_content.json"
 @onready var help_list: VBoxContainer = $MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin/HelpList
 @onready var back_button = $MainVBox/BackButton
 
+const SECTION_HEADER_FONT_SIZE := 28
+const SECTION_ACCENT := Color(0.419608, 0.568627, 0.819608, 1.0)
+
 var help_card_template: HelpCard
 
 
@@ -63,8 +66,14 @@ func _setup_help_items() -> void:
 func _load_help_content() -> Dictionary:
 	_ensure_user_help_content()
 	var path := HELP_CONTENT_USER_PATH if FileAccess.file_exists(HELP_CONTENT_USER_PATH) else _default_help_path()
-	if path == "" or not FileAccess.file_exists(path):
+	if path == "":
 		push_warning("HelpScreen: не найден файл справки")
+		return {}
+	return _read_help_json(path)
+
+
+func _read_help_json(path: String) -> Dictionary:
+	if path == "" or not FileAccess.file_exists(path):
 		return {}
 	var fa := FileAccess.open(path, FileAccess.READ)
 	if fa == null:
@@ -90,10 +99,17 @@ func _default_help_path() -> String:
 
 
 func _ensure_user_help_content() -> void:
-	if FileAccess.file_exists(HELP_CONTENT_USER_PATH):
-		return
 	var default_path := _default_help_path()
 	if default_path == "":
+		return
+	var should_copy := not FileAccess.file_exists(HELP_CONTENT_USER_PATH)
+	if not should_copy:
+		var default_data := _read_help_json(default_path)
+		var user_data := _read_help_json(HELP_CONTENT_USER_PATH)
+		var default_version := int(default_data.get("version", 0))
+		var user_version := int(user_data.get("version", 0))
+		should_copy = default_version > user_version
+	if not should_copy:
 		return
 	var src := FileAccess.open(default_path, FileAccess.READ)
 	if src == null:
@@ -118,31 +134,42 @@ func _resolve_colors(text: String, colors: Dictionary) -> String:
 func _add_help_category(section_title: String) -> VBoxContainer:
 	var wrap := VBoxContainer.new()
 	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wrap.add_theme_constant_override("separation", 8)
 	help_list.add_child(wrap)
 
 	var header := Button.new()
 	header.toggle_mode = true
 	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	header.custom_minimum_size.y = 72
-	header.add_theme_font_size_override("font_size", 30)
+	header.custom_minimum_size.y = 50
+	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_theme_font_size_override("font_size", SECTION_HEADER_FONT_SIZE)
+	if back_button and back_button.theme:
+		header.theme = back_button.theme
+	header.theme_type_variation = &"FlatMenuSongButton"
 	header.text = "> " + section_title
+	header.modulate = Color.WHITE
+
+	var inner_wrap := MarginContainer.new()
+	inner_wrap.visible = false
+	inner_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner_wrap.add_theme_constant_override("margin_left", 32)
+	inner_wrap.add_theme_constant_override("margin_right", 10)
+	inner_wrap.add_theme_constant_override("margin_top", 4)
 
 	var inner := VBoxContainer.new()
-	inner.visible = false
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("separation", 10)
+	inner_wrap.add_child(inner)
 
 	var title_ref := section_title
 	header.toggled.connect(func(pressed: bool):
-		inner.visible = pressed
+		inner_wrap.visible = pressed
 		header.text = ("v " if pressed else "> ") + title_ref
-		if pressed:
-			header.modulate = Color(0.42, 0.57, 0.82)
-		else:
-			header.modulate = Color.WHITE
+		header.modulate = SECTION_ACCENT if pressed else Color.WHITE
 	)
 
 	wrap.add_child(header)
-	wrap.add_child(inner)
+	wrap.add_child(inner_wrap)
 	return inner
 
 

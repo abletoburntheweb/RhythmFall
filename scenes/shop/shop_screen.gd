@@ -15,6 +15,9 @@ var current_cover_item_data: Dictionary = {}
 var _scroll_step := 60
 var _page_step := 480
 
+@onready var _unlock_progress_bar: ProgressBar = $MainContent/MainVBox/UnlockProgressBar
+@onready var _counter_label: Label = $MainContent/MainVBox/CounterLabel
+
 func _ready():
 	var started_ms := Time.get_ticks_msec()
 	var game_engine = get_parent()
@@ -51,7 +54,6 @@ func _ready():
 		printerr("ShopScreen.gd: Файл achievements_data.json не найден: ", user_ach)
 
 	currency = PlayerDataManager.get_currency()  
-	_update_currency_label()
 	_update_shop_progress_label()
 	
 
@@ -85,9 +87,21 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
+	_sync_achievement_rewards()
 	await _create_item_cards()
 	_set_buttons_focus_to_none()
 	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
+
+func _sync_achievement_rewards() -> void:
+	var game_engine = get_parent()
+	if not game_engine or not game_engine.has_method("get_achievement_system"):
+		return
+	var ach_sys = game_engine.get_achievement_system()
+	if not ach_sys or not ach_sys.achievement_manager:
+		return
+	var am = ach_sys.achievement_manager
+	am.check_playtime_achievements(PlayerDataManager)
+	am.sync_unlocked_achievements_to_player_data()
 
 func _get_currency_label() -> Label:
 	var main_vbox = $MainContent/MainVBox
@@ -110,21 +124,6 @@ func _pulse_currency_label() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(lbl, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(lbl, "modulate", Color(1, 1, 1, 1), 0.25)
-
-func _update_currency_label():
-	var main_vbox = $MainContent/MainVBox
-	if main_vbox:
-		var v_box_container = main_vbox.get_node("VBoxContainer")
-		if v_box_container:
-			var currency_label = v_box_container.find_child("CurrencyLabel", true, false)
-			if currency_label and currency_label is Label:
-				currency_label.text = "Валюта: %d" % PlayerDataManager.get_currency() 
-			else:
-				printerr("ShopScreen.gd: ОШИБКА: CurrencyLabel НЕ найден внутри VBoxContainer.")
-		else:
-			printerr("ShopScreen.gd: ОШИБКА: VBoxContainer НЕ найден внутри MainVBox.")
-	else:
-		printerr("ShopScreen.gd: ОШИБКА: MainVBox НЕ найден по пути $MainContent/MainVBox.")
 
 func _update_shop_progress_label():
 	var items = shop_data.get("items", [])
@@ -155,17 +154,17 @@ func _update_shop_progress_label():
 			available_by_daily = PlayerDataManager.get_daily_quests_completed_total() >= req_daily
 		if is_unlocked_purchase or is_default_item or available_by_level or available_by_achievement or available_by_daily:
 			unlocked += 1
-	var main_vbox = $MainContent/MainVBox
-	if main_vbox:
-		var progress_label = main_vbox.find_child("CounterLabel", true, false)
-		if progress_label and progress_label is Label:
-			progress_label.text = "Открыто: %d / %d" % [unlocked, total_items]
+	if _counter_label:
+		_counter_label.text = "Открыто: %d / %d" % [unlocked, total_items]
+	if _unlock_progress_bar:
+		_unlock_progress_bar.max_value = maxf(float(total_items), 1.0)
+		_unlock_progress_bar.value = float(unlocked)
 func _initialize_categories_default():
 	_update_category_buttons("Все")
 	current_category = "Все"
 
 func _update_category_buttons(selected: String):
-	var hbox = $MainContent/MainVBox/VBoxContainer/CategoriesHBox
+	var hbox = $MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox
 	if not hbox:
 		return
 	var all_btn: Button = hbox.get_node("CategoryButtonAll")
@@ -243,6 +242,9 @@ func _create_item_cards() -> void:
 				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
 				daily_unlocked = total_completed >= required_daily
 			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
+			var item_id_str := String(item_data.get("item_id", ""))
+			if new_card.has_method("set_new_reward_highlight"):
+				new_card.set_new_reward_highlight(PlayerDataManager.is_shop_reward_unseen(item_id_str, items))
 			new_card.buy_pressed.connect(_on_item_buy_pressed)
 			new_card.use_pressed.connect(_on_item_use_pressed)
 			new_card.preview_pressed.connect(_on_item_preview_pressed)
@@ -256,7 +258,12 @@ func _create_item_cards() -> void:
 	if items_scroll:
 		items_scroll.scroll_vertical = 0
 		items_scroll.scroll_horizontal = 0
+	call_deferred("_apply_shop_ui_interactions")
 	print("[Perf] ShopScreen create cards: %d ms, items=%d, batch=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size(), batch_size])
+
+
+func _apply_shop_ui_interactions() -> void:
+	UiInteractionApplier.apply_from_engine(self)
 
 
 func _shop_grid_clear_min_height() -> void:
@@ -337,7 +344,6 @@ func _on_item_buy_pressed(item_id: String):
 			
 			MusicManager.play_shop_purchase()  
 			
-			_update_currency_label()
 			_pulse_currency_label()
 			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
@@ -423,6 +429,7 @@ func _open_cover_gallery(item_data: Dictionary):
 
 	current_cover_gallery.images_folder = item_data.get("images_folder", "")
 	current_cover_gallery.images_count = item_data.get("images_count", 0)
+	current_cover_gallery.item_title = str(item_data.get("title", item_data.get("name", "")))
 
 	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
 	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)
@@ -438,6 +445,7 @@ func _open_cover_gallery(item_data: Dictionary):
 func _deferred_add_child(gallery_node: Node):
 	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(gallery_node):
 		add_child(gallery_node)
+		UiInteractionApplier.apply_from_engine(gallery_node)
 		gallery_node.grab_focus()
 	else:
 		if is_instance_valid(gallery_node):

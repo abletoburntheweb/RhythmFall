@@ -1,6 +1,8 @@
 # scenes/victory_screen/victory_screen.gd
 extends Control
 
+const GradeDisplay = preload("res://logic/utils/grade_display.gd")
+
 signal song_select_requested
 signal replay_requested
 
@@ -100,6 +102,7 @@ var _last_int_max_combo: int = -1
 var _last_int_hit: int = -1
 var _last_int_miss: int = -1
 var _last_acc_tenths: int = -1
+var _rewards_detail_clickable: bool = false
 @export var count_progress: float:
 	set(value):
 		if count_kind != _progress_owner_kind:
@@ -256,13 +259,14 @@ var victory_animation_player: AnimationPlayer = null
 @onready var max_combo_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/MaxComboLabel
 @onready var accuracy_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/AccuracyLabel
 @onready var grade_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/GradeLabel
-@onready var currency_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/CurrencyLabel
-@onready var xp_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/XPLabel 
+@onready var currency_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/CurrencyRow/CurrencyLabel
+@onready var xp_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/XPRow/XPLabel
 @onready var hit_notes_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/HitNotesLabel 
 @onready var missed_notes_label: Label = $MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/MissedNotesLabel 
 @onready var replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/ReplayButton
 @onready var song_select_button: Button = $MainMargin/MainVBox/ButtonsContainer/SongSelectButton
 @onready var countups_delay_timer: Timer = $CountupsDelayTimer
+@onready var hint_label: Label = $MainMargin/MainVBox/HintLabel
 
 
 func _ready():
@@ -274,15 +278,28 @@ func _ready():
 		victory_animation_player.animation_finished.connect(_on_victory_anim_finished)
 	
 	if currency_label:
-		currency_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		currency_label.gui_input.connect(_on_currency_label_clicked)
 	
 	if xp_label:
-		xp_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		xp_label.gui_input.connect(_on_xp_label_clicked)
+	
+	_set_rewards_detail_clickable(false)
 	
 	if countups_delay_timer:
 		countups_delay_timer.timeout.connect(_on_countups_delay_timer_timeout)
+	if hint_label:
+		hint_label.visible = false
+
+func _set_rewards_detail_clickable(enabled: bool) -> void:
+	_rewards_detail_clickable = enabled
+	var filter := Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	var cursor := Control.CURSOR_POINTING_HAND if enabled else Control.CURSOR_ARROW
+	if currency_label:
+		currency_label.mouse_filter = filter
+		currency_label.mouse_default_cursor_shape = cursor
+	if xp_label:
+		xp_label.mouse_filter = filter
+		xp_label.mouse_default_cursor_shape = cursor
 
 func _calculate_grade() -> String:
 	if accuracy == 100.0: 
@@ -300,9 +317,10 @@ func _calculate_grade() -> String:
 	else: 
 		return "F"
 		
-func _get_grade_color(grade: String) -> Color:
+func _get_grade_color(grade: String, is_repeat_ss: bool = false) -> Color:
+	if grade == "SS":
+		return GradeDisplay.ss_display_color(is_repeat_ss)
 	match grade:
-		"SS": return grade_color_SS
 		"S": return grade_color_S
 		"A": return grade_color_A
 		"B": return grade_color_B
@@ -371,6 +389,8 @@ func _on_song_select_button_pressed():
 	queue_free()
 
 func _on_currency_label_clicked(event):
+	if not _rewards_detail_clickable:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_show_currency_details()
 
@@ -396,6 +416,8 @@ func _on_currency_details_closed():
 	pass
 
 func _on_xp_label_clicked(event):
+	if not _rewards_detail_clickable:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_show_xp_details()
 
@@ -467,6 +489,9 @@ func _calculate_currency_new() -> int:
 	return max(1, int(total_currency))
 
 func _deferred_update_ui():
+	_set_rewards_detail_clickable(false)
+	if hint_label:
+		hint_label.visible = false
 	if is_instance_valid(song_label):
 		var artist = String(song_info.get("artist", "Неизвестен"))
 		var title = String(song_info.get("title", "Без названия"))
@@ -494,15 +519,11 @@ func _deferred_update_ui():
 
 	if is_instance_valid(grade_label):
 		var grade = _calculate_grade()
-		var grade_color = _get_grade_color(grade)
+		var song_path_for_color = song_info.get("path", "")
+		var is_repeat_ss := grade == "SS" and GradeDisplay.is_repeat_ss_on_track(song_path_for_color)
+		var grade_color = _get_grade_color(grade, is_repeat_ss)
 		grade_label.text = "Оценка: %s" % grade
 		grade_label.modulate = grade_color
-		var song_path_for_color = song_info.get("path", "")
-		if song_path_for_color != "":
-			var best_map = PlayerDataManager.data.get("best_grades_per_track", {})
-			var best_for_track = str(best_map.get(song_path_for_color, ""))
-			if best_for_track == "SS" and grade == "SS":
-				grade_label.modulate = grade_color_SS_repeat
 		grade_label.visible = false
 	
 	if is_instance_valid(currency_label):
@@ -553,12 +574,14 @@ func _deferred_update_ui():
 	PlayerDataManager.add_score_to_total(score, is_drum_mode)
 
 	var should_save_result_later = (results_manager and song_info and song_info.get("path"))
+	var song_path = song_info.get("path", "")
+	var final_grade = _calculate_grade()
+	var is_repeat_ss := final_grade == "SS" and GradeDisplay.is_repeat_ss_on_track(song_path)
+	var grade_color_for_result = _get_grade_color(final_grade, is_repeat_ss)
 	if should_save_result_later:
 		var instrument_for_result = song_info.get("instrument", "standard")
 		if instrument_for_result == "drums":
 			instrument_for_result = "Перкуссия"
-		var grade_for_result = _calculate_grade()
-		var grade_color_for_result = _get_grade_color(grade_for_result)
 		var result_datetime_for_result = Time.get_datetime_string_from_system(true, true)
 		var mode_for_result = str(song_info.get("mode", ""))
 		results_manager.save_result_for_song(
@@ -566,16 +589,17 @@ func _deferred_update_ui():
 			instrument_for_result,          
 			score,                    
 			accuracy,                  
-			grade_for_result,                   
+			final_grade,                   
 			grade_color_for_result,              
 			result_datetime_for_result,
-			mode_for_result
+			mode_for_result,
+			is_repeat_ss
 		)
 
-	var song_path = song_info.get("path", "")
 	if !song_path.is_empty():
-		var final_grade = _calculate_grade()
 		PlayerDataManager.update_best_grade_for_track(song_path, final_grade)
+		if final_grade == "SS" and TrackStatsManager:
+			TrackStatsManager.record_ss_clear(song_path)
 
 	var achievement_system = null
 	var achievement_manager = null
@@ -595,8 +619,8 @@ func _deferred_update_ui():
 			var instrument_type_for_history = song_info.get("instrument", "standard")
 			if instrument_type_for_history == "drums":
 				instrument_type_for_history = "Перкуссия"
-			var grade_for_history = _calculate_grade()
-			var grade_color_for_history = _get_grade_color(grade_for_history)
+			var grade_for_history = final_grade
+			var grade_color_for_history = grade_color_for_result
 			var current_time_string = Time.get_datetime_string_from_system(true, true)
 			var artist = song_info.get("artist", "N/A")
 			var title = song_info.get("title", "N/A")
@@ -608,7 +632,8 @@ func _deferred_update_ui():
 				instrument_type_for_history,
 				score,
 				artist,
-				title
+				title,
+				is_repeat_ss
 			)
 
 	if achievement_system:
@@ -658,6 +683,9 @@ func _on_countups_delay_timer_timeout():
 		_reveal_grade()
 
 func _reveal_grade():
+	if hint_label:
+		hint_label.visible = true
+	_set_rewards_detail_clickable(true)
 	if not is_instance_valid(grade_label):
 		return
 	grade_label.visible = true

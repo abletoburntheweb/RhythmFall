@@ -1966,6 +1966,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+shadow_offset = Vector2(0, 2)
+
 [sub_resource type="Theme" id="Theme_re5xs"]
 ActiveAll/base_type = &"Button"
 ActiveAll/colors/font_color = Color(0.5128, 0.6388, 0.8488, 1)
@@ -2516,7 +2518,7 @@ size_flags_horizontal = 4
 
 [node name="StatusLabel" type="Label" parent="MarginContainer/ContentContainer/StatusDefaultHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "Стандартный"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2539,6 +2541,16 @@ size_flags_horizontal = 3
 theme = ExtResource("2_ha41t")
 theme_type_variation = &"FlatButtonGreen"
 text = "Использовать"
+icon = ExtResource("3_1pvwo")
+icon_alignment = 2
+
+[node name="OpenRewardButton" type="Button" parent="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_ha41t")
+theme_type_variation = &"FlatButtonYellow"
+text = "Открыть"
 icon = ExtResource("3_1pvwo")
 icon_alignment = 2
 
@@ -2587,5 +2599,6 @@ icon_alignment = 2
 
 [connection signal="gui_input" from="MarginContainer/ContentContainer/ImageWrapper/ImageRect" to="." method="_on_image_rect_gui_input"]
 [connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton" to="." method="_on_use_pressed"]
+[connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/OpenRewardButton" to="." method="_on_open_reward_pressed"]
 [connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton" to="." method="_on_buy_pressed"]
 [connection signal="pressed" from="MarginContainer/ContentContainer/ButtonsContainer/PreviewButton" to="." method="_on_preview_pressed"]

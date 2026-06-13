@@ -8,8 +8,9 @@ var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
 
 @onready var back_button: Button = $MainVBox/BackButton
 @onready var counter_label: Label = $MainVBox/CounterLabel
-@onready var search_bar: LineEdit = $MainVBox/SearchAndFilterHBox/SearchBar
-@onready var filter_box: OptionButton = $MainVBox/SearchAndFilterHBox/FilterBox
+@onready var unlock_progress_bar: ProgressBar = $MainVBox/UnlockProgressBar
+@onready var search_bar: LineEdit = $MainVBox/FilterBarPanel/SearchAndFilterHBox/SearchBar
+@onready var filter_box: OptionButton = $MainVBox/FilterBarPanel/SearchAndFilterHBox/FilterBox
 @onready var achievements_list: VBoxContainer = $MainVBox/ContentContainer/AchievementsScroll/BottomMargin/AchievementsList
 
 var achievements: Array[Dictionary] = []
@@ -86,6 +87,9 @@ func _update_counter():
 		if a.get("unlocked", false):
 			unlocked_count += 1
 	counter_label.text = "Открыто: %d / %d" % [unlocked_count, achievements.size()]
+	if unlock_progress_bar:
+		unlock_progress_bar.max_value = maxf(float(achievements.size()), 1.0)
+		unlock_progress_bar.value = float(unlocked_count)
 
 
 

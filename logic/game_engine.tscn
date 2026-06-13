@@ -1,10 +1,11 @@
-[gd_scene load_steps=14 format=3 uid="uid://5vghv31ksise"]
+[gd_scene load_steps=15 format=3 uid="uid://5vghv31ksise"]
 
 [ext_resource type="Script" uid="uid://ck3r6dancw1s4" path="res://logic/game_engine.gd" id="1_w1ht0"]
 [ext_resource type="Shader" uid="uid://d28m038fb1v6f" path="res://shaders/radial_glow.gdshader" id="2_q8hsq"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_358gi"]
 [ext_resource type="Script" uid="uid://bkldcmlwkw05g" path="res://ui/notification_ui.gd" id="4_358gi"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="4_wjwn5"]
+[ext_resource type="Texture2D" uid="uid://8fq25a0r60l6" path="res://assets/icons/gauge.svg" id="5_gauge"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hq7uf"]
 shader = ExtResource("2_q8hsq")
@@ -143,7 +144,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.6789437, 0.6789437, 0.6789437, 1)
 theme_override_font_sizes/font_size = 12
-text = "v1.1.9 • Release (Build 412)"
+text = "v1.1.10 • Release (Build 414)"
 
 [node name="XPContainer" type="Control" parent="."]
 layout_mode = 1
@@ -167,18 +168,27 @@ grow_vertical = 2
 theme_override_styles/fill = SubResource("StyleBoxFlat_q8hsq")
 show_percentage = false
 
-[node name="LevelLabel" type="Label" parent="XPContainer"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 79.25
-anchor_right = 79.25
-offset_left = -324.0
+[node name="LevelRow" type="HBoxContainer" parent="XPContainer"]
+layout_mode = 0
+offset_left = -5.0
 offset_top = 4.0
+offset_right = 322.0
 offset_bottom = 38.0
+theme_override_constants/separation = 6
+
+[node name="LevelLabel" type="Label" parent="XPContainer/LevelRow"]
+layout_mode = 2
+size_flags_horizontal = 10
 theme_override_font_sizes/font_size = 24
 text = "Уровень 1"
 horizontal_alignment = 2
 vertical_alignment = 2
+
+[node name="LevelIcon" type="TextureRect" parent="XPContainer/LevelRow"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture = ExtResource("5_gauge")
+expand_mode = 1
 
 [node name="XPAmountLabel" type="Label" parent="XPContainer"]
 layout_mode = 1
@@ -225,7 +235,7 @@ libraries = {
 [node name="NotificationsLayer" type="CanvasLayer" parent="."]
 
 [node name="NotifHBox" type="HBoxContainer" parent="NotificationsLayer"]
-offset_top = 1060.0
+offset_top = 1063.0
 offset_right = 260.0
 offset_bottom = 1080.0
 script = ExtResource("4_358gi")
@@ -235,7 +245,7 @@ visible = false
 custom_minimum_size = Vector2(0, 17)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Текст"
 
 [node name="CancelButton" type="LinkButton" parent="NotificationsLayer/NotifHBox"]
@@ -243,7 +253,7 @@ visible = false
 layout_mode = 2
 theme = ExtResource("4_wjwn5")
 theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Отмена"
 underline = 1
 
@@ -253,7 +263,7 @@ custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme = ExtResource("4_wjwn5")
 theme_override_colors/font_color = Color(0.6784314, 0.6784314, 0.6784314, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 12
 text = "Повторить"
 underline = 1
 
