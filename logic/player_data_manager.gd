@@ -157,6 +157,24 @@ func get_unseen_shop_reward_ids(shop_items: Array = []) -> PackedStringArray:
 func get_unseen_shop_reward_count(shop_items: Array = []) -> int:
 	return get_unseen_shop_reward_ids(shop_items).size()
 
+func get_unseen_shop_reward_count_for_category(category: String, shop_items: Array = []) -> int:
+	category = category.strip_edges()
+	if category == "" or category == "Все":
+		return get_unseen_shop_reward_count(shop_items)
+	if shop_items.is_empty():
+		shop_items = ShopRewardNotifications.load_shop_items()
+	var unseen_ids := get_unseen_shop_reward_ids(shop_items)
+	var count := 0
+	for item in shop_items:
+		if not (item is Dictionary):
+			continue
+		var item_id := str(item.get("item_id", ""))
+		if item_id == "" or not unseen_ids.has(item_id):
+			continue
+		if str(item.get("category", "")) == category:
+			count += 1
+	return count
+
 func is_shop_reward_unseen(item_id: String, shop_items: Array = []) -> bool:
 	item_id = item_id.strip_edges()
 	if item_id == "":

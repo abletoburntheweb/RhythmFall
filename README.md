@@ -15,11 +15,49 @@ RhythmFall is a Godot‑based rhythm game that analyzes any track you choose and
 - The client saves the chart locally and you can play immediately.
 
 ## Key Features
-- Automatic note generation from audio (no manual mapping)
-- Drum‑focused patterns with basic and enhanced modes
-- Genre‑aware density and groove
-- Optional stems separation for improved detection
-- Fully local workflow (talks to localhost)
+
+**Core gameplay**
+- Automatic note generation from audio (no manual charting)
+- Drum-focused patterns: minimal, basic, enhanced, natural, and custom modes
+- 3–5 lanes, genre-aware density and groove, optional stem separation
+- Letter grades (SS through C), combo, accuracy, XP and currency rewards
+- Audio-driven timing; calibration in Settings
+
+**Song library**
+- Import your own tracks; bundled songs included
+- BPM analysis and per-track note generation via the local server
+- Metadata editing (title, artist, year, genre, BPM), per-song results history
+- Delete user-added tracks from the library (bundled songs stay protected)
+
+**Progression and meta**
+- Player level and XP; in-game currency (diamonds)
+- **Shop** — unlockable covers, themes, and cosmetics; rewards from levels, achievements, and daily quests
+- **Achievements** — track milestones across gameplay, library, and stats
+- **Daily quests** on the main menu — short goals with currency rewards
+- **Profile** — favorite track, stats dashboard, grade tiles, accuracy chart, recent sessions
+
+**Menus and settings**
+- Main menu hub: play, shop, achievements, profile, settings, help
+- **Settings** — sound, graphics, controls, misc (generation server host/port, data reset)
+- **Help** — scrollable guide with Getting Started onboarding (content editable via JSON)
+
+**Technical**
+- Fully local workflow for analysis and generation (localhost or LAN server)
+- Windows installer and portable build since v1.1.10
+
+## Screenshots
+
+| Main menu | Gameplay |
+| --- | --- |
+| ![Main menu — daily quests and navigation](./assets/readme/main_menu.png) | ![Gameplay — lanes, HUD, note chart](./assets/readme/gameplay.png) |
+
+| Song library & generation | Victory |
+| --- | --- |
+| ![Song select — library and generation parameters](./assets/readme/song-select-generation.png) | ![Victory — grade and run statistics](./assets/readme/victory_screen.png) |
+
+| Profile |
+| --- |
+| ![Profile — stats dashboard and favorite track](./assets/readme/profile_screen.png) |
 
 ## Quick Start
 - Start the local server ([RhythmFallServer](https://github.com/abletoburntheweb/RhythmFallServer)).
@@ -27,9 +65,11 @@ RhythmFall is a Godot‑based rhythm game that analyzes any track you choose and
 - Generate notes: choose drums, mode (basic/enhanced), and lanes; pick a song.
 - Play the newly generated level.
 
-## Windows download (v1.1.10)
+## Windows download
 
-Download **`RhythmFall-1.1.10-setup.exe`** from [GitHub Releases](https://github.com/abletoburntheweb/RhythmFall/releases). A portable ZIP (folder with `RhythmFall.exe`) may also be provided.
+Pre-built Windows builds are available since **v1.1.10** (installer and optional portable ZIP) — no Godot editor required.
+
+Download the latest **`RhythmFall-*-setup.exe`** from [GitHub Releases](https://github.com/abletoburntheweb/RhythmFall/releases) (currently **v1.1.11**). A portable ZIP (folder with `RhythmFall.exe`) may also be provided for the same version.
 
 **Install:** run setup.exe → choose a folder (default: Program Files or Local Programs) → Start menu shortcut, optional desktop icon.
 

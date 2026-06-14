@@ -1,7 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://c2mtaeditdlg01"]
+[gd_scene load_steps=4 format=3 uid="uid://cu1d70grsqgto"]
 
-[ext_resource type="Script" path="res://scenes/song_select/metadata_edit_dialog.gd" id="1_meta"]
+[ext_resource type="Script" uid="uid://dqeodkbw7omxc" path="res://scenes/song_select/metadata_edit_dialog.gd" id="1_meta"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_meta_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
 
 [node name="MetadataEdit" type="Control"]
 layout_mode = 3
@@ -20,7 +39,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.7058824)
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.78)
 
 [node name="Container" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -29,141 +49,166 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 10
 
 [node name="BackButton" type="Button" parent="Container"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 31)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("2_theme")
 theme_type_variation = &"FlatBackButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="TitleLabel" type="Label" parent="Container"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
 text = "Редактирование метаданных"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="FormMargin" type="MarginContainer" parent="Container"]
+[node name="SubtitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.92, 1)
+theme_override_font_sizes/font_size = 18
+text = "Измените поля и сохраните — в список попадут только отличия"
+horizontal_alignment = 1
+
+[node name="BodyCenter" type="CenterContainer" parent="Container"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/margin_left = 200
-theme_override_constants/margin_top = 40
-theme_override_constants/margin_right = 200
-theme_override_constants/margin_bottom = 40
 
-[node name="Form" type="VBoxContainer" parent="Container/FormMargin"]
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(860, 0)
 layout_mode = 2
-size_flags_vertical = 0
-theme_override_constants/separation = 24
+theme_override_styles/panel = SubResource("StyleBoxFlat_meta_card")
 
-[node name="TitleRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+[node name="FormMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
 
-[node name="TitleFieldLabel" type="Label" parent="Container/FormMargin/Form/TitleRow"]
-custom_minimum_size = Vector2(320, 0)
+[node name="Form" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_constants/separation = 18
+
+[node name="TitleRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/FormMargin/Form/TitleRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
 text = "Название"
-vertical_alignment = 1
 
-[node name="TitleEdit" type="LineEdit" parent="Container/FormMargin/Form/TitleRow"]
-custom_minimum_size = Vector2(0, 50)
+[node name="TitleEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/FormMargin/Form/TitleRow"]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
+theme = ExtResource("2_theme")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 20
 placeholder_text = "Название трека"
 
-[node name="ArtistRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+[node name="ArtistRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 6
 
-[node name="ArtistFieldLabel" type="Label" parent="Container/FormMargin/Form/ArtistRow"]
-custom_minimum_size = Vector2(320, 0)
+[node name="ArtistFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/FormMargin/Form/ArtistRow"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
 text = "Исполнитель"
-vertical_alignment = 1
 
-[node name="ArtistEdit" type="LineEdit" parent="Container/FormMargin/Form/ArtistRow"]
-custom_minimum_size = Vector2(0, 50)
+[node name="ArtistEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/FormMargin/Form/ArtistRow"]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
+theme = ExtResource("2_theme")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 20
 placeholder_text = "Имя исполнителя"
 
-[node name="YearRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+[node name="MetaGrid" type="GridContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 18
+columns = 2
 
-[node name="YearFieldLabel" type="Label" parent="Container/FormMargin/Form/YearRow"]
-custom_minimum_size = Vector2(320, 0)
+[node name="YearRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="YearFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid/YearRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
 text = "Год"
-vertical_alignment = 1
 
-[node name="YearSpin" type="SpinBox" parent="Container/FormMargin/Form/YearRow"]
-custom_minimum_size = Vector2(400, 50)
+[node name="YearSpin" type="SpinBox" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid/YearRow"]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
 theme = ExtResource("2_theme")
 min_value = 1900.0
 max_value = 2100.0
-step = 1.0
 value = 2020.0
 
-[node name="BpmRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
+[node name="BpmRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid"]
 layout_mode = 2
-theme_override_constants/separation = 20
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
-[node name="BpmFieldLabel" type="Label" parent="Container/FormMargin/Form/BpmRow"]
-custom_minimum_size = Vector2(320, 0)
+[node name="BpmFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid/BpmRow"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
 text = "BPM"
-vertical_alignment = 1
 
-[node name="BpmSpin" type="SpinBox" parent="Container/FormMargin/Form/BpmRow"]
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 0
-theme = ExtResource("2_theme")
-min_value = 90.0
-max_value = 400.0
-step = 1.0
-value = 120.0
-
-[node name="GenreRow" type="HBoxContainer" parent="Container/FormMargin/Form"]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="GenreFieldLabel" type="Label" parent="Container/FormMargin/Form/GenreRow"]
-custom_minimum_size = Vector2(320, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Жанр"
-vertical_alignment = 1
-
-[node name="GenreButton" type="Button" parent="Container/FormMargin/Form/GenreRow"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BpmSpin" type="SpinBox" parent="Container/BodyCenter/CardPanel/FormMargin/Form/MetaGrid/BpmRow"]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_theme")
-theme_override_font_sizes/font_size = 22
+min_value = 90.0
+max_value = 400.0
+value = 120.0
+
+[node name="GenreRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/FormMargin/Form"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GenreFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/FormMargin/Form/GenreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Жанр"
+
+[node name="GenreButton" type="Button" parent="Container/BodyCenter/CardPanel/FormMargin/Form/GenreRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
 text = "не указан"
 
-[node name="SaveButton" type="Button" parent="Container"]
-custom_minimum_size = Vector2(0, 60)
+[node name="SaveRow" type="HBoxContainer" parent="Container"]
 layout_mode = 2
+alignment = 1
+
+[node name="SaveButton" type="Button" parent="Container/SaveRow"]
+custom_minimum_size = Vector2(320, 52)
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 20
 text = "Сохранить"
 
 [connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
-[connection signal="pressed" from="Container/FormMargin/Form/GenreRow/GenreButton" to="." method="_on_genre_button_pressed"]
-[connection signal="pressed" from="Container/SaveButton" to="." method="_on_save_button_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/FormMargin/Form/GenreRow/GenreButton" to="." method="_on_genre_button_pressed"]
+[connection signal="pressed" from="Container/SaveRow/SaveButton" to="." method="_on_save_button_pressed"]

@@ -31,12 +31,7 @@ func save_result_for_song(song_path: String, instrument_type: String, score: int
 	if mode != "":
 		new_result["mode"] = mode
 	results.append(new_result)
-	results.sort_custom(func(a, b):
-		if a.get("score", 0) != b.get("score", 0):
-			return a.get("score", 0) > b.get("score", 0)
-		else:
-			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-	)
+	results.sort_custom(TimeUtils.sort_results_newest_first)
 	if results.size() > 20:
 		results.resize(20)
 	var song_file_name = song_path.get_file().get_basename()
@@ -57,12 +52,7 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 	var results = load_results_for_song(song_path)
 	if results.size() == 0:
 		return {}
-	results.sort_custom(func(a, b):
-		if a.get("score", 0) != b.get("score", 0):
-			return a.get("score", 0) > b.get("score", 0)
-		else:
-			return a.get("accuracy", 0.0) > b.get("accuracy", 0.0)
-	)
+	results.sort_custom(TimeUtils.sort_results_by_score)
 	return results[0]
 
 func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int, artist: String = "N/A", title: String = "N/A", ss_repeat: bool = false):

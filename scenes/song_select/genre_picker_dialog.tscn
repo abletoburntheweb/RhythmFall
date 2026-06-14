@@ -1,7 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://bvqgg8p62jhe0"]
+[gd_scene load_steps=4 format=3 uid="uid://bvqgg8p62jhe0"]
 
 [ext_resource type="Script" uid="uid://dwrvglrg13hnt" path="res://scenes/song_select/genre_picker_dialog.gd" id="1_06red"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_n0ssd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_genre_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
 
 [node name="GenrePicker" type="Control"]
 layout_mode = 3
@@ -21,7 +40,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.7058824)
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.78)
 
 [node name="Container" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -30,43 +50,87 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 10
 
 [node name="BackButton" type="Button" parent="Container"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 31)
+custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("2_n0ssd")
 theme_type_variation = &"FlatBackButton"
-text = "Назад	"
+text = "Назад"
 
 [node name="InstrumentLabel" type="Label" parent="Container"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.68235296, 0.75686276, 1, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
 text = "Выберите жанр"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="SearchLineEdit" type="LineEdit" parent="Container"]
-custom_minimum_size = Vector2(1700, 50)
+[node name="SubtitleLabel" type="Label" parent="Container"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.92, 1)
+theme_override_font_sizes/font_size = 18
+text = "Найдите жанр в списке или через поиск"
+horizontal_alignment = 1
+
+[node name="BodyCenter" type="CenterContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(920, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_genre_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="SearchRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SearchFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/ContentVBox/SearchRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Поиск"
+
+[node name="SearchLineEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/CardMargin/ContentVBox/SearchRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"SearchField"
 theme_override_font_sizes/font_size = 20
 placeholder_text = "Поиск жанра…"
 
-[node name="GenreList" type="ItemList" parent="Container"]
-custom_minimum_size = Vector2(0, 870)
+[node name="GenreList" type="ItemList" parent="Container/BodyCenter/CardPanel/CardMargin/ContentVBox"]
+custom_minimum_size = Vector2(0, 420)
 layout_mode = 2
+size_flags_vertical = 3
 theme = ExtResource("2_n0ssd")
 theme_override_font_sizes/font_size = 20
 
-[node name="ResetButton" type="Button" parent="Container"]
-custom_minimum_size = Vector2(0, 50)
+[node name="ResetButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/ContentVBox"]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 20
 text = "Сбросить жанр"
 
 [connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
-[connection signal="text_changed" from="Container/SearchLineEdit" to="." method="_on_search_changed"]
-[connection signal="item_activated" from="Container/GenreList" to="." method="_on_item_activated"]
-[connection signal="pressed" from="Container/ResetButton" to="." method="_on_reset_pressed"]
+[connection signal="text_changed" from="Container/BodyCenter/CardPanel/CardMargin/ContentVBox/SearchRow/SearchLineEdit" to="." method="_on_search_changed"]
+[connection signal="item_activated" from="Container/BodyCenter/CardPanel/CardMargin/ContentVBox/GenreList" to="." method="_on_item_activated"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/ContentVBox/ResetButton" to="." method="_on_reset_pressed"]

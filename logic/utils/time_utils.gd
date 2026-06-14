@@ -78,3 +78,32 @@ static func format_iso_to_ddmmyyyy_hhmmss(date_str: String) -> String:
 		var time_part_v = date_str.substr(11, 8)
 		return "%s.%s.%s %s" % [day_v, month_v, year_v, time_part_v]
 	return date_str
+
+static func result_datetime_sort_key(date_str: String) -> int:
+	var s := String(date_str).strip_edges()
+	if s == "" or s == "N/A":
+		return 0
+	s = s.replace("T", " ")
+	if s.length() >= 19 and s[4] == '-' and s[7] == '-':
+		var dt := {
+			"year": s.substr(0, 4).to_int(),
+			"month": s.substr(5, 2).to_int(),
+			"day": s.substr(8, 2).to_int(),
+			"hour": s.substr(11, 2).to_int(),
+			"minute": s.substr(13, 2).to_int(),
+			"second": s.substr(16, 2).to_int(),
+		}
+		return int(Time.get_unix_time_from_datetime_dict(dt))
+	return 0
+
+static func sort_results_newest_first(a: Dictionary, b: Dictionary) -> bool:
+	var key_a := result_datetime_sort_key(str(a.get("date", "")))
+	var key_b := result_datetime_sort_key(str(b.get("date", "")))
+	if key_a != key_b:
+		return key_a > key_b
+	return int(a.get("score", 0)) > int(b.get("score", 0))
+
+static func sort_results_by_score(a: Dictionary, b: Dictionary) -> bool:
+	if int(a.get("score", 0)) != int(b.get("score", 0)):
+		return int(a.get("score", 0)) > int(b.get("score", 0))
+	return float(a.get("accuracy", 0.0)) > float(b.get("accuracy", 0.0))

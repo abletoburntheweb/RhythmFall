@@ -27,12 +27,14 @@ var _initial_year_value: int = 0
 var _initial_year_present: bool = false
 var _initial_bpm_value: int = 0
 
+const _FORM_ROOT := "Container/BodyCenter/CardPanel/FormMargin/Form"
+
 func _ready():
-	_title_edit = get_node_or_null("Container/FormMargin/Form/TitleRow/TitleEdit")
-	_artist_edit = get_node_or_null("Container/FormMargin/Form/ArtistRow/ArtistEdit")
-	_year_spin = get_node_or_null("Container/FormMargin/Form/YearRow/YearSpin")
-	_bpm_spin = get_node_or_null("Container/FormMargin/Form/BpmRow/BpmSpin")
-	_genre_button = get_node_or_null("Container/FormMargin/Form/GenreRow/GenreButton")
+	_title_edit = get_node_or_null("%s/TitleRow/TitleEdit" % _FORM_ROOT)
+	_artist_edit = get_node_or_null("%s/ArtistRow/ArtistEdit" % _FORM_ROOT)
+	_year_spin = get_node_or_null("%s/MetaGrid/YearRow/YearSpin" % _FORM_ROOT)
+	_bpm_spin = get_node_or_null("%s/MetaGrid/BpmRow/BpmSpin" % _FORM_ROOT)
+	_genre_button = get_node_or_null("%s/GenreRow/GenreButton" % _FORM_ROOT)
 	SpinBoxUtils.apply_value_font_size(_year_spin, 22)
 	SpinBoxUtils.apply_value_font_size(_bpm_spin, 22)
 	_apply_song_data()
