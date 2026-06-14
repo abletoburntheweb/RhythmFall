@@ -831,62 +831,76 @@ func _game_combo_sub(amount_str: String):
 	if c:
 		c.print_info("Комбо: %d | Макс.: %d | Множитель: x%.1f" % [gs.score_manager.combo, gs.score_manager.max_combo, gs.score_manager.combo_multiplier])
 
+func _resolve_game_total_notes(gs) -> int:
+	var total := int(gs.score_manager.total_notes)
+	if total <= 0 and gs.note_manager and gs.note_manager.has_method("get_spawn_queue_size"):
+		total = int(gs.note_manager.get_spawn_queue_size())
+	if total <= 0:
+		total = gs.score_manager.get_hit_notes_count() + gs.score_manager.get_missed_notes_count()
+	return maxi(total, 1)
+
+func _parse_accuracy_arg(raw) -> float:
+	var text := str(raw).strip_edges()
+	if text == "" or not text.is_valid_float():
+		return -1.0
+	return clampf(text.to_float(), 0.0, 100.0)
+
+func _apply_simulated_accuracy(gs, target_accuracy: float) -> Dictionary:
+	var total_notes := _resolve_game_total_notes(gs)
+	target_accuracy = clampf(target_accuracy, 0.0, 100.0)
+	var missed_notes := int(floor(float(total_notes) * (100.0 - target_accuracy) / 100.0))
+	missed_notes = clampi(missed_notes, 0, total_notes)
+	var hit_notes := total_notes - missed_notes
+	gs.score_manager.total_notes = total_notes
+	gs.score_manager.missed_notes = missed_notes
+	gs.score_manager.hit_notes = hit_notes
+	gs.score_manager.set_accuracy(target_accuracy)
+	return {
+		"total_notes": total_notes,
+		"hit_notes": hit_notes,
+		"missed_notes": missed_notes,
+		"accuracy": target_accuracy,
+	}
+
 func _game_accuracy_set(percent_str: String):
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
 	if not gs or not gs.score_manager:
 		if c: c.print_error("ScoreManager недоступен")
 		return
-	if not percent_str.is_valid_float():
+	var target := _parse_accuracy_arg(percent_str)
+	if target < 0.0:
 		if c: c.print_error("Процент должен быть числом")
 		return
-	var target = clampf(percent_str.to_float(), 0.0, 100.0)
-	var total_notes = gs.score_manager.total_notes
-	if total_notes <= 0 and gs.note_manager and gs.note_manager.has_method("get_spawn_queue_size"):
-		total_notes = gs.note_manager.get_spawn_queue_size()
-	if total_notes <= 0:
-		total_notes = 1
-	var missed_notes = int(round(total_notes * (100.0 - target) / 100.0))
-	missed_notes = clamp(missed_notes, 0, total_notes)
-	var hit_notes = total_notes - missed_notes
-	gs.score_manager.total_notes = total_notes
-	gs.score_manager.missed_notes = missed_notes
-	gs.score_manager.hit_notes = hit_notes
-	gs.score_manager.update_accuracy()
+	var stats := _apply_simulated_accuracy(gs, target)
 	if gs.has_method("update_ui"):
 		gs.update_ui()
 	if c:
-		c.print_info("Точность установлена: %.2f%% (total=%d, hit=%d, miss=%d)" % [gs.score_manager.get_accuracy(), total_notes, hit_notes, missed_notes])
+		c.print_info(
+			"Точность установлена: %.2f%% (total=%d, hit=%d, miss=%d)"
+			% [stats.accuracy, stats.total_notes, stats.hit_notes, stats.missed_notes]
+		)
 
-func _game_win(accuracy_opt := ""):
+func _game_win(accuracy_opt = ""):
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
 	if not gs or not gs.score_manager or not gs.note_manager:
 		if c: c.print_error("GameScreen или компоненты недоступны")
 		return
-	var target_accuracy = gs.score_manager.get_accuracy()
-	var override = false
-	if accuracy_opt is String and accuracy_opt != "" and accuracy_opt.is_valid_float():
-		target_accuracy = clampf(accuracy_opt.to_float(), 0.0, 100.0)
-		override = true
-	var total_notes = gs.score_manager.total_notes
-	if total_notes <= 0:
-		if gs.note_manager and gs.note_manager.has_method("get_spawn_queue_size"):
-			total_notes = gs.note_manager.get_spawn_queue_size()
-	if total_notes <= 0:
-		total_notes = 1
+	var parsed := _parse_accuracy_arg(accuracy_opt)
+	var override := parsed >= 0.0
+	var target_accuracy: float = parsed if override else float(gs.score_manager.get_accuracy())
+	var total_notes: int = int(gs.score_manager.total_notes)
 	if override:
-		var missed_notes = int(round(total_notes * (100.0 - target_accuracy) / 100.0))
-		missed_notes = clamp(missed_notes, 0, total_notes)
-		var hit_notes = total_notes - missed_notes
-		gs.score_manager.total_notes = total_notes
-		gs.score_manager.missed_notes = missed_notes
-		gs.score_manager.hit_notes = hit_notes
-		gs.score_manager.update_accuracy()
+		var stats := _apply_simulated_accuracy(gs, target_accuracy)
+		total_notes = stats.total_notes
+		target_accuracy = stats.accuracy
 	var hits_for_combo = gs.score_manager.get_hit_notes_count()
 	if target_accuracy >= 100.0 and hits_for_combo > 0:
 		gs.score_manager.combo = hits_for_combo
 		gs.score_manager.max_combo = max(gs.score_manager.max_combo, hits_for_combo)
+		gs.perfect_hits_this_level = hits_for_combo
+	elif override:
 		gs.perfect_hits_this_level = hits_for_combo
 	var base_score_per_hit = 100
 	var multiplier = 1.0
@@ -908,8 +922,10 @@ func _game_win(accuracy_opt := ""):
 	if gs.has_method("end_game"):
 		gs.end_game()
 	if c:
-		c.print_info("Симулировано завершение уровня (точность: %.2f%%)" % target_accuracy)
-		
+		c.print_info(
+			"Симулировано завершение уровня (точность: %.2f%%, hit=%d, miss=%d)"
+			% [gs.score_manager.get_accuracy(), gs.score_manager.get_hit_notes_count(), gs.score_manager.get_missed_notes_count()]
+		)
 func _game_autoplay_on():
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()

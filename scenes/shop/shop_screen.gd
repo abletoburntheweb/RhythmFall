@@ -15,6 +15,18 @@ var current_cover_item_data: Dictionary = {}
 var _scroll_step := 60
 var _page_step := 480
 
+const _CATEGORIES_HBOX_PATH := "MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"
+const _CATEGORY_BUTTON_SPECS: Array = [
+	["Все", "CategoryButtonAll"],
+	["Кик", "CategoryButtonKick"],
+	["Обложки", "CategoryButtonCover"],
+	["Ноты", "CategoryButtonNotes"],
+	["Подсветка линий", "CategoryButtonLaneHighlight"],
+]
+
+var _category_badges: Dictionary = {}
+var _unseen_reward_stats: Dictionary = {}
+
 @onready var _unlock_progress_bar: ProgressBar = $MainContent/MainVBox/UnlockProgressBar
 @onready var _counter_label: Label = $MainContent/MainVBox/CounterLabel
 
@@ -88,7 +100,11 @@ func _ready():
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
 	_sync_achievement_rewards()
+	_ensure_category_badges()
+	if PlayerDataManager.has_signal("shop_new_rewards_changed"):
+		PlayerDataManager.shop_new_rewards_changed.connect(_update_category_badges)
 	await _create_item_cards()
+	_update_category_badges(false)
 	_set_buttons_focus_to_none()
 	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
 
@@ -178,12 +194,95 @@ func _update_category_buttons(selected: String):
 	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
 	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
 
+func _compute_unseen_reward_stats(items: Array) -> Dictionary:
+	var unseen_ids := PlayerDataManager.get_unseen_shop_reward_ids(items)
+	var unseen_set: Dictionary = {}
+	for id in unseen_ids:
+		unseen_set[id] = true
+	var counts: Dictionary = {}
+	for spec in _CATEGORY_BUTTON_SPECS:
+		counts[spec[0]] = 0
+	counts["Все"] = unseen_ids.size()
+	for item in items:
+		if not item is Dictionary:
+			continue
+		var item_id := str(item.get("item_id", ""))
+		if item_id == "" or not unseen_set.has(item_id):
+			continue
+		var category := str(item.get("category", ""))
+		if counts.has(category):
+			counts[category] = int(counts[category]) + 1
+	return {"unseen_set": unseen_set, "counts": counts}
+
+func _ensure_category_badges() -> void:
+	if not _category_badges.is_empty():
+		return
+	var hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as HBoxContainer
+	if not hbox:
+		return
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = Color(0.91, 0.36, 0.36, 1.0)
+	badge_style.set_corner_radius_all(10)
+	badge_style.content_margin_left = 6.0
+	badge_style.content_margin_top = 2.0
+	badge_style.content_margin_right = 6.0
+	badge_style.content_margin_bottom = 2.0
+	for spec in _CATEGORY_BUTTON_SPECS:
+		var category := String(spec[0])
+		var btn := hbox.get_node_or_null(String(spec[1])) as Button
+		if not btn:
+			continue
+		var badge := PanelContainer.new()
+		badge.name = "NewRewardsBadge"
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.visible = false
+		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		badge.anchor_left = 1.0
+		badge.anchor_right = 1.0
+		badge.offset_left = -26.0
+		badge.offset_top = 2.0
+		badge.offset_right = -4.0
+		badge.offset_bottom = 22.0
+		badge.add_theme_stylebox_override("panel", badge_style.duplicate())
+		var count_label := Label.new()
+		count_label.name = "CountLabel"
+		count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		count_label.add_theme_font_size_override("font_size", 13)
+		count_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+		count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.45))
+		count_label.add_theme_constant_override("outline_size", 1)
+		badge.add_child(count_label)
+		btn.add_child(badge)
+		_category_badges[category] = {"panel": badge, "label": count_label}
+
+func _update_category_badges(recompute: bool = true) -> void:
+	if _category_badges.is_empty():
+		return
+	if recompute or _unseen_reward_stats.is_empty():
+		_unseen_reward_stats = _compute_unseen_reward_stats(shop_data.get("items", []))
+	var counts: Dictionary = _unseen_reward_stats.get("counts", {})
+	for category in _category_badges.keys():
+		var entry: Dictionary = _category_badges[category]
+		var badge := entry.get("panel") as PanelContainer
+		var count_label := entry.get("label") as Label
+		if not badge or not count_label:
+			continue
+		var count := int(counts.get(category, 0))
+		if count <= 0:
+			badge.visible = false
+		else:
+			badge.visible = true
+			count_label.text = "99+" if count > 99 else str(count)
+
 func _create_item_cards() -> void:
 	var started_ms := Time.get_ticks_msec()
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
 	var items = shop_data.get("items", [])
+	_unseen_reward_stats = _compute_unseen_reward_stats(items)
+	var unseen_set: Dictionary = _unseen_reward_stats["unseen_set"]
 	var main_vbox = $MainContent/MainVBox
 	var grid_container = null
 	if main_vbox:
@@ -244,7 +343,7 @@ func _create_item_cards() -> void:
 			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
 			var item_id_str := String(item_data.get("item_id", ""))
 			if new_card.has_method("set_new_reward_highlight"):
-				new_card.set_new_reward_highlight(PlayerDataManager.is_shop_reward_unseen(item_id_str, items))
+				new_card.set_new_reward_highlight(unseen_set.has(item_id_str))
 			new_card.buy_pressed.connect(_on_item_buy_pressed)
 			new_card.use_pressed.connect(_on_item_use_pressed)
 			new_card.preview_pressed.connect(_on_item_preview_pressed)

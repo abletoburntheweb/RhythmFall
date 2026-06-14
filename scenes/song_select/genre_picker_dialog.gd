@@ -13,15 +13,22 @@ var _all: Array = []
 var _filtered: Array = []
 var _grouped_data = []
 
+const _SEARCH_PATH := "Container/BodyCenter/CardPanel/CardMargin/ContentVBox/SearchRow/SearchLineEdit"
+const _LIST_PATH := "Container/BodyCenter/CardPanel/CardMargin/ContentVBox/GenreList"
+
 func _ready():
-	_search = get_node_or_null("SearchLineEdit")
+	_search = get_node_or_null(_SEARCH_PATH)
+	if _search == null:
+		_search = get_node_or_null("SearchLineEdit")
 	if _search == null:
 		_search = get_node_or_null("Container/SearchLineEdit")
 	if _search == null:
 		_search = get_node_or_null("SearchBar")
 	if _search == null:
 		_search = get_node_or_null("Container/SearchBar")
-	_list = get_node_or_null("GenreList")
+	_list = get_node_or_null(_LIST_PATH)
+	if _list == null:
+		_list = get_node_or_null("GenreList")
 	if _list == null:
 		_list = get_node_or_null("Container/GenreList")
 	_populate()

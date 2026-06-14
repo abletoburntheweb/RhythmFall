@@ -1508,6 +1508,27 @@ theme_override_font_sizes/font_size = 20
 text = "Результаты
 "
 
+[node name="DeleteSongConfirmDialog" type="ConfirmationDialog" parent="."]
+oversampling_override = 1.0
+title = "Удалить трек"
+initial_position = 2
+borderless = true
+theme = ExtResource("2_gqiy2")
+theme_type_variation = &"ConfirmationDialogDanger"
+ok_button_text = "Удалить"
+dialog_text = "Будет удалён файл с диска, сгенерированные ноты и история результатов. Действие необратимо."
+cancel_button_text = "Отмена"
+
+[node name="DeleteSongNoticeDialog" type="AcceptDialog" parent="."]
+oversampling_override = 1.0
+title = "Удаление"
+initial_position = 2
+borderless = true
+theme = ExtResource("2_gqiy2")
+theme_type_variation = &"AcceptDialogSubtle"
+ok_button_text = "Понятно"
+dialog_text = "Встроенные треки из комплекта игры удалить нельзя."
+
 [connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
 [connection signal="text_changed" from="MainVBox/TopBarHBox/SearchBar" to="." method="_on_search_text_changed"]
 [connection signal="pressed" from="MainVBox/TopBarHBox/EditButton" to="." method="_toggle_edit_mode"]
@@ -1518,4 +1539,6 @@ text = "Результаты
 [connection signal="pressed" from="MainVBox/ContentHBox/DetailsVBox/AnalyzeBPMButton" to="." method="_on_analyze_bpm_pressed"]
 [connection signal="pressed" from="MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton" to="." method="_on_generate_pressed"]
 [connection signal="pressed" from="MainVBox/ContentHBox/DetailsVBox/DeleteButton" to="." method="_on_delete_pressed"]
+[connection signal="confirmed" from="DeleteSongConfirmDialog" to="." method="_on_delete_song_confirmed"]
+[connection signal="canceled" from="DeleteSongConfirmDialog" to="." method="_on_delete_song_canceled"]
 [connection signal="pressed" from="MainVBox/ContentHBox/DetailsVBox/ResultsButton" to="." method="_on_results_pressed"]
