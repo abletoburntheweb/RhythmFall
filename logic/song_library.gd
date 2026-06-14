@@ -445,9 +445,52 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 
 func remove_metadata(song_file_path: String):
 	var cache_key := _metadata_cache_key(song_file_path)
+	var changed := false
 	if _metadata_cache.erase(cache_key):
 		_save_metadata()
-	_update_song_in_list(song_file_path)
+		changed = true
+	var index := _song_index_for_path(song_file_path)
+	if index != -1:
+		songs.remove_at(index)
+		changed = true
+	if changed:
+		emit_signal("songs_list_changed")
+
+func is_built_in_path(song_file_path: String) -> bool:
+	var norm := _normalize_song_path(song_file_path)
+	if norm.begins_with(String(BUILT_IN_FOLDER_PATH).replace("\\", "/")):
+		return true
+	var exe_dir := OS.get_executable_path().get_base_dir().replace("\\", "/")
+	if not exe_dir.ends_with("/"):
+		exe_dir += "/"
+	return norm.begins_with(exe_dir + "bundled_songs/")
+
+func can_delete_song(song_file_path: String) -> bool:
+	return String(song_file_path).strip_edges() != "" and not is_built_in_path(song_file_path)
+
+func _absolute_file_path(path: String) -> String:
+	var norm := _normalize_song_path(path)
+	if norm.begins_with("user://") or norm.begins_with("res://"):
+		return ProjectSettings.globalize_path(norm)
+	return norm
+
+func delete_song_file(song_file_path: String) -> bool:
+	if is_built_in_path(song_file_path):
+		return false
+	if not FileAccess.file_exists(song_file_path):
+		return true
+	var abs_path := _absolute_file_path(song_file_path)
+	if abs_path == "":
+		return false
+	return DirAccess.remove_absolute(abs_path) == OK
+
+func delete_song(song_file_path: String) -> bool:
+	if not can_delete_song(song_file_path):
+		return false
+	if not delete_song_file(song_file_path):
+		return false
+	remove_metadata(song_file_path)
+	return true
 
 func _update_song_in_list(song_file_path: String):
 	var index := _song_index_for_path(song_file_path)

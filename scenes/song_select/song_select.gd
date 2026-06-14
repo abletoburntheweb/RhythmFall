@@ -18,6 +18,8 @@ var song_metadata_manager = SongLibrary
 @onready var analyze_bpm_button: Button = $MainVBox/ContentHBox/DetailsVBox/AnalyzeBPMButton
 @onready var results_button: Button = $MainVBox/ContentHBox/DetailsVBox/ResultsButton
 @onready var clear_results_button: Button = $MainVBox/TopBarHBox/ClearResultsButton
+@onready var delete_song_confirm_dialog: ConfirmationDialog = $DeleteSongConfirmDialog
+@onready var delete_song_notice_dialog: AcceptDialog = $DeleteSongNoticeDialog
 
 var generation_settings_selector: Control = null
 
@@ -26,6 +28,7 @@ var current_generation_mode: String = "basic"
 var current_lanes: int = 4
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
+var _pending_delete_song_path: String = ""
 var _details_tween: Tween = null
 
 func _ready():
@@ -126,19 +129,20 @@ func _connect_ui_signals():
 	cover_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 	primary_genre_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	
-	if not title_label.gui_input.is_connected(_on_gui_input_for_label):
-		title_label.gui_input.connect(_on_gui_input_for_label.bind("title"))
-	if not artist_label.gui_input.is_connected(_on_gui_input_for_label):
-		artist_label.gui_input.connect(_on_gui_input_for_label.bind("artist"))
-	if not year_label.gui_input.is_connected(_on_gui_input_for_label):
-		year_label.gui_input.connect(_on_gui_input_for_label.bind("year"))
-	if not bpm_label.gui_input.is_connected(_on_gui_input_for_label):
-		bpm_label.gui_input.connect(_on_gui_input_for_label.bind("bpm"))
-	if not cover_rect.gui_input.is_connected(_on_gui_input_for_label):
-		cover_rect.gui_input.connect(_on_gui_input_for_label.bind("cover"))
-	if not primary_genre_label.gui_input.is_connected(_on_gui_input_for_label):
-		primary_genre_label.gui_input.connect(_on_gui_input_for_label.bind("primary_genre"))
+	_connect_label_edit_input(title_label, "title")
+	_connect_label_edit_input(artist_label, "artist")
+	_connect_label_edit_input(year_label, "year")
+	_connect_label_edit_input(bpm_label, "bpm")
+	_connect_label_edit_input(cover_rect, "cover")
+	_connect_label_edit_input(primary_genre_label, "primary_genre")
 	_update_metadata_edit_availability()
+
+func _connect_label_edit_input(node: Control, field_type: String) -> void:
+	if node == null:
+		return
+	var bound := _on_gui_input_for_label.bind(field_type)
+	if not node.gui_input.is_connected(bound):
+		node.gui_input.connect(bound)
  
 func _on_bpm_started(path, _disp):
 	if _song_path_key(path) == _song_path_key(current_displayed_song_path):
@@ -485,15 +489,32 @@ func _update_metadata_edit_availability() -> void:
 				cover_rect.remove_meta("ui_force_cursor")
 			cover_rect.mouse_default_cursor_shape = Control.CURSOR_ARROW
 			cover_rect.tooltip_text = ""
+	_update_delete_button_state()
 
-func _on_gui_input_for_label(event: InputEvent, field_type: String):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click:
-		if song_list_manager.is_edit_mode_active():
-			var selected_indices = song_item_list_ref.get_selected_items()
-			if selected_indices.size() > 0:
-				var song_data = song_list_manager.get_song_data_by_item_list_index(selected_indices[0])
-				if not song_data.is_empty():
-					song_list_manager.start_editing(field_type, song_data, selected_indices[0])
+func _on_gui_input_for_label(event: InputEvent, field_type: String) -> void:
+	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.double_click):
+		return
+	if not song_list_manager.is_edit_mode_active():
+		return
+	var selected_indices = song_item_list_ref.get_selected_items()
+	if selected_indices.is_empty():
+		return
+	var song_data = song_list_manager.get_song_data_by_item_list_index(selected_indices[0])
+	if song_data.is_empty():
+		return
+	song_list_manager.start_editing(field_type, song_data, selected_indices[0])
+
+func _update_delete_button_state() -> void:
+	var delete_button = $MainVBox/ContentHBox/DetailsVBox/DeleteButton
+	if delete_button == null:
+		return
+	var gen_active := _is_song_metadata_edit_locked(current_displayed_song_path)
+	var can_delete := SongLibrary.can_delete_song(current_displayed_song_path)
+	delete_button.disabled = gen_active or current_displayed_song_path == "" or not can_delete
+	if current_displayed_song_path != "" and not can_delete:
+		delete_button.tooltip_text = "Встроенные треки из комплекта игры удалить нельзя"
+	else:
+		delete_button.tooltip_text = ""
 
 func _toggle_edit_mode():
 	song_list_manager.set_edit_mode(!song_list_manager.is_edit_mode_active())
@@ -623,67 +644,64 @@ func _generate_notes_for_current_song():
 	_apply_background_status_ui()
 
 func _on_delete_pressed():
-	var selected_items = song_item_list_ref.get_selected_items()
-	if selected_items.size() == 0:
-		return
-
-	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_items[0])
-	if selected_song_data.is_empty():
-		printerr("SongSelect.gd: Выбран не трек (возможно, заголовок группы).")
-		return
-
-	var song_path = selected_song_data.get("path", "")
+	var song_path := String(current_selected_song_data.get("path", current_displayed_song_path)).strip_edges()
 	if song_path == "":
 		return
-
 	if _is_song_metadata_edit_locked(song_path):
 		return
-
-	var dir = DirAccess.open("res://")
-	if dir and dir.remove(song_path) == OK:
-		SongLibrary.remove_metadata(song_path)
-		results_manager.clear_results_for_song(song_path)
-		
-		var base_name = NotesUtils.base_name_from_song_path(song_path)
-		var notes_dir_path = NotesUtils.notes_dir(base_name)
-		var user_dir = DirAccess.open("user://")
-		if user_dir and user_dir.dir_exists(notes_dir_path):
-			DirectoryUtils.delete_dir_recursive(notes_dir_path)
-		
-		SongLibrary.load_songs()
-		
-		song_list_manager.populate_items_grouped()
-		_on_song_list_changed()
-		
-		var current_selected_items = song_item_list_ref.get_selected_items()
-		if current_selected_items.size() == 0 or current_selected_items[0] >= song_item_list_ref.item_count:
-			song_details_manager.update_details({})
-			song_details_manager.stop_preview()
-			analyze_bpm_button.disabled = true
-			
-		pass
-	else:
-		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
-
-func _delete_directory_recursive(dir_path: String) -> void:
-	var dir = DirAccess.open(dir_path)
-	if not dir:
+	if not SongLibrary.can_delete_song(song_path):
+		_show_delete_notice("Встроенные треки из комплекта игры удалить нельзя.")
 		return
-	dir.list_dir_begin()
-	var name = dir.get_next()
-	while name != "":
-		if name != "." and name != "..":
-			var child_path = "%s/%s" % [dir_path, name]
-			if dir.current_is_dir():
-				_delete_directory_recursive(child_path)
-			var root = DirAccess.open("user://")
-			if root:
-				root.remove(child_path)
-		name = dir.get_next()
-	dir.list_dir_end()
-	var root2 = DirAccess.open("user://")
-	if root2:
-		root2.remove(dir_path)
+
+	var title := str(current_selected_song_data.get("title", song_path.get_file()))
+	_pending_delete_song_path = song_path
+	if delete_song_confirm_dialog:
+		delete_song_confirm_dialog.dialog_text = (
+			"Удалить «%s» из библиотеки?\n\n"
+			% title
+			+ "Будет удалён файл с диска, сгенерированные ноты и история результатов. Действие необратимо."
+		)
+		delete_song_confirm_dialog.popup_centered()
+
+func _on_delete_song_confirmed() -> void:
+	var song_path := _pending_delete_song_path
+	_pending_delete_song_path = ""
+	if song_path == "":
+		return
+	_perform_delete_song(song_path)
+
+func _on_delete_song_canceled() -> void:
+	_pending_delete_song_path = ""
+
+func _show_delete_notice(text: String) -> void:
+	if delete_song_notice_dialog == null:
+		return
+	delete_song_notice_dialog.dialog_text = text
+	delete_song_notice_dialog.popup_centered()
+
+func _perform_delete_song(song_path: String) -> void:
+	song_details_manager.stop_preview()
+	if not SongLibrary.delete_song(song_path):
+		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
+		_show_delete_notice("Не удалось удалить файл трека.")
+		return
+
+	results_manager.clear_results_for_song(song_path)
+	var base_name = NotesUtils.base_name_from_song_path(song_path)
+	DirectoryUtils.delete_dir_recursive(NotesUtils.notes_dir(base_name))
+
+	SongLibrary.load_songs()
+	song_list_manager.populate_items_grouped()
+	_on_song_list_changed()
+
+	current_selected_song_data = {}
+	current_displayed_song_path = ""
+	song_details_manager.update_details({})
+	analyze_bpm_button.disabled = true
+	results_button.disabled = true
+	clear_results_button.disabled = true
+	_apply_bpm_dependent_ui()
+	_update_metadata_edit_availability()
 
 func _on_results_pressed():
 	var song_item_list = $MainVBox/ContentHBox/SongListVBox/SongItemList
@@ -792,10 +810,6 @@ func _apply_background_status_ui():
 			else:
 				$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.text = "Сгенерировать ноты"
 			$MainVBox/ContentHBox/DetailsVBox/GenerateNotesButton.disabled = false
-	var delete_button = $MainVBox/ContentHBox/DetailsVBox/DeleteButton
-	if delete_button:
-		var gen_active := _is_song_metadata_edit_locked(current_displayed_song_path)
-		delete_button.disabled = gen_active or current_displayed_song_path == ""
 	_update_metadata_edit_availability()
 
 func _format_generation_settings_label(instrument: String, mode: String, lanes: int) -> String:

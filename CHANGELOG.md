@@ -1,6 +1,43 @@
+## RhythmFall Client v1.1.11
+
+Patch release focused on library management, results display, debug tooling, and song-select fixes.
+
+### New
+
+**Delete track from library**
+
+- **Удалить** on the song select screen removes a user-added track from the library
+- Confirmation dialog before deletion; built-in bundled tracks cannot be deleted
+- Deletes the audio file from disk, generated notes, and saved results for that track
+- Delete button stays correctly enabled/disabled after note generation finishes (no longer stuck until re-selecting the track)
+
+**Results show generation mode**
+
+- Per-song results list displays instrument and generation mode as `[Перкуссия · Базовый]`
+- Older entries without a saved mode show `—` in the mode slot
+
+### Fixes & Improvements
+
+**Song library & results**
+
+- Restored missing `_on_gui_input_for_label()` in `song_select.gd` (parse error had blocked the entire song-select screen)
+- Per-song results list sorted by **date/time (newest first)**, not by score
+- Session history keeps the 20 most recent runs chronologically
+
+**Debug console**
+
+- `game.win` respects the accuracy argument instead of always reporting 100%
+
+### Notes
+
+- Track deletion is irreversible for user-imported files; built-in `bundled_songs` entries remain protected
+- Mode appears in new results after playing with the current generation settings; re-play a track to backfill if needed
+
+---
+
 ## RhythmFall Client v1.1.10
 
-Patch release focused on UI polish, shop/achievements/main menu visual refresh, help screen redesign, cover gallery rework, Lucide currency/XP icons, grade color system, unified interaction system, achievement synchronization, settings tab theming, and debug autoplay timing.
+Patch release focused on UI polish, shop/achievements/main menu visual refresh, help screen redesign and onboarding content, first-run server notice, cover gallery rework, Lucide currency/XP icons, grade color system, unified interaction system, achievement synchronization, settings tab theming, debug autoplay timing, Windows installer, and catalog JSON sync on update.
 
 ### New
 
@@ -10,6 +47,16 @@ Patch release focused on UI polish, shop/achievements/main menu visual refresh, 
 - Categories as toggle buttons (`FlatMenuSongButton`) that group questions
 - Content loaded from `data/help_content.json` (text and color palette)
 - Colors externalized — edit the palette without recompiling
+- **Getting Started** section at the top — onboarding for new players (first launch, RhythmFallServer, audio calibration, controls, adding songs, grades, progress after the first song)
+- Help file **`version`** field (`version: 2`); `HelpScreen` refreshes `user://help_content.json` when the bundled version is newer (also updated on launch via `CatalogDataSync`)
+- Question cards nested under categories: darker inset panels, left indent, muted borders — visually distinct from category headers (category outline vs. dark card)
+
+**First-run server setup notice**
+
+- Welcome dialog on first main menu visit (`ServerSetupNoticeDialog` in `main_menu.tscn`, `AcceptDialogInfo` theme)
+- Explains RhythmFallServer requirement and steps: install server → Settings → Misc → BPM → generate → play
+- **Open repository** button links to [RhythmFallServer](https://github.com/abletoburntheweb/RhythmFallServer); **Got it** dismisses and sets `seen_server_setup_notice` in settings
+- Flag resets when **Reset profile statistics** is confirmed (Misc tab), so the notice can show again after a full profile wipe
 
 **Cover gallery reworked**
 
@@ -73,12 +120,27 @@ Patch release focused on UI polish, shop/achievements/main menu visual refresh, 
 - Main menu and pause menu call `UiInteractionApplier.apply_from_engine()` on open
 - Victory currency/XP labels and shop cover previews use manual hand-cursor setup where needed
 
+**Windows installer (Inno Setup 6)**
+
+- Pre-built Windows distribution via `RFALL/` — Godot export payload, `installer/RhythmFall.iss`, and `build-installer.bat`
+- Release artifact: `RhythmFall-1.1.10-setup.exe` (Start menu shortcut, optional desktop icon, uninstall via Windows Settings → Apps)
+- On uninstall, optional prompt to delete saves in `%APPDATA%\RhythmFall\` (default: keep)
+- `Uninstall-RhythmFall.bat` remains for portable ZIP only — excluded from the installer
+
+**Catalog sync on update (`CatalogDataSync`)**
+
+- On each launch, bundled `data/` next to the exe is merged into `%APPDATA%\RhythmFall\` so catalog updates ship with new builds without wiping player progress
+- `shop_data.json` — merge by `item_id` (new fields/colors from the build; purchases stay in `player_data.json`)
+- `genre_groups.json`, `daily_quests.json`, `help_content.json` — replaced from the bundled copy
+- `achievements_data.json` — merge; preserves `current`, `unlocked`, `unlock_date`
+- Does **not** touch `player_data.json` or `song_metadata.json`
+
 ### Fixes & Improvements
 
 **UI polish**
 
 - Achievements list no longer clipped (scroll container expands correctly)
-- Removed stray tab characters from “Back” button labels across menu screens
+- Removed stray tab characters from "Back" button labels across menu screens
 - `AchievementCard` script correctly extends `PanelContainer`
 
 **Shop**
@@ -149,10 +211,12 @@ Patch release focused on UI polish, shop/achievements/main menu visual refresh, 
 
 ### Notes
 
-- Help content remains fully externalized in `data/help_content.json` — editable without rebuilding
+- Help content remains fully externalized in `data/help_content.json` — editable without rebuilding; v2 adds the **Getting Started** section and bumps `version` for update detection
 - Cover gallery uses a fixed 4-column layout; cells resize across common resolutions
 - Many scenes still assign theme per control (`ExtResource` or embedded `SubResource` copies); `UiInteractionApplier` is required so hover and cursors stay consistent with `app_theme.gd` at runtime
 - Main menu buttons keep their embedded theme; other refreshed screens use `app_theme.tres`
 - Shop/achievement card styling lives in `.tscn` + screen/card scripts — edit there to adjust look
 - Time-based achievement rewards unlock reliably even when progress and unlock flags were previously out of sync
 - Autoplay is a debug/testing tool (console); with a negative timing offset in settings, hit-minus-note average will reflect that offset even when hits look correct on the line — use the line-average overlay metric to verify visual rhythm
+- **Windows release:** publish `RhythmFall-1.1.10-setup.exe` on GitHub Releases; optional portable ZIP of `RFALL/RhythmFall/`. Note generation still requires the separate [RhythmFallServer](https://github.com/abletoburntheweb/RhythmFallServer) — not bundled with the client installer
+- Installing a new setup.exe over an older build keeps saves in `%APPDATA%\RhythmFall\`; catalog JSON updates apply on the next game launch via `CatalogDataSync`
