@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://chelpflow1"]
+
+[ext_resource type="Script" path="res://scenes/help/help_flow.gd" id="1"]
+
+[node name="HelpFlow" type="PanelContainer"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+script = ExtResource("1")

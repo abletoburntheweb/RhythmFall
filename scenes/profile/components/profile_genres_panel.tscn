@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=3 uid="uid://cprofilegenresp"]
+
+[ext_resource type="Script" path="res://scenes/profile/components/profile_genres_panel.gd" id="1_script"]
+
+[node name="ProfileGenresPanel" type="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+script = ExtResource("1_script")
+
+[node name="HeaderVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleRow" type="HBoxContainer" parent="HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="HeaderVBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 24
+text = "Music collection"
+
+[node name="CatalogLabel" type="Label" parent="HeaderVBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "0 / 200"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.62, 0.72, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Genre mastery grows with every clear."
+autowrap_mode = 3
+
+[node name="HintLabel" type="Label" parent="HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.52, 0.58, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "Level 1 after first clear; +5 per level (max 20)."
+autowrap_mode = 3
+
+[node name="GenresScroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="GenresGrid" type="GridContainer" parent="GenresScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2

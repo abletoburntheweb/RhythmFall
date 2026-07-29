@@ -1,0 +1,134 @@
+[gd_scene load_steps=3 format=3 uid="uid://cplaylistfilterdlg01"]
+
+[ext_resource type="Script" path="res://scenes/song_select/playlists/playlist_filter_dialog.gd" id="1_filter"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="PlaylistFilterDialog" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_filter")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.97)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CardPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CardVBox" type="VBoxContainer" parent="Center/CardPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.82, 0.9, 0.98, 1)
+text = "PLAYLIST_FILTER_TITLE"
+
+[node name="DisplayModeCaption" type="Label" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYLIST_FILTER_DISPLAY_MODE"
+
+[node name="DisplayModeRow" type="HBoxContainer" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GoalCaption" type="Label" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYLIST_FILTER_GOALS"
+
+[node name="GoalRow" type="HBoxContainer" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DiffCaption" type="Label" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYLIST_FILTER_DIFFICULTY"
+
+[node name="DiffRow" type="HBoxContainer" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="InstrumentCaption" type="Label" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYLIST_FILTER_INSTRUMENT"
+
+[node name="InstrumentRow" type="HBoxContainer" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NotesReadyCheck" type="CheckBox" parent="Center/CardPanel/CardVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "PLAYLIST_FILTER_NOTES_READY"
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/CardPanel/CardVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="Center/CardPanel/CardVBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Cancel"
+
+[node name="ApplyButton" type="Button" parent="Center/CardPanel/CardVBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Apply"

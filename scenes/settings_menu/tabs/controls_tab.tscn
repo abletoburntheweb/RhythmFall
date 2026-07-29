@@ -28,27 +28,48 @@ size_flags_vertical = 3
 
 [node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
 layout_mode = 2
-custom_minimum_size = Vector2(640, 0)
-theme_override_constants/separation = 16
+custom_minimum_size = Vector2(920, 0)
+theme_override_constants/separation = 20
 
-[node name="SectionHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+[node name="LayoutPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
-theme_type_variation = &"SectionHeaderPurple"
-theme_override_font_sizes/font_size = 26
-text = "Привязка клавиш"
-horizontal_alignment = 1
+theme_type_variation = &"SectionPanelPink"
 
-[node name="DescLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
+[node name="LayoutPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.34901962, 0.81960785, 0.74509805, 1)
-theme_override_font_sizes/font_size = 20
-text = "Нажмите на клавишу, чтобы изменить её назначение."
-horizontal_alignment = 1
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="LayoutRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel/LayoutPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="LayoutHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel/LayoutPanelMargin/LayoutRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderPink"
+theme_override_font_sizes/font_size = 22
+text = "Active layouts"
+
+[node name="LayoutHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel/LayoutPanelMargin/LayoutRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Choose which key layouts are active during gameplay."
 autowrap_mode = 3
 
-[node name="KeysPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
-theme_type_variation = &"SectionPanelPurple"
+[node name="LayoutModeOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel/LayoutPanelMargin/LayoutRows"]
+custom_minimum_size = Vector2(360, 50)
 layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_704fg")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
+
+[node name="KeysPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelPink"
 
 [node name="KeysPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel"]
 layout_mode = 2
@@ -59,144 +80,51 @@ theme_override_constants/margin_bottom = 16
 
 [node name="KeysPanelVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+[node name="SectionHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_type_variation = &"SectionHeaderPink"
+theme_override_font_sizes/font_size = 22
+text = "Key bindings"
 
-[node name="ActionsHeaderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/HBoxContainer"]
+[node name="KeysHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Click a key button to change its assignment."
+autowrap_mode = 3
+
+[node name="KeysColumnsHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="PrimaryColumn" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysColumnsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
-theme_override_font_sizes/font_size = 22
-text = "Действие"
-
-[node name="KeysHeaderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/HBoxContainer"]
-custom_minimum_size = Vector2(140, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.81960785, 1)
-theme_override_font_sizes/font_size = 22
-text = "Клавиша"
-horizontal_alignment = 1
-
-[node name="HeaderSep" type="HSeparator" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
-layout_mode = 2
-
-[node name="KeysContainer" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
-layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Lane1Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row"]
+[node name="AltColumn" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysColumnsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 22
-text = "Линия 1"
+theme_override_constants/separation = 8
 
-[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row"]
-custom_minimum_size = Vector2(140, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 22
-text = "A"
-
-[node name="Lane2Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 22
-text = "Линия 2"
-
-[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row"]
-custom_minimum_size = Vector2(140, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 22
-text = "S"
-
-[node name="Lane3Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 22
-text = "Линия 3"
-
-[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row"]
-custom_minimum_size = Vector2(140, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 22
-text = "D"
-
-[node name="Lane4Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 22
-text = "Линия 4"
-
-[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row"]
-custom_minimum_size = Vector2(140, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 22
-text = "F"
-
-[node name="Lane5Row" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="LineLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-theme_override_font_sizes/font_size = 22
-text = "Линия 5"
-
-[node name="KeyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row"]
-custom_minimum_size = Vector2(140, 50)
-layout_mode = 2
-theme = ExtResource("2_704fg")
-theme_override_font_sizes/font_size = 22
-text = "G"
-
-[node name="ResetControlsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox"]
-custom_minimum_size = Vector2(220, 50)
+[node name="ResetControlsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox"]
+custom_minimum_size = Vector2(280, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 theme = ExtResource("2_704fg")
 theme_type_variation = &"FlatExitButton"
-theme_override_font_sizes/font_size = 22
-text = "Сбросить"
+theme_override_font_sizes/font_size = 20
+text = "Reset key bindings"
 
 [node name="HintLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6156863, 0.6156863, 0.6156863, 1)
 theme_override_font_sizes/font_size = 18
-text = "Нажмите ESC, чтобы отменить переназначение клавиши"
+text = "Press ESC to cancel key remapping"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane1Row/KeyButton" to="." method="_on_key_button_pressed" binds= [0]]
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane2Row/KeyButton" to="." method="_on_key_button_pressed" binds= [1]]
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane3Row/KeyButton" to="." method="_on_key_button_pressed" binds= [2]]
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane4Row/KeyButton" to="." method="_on_key_button_pressed" binds= [3]]
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/KeysContainer/Lane5Row/KeyButton" to="." method="_on_key_button_pressed" binds= [4]]
-[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/LayoutPanel/LayoutPanelMargin/LayoutRows/LayoutModeOption" to="." method="_on_layout_mode_selected"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/KeysPanel/KeysPanelMargin/KeysPanelVBox/ResetControlsButton" to="." method="_on_reset_controls_pressed"]

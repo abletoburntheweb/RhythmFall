@@ -1,0 +1,1116 @@
+{
+  "items": [
+    {
+      "item_id": "kick_default",
+      "name": "Стандартный кик",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick_default.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_default": true
+    },
+    {
+      "item_id": "lanes_highlight_default",
+      "name": "Стандартные полосы",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#fec6e580",
+      "is_default": true
+    },
+    {
+      "item_id": "notes_default",
+      "name": "Стандартные ноты",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff8fa3",
+        "#ffd6a5",
+        "#fdffb6",
+        "#bde0fe",
+        "#a0c4ff"
+      ],
+      "is_default": true
+    },
+    {
+      "item_id": "kick_1",
+      "name": "Стандартная бочка",
+      "price": 1300,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick1.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_2",
+      "name": "Тяжёлый шаг",
+      "price": 850,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick2.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_3",
+      "name": "Железный бит",
+      "price": 2100,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick7.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_4",
+      "name": "Глубокий удар",
+      "price": 1100,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick8.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_5",
+      "name": "Неон-панч",
+      "price": 2350,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick9.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "collection_id": "synthwave"
+    },
+    {
+      "item_id": "kick_6",
+      "name": "Глубокая сухая бочка",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick10.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_achievement_reward": true,
+      "achievement_required": "9"
+    },
+    {
+      "item_id": "kick_7",
+      "name": "Реакторный удар",
+      "price": 1000,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick11.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_8",
+      "name": "Плотная сухая бочка",
+      "price": 2300,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick12.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "kick_9",
+      "name": "Штормовой кик",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick3.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_achievement_reward": true,
+      "achievement_required": "32"
+    },
+    {
+      "item_id": "kick_10",
+      "name": "Памятный кик",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick4.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_achievement_reward": true,
+      "achievement_required": "33"
+    },
+    {
+      "item_id": "kick_11",
+      "name": "Гранитный удар",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick5.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_level_reward": true,
+      "required_level": 10
+    },
+    {
+      "item_id": "kick_12",
+      "name": "Хрустальный импульс",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick6.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_level_reward": true,
+      "required_level": 20,
+      "collection_id": "sakura"
+    },
+    {
+      "item_id": "kick_13",
+      "name": "Сумеречный удар",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick13.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_daily_reward": true,
+      "required_daily_completed": 5
+    },
+    {
+      "item_id": "kick_14",
+      "name": "Полуночный импульс",
+      "price": 0,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick14.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "is_daily_reward": true,
+      "required_daily_completed": 20
+    },
+    {
+      "item_id": "kick_15",
+      "name": "Древесный щелчок",
+      "price": 850,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/pluck1.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "collection_id": "forest"
+    },
+    {
+      "item_id": "notes_monochrome_red",
+      "name": "Красные ноты",
+      "price": 500,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff0000"
+      ]
+    },
+    {
+      "item_id": "notes_pure_white",
+      "name": "Чистый белый",
+      "price": 400,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffffff"
+      ]
+    },
+    {
+      "item_id": "notes_soft_gray",
+      "name": "Мягкий серый",
+      "price": 350,
+      "category": "Ноты",
+      "note_colors": [
+        "#bfbfbf"
+      ]
+    },
+    {
+      "item_id": "notes_neon_cyan",
+      "name": "Неон-циан",
+      "price": 600,
+      "category": "Ноты",
+      "note_colors": [
+        "#00f5ff"
+      ]
+    },
+    {
+      "item_id": "notes_acid_green",
+      "name": "Кислотный зелёный",
+      "price": 650,
+      "category": "Ноты",
+      "note_colors": [
+        "#39ff14"
+      ]
+    },
+    {
+      "item_id": "notes_warm_pink",
+      "name": "Тёплый розовый",
+      "price": 550,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff4fd8"
+      ]
+    },
+    {
+      "item_id": "notes_guitar_hero",
+      "name": "Guitar Hero",
+      "price": 1400,
+      "category": "Ноты",
+      "note_colors": [
+        "#32c832",
+        "#ff3333",
+        "#ffd700",
+        "#33ccff",
+        "#ffa500"
+      ]
+    },
+    {
+      "item_id": "notes_pastel",
+      "name": "Пастельные ноты",
+      "price": 1050,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffb3ba",
+        "#ffdfba",
+        "#ffffba",
+        "#baffc9",
+        "#bae1ff"
+      ]
+    },
+    {
+      "item_id": "notes_rgb_spread",
+      "name": "RGB Спектр",
+      "price": 1350,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff4b4b",
+        "#ffd93d",
+        "#4dff88",
+        "#4db8ff",
+        "#b84dff"
+      ]
+    },
+    {
+      "item_id": "notes_osu_soft",
+      "name": "Osu!",
+      "price": 1200,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff66aa",
+        "#66ccff",
+        "#88ff66",
+        "#ffcc66",
+        "#cc99ff"
+      ]
+    },
+    {
+      "item_id": "notes_neon_arcade",
+      "name": "Аркадный неон",
+      "price": 1450,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff006e",
+        "#fb5607",
+        "#ffbe0b",
+        "#3a86ff",
+        "#8338ec"
+      ]
+    },
+    {
+      "item_id": "notes_synthwave",
+      "name": "Синтвейв",
+      "price": 1500,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff2e88",
+        "#ff6ec7",
+        "#ffd166",
+        "#06d6a0",
+        "#118ab2"
+      ],
+      "collection_id": "synthwave"
+    },
+    {
+      "item_id": "notes_cyberpunk",
+      "name": "Киберпанк",
+      "price": 1550,
+      "category": "Ноты",
+      "note_colors": [
+        "#f72585",
+        "#b5179e",
+        "#7209b7",
+        "#560bad",
+        "#480ca8"
+      ]
+    },
+    {
+      "item_id": "notes_neon_night",
+      "name": "Неоновая ночь",
+      "price": 1400,
+      "category": "Ноты",
+      "note_colors": [
+        "#00f5d4",
+        "#0bbcd6",
+        "#3a86ff",
+        "#8338ec",
+        "#ff006e"
+      ]
+    },
+    {
+      "item_id": "notes_forest",
+      "name": "Лесная глубина",
+      "price": 1000,
+      "category": "Ноты",
+      "note_colors": [
+        "#2d6a4f",
+        "#40916c",
+        "#95d5b2",
+        "#d8f3dc",
+        "#1b4332"
+      ],
+      "collection_id": "forest"
+    },
+    {
+      "item_id": "notes_pastel_dream",
+      "name": "Пастельный сон",
+      "price": 1100,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffc6ff",
+        "#bdb2ff",
+        "#a0c4ff",
+        "#caffbf",
+        "#ffd6a5"
+      ]
+    },
+    {
+      "item_id": "notes_sunset_gradient",
+      "name": "Закатный градиент",
+      "price": 1000,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff7b00",
+        "#ff8800",
+        "#ff9500",
+        "#ffaa00",
+        "#ffc300"
+      ],
+      "collection_id": "sunset"
+    },
+    {
+      "item_id": "notes_high_contrast",
+      "name": "Высокий контраст",
+      "price": 1300,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffffff",
+        "#ff0000",
+        "#00ff00",
+        "#0000ff",
+        "#ffff00"
+      ]
+    },
+    {
+      "item_id": "notes_sakura",
+      "name": "Сакура-сон",
+      "price": 850,
+      "category": "Ноты",
+      "note_colors": [
+        "#f4a7b9",
+        "#f6c1cc",
+        "#f7d6e0",
+        "#d0f4de",
+        "#cdb4db"
+      ],
+      "collection_id": "sakura"
+    },
+    {
+      "item_id": "notes_fog",
+      "name": "Утренний туман",
+      "price": 800,
+      "category": "Ноты",
+      "note_colors": [
+        "#c9c9d6",
+        "#dcd6f7",
+        "#e2ece9",
+        "#bee1e6",
+        "#fde2e4"
+      ]
+    },
+    {
+      "item_id": "notes_forest_soft",
+      "name": "Лесной покой",
+      "price": 900,
+      "category": "Ноты",
+      "note_colors": [
+        "#588157",
+        "#a3b18a",
+        "#dad7cd",
+        "#b7e4c7",
+        "#95d5b2"
+      ]
+    },
+    {
+      "item_id": "notes_sunset_soft",
+      "name": "Закат в облаках",
+      "price": 850,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffadad",
+        "#ffd6a5",
+        "#fdffb6",
+        "#caffbf",
+        "#9bf6ff"
+      ]
+    },
+    {
+      "item_id": "notes_pro_soft",
+      "name": "Чёткий фокус",
+      "price": 1250,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff8fab",
+        "#ffd6a5",
+        "#ffffff",
+        "#bde0fe",
+        "#a2d2ff"
+      ]
+    },
+    {
+      "item_id": "notes_synth_soft",
+      "name": "Неон-сон",
+      "price": 1200,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff99c8",
+        "#cdb4db",
+        "#ffc8dd",
+        "#bde0fe",
+        "#a2d2ff"
+      ]
+    },
+    {
+      "item_id": "notes_candy",
+      "name": "Конфетный дождь",
+      "price": 800,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffadad",
+        "#ffc6ff",
+        "#caffbf",
+        "#9bf6ff",
+        "#bdb2ff"
+      ]
+    },
+    {
+      "item_id": "notes_minimal",
+      "name": "Белый шум",
+      "price": 700,
+      "category": "Ноты",
+      "note_colors": [
+        "#eaeaea",
+        "#d8e2dc",
+        "#ffffff",
+        "#d8e2dc",
+        "#eaeaea"
+      ]
+    },
+    {
+      "item_id": "notes_creamy_blue_palette",
+      "name": "Кремово-голубая палитра",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffe8d6",
+        "#ffd7ba",
+        "#fec5bb",
+        "#d8e2dc",
+        "#bee1e6"
+      ],
+      "is_achievement_reward": true,
+      "achievement_required": "34"
+    },
+    {
+      "item_id": "notes_neon_palette",
+      "name": "Неоновая палитра",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#00d4ff",
+        "#00ffe1",
+        "#9fffcb",
+        "#ffd166",
+        "#ef476f"
+      ],
+      "is_achievement_reward": true,
+      "achievement_required": "39"
+    },
+    {
+      "item_id": "notes_ice_palette",
+      "name": "Ледяная палитра",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#e0fbfc",
+        "#c2dfe3",
+        "#9db4c0",
+        "#5c6b73",
+        "#253237"
+      ],
+      "is_level_reward": true,
+      "required_level": 16
+    },
+    {
+      "item_id": "notes_solar_palette",
+      "name": "Солнечная палитра",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#fff3b0",
+        "#ffd166",
+        "#fdae61",
+        "#f78c6b",
+        "#e76f51"
+      ],
+      "is_level_reward": true,
+      "required_level": 50
+    },
+    {
+      "item_id": "notes_pastel_daily",
+      "name": "Пастельный бриз",
+      "price": 0,
+      "category": "Ноты",
+      "note_colors": [
+        "#ff9a9e",
+        "#fec8a1",
+        "#fef9c3",
+        "#b6e2d3",
+        "#99d5cf"
+      ],
+      "is_daily_reward": true,
+      "required_daily_completed": 20
+    },
+    {
+      "item_id": "lanes_highlight_1",
+      "name": "Огненный закат",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#ff6b3580",
+      "collection_id": "sunset"
+    },
+    {
+      "item_id": "lanes_highlight_2",
+      "name": "Океанская волна",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#176b8780"
+    },
+    {
+      "item_id": "lanes_highlight_3",
+      "name": "Лайм-базальт",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#6a994e80"
+    },
+    {
+      "item_id": "lanes_highlight_4",
+      "name": "Фиолетовая тьма",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#5e548e80",
+      "collection_id": "synthwave"
+    },
+    {
+      "item_id": "lanes_highlight_5",
+      "name": "Солнечный блик",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#f1c40f80"
+    },
+    {
+      "item_id": "lanes_highlight_6",
+      "name": "Морская пена",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#d6e4e580"
+    },
+    {
+      "item_id": "lanes_highlight_7",
+      "name": "Багровый рассвет",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#b5347180"
+    },
+    {
+      "item_id": "lanes_highlight_8",
+      "name": "Изумрудный лес",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#0b6e4f80",
+      "collection_id": "forest"
+    },
+    {
+      "item_id": "lanes_highlight_9",
+      "name": "Сиреневая дымка",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#8a5a9b80"
+    },
+    {
+      "item_id": "lanes_highlight_10",
+      "name": "Карамельная вуаль",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#d8a78280"
+    },
+    {
+      "item_id": "lanes_highlight_11",
+      "name": "Электрический синий",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#2a9d8f80"
+    },
+    {
+      "item_id": "lanes_highlight_12",
+      "name": "Розовый кварц",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#e76f5180",
+      "collection_id": "sakura"
+    },
+    {
+      "item_id": "lanes_highlight_13",
+      "name": "Темный графит",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#3d405b80"
+    },
+    {
+      "item_id": "lanes_highlight_14",
+      "name": "Золотой песок",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#e9c46a80"
+    },
+    {
+      "item_id": "lanes_highlight_15",
+      "name": "Алый шарм",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#e6394680"
+    },
+    {
+      "item_id": "lanes_highlight_16",
+      "name": "Лавандовый туман",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#c3a9d880"
+    },
+    {
+      "item_id": "lanes_highlight_17",
+      "name": "Тёплый янтарь",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#f4a26180"
+    },
+    {
+      "item_id": "lanes_highlight_18",
+      "name": "Холодный сталь",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#a0aec080"
+    },
+    {
+      "item_id": "lanes_highlight_19",
+      "name": "Неон-зелёный",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#7cfc0080"
+    },
+    {
+      "item_id": "lanes_highlight_20",
+      "name": "Глубокий индиго",
+      "price": 750,
+      "category": "Подсветка линий",
+      "color_hex": "#4b369d80"
+    },
+    {
+      "item_id": "lanes_highlight_24",
+      "name": "Алый шторм",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#e71d3680",
+      "is_achievement_reward": true,
+      "achievement_required": "7"
+    },
+    {
+      "item_id": "lanes_highlight_25",
+      "name": "Аметистовый акцент",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#9c89b880",
+      "is_achievement_reward": true,
+      "achievement_required": "17"
+    },
+    {
+      "item_id": "lanes_highlight_21",
+      "name": "Бирюзовая волна",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#00b4d880",
+      "is_level_reward": true,
+      "required_level": 25
+    },
+    {
+      "item_id": "lanes_highlight_22",
+      "name": "Оранжевый рассвет",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#ff9f1c80",
+      "is_level_reward": true,
+      "required_level": 100
+    },
+    {
+      "item_id": "lanes_highlight_23",
+      "name": "Неоновая бирюза",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#2ec4b680",
+      "is_daily_reward": true,
+      "required_daily_completed": 10
+    },
+    {
+      "item_id": "particles_default",
+      "name": "Стандартные частицы",
+      "price": 0,
+      "category": "Частицы хита",
+      "is_default": true,
+      "particle_preset": {
+        "variant": "default",
+        "amount": 18,
+        "lifetime": 0.45,
+        "spread": 120,
+        "gravity_y": 700,
+        "velocity_min": 200,
+        "velocity_max": 420,
+        "scale_min": 3,
+        "scale_max": 6,
+        "damping_min": 40,
+        "damping_max": 80,
+        "perfect_white_lerp": 0.5,
+        "preview_color": "#7ad4c8"
+      }
+    },
+    {
+      "item_id": "particles_spark_burst",
+      "name": "Искры",
+      "medal_price": 12,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "spark",
+        "amount": 28,
+        "lifetime": 0.35,
+        "spread": 160,
+        "gravity_y": 900,
+        "velocity_min": 280,
+        "velocity_max": 520,
+        "scale_min": 2,
+        "scale_max": 5,
+        "damping_min": 20,
+        "damping_max": 50,
+        "perfect_white_lerp": 0.65,
+        "preview_color": "#ffd166"
+      }
+    },
+    {
+      "item_id": "particles_soft_rise",
+      "name": "Мягкий подъём",
+      "medal_price": 17,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "rise",
+        "amount": 14,
+        "lifetime": 0.65,
+        "spread": 45,
+        "gravity_y": 350,
+        "velocity_min": 120,
+        "velocity_max": 220,
+        "scale_min": 4,
+        "scale_max": 8,
+        "damping_min": 60,
+        "damping_max": 100,
+        "perfect_white_lerp": 0.4,
+        "preview_color": "#bde0fe"
+      }
+    },
+    {
+      "item_id": "particles_ring_pop",
+      "name": "Кольцо",
+      "medal_price": 22,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "ring",
+        "amount": 24,
+        "lifetime": 0.5,
+        "spread": 360,
+        "gravity_y": 200,
+        "velocity_min": 150,
+        "velocity_max": 280,
+        "scale_min": 2.5,
+        "scale_max": 4.5,
+        "damping_min": 80,
+        "damping_max": 120,
+        "perfect_white_lerp": 0.55,
+        "preview_color": "#c77dff"
+      }
+    },
+    {
+      "item_id": "particles_dense_flare",
+      "name": "Вспышка",
+      "medal_price": 29,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "flare",
+        "amount": 36,
+        "lifetime": 0.28,
+        "spread": 90,
+        "gravity_y": 1100,
+        "velocity_min": 320,
+        "velocity_max": 580,
+        "scale_min": 2,
+        "scale_max": 4,
+        "damping_min": 10,
+        "damping_max": 30,
+        "perfect_white_lerp": 0.7,
+        "preview_color": "#ff9f1c"
+      }
+    },
+    {
+      "item_id": "particles_forest_pollen",
+      "name": "Лесная пыльца",
+      "medal_price": 17,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "pollen",
+        "amount": 16,
+        "lifetime": 0.72,
+        "spread": 62,
+        "gravity_y": 240,
+        "velocity_min": 70,
+        "velocity_max": 140,
+        "scale_min": 3.5,
+        "scale_max": 7.5,
+        "damping_min": 72,
+        "damping_max": 110,
+        "perfect_white_lerp": 0.38,
+        "preview_color": "#9ed4b0",
+        "color_blend": 0.34
+      },
+      "collection_id": "forest"
+    },
+    {
+      "item_id": "particles_neon_ring",
+      "name": "Неоновое кольцо",
+      "medal_price": 22,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "neon_ring",
+        "amount": 22,
+        "lifetime": 0.48,
+        "spread": 360,
+        "gravity_y": 120,
+        "velocity_min": 130,
+        "velocity_max": 240,
+        "scale_min": 2.2,
+        "scale_max": 4.2,
+        "damping_min": 88,
+        "damping_max": 124,
+        "perfect_white_lerp": 0.52,
+        "preview_color": "#b388ff",
+        "color_blend": 0.36
+      },
+      "collection_id": "synthwave"
+    },
+    {
+      "item_id": "particles_sunset_sparks",
+      "name": "Закатные искры",
+      "medal_price": 12,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "ember",
+        "amount": 26,
+        "lifetime": 0.34,
+        "spread": 148,
+        "gravity_y": 860,
+        "velocity_min": 250,
+        "velocity_max": 470,
+        "scale_min": 1.8,
+        "scale_max": 4.2,
+        "damping_min": 18,
+        "damping_max": 44,
+        "perfect_white_lerp": 0.6,
+        "preview_color": "#e8b86d",
+        "color_blend": 0.32
+      },
+      "collection_id": "sunset"
+    },
+    {
+      "item_id": "particles_sakura_petals",
+      "name": "Лепестки",
+      "medal_price": 29,
+      "category": "Частицы хита",
+      "particle_preset": {
+        "variant": "petal",
+        "amount": 18,
+        "lifetime": 0.58,
+        "spread": 118,
+        "gravity_y": 360,
+        "velocity_min": 88,
+        "velocity_max": 168,
+        "scale_min": 2.8,
+        "scale_max": 5.2,
+        "damping_min": 38,
+        "damping_max": 72,
+        "perfect_white_lerp": 0.44,
+        "preview_color": "#f2b5d0",
+        "color_blend": 0.3
+      },
+      "collection_id": "sakura"
+    },
+    {
+      "item_id": "kick_medal_ember",
+      "name": "Угольный кик",
+      "medal_price": 9,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick_medal_ember.wav",
+      "image": "res://assets/textures/kick_icon.png",
+      "collection_id": "sunset"
+    },
+    {
+      "item_id": "kick_medal_crystal",
+      "name": "Хрустальный кик",
+      "medal_price": 14,
+      "category": "Кик",
+      "type": "kick",
+      "audio": "res://assets/shop/sounds/kick/kick_medal_crystal.wav",
+      "image": "res://assets/textures/kick_icon.png"
+    },
+    {
+      "item_id": "notes_medal_aurora",
+      "name": "Северное сияние",
+      "medal_price": 10,
+      "category": "Ноты",
+      "note_colors": [
+        "#00ff87",
+        "#60efff",
+        "#7b2ff7",
+        "#f107a3",
+        "#00d9ff"
+      ]
+    },
+    {
+      "item_id": "notes_medal_sakura",
+      "name": "Сакура",
+      "medal_price": 13,
+      "category": "Ноты",
+      "note_colors": [
+        "#ffc8dd",
+        "#ffafcc",
+        "#bde0fe",
+        "#cdb4db",
+        "#a2d2ff"
+      ]
+    },
+    {
+      "item_id": "notes_medal_metallic",
+      "name": "Металлик",
+      "medal_price": 17,
+      "category": "Ноты",
+      "note_colors": [
+        "#495867",
+        "#577590",
+        "#b0c4b1",
+        "#fdfcdc",
+        "#f6bd60"
+      ]
+    },
+    {
+      "item_id": "lanes_highlight_26",
+      "name": "Лиловый туман",
+      "medal_price": 8,
+      "category": "Подсветка линий",
+      "color_hex": "#9d4edd80"
+    },
+    {
+      "item_id": "lanes_highlight_27",
+      "name": "Медный закат",
+      "medal_price": 12,
+      "category": "Подсветка линий",
+      "color_hex": "#e76f5180"
+    },
+    {
+      "item_id": "lanes_highlight_28",
+      "name": "Мятный рассвет",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#52b78880",
+      "is_daily_reward": true,
+      "required_daily_completed": 30
+    },
+    {
+      "item_id": "lanes_highlight_29",
+      "name": "Пульс ритма",
+      "price": 0,
+      "category": "Подсветка линий",
+      "color_hex": "#f7258580",
+      "is_achievement_reward": true,
+      "achievement_required": "28"
+    }
+  ],
+  "collections": [
+    {
+      "collection_id": "forest",
+      "name_key": "SHOP_COLLECTION_FOREST_NAME",
+      "tagline_key": "SHOP_COLLECTION_FOREST_TAGLINE",
+      "accent_color": "#52b788",
+      "icon": "trees.svg",
+      "sort_order": 1,
+      "slots": {
+        "kick": "kick_15",
+        "notes": "notes_forest",
+        "lane_highlight": "lanes_highlight_8",
+        "hit_particles": "particles_forest_pollen"
+      }
+    },
+    {
+      "collection_id": "synthwave",
+      "name_key": "SHOP_COLLECTION_SYNTHWAVE_NAME",
+      "tagline_key": "SHOP_COLLECTION_SYNTHWAVE_TAGLINE",
+      "accent_color": "#b5179e",
+      "icon": "sparkles.svg",
+      "sort_order": 2,
+      "slots": {
+        "kick": "kick_5",
+        "notes": "notes_synthwave",
+        "lane_highlight": "lanes_highlight_4",
+        "hit_particles": "particles_neon_ring"
+      }
+    },
+    {
+      "collection_id": "sunset",
+      "name_key": "SHOP_COLLECTION_SUNSET_NAME",
+      "tagline_key": "SHOP_COLLECTION_SUNSET_TAGLINE",
+      "accent_color": "#ff9f1c",
+      "icon": "sun.svg",
+      "sort_order": 3,
+      "slots": {
+        "kick": "kick_medal_ember",
+        "notes": "notes_sunset_gradient",
+        "lane_highlight": "lanes_highlight_1",
+        "hit_particles": "particles_sunset_sparks"
+      }
+    },
+    {
+      "collection_id": "sakura",
+      "name_key": "SHOP_COLLECTION_SAKURA_NAME",
+      "tagline_key": "SHOP_COLLECTION_SAKURA_TAGLINE",
+      "accent_color": "#ffafcc",
+      "icon": "heart-pulse.svg",
+      "sort_order": 4,
+      "slots": {
+        "kick": "kick_12",
+        "notes": "notes_sakura",
+        "lane_highlight": "lanes_highlight_12",
+        "hit_particles": "particles_sakura_petals"
+      }
+    }
+  ]
+}

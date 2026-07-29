@@ -1,0 +1,59 @@
+[gd_scene load_steps=2 format=3 uid="uid://bsharepreviewslot"]
+
+[ext_resource type="Script" path="res://scenes/profile/share/profile_share_preview_slot.gd" id="1_script"]
+
+[node name="ProfileSharePreviewSlot" type="PanelContainer"]
+custom_minimum_size = Vector2(205, 365)
+clip_contents = true
+script = ExtResource("1_script")
+
+[node name="ClickButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="PreviewTexture" type="TextureRect" parent="ClickButton"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 0
+
+[node name="LoadingLabel" type="Label" parent="ClickButton"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -12.0
+offset_right = 80.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotkeyLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.98, 0.86, 0.52, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "1"

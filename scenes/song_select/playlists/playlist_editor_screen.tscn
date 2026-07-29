@@ -1,0 +1,139 @@
+[gd_scene load_steps=3 format=3 uid="uid://cplaylisteditorscr01"]
+
+[ext_resource type="Script" path="res://scenes/song_select/playlists/playlist_editor_screen.gd" id="1_editor"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="PlaylistEditorScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_editor")
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="MainVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatButton"
+text = "Back"
+
+[node name="NameEdit" type="LineEdit" parent="MainVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+placeholder_text = "PLAYLIST_EDITOR_NAME_PLACEHOLDER"
+
+[node name="StatsLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "PLAYLIST_EDITOR_STATS_FMT"
+horizontal_alignment = 1
+
+[node name="EditorPanel" type="PanelContainer" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EditorMargin" type="MarginContainer" parent="MainVBox/EditorPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="EditorVBox" type="VBoxContainer" parent="MainVBox/EditorPanel/EditorMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ToolbarRow" type="HBoxContainer" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SearchEdit" type="LineEdit" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox/ToolbarRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 48)
+theme_override_font_sizes/font_size = 16
+placeholder_text = "Search"
+
+[node name="FilterButton" type="Button" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox/ToolbarRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Filter"
+
+[node name="FilterSummaryLabel" type="Label" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "PLAYLIST_EDITOR_FILTER_SUMMARY_FMT"
+autowrap_mode = 3
+
+[node name="TagsRow" type="HBoxContainer" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EmptyLabel" type="Label" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "PLAYLIST_EDITOR_LIST_EMPTY"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ListScroll" type="ScrollContainer" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListVBox" type="VBoxContainer" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox/ListScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="BottomRow" type="HBoxContainer" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CountLabel" type="Label" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "PLAYLIST_EDITOR_SELECTED_FMT"
+
+[node name="DoneButton" type="Button" parent="MainVBox/EditorPanel/EditorMargin/EditorVBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Done"

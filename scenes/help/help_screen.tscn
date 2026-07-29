@@ -1,8 +1,71 @@
-[gd_scene load_steps=4 format=3 uid="uid://cm0cwu0mvp3yq"]
+[gd_scene load_steps=8 format=3 uid="uid://cm0cwu0mvp3yq"]
 
 [ext_resource type="Script" uid="uid://be44itwxsmmgf" path="res://scenes/help/help_screen.gd" id="1_87tvd"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="1_x4o1d"]
-[ext_resource type="Script" uid="uid://da1tvl1igewy4" path="res://scenes/help/help_card.gd" id="3_fablb"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.07, 0.08, 0.11, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_article"]
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+bg_color = Color(0.06, 0.07, 0.1, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.38, 0.78, 0.74, 0.16)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.78, 0.74, 0.45)
+corner_radius_top_left = 999
+corner_radius_top_right = 999
+corner_radius_bottom_right = 999
+corner_radius_bottom_left = 999
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pager_btn"]
+bg_color = Color(0.1, 0.11, 0.15, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
 
 [node name="HelpScreen" type="Control"]
 layout_mode = 3
@@ -21,100 +84,237 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.7058824)
+color = Color(0, 0, 0, 0)
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 10.0
+offset_right = -24.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="BackButton" type="Button" parent="MainVBox"]
+[node name="TopBar" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="MainVBox/TopBar"]
 clip_contents = true
-custom_minimum_size = Vector2(140, 36)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("1_x4o1d")
-theme_type_variation = &"FlatBackButton"
+theme_type_variation = &"FlatButton"
 text = "Назад"
 
-[node name="TitleLabel" type="Label" parent="MainVBox"]
+[node name="TitleVBox" type="VBoxContainer" parent="MainVBox/TopBar"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
-theme_override_font_sizes/font_size = 34
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="TitleLabel" type="Label" parent="MainVBox/TopBar/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.78, 0.74, 1)
+theme_override_font_sizes/font_size = 30
 text = "Справка"
-horizontal_alignment = 1
+clip_text = true
 
-[node name="SubtitleLabel" type="Label" parent="MainVBox"]
+[node name="SubtitleLabel" type="Label" parent="MainVBox/TopBar/TitleVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 0.82)
-theme_override_font_sizes/font_size = 19
-text = "Ответы на частые вопросы по игре и генерации нот"
-horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.88)
+theme_override_font_sizes/font_size = 16
+text = "Ответы на частые вопросы"
+clip_text = true
 
-[node name="ContentContainer" type="MarginContainer" parent="MainVBox"]
+[node name="BodyHBox" type="HBoxContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 20
+theme_override_constants/separation = 14
 
-[node name="HelpScroll" type="ScrollContainer" parent="MainVBox/ContentContainer"]
+[node name="SidebarPanel" type="PanelContainer" parent="MainVBox/BodyHBox"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.42
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_sidebar")
+
+[node name="SidebarVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/SidebarPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="SearchBar" type="LineEdit" parent="MainVBox/BodyHBox/SidebarPanel/SidebarVBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_x4o1d")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 17
+placeholder_text = "Поиск по справке..."
+
+[node name="NavScroll" type="ScrollContainer" parent="MainVBox/BodyHBox/SidebarPanel/SidebarVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ScrollBottomMargin" type="MarginContainer" parent="MainVBox/ContentContainer/HelpScroll"]
+[node name="NavList" type="VBoxContainer" parent="MainVBox/BodyHBox/SidebarPanel/SidebarVBox/NavScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/margin_bottom = 20
+theme_override_constants/separation = 8
 
-[node name="HelpList" type="VBoxContainer" parent="MainVBox/ContentContainer/HelpScroll/ScrollBottomMargin"]
+[node name="SidebarEmptyLabel" type="Label" parent="MainVBox/BodyHBox/SidebarPanel/SidebarVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.62, 0.7, 0.95)
+theme_override_font_sizes/font_size = 16
+text = "Ничего не найдено"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ArticlePanel" type="PanelContainer" parent="MainVBox/BodyHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.58
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_article")
+
+[node name="ArticleMargin" type="MarginContainer" parent="MainVBox/BodyHBox/ArticlePanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ArticleVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="ArticleHeaderRow" type="HBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CategoryBadge" type="PanelContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="CategoryBadgeLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/CategoryBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.78, 0.74, 1)
+theme_override_font_sizes/font_size = 17
+text = "Category"
+
+[node name="HeaderSpacer" type="Control" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PaginationHBox" type="HBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow"]
+layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HelpCard" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 0
-offset_left = 40.0
-offset_top = 120.0
-offset_right = 520.0
-offset_bottom = 280.0
-script = ExtResource("3_fablb")
-
-[node name="InnerVBox" type="VBoxContainer" parent="HelpCard"]
+[node name="PrevButton" type="Button" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/PaginationHBox"]
+custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="HeaderButton" type="Button" parent="HelpCard/InnerVBox"]
-custom_minimum_size = Vector2(0, 46)
-layout_mode = 2
-size_flags_horizontal = 3
 theme = ExtResource("1_x4o1d")
-theme_override_font_sizes/font_size = 26
-toggle_mode = true
-text = "Заголовок"
+theme_override_styles/normal = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_pager_btn")
+theme_override_font_sizes/font_size = 18
+text = "<"
 
-[node name="ContentMargin" type="MarginContainer" parent="HelpCard/InnerVBox"]
+[node name="PageLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/PaginationHBox"]
+custom_minimum_size = Vector2(52, 0)
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "1 / 1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="ContentLabel" type="RichTextLabel" parent="HelpCard/InnerVBox/ContentMargin"]
+[node name="NextButton" type="Button" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/PaginationHBox"]
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+theme = ExtResource("1_x4o1d")
+theme_override_styles/normal = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pager_btn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_pager_btn")
+theme_override_font_sizes/font_size = 18
+text = ">"
+
+[node name="ArticleTitleLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.99, 1)
+theme_override_font_sizes/font_size = 32
+text = "Title"
+autowrap_mode = 3
+
+[node name="ArticleSummaryLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.84, 1)
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 3
+
+[node name="ArticleScroll" type="ScrollContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ArticleBodyVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/default_color = Color(0.92, 0.93, 0.96, 1)
-theme_override_font_sizes/normal_font_size = 28
-bbcode_enabled = true
-fit_content = true
-scroll_active = false
+size_flags_vertical = 0
+theme_override_constants/separation = 12
 
-[connection signal="pressed" from="MainVBox/BackButton" to="." method="_on_back_pressed"]
+[node name="ArticleFooterVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RelatedHeaderLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleFooterVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "См. также"
+
+[node name="RelatedButtonsVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleFooterVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LinksHeaderLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleFooterVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Полезные ссылки"
+
+[node name="LinksButtonsVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleFooterVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ArticlePlaceholderLabel" type="Label" parent="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.52, 0.58, 0.68, 0.9)
+theme_override_font_sizes/font_size = 18
+text = "Выберите вопрос слева"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="FooterLabel" type="Label" parent="MainVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.58, 0.75)
+theme_override_font_sizes/font_size = 14
+text = "Esc — выход · 1–6 разделы · стрелки — вопросы"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="MainVBox/TopBar/BackButton" to="." method="_on_back_pressed"]
+[connection signal="text_changed" from="MainVBox/BodyHBox/SidebarPanel/SidebarVBox/SearchBar" to="." method="_on_search_text_changed"]
+[connection signal="text_submitted" from="MainVBox/BodyHBox/SidebarPanel/SidebarVBox/SearchBar" to="." method="_on_search_text_submitted"]
+[connection signal="pressed" from="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/PaginationHBox/PrevButton" to="." method="_on_prev_article_pressed"]
+[connection signal="pressed" from="MainVBox/BodyHBox/ArticlePanel/ArticleMargin/ArticleVBox/ArticleHeaderRow/PaginationHBox/NextButton" to="." method="_on_next_article_pressed"]

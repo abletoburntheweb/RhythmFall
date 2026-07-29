@@ -1,0 +1,586 @@
+[gd_scene load_steps=8 format=3 uid="uid://seriesfinish01"]
+
+[ext_resource type="Script" path="res://scenes/series_finish/series_finish_screen.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/series_finish/series_finish_hero_ring.gd" id="3_ring"]
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_accuracy_chart.gd" id="4_chart"]
+[ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="5_diamond"]
+[ext_resource type="Texture2D" path="res://assets/icons/gauge.svg" id="6_gauge"]
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_lane_stats.gd" id="7_lanestats"]
+
+[node name="SeriesFinishScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="MainMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 20
+
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TopRowHBox" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 20
+
+[node name="HeroFrame" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 320)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="HeroRing" type="Control" parent="MainMargin/MainVBox/TopRowHBox/HeroFrame"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 280)
+layout_mode = 2
+script = ExtResource("3_ring")
+
+[node name="HeroVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.15
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Endless"
+
+[node name="SubtitleLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Series ended"
+
+[node name="MetaLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="RecordBanner" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="TopStatsRow" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="TopStat0" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat0"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="TopStat0Caption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat0/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 11
+text = "TRACKS"
+horizontal_alignment = 1
+
+[node name="TopStat0Value" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat0/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "0"
+horizontal_alignment = 1
+
+[node name="TopStat0Note" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat0/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 11
+text = ""
+horizontal_alignment = 1
+
+[node name="TopStat1" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat1"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="TopStat1Caption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat1/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 11
+text = "RR"
+horizontal_alignment = 1
+
+[node name="TopStat1Value" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat1/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "0"
+horizontal_alignment = 1
+
+[node name="TopStat1Note" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/TopStatsRow/TopStat1/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 11
+text = ""
+horizontal_alignment = 1
+
+[node name="RightColVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+custom_minimum_size = Vector2(304, 320)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 10
+
+[node name="RewardsPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RewardsMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel"]
+layout_mode = 2
+
+[node name="RewardsVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RewardsTitle" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "REWARDS"
+
+[node name="RewardsBodyHBox" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CurrencyCol" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="CurrencyTop" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="DiamondIcon" type="TextureRect" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyTop"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("5_diamond")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CurrencyLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyTop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 26
+text = "+0"
+horizontal_alignment = 1
+
+[node name="CurrencyCaption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 11
+text = "CURRENCY"
+horizontal_alignment = 1
+
+[node name="XpCol" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="XpTop" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XpCol"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="GaugeIcon" type="TextureRect" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XpCol/XpTop"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("6_gauge")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="XpLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XpCol/XpTop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.86, 0.78, 1)
+theme_override_font_sizes/font_size = 26
+text = "+0"
+horizontal_alignment = 1
+
+[node name="XpCaption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XpCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 11
+text = "XP"
+horizontal_alignment = 1
+
+[node name="XpProgressBar" type="ProgressBar" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="XpProgressLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 10
+text = "0 / 0"
+horizontal_alignment = 1
+
+[node name="ChartPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChartMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ChartVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="ChartTitle" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin/ChartVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "ACCURACY"
+
+[node name="VictoryAccuracyChart" type="Control" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin/ChartVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("4_chart")
+
+[node name="RouteBadgesPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="BadgesMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RouteBadgesPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="BadgesVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RouteBadgesPanel/BadgesMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="RouteBadgesTitle" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RouteBadgesPanel/BadgesMargin/BadgesVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 11
+text = "ROUTE REWARDS"
+
+[node name="RouteBadgesRow" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RouteBadgesPanel/BadgesMargin/BadgesVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BottomRowHBox" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 148)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 12
+
+[node name="StatsPanel" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StatsMargin" type="MarginContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="StatsGrid" type="GridContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 4
+
+[node name="ScoreTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "SCORE"
+horizontal_alignment = 1
+
+[node name="ScoreValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="ComboTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "COMBO"
+horizontal_alignment = 1
+
+[node name="ComboValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="MaxComboTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "MAX COMBO"
+horizontal_alignment = 1
+
+[node name="MaxComboValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="AccuracyTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "ACCURACY"
+horizontal_alignment = 1
+
+[node name="AccuracyValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0%"
+horizontal_alignment = 1
+
+[node name="PerfectTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "PERFECT"
+horizontal_alignment = 1
+
+[node name="PerfectValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="GoodTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "GOOD"
+horizontal_alignment = 1
+
+[node name="GoodValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="MissTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Cap" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "MISS"
+horizontal_alignment = 1
+
+[node name="MissValue" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="LaneStatsPanel" type="PanelContainer" parent="MainMargin/MainVBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="LaneStatsMargin" type="MarginContainer" parent="MainMargin/MainVBox/LaneStatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="LaneStatsVBox" type="VBoxContainer" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LaneStatsTitle" type="Label" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin/LaneStatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "LANE STATS"
+
+[node name="VictoryLaneStats" type="Control" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin/LaneStatsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("7_lanestats")
+
+[node name="ButtonsRow" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 14
+
+[node name="BackButton" type="Button" parent="MainMargin/MainVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 52)
+layout_mode = 2
+text = "Back"
+
+[node name="PlayAgainButton" type="Button" parent="MainMargin/MainVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Play again"
+
+[node name="SecondaryButton" type="Button" parent="MainMargin/MainVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 52)
+layout_mode = 2
+text = "New setup"

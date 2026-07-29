@@ -9,6 +9,11 @@ const CARD_BORDER_ACTIVE := Color(0.30, 0.36, 0.44, 0.75)
 const CARD_BG := Color(0.025, 0.025, 0.028, 1.0)
 const CARD_BG_EXPANDED := Color(0.032, 0.032, 0.036, 1.0)
 
+static var _panel_collapsed: StyleBoxFlat
+static var _panel_expanded: StyleBoxFlat
+static var _header_empty: StyleBoxEmpty
+static var _header_hover: StyleBoxFlat
+
 @export var collapsed_prefix: String = "> "
 @export var expanded_prefix: String = "v "
 @export var title_modulate_expanded: Color = Color(0.97, 0.98, 1.0, 1.0)
@@ -41,35 +46,53 @@ func setup(title: String, content: String) -> void:
 
 
 func _apply_card_panel(expanded: bool) -> void:
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = CARD_BG_EXPANDED if expanded else CARD_BG
-	panel.draw_center = true
-	panel.border_width_left = 3 if expanded else 1
-	panel.border_width_top = 1
-	panel.border_width_right = 1
-	panel.border_width_bottom = 1
+	add_theme_stylebox_override("panel", _panel_style(expanded))
+
+
+func _panel_style(expanded: bool) -> StyleBoxFlat:
 	if expanded:
-		panel.border_color = CARD_BORDER_ACTIVE
-	else:
-		panel.border_color = CARD_BORDER
-	panel.set_corner_radius_all(8)
-	panel.content_margin_left = 4
-	panel.content_margin_top = 2
-	panel.content_margin_right = 4
-	panel.content_margin_bottom = 4
-	add_theme_stylebox_override("panel", panel)
+		if _panel_expanded == null:
+			_panel_expanded = StyleBoxFlat.new()
+			_panel_expanded.bg_color = CARD_BG_EXPANDED
+			_panel_expanded.border_width_left = 3
+			_panel_expanded.border_width_top = 1
+			_panel_expanded.border_width_right = 1
+			_panel_expanded.border_width_bottom = 1
+			_panel_expanded.border_color = CARD_BORDER_ACTIVE
+			_panel_expanded.set_corner_radius_all(8)
+			_panel_expanded.content_margin_left = 4
+			_panel_expanded.content_margin_top = 2
+			_panel_expanded.content_margin_right = 4
+			_panel_expanded.content_margin_bottom = 4
+		return _panel_expanded
+	if _panel_collapsed == null:
+		_panel_collapsed = StyleBoxFlat.new()
+		_panel_collapsed.bg_color = CARD_BG
+		_panel_collapsed.border_width_left = 1
+		_panel_collapsed.border_width_top = 1
+		_panel_collapsed.border_width_right = 1
+		_panel_collapsed.border_width_bottom = 1
+		_panel_collapsed.border_color = CARD_BORDER
+		_panel_collapsed.set_corner_radius_all(8)
+		_panel_collapsed.content_margin_left = 4
+		_panel_collapsed.content_margin_top = 2
+		_panel_collapsed.content_margin_right = 4
+		_panel_collapsed.content_margin_bottom = 4
+	return _panel_collapsed
 
 
 func _apply_header_button_styles() -> void:
-	var empty := StyleBoxEmpty.new()
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = Color(1, 1, 1, 0.035)
-	hover.set_corner_radius_all(6)
-	_header_button.add_theme_stylebox_override("normal", empty)
-	_header_button.add_theme_stylebox_override("hover", hover)
-	_header_button.add_theme_stylebox_override("pressed", hover)
-	_header_button.add_theme_stylebox_override("focus", empty)
-	_header_button.add_theme_stylebox_override("disabled", empty)
+	if _header_empty == null:
+		_header_empty = StyleBoxEmpty.new()
+	if _header_hover == null:
+		_header_hover = StyleBoxFlat.new()
+		_header_hover.bg_color = Color(1, 1, 1, 0.035)
+		_header_hover.set_corner_radius_all(6)
+	_header_button.add_theme_stylebox_override("normal", _header_empty)
+	_header_button.add_theme_stylebox_override("hover", _header_hover)
+	_header_button.add_theme_stylebox_override("pressed", _header_hover)
+	_header_button.add_theme_stylebox_override("focus", _header_empty)
+	_header_button.add_theme_stylebox_override("disabled", _header_empty)
 
 
 func _on_header_toggled(pressed: bool) -> void:
@@ -86,7 +109,7 @@ func _on_header_toggled(pressed: bool) -> void:
 func _update_richtext_layout() -> void:
 	if not _content_margin.visible:
 		return
-	for _i in range(10):
+	for _i in range(4):
 		await get_tree().process_frame
 		_content_label.queue_redraw()
 		var mw: float = _content_margin.size.x

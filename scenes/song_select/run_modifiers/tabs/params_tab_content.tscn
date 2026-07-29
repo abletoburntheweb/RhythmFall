@@ -1,0 +1,211 @@
+[gd_scene load_steps=3 format=3 uid="uid://crunmodparamtab1"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/tabs/params_tab_content.gd" id="1_params"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ParamsTabContent" type="VBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_params")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ParamsVBox" type="VBoxContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="IntroLabel" type="Label" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 16
+text = "Тонкая настройка параметров для следующего забега."
+autowrap_mode = 3
+
+[node name="IntroRow" type="HBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+
+[node name="ResetParamsBtn" type="Button" parent="Scroll/ParamsVBox/IntroRow"]
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 15
+text = "Сбросить параметры"
+
+[node name="SongSection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SongSectionHeader" type="Label" parent="Scroll/ParamsVBox/SongSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Скорость песни"
+
+[node name="SongRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/SongSection"]
+layout_mode = 2
+
+[node name="ScrollSection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ScrollSectionHeader" type="Label" parent="Scroll/ParamsVBox/ScrollSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Скорость прокрутки нот"
+
+[node name="ScrollSectionHint" type="Label" parent="Scroll/ParamsVBox/ScrollSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Сейчас используется значение из настроек игры."
+autowrap_mode = 3
+
+[node name="FixedScrollCheck" type="CheckButton" parent="Scroll/ParamsVBox/ScrollSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Задать фиксированную скорость"
+
+[node name="ScrollMultRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/ScrollSection"]
+layout_mode = 2
+
+[node name="ScrollRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/ScrollSection"]
+visible = false
+layout_mode = 2
+
+[node name="TimingSection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TimingSectionHeader" type="Label" parent="Scroll/ParamsVBox/TimingSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Окно попадания"
+
+[node name="TimingSectionHint" type="Label" parent="Scroll/ParamsVBox/TimingSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Множитель к окнам Perfect и Good. 100% — как в настройках модификаторов."
+autowrap_mode = 3
+
+[node name="TimingRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/TimingSection"]
+layout_mode = 2
+
+[node name="VisibilitySection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VisibilitySectionHeader" type="Label" parent="Scroll/ParamsVBox/VisibilitySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Полоса видимости"
+
+[node name="VisibilitySectionHint" type="Label" parent="Scroll/ParamsVBox/VisibilitySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Для модов «Скрытые» и «Внезапные» — ширина зоны появления нот."
+autowrap_mode = 3
+
+[node name="VisibilityRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/VisibilitySection"]
+layout_mode = 2
+
+[node name="MemorySection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MemorySectionHeader" type="Label" parent="Scroll/ParamsVBox/MemorySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Прогрессивная память"
+
+[node name="MemorySectionHint" type="Label" parent="Scroll/ParamsVBox/MemorySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Длительность показа ноты при моде «Память». Короткая фаза — 60% от этого значения."
+autowrap_mode = 3
+
+[node name="MemoryRowHost" type="VBoxContainer" parent="Scroll/ParamsVBox/MemorySection"]
+layout_mode = 2
+
+[node name="ExtraParamsHost" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ComboEscalationSection" type="VBoxContainer" parent="Scroll/ParamsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ComboEscalationSectionHeader" type="Label" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Эскалация по комбо"
+
+[node name="ComboEscalationSectionHint" type="Label" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Как выбираются усложняющие моды при моде «Эскалация»."
+autowrap_mode = 3
+
+[node name="PickModeLabel" type="Label" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "Режим выбора"
+
+[node name="PickModeOption" type="OptionButton" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 16
+
+[node name="CePoolHost" type="VBoxContainer" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OrderSection" type="VBoxContainer" parent="Scroll/ParamsVBox/ComboEscalationSection"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OrderHint" type="Label" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 14
+text = "Порядок модов сверху вниз. Ступень 1 — первый пункт, затем по списку по кругу."
+autowrap_mode = 3
+
+[node name="OrderScroll" type="ScrollContainer" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_scroll_mode = 0
+
+[node name="OrderVBox" type="VBoxContainer" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection/OrderScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="OrderButtons" type="HBoxContainer" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MoveUpBtn" type="Button" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection/OrderButtons"]
+layout_mode = 2
+text = "Выше"
+
+[node name="MoveDownBtn" type="Button" parent="Scroll/ParamsVBox/ComboEscalationSection/OrderSection/OrderButtons"]
+layout_mode = 2
+text = "Ниже"

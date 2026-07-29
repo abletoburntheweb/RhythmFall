@@ -1,0 +1,283 @@
+[gd_scene load_steps=5 format=3 uid="uid://bvqgg8p62jhe0"]
+
+[ext_resource type="Script" uid="uid://dwrvglrg13hnt" path="res://scenes/song_select/dialogs/genre_picker_dialog.gd" id="1_06red"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_n0ssd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_genre_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="GenrePicker" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_n0ssd")
+script = ExtResource("1_06red")
+auto_close = false
+metadata/_custom_type_script = "uid://dwrvglrg13hnt"
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.97)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="InstrumentLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
+text = "Выберите жанр"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 17
+text = "Жанр влияет на достижения и на то, как сервер строит паттерны карты."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyCenter" type="MarginContainer" parent="Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_right = 48
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(0, 660)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_genre_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="BodyHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="LeftVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.42
+theme_override_constants/separation = 10
+
+[node name="ServerPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner_panel")
+
+[node name="ServerVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ServerHeaderHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ServerTitleLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox/ServerHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.8, 0.94, 1)
+theme_override_font_sizes/font_size = 18
+text = "Определено сервером"
+
+[node name="RefreshButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox/ServerHeaderHBox"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 15
+text = "Обновить анализ"
+
+[node name="ServerStatusLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.72, 0.82, 0.95)
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+
+[node name="ServerHintLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Выберите вариант в списке, чтобы назначить его основным жанром трека."
+autowrap_mode = 3
+
+[node name="SuggestionsScroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SuggestionsVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox/SuggestionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="SelectedPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner_panel")
+
+[node name="SelectedVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SelectedTitleLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel/SelectedVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "Выбранный жанр"
+
+[node name="SelectedGenreRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel/SelectedVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="IconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel/SelectedVBox/SelectedGenreRow"]
+layout_mode = 2
+
+[node name="SelectedGenreLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel/SelectedVBox/SelectedGenreRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.45, 0.86, 0.8, 1)
+theme_override_font_sizes/font_size = 26
+text = "не указан"
+
+[node name="SelectedHintLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/SelectedPanel/SelectedVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Выбранный жанр сохранится в метаданных трека."
+autowrap_mode = 3
+
+[node name="ActionsHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ActionsHBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"FlatModalDangerButton"
+theme_override_font_sizes/font_size = 18
+text = "Сбросить жанр"
+
+[node name="ConfirmButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ActionsHBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 18
+text = "Подтвердить"
+
+[node name="RightVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.58
+theme_override_constants/separation = 10
+
+[node name="SearchRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SearchFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/SearchRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Поиск"
+
+[node name="SearchLineEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/SearchRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_n0ssd")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Поиск жанра…"
+
+[node name="GenreList" type="ItemList" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("2_n0ssd")
+theme_override_font_sizes/font_size = 20
+
+[node name="FooterHintLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.7, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "Esc — отмена · Enter — подтвердить"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ServerPanel/ServerVBox/ServerHeaderHBox/RefreshButton" to="." method="_on_refresh_analysis_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ActionsHBox/ResetButton" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ActionsHBox/ConfirmButton" to="." method="_on_confirm_pressed"]
+[connection signal="text_changed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/SearchRow/SearchLineEdit" to="." method="_on_search_changed"]
+[connection signal="item_activated" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/GenreList" to="." method="_on_item_activated"]
+[connection signal="item_selected" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/GenreList" to="." method="_on_item_selected"]

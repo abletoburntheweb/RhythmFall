@@ -1,0 +1,74 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8shopcollectioncard"]
+
+[ext_resource type="Script" path="res://scenes/shop/components/shop_collection_card.gd" id="1_card"]
+
+[node name="ShopCollectionCard" type="PanelContainer"]
+custom_minimum_size = Vector2(160, 96)
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+mouse_filter = 0
+script = ExtResource("1_card")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="MainVBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IconFrame" type="PanelContainer" parent="Margin/MainVBox/TopRow"]
+visible = false
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="IconTexture" type="TextureRect" parent="Margin/MainVBox/TopRow/IconFrame"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TextVBox" type="VBoxContainer" parent="Margin/MainVBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="NameLabel" type="Label" parent="Margin/MainVBox/TopRow/TextVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.91, 0.98, 1)
+theme_override_font_sizes/font_size = 15
+text = "ЛЕСНАЯ"
+
+[node name="TaglineLabel" type="Label" parent="Margin/MainVBox/TopRow/TextVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 1)
+theme_override_font_sizes/font_size = 12
+text = "Тёмный лес и мягкая зелень"
+autowrap_mode = 2
+
+[node name="ProgressRow" type="HBoxContainer" parent="Margin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProgressBar" type="ProgressBar" parent="Margin/MainVBox/ProgressRow"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 4.0
+value = 1.0
+show_percentage = false
+
+[node name="ProgressLabel" type="Label" parent="Margin/MainVBox/ProgressRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "0 / 4"
+horizontal_alignment = 2

@@ -14,6 +14,7 @@ var achievement_category: String = ""
 const _ACCENT_BY_CATEGORY := {
 	"mastery": Color(0.66, 0.58, 0.86),
 	"drums": Color(0.38, 0.78, 0.74),
+	"bass": Color(0.45, 0.62, 0.92),
 	"genres": Color(0.86, 0.52, 0.72),
 	"system": Color(0.8, 0.86, 0.94),
 	"shop": Color(0.52, 0.76, 0.92),
@@ -22,11 +23,17 @@ const _ACCENT_BY_CATEGORY := {
 	"playtime": Color(0.42, 0.57, 0.82),
 	"events": Color(0.95, 0.55, 0.45),
 	"level": Color(0.55, 0.92, 0.65),
+	"modifiers": Color(0.52, 0.76, 0.94),
+	"play_modes": Color(0.62, 0.48, 0.95),
 	"default": Color(0.42, 0.57, 0.82),
 }
 
-var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd").new()
-var TimeUtils = preload("res://logic/utils/time_utils.gd")
+var AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.gd").new()
+const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
+var TimeUtils = preload("res://logic/platform/time_utils.gd")
+
+var _achievement_data_cache: Dictionary = {}
+var _achievement_manager_cache: AchievementManager = null
 
 @onready var icon_frame: PanelContainer = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconFrame")
 @onready var icon_texture_rect: TextureRect = get_node_or_null("MarginContainer/ContentContainer/TopRowContainer/IconFrame/IconTexture")
@@ -36,12 +43,15 @@ var TimeUtils = preload("res://logic/utils/time_utils.gd")
 @onready var progress_label: Label = $MarginContainer/ContentContainer/TopRowContainer/ProgressLabel
 
 func _ready():
-	clip_contents = true
+	# Do not clip the card shell: clip_contents cuts StyleBoxFlat border AA
+	# and makes left corners look jagged against the scroll edge.
+	clip_contents = false
 	if is_unlocked:
 		theme_type_variation = "CardDefault"
 	else:
 		theme_type_variation = "CardLocked"
 	_update_display()
+
 
 func _ensure_nodes():
 	if title_label == null:
@@ -72,7 +82,7 @@ func _update_display():
 		progress_label.add_theme_color_override("font_color", Color("#D1D1D1"))
 
 	if unlock_date_text and unlock_date_text != "":
-		unlock_date_label.text = "Открыто: %s" % unlock_date_text
+		unlock_date_label.text = tr("ACH_UNLOCKED_ON") % unlock_date_text
 		unlock_date_label.visible = true
 	else:
 		unlock_date_label.text = ""
@@ -119,6 +129,7 @@ func _build_card_shell_style(accent: Color, unlocked: bool) -> StyleBoxFlat:
 	shell.border_color = accent.lightened(0.12 if unlocked else 0.0)
 	shell.set_border_width_all(2 if unlocked else 1)
 	shell.set_corner_radius_all(12)
+	shell.corner_detail = 16
 	shell.shadow_color = Color(accent.r, accent.g, accent.b, 0.24 if unlocked else 0.0)
 	shell.shadow_size = 8 if unlocked else 0
 	shell.shadow_offset = Vector2(0, 3)
@@ -145,13 +156,24 @@ func _apply_icon_frame(accent: Color) -> void:
 	if icon_texture_rect:
 		icon_texture_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
+func apply_locale() -> void:
+	if _achievement_data_cache.is_empty():
+		return
+	apply_achievement(_achievement_data_cache, _achievement_manager_cache)
+
+
 func apply_achievement(ach: Dictionary, achievement_manager: AchievementManager = null) -> void:
-	title = str(ach.get("title", ""))
-	description = str(ach.get("description", ""))
+	_achievement_data_cache = ach.duplicate()
+	_achievement_manager_cache = achievement_manager
+	title = _AchievementLocale.localized_title(ach)
+	description = _AchievementLocale.localized_description(ach)
 	is_unlocked = bool(ach.get("unlocked", false))
 	var unlock_val = ach.get("unlock_date", null)
-	if is_unlocked and unlock_val != null and str(unlock_val) != "" and str(unlock_val).to_lower() != "<null>":
+	if is_unlocked and unlock_val != null and str(unlock_val).strip_edges() != "" and str(unlock_val).to_lower() != "<null>":
 		unlock_date_text = TimeUtils.format_unlock_display(str(unlock_val))
+	elif is_unlocked:
+		# Restored / legacy unlocks without a stored date.
+		unlock_date_text = TranslationServer.translate("ACH_DATE_EARLIER")
 	else:
 		unlock_date_text = ""
 	icon_texture = AchievementsUtils.load_icon_texture_for_category(str(ach.get("category", "")))

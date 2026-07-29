@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://c8kmodcfglink2"]
+
+[ext_resource type="Script" uid="uid://c8kmodcfglink1" path="res://scenes/song_select/run_modifiers/run_modifier_configure_link.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="RunModifierConfigureLink" type="LinkButton"]
+theme = ExtResource("2_theme")
+text = "configure"
+script = ExtResource("1_script")

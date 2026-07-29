@@ -1,0 +1,807 @@
+keys,en,ru
+"HELP_SEC_start_TITLE","Getting Started","С чего начать?"
+"HELP_first_run_TITLE","What to do on first launch?","С чего начать при первом запуске?"
+"HELP_first_run_SUMMARY","In short: BPM → notes → play; server mode is under Settings → Generation.","Коротко: BPM → ноты → играть; режим сервера — в Настройки → Генерация."
+"HELP_first_run_CONTENT","[flow linear]
+music.svg|primary|Song in library
+metronome.svg|teal|Detect BPM
+sparkles.svg|mint|Generate notes
+circle-play.svg|play|Play
+[/flow]
+
+[color=#{muted}]RhythmFallServer.exe[/color] ships with the game — by default the server starts automatically.
+Server mode is set in [color=#{sky}]Settings → Generation[/color] ([color=#{teal}]Automatic[/color] / [color=#{primary}]Manual[/color] / [color=#{sky}]LAN[/color]).
+
+[callout tip]If BPM or generation does not finish, wait a few seconds in Automatic mode or open Server and Audio Analysis.[/callout]","[flow linear]
+music.svg|primary|Песня в библиотеке
+metronome.svg|teal|Вычислить BPM
+sparkles.svg|mint|Сгенерировать ноты
+circle-play.svg|play|Играть
+[/flow]
+
+[color=#{muted}]RhythmFallServer.exe[/color] входит в комплект — по умолчанию сервер запускается автоматически.
+Режим сервера задаётся в [color=#{sky}]Настройки → Генерация[/color] ([color=#{teal}]Авто[/color] / [color=#{primary}]Вручную[/color] / [color=#{sky}]LAN[/color]).
+
+[callout tip]Если BPM или генерация не завершаются, в режиме Авто достаточно подождать несколько секунд либо открыть раздел «Сервер и анализ аудио».[/callout]"
+"HELP_after_first_TITLE","What to do after your first song?","Что делать после первой песни?"
+"HELP_after_first_CONTENT","After clearing a level, available systems include:
+· [color=#{purple}]Profile[/color] — overview, statistics, genre mastery, and records; level, XP, medals, and Rhythm Rating.
+· [color=#{cat_daily}]Daily quests[/color] — three quests in the main menu; each awards currency immediately.
+· [color=#{primary}]Shop[/color] — cosmetics: note skins, hit sounds, lane highlights, hit particles.
+· On song select — run modifiers.
+· [color=#{cat_ach}]Achievements[/color] — long-term goals; some rewards unlock items outside normal purchase.","После прохождения уровня доступны:
+· [color=#{purple}]Профиль[/color] — обзор, статистика, мастерство жанров и рекорды; уровень, XP, медали и Rhythm Rating.
+· [color=#{cat_daily}]Ежедневные задания[/color] — три квеста в главном меню; за каждый сразу начисляется валюта.
+· [color=#{primary}]Магазин[/color] — косметика: скины нот, звуки удара, подсветка линий, частицы хита.
+· На выборе песни — модификаторы забега.
+· [color=#{cat_ach}]Достижения[/color] — долгосрочные цели; часть наград открывает предметы вне обычной покупки."
+"HELP_audio_timing_TITLE","Audio is early or late compared to notes — what to do?","Звук отстаёт или опережает ноты — что делать?"
+"HELP_audio_timing_CONTENT","[flow split]
+left=headphones.svg|teal|Audio lags|Need offset −
+right=headphones.svg|pink|Audio leads|Need offset +
+[/flow]
+
+When hits are consistently early or late relative to the beat, the cause is usually sound-card or headphone latency — not the server.
+· Audio [color=#{teal}]lags[/color] (note is on the line, hit sound arrives later) — negative offset.
+· Audio [color=#{pink}]leads[/color] — positive offset.
+Calibration: [color=#{sky}]Settings → Audio[/color] → [color=#{primary}]Timing calibration[/color]. [color=#{teal}]Audio calibration[/color] starts a metronome; offset is computed from first-lane key taps (up to ±500 ms). Current value is shown as [color=#{slate}]Offset: … ms[/color]. Reset to 0 with [color=#{pink}]Reset calibration[/color].
+
+[callout info]The settings metronome is used only during calibration.[/callout]","[flow split]
+left=headphones.svg|teal|Звук отстаёт|Нужен оффсет −
+right=headphones.svg|pink|Звук опережает|Нужен оффсет +
+[/flow]
+
+При стабильном смещении попаданий относительно ритма причиной обычно является задержка звуковой карты или наушников, а не сервер.
+· Звук [color=#{teal}]отстаёт[/color] (нота уже на линии, удар слышен позже) — отрицательный оффсет.
+· Звук [color=#{pink}]опережает[/color] — положительный оффсет.
+Калибровка: [color=#{sky}]Настройки → Звук[/color] → блок [color=#{primary}]«Калибровка тайминга»[/color]. Кнопка [color=#{teal}]«Калибровка аудио»[/color] запускает метроном; оффсет рассчитывается по нажатиям клавиши первой линии (до ±500 мс). Текущее значение отображается как [color=#{slate}]«Оффсет: … мс»[/color]. Сброс к 0 — [color=#{pink}]«Сбросить калибровку»[/color].
+
+[callout info]Метроном на вкладке звука используется только во время калибровки.[/callout]"
+"HELP_server_install_TITLE","How does the generation server work?","Как работает сервер генерации?"
+"HELP_server_install_CONTENT","[color=#{muted}]RhythmFallServer.exe[/color] ships with the game (Windows Python venv in the [color=#{slate}]RhythmFallServer[/color] folder). In [color=#{sky}]Settings → Generation[/color] choose:\n· [color=#{teal}]Automatic[/color] (default) — the game starts a hidden local worker when needed.\n· [color=#{primary}]Manual[/color] — you start the server yourself (console window with logs).\n· [color=#{sky}]LAN[/color] — another PC on your network; enter host and port (often [color=#{teal}]5000[/color]).\nFirst launch may take longer while models load; the game can prewarm the server in the background.","[color=#{muted}]RhythmFallServer.exe[/color] идёт в комплекте с игрой (Windows Python в папке [color=#{slate}]RhythmFallServer[/color]). В [color=#{sky}]Настройки → Генерация[/color]:\n· [color=#{teal}]Автоматически[/color] (по умолчанию) — игра сама поднимает скрытый локальный воркер.\n· [color=#{primary}]Вручную[/color] — сервер запускаете сами (окно консоли с логами).\n· [color=#{sky}]LAN[/color] — другой ПК в сети; укажите адрес и порт (часто [color=#{teal}]5000[/color]).\nПервый запуск может быть дольше из‑за загрузки моделей; игра может прогревать сервер в фоне."
+"HELP_bpm_stuck_TITLE","BPM or generation doesn't work / hangs","BPM или генерация не работают / «висят»"
+"HELP_bpm_stuck_CONTENT","Most often the server is [color=#{danger}]not running[/color] (Manual mode) or the [color=#{danger}]LAN address or port is wrong[/color]. In [color=#{teal}]Automatic[/color] mode, wait a few seconds and try again — the game may still be starting the worker.\nCheck [color=#{sky}]Settings → Generation[/color]. In Manual mode, start [color=#{muted}]RhythmFallServer.exe[/color] yourself. After changing networks, retry [color=#{primary}]Detect BPM[/color] and [color=#{mint}]Generate notes[/color].\n\n[callout warning]In LAN mode, make sure the host and port match the server on the other PC.[/callout]","Чаще всего сервер [color=#{danger}]не запущен[/color] (режим «Вручную») или указан [color=#{danger}]неверный адрес/порт LAN[/color]. В режиме [color=#{teal}]«Автоматически»[/color] подождите несколько секунд — воркер может ещё стартовать.\nПроверьте [color=#{sky}]Настройки → Генерация[/color]. Вручную — запустите [color=#{muted}]RhythmFallServer.exe[/color] сами. После смены сети снова нажмите [color=#{primary}]Вычислить BPM[/color] и [color=#{mint}]Сгенерировать ноты[/color].\n\n[callout warning]В режиме LAN убедитесь, что адрес и порт совпадают с сервером на другом ПК.[/callout]"
+"HELP_note_speed_TITLE","Notes scroll too fast or too slow","Ноты летят слишком быстро или медленно"
+"HELP_note_speed_CONTENT","Fall speed is set separately from BPM: [color=#{sky}]Settings → Graphics[/color] → [color=#{primary}]Note scroll speed[/color]. BPM affects pattern [color=#{teal}]density[/color] over time, not scroll speed.","Скорость падения задаётся отдельно от BPM: [color=#{sky}]Настройки → Графика[/color] → [color=#{primary}]«Скорость движения нот»[/color]. BPM влияет на [color=#{teal}]плотность[/color] паттерна во времени, а не на скорость прокрутки."
+"HELP_controls_TITLE","How to play and pause?","Как управлять и поставить на паузу?"
+"HELP_controls_CONTENT","Press lane keys when a note reaches the hit zone (by default [color=#{primary}]A[/color], [color=#{teal}]S[/color], [color=#{sky}]D[/color], [color=#{mint}]F[/color], and with 5 lanes — [color=#{purple}]G[/color]). You can remap keys in [color=#{sky}]Settings → Controls[/color].\nDuring a song, [color=#{pink}]Esc[/color] opens the pause menu.\n\n[callout tip]Using a Guitar Hero / Rock Band controller? See [color=#{sky}]«Guitar Hero controller»[/color] under [color=#{sky}]Gameplay & settings[/color].[/callout]","Нажимайте клавиши линий, когда нота доходит до зоны попадания (по умолчанию [color=#{primary}]A[/color], [color=#{teal}]S[/color], [color=#{sky}]D[/color], [color=#{mint}]F[/color] и при 5 линиях — [color=#{purple}]G[/color]). Переназначить можно в [color=#{sky}]Настройки → Управление[/color].\nВо время песни [color=#{pink}]Esc[/color] открывает меню паузы.\n\n[callout tip]Есть гитарный контроллер Guitar Hero / Rock Band? См. [color=#{sky}]«Контроллер Guitar Hero»[/color] в разделе [color=#{sky}]«Геймплей и настройки»[/color].[/callout]"
+"HELP_guitar_hero_controller_TITLE","Guitar Hero / Rock Band controller","Контроллер Guitar Hero / Rock Band"
+"HELP_guitar_hero_controller_SUMMARY","In short: five colored frets → lanes; D-Pad strum in Pick mode; Start pauses, Select skips.","Коротко: пять цветных ладов → линии; D-Pad — страм в Pick mode; Start — пауза, Select — пропуск."
+"HELP_guitar_hero_controller_CONTENT","[flow linear]
+guitar.svg|primary|Plug in gamepad
+settings-2.svg|sky|Settings → Controls
+gamepad-2.svg|teal|Enable guitar controller
+circle-play.svg|play|Play
+[/flow]
+
+**Enable:** [color=#{sky}]Settings → Controls[/color] → block [color=#{primary}]«Guitar Hero controller»[/color] → check [color=#{teal}]«Enable guitar controller»[/color].
+
+**Default XInput mapping (lanes 1–5):**
+· [color=#{mint}]Green[/color] — A · [color=#{danger}]Red[/color] — B · [color=#{yellow}]Yellow[/color] — Y · [color=#{sky}]Blue[/color] — X · [color=#{orange}]Orange[/color] — LB
+· **Strum** (Pick mode): D-Pad [color=#{teal}]Up[/color] / [color=#{teal}]Down[/color]
+· [color=#{pink}]Start[/color] — pause · [color=#{slate}]Select[/color] — skip (like Space during countdown/intro)
+
+**Auto-detect** picks a pad by name (Guitar Hero, Rock Band, XInput, …) or falls back to the **first connected** gamepad.
+
+**Remap:** colored fret rows and strum/system buttons in the same panel. **Input test** lights lanes when you press buttons (holds show while pressed).
+
+[callout info]Gameplay only — menus and song select stay on keyboard/mouse. Keyboard lanes still work in parallel.[/callout]
+
+[callout tip]Strum matters mainly with the [color=#{purple}]Pick mode[/color] modifier; on normal tap notes frets alone are enough.[/callout]","[flow linear]
+guitar.svg|primary|Подключить геймпад
+settings-2.svg|sky|Настройки → Управление
+gamepad-2.svg|teal|Включить гитарный контроллер
+circle-play.svg|play|Играть
+[/flow]
+
+**Включение:** [color=#{sky}]Настройки → Управление[/color] → блок [color=#{primary}]«Контроллер Guitar Hero»[/color] → галочка [color=#{teal}]«Включить гитарный контроллер»[/color].
+
+**Стандартная раскладка XInput (линии 1–5):**
+· [color=#{mint}]Зелёный[/color] — A · [color=#{danger}]Красный[/color] — B · [color=#{yellow}]Жёлтый[/color] — Y · [color=#{sky}]Синий[/color] — X · [color=#{orange}]Оранжевый[/color] — LB
+· **Страм** (режим медиатора): D-Pad [color=#{teal}]Вверх[/color] / [color=#{teal}]Вниз[/color]
+· [color=#{pink}]Start[/color] — пауза · [color=#{slate}]Select[/color] — пропуск (как Пробел на отсчёте/интро)
+
+**Автоопределение** ищет геймпад по имени (Guitar Hero, Rock Band, XInput, …) или берёт **первый подключённый**.
+
+**Переназначение:** цветные ряды ладов и кнопки страма/системы в той же панели. **Проверка ввода** подсвечивает линии при нажатии (удержание видно, пока кнопка зажата).
+
+[callout info]Только в игре — меню и выбор песни по-прежнему с клавиатуры/мыши. Клавиатурные линии работают параллельно.[/callout]
+
+[callout tip]Страм важен в основном с модом [color=#{purple}]«Режим медиатора»[/color]; на обычных тап-нотах достаточно ладов.[/callout]"
+"HELP_add_songs_TITLE","How to add your own songs?","Как добавить свои песни?"
+"HELP_add_songs_CONTENT","[flow linear]
+folder-open.svg|sky|Music folder
+folder-search.svg|teal|Scan
+metronome.svg|primary|BPM
+sparkles.svg|mint|Notes
+[/flow]
+
+[color=#{primary}]MP3, OGG, or WAV[/color] files go into the music folder — the path is set in [color=#{sky}]Settings → Library[/color]. After [color=#{teal}]Scan songs[/color], new tracks appear in the list; BPM detection and note generation via the server are still required.","[flow linear]
+folder-open.svg|sky|Папка с музыкой
+folder-search.svg|teal|Сканировать
+metronome.svg|primary|BPM
+sparkles.svg|mint|Ноты
+[/flow]
+
+Файлы [color=#{primary}]MP3, OGG или WAV[/color] помещаются в папку с музыкой — путь задаётся в [color=#{sky}]Настройки → Библиотека[/color]. После [color=#{teal}]«Сканировать песни»[/color] новые треки появляются в списке; для них по-прежнему требуются BPM и генерация нот через сервер."
+"HELP_hit_grades_TITLE","What are PERFECT and GOOD?","Что такое ИДЕАЛЬНО и ХОРОШО?"
+"HELP_hit_grades_CONTENT","[showcase hit_window]
+
+Timing accuracy grades:
+· [color=#{perfect}]PERFECT[/color] — hit near the center of the window (±0.05 s).
+· [color=#{good}]GOOD[/color] — wider window (±0.15 s).
+· [color=#{danger}]MISS[/color] — too early, too late, or an extra press.
+Score and combo details are in [color=#{sky}]Gameplay and Settings[/color].","[showcase hit_window]
+
+Оценки точности попадания по времени:
+· [color=#{perfect}]ИДЕАЛЬНО[/color] — попадание почти в центр окна (±0,05 с).
+· [color=#{good}]ХОРОШО[/color] — более широкое окно (±0,15 с).
+· [color=#{danger}]ПРОМАХ[/color] — слишком рано, поздно или лишнее нажатие.
+Подробнее об очках и комбо — в разделе [color=#{sky}]«Геймплей и настройки»[/color]."
+"HELP_SEC_server_TITLE","Server and Audio Analysis","Сервер и анализ аудио"
+"HELP_architecture_TITLE","How does the server architecture work?","Как работает архитектура сервера?"
+"HELP_architecture_CONTENT","RhythmFall uses a client-server architecture.
+
+[flow split]
+left=gamepad-2.svg|sky|Godot|UI · play · input
+right=server.svg|teal|Python server|BPM · stems · notes
+[/flow]
+
+The server handles BPM, stems (drums / bass), and pattern generation for the selected **instrument**, **goal**, and **difficulty**.
+
+[callout info]Chart parameters — in the song library; server connection — [color=#{sky}]Settings → Generation[/color].[/callout]","RhythmFall использует клиент-серверную архитектуру.
+
+[flow split]
+left=gamepad-2.svg|sky|Godot|UI · игра · ввод
+right=server.svg|teal|Python-сервер|BPM · стемы · ноты
+[/flow]
+
+Сервер: BPM, стемы (ударные / бас), генерация паттерна для выбранного **инструмента**, цели и сложности.
+
+[callout info]Параметры чарта — в библиотеке; подключение к серверу — [color=#{sky}]Настройки → Генерация[/color].[/callout]"
+"HELP_pipeline_TITLE","Audio analysis pipeline","Технологический пайплайн анализа"
+"HELP_pipeline_CONTENT","Track processing on the server follows this chain:\n1. [color=#{primary}]Stem Separation[/color]: the Demucs model separates drums from the mix.\n2. [color=#{teal}]Tempo Analysis[/color]: TempoCNN estimates BPM.\n3. [color=#{sky}]Beat Tracking[/color]: a network builds the beat grid.\n4. [color=#{purple}]Genre ID[/color]: Discogs400 suggests genre for generation rules.\n5. [color=#{mint}]Synthesis[/color]: assembling notes with quantization and lane assignment.","Обработка трека на сервере идёт по цепочке:\n1. [color=#{primary}]Stem Separation[/color]: модель Demucs отделяет ударные от микса.\n2. [color=#{teal}]Tempo Analysis[/color]: TempoCNN оценивает BPM.\n3. [color=#{sky}]Beat Tracking[/color]: сеть строит тактовую сетку.\n4. [color=#{purple}]Genre ID[/color]: Discogs400 подсказывает жанр для правил генерации.\n5. [color=#{mint}]Synthesis[/color]: сборка нот с квантованием и назначением по линиям."
+"HELP_server_required_TITLE","Do I need a local server for BPM and generation?","Нужен ли локальный сервер для BPM и генерации?"
+"HELP_server_required_CONTENT","Yes. Both [color=#{teal}]BPM detection[/color] and [color=#{primary}]note generation[/color] run on the server bundled with the game. Default [color=#{teal}]Automatic[/color] mode starts the server in the background. [color=#{primary}]Manual[/color] means [color=#{muted}]RhythmFallServer.exe[/color] is launched separately; [color=#{sky}]LAN[/color] uses another PC (host + port, often [color=#{teal}]5000[/color]). Configuration is in [color=#{sky}]Settings → Generation[/color]. Without a responding server, analysis and generation will not finish.","Да. И [color=#{teal}]BPM[/color], и [color=#{primary}]генерация нот[/color] идут через сервер из комплекта игры. По умолчанию [color=#{teal}]«Автоматически»[/color] — сервер запускается в фоне. [color=#{primary}]«Вручную»[/color] — [color=#{muted}]RhythmFallServer.exe[/color] запускается отдельно; [color=#{sky}]LAN[/color] — другой ПК (адрес + порт, часто [color=#{teal}]5000[/color]) — в [color=#{sky}]Настройки → Генерация[/color]. Без отвечающего сервера анализ и генерация не завершатся."
+"HELP_stems_TITLE","What are stems in generation settings?","Что такое «стемы» в настройках генерации?"
+"HELP_stems_CONTENT","[showcase stems]\n\n[color=#{sky}]Stems[/color] are separate tracks split from the full mix (for example, drums only). If [color=#{teal}]Enable stem separation[/color] is on in advanced generation settings, the server focuses on the isolated drum track — usually more accurate for rhythm than analyzing the full mix.","[showcase stems]\n\n[color=#{sky}]Стемы[/color] — это разделение полного микса на отдельные дорожки (например, только ударные). Если включено [color=#{teal}]«Включить разделение на stem'ы»[/color] в расширенных настройках генерации, сервер ориентируется на изолированную барабанную дорожку — для ритма это обычно точнее, чем анализ всего микса."
+"HELP_SEC_generation_TITLE","Note Generation","Генерация нот"
+"HELP_modes_TITLE","How does chart goal work?","Как работает цель генерации?"
+"HELP_modes_SUMMARY","In short: pick Original (close to the audio) or Arcade (playable, grid-friendly).","Коротко: выбери Оригинал (ближе к аудио) или Аркаду (играбельно, к сетке)."
+"HELP_modes_CONTENT","[showcase gen_modes]
+
+In [color=#{primary}]Generation settings[/color], the chart is set by [color=#{sky}]goal[/color] — not a stack of separate “style” buttons.
+
+**[color=#{sky}]Goal[/color]** — build policy:
+· [color=#{teal}]Original[/color] — events closer to audio detection; minimal gap fill.
+· [color=#{pink}]Arcade[/color] — playable chart: gap fill, grid snap, readable patterns.
+
+Filenames include the goal, e.g. [color=#{muted}]drums_original.rf[/color], [color=#{muted}]drums_arcade_standard.rf[/color], [color=#{muted}]bass_arcade_standard.rf[/color].
+
+[callout info]Former names “Pulse” and “Minimal” belonged to a legacy single-style scheme; their role is covered by the Arcade goal.[/callout]","[showcase gen_modes]
+
+В [color=#{primary}]«Настройки генерации»[/color] карта задаётся [color=#{sky}]целью[/color] — не набором отдельных кнопок «стиль».
+
+**[color=#{sky}]Цель[/color]** — принцип построения:
+· [color=#{teal}]Оригинал[/color] — события ближе к детекции в аудио; минимум достройки.
+· [color=#{pink}]Аркада[/color] — играбельная карта: достройка пропусков, привязка к сетке, читаемые паттерны.
+
+В имени файла стоят инструмент и цель, например [color=#{muted}]drums_original.rf[/color], [color=#{muted}]drums_arcade_standard.rf[/color], [color=#{muted}]bass_arcade_standard.rf[/color].
+
+[callout info]Прежние названия «Пульс» и «Минимум» относились к устаревшей схеме из одного «стиля»; их роль выполняет цель «Аркада».[/callout]"
+"HELP_advanced_TITLE","What are Advanced generation settings?","Что такое «Расширенные настройки» генерации?"
+"HELP_advanced_CONTENT","[showcase gen_advanced]
+
+**Percussion.** An expandable block in [color=#{sky}]Generation settings[/color] refines the result on top of the selected goal and difficulty:
+· [color=#{teal}]Fill[/color] — notes in gaps between main hits.
+· [color=#{sky}]Liveliness[/color] — pattern variation.
+· [color=#{mint}]Density[/color] — overall note count (server limits apply).
+· [color=#{purple}]Grid snap[/color] — quantization strength to BPM.
+· [color=#{pink}]Genre template[/color] — genre rule influence.
+· [color=#{primary}]Downbeat accent[/color], [color=#{slate}]genre detection[/color], [color=#{kick}]stems[/color], [color=#{purple}]hi-hats[/color], [color=#{teal}]noise cleanup[/color], [color=#{primary}]gap fill[/color] (stronger for [color=#{pink}]Arcade[/color]), [color=#{sky}]raw ADTOF[/color].
+
+**Bass.** Advanced settings expose only [color=#{kick}]stem separation[/color]; percussion sliders are hidden. Goal and difficulty define the whole chart.
+
+[color=#{mint}]Reset style[/color] restores slider defaults for the current goal. [color=#{purple}]Presets[/color] store a separate parameter set — see “What are generation presets”.","[showcase gen_advanced]
+
+**Перкуссия.** Раскрывающийся блок в [color=#{sky}]«Настройки генерации»[/color] уточняет результат поверх выбранных цели и сложности:
+· [color=#{teal}]Заполнение[/color] — ноты в паузах между основными ударами.
+· [color=#{sky}]Живость[/color] — вариативность рисунка.
+· [color=#{mint}]Плотность[/color] — общее число нот (с лимитами сервера).
+· [color=#{purple}]Привязка к сетке[/color] — сила квантования к BPM.
+· [color=#{pink}]Жанровый шаблон[/color] — влияние жанровых правил.
+· [color=#{primary}]Акцент сильной доли[/color], [color=#{slate}]определение жанра[/color], [color=#{kick}]стемы[/color], [color=#{purple}]тарелки[/color], [color=#{teal}]чистка шума[/color], [color=#{primary}]достройка пропусков[/color] (сильнее при цели [color=#{pink}]Аркада[/color]), [color=#{sky}]сырой ADTOF[/color].
+
+**Бас.** В расширенных настройках доступно только [color=#{kick}]разделение на stem'ы[/color]; слайдеры перкуссии скрыты. Цель и сложность задают карту целиком.
+
+[color=#{mint}]«Сбросить стиль»[/color] возвращает слайдеры к значениям по умолчанию для текущей цели. [color=#{purple}]Пресеты[/color] хранят отдельный набор параметров — см. «Что такое пресеты генерации»."
+"HELP_persist_TITLE","Are generation settings saved?","Сохраняются ли настройки генерации?"
+"HELP_persist_CONTENT","Yes. [color=#{primary}]Sliders, checkboxes, goal, difficulty, instrument, and lane count[/color] are saved in game settings and restored the next time you open [color=#{sky}]Generation settings[/color] — this is a draft, not a saved preset. Saved [color=#{purple}]presets[/color] (10 slots, each with its own chart) are a separate feature — see “What are generation presets”.","Да. [color=#{primary}]Слайдеры, чекбоксы, цель, сложность, инструмент и число линий[/color] сохраняются в настройках игры и восстанавливаются при следующем открытии окна [color=#{sky}]«Настройки генерации»[/color] — это черновик, а не отдельный пресет. Сохранённые [color=#{purple}]пресеты[/color] (10 слотов, каждый со своим чартом) — отдельная функция, см. «Что такое пресеты генерации»."
+"HELP_SEC_instruments_TITLE","Instruments","Инструменты"
+"HELP_instruments_overview_TITLE","Which instruments exist and how do they differ?","Какие инструменты есть и чем отличаются?"
+"HELP_instruments_overview_SUMMARY","In short: percussion and bass are available; guitar, keys, and vocals are in development.","Коротко: перкуссия и бас доступны; гитара, клавиши и вокал — в разработке."
+"HELP_instruments_overview_CONTENT","[flow split]
+left=drum.svg|teal|Percussion|Discrete hits on lanes
+right=guitar.svg|sky|Bass|Holds and sustained notes
+[/flow]
+
+A single track can have separate charts per instrument. Selection is in [color=#{primary}]Generation settings[/color] ([color=#{muted}]1[/color] — percussion, [color=#{muted}]2[/color] — bass).
+
+**[color=#{teal}]Percussion[/color]** — a rhythm chart from drums (kick, snare, cymbals) on 3–5 lanes. Analysis usually uses a drum stem.
+
+**[color=#{sky}]Bass[/color]** — a chart from the bass part: tap, hold, multi-lane; built from a bass stem and pitch track.
+
+Guitar, keys, vocals, and full mix are not available in the UI at this time.
+
+Each instrument has its own chart files (e.g. [color=#{muted}]bass_arcade_standard.rf[/color]) and separate profile stats.","[flow split]
+left=drum.svg|teal|Перкуссия|Дискретные удары по линиям
+right=guitar.svg|sky|Бас|Удержания и протяжённые ноты
+[/flow]
+
+Один трек может иметь отдельные партии по инструментам. Выбор — в [color=#{primary}]«Настройки генерации»[/color] ([color=#{muted}]1[/color] — перкуссия, [color=#{muted}]2[/color] — бас).
+
+**[color=#{teal}]Перкуссия[/color]** — ритм-карта по ударным (kick, snare, тарелки) на 3–5 линиях. Анализ обычно опирается на drum-stem.
+
+**[color=#{sky}]Бас[/color]** — карта по басовой партии: tap, hold, multi-lane; построение из bass-stem и pitch-трека.
+
+Гитара, клавиши, вокал и полный микс в интерфейсе пока недоступны.
+
+У каждого инструмента отдельные файлы чартов (например [color=#{muted}]bass_arcade_standard.rf[/color]) и отдельная статистика в профиле."
+"HELP_instrument_gameplay_TITLE","Percussion and bass: how gameplay works","Перкуссия и бас: как устроен геймплей"
+"HELP_instrument_gameplay_SUMMARY","In short: percussion — discrete hits; bass — tap, hold, ghost, multi-lane.","Коротко: перкуссия — дискретные удары; бас — tap, hold, ghost, multi-lane."
+"HELP_instrument_gameplay_CONTENT","**[color=#{teal}]Percussion[/color]**
+Each note is a separate hit on its lane. The press occurs when the note crosses the hit line. Grades are [color=#{perfect}]Perfect[/color] / [color=#{good}]Good[/color] / [color=#{danger}]Miss[/color] (see “What are PERFECT and GOOD?”). Several notes at once require simultaneous presses on the matching lanes. Generation uses goal × difficulty; percussion also has advanced sliders. DNA modifiers use the `.rfd` sidecar.
+
+**[color=#{sky}]Bass[/color]**
+· **Tap** — press at the note head.
+· **Hold** — the sustain continues until the note ends; releasing early stops tail points and is not a miss.
+· **Ghost** — optional note: a successful hit awards a bonus; skipping it is not a miss and does not break combo.
+· **Multi-lane** — several lanes at once (same tap or hold).
+· **Slide** — present in the chart format; currently played as hold.
+
+Other notes do not appear on a lane during a hold.
+
+[callout info]Percussion and bass on one track are different chart files; changing the instrument in generation settings does not overwrite the other instrument’s chart.[/callout]
+
+[callout warning]Rhythm DNA for bass is not implemented at this time — only standard run modifiers apply. Rhythm DNA is available for percussion when a `.rfd` file is present.[/callout]","**[color=#{teal}]Перкуссия[/color]**
+Каждая нота — отдельный удар в свою линию. Нажатие выполняется в момент прохождения ноты через линию попадания. Оценка — [color=#{perfect}]Идеально[/color] / [color=#{good}]Хорошо[/color] / [color=#{danger}]Промах[/color] (см. «Что такое ИДЕАЛЬНО и ХОРОШО?»). Несколько нот в один момент требуют одновременного нажатия соответствующих линий. Генерация: цель × сложность; для перкуссии доступны расширенные слайдеры. DNA-модификаторы используют sidecar `.rfd`.
+
+**[color=#{sky}]Бас[/color]**
+· **Tap** — нажатие в момент головы ноты.
+· **Hold** — удержание продолжается до конца ноты; досрочное отпускание прекращает начисление очков за хвост и не считается промахом.
+· **Ghost** — опциональная нота: успешное попадание даёт бонус; пропуск не даёт промаха и не прерывает комбо.
+· **Multi-lane** — одновременное нажатие нескольких линий (тот же tap или hold).
+· **Slide** — присутствует в формате чарта; на данный момент воспроизводится как hold.
+
+На линии на протяжении hold другие ноты не появляются.
+
+[callout info]Перкуссия и бас на одном треке — разные файлы чартов; смена инструмента в настройках генерации не перезаписывает чарт другого инструмента.[/callout]
+
+[callout warning]На данный момент Rhythm DNA для баса не реализован — доступны только обычные модификаторы забега. Rhythm DNA доступен для перкуссии при наличии `.rfd`.[/callout]"
+"HELP_bass_generation_TITLE","How bass charts are generated","Как генерируется бас"
+"HELP_bass_generation_SUMMARY","In short: same goal and difficulty as percussion; advanced settings offer stems only.","Коротко: те же цель и сложность, что у перкуссии; в расширенных настройках — только стемы."
+"HELP_bass_generation_CONTENT","The server isolates a bass stem (Demucs), builds a pitch track, and writes `.rf` with `instrument=bass`.
+
+Goal and difficulty match the percussion axes:
+· [color=#{teal}]Original[/color] — closer to the bass line in the audio.
+· [color=#{pink}]Arcade[/color] — a more playable chart: quantization, gap fill, multi-lane accents.
+· [color=#{mint}]Backbone / Easy[/color] — fewer notes; [color=#{danger}]Hard / As in audio[/color] — higher density.
+
+In advanced settings for bass, only [color=#{kick}]stem separation[/color] is available; percussion sliders are hidden.
+
+Filenames: [color=#{muted}]bass_original.rf[/color], [color=#{muted}]bass_arcade_dense.rf[/color], and similar.","Сервер выделяет bass-stem (Demucs), строит pitch-трек и записывает `.rf` с `instrument=bass`.
+
+Цель и сложность совпадают с осями перкуссии:
+· [color=#{teal}]Оригинал[/color] — ближе к басовой линии в аудио.
+· [color=#{pink}]Аркада[/color] — более играбельная карта: квантование, достройка пропусков, multi-lane акценты.
+· Для [color=#{pink}]Аркады[/color]: [color=#{mint}]Лёгкая[/color] — меньше нот; [color=#{danger}]Сложная[/color] — выше плотность. У [color=#{teal}]Оригинала[/color] тиров сложности нет.
+
+В расширенных настройках для баса доступно только [color=#{kick}]разделение на stem'ы[/color]; слайдеры перкуссии скрыты.
+
+Имена файлов: [color=#{muted}]bass_original.rf[/color], [color=#{muted}]bass_arcade_dense.rf[/color] и аналогичные."
+"HELP_instrument_stats_TITLE","Instrument stats in profile","Статистика по инструментам в профиле"
+"HELP_instrument_stats_SUMMARY","In short: on the Statistics tab, “By instrument” opens a percussion and bass summary.","Коротко: на вкладке «Статистика» кнопка «По инструментам» открывает сводку по перкуссии и басу."
+"HELP_instrument_stats_CONTENT","On the [color=#{primary}]Statistics[/color] tab, in the general stats block, [color=#{sky}]By instrument →[/color] is available.
+
+A modal opens with two cards (percussion and bass). Metrics match: levels cleared, perfect hits, combo, score, hits, misses.
+
+The accuracy chart on the tab aggregates all sessions; the per-instrument breakdown is only in this window.","На вкладке [color=#{primary}]«Статистика»[/color] в блоке общей статистики доступна кнопка [color=#{sky}]«По инструментам →»[/color].
+
+Открывается модальное окно с двумя карточками (перкуссия и бас). Метрики совпадают: уровни, идеальные попадания, комбо, очки, попадания, промахи.
+
+График точности на вкладке агрегирует все сессии; разбивка по инструменту — только в этом окне."
+"HELP_SEC_gameplay_TITLE","Gameplay and Settings","Геймплей и настройки"
+"HELP_how_to_play_TITLE","How do I start playing?","Как начать играть?"
+"HELP_how_to_play_CONTENT","[flow linear]
+music.svg|primary|Song
+metronome.svg|teal|BPM
+settings-2.svg|sky|Instrument · goal · difficulty
+sparkles.svg|mint|Notes
+circle-play.svg|play|Play
+[/flow]
+
+[showcase hit_window]
+
+In the [color=#{sky}]song list[/color]:
+1. [color=#{teal}]Detect BPM[/color] — if tempo is not set yet.
+2. [color=#{primary}]Generation settings[/color] — instrument (percussion / bass), goal (Original / Arcade), difficulty, lane count.
+3. [color=#{mint}]Generate notes[/color].
+4. [color=#{play}]Play[/color].
+[color=#{play}]Double-click[/color] on a track starts the level when notes are ready.","[flow linear]
+music.svg|primary|Песня
+metronome.svg|teal|BPM
+settings-2.svg|sky|Инструмент · цель · сложность
+sparkles.svg|mint|Ноты
+circle-play.svg|play|Играть
+[/flow]
+
+[showcase hit_window]
+
+В [color=#{sky}]списке песен[/color]:
+1. [color=#{teal}]Вычислить BPM[/color] — если темп ещё не определён.
+2. [color=#{primary}]Настройки генерации[/color] — инструмент (перкуссия / бас), цель (Оригинал / Аркада), сложность, число линий.
+3. [color=#{mint}]Сгенерировать ноты[/color].
+4. [color=#{play}]Играть[/color].
+[color=#{play}]Двойной щелчок[/color] по треку запускает уровень при готовых нотах."
+"HELP_bpm_scroll_TITLE","Does BPM affect note scroll speed?","Влияет ли BPM на скорость падения нот?"
+"HELP_bpm_scroll_SUMMARY","In short: BPM does not change scroll speed — only note density over time.","Коротко: BPM не меняет скорость скролла — только плотность нот по времени."
+"HELP_bpm_scroll_CONTENT","[showcase note_speed]\n\nNot directly: scroll speed is set by [color=#{primary}]Note scroll speed[/color] ([color=#{sky}]Settings → Graphics[/color], usually 6 to 20). At high BPM, notes in the pattern may be closer together in time, so the level [color=#{teal}]feels[/color] faster even though scroll speed does not change.","[showcase note_speed]\n\nНапрямую нет: скорость падения задаётся настройкой [color=#{primary}]«Скорость движения нот»[/color] ([color=#{sky}]Настройки → Графика[/color], обычно от 6 до 20). При высоком BPM ноты в паттерне могут стоять плотнее по времени, поэтому уровень [color=#{teal}]ощущается[/color] быстрее, хотя скорость прокрутки не меняется."
+"HELP_speed_audio_TITLE","How to adjust scroll speed and audio delay?","Как настроить скорость и задержку звука?"
+"HELP_speed_audio_CONTENT","[showcase note_speed]
+
+Scroll speed is set by [color=#{primary}]Note scroll speed[/color] in [color=#{sky}]Settings → Graphics[/color].
+Systematic hit offset is corrected via [color=#{teal}]Audio calibration[/color] in [color=#{sky}]Settings → Audio[/color] (Timing calibration); the offset is computed from metronome taps.","[showcase note_speed]
+
+Скорость прокрутки задаётся параметром [color=#{primary}]«Скорость движения нот»[/color] в [color=#{sky}]Настройки → Графика[/color].
+Систематическое смещение попаданий корректируется через [color=#{teal}]«Калибровку аудио»[/color] в [color=#{sky}]Настройки → Звук[/color] (блок «Калибровка тайминга»); оффсет рассчитывается по нажатиям в такт метронома."
+"HELP_scoring_TITLE","How are score and combo calculated?","Как рассчитываются очки и комбо?"
+"HELP_scoring_SUMMARY","In short: score from hits × combo; XP and currency use the modifier multiplier.","Коротко: очки за попадания × комбо; XP и валюта учитывают множитель модификаторов."
+"HELP_scoring_CONTENT","[showcase scoring]\n\nHits award points: [color=#{perfect}]PERFECT[/color] — 100, [color=#{good}]GOOD[/color] — 50 (both multiplied by combo multiplier). Base windows: ±0.05 s perfect, ±0.15 s good (modifiers can change them).\nCombo multiplier grows every 10 hits (max [color=#{primary}]×4.0[/color]). A [color=#{danger}]miss[/color] resets combo. Victory XP/currency use the [color=#{teal}]modifier multiplier[/color] if active.","[showcase scoring]\n\nЗа попадание начисляются очки: [color=#{perfect}]ИДЕАЛЬНО[/color] — 100, [color=#{good}]ХОРОШО[/color] — 50 (оба умножаются на текущий множитель комбо). Базовые окна: ±0,05 с для идеала и ±0,15 с для «хорошо» (модификаторы могут их менять).\nМножитель комбо растёт каждые 10 успешных попаданий подряд (максимум [color=#{primary}]×4,0[/color]). [color=#{danger}]Промах[/color] сбрасывает комбо. На экране победы XP и валюта учитывают [color=#{teal}]множитель модификаторов[/color], если он был активен."
+"HELP_SEC_library_TITLE","Track Library","Библиотека треков"
+"HELP_edit_mode_TITLE","How to use edit mode?","Как пользоваться режимом редактирования?"
+"HELP_edit_mode_CONTENT","In the song list, press [color=#{primary}]Edit[/color] — the button will show [color=#{teal}]Edit (ON)[/color]. While the mode is active, [color=#{sky}]double-click[/color] the title, artist, year, BPM, main genre, or cover to edit. Changes are saved in track metadata. During background analysis, some fields may be temporarily unavailable.","В списке песен нажмите [color=#{primary}]«Редактировать»[/color] — кнопка покажет [color=#{teal}]«Редактировать (ВКЛ)»[/color]. Пока режим активен, [color=#{sky}]двойной щелчок[/color] по названию, исполнителю, году, BPM, основному жанру или обложке открывает правку. Изменения сохраняются в метаданных трека. Во время фонового анализа часть полей может быть временно недоступна."
+"HELP_add_music_TITLE","How to add your own music?","Как добавить свою музыку?"
+"HELP_add_music_CONTENT","[flow linear]
+folder-open.svg|sky|Music folder
+folder-search.svg|teal|Scan
+metronome.svg|primary|BPM
+sparkles.svg|mint|Notes
+[/flow]
+
+[color=#{primary}]MP3, OGG, or WAV[/color] files go into the songs folder. The path is set in [color=#{slate}]Settings → Library[/color]. After [color=#{teal}]Scan songs[/color], new tracks appear in the library. List preview supports MP3 and WAV.","[flow linear]
+folder-open.svg|sky|Папка с музыкой
+folder-search.svg|teal|Сканировать
+metronome.svg|primary|BPM
+sparkles.svg|mint|Ноты
+[/flow]
+
+Файлы [color=#{primary}]MP3, OGG или WAV[/color] помещаются в папку с песнями. Путь задаётся в [color=#{slate}]Настройки → Библиотека[/color]. После [color=#{teal}]«Сканировать песни»[/color] новые треки появляются в библиотеке. Предпрослушивание в списке поддерживает MP3 и WAV."
+"HELP_SEC_progress_TITLE","Progress and Shop","Прогресс и магазин"
+"HELP_xp_TITLE","What do levels and XP give you?","Что дают уровни и опыт (XP)?"
+"HELP_xp_CONTENT","[showcase progress_xp]
+
+Clearing levels awards [color=#{purple}]experience[/color]. Raising [color=#{cat_lvl}]profile level[/color] unlocks some shop items ([color=#{skin}]note skins[/color], [color=#{kick}]hit sounds[/color], [color=#{lines}]line highlights[/color], [color=#{particles}]hit particles[/color]). Maximum level is [color=#{primary}]100[/color].","[showcase progress_xp]
+
+За прохождение уровней начисляется [color=#{purple}]опыт[/color]. Повышение [color=#{cat_lvl}]уровня профиля[/color] открывает часть предметов магазина ([color=#{skin}]скины нот[/color], [color=#{kick}]звуки удара[/color], [color=#{lines}]подсветка линий[/color], [color=#{particles}]частицы хита[/color]). Максимальный уровень — [color=#{primary}]100[/color]."
+"HELP_currency_TITLE","What is in-game currency for?","Зачем нужна внутриигровая валюта?"
+"HELP_currency_CONTENT","[showcase progress_currency]\n\nCurrency is earned from clearing songs and completing [color=#{cat_daily}]daily quests[/color]. You can spend it in the [color=#{primary}]shop[/color] on cosmetics: [color=#{skin}]note skins[/color], [color=#{lines}]line highlights[/color], and [color=#{kick}]hit sounds[/color] and [color=#{particles}]hit particles[/color].","[showcase progress_currency]\n\nВалюта начисляется за прохождение песен и выполнение [color=#{cat_daily}]ежедневных заданий[/color]. Её можно потратить в [color=#{primary}]магазине[/color] на косметику: [color=#{skin}]скины нот[/color], [color=#{lines}]подсветку линий[/color] и [color=#{kick}]звуки удара[/color], [color=#{particles}]частицы хита[/color]."
+"HELP_shop_items_TITLE","What do shop items do?","В чём смысл предметов из магазина?"
+"HELP_shop_items_CONTENT","[showcase shop_categories]\n\nItems are [color=#{sky}]cosmetics and sound[/color] (no direct difficulty bonus):\n1. [color=#{skin}]Note skins[/color] — note appearance.\n2. [color=#{kick}]Hit sounds[/color] — hit SFX (kick cards show a waveform preview).\n3. [color=#{lines}]Line highlights[/color] — lane styling.\n4. [color=#{particles}]Hit particles[/color] — burst on hit; click the preview area on the card to test.","[showcase shop_categories]\n\nПредметы сами по себе не меняют сложность — это [color=#{sky}]косметика и звук[/color]:\n1. [color=#{skin}]Скины нот[/color] — внешний вид нот на линиях.\n2. [color=#{kick}]Звуки удара[/color] — звук при успешном попадании (в магазине есть превью-волна).\n3. [color=#{lines}]Подсветка линий[/color] — оформление подсветки дорожек.\n4. [color=#{particles}]Частицы хита[/color] — вспышка при попадании; превью — клик по области картинки в карточке."
+"HELP_shop_unlock_TITLE","How do you unlock shop items?","Как получают предметы в магазине?"
+"HELP_shop_unlock_CONTENT","[showcase progress_unlocks]\n\nOne item can unlock in several ways:\n1. [color=#{mint}]For currency[/color] — buy with earned coins.\n2. [color=#{cat_ach}]For achievements[/color] — free when the condition is met.\n3. [color=#{cat_lvl}]For level[/color] — available at the required profile level.\n4. [color=#{cat_daily}]For daily quests[/color] — reward for completed quest total.\n5. [color=#{teal}]For medals[/color] — threshold by [color=#{teal}]collected track medals[/color]; press Open, then Use. Medals are not spent.","[showcase progress_unlocks]\n\nОдин предмет может открываться разными способами:\n1. [color=#{mint}]За валюту[/color] — покупка за заработанные монеты.\n2. [color=#{cat_ach}]За достижения[/color] — бесплатно при выполнении условия.\n3. [color=#{cat_lvl}]За уровень[/color] — доступ при нужном уровне профиля.\n4. [color=#{cat_daily}]За ежедневные задания[/color] — награда за накопленное число выполненных квестов.\n5. [color=#{teal}]За медали[/color] — порог по [color=#{teal}]собранным медалям[/color] на треках; после «Открыть» предмет можно использовать. Медали при этом не списываются."
+"HELP_daily_TITLE","How do daily quests work?","Как работают ежедневные задания?"
+"HELP_daily_CONTENT","[showcase daily_quests]\n\nEach day you get [color=#{sky}]3 random quests[/color] (for example, reach a combo or play several songs). Completing each one pays [color=#{teal}]currency[/color] immediately. Progress is shown in the [color=#{primary}]main menu[/color].","[showcase daily_quests]\n\nКаждый день выдаётся [color=#{sky}]3 случайных задания[/color] (например, набрать комбо или сыграть несколько песен). За выполнение каждого сразу начисляется [color=#{teal}]валюта[/color]. Прогресс виден в [color=#{primary}]главном меню[/color]."
+"HELP_achievements_TITLE","How do achievements work?","Как работают достижения?"
+"HELP_achievements_CONTENT","[showcase achievement_categories]\n\nThe game has [color=#{primary}]128 achievements[/color]: from simple (first song) to hard (modifiers, medals, difficult charts, genre mastery, Rhythm Rating). Some unlock [color=#{cat_ach}]exclusive items[/color]. There is a dedicated [color=#{sky}]Modifiers[/color] category. Runs with [color=#{slate}]autoplay[/color] do not count toward modifier achievements.","[showcase achievement_categories]\n\nВ игре [color=#{primary}]128 достижений[/color]: от простых (первая песня) до сложных (модификаторы, медали, сложные чарты, мастерство жанров, Rhythm Rating). Часть достижений открывает [color=#{cat_ach}]эксклюзивные предметы[/color]. Есть отдельная категория [color=#{sky}]«Модификаторы»[/color]. Забеги с [color=#{slate}]автопилотом[/color] не засчитываются в модификаторные достижения."
+"HELP_gen_confirm_TITLE","Regeneration confirmation","Подтверждение повторной генерации"
+"HELP_gen_confirm_CONTENT","In [color=#{sky}]Settings → Generation[/color] you can enable prompts before re-running BPM or generation. When generating several goals/difficulties at once, the game asks: rebuild everything or only missing files.","В [color=#{sky}]Настройки → Генерация[/color] можно включить запрос перед повторным BPM или генерацией. При массовой генерации (несколько целей/сложностей) игра спросит: пересоздать всё или только недостающие файлы."
+"HELP_gen_scope_setting_TITLE","What does “Chart readiness” do?","Что делает настройка «Готовность чартов»?"
+"HELP_gen_scope_setting_SUMMARY","In short: icon rows for instruments, goals, and difficulties; Generate notes queues that product for the song. Presets are separate.","Коротко: ряды иконок инструментов, целей и сложностей; «Сгенерировать ноты» ставит в очередь это произведение для песни. Пресеты отдельно."
+"HELP_gen_scope_setting_CONTENT","In [color=#{sky}]Settings → Generation[/color], [color=#{primary}]Chart readiness[/color] decides when a track counts as **ready** (green highlight, active [color=#{play}]Play[/color]) and which charts [color=#{primary}]Generate notes[/color] / mass queue request.
+
+Three icon rows — [color=#{sky}]instruments[/color], [color=#{teal}]goals[/color], [color=#{mint}]difficulties[/color]:
+· Toggle icons on/off (tooltip on hover; difficulty tips show Original / Arcade names, e.g. Readable / Medium).
+· At least one icon must stay on in each row.
+· For one song, Generate notes queues the cartesian product of the selected icons.
+· Example: only Bass + Original + Readable → one chart. More icons on → those extra variants for the same song too.
+
+[callout info][color=#{purple}]Presets[/color] are separate — each slot has tag [color=#{muted}]_p01[/color]…[color=#{muted}]_p10[/color]. The “Notes ready” library filter follows the same logic.[/callout]","В [color=#{sky}]Настройки → Генерация[/color] [color=#{primary}]«Готовность чартов»[/color] решает, когда трек **готов** (зелёная подсветка, активная [color=#{play}]«Играть»[/color]) и какие чарты запросит [color=#{primary}]«Сгенерировать ноты»[/color] / массовая очередь.
+
+Три ряда иконок — [color=#{sky}]инструменты[/color], [color=#{teal}]цели[/color], [color=#{mint}]сложности[/color]:
+· Включайте/выключайте иконки (подсказка при наведении; у сложностей — имена Оригинал / Аркада, напр. Читаемая / Средняя).
+· В каждом ряду хотя бы одна иконка должна остаться включённой.
+· Для одной песни «Сгенерировать ноты» ставит в очередь декартово произведение выбранных иконок.
+· Пример: только бас + оригинал + читаемая — один чарт. Если выбрано больше — для той же песни генерируются и дополнительные варианты.
+
+[callout info][color=#{purple}]Пресеты[/color] живут отдельно — у слота свой тег [color=#{muted}]_p01[/color]…[color=#{muted}]_p10[/color]. Фильтр «Ноты готовы» в библиотеке следует той же логике.[/callout]"
+"HELP_why_notes_not_ready_TITLE","Why is the track “not ready” or missing notes?","Почему трек «не готов» или нет нот?"
+"HELP_why_notes_not_ready_SUMMARY","In short: required .rf charts for Chart readiness are missing — Generate notes or narrow the icons.","Коротко: нет нужных .rf под готовность чартов — «Сгенерировать ноты» или сузьте иконки."
+"HELP_why_notes_not_ready_CONTENT","[color=#{play}]Play[/color] stays enabled only when every chart from [color=#{primary}]Chart readiness[/color] (instruments × goals × difficulties) exists for the current instrument.
+
+If you see [color=#{danger}]no notes[/color] / [color=#{danger}]generate notes first[/color]:
+· press [color=#{mint}]Generate notes[/color] — it queues every selected combination for this song;
+· or narrow the readiness icons in [color=#{sky}]Settings → Generation[/color] if you only need one variant;
+· make sure BPM is set and the server responds.
+
+[callout tip]Lane count on the library screen does not block readiness: the client remaps the unified chart to the chosen lane count when you play.[/callout]","[color=#{play}]«Играть»[/color] активна, только когда на диске есть все чарты из [color=#{primary}]«Готовности чартов»[/color] (инструменты × цели × сложности) для текущего инструмента.
+
+Если статус [color=#{danger}]«нет нот»[/color] / [color=#{danger}]«сначала сгенерируйте»[/color]:
+· нажмите [color=#{mint}]«Сгенерировать ноты»[/color] — в очередь уйдут все выбранные комбинации для этой песни;
+· или сузьте иконки готовности в [color=#{sky}]Настройки → Генерация[/color], если нужен один вариант;
+· убедитесь, что BPM уже посчитан и сервер отвечает.
+
+[callout tip]Число линий на экране библиотеки не блокирует готовность: клиент пересчитывает unified-чарт под выбранное число линий при игре.[/callout]"
+"HELP_rhythm_dna_overview_TITLE","What is Rhythm DNA?","Что такое Rhythm DNA?"
+"HELP_rhythm_dna_overview_SUMMARY","In short: beta “About generation” report from .rfd — what the server found and how the drum chart was built.","Коротко: бета-отчёт «О генерации» по .rfd — что сервер нашёл и как собрал чарт ударных."
+"HELP_rhythm_dna_overview_CONTENT","[color=#{cat_ach}]Rhythm DNA[/color] (beta) is the [color=#{primary}]generation passport[/color] for a drum chart: a short report on the song card ([color=#{sky}]About generation[/color]).
+
+Inside:
+· what was detected in the audio (tempo, kit, groove);
+· section structure;
+· pipeline (how many events were removed / kept);
+· analysis confidence and warnings.
+
+Sidecar file next to the chart: [color=#{muted}].rfd[/color]. Without it, DNA mods on the [color=#{sky}]Modifiers[/color] screen stay unavailable. [color=#{teal}]Bass[/color] has no DNA pipeline yet.
+
+[callout warning]The report and section mods are still being polished — that is what the Beta label means.[/callout]","[color=#{cat_ach}]Rhythm DNA[/color] (бета) — [color=#{primary}]паспорт генерации[/color] для чарта ударных: короткий отчёт рядом с песней ([color=#{sky}]«О генерации»[/color]).
+
+Что внутри:
+· что обнаружено в аудио (темп, установка, грув);
+· структура секций;
+· конвейер (сколько событий убрали / оставили);
+· уверенность анализа и предупреждения.
+
+Файл рядом с чартом: [color=#{muted}].rfd[/color] (sidecar). Без него DNA-моды в [color=#{sky}]Модификаторах[/color] недоступны. Для [color=#{teal}]баса[/color] DNA пока не строится.
+
+[callout warning]Отчёт и секции ещё дорабатываются — пометка «Бета» на экране как раз об этом.[/callout]"
+"HELP_gen_presets_TITLE","What are generation presets and how are they tied to charts?","Что такое пресеты генерации и как они связаны с чартами?"
+"HELP_gen_presets_SUMMARY","In short: 10 parameter slots; each clean active slot gets its own tagged chart.","Коротко: 10 слотов параметров; у каждого чистого активного слота — свой чарт с тегом p01…p10."
+"HELP_gen_presets_CONTENT","[flow branch]
+tags.svg|purple|Presets button|10 named slots
+sparkles.svg|teal|Active slot, unchanged|{inst}_{goal}_{diff}_pNN.rf — its own chart
+triangle-alert.svg|pink|Active slot, sliders edited|Tuned badge; dialog before generate
+circle-check.svg|primary|Clear active slot|Reset style or re-click goal
+[/flow]
+
+[color=#{purple}]Generation presets[/color] — saved sets (instrument, lanes, goal, difficulty, sliders). Open with [color=#{primary}]Presets[/color] on the generation screen.
+· A clean slot gets its own file, e.g. [color=#{muted}]drums_arcade_standard_p03.rf[/color] — does not overwrite untagged charts.
+· Moved sliders → [color=#{pink}]Tuned[/color] badge.
+· Mass generation of all 6 variants is **blocked** while a preset is active.
+
+[callout info]✓ in the list — chart exists for the slot; ⚠ — not yet.[/callout]","[flow branch]
+tags.svg|purple|Кнопка «Пресеты»|10 слотов с именами
+sparkles.svg|teal|Слот активен, без правок|{inst}_{goal}_{diff}_pNN.rf — свой чарт
+triangle-alert.svg|pink|Слот активен, слайдеры изменены|Бейдж «Настроено»; диалог перед генерацией
+circle-check.svg|primary|Снять активный слот|«Сбросить стиль» или повторный клик по цели
+[/flow]
+
+[color=#{purple}]Пресеты генерации[/color] — сохранённые наборы (инструмент, линии, цель, сложность, слайдеры). Кнопка [color=#{primary}]«Пресеты»[/color] на экране настроек.
+· У «чистого» слота свой файл, например [color=#{muted}]drums_arcade_standard_p03.rf[/color] — не затирает чарты без тега.
+· Сдвинули слайдеры — бейдж [color=#{pink}]«Настроено»[/color].
+· Массовая генерация всех 6 вариантов **недоступна**, пока активен пресет.
+
+[callout info]✓ в списке — чарт для слота уже есть; ⚠ — ещё нет.[/callout]"
+"HELP_run_modifiers_TITLE","What are run modifiers?","Что такое модификаторы забега?"
+"HELP_run_modifiers_SUMMARY","In short: 36 mods in 4 categories — see Modifier categories and Incompatible modifiers.","Коротко: 36 модов в 4 категориях — разбор в «Категории модификаторов», конфликты отдельно."
+"HELP_run_modifiers_CONTENT","[showcase mod_screen]
+
+Optional run rules: speed, HP, note visibility, lanes, Rhythm DNA, and other gameplay changes. On [color=#{sky}]song select[/color], [color=#{primary}]Modifiers[/color] opens a screen with 36 mods in 4 categories.
+
+Modifiers affect difficulty and the [color=#{teal}]reward multiplier[/color] (XP and currency). The set is kept until changed. Per-category breakdown — [color=#{sky}]Modifier categories[/color]; incompatible pairs — [color=#{sky}]Incompatible modifiers[/color].
+
+· [color=#{mint}]Easing[/color] — Half Time, No Fail, Easy Windows.
+· [color=#{danger}]Hardening[/color] — Double Time, Heat, Rush, Strict, Hidden, Sudden, lane mods, and more.
+· [color=#{purple}]Special[/color] — fixed speed, Time Warp, single lane, Combo Escalation, Last Chance, autoplay.
+· [color=#{cat_ach}]Rhythm DNA[/color] — 8 section-based mods; requires a [color=#{teal}].rfd[/color] sidecar (see [color=#{sky}]Where charts are stored[/color]).
+Rhythm DNA is available for percussion; for bass it is not implemented at this time.
+
+[callout info]Incompatible mods turn each other off in the UI. Reward multiplier is shown on the Overview tab.[/callout]
+
+[callout tip]A gear icon on a card means the mod has parameters on the Parameters tab or in the detail panel.[/callout]
+
+[callout warning]A run with [color=#{slate}]autoplay[/color] does not save results and awards no XP/currency.[/callout]","[showcase mod_screen]
+
+Опциональные правила забега: скорость, HP, видимость нот, линии, Rhythm DNA и другие изменения геймплея. На [color=#{sky}]выборе песни[/color] кнопка [color=#{primary}]«Модификаторы»[/color] открывает экран с 36 модами в 4 категориях.
+
+Модификаторы влияют на сложность и [color=#{teal}]множитель награды[/color] (XP и валюта). Набор сохраняется до следующей смены. Разбор по категориям — в [color=#{sky}]«Категории модификаторов»[/color]; несовместимые пары — в [color=#{sky}]«Несовместимые модификаторы»[/color].
+
+· [color=#{mint}]Облегчающие[/color] — Замедление, Без провала, Лёгкие окна.
+· [color=#{danger}]Усложняющие[/color] — Ускорение, Разгон, Рывок, Строгий тайминг, Скрытые, Внезапные, моды линий и др.
+· [color=#{purple}]Особые[/color] — фикс. скорость, Искажение времени, одна линия, Эскалация по комбо, Последний шанс, автопилот.
+· [color=#{cat_ach}]Rhythm DNA[/color] — 8 модов по секциям трека; требуется sidecar [color=#{teal}].rfd[/color] (см. [color=#{sky}]«Где хранятся чарты»[/color]).
+На данный момент Rhythm DNA доступен для перкуссии; для баса не реализован.
+
+[callout info]Несовместимые моды отключают друг друга в UI. Множитель награды отображается на вкладке «Обзор».[/callout]
+
+[callout tip]Иконка шестерёнки на карточке означает наличие параметров на вкладке «Параметры» или в detail-панели.[/callout]
+
+[callout warning]Забег с [color=#{slate}]автопилотом[/color] не сохраняет результат и не начисляет XP/валюту.[/callout]"
+"HELP_run_modifiers_categories_TITLE","Modifier categories","Категории модификаторов"
+"HELP_run_modifiers_categories_SUMMARY","In short: every mod by category — sidebar tab icons.","Коротко: все моды по категориям — иконки вкладок боковой панели."
+"HELP_run_modifiers_categories_CONTENT","All **36** mods are split into **4 categories** — sidebar tabs on the modifiers screen. Each category below shows mod icons.
+
+**[color=#{mint}]Easing[/color]** — lowers difficulty and the [color=#{danger}]reward multiplier[/color] (XP and currency).
+
+[showcase modifiers category=easing]
+
+**[color=#{danger}]Hardening[/color]** — raises difficulty and the [color=#{teal}]reward multiplier[/color]. UI subgroups: Speed · Timing · Visibility · Lanes · Audio.
+
+[showcase modifiers category=hardening]
+
+**[color=#{purple}]Special[/color]** — changes run rules; adds [color=#{teal}]0%[/color] to reward (except Combo Escalation and Autoplay — [color=#{danger}]0×[/color] final).
+
+[showcase modifiers category=special]
+
+**[color=#{cat_ach}]Rhythm DNA[/color]** — **8 section-based mods**.
+Reward: [color=#{teal}]0%[/color]. Subgroups: Structure · Energy · Density · Behavior.
+
+[showcase modifiers category=dna]
+
+[callout warning]For tracks without Rhythm DNA ([color=#{teal}].rfd[/color] file), DNA mods are unavailable. Rhythm DNA for bass is not implemented at this time — percussion support only. See [color=#{sky}]Where charts are stored[/color].[/callout]
+
+[callout tip]Parameters (HT/DT speed, EZ/ST windows, starting HP, etc.) — Parameters tab or detail panel.[/callout]","Все **36** модов разбиты на **4 категории** — вкладки sidebar на экране модификаторов. Ниже каждая категория с иконками модов.
+
+**[color=#{mint}]Упрощение[/color]** — снижает сложность и [color=#{danger}]множитель награды[/color] (XP и валюта).
+
+[showcase modifiers category=easing]
+
+**[color=#{danger}]Усложнение[/color]** — повышает сложность и [color=#{teal}]множитель награды[/color]. В UI разбито на подгруппы: Скорость · Тайминг · Видимость · Линии · Аудио.
+
+[showcase modifiers category=hardening]
+
+**[color=#{purple}]Особые[/color]** — меняют правила забега; к сумме награды дают [color=#{teal}]0%[/color] (кроме Эскалации по комбо и Автопилота — итог [color=#{danger}]0×[/color]).
+
+[showcase modifiers category=special]
+
+**[color=#{cat_ach}]Rhythm DNA[/color]** — **8 модов** по секциям трека.
+Награда — [color=#{teal}]0%[/color]. Подгруппы: Структура · Энергия · Плотность · Поведение.
+
+[showcase modifiers category=dna]
+
+[callout warning]Для треков без Rhythm DNA (файл [color=#{teal}].rfd[/color]) DNA-моды недоступны. На данный момент Rhythm DNA для баса не реализован — поддержка есть у перкуссии. См. [color=#{sky}]«Где хранятся чарты»[/color].[/callout]
+
+[callout tip]Параметры (скорость HT/DT, окна EZ/ST, старт HP и др.) — вкладка «Параметры» или detail-панель.[/callout]"
+"HELP_run_modifiers_conflicts_TITLE","Incompatible modifiers","Несовместимые модификаторы"
+"HELP_run_modifiers_conflicts_SUMMARY","In short: enabling one mod automatically turns off incompatible ones.","Коротко: при включении одного мода несовместимый снимается автоматически."
+"HELP_run_modifiers_conflicts_CONTENT","[showcase mod_conflicts ids=slow_75,fast_150]\n\nEnabling one mod turns the incompatible one **off** in the UI. The same rules apply when loading presets.\n\n**Speed and timing**\n· Half Time ↔ Double Time\n· Easy Windows ↔ Strict Timing\n· No Fail ↔ Sudden Death\n\n**Visibility**\n· Hidden ↔ Sudden\n· Hidden / Sudden ↔ Progressive Memory\n· Density Focus ↔ Hidden, Sudden, Memory, Spotlight\n\n**Lanes**\n· Dynamic Lanes ↔ Single Lane\n· Mirror / Shuffle / Random — only one lane mod; incompatible with each other, Single Lane, Dynamic Lanes, and Combo Escalation\n\n**Combo Escalation**\n· ↔ **all** Hardening mods (except Hidden/Sudden/Memory pairs and HT/DT with each other)\n· Any hardening ↔ Combo Escalation\n\n**Rhythm DNA**\n· Phrase Shift / Groove Lock / Groove Addiction / Adaptive — only **one** Behavior mod\n· Groove Lock ↔ Groove Addiction\n· Energy Pulse ↔ Time Warp, HT, DT\n· Heat ↔ Phrase Shift, Groove Lock, Adaptive, Rush\n· Rush ↔ Heat, Combo Escalation\n· Last Chance ↔ No Fail, Sudden Death, Combo Escalation\n· Reverse Scroll ↔ Phrase Shift, Adaptive\n· Energy Balance ↔ Easy, Strict, Groove Lock/Addiction, Adaptive, Combo Escalation\n· Adaptive ↔ EP, DF, Time Warp, HT, DT, Heat, Strict, Groove Addiction, Energy Balance, visibility mods\n\n[callout info]If a mod is already on and you enable an incompatible one, the old mod is removed automatically. The Overview tab shows the final set.[/callout]","[showcase mod_conflicts ids=slow_75,fast_150]\n\nПри включении одного мода второй **снимается** в UI. Те же правила при загрузке пресета и сохранении набора.\n\n**Скорость и тайминг**\n· Half Time ↔ Double Time\n· Easy Windows ↔ Strict Timing\n· No Fail ↔ Sudden Death\n\n**Видимость**\n· Hidden ↔ Sudden\n· Hidden / Sudden ↔ Progressive Memory\n· Density Focus ↔ Hidden, Sudden, Memory, Spotlight\n\n**Линии**\n· Dynamic Lanes ↔ Single Lane\n· Mirror / Shuffle / Random — только один lane-мод; несовместимы друг с другом, с Single Lane, Dynamic Lanes и Combo Escalation\n\n**Combo Escalation**\n· ↔ **все** моды категории Усложнение (кроме пар Hidden/Sudden/Memory и HT/DT между собой)\n· Любой hardening ↔ Combo Escalation\n\n**Rhythm DNA**\n· Phrase Shift / Groove Lock / Groove Addiction / Adaptive — только **один** Behavior-мод\n· Groove Lock ↔ Groove Addiction\n· Energy Pulse ↔ Time Warp, HT, DT\n· Heat ↔ Phrase Shift, Groove Lock, Adaptive, Rush\n· Rush ↔ Heat, Combo Escalation\n· Last Chance ↔ No Fail, Sudden Death, Combo Escalation\n· Reverse Scroll ↔ Phrase Shift, Adaptive\n· Energy Balance ↔ Easy, Strict, Groove Lock/Addiction, Adaptive, Combo Escalation\n· Adaptive ↔ EP, DF, Time Warp, HT, DT, Heat, Strict, Groove Addiction, Energy Balance, visibility-моды\n\n[callout info]Если мод уже включён и вы включаете несовместимый — старый снимается автоматически. На вкладке «Обзор» видно итоговый набор.[/callout]"
+"HELP_modifier_presets_TITLE","What are modifier presets?","Что такое пресеты модификаторов?"
+"HELP_modifier_presets_SUMMARY","In short: 10 slots with a saved modifier set — quick loadouts for song select.","Коротко: 10 слотов с сохранённым набором модификаторов — быстрые заготовки для выбора песни."
+"HELP_modifier_presets_CONTENT","[flow linear]\nlist-checks.svg|primary|Set up mods in Modifiers\ndatabase.svg|teal|Save into one of 10 slots\ndisc-3.svg|purple|Load on another track\ncircle-play.svg|play|Play with the same set\n[/flow]\n\nThe [color=#{primary}]Presets[/color] button in the [color=#{mint}]Modifiers[/color] screen header opens 10 named slots for run-modifier sets — separate from generation presets.\n· A slot stores the active mods and their parameters (HT/DT speed, EZ/ST windows, starting HP for Half HP, Combo Escalation settings, and more).\n· [color=#{teal}]Load[/color] applies the set right away: the screen switches to Overview and expands the active-mod summary; double-clicking a slot row does the same.\n· The [color=#{cat_lvl}]Mine[/color] and [color=#{cat_ach}]Favorites[/color] tabs filter the list; a star on a slot marks it as a favorite.\n· Saving and loading automatically sanitize incompatible mod combos and out-of-range parameters.\n\n[callout info]This is a separate system from generation presets: those decide which chart you play, while these decide how you play — the run's rules.[/callout]","[flow linear]\nlist-checks.svg|primary|Настроить моды в «Модификаторы»\ndatabase.svg|teal|Сохранить в один из 10 слотов\ndisc-3.svg|purple|Загрузить на другом треке\ncircle-play.svg|play|Играть с тем же набором\n[/flow]\n\nКнопка [color=#{primary}]«Пресеты»[/color] в заголовке экрана [color=#{mint}]«Модификаторы»[/color] открывает 10 именованных слотов для набора модификаторов забега — отдельно от пресетов генерации.\n· В слот сохраняются активные моды и их параметры (скорость HT/DT, окна EZ/ST, старт HP при «Half HP», настройки Combo Escalation и другие).\n· [color=#{teal}]Загрузить[/color] применяет набор сразу: экран переключается на «Обзор» и разворачивает сводку активных модов; двойной клик по строке слота делает то же самое.\n· Вкладки [color=#{cat_lvl}]«Мои»[/color] и [color=#{cat_ach}]«Избранное»[/color] фильтруют список; звезда на слоте отмечает избранное.\n· При сохранении и загрузке несовместимые сочетания модов и параметры автоматически приводятся к допустимым значениям.\n\n[callout info]Это отдельная система от пресетов генерации: те привязаны к чарту — какие ноты играть, а эти — к правилам забега: как играть.[/callout]"
+"HELP_health_bar_TITLE","Health bar and defeat","Полоска HP и поражение"
+"HELP_health_bar_SUMMARY","In short: misses drain HP; at 0 you fail (unless No Fail / Last Chance).","Коротко: промахи снимают HP; при 0 — поражение (если нет No Fail / Last Chance)."
+"HELP_health_bar_CONTENT","[showcase health_bar]\n\nDuring a song, a [color=#{danger}]health bar[/color] appears to the right of the playfield. Misses drain it; good hits restore a little. At 0 HP you fail the run unless [color=#{mint}]No Fail[/color] is active. The defeat screen lets you retry with the same modifiers.","[showcase health_bar]\n\nВо время песни [color=#{danger}]полоска здоровья[/color] отображается справа от игрового поля. Промахи её уменьшают; удачные попадания немного восстанавливают. При 0 HP забег заканчивается поражением (если не включён модификатор [color=#{mint}]«Без провала»[/color]). На экране поражения можно повторить уровень с теми же модификаторами."
+"HELP_chart_medals_TITLE","Chart difficulty and track medals","Сложность чарта и медали за трек"
+"HELP_chart_medals_CONTENT","[showcase chart_difficulty base=7.3 mods=11.2]\n\nAfter generation, the game rates [color=#{primary}]chart difficulty[/color] (scale 1–10) from note density and chord load. The value is often [color=#{teal}]non-integer[/color] — e.g. [color=#{mint}]7.3/10[/color]: the eighth bolt is partially filled. Shown in song details, on victory, and in profile (⚡ icons tinted by tier).\n\nWith [color=#{purple}]run modifiers[/color] active, you see [color=#{pink}]effective difficulty including mods[/color] — it can [color=#{danger}]exceed 10[/color] (e.g. [color=#{danger}]11.2/10[/color]): all ten bolts light up and overflow appears as «+1.2». On the song card, base difficulty and modifier influence are shown separately.\n\nEach track has up to [color=#{teal}]8 medals[/color]: [color=#{teal}]FC[/color] first clear, [color=#{teal}]SS[/color], [color=#{teal}]NC[/color] no combo, [color=#{teal}]M2[/color] min. 2 modifiers, [color=#{teal}]HC[/color] all hardening, [color=#{teal}]HR[/color] with hardening, [color=#{teal}]×3[/color] combo ×3, [color=#{teal}]CZ[/color] clean (no mods). Medals appear in the song list and profile.\n\n[callout tip]A perfect SS clear earns at most two medals at once (first clear + SS); other medals need separate runs with the right modifiers.[/callout]\n\n[callout info]Some [color=#{primary}]shop[/color] rewards unlock at a [color=#{teal}]collected medal[/color] threshold — medals are not spent.[/callout]","[showcase chart_difficulty base=7.3 mods=11.2]\n\nПосле генерации игра оценивает [color=#{primary}]сложность чарта[/color] (шкала 1–10) по плотности нот и доле аккордов. Значение часто [color=#{teal}]нецелое[/color] — например [color=#{mint}]7,3/10[/color]: восьмая молния заполнена частично. Оно видно в деталях трека, на экране победы и в профиле — иконки ⚡ окрашены по уровню.\n\nЕсли перед забегом включены [color=#{purple}]модификаторы[/color], показывается [color=#{pink}]итоговая сложность с их учётом[/color] — она может [color=#{danger}]превышать 10[/color] (например [color=#{danger}]11,2/10[/color]): все десять молний горят, а сверх лимита чарта отображается «+1,2». В карточке трека базовая сложность и влияние модов показаны отдельно.\n\nЗа каждый трек можно заработать до [color=#{teal}]8 медалей[/color]: [color=#{teal}]ПП[/color] — первое прохождение, [color=#{teal}]SS[/color], [color=#{teal}]СК[/color] без комбо, [color=#{teal}]М2[/color] минимум 2 модификатора, [color=#{teal}]ВС[/color] все усложняющие, [color=#{teal}]УР[/color] с усложнением, [color=#{teal}]×3[/color] комбо ×3, [color=#{teal}]БЗ[/color] без модов. Медали отображаются в списке песен и в профиле.\n\n[callout tip]На одном идеальном SS-прохождении можно получить максимум две медали (первое прохождение + SS); остальные требуют отдельных забегов с нужными модификаторами.[/callout]\n\n[callout info]Часть наград в [color=#{primary}]магазине[/color] открывается при наборе порога по [color=#{teal}]собранным медалям[/color] — медали не тратятся.[/callout]"
+"HELP_profile_tabs_TITLE","What are the profile tabs?","Что за вкладки в профиле?"
+"HELP_profile_tabs_CONTENT","[showcase profile_tabs]
+
+[color=#{purple}]Profile[/color] has four tabs:
+· [color=#{sky}]Overview[/color] — KPI, medals, genres, achievements.
+· [color=#{primary}]Statistics[/color] — overall stats, grades, **chart**; [color=#{teal}]By instrument[/color] opens percussion and bass details.
+· [color=#{mint}]Genres[/color] — mastery per collection.
+· [color=#{teal}]Records[/color] — RR, milestones, modifiers.
+Your last tab is remembered.","[showcase profile_tabs]
+
+В [color=#{purple}]профиле[/color] четыре вкладки:
+· [color=#{sky}]Обзор[/color] — KPI, медали, жанры, достижения.
+· [color=#{primary}]Статистика[/color] — общие цифры, оценки, **график**; кнопка [color=#{teal}]«По инструментам»[/color] открывает детали перкуссии и баса.
+· [color=#{mint}]Жанры[/color] — мастерство по коллекциям.
+· [color=#{teal}]Рекорды[/color] — RR, вехи, модификаторы.
+
+Последняя вкладка запоминается."
+"HELP_profile_share_TITLE","How do I share my profile stats?","Как поделиться статистикой профиля?"
+"HELP_profile_share_SUMMARY","In short: the Export button on your profile saves stat cards as PNGs to share.","Коротко: кнопка «Экспорт» в профиле сохраняет карточки статистики в PNG для соцсетей."
+"HELP_profile_share_CONTENT","[flow linear]\nlayout-dashboard.svg|purple|Overview\nchart-column.svg|sky|Statistics\nmusic.svg|mint|Music profile\ntrophy.svg|cat_ach|Achievements & records\n[/flow]\n\nOn the [color=#{purple}]Profile[/color], the [color=#{primary}]Export[/color] button opens a window with four poster-style cards (year-in-review style): [color=#{purple}]Overview[/color], [color=#{sky}]Statistics[/color], [color=#{mint}]Music profile[/color], and [color=#{cat_ach}]Achievements & records[/color].\n· Keys [color=#{muted}]1[/color]–[color=#{muted}]4[/color] or a click select a card to preview.\n· [b]Enter[/b] saves the selected card as a PNG; [b]Shift+Enter[/b] saves all four at once into a chosen folder.\n· Each card is built from profile stats: level and XP, accuracy and hits, favorite genres and collection mastery, best grades, streaks, and records.\n\n[callout info]The export is fully local: PNG files are written to disk and the game never uploads them — files can be shared manually (Discord, social media, and so on).[/callout]","[flow linear]\nlayout-dashboard.svg|purple|Обзор\nchart-column.svg|sky|Статистика\nmusic.svg|mint|Музыкальный профиль\ntrophy.svg|cat_ach|Достижения и рекорды\n[/flow]\n\nВ [color=#{purple}]Профиле[/color] кнопка [color=#{primary}]«Экспорт»[/color] открывает окно с четырьмя карточками-постерами (в стиле годового отчёта): [color=#{purple}]Обзор[/color], [color=#{sky}]Статистика[/color], [color=#{mint}]Музыкальный профиль[/color] и [color=#{cat_ach}]Достижения и рекорды[/color].\n· Клавиши [color=#{muted}]1[/color]–[color=#{muted}]4[/color] или клик выбирают карточку для предпросмотра.\n· [b]Enter[/b] сохраняет выбранную карточку в PNG; [b]Shift+Enter[/b] сохраняет все четыре сразу в выбранную папку.\n· Каждая карточка собирается из статистики профиля: уровень и XP, точность и попадания, любимые жанры и мастерство коллекции, лучшие оценки, серии и рекорды.\n\n[callout info]Экспорт полностью локальный: PNG сохраняются на диск, игра никуда их не отправляет — файл можно отправить вручную (Discord, соцсети и так далее).[/callout]"
+"HELP_rhythm_rating_TITLE","What is Rhythm Rating (RR)?","Что такое Rhythm Rating (RR)?"
+"HELP_rhythm_rating_CONTENT","[showcase rhythm_rating]\n\n[color=#{primary}]Rhythm Rating[/color] scores each chart configuration (song + instrument + mode + lanes + modifiers) from accuracy, [color=#{sky}]chart difficulty[/color], grade, full combo, and active modifiers.\nOnly your [color=#{teal}]best RR per config[/color] is saved. [color=#{purple}]Total RR[/color] on the profile is the sum of those bests across all configs.\nBest RR for the current chart is shown in song details. Autoplay runs do not save RR.\n\n[callout info]RR is earned from [color=#{teal}]Library[/color] clears (and Marathon improvements). [color=#{purple}]Endless[/color] does not award RR — it tracks streak, accuracy, and XP/coin rewards.[/callout]","[showcase rhythm_rating]\n\n[color=#{primary}]Rhythm Rating[/color] оценивает каждую конфигурацию чарта (трек + инструмент + режим + линии + модификаторы) по точности, [color=#{sky}]сложности чарта[/color], оценке, full combo и активным модификаторам.\nСохраняется только [color=#{teal}]лучший RR на конфиг[/color]. [color=#{purple}]«Всего RR»[/color] в профиле — сумма лучших значений по всем конфигам.\nЛучший RR для текущего чарта виден в деталях трека. Забеги с автопилотом RR не сохраняют.\n\n[callout info]RR начисляется за прохождения в [color=#{teal}]библиотеке[/color] (и за улучшения в [color=#{primary}]марафоне[/color]). Режим [color=#{purple}]«Бесконечный»[/color] RR не даёт — там считаются серия, точность и награды XP/монеты.[/callout]"
+"HELP_genre_mastery_TITLE","How does genre mastery work?","Как работает мастерство жанров?"
+"HELP_genre_mastery_CONTENT","[showcase genre_mastery]
+
+In [color=#{purple}]Profile → Genres[/color], styles are grouped into [color=#{primary}]15 collections[/color]. Each has a [color=#{teal}]mastery level[/color]:
+· first clear in a style = [color=#{mint}]level 1[/color];
+· each next level needs about [color=#{sky}]+5 clears[/color] in that collection (max [color=#{pink}]20[/color]).
+
+The [color=#{slate}]“X / Y genres”[/color] counter is how many [color=#{teal}]subgenres[/color] from the collection catalog have at least one clear. Card color follows mastery level.
+
+[callout info]With no clears in a style, the card stays [color=#{muted}]locked[/color] — progress starts after the first clear of a track in that genre.[/callout]","[showcase genre_mastery]
+
+В [color=#{purple}]Профиль → Жанры[/color] стили сгруппированы в [color=#{primary}]15 коллекций[/color]. У каждой — [color=#{teal}]уровень мастерства[/color]:
+· первое прохождение трека в стиле = [color=#{mint}]уровень 1[/color];
+· каждый следующий уровень — ещё [color=#{sky}]+5 прохождений[/color] в этой коллекции (максимум [color=#{pink}]20[/color]).
+
+Счётчик [color=#{slate}]«X / Y жанров»[/color] на карточке — число [color=#{teal}]поджанров[/color] из каталога коллекции, для которых есть хотя бы одно прохождение. Цвет карточки зависит от уровня.
+
+[callout info]Без прохождений в стиле карточка [color=#{muted}]закрыта[/color] — прогресс начинается после первого клира трека этого жанра.[/callout]"
+"HELP_keyboard_nav_TITLE","Keyboard shortcuts in menus","Горячие клавиши в меню"
+"HELP_keyboard_nav_CONTENT","[showcase keyboard_nav]
+
+Keyboard shortcuts (QWERTY; digits work on any layout):
+· [color=#{sky}]Song library[/color] — double-click = play.
+· [color=#{primary}]Generation settings[/color] — [color=#{muted}]1[/color]/[color=#{muted}]2[/color] instrument; [color=#{muted}]Q[/color]/[color=#{muted}]W[/color] goal (Original/Arcade); [color=#{muted}]E[/color]/[color=#{muted}]R[/color]/[color=#{muted}]T[/color] difficulty; [color=#{muted}]A[/color]/[color=#{muted}]S[/color]/[color=#{muted}]D[/color] lanes; [color=#{muted}]Z[/color] advanced; [b]Enter[/b]; [b]Shift+R[/b] reset; [b]Esc[/b].
+· [color=#{mint}]Modifiers[/color] — letter keys on the grid.
+· [color=#{purple}]Main menu[/color] — [color=#{muted}]1[/color]–[color=#{muted}]6[/color].
+· [color=#{teal}]Profile[/color] — [color=#{muted}]1[/color]–[color=#{muted}]4[/color] tabs; on Statistics [color=#{muted}]1[/color]–[color=#{muted}]3[/color] — chart metric.","[showcase keyboard_nav]
+
+Горячие клавиши (QWERTY; цифры работают на любой раскладке):
+· [color=#{sky}]Библиотека[/color] — двойной щелчок = играть.
+· [color=#{primary}]Настройки генерации[/color] — [color=#{muted}]1[/color]/[color=#{muted}]2[/color] инструмент; [color=#{muted}]Q[/color]/[color=#{muted}]W[/color] цель (Оригинал/Аркада); [color=#{muted}]E[/color]/[color=#{muted}]R[/color]/[color=#{muted}]T[/color] сложность; [color=#{muted}]A[/color]/[color=#{muted}]S[/color]/[color=#{muted}]D[/color] линии; [color=#{muted}]Z[/color] расширенные; [b]Enter[/b]; [b]Shift+R[/b] сброс; [b]Esc[/b].
+· [color=#{mint}]Модификаторы[/color] — буквы на сетке.
+· [color=#{purple}]Главное меню[/color] — [color=#{muted}]1[/color]–[color=#{muted}]6[/color].
+· [color=#{teal}]Профиль[/color] — [color=#{muted}]1[/color]–[color=#{muted}]4[/color] вкладки; на Статистике [color=#{muted}]1[/color]–[color=#{muted}]3[/color] — метрика графика."
+"HELP_song_preview_TITLE","Track preview in the song library","Предпросмотр трека в библиотеке"
+"HELP_song_preview_CONTENT","Selecting a track plays a preview in the background. In [color=#{sky}]Settings → Sound[/color] choose:\n· [color=#{primary}]15 s highlight[/color] (default) — the game finds a loud 15-second hook (full RMS scan for WAV; approximate hook for MP3) with smooth fade in/out, then loops it.\n· [color=#{teal}]Full track[/color] — plays the entire song and loops when it ends.\nAdjust [color=#{slate}]Preview volume[/color] on the same screen.","При выборе трека в фоне играет предпросмотр. В [color=#{sky}]Настройки → Звук[/color]:\n· [color=#{primary}]15 с — самый громкий фрагмент[/color] (по умолчанию) — ищется громкий отрезок 15 с (полный анализ для WAV; приблизительный «припев» для MP3), с плавным нарастанием и затуханием, затем цикл.\n· [color=#{teal}]Вся песня[/color] — проигрывание целиком с повтором.\nГромкость — слайдер [color=#{slate}]«Громкость предпросмотра»[/color] на той же вкладке."
+"HELP_server_windows_TITLE","Windows-native server and auto-start","Сервер на Windows и автозапуск"
+"HELP_server_windows_CONTENT","Release builds use [color=#{muted}]RhythmFallServer.exe[/color] with Windows Python — no WSL. [color=#{teal}]Automatic[/color] mode runs a hidden worker; [color=#{primary}]Manual[/color] shows a console with Flask logs. GPU stem separation is optional (CUDA / DirectML / CPU). The server ships with the game — no separate install script is required.","Релиз использует [color=#{muted}]RhythmFallServer.exe[/color] и Windows Python — без WSL. [color=#{teal}]Авто[/color] — скрытый воркер; [color=#{primary}]Вручную[/color] — консоль с логами Flask. GPU для стемов опционален (CUDA / DirectML / CPU). Сервер идёт в комплекте с игрой — отдельный скрипт установки не нужен."
+"HELP_MOD_PLAIN_SLOW_75","The song plays slower — easier to read notes.","Песня играет медленнее — ноты легче читать."
+"HELP_MOD_PLAIN_FAST_150","The song plays faster — harder, but more reward.","Песня быстрее — сложнее, но больше награда."
+"HELP_MOD_PLAIN_NO_FAIL","You can reach 0 HP and keep playing.","HP может упасть до 0, но забег не закончится."
+"HELP_MOD_PLAIN_EASY_WINDOWS","Perfect and Good timing windows are wider.","Окна Perfect и Good шире обычного."
+"HELP_MOD_PLAIN_STRICT_TIMING","Perfect and Good windows are tighter.","Окна Perfect и Good уже обычного."
+"HELP_MOD_PLAIN_NO_MISS_FORGIVENESS","Tapping empty space counts as a Miss.","Нажатие в пустоту считается промахом."
+"HELP_MOD_PLAIN_SUDDEN_DEATH","One Miss ends the run.","Один промах — поражение."
+"HELP_MOD_PLAIN_FIXED_SPEED_20","Scroll speed stays fixed regardless of BPM.","Скорость скролла фиксирована, не зависит от BPM."
+"HELP_MOD_PLAIN_AUTOPLAY","Notes play themselves — no rewards saved.","Ноты играют сами — награды не сохраняются."
+"HELP_MOD_PLAIN_HIDDEN","Notes fade out before the hit line.","Ноты исчезают до линии попадания."
+"HELP_MOD_PLAIN_SUDDEN","Notes appear only near the hit line.","Ноты появляются только у линии попадания."
+"HELP_MOD_PLAIN_HALF_HP","You start with half health.","Старт с половиной HP."
+"HELP_MOD_PLAIN_SINGLE_LANE","All notes use one lane only.","Все ноты идут по одной линии."
+"HELP_MOD_PLAIN_TIME_WARP","Scroll speed changes over time.","Скорость скролла меняется со временем."
+"HELP_MOD_PLAIN_PICK_MODE","Only one lane is active at a time.","Активна только одна линия за раз."
+"HELP_MOD_PLAIN_REVERSE_SCROLL","Notes scroll upward instead of down.","Ноты летят вверх, а не вниз."
+"HELP_MOD_PLAIN_MEMORY_MODE","Notes hide after first appearance — recall from memory.","Ноты скрываются после первого появления — нужно помнить."
+"HELP_MOD_PLAIN_DYNAMIC_LANES","Lane count changes by track section (requires .rfd).","Число линий меняется по секциям трека (требуется .rfd)."
+"HELP_MOD_PLAIN_ENERGY_PULSE","Speed follows section energy (requires .rfd).","Скорость следует энергии секций (требуется .rfd)."
+"HELP_MOD_PLAIN_DENSITY_FOCUS","Dense sections hide notes more (requires .rfd).","В плотных секциях ноты сильнее скрываются (требуется .rfd)."
+"HELP_MOD_PLAIN_PHRASE_SHIFT","Rules shift between calm and loud sections (requires .rfd).","Правила меняются между спокойными и громкими секциями (требуется .rfd)."
+"HELP_MOD_PLAIN_GROOVE_LOCK","Groove sections get stricter timing (requires .rfd).","В groove-секциях тайминг строже (требуется .rfd)."
+"HELP_MOD_PLAIN_ADAPTIVE","Difficulty adapts to recent accuracy (requires .rfd).","Сложность подстраивается под недавнюю точность (требуется .rfd)."
+"HELP_MOD_PLAIN_MIRROR_MODE","Left and right lanes are swapped.","Левая и правая линии меняются местами."
+"HELP_MOD_PLAIN_SHUFFLE_MODE","Lane order is shuffled.","Порядок линий перемешан."
+"HELP_MOD_PLAIN_RANDOM_MODE","Lane order changes during the song.","Порядок линий меняется во время песни."
+"HELP_MOD_PLAIN_COMBO_ESCALATION","Hardening mods turn on automatically as combo grows.","Моды усложнения включаются сами по росту комбо."
+"HELP_MOD_PLAIN_METRONOME_ONLY","Music is muted; only the metronome plays.","Музыка выключена — слышен только метроном."
+"HELP_MOD_PLAIN_HEAT","Scroll gradually speeds up during the run.","Скролл постепенно ускоряется во время забега."
+"HELP_MOD_PLAIN_SPOTLIGHT","Only notes near the hit line are fully visible.","Полностью видны только ноты у линии попадания."
+"HELP_MOD_PLAIN_SILENCE","Hit sounds are muted.","Звуки попаданий отключены."
+"HELP_MOD_PLAIN_RUSH","Random scroll speed bursts on a fixed schedule.","Случайные всплески скорости скролла по расписанию."
+"HELP_MOD_PLAIN_LAST_CHANCE","At 0 HP you get one continue; then Miss = fail.","При 0 HP — один шанс продолжить; дальше промах = поражение."
+"HELP_MOD_PLAIN_GROOVE_ADDICTION","Groove sections speed up over time (requires .rfd).","Groove-секции со временем ускоряются (требуется .rfd)."
+"HELP_MOD_PLAIN_ENERGY_BALANCE","Calm sections slow down, dense ones speed up (requires .rfd).","Спокойные секции медленнее, плотные — быстрее (требуется .rfd)."
+"HELP_SEC_play_modes_TITLE","Play Modes","Режимы игры"
+"HELP_play_modes_overview_TITLE","What is the Play Modes screen?","Что такое экран «Режимы игры»?"
+"HELP_play_modes_overview_SUMMARY","In short: library, Endless, Marathon — different ways to start a run.","Коротко: библиотека, бесконечный, марафон — разные способы запустить забег."
+"HELP_play_modes_overview_CONTENT","From the [color=#{purple}]main menu[/color], [color=#{primary}]Play[/color] → [color=#{sky}]Play Modes[/color]:
+· [color=#{teal}]Library[/color] — one track.
+· [color=#{purple}]Endless[/color] — song chain until you fail.
+· [color=#{primary}]Marathon[/color] — fixed multi-track routes.
+
+[callout info]Main-menu music plays on this screen; it fades when you enter a specific mode.[/callout]","С [color=#{purple}]главного меню[/color] [color=#{primary}]«Играть»[/color] → [color=#{sky}]«Режимы игры»[/color]:
+· [color=#{teal}]Библиотека[/color] — один трек.
+· [color=#{purple}]Бесконечный[/color] — серия до поражения.
+· [color=#{primary}]Марафон[/color] — фиксированные маршруты.
+
+[callout info]Музыка меню играет на экране режимов; затухает при входе в конкретный режим.[/callout]"
+"HELP_endless_mode_TITLE","Endless mode","Режим «Бесконечный»"
+"HELP_endless_mode_SUMMARY","In short: songs until you fail; setup, cumulative score, run summary.","Коротко: песни подряд до поражения; настройка, накопление счёта, итог серии."
+"HELP_endless_mode_CONTENT","[flow linear]
+settings-2.svg|sky|Setup
+list-checks.svg|teal|Filters
+repeat.svg|mint|Tracks in a row
+flag.svg|primary|Summary
+[/flow]
+
+[color=#{purple}]Endless[/color] — several songs in a row until you fail or exit.
+
+Before start — [color=#{sky}]session setup[/color]: track source, filters, run-wide modifiers. Score, accuracy, and combo **carry over** between songs. After the series — a summary screen.
+
+You can **repeat the last** configuration from the mode card.
+
+[callout info]More — article ""Endless session setup"". Modifiers — [color=#{sky}]Run modifiers[/color].[/callout]
+
+[callout warning]Runs with [color=#{slate}]autoplay[/color] earn no XP/currency. Endless does not award RR.[/callout]","[flow linear]
+settings-2.svg|sky|Настройка
+list-checks.svg|teal|Фильтры
+repeat.svg|mint|Треки подряд
+flag.svg|primary|Итог
+[/flow]
+
+[color=#{purple}]Бесконечный[/color] — несколько песен подряд до поражения или выхода.
+
+Перед стартом — [color=#{sky}]настройка сессии[/color]: откуда брать треки, фильтры, модификаторы на весь забег. Счёт, точность и комбо **накапливаются** между песнями. После серии — сводный итог.
+
+На карточке режима можно **повторить последнюю** конфигурацию.
+
+[callout info]Подробнее — «Настройка сессии в „Бесконечном“». Модификаторы — [color=#{sky}]«Модификаторы забега»[/color].[/callout]
+
+[callout warning]Забег с [color=#{slate}]автопилотом[/color] не даёт опыт и валюту. RR в «Бесконечном» не начисляется.[/callout]"
+"HELP_endless_session_setup_TITLE","Endless session setup","Настройка сессии в «Бесконечном»"
+"HELP_endless_session_setup_SUMMARY","In short: track source, filters, modifiers, and matching-chart count.","Коротко: источник треков, фильтры, модификаторы и счётчик подходящих чартов."
+"HELP_endless_session_setup_CONTENT","[flow linear]
+shuffle.svg|purple|Random tracks
+music.svg|teal|Selected playlist
+list-checks.svg|sky|Filters
+zap.svg|primary|Modifiers
+[/flow]
+
+Open from the [color=#{purple}]Endless[/color] card → [color=#{primary}]Configure[/color].
+
+**Source:** random tracks by filters or a preset playlist. Options: favorites only, each song once.
+
+**Filters:** genres, instrument, difficulty (★), duration. Preview shows how many charts match.
+
+**Modifiers:** none, random from pool, or fixed set for the whole run.
+
+[callout tip]If matching charts is 0 — loosen filters or add tracks. Compare with [color=#{sky}]Marathon[/color] — fixed routes there.[/callout]","[flow linear]
+shuffle.svg|purple|Случайные треки
+music.svg|teal|Выбранный плейлист
+list-checks.svg|sky|Фильтры
+zap.svg|primary|Модификаторы
+[/flow]
+
+Экран открывается с карточки [color=#{purple}]«Бесконечный»[/color] → [color=#{primary}]«Настроить»[/color].
+
+**Источник:** случайные треки по фильтрам или заранее выбранный плейлист. Опции: только избранное, каждая песня один раз.
+
+**Фильтры:** жанры, инструмент, сложность (★), длительность. Справа — сколько чартов подходит.
+
+**Модификаторы:** без модов, случайные из пула или фиксированный набор на всю серию.
+
+[callout tip]Если подходящих чартов 0 — ослабьте фильтры или добавьте треки. Сравните с [color=#{sky}]«Марафоном»[/color] — там фиксированные маршруты.[/callout]"
+"HELP_marathon_mode_TITLE","Marathon mode","Режим «Марафон»"
+"HELP_marathon_mode_SUMMARY","In short: route catalog, rotation, daily route, run setup.","Коротко: каталог маршрутов, ротация, марафон дня, настройка забега."
+"HELP_marathon_mode_CONTENT","[flow linear]
+map.svg|primary|Route catalog
+repeat.svg|sky|Rotating sets
+calendar.svg|teal|Daily route
+settings-2.svg|purple|Run setup
+[/flow]
+
+[color=#{primary}]Marathon[/color] — preset routes: fixed track count, genre, star range, and rules. Open from the mode card on [color=#{sky}]Play Modes[/color].
+
+**Catalog:** left — routes (current set and challenges), center — run setup, right — cover, preview, rules, progress. **Next set** toggle shows upcoming routes.
+
+**Daily route** — separate tab, one route per day.
+
+**Not enough songs** — route unavailable (needs at least the route minimum); **Refresh pool** or add library tracks.
+
+Rewards and stats — Profile → Records.
+
+[callout tip]Fixed route length and rotating sets — unlike an endless chain until failure.[/callout]","[flow linear]
+map.svg|primary|Каталог маршрутов
+repeat.svg|sky|Ротация наборов
+calendar.svg|teal|Марафон дня
+settings-2.svg|purple|Настройка забега
+[/flow]
+
+[color=#{primary}]Марафон[/color] — заранее заданные маршруты: фиксированное число треков, жанр, диапазон ★ и правила. Открывается с карточки режима на экране [color=#{sky}]«Режимы игры»[/color].
+
+**Каталог:** слева — маршруты (текущий набор и испытания), по центру — настройка забега, справа — обложка, прослушивание, правила и прогресс. Переключатель **«Следующий набор»** показывает будущие маршруты.
+
+**Марафон дня** — отдельная вкладка, один маршрут на календарный день.
+
+**Недостаточно песен** — маршрут недоступен (нужен минимум треков для маршрута); кнопка **«Обновить подбор»** или добавление треков в библиотеку.
+
+Награды и статистика — в профиле → **Записи**.
+
+[callout tip]Фиксированная длина маршрута и ротация наборов — в отличие от бесконечной серии до поражения.[/callout]"
+"HELP_notes_folder_rf_TITLE","Where are charts (.rf) stored?","Где хранятся чарты (.rf)?"
+"HELP_notes_folder_rf_SUMMARY","In short: charts folder in Settings → Library; filenames use instrument_goal_difficulty.","Коротко: папка чартов в Настройки → Библиотека; имена — инструмент_цель_сложность."
+"HELP_notes_folder_rf_CONTENT","Generated notes are [color=#{primary}].rf[/color] files in the folder from [color=#{sky}]Settings → Library[/color] → “Charts folder”. A [color=#{cat_ach}].rfd[/color] sidecar may sit nearby (Rhythm DNA; currently used for percussion modifiers).
+
+**Filenames:** `{instrument}_{goal}.rf (Original) or {instrument}_{goal}_{difficulty}.rf (Arcade)`, for example:
+· [color=#{muted}]drums_original.rf[/color]
+· [color=#{muted}]drums_arcade_relaxed.rf[/color]
+· [color=#{muted}]bass_original.rf[/color]
+
+Presets add [color=#{muted}]_p01[/color]…[color=#{muted}]_p10[/color]. Names [color=#{muted}]drums_groove.rf[/color] / [color=#{muted}]drums_sparse.rf[/color] are legacy; new charts use the scheme above.
+
+[callout info]Changing the folder in settings does not move existing charts — copy or regenerate.[/callout]","Сгенерированные ноты — файлы [color=#{primary}].rf[/color] в папке из [color=#{sky}]Настройки → Библиотека[/color] → «Папка с чартами». Рядом может быть [color=#{cat_ach}].rfd[/color] (Rhythm DNA; на данный момент используется для модификаторов перкуссии).
+
+**Имена файлов:** `{инструмент}_{цель}.rf (Оригинал) или {инструмент}_{цель}_{сложность}.rf (Аркада)`, например:
+· [color=#{muted}]drums_original.rf[/color]
+· [color=#{muted}]drums_arcade_relaxed.rf[/color]
+· [color=#{muted}]bass_original.rf[/color]
+
+Пресеты добавляют [color=#{muted}]_p01[/color]…[color=#{muted}]_p10[/color]. Имена [color=#{muted}]drums_groove.rf[/color] / [color=#{muted}]drums_sparse.rf[/color] — legacy; новые чарты используют схему выше.
+
+[callout info]Смена папки в настройках не переносит существующие чарты — требуется копирование или повторная генерация.[/callout]"

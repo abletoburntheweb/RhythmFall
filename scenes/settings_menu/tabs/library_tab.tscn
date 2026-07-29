@@ -1,0 +1,252 @@
+[gd_scene load_steps=6 format=3 uid="uid://blibrarysettings1"]
+
+[ext_resource type="Script" path="res://scenes/settings_menu/tabs/library_tab.gd" id="1_lib"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="3_notice"]
+[ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="4_confirm"]
+[ext_resource type="PackedScene" uid="uid://cappsongsfolderoverlay01" path="res://ui/overlays/app_songs_folder_change_overlay.tscn" id="5_folder"]
+
+[node name="LibraryTab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lib")
+
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="SongsFolderPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelAmber"
+
+[node name="SongsFolderPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="SongsFolderRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SongsFolderHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderAmber"
+theme_override_font_sizes/font_size = 22
+text = "Папка песен"
+
+[node name="SongsFolderHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Folder scanned for audio files."
+autowrap_mode = 3
+
+[node name="SongsFolderHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SongsFolderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows/SongsFolderHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Путь"
+
+[node name="SongsFolderLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows/SongsFolderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme_override_font_sizes/font_size = 18
+
+[node name="ChooseSongsFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows/SongsFolderHBox"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButtonAmber"
+theme_override_font_sizes/font_size = 18
+text = "Выбрать…"
+
+[node name="ScanPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelAmber"
+
+[node name="ScanPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="ScanRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ScanHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderAmber"
+theme_override_font_sizes/font_size = 22
+text = "Сканирование"
+
+[node name="ScanHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Rescan the songs folder for new tracks."
+autowrap_mode = 3
+
+[node name="LastScanLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 16
+text = "Последнее сканирование: —"
+
+[node name="ScanButtonRow" type="CenterContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows"]
+layout_mode = 2
+
+[node name="ScanSongsButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows/ScanButtonRow"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButtonAmber"
+theme_override_font_sizes/font_size = 20
+text = "Сканировать песни"
+
+[node name="NotesFolderPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelAmber"
+
+[node name="NotesFolderPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="NotesFolderRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NotesFolderHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderAmber"
+theme_override_font_sizes/font_size = 22
+text = "Папка нот"
+
+[node name="NotesHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Сгенерированные чарты (.rf) хранятся в подпапках по chart ID."
+autowrap_mode = 3
+
+[node name="NotesHelpLink" type="LinkButton" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 14
+text = "Справка: где лежат чарты .rf"
+
+[node name="NotesFolderHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NotesFolderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows/NotesFolderHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Путь"
+
+[node name="NotesFolderLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows/NotesFolderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme_override_font_sizes/font_size = 18
+
+[node name="ChooseNotesFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows/NotesFolderHBox"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButtonAmber"
+theme_override_font_sizes/font_size = 18
+text = "Выбрать…"
+
+[node name="LibraryOptionsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelAmber"
+
+[node name="LibraryOptionsPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="LibraryOptionsRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel/LibraryOptionsPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LibraryOptionsHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderAmber"
+theme_override_font_sizes/font_size = 22
+text = "Отображение"
+
+[node name="LibraryOptionsHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Extra columns in the song list."
+autowrap_mode = 3
+
+[node name="ShowChartIdCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Показывать ID чарта"
+
+[node name="SongsFolderDialog" type="FileDialog" parent="."]
+unresizable = true
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[node name="NotesFolderDialog" type="FileDialog" parent="."]
+unresizable = true
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[node name="NoticeOverlay" parent="." instance=ExtResource("3_notice")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="ConfirmOverlay" parent="." instance=ExtResource("4_confirm")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="SongsFolderChangeOverlay" parent="." instance=ExtResource("5_folder")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows/NotesHelpLink" to="." method="_on_notes_help_link_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows/SongsFolderHBox/ChooseSongsFolderButton" to="." method="_on_choose_songs_folder_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows/ScanButtonRow/ScanSongsButton" to="." method="_on_scan_songs_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows/NotesFolderHBox/ChooseNotesFolderButton" to="." method="_on_choose_notes_folder_pressed"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows/ShowChartIdCheckBox" to="." method="_on_show_chart_id_toggled"]
+[connection signal="dir_selected" from="SongsFolderDialog" to="." method="_on_songs_folder_dir_selected"]
+[connection signal="dir_selected" from="NotesFolderDialog" to="." method="_on_notes_folder_dir_selected"]

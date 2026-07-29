@@ -1,0 +1,36 @@
+[gd_scene load_steps=4 format=3 uid="uid://crunmodparamspanel1"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/run_modifier_params_panel.gd" id="1_params"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://dgc5s80h3p23" path="res://scenes/song_select/run_modifiers/run_modifier_mod_params_section.gd" id="3_modparams"]
+
+[node name="RunModifierParamsPanel" type="VBoxContainer"]
+visible = false
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 10
+size_flags_vertical = 3
+script = ExtResource("1_params")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "—"
+
+[node name="HintLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.88)
+theme_override_font_sizes/font_size = 14
+text = "MOD_PARAMS_SELECT_HINT"
+autowrap_mode = 3
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ModParamsSection" type="VBoxContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+script = ExtResource("3_modparams")

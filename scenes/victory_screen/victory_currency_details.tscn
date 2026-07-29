@@ -1,31 +1,34 @@
-[gd_scene load_steps=5 format=3 uid="uid://c2p87b8j3164d"]
+[gd_scene load_steps=7 format=3 uid="uid://c2p87b8j3164d"]
 
-[ext_resource type="Script" uid="uid://yqvuau56ualj" path="res://scenes/victory_screen/victory_currency_details.gd" id="1_8e8ra"]
-[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_v5b8k"]
+[ext_resource type="Script" uid="uid://yqvuau56ualj" path="res://scenes/victory_screen/victory_currency_details.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/icons/diamond.svg" id="3_diamond"]
+[ext_resource type="PackedScene" path="res://scenes/victory_screen/victory_reward_breakdown_row.tscn" id="4_row"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_card"]
-content_margin_left = 20.0
-content_margin_top = 18.0
-content_margin_right = 20.0
-content_margin_bottom = 18.0
-bg_color = Color(0.108, 0.118, 0.158, 0.96)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 24.0
+content_margin_top = 22.0
+content_margin_right = 24.0
+content_margin_bottom = 22.0
+bg_color = Color(0.09, 0.1, 0.14, 0.97)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 0.18)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 8
-shadow_offset = Vector2(0, 3)
+border_color = Color(0.94902, 0.701961, 0.352941, 0.42)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.94902, 0.701961, 0.352941, 0.12)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_sep"]
-content_margin_top = 6.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
 bg_color = Color(1, 1, 1, 0.1)
+
 [node name="VictoryCurrencyDetails" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -33,7 +36,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_8e8ra")
+script = ExtResource("1_script")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -52,89 +55,126 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="DialogVBox" type="VBoxContainer" parent="CenterWrap"]
-custom_minimum_size = Vector2(680, 0)
+[node name="DialogPanel" type="PanelContainer" parent="CenterWrap"]
+custom_minimum_size = Vector2(760, 0)
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 
-[node name="TitleLabel" type="Label" parent="CenterWrap/DialogVBox"]
+[node name="Margin" type="MarginContainer" parent="CenterWrap/DialogPanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.946361, 0.697177, 0.343459, 1)
-theme_override_font_sizes/font_size = 40
-text = "Детализация валюты"
-horizontal_alignment = 1
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
-[node name="StatsFrame" type="PanelContainer" parent="CenterWrap/DialogVBox"]
+[node name="DialogVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeroIcon" type="TextureRect" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+texture = ExtResource("3_diamond")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderText" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+theme_override_constants/separation = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterWrap/DialogVBox/StatsFrame"]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
-
-[node name="ContentVBox" type="VBoxContainer" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="ScoreLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.52549, 0.72549, 0.952941, 1)
-theme_override_font_sizes/font_size = 22
-text = "Базовый валюта (от счёта): 0"
-horizontal_alignment = 1
-
-[node name="ComboLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
-theme_override_font_sizes/font_size = 22
-text = "Бонус за максимальное комбо: 0"
-horizontal_alignment = 1
-
-[node name="AccuracyLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.47451, 0.890196, 0.835294, 1)
-theme_override_font_sizes/font_size = 22
-text = "Бонус за точность: 0"
-horizontal_alignment = 1
-
-[node name="FullComboLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.556863, 0.831373, 0.615686, 1)
-theme_override_font_sizes/font_size = 22
-text = "Бонус за полное комбо: 0"
-horizontal_alignment = 1
-
-[node name="MultiplierLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
-theme_override_font_sizes/font_size = 22
-text = "Бонус за множитель: 0"
-horizontal_alignment = 1
-
-[node name="Separator" type="HSeparator" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
-layout_mode = 2
-theme_override_styles/separator = SubResource("StyleBoxFlat_victory_sep")
-
-[node name="TotalLabel" type="Label" parent="CenterWrap/DialogVBox/StatsFrame/MarginContainer/ContentVBox"]
+[node name="TitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
 theme_override_font_sizes/font_size = 28
-text = "Итого валюты: 0"
-horizontal_alignment = 1
+text = "ДЕТАЛИЗАЦИЯ ВАЛЮТЫ"
 
-[node name="ButtonsContainer" type="HBoxContainer" parent="CenterWrap/DialogVBox"]
+[node name="SubtitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
 layout_mode = 2
-alignment = 1
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Как были рассчитаны алмазы"
 
-[node name="BackButton" type="Button" parent="CenterWrap/DialogVBox/ButtonsContainer"]
+[node name="FinalRewardRow" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeroTotalLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/FinalRewardRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 42
+text = "0"
+
+[node name="HeroTotalIcon" type="TextureRect" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/FinalRewardRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("3_diamond")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FinalRewardCaption" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/FinalRewardRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "Итоговая награда"
+vertical_alignment = 1
+
+[node name="RowsVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RowBase" parent="CenterWrap/DialogPanel/Margin/DialogVBox/RowsVBox" instance=ExtResource("4_row")]
+layout_mode = 2
+
+[node name="RowCombo" parent="CenterWrap/DialogPanel/Margin/DialogVBox/RowsVBox" instance=ExtResource("4_row")]
+layout_mode = 2
+
+[node name="RowAccuracy" parent="CenterWrap/DialogPanel/Margin/DialogVBox/RowsVBox" instance=ExtResource("4_row")]
+layout_mode = 2
+
+[node name="RowFullCombo" parent="CenterWrap/DialogPanel/Margin/DialogVBox/RowsVBox" instance=ExtResource("4_row")]
+layout_mode = 2
+
+[node name="RowMultiplier" parent="CenterWrap/DialogPanel/Margin/DialogVBox/RowsVBox" instance=ExtResource("4_row")]
+layout_mode = 2
+
+[node name="FooterSep" type="HSeparator" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="FooterHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+
+[node name="FooterTotalLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FooterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "ВСЕГО ПОЛУЧЕНО"
+
+[node name="FooterValueLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FooterHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="FooterValueIcon" type="TextureRect" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FooterHBox"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+texture = ExtResource("3_diamond")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseButton" type="Button" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
 clip_contents = true
-custom_minimum_size = Vector2(180, 48)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-theme = ExtResource("2_v5b8k")
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
 theme_type_variation = &"FlatModalPrimaryButton"
-theme_override_font_sizes/font_size = 18
-text = "Назад"
+theme_override_font_sizes/font_size = 16
+text = "ЗАКРЫТЬ"

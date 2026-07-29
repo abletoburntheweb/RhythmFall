@@ -1,0 +1,335 @@
+[gd_scene load_steps=12 format=3 uid="uid://crunmodifierscreen1"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/run_modifiers_screen.gd" id="1_screen"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://crunmodsidebartab1" path="res://scenes/song_select/run_modifiers/run_modifier_sidebar_tab.tscn" id="3_nav"]
+[ext_resource type="PackedScene" uid="uid://crunmodoverviewtab1" path="res://scenes/song_select/run_modifiers/tabs/overview_tab_content.tscn" id="4_overview"]
+[ext_resource type="PackedScene" uid="uid://crunmodcattab01" path="res://scenes/song_select/run_modifiers/tabs/category_tab_content.tscn" id="5_category"]
+[ext_resource type="PackedScene" uid="uid://crunmodparamtab1" path="res://scenes/song_select/run_modifiers/tabs/params_tab_content.tscn" id="6_params"]
+[ext_resource type="PackedScene" uid="uid://crunmoddetail01" path="res://scenes/song_select/run_modifiers/run_modifier_detail_panel.tscn" id="7_detail"]
+[ext_resource type="PackedScene" uid="uid://crunmodsummary01" path="res://scenes/song_select/run_modifiers/run_modifier_summary_panel.tscn" id="8_summary"]
+[ext_resource type="PackedScene" uid="uid://crunmodparamspanel1" path="res://scenes/song_select/run_modifiers/run_modifier_params_panel.tscn" id="9_paramspanel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.07, 0.075, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.57, 0.82, 0.3)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_center"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_footer"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.09, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="RunModifiersScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_screen")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="RootMargin/RootVBox/HeaderRow"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+text = "Назад"
+
+[node name="TitleVBox" type="VBoxContainer" parent="RootMargin/RootVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox/HeaderRow/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 30
+text = "Модификаторы забега"
+
+[node name="SubtitleLabel" type="Label" parent="RootMargin/RootVBox/HeaderRow/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 15
+text = "Необязательные правила для следующего прохождения."
+
+[node name="PresetsButton" type="Button" parent="RootMargin/RootVBox/HeaderRow"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Пресеты"
+
+[node name="MainHBox" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="SidebarCard" type="PanelContainer" parent="RootMargin/RootVBox/MainHBox"]
+custom_minimum_size = Vector2(248, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_sidebar")
+
+[node name="SidebarMargin" type="MarginContainer" parent="RootMargin/RootVBox/MainHBox/SidebarCard"]
+layout_mode = 2
+
+[node name="SidebarVBox" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NavScroll" type="ScrollContainer" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="NavVBox" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="NavOverview" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "overview"
+
+[node name="NavEasing" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "easing"
+
+[node name="NavHardening" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "hardening"
+
+[node name="NavSpecial" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "special"
+
+[node name="NavDna" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "dna"
+
+[node name="NavParams" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "params"
+
+[node name="CenterColumn" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PageTitleLabel" type="Label" parent="RootMargin/RootVBox/MainHBox/CenterColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.819608, 1)
+theme_override_font_sizes/font_size = 24
+text = "Обзор"
+
+[node name="CenterCard" type="PanelContainer" parent="RootMargin/RootVBox/MainHBox/CenterColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_center")
+
+[node name="CenterMargin" type="MarginContainer" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TabStack" type="Control" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="OverviewTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("4_overview")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EasingTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("5_category")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HardeningTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("5_category")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SpecialTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("5_category")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DnaTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("5_category")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ParamsTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("6_params")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RightCard" type="PanelContainer" parent="RootMargin/RootVBox/MainHBox"]
+custom_minimum_size = Vector2(448, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_center")
+
+[node name="RightMargin" type="MarginContainer" parent="RootMargin/RootVBox/MainHBox/RightCard"]
+layout_mode = 2
+
+[node name="RightStack" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="RightPanelToggle" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/RightPanelToggle"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RightPanelSummaryBtn" type="Button" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/RightPanelToggle/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+theme_type_variation = &"FlatButton"
+text = "Summary"
+
+[node name="RightPanelDetailBtn" type="Button" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/RightPanelToggle/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+theme_type_variation = &"FlatButton"
+text = "Detail"
+
+[node name="RightPanelParamsBtn" type="Button" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/RightPanelToggle"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+theme_type_variation = &"FlatButton"
+text = "Parameters"
+
+[node name="DetailPanel" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack" instance=ExtResource("7_detail")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ParamsPanel" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack" instance=ExtResource("9_paramspanel")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SummaryPanel" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack" instance=ExtResource("8_summary")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FooterRow" type="VBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FooterPanels" type="HBoxContainer" parent="RootMargin/RootVBox/FooterRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ConflictsCalloutSlot" type="VBoxContainer" parent="RootMargin/RootVBox/FooterRow/FooterPanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HintCalloutSlot" type="VBoxContainer" parent="RootMargin/RootVBox/FooterRow/FooterPanels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HotkeysLabel" type="Label" parent="RootMargin/RootVBox/FooterRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.7, 0.88)
+theme_override_font_sizes/font_size = 14
+text = "1–5 вкладки · Esc назад · Enter подтвердить"
+horizontal_alignment = 1

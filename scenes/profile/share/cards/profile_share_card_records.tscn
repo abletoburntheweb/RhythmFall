@@ -1,0 +1,309 @@
+[gd_scene load_steps=3 format=3 uid="uid://bsharerecords"]
+
+[ext_resource type="PackedScene" path="res://scenes/profile/share/profile_share_card_shell.tscn" id="1_shell"]
+[ext_resource type="Script" path="res://scenes/profile/share/cards/profile_share_card_records.gd" id="2_script"]
+
+[node name="ProfileShareCardRecords" instance=ExtResource("1_shell")]
+script = ExtResource("2_script")
+
+[node name="SectionHeaderMilestones" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ACHIEVEMENTS"
+
+[node name="MilestonesRow" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="1"]
+layout_mode = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="Milestone0" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone0"]
+layout_mode = 2
+alignment = 1
+
+[node name="MarkLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone0/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "·"
+
+[node name="TitleLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone0/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 3
+text = "SS"
+
+[node name="Milestone1" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone1"]
+layout_mode = 2
+alignment = 1
+
+[node name="MarkLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone1/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "·"
+
+[node name="TitleLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone1/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 3
+text = "FC"
+
+[node name="Milestone2" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone2"]
+layout_mode = 2
+alignment = 1
+
+[node name="MarkLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone2/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "·"
+
+[node name="TitleLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone2/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 3
+text = "100"
+
+[node name="Milestone3" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone3"]
+layout_mode = 2
+alignment = 1
+
+[node name="MarkLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone3/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "·"
+
+[node name="TitleLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MilestonesRow/Milestone3/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 7
+autowrap_mode = 3
+text = "S"
+
+[node name="SectionHeaderRecords" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "YOUR RECORDS"
+
+[node name="RecordsList" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="3"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Record0" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record0"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record0/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 3
+text = "Acc"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record0/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="Record1" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record1"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record1/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 3
+text = "Chart"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record1/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="Record2" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record2"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record2/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 3
+text = "FC"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record2/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="Record3" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record3"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record3/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 3
+text = "BPM"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record3/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="Record4" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record4"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record4/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+autowrap_mode = 3
+text = "Dur"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/RecordsList/Record4/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="SectionHeaderStreaks" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="4"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "STREAKS"
+
+[node name="StreaksList" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="5"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="StreakPanel0" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel0"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel0/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "Best win streak"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel0/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="StreakPanel1" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel1"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel1/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "Current win streak"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel1/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="StreakPanel2" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel2"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel2/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "Best login streak"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel2/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="StreakPanel3" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel3"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel3/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "Current login"
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StreaksList/StreakPanel3/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "—"
+
+[node name="TaglineLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="6"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "Keep pushing"

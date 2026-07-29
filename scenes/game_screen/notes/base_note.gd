@@ -13,6 +13,9 @@ var note_type: String = "BaseNote"
 var was_hit: bool = false 
 var is_missed: bool = false
 var lane_palette_color: Color = Color.WHITE
+var display_lane: int = -1
+var memory_hide_at: float = -1.0
+var memory_pattern_first_beat: bool = false
 
 func _init(p_lane: int, p_y: float, p_spawn_time: float = 0.0):
 	lane = p_lane

@@ -1,0 +1,295 @@
+[gd_scene load_steps=3 format=3 uid="uid://marathoncatalog01"]
+
+[ext_resource type="Script" path="res://scenes/marathon/marathon_catalog_screen.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="MarathonCatalogScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="MainVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatButton"
+text = "Back"
+
+[node name="TopMargin" type="MarginContainer" parent="MainVBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+
+[node name="TopVBox" type="VBoxContainer" parent="MainVBox/TopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HeaderCenter" type="CenterContainer" parent="MainVBox/TopMargin/TopVBox"]
+layout_mode = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="MainVBox/TopMargin/TopVBox/HeaderCenter"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TitleLabel" type="Label" parent="MainVBox/TopMargin/TopVBox/HeaderCenter/TitleVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.99, 1)
+theme_override_font_sizes/font_size = 28
+text = "Marathon"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="MainVBox/TopMargin/TopVBox/HeaderCenter/TitleVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.92, 1)
+theme_override_font_sizes/font_size = 14
+text = "Genre playlists from your library"
+horizontal_alignment = 1
+
+[node name="BodyHBox" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="LeftColumn" type="VBoxContainer" parent="MainVBox/BodyHBox"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+theme_override_constants/separation = 8
+
+[node name="CoursesTitle" type="Label" parent="MainVBox/BodyHBox/LeftColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.79, 0.57, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Courses"
+
+[node name="TabRow" type="HBoxContainer" parent="MainVBox/BodyHBox/LeftColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TabAllButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"FlatButton"
+toggle_mode = true
+button_pressed = true
+text = "All"
+
+[node name="TabGenresButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"FlatButton"
+toggle_mode = true
+text = "By genre"
+
+[node name="TabPlaylistsButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"FlatButton"
+toggle_mode = true
+text = "Playlists"
+
+[node name="CoursesScroll" type="ScrollContainer" parent="MainVBox/BodyHBox/LeftColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CoursesListVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/LeftColumn/CoursesScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PlaylistsPlaceholder" type="Label" parent="MainVBox/BodyHBox/LeftColumn"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.88)
+theme_override_font_sizes/font_size = 14
+text = "Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="CenterColumn" type="VBoxContainer" parent="MainVBox/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.35
+theme_override_constants/separation = 10
+
+[node name="StatsRow" type="HBoxContainer" parent="MainVBox/BodyHBox/CenterColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatTracksLabel" type="Label" parent="MainVBox/BodyHBox/CenterColumn/StatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "5 tracks"
+horizontal_alignment = 1
+
+[node name="StatDurationLabel" type="Label" parent="MainVBox/BodyHBox/CenterColumn/StatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "~25 min"
+horizontal_alignment = 1
+
+[node name="StatDifficultyLabel" type="Label" parent="MainVBox/BodyHBox/CenterColumn/StatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.82, 0.86, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "2.0 -> 6.8"
+horizontal_alignment = 1
+
+[node name="SettingsHost" type="VBoxContainer" parent="MainVBox/BodyHBox/CenterColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RightColumn" type="VBoxContainer" parent="MainVBox/BodyHBox"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+theme_override_constants/separation = 12
+
+[node name="HeroPanel" type="PanelContainer" parent="MainVBox/BodyHBox/RightColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HeroRoot" type="Control" parent="MainVBox/BodyHBox/RightColumn/HeroPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HeroCover" type="TextureRect" parent="MainVBox/BodyHBox/RightColumn/HeroPanel/HeroRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HeroOverlay" type="ColorRect" parent="MainVBox/BodyHBox/RightColumn/HeroPanel/HeroRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.06, 0.1, 0.55)
+
+[node name="HeroTextVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/RightColumn/HeroPanel/HeroRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 2
+
+[node name="HeroTitleLabel" type="Label" parent="MainVBox/BodyHBox/RightColumn/HeroPanel/HeroRoot/HeroTextVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.96, 0.92, 1)
+theme_override_font_sizes/font_size = 20
+text = "Course"
+
+[node name="HeroSubtitleLabel" type="Label" parent="MainVBox/BodyHBox/RightColumn/HeroPanel/HeroRoot/HeroTextVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.78, 0.62, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Genre route"
+autowrap_mode = 3
+
+[node name="SummaryTitle" type="Label" parent="MainVBox/BodyHBox/RightColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.79, 0.57, 0.35, 1)
+theme_override_font_sizes/font_size = 15
+text = "Summary"
+
+[node name="SummaryPanel" type="PanelContainer" parent="MainVBox/BodyHBox/RightColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+
+[node name="SummaryScroll" type="ScrollContainer" parent="MainVBox/BodyHBox/RightColumn/SummaryPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SummaryVBox" type="VBoxContainer" parent="MainVBox/BodyHBox/RightColumn/SummaryPanel/SummaryScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="StartButton" type="Button" parent="MainVBox/BodyHBox/RightColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &""
+theme_override_font_sizes/font_size = 18
+metadata/ui_icon_file = "circle-play.svg"
+text = "Start marathon"
+
+[node name="FooterLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "Hint"
+horizontal_alignment = 1

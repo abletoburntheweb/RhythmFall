@@ -1,0 +1,117 @@
+[gd_scene load_steps=3 format=3 uid="uid://cstatusdock01"]
+
+[ext_resource type="Script" path="res://ui/status_dock.gd" id="1_sd"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="StatusDock" type="Control"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -120.0
+offset_right = 560.0
+offset_bottom = -24.0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("1_sd")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="SecondaryPanel" type="PanelContainer" parent="VBox"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Row" type="HBoxContainer" parent="VBox/SecondaryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="VBox/SecondaryPanel/Row"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="VBox/SecondaryPanel/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.88, 0.94, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Статус"
+
+[node name="PrimaryPanel" type="PanelContainer" parent="VBox"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Body" type="VBoxContainer" parent="VBox/PrimaryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="VBox/PrimaryPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="VBox/PrimaryPanel/Body/TopRow"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextCol" type="VBoxContainer" parent="VBox/PrimaryPanel/Body/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="VBox/PrimaryPanel/Body/TopRow/TextCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.99, 1)
+theme_override_font_sizes/font_size = 13
+text = "Заголовок"
+autowrap_mode = 3
+
+[node name="Subtitle" type="Label" parent="VBox/PrimaryPanel/Body/TopRow/TextCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.9, 0.98)
+theme_override_font_sizes/font_size = 11
+text = "Подзаголовок"
+autowrap_mode = 3
+
+[node name="ActionCancel" type="LinkButton" parent="VBox/PrimaryPanel/Body/TopRow"]
+visible = false
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_colors/font_color = Color(0.62, 0.78, 0.96, 1)
+theme_override_font_sizes/font_size = 11
+text = "Space — отмена"
+underline = 1
+
+[node name="ActionRetry" type="LinkButton" parent="VBox/PrimaryPanel/Body/TopRow"]
+visible = false
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_colors/font_color = Color(0.62, 0.78, 0.96, 1)
+theme_override_font_sizes/font_size = 11
+text = "Повторить"
+underline = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="VBox/PrimaryPanel/Body"]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="ClearTimer" type="Timer" parent="."]
+one_shot = true
+
+[connection signal="pressed" from="VBox/PrimaryPanel/Body/TopRow/ActionCancel" to="." method="_on_action_cancel_pressed"]
+[connection signal="pressed" from="VBox/PrimaryPanel/Body/TopRow/ActionRetry" to="." method="_on_action_retry_pressed"]

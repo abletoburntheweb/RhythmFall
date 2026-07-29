@@ -1,0 +1,72 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsharepanel01"]
+
+[ext_resource type="Script" path="res://scenes/profile/share/profile_share_panel.gd" id="1_panel"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.094118, 0.094118, 0.121569, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="ProfileSharePanel" type="PanelContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("1_panel")
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShareTitleLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.823529, 1)
+theme_override_font_sizes/font_size = 15
+text = "Share cards"
+horizontal_alignment = 1
+
+[node name="CardsRow" type="HBoxContainer" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ShareHintLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "1-4 pick card, Enter save, Shift+Enter save all"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+title = "Save card"
+size = Vector2i(640, 420)
+ok_button_text = "Save"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.png ; PNG Images")
+
+[node name="SaveDirDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+title = "Save all cards"
+size = Vector2i(640, 420)
+ok_button_text = "Save"
+file_mode = 2
+access = 2

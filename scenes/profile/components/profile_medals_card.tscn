@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://cprofilemedalcard"]
+
+[ext_resource type="Script" path="res://scenes/profile/components/profile_medals_card.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="TrackMedalsCard" type="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CardTitle" type="Label" parent="ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.780392, 0.352941, 1)
+text = "Собранные медали треков"
+horizontal_alignment = 1
+
+[node name="MedalsGrid" type="GridContainer" parent="ContentVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+columns = 4

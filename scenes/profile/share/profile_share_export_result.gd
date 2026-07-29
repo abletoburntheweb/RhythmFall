@@ -1,0 +1,3 @@
+# scenes/profile/share/profile_share_export_result.gd
+class_name ProfileShareExportResult
+extends AppNoticeOverlay
