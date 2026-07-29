@@ -1,0 +1,163 @@
+[gd_scene load_steps=3 format=3 uid="uid://bgenqareportdlg1"]
+
+[ext_resource type="Script" path="res://scenes/game_screen/generation_quality_report_dialog.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
+
+[node name="GenerationQualityReportDialog" type="Control"]
+z_index = 120
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.03, 0.06, 0.72)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(540, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="VBoxContainer" parent="Center/Card/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 26
+text = "Mark generation issue"
+horizontal_alignment = 1
+
+[node name="MetaLabel" type="Label" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "—"
+autowrap_mode = 3
+
+[node name="DensityLabel" type="Label" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.65, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "—"
+autowrap_mode = 3
+
+[node name="IssueBox" type="VBoxContainer" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OptionsVBox" type="VBoxContainer" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="UntilEndCheck" type="CheckBox" parent="Center/Card/CardMargin/VBox/OptionsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Until end of track"
+
+[node name="LateCheck" type="CheckBox" parent="Center/Card/CardMargin/VBox/OptionsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Noticed late"
+
+[node name="IssueMeasureRow" type="HBoxContainer" parent="Center/Card/CardMargin/VBox/OptionsVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IssueMeasureLabel" type="Label" parent="Center/Card/CardMargin/VBox/OptionsVBox/IssueMeasureRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Problem around measure"
+
+[node name="IssueMeasureSpin" type="SpinBox" parent="Center/Card/CardMargin/VBox/OptionsVBox/IssueMeasureRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 9999.0
+value = 0.0
+
+[node name="CommentRow" type="VBoxContainer" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CommentLabel" type="Label" parent="Center/Card/CardMargin/VBox/CommentRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Comment"
+
+[node name="CommentEdit" type="LineEdit" parent="Center/Card/CardMargin/VBox/CommentRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+placeholder_text = "Optional"
+clear_button_enabled = true
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="Center/Card/CardMargin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Cancel"
+
+[node name="SaveButton" type="Button" parent="Center/Card/CardMargin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(160, 44)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Save"
+
+[node name="HintLabel" type="Label" parent="Center/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.7, 0.88)
+theme_override_font_sizes/font_size = 13
+text = "F10 mark · Shift+F10 end · Esc cancel"
+horizontal_alignment = 1

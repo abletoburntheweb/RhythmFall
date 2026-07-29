@@ -1,0 +1,64 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7kdetailslider"]
+
+[ext_resource type="Script" uid="uid://dgc5s81ffj5uw" path="res://scenes/song_select/run_modifiers/run_modifier_detail_slider.gd" id="1_script"]
+
+[node name="RunModifierDetailSlider" type="VBoxContainer"]
+theme_override_constants/separation = 4
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "Speed"
+autowrap_mode = 3
+
+[node name="ValueRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Slider" type="HSlider" parent="ValueRow"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 25.0
+max_value = 250.0
+step = 5.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="ValueRow"]
+custom_minimum_size = Vector2(108, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.92, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "100%"
+horizontal_alignment = 2
+clip_text = true
+
+[node name="RangeRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="MinLabel" type="Label" parent="RangeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.45, 0.52, 0.62, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "25%"
+
+[node name="MaxLabel" type="Label" parent="RangeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.52, 0.62, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "100%"
+horizontal_alignment = 2
+
+[node name="WindowsCaption" type="Label" parent="."]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.42, 0.92, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 3

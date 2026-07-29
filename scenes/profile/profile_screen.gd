@@ -2,114 +2,100 @@
 class_name ProfileScreen
 extends BaseScreen
 
-const ACHIEVEMENT_CARD_SCENE := preload("res://scenes/achievements/achievement_card.tscn")
-const ACHIEVEMENTS_JSON_PATH := "res://data/achievements_data.json"
-const TimeUtils = preload("res://logic/utils/time_utils.gd")
-const GradeDisplay = preload("res://logic/utils/grade_display.gd")
+const _SpotlightTutorialScene = preload("res://ui/spotlight_tutorial.tscn")
+const UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
+const _UiRoundedClip = preload("res://logic/ui/ui_rounded_clip.gd")
+const _FAVORITE_COVER_RADIUS := 10.0
 
 const _ROOT := "MainVBox/ProfileRoot"
-const _FAVORITE := "%s/FavoriteTrackCard/MarginContainer/HBoxContainer" % _ROOT
-const _HIGHLIGHTS := "%s/HighlightsRow" % _ROOT
-const _LEFT := "%s/BodyRow/LeftStack" % _ROOT
-const _RIGHT := "%s/BodyRow/RightStack" % _ROOT
+const _CATEGORIES_HBOX_PATH := "MainVBox/CategoryRow/CategoryBarPanel/CategoriesHBox"
 
-const _TILE_VALUE_COLORS := {
-	"notes_hit": Color(0.38039216, 0.78039217, 0.7411765),
-	"notes_miss": Color(0.8980392, 0.4509804, 0.4509804),
-	"max_streak": Color(0.9490196, 0.7019608, 0.3529412),
-	"earned": Color(0.38039216, 0.78039217, 0.7411765),
-	"spent": Color(0.8980392, 0.4509804, 0.4509804),
-	"total_score": Color(0.78431374, 0.8235294, 0.9019608),
-}
-
-const _STAT_TILE_SPECS: Array = [
-	["unique_tracks", "Уникальных треков"],
-	["total_score", "Очков всего"],
-	["notes_hit", "Попаданий"],
-	["notes_miss", "Промахов"],
-	["max_streak", "Серия"],
-	["daily_quests", "Квестов"],
-	["member_since", "В игре с"],
-	["earned", "Заработано"],
-	["spent", "Потрачено"],
-]
-
-const _GRADE_TILE_SPECS: Array = [
-	["SS", "SS"],
-	["S", "S"],
-	["A", "A"],
-	["B", "B"],
-]
-
-const _GRADE_VALUE_COLORS := {
-	"SS": Color(0.92, 0.78, 0.42),
-	"S": Color(0.78, 0.82, 0.90),
-	"A": Color(0.62, 0.72, 0.88),
-	"B": Color(0.72, 0.74, 0.82),
-}
-
-const STAT_VALUE_FONT_SIZE := 26
-const STAT_CAPTION_FONT_SIZE := 12
-const STAT_MEMBER_SINCE_FONT_SIZE := 17
-const GRADE_VALUE_FONT_SIZE := 24
-const GRADE_CAPTION_FONT_SIZE := 12
-
-var _stat_tiles: Dictionary = {}
-var _grade_tiles: Dictionary = {}
-var _profile_tiles_ready: bool = false
-var _grades_styled: bool = false
-
-@onready var back_button: Button = get_node_or_null("MainVBox/BackButton") as Button
-@onready var level_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/LevelLabel" % _HIGHLIGHTS) as Label
-@onready var xp_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPLabel" % _HIGHLIGHTS) as Label
-@onready var xp_progress_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressLabel" % _HIGHLIGHTS) as Label
-@onready var xp_progress_bar: ProgressBar = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressBar" % _HIGHLIGHTS) as ProgressBar
-
-@onready var highlight_play_time_value: Label = get_node_or_null("%s/PlayTimeHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
-@onready var highlight_accuracy_value: Label = get_node_or_null("%s/AccuracyHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
-@onready var highlight_levels_value: Label = get_node_or_null("%s/LevelsHighlight/VBox/ValueLabel" % _HIGHLIGHTS) as Label
-
-@onready var accuracy_chart_line: Line2D = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartLine") as Line2D
-@onready var accuracy_chart_points: Control = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground/AccuracyChartPoints") as Control
-@onready var chart_background: ColorRect = get_node_or_null("MainVBox/ChartCard/ChartContainer/ChartBackground") as ColorRect
-@onready var tooltip_label: RichTextLabel = get_node_or_null("MainVBox/ChartCard/ChartContainer/TooltipLabel") as RichTextLabel
-
-@onready var favorite_track_card: PanelContainer = get_node_or_null("%s/FavoriteTrackCard" % _ROOT)
-@onready var favorite_cover_texture_rect: TextureRect = get_node_or_null("%s/FavoriteCoverTextureRect" % _FAVORITE)
-@onready var favorite_title_label: Label = get_node_or_null("%s/InfoVBox/FavoriteTitleLabel" % _FAVORITE)
-@onready var favorite_artist_label: Label = get_node_or_null("%s/InfoVBox/FavoriteArtistLabel" % _FAVORITE)
-@onready var favorite_genre_label: Label = get_node_or_null("%s/InfoVBox/FavoriteGenreLabel" % _FAVORITE)
-
-@onready var achievements_list_vbox: VBoxContainer = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/AchievementsListVBox" % _RIGHT)
-@onready var achievements_empty_label: Label = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/AchievementsListVBox/EmptyLabel" % _RIGHT)
-@onready var achievement_card_template: PanelContainer = get_node_or_null("%s/RecentAchievementsCard/ContentVBox/TemplateAchievementCard/AchievementCard" % _RIGHT)
+var current_profile_category: String = "overview"
+var _profile_initial_refresh_done := false
+var _profile_skip_category_transition := true
+var category_nav: ProfileCategoryNav = null
 
 var session_history_manager = null
 var results_history_service = null
 var achievement_manager: AchievementManager = null
 
-func _play_time_string_to_seconds(time_str: String) -> int:
-	var parts = time_str.split(":")
-	if parts.size() == 2:
-		var hours = parts[0].to_int()
-		var minutes = parts[1].to_int()
-		return (hours * 3600) + (minutes * 60)
-	return 0
+var overview_tab
+var stats_tab
+var genres_tab
+var records_tab
 
-func _format_play_time_ru(time_str: String) -> String:
-	var parts = time_str.split(":")
-	var hours = 0
-	var minutes = 0
-	if parts.size() >= 2:
-		hours = int(parts[0])
-		minutes = int(parts[1])
-	else:
-		var seconds = _play_time_string_to_seconds(time_str)
-		hours = int(seconds / 3600)
-		minutes = int((seconds % 3600) / 60)
-	return "%02dч:%02dм" % [hours, minutes]
+var _share_recap_loading := false
+var _spotlight_tutorial: CanvasLayer = null
+var _refresh_stats_scheduled := false
+var _pending_records_section_id := ""
+var _applying_locale := false
+var _initial_profile_refresh_running := false
 
-func _ready():
+@onready var back_button: Button = get_node_or_null("MainVBox/BackButton") as Button
+@onready var title_label: Label = get_node_or_null("MainVBox/TitleRow/TitleLabel") as Label
+@onready var subtitle_label: Label = get_node_or_null("MainVBox/TitleRow/SubtitleLabel") as Label
+@onready var share_cards_button: Button = get_node_or_null("%ShareCardsButton") as Button
+@onready var footer_label: Label = get_node_or_null("MainVBox/FooterLabel") as Label
+@onready var _share_modal: ProfileShareModal = get_node_or_null("ProfileShareModal") as ProfileShareModal
+@onready var profile_root: Control = get_node_or_null(_ROOT) as Control
+@onready var category_bar_panel: PanelContainer = get_node_or_null(
+	"MainVBox/CategoryRow/CategoryBarPanel"
+) as PanelContainer
+
+
+func apply_locale() -> void:
+	if _applying_locale:
+		return
+	_applying_locale = true
+	if back_button:
+		back_button.text = tr("BTN_BACK")
+	if title_label:
+		title_label.text = tr("PROFILE_TITLE")
+		title_label.add_theme_color_override("font_color", Color(0.78, 0.86, 0.98, 1.0))
+		title_label.add_theme_font_size_override("font_size", 34)
+	if subtitle_label:
+		subtitle_label.text = tr("PROFILE_SUBTITLE")
+		subtitle_label.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.9))
+		subtitle_label.add_theme_font_size_override("font_size", 15)
+	if share_cards_button:
+		share_cards_button.text = tr("PROFILE_SHARE_OPEN_BUTTON")
+		share_cards_button.set_meta("ui_icon_file", "file-chart-column.svg")
+		UiIconHelper.apply_icon_from_meta(share_cards_button, 18)
+		call_deferred("_balance_category_export_row")
+	if footer_label:
+		footer_label.text = tr("PROFILE_FOOTER_HINT")
+	if category_nav:
+		category_nav.apply_button_labels()
+	if _profile_initial_refresh_done and not _initial_profile_refresh_running:
+		_apply_profile_category_visibility(current_profile_category)
+	if overview_tab and overview_tab.has_method("apply_locale"):
+		overview_tab.apply_locale()
+	if stats_tab and stats_tab.has_method("apply_locale"):
+		stats_tab.apply_locale()
+	if genres_tab and genres_tab.has_method("apply_locale"):
+		genres_tab.apply_locale()
+	_applying_locale = false
+
+
+func _ready() -> void:
+	overview_tab = get_node_or_null("%s/OverviewPanel" % _ROOT)
+	stats_tab = get_node_or_null("%s/StatsPanel" % _ROOT)
+	genres_tab = get_node_or_null("%s/GenresPanel" % _ROOT)
+	records_tab = get_node_or_null("%s/RecordsPanel" % _ROOT)
+	var favorite_cover := get_node_or_null(
+		"%s/OverviewPanel/FavoriteTrackCard/MarginContainer/HBoxContainer/FavoriteCoverTextureRect" % _ROOT
+	) as TextureRect
+	if favorite_cover:
+		_UiRoundedClip.apply_to_canvas_item(favorite_cover, _FAVORITE_COVER_RADIUS)
+	if overview_tab and overview_tab.has_method("bind"):
+		overview_tab.bind(self)
+	if stats_tab and stats_tab.has_method("bind"):
+		stats_tab.bind(self)
+	if genres_tab and genres_tab.has_method("bind"):
+		genres_tab.bind(self)
+	if records_tab and records_tab.has_method("bind"):
+		records_tab.bind(self)
+
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var trans = game_engine.get_transitions()
@@ -127,536 +113,466 @@ func _ready():
 
 		PlayerDataManager.total_play_time_changed.connect(_on_total_play_time_changed)
 		PlayerDataManager.daily_quests_updated.connect(_on_daily_quests_updated)
+		if PlayerDataManager.has_signal("calendar_day_changed"):
+			PlayerDataManager.calendar_day_changed.connect(_on_calendar_day_changed)
 		if PlayerDataManager.has_signal("profile_statistics_reset"):
-			PlayerDataManager.profile_statistics_reset.connect(func(): refresh_stats())
-		if chart_background:
-			chart_background.resized.connect(_on_chart_background_resized)
+			if not PlayerDataManager.profile_statistics_reset.is_connected(_on_profile_statistics_reset):
+				PlayerDataManager.profile_statistics_reset.connect(_on_profile_statistics_reset)
 	else:
 		printerr("ProfileScreen.gd: Не удалось получить transitions через GameEngine.")
 
-	_setup_profile_tiles()
-	_setup_grade_tiles()
-	refresh_stats()
+	if overview_tab and overview_tab.has_method("setup"):
+		overview_tab.setup()
+	if stats_tab and stats_tab.has_method("setup"):
+		stats_tab.setup()
+
+	category_nav = ProfileCategoryNav.new()
+	category_nav.name = "CategoryNav"
+	category_nav.initialize(self)
+	category_nav.skip_transition = _profile_skip_category_transition
+	add_child(category_nav)
+
+	_restore_profile_category_from_settings()
+	_migrate_legacy_profile_layout()
+	category_nav.ensure_records_button()
+	_setup_profile_categories()
+
+	if share_cards_button and not share_cards_button.pressed.is_connected(_on_share_cards_pressed):
+		share_cards_button.pressed.connect(_on_share_cards_pressed)
+		call_deferred("_balance_category_export_row")
+	if _share_modal and not _share_modal.closed.is_connected(_on_share_modal_closed):
+		_share_modal.closed.connect(_on_share_modal_closed)
+	var category_row := get_node_or_null("MainVBox/CategoryRow") as Control
+	if category_row and not category_row.resized.is_connected(_balance_category_export_row):
+		category_row.resized.connect(_balance_category_export_row)
+
+	call_deferred("_initial_profile_refresh")
 
 	if back_button == null:
 		printerr("ProfileScreen: Кнопка back_button не найдена!")
 
-func _on_total_play_time_changed(new_time: String):
-	_update_highlight_tiles()
 
-func setup_session_history_manager(session_history_mgr):
+func get_total_rr_earned() -> int:
+	if ProfileMilestonesManager:
+		return ProfileMilestonesManager.get_total_rr_earned()
+	return 0
+
+
+func with_profile_loading(action: Callable) -> void:
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_PROFILE"), true)
+	await get_tree().process_frame
+	await action.call()
+	if overlay:
+		overlay.hide_loading()
+
+
+func setup_session_history_manager(session_history_mgr) -> void:
 	session_history_manager = session_history_mgr
 	results_history_service = session_history_mgr
+	if _profile_initial_refresh_done and not _initial_profile_refresh_running:
+		refresh_stats()
+
+
+func refresh_stats() -> void:
+	if _refresh_stats_scheduled:
+		return
+	_refresh_stats_scheduled = true
+	call_deferred("_run_refresh_stats")
+
+
+func _run_refresh_stats() -> void:
+	_refresh_stats_scheduled = false
+	if overview_tab and overview_tab.has_method("refresh_fast"):
+		overview_tab.refresh_fast()
+	if stats_tab and stats_tab.has_method("refresh_fast"):
+		stats_tab.refresh_fast()
+	if genres_tab and genres_tab.has_method("refresh_if_visible"):
+		genres_tab.refresh_if_visible()
+	if _initial_profile_refresh_running or not _profile_initial_refresh_done:
+		if achievement_manager:
+			achievement_manager.check_rr_mastery_achievements()
+		return
+	if current_profile_category == "overview" and overview_tab and overview_tab.has_method("schedule_heavy_refresh"):
+		overview_tab.schedule_heavy_refresh()
+	elif current_profile_category == "stats" and stats_tab and stats_tab.has_method("request_chart_update"):
+		stats_tab.request_chart_update()
+	elif current_profile_category == "records" and records_tab and records_tab.has_method("is_built"):
+		if records_tab.is_built():
+			call_deferred("_refresh_records_panel")
+	if achievement_manager:
+		achievement_manager.check_rr_mastery_achievements()
+
+
+func on_category_nav_changed(category: String) -> void:
+	current_profile_category = category
+	_apply_profile_category_visibility(category)
+	if category == "stats" and stats_tab and stats_tab.has_method("on_tab_shown"):
+		stats_tab.on_tab_shown()
+
+
+func _on_profile_category_selected(category: String) -> void:
+	if category_nav:
+		category_nav.select(category)
+
+
+func _initial_profile_refresh() -> void:
+	_initial_profile_refresh_running = true
+	await with_profile_loading(_run_initial_profile_data_refresh)
+	_initial_profile_refresh_running = false
+	_profile_initial_refresh_done = true
+	_profile_skip_category_transition = false
+	call_deferred("_maybe_show_profile_tutorial")
+
+
+func _run_initial_profile_data_refresh() -> void:
+	refresh_stats()
+	await get_tree().process_frame
+	match current_profile_category:
+		"overview":
+			if overview_tab and overview_tab.has_method("refresh_content_async"):
+				await overview_tab.refresh_content_async()
+		"stats":
+			if stats_tab and stats_tab.has_method("update_session_chart"):
+				stats_tab.update_session_chart()
+			await get_tree().process_frame
+		"records":
+			if records_tab and records_tab.has_method("rebuild_async"):
+				await records_tab.rebuild_async()
+		"genres":
+			if genres_tab and genres_tab.has_method("rebuild_async"):
+				await genres_tab.rebuild_async()
+
+
+func _on_total_play_time_changed(_new_time: String) -> void:
+	if overview_tab and overview_tab.has_method("on_play_time_changed"):
+		overview_tab.on_play_time_changed()
+
+
+func _on_daily_quests_updated() -> void:
+	if stats_tab and stats_tab.has_method("on_daily_quests_updated"):
+		stats_tab.on_daily_quests_updated()
+
+
+func _on_calendar_day_changed(_new_date: String) -> void:
+	if overview_tab and overview_tab.has_method("on_calendar_day_changed"):
+		overview_tab.on_calendar_day_changed()
+
+
+func _on_profile_statistics_reset() -> void:
+	ProfileShareSnapshot.invalidate_cache()
 	refresh_stats()
 
-func _setup_profile_tiles() -> void:
-	if _profile_tiles_ready:
+
+func _restore_profile_category_from_settings() -> void:
+	category_nav.restore_from_settings()
+	current_profile_category = category_nav.current_category
+
+
+func _migrate_legacy_profile_layout() -> void:
+	var hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as HBoxContainer
+	if hbox:
+		var medals_btn := hbox.get_node_or_null("CategoryButtonMedals") as Button
+		if medals_btn:
+			hbox.remove_child(medals_btn)
+			medals_btn.queue_free()
+
+	if current_profile_category == "medals":
+		current_profile_category = "overview"
+
+	if overview_tab and overview_tab.has_method("migrate_legacy_layout"):
+		overview_tab.migrate_legacy_layout()
+
+
+func _setup_profile_categories() -> void:
+	category_nav.current_category = current_profile_category
+	category_nav.setup()
+	_apply_profile_category_visibility(current_profile_category)
+	if current_profile_category == "stats" and stats_tab and stats_tab.has_method("on_tab_shown"):
+		stats_tab.call_deferred("on_tab_shown")
+
+
+func _apply_profile_category_visibility(category: String) -> void:
+	if overview_tab:
+		overview_tab.visible = category == "overview"
+	if stats_tab:
+		stats_tab.visible = category == "stats"
+	if genres_tab:
+		genres_tab.visible = category == "genres"
+	if records_tab:
+		records_tab.visible = category == "records"
+	if not _profile_initial_refresh_done or _initial_profile_refresh_running:
 		return
-	_profile_tiles_ready = true
-
-	var content := get_node_or_null("%s/GeneralStatsCard/ContentVBox" % _LEFT) as VBoxContainer
-	if content == null:
-		return
-
-	if content.get_node_or_null("StatsGrid"):
-		return
-
-	var grid := GridContainer.new()
-	grid.name = "StatsGrid"
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	for spec in _STAT_TILE_SPECS:
-		grid.add_child(_create_stat_tile(str(spec[0]), str(spec[1])))
-
-	content.add_child(grid)
-
-func _create_stat_tile(tile_key: String, caption: String) -> PanelContainer:
-	var tile_style := StyleBoxFlat.new()
-	tile_style.bg_color = Color(0.094118, 0.094118, 0.121569, 1)
-	tile_style.border_color = Color(1, 1, 1, 0.08)
-	tile_style.set_border_width_all(1)
-	tile_style.set_corner_radius_all(8)
-	tile_style.content_margin_left = 10.0
-	tile_style.content_margin_top = 8.0
-	tile_style.content_margin_right = 10.0
-	tile_style.content_margin_bottom = 8.0
-
-	var tile := PanelContainer.new()
-	tile.name = "%sTile" % tile_key
-	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tile.custom_minimum_size = Vector2(0, 80)
-	tile.add_theme_stylebox_override("panel", tile_style)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 2)
-	tile.add_child(vbox)
-
-	var value_label := Label.new()
-	value_label.text = "—"
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var value_font_size := STAT_MEMBER_SINCE_FONT_SIZE if tile_key == "member_since" else STAT_VALUE_FONT_SIZE
-	value_label.add_theme_font_size_override("font_size", value_font_size)
-	var value_color: Color = _TILE_VALUE_COLORS.get(tile_key, Color(0.95, 0.95, 0.97))
-	value_label.add_theme_color_override("font_color", value_color)
-	vbox.add_child(value_label)
-
-	var caption_label := Label.new()
-	caption_label.text = caption
-	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	caption_label.add_theme_font_size_override("font_size", STAT_CAPTION_FONT_SIZE)
-	caption_label.add_theme_color_override("font_color", Color(0.654902, 0.654902, 0.678431))
-	vbox.add_child(caption_label)
-
-	_stat_tiles[tile_key] = value_label
-	return tile
-
-func _setup_grade_tiles() -> void:
-	if _grades_styled:
-		return
-	_grades_styled = true
-
-	var grades_hbox := get_node_or_null("%s/GradesCard/MainVBox/ContentHBox" % _RIGHT) as HBoxContainer
-	if grades_hbox == null:
-		return
-
-	grades_hbox.add_theme_constant_override("separation", 8)
-	for child in grades_hbox.get_children():
-		child.queue_free()
-
-	for spec in _GRADE_TILE_SPECS:
-		grades_hbox.add_child(_create_grade_tile(str(spec[0]), str(spec[1])))
-
-func _create_grade_tile(tile_key: String, caption: String) -> PanelContainer:
-	var tile_style := StyleBoxFlat.new()
-	tile_style.bg_color = Color(0.094118, 0.094118, 0.121569, 1)
-	tile_style.border_color = Color(1, 1, 1, 0.08)
-	tile_style.set_border_width_all(1)
-	tile_style.set_corner_radius_all(8)
-	tile_style.content_margin_left = 10.0
-	tile_style.content_margin_top = 8.0
-	tile_style.content_margin_right = 10.0
-	tile_style.content_margin_bottom = 8.0
-
-	var tile := PanelContainer.new()
-	tile.name = "%sGradeTile" % tile_key
-	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tile.custom_minimum_size = Vector2(0, 72)
-	tile.add_theme_stylebox_override("panel", tile_style)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 2)
-	tile.add_child(vbox)
-
-	var value_label := Label.new()
-	value_label.text = "0"
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	value_label.add_theme_font_size_override("font_size", GRADE_VALUE_FONT_SIZE)
-	var value_color: Color = _GRADE_VALUE_COLORS.get(tile_key, Color(0.95, 0.95, 0.97))
-	value_label.add_theme_color_override("font_color", value_color)
-	vbox.add_child(value_label)
-
-	var caption_label := Label.new()
-	caption_label.text = caption
-	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption_label.add_theme_font_size_override("font_size", GRADE_CAPTION_FONT_SIZE)
-	caption_label.add_theme_color_override("font_color", Color(0.654902, 0.654902, 0.678431))
-	vbox.add_child(caption_label)
-
-	_grade_tiles[tile_key] = value_label
-	return tile
-
-func _set_grade_tile(key: String, value: int) -> void:
-	if _grade_tiles.has(key):
-		(_grade_tiles[key] as Label).text = str(value)
-
-func _set_stat_tile(key: String, value: String) -> void:
-	if _stat_tiles.has(key):
-		(_stat_tiles[key] as Label).text = value
-
-func refresh_stats():
-	var favorite_track_path = PlayerDataManager.data.get("favorite_track", "")
-	var favorite_track_count = PlayerDataManager.data.get("favorite_track_play_count", 0)
-	if favorite_track_path == "" or favorite_track_count == 0:
-		favorite_track_path = TrackStatsManager.get_favorite_track()
-		favorite_track_count = TrackStatsManager.get_favorite_track_count()
-
-	if favorite_track_card:
-		var title_text = "Н/Д"
-		var artist_text = "Н/Д"
-		var cover_texture = null
-		if favorite_track_path != "":
-			favorite_track_path = favorite_track_path.replace("\\", "/").trim_suffix("/")
-			var basic_md = _read_basic_metadata(favorite_track_path)
-			title_text = str(basic_md.get("title", title_text))
-			artist_text = str(basic_md.get("artist", artist_text))
-			cover_texture = basic_md.get("cover", null)
-			var user_md = SongLibrary.get_metadata_for_song(favorite_track_path)
-			if user_md and typeof(user_md) == TYPE_DICTIONARY:
-				title_text = str(user_md.get("title", title_text))
-				artist_text = str(user_md.get("artist", artist_text))
-		if favorite_cover_texture_rect:
-			if cover_texture and cover_texture is ImageTexture:
-				favorite_cover_texture_rect.texture = cover_texture
+	if category == "stats" and stats_tab and stats_tab.has_method("request_chart_update"):
+		stats_tab.request_chart_update()
+	if category == "records" and _profile_initial_refresh_done:
+		if records_tab and records_tab.has_method("is_built") and not records_tab.is_built():
+			call_deferred("_refresh_records_panel")
+	if category == "genres" and _profile_initial_refresh_done:
+		if genres_tab:
+			var panel = genres_tab.get_genres_panel() if genres_tab.has_method("get_genres_panel") else null
+			if panel and panel.is_built():
+				panel.refresh_catalog_only()
 			else:
-				var file_cover = _get_cover_from_file(favorite_track_path)
-				if file_cover:
-					favorite_cover_texture_rect.texture = file_cover
-				else:
-					var fallback_texture = _get_fallback_cover_texture()
-					if fallback_texture:
-						favorite_cover_texture_rect.texture = fallback_texture
-		if favorite_title_label:
-			favorite_title_label.text = title_text
-		if favorite_artist_label:
-			favorite_artist_label.text = artist_text
-		if favorite_genre_label:
-			var fav_genre = str(PlayerDataManager.data.get("favorite_genre", "unknown"))
-			if fav_genre == "unknown" or fav_genre == "":
-				fav_genre = TrackStatsManager.get_favorite_genre()
-			if fav_genre == "unknown" or fav_genre == "":
-				fav_genre = "Н/Д"
-			favorite_genre_label.text = "Любимый жанр: %s" % fav_genre
+				call_deferred("_refresh_genres_panel")
+	if category == "overview" and _profile_initial_refresh_done and overview_tab and overview_tab.has_method("schedule_heavy_refresh"):
+		call_deferred("_schedule_overview_heavy_refresh")
 
-	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
-	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
-	var total_notes_played = total_notes_hit + total_notes_missed
-	var overall_accuracy = 0.0
-	if total_notes_played > 0:
-		overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
-	elif results_history_service:
-		var hist = results_history_service.get_history()
-		if hist.size() > 0:
-			var sum_acc = 0.0
-			for item in hist:
-				sum_acc += float(item.get("accuracy", 0.0))
-			overall_accuracy = sum_acc / float(hist.size())
 
-	var max_streak = PlayerDataManager.data.get("max_combo_ever", 0)
-	var total_score = PlayerDataManager.data.get("total_score_ever", 0)
-
-	_set_stat_tile("unique_tracks", str(PlayerDataManager.get_unique_levels_completed()))
-	_set_stat_tile("total_score", str(total_score))
-	_set_stat_tile("notes_hit", str(total_notes_hit))
-	_set_stat_tile("notes_miss", str(total_notes_missed))
-	_set_stat_tile("max_streak", str(max_streak))
-	_set_stat_tile("daily_quests", str(PlayerDataManager.get_daily_quests_completed_total()))
-	_set_stat_tile("member_since", TimeUtils.format_iso_date_ru(str(PlayerDataManager.data.get("profile_created_date", ""))))
-	_set_stat_tile("earned", str(PlayerDataManager.data.get("total_earned_currency", 0)))
-	_set_stat_tile("spent", str(PlayerDataManager.data.get("spent_currency", 0)))
-
-	var grades = PlayerDataManager.data.get("grades", {})
-	_set_grade_tile("SS", int(grades.get("SS", 0)))
-	_set_grade_tile("S", int(grades.get("S", 0)))
-	_set_grade_tile("A", int(grades.get("A", 0)))
-	_set_grade_tile("B", int(grades.get("B", 0)))
-
-	if level_label:
-		level_label.text = "Уровень: %d" % PlayerDataManager.get_current_level()
-	if xp_label:
-		xp_label.text = "XP: %s" % PlayerDataManager.get_xp_progress_text()
-	if xp_progress_label:
-		var progress_percent = PlayerDataManager.get_xp_progress() * 100.0
-		xp_progress_label.text = "Прогресс: %.1f%%" % progress_percent
-	if xp_progress_bar:
-		xp_progress_bar.value = PlayerDataManager.get_xp_progress()
-
-	_update_highlight_tiles(overall_accuracy)
-
-	if results_history_service:
-		_update_accuracy_chart()
-	_update_recent_achievements()
-
-func _update_highlight_tiles(overall_accuracy: float = -1.0) -> void:
-	if overall_accuracy < 0.0:
-		var total_notes_hit = PlayerDataManager.get_total_notes_hit()
-		var total_notes_missed = PlayerDataManager.get_total_notes_missed()
-		var total_notes_played = total_notes_hit + total_notes_missed
-		if total_notes_played > 0:
-			overall_accuracy = (float(total_notes_hit) / float(total_notes_played)) * 100.0
-		elif results_history_service:
-			var hist = results_history_service.get_history()
-			if hist.size() > 0:
-				var sum_acc = 0.0
-				for item in hist:
-					sum_acc += float(item.get("accuracy", 0.0))
-				overall_accuracy = sum_acc / float(hist.size())
-			else:
-				overall_accuracy = 0.0
-		else:
-			overall_accuracy = 0.0
-
-	if highlight_play_time_value:
-		highlight_play_time_value.text = _format_play_time_ru(PlayerDataManager.get_total_play_time_formatted())
-	if highlight_accuracy_value:
-		highlight_accuracy_value.text = "%.1f%%" % overall_accuracy
-	if highlight_levels_value:
-		highlight_levels_value.text = str(PlayerDataManager.get_levels_completed())
-
-func _on_daily_quests_updated():
-	_set_stat_tile("daily_quests", str(PlayerDataManager.get_daily_quests_completed_total()))
-
-func _read_basic_metadata(filepath: String) -> Dictionary:
-	var result = {
-		"title": filepath.get_file().get_basename(),
-		"artist": "Неизвестен",
-		"cover": null
-	}
-	var ext = filepath.get_extension().to_lower()
-	var global_path = ProjectSettings.globalize_path(filepath)
-	if FileAccess.file_exists(global_path):
-		var f = FileAccess.open(global_path, FileAccess.READ)
-		if f:
-			var data = f.get_buffer(f.get_length())
-			f.close()
-			var md = MusicMetadata.new()
-			md.set_from_data(data)
-			if md.title != "":
-				result["title"] = md.title
-			if md.artist != "":
-				result["artist"] = md.artist
-			result["cover"] = md.cover
-	if ext == "wav":
-		if result["title"] == filepath.get_file().get_basename():
-			var stem = filepath.get_file().get_basename()
-			if " - " in stem:
-				var parts = stem.split(" - ", false, 1)
-				if parts.size() == 2:
-					result["artist"] = parts[0].strip_edges()
-					result["title"] = parts[1].strip_edges()
-	return result
-
-func _get_cover_from_file(filepath: String):
-	if filepath == "":
-		return null
-	var ext = filepath.get_extension().to_lower()
-	if ext != "mp3" and ext != "wav":
-		return null
-	var global_path = ProjectSettings.globalize_path(filepath)
-	if not FileAccess.file_exists(global_path):
-		return null
-	var file_access = FileAccess.open(global_path, FileAccess.READ)
-	if not file_access:
-		return null
-	var file_data = file_access.get_buffer(file_access.get_length())
-	file_access.close()
-	var md = MusicMetadata.new()
-	md.set_from_data(file_data)
-	return md.cover
-
-func _get_fallback_cover_texture():
-	var active_cover_item_id = PlayerDataManager.get_active_item("Covers")
-	var folder_name_map = {
-		"covers_default": "default_covers"
-	}
-	var folder_name = folder_name_map.get(active_cover_item_id, active_cover_item_id.replace("covers_", ""))
-	var rng = RandomNumberGenerator.new()
-	rng.randomize()
-	var random_index = rng.randi_range(1, 7)
-	var fallback_cover_filename = "cover%d.png" % random_index
-	var fallback_cover_path = "res://assets/shop/covers/%s/%s" % [folder_name, fallback_cover_filename]
-	if FileAccess.file_exists(fallback_cover_path):
-		var image = Image.new()
-		var error = image.load(fallback_cover_path)
-		if error == OK:
-			var texture = ImageTexture.create_from_image(image)
-			if texture:
-				return texture
+func open_records_section(section_id: String = "") -> void:
+	_pending_records_section_id = str(section_id).strip_edges()
+	if category_nav:
+		category_nav.select("records", false)
 	else:
-		var fallback_fallback_path = "res://assets/shop/covers/%s/cover1.png" % folder_name
-		if fallback_cover_path != fallback_fallback_path and FileAccess.file_exists(fallback_fallback_path):
-			var image_ff = Image.new()
-			var error_ff = image_ff.load(fallback_fallback_path)
-			if error_ff == OK:
-				var texture_ff = ImageTexture.create_from_image(image_ff)
-				if texture_ff:
-					return texture_ff
-	return null
+		current_profile_category = "records"
+		_apply_profile_category_visibility("records")
+	call_deferred("_focus_pending_records_section")
 
-func _update_recent_achievements():
-	if achievements_list_vbox == null:
+
+func _focus_pending_records_section() -> void:
+	var section_id := _pending_records_section_id
+	_pending_records_section_id = ""
+	if records_tab and records_tab.has_method("focus_section"):
+		if not records_tab.is_built():
+			await records_tab.rebuild_async()
+		if section_id != "":
+			records_tab.focus_section(section_id)
+
+
+func _schedule_overview_heavy_refresh() -> void:
+	if overview_tab and overview_tab.has_method("schedule_heavy_refresh"):
+		overview_tab.schedule_heavy_refresh()
+
+
+func _refresh_genres_panel() -> void:
+	if genres_tab and genres_tab.has_method("refresh_panel"):
+		genres_tab.refresh_panel()
+
+
+func _refresh_records_panel() -> void:
+	if records_tab and records_tab.has_method("refresh_panel"):
+		records_tab.refresh_panel()
+
+
+func _maybe_show_profile_tutorial(force: bool = false) -> void:
+	if not SettingsManager or not SettingsManager.has_method("get_tutorial_profile_done"):
 		return
-	for child in achievements_list_vbox.get_children():
-		achievements_list_vbox.remove_child(child)
-		child.queue_free()
-	var file = null
-	var user_path = "user://achievements_data.json"
-	if FileAccess.file_exists(user_path):
-		file = FileAccess.open(user_path, FileAccess.READ)
-	if not file:
-		if achievements_empty_label:
-			achievements_empty_label.visible = true
+	if not force and SettingsManager.get_tutorial_profile_done():
 		return
-	var json_text = file.get_as_text()
-	file.close()
-	var parsed = JSON.parse_string(json_text)
-	if not parsed or not parsed.has("achievements") or not (parsed.achievements is Array):
-		if achievements_empty_label:
-			achievements_empty_label.visible = true
+	_run_profile_tutorial(force)
+
+
+func _run_profile_tutorial(force: bool) -> void:
+	if not force and SettingsManager and SettingsManager.get_tutorial_profile_done():
 		return
-	var unlocked_list: Array[Dictionary] = []
-	for item in parsed.achievements:
-		if item is Dictionary and item.get("unlocked", false) and item.get("unlock_date", null) != null:
-			unlocked_list.append(item)
-	unlocked_list.sort_custom(Callable(self, "_sort_by_unlock_date_desc"))
-	var to_display = unlocked_list.slice(0, min(3, unlocked_list.size()))
-	if achievements_empty_label:
-		achievements_empty_label.visible = to_display.size() == 0
-	for ach in to_display:
-		var card: PanelContainer = null
-		if achievement_card_template:
-			card = achievement_card_template.duplicate(
-				Node.DUPLICATE_SCRIPTS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SIGNALS
-			)
-			card.visible = true
-		else:
-			card = ACHIEVEMENT_CARD_SCENE.instantiate()
-		achievements_list_vbox.add_child(card)
-		card.apply_achievement(ach, achievement_manager)
+	if current_profile_category != "overview":
+		current_profile_category = "overview"
+		category_nav.update_buttons("overview")
+		_apply_profile_category_visibility("overview")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if _spotlight_tutorial == null:
+		_spotlight_tutorial = _SpotlightTutorialScene.instantiate() as CanvasLayer
+		if _spotlight_tutorial == null:
+			return
+		add_child(_spotlight_tutorial)
+		if not _spotlight_tutorial.finished.is_connected(_on_profile_tutorial_closed):
+			_spotlight_tutorial.finished.connect(_on_profile_tutorial_closed)
+		if not _spotlight_tutorial.skipped.is_connected(_on_profile_tutorial_closed):
+			_spotlight_tutorial.skipped.connect(_on_profile_tutorial_closed)
+		if _spotlight_tutorial.has_signal("step_shown") and not _spotlight_tutorial.step_shown.is_connected(_on_profile_tutorial_step_shown):
+			_spotlight_tutorial.step_shown.connect(_on_profile_tutorial_step_shown)
+	var category_hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as Control
+	var overview_btn := category_nav.get_category_button("overview")
+	var chart_card: Control = null
+	var chart_metric_accuracy: Button = null
+	var genres_panel_node: Node = null
+	var records_content: VBoxContainer = null
+	if stats_tab and stats_tab.has_method("get_chart_card"):
+		chart_card = stats_tab.get_chart_card()
+	if stats_tab and stats_tab.has_method("get_chart_metric_button"):
+		chart_metric_accuracy = stats_tab.get_chart_metric_button("accuracy")
+	if genres_tab and genres_tab.has_method("get_genres_panel"):
+		genres_panel_node = genres_tab.get_genres_panel()
+	elif genres_tab:
+		genres_panel_node = genres_tab
+	if records_tab and records_tab.has_method("get_content_vbox"):
+		records_content = records_tab.get_content_vbox()
+	elif records_tab:
+		records_content = records_tab as VBoxContainer
+	var steps: Array = [
+		{
+			"title_key": "TUTORIAL_PRO_1_TITLE",
+			"body_key": "TUTORIAL_PRO_1_BODY",
+			"target": overview_tab if overview_tab else overview_btn,
+		},
+		{
+			"title_key": "TUTORIAL_PRO_2_TITLE",
+			"body_key": "TUTORIAL_PRO_2_BODY",
+			"target": chart_card if chart_card else chart_metric_accuracy,
+		},
+		{
+			"title_key": "TUTORIAL_PRO_3_TITLE",
+			"body_key": "TUTORIAL_PRO_3_BODY",
+			"target": genres_panel_node if genres_panel_node else genres_tab,
+		},
+		{
+			"title_key": "TUTORIAL_PRO_4_TITLE",
+			"body_key": "TUTORIAL_PRO_4_BODY",
+			"target": records_content if records_content else records_tab,
+		},
+		{
+			"title_key": "TUTORIAL_PRO_5_TITLE",
+			"body_key": "TUTORIAL_PRO_5_BODY",
+			"target": share_cards_button,
+		},
+	]
+	if category_hbox:
+		steps.insert(0, {
+			"title_key": "TUTORIAL_PRO_0_TITLE",
+			"body_key": "TUTORIAL_PRO_0_BODY",
+			"target": category_hbox,
+		})
+	if _spotlight_tutorial.has_method("start"):
+		_spotlight_tutorial.start(steps)
 
-func _sort_by_unlock_date_desc(a: Dictionary, b: Dictionary) -> bool:
-	var ka = TimeUtils.unlock_date_key(str(a.get("unlock_date", "")))
-	var kb = TimeUtils.unlock_date_key(str(b.get("unlock_date", "")))
-	if ka[0] != kb[0]:
-		return ka[0] > kb[0]
-	if ka[1] != kb[1]:
-		return ka[1] > kb[1]
-	if ka[2] != kb[2]:
-		return ka[2] > kb[2]
-	if ka[3] != kb[3]:
-		return ka[3] > kb[3]
-	return ka[4] > kb[4]
 
-func _load_achievement_icon(ach: Dictionary) -> ImageTexture:
-	var category = str(ach.get("category", ""))
-	var AchievementsUtils = preload("res://logic/utils/achievements_utils.gd")
-	var fallback_path = AchievementsUtils.icon_path_for_category(category)
-	if FileAccess.file_exists(fallback_path):
-		var loaded_default_resource = ResourceLoader.load(fallback_path, "ImageTexture", ResourceLoader.CACHE_MODE_IGNORE)
-		if loaded_default_resource and loaded_default_resource is ImageTexture:
-			return loaded_default_resource
-		var image2 = Image.new()
-		var err2 = image2.load(fallback_path)
-		if err2 == OK:
-			return ImageTexture.create_from_image(image2)
-	var dummy_image = Image.create(1, 1, false, Image.FORMAT_RGBA8)
-	dummy_image.set_pixel(0, 0, Color.WHITE)
-	return ImageTexture.create_from_image(dummy_image)
-
-func _update_accuracy_chart():
-	if accuracy_chart_line == null or accuracy_chart_points == null or chart_background == null:
+func _switch_profile_category_for_tutorial(category: String) -> void:
+	if not category_nav.is_valid_category(category):
 		return
-	if results_history_service == null:
-		printerr("ProfileScreen: ResultsHistoryService не установлен!")
-		if accuracy_chart_line:
-			accuracy_chart_line.points = []
-		if accuracy_chart_points:
-			for child in accuracy_chart_points.get_children():
-				child.queue_free()
-		if tooltip_label:
-			tooltip_label.visible = false
+	if current_profile_category == category:
 		return
+	current_profile_category = category
+	category_nav.update_buttons(category)
+	_apply_profile_category_visibility(category)
+	if category == "stats" and stats_tab and stats_tab.has_method("request_chart_update"):
+		stats_tab.request_chart_update()
+	elif category == "genres" and genres_tab and genres_tab.has_method("refresh_if_visible"):
+		genres_tab.refresh_if_visible()
 
-	var history = results_history_service.get_history()
-	if history.size() == 0:
-		if accuracy_chart_line:
-			accuracy_chart_line.points = []
-		if accuracy_chart_points:
-			for child in accuracy_chart_points.get_children():
-				child.queue_free()
-		if tooltip_label:
-			tooltip_label.visible = false
+
+func _on_profile_tutorial_step_shown(step_index: int) -> void:
+	var categories := ["overview", "stats", "genres", "records", "records"]
+	var category_hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as Control
+	var offset := 1 if category_hbox else 0
+	if step_index < offset:
 		return
-
-	if chart_background.size.x <= 0 or chart_background.size.y <= 0:
-		call_deferred("_update_accuracy_chart")
+	var category_index := step_index - offset
+	if category_index < 0 or category_index >= categories.size():
 		return
+	_switch_profile_category_for_tutorial(categories[category_index])
 
-	for child in accuracy_chart_points.get_children():
-		if child.has_signal("point_hovered"):
-			child.point_hovered.disconnect(_on_point_hovered)
-		if child.has_signal("point_unhovered"):
-			child.point_unhovered.disconnect(_on_point_unhovered)
-		child.queue_free()
 
-	var start_index = max(0, history.size() - 20)
-	var relevant_history = history.slice(start_index, history.size())
+func _on_profile_tutorial_closed() -> void:
+	if SettingsManager and SettingsManager.has_method("set_tutorial_profile_done"):
+		SettingsManager.set_tutorial_profile_done(true)
 
-	var points = []
-	for i in range(20):
-		var session = null
-		if i < relevant_history.size():
-			session = relevant_history[i]
-		else:
-			session = {
-				"accuracy": 0.0,
-				"grade_color": {"r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0}
-			}
 
-		var accuracy = session.get("accuracy", 0.0)
-		var bg_width = chart_background.size.x
-		var bg_height = chart_background.size.y
-		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
-		var y = bg_height - (accuracy / 100.0) * bg_height
-		points.append(Vector2(x, y))
-	if accuracy_chart_line:
-		accuracy_chart_line.points = points
+func debug_show_tutorial() -> void:
+	_run_profile_tutorial(true)
 
-	for i in range(20):
-		var session = null
-		var tooltip_text = "Н/Д - Н/Д (0.00%)"
-		if i < relevant_history.size():
-			session = relevant_history[i]
-			var accuracy = session.get("accuracy", 0.0)
-			var artist = session.get("artist", "Unknown")
-			var title = session.get("title", "Unknown Track")
-			tooltip_text = "%s - %s\n(%.2f%%)" % [artist, title, accuracy]
-		else:
-			var accuracy = session.get("accuracy", 0.0) if session else 0.0
-			tooltip_text = "Н/Д - Н/Д\n(%.2f%%)" % accuracy
 
-		var color = GradeDisplay.color_from_saved_result(session) if session else Color(0.5, 0.5, 0.5, 1.0)
+func cleanup_before_exit() -> void:
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.reset_loading()
 
-		var bg_width = chart_background.size.x
-		var bg_height = chart_background.size.y
-		var x = 20 + i * ((bg_width - 40) / 19.0) if 19 > 0 else 20
-		var y = bg_height - (session.get("accuracy", 0.0) / 100.0) * bg_height if session else bg_height
 
-		var point_position = Vector2(x, y)
+func _balance_category_export_row() -> void:
+	# Tabs are truly centered under the title; Export is overlaid on the right
+	# and does not participate in the centering math.
+	var row := get_node_or_null("MainVBox/CategoryRow") as Control
+	if row == null or category_bar_panel == null:
+		return
+	category_bar_panel.reset_size()
+	var bar_size := category_bar_panel.get_combined_minimum_size()
+	if bar_size.x <= 1.0:
+		bar_size = category_bar_panel.size
+	var row_h := maxf(row.size.y, maxf(bar_size.y, 58.0))
+	row.custom_minimum_size.y = row_h
+	var bar_x := (row.size.x - bar_size.x) * 0.5
+	var bar_y := (row_h - bar_size.y) * 0.5
+	category_bar_panel.position = Vector2(maxf(bar_x, 0.0), maxf(bar_y, 0.0))
+	category_bar_panel.size = bar_size
+	if share_cards_button == null or not is_instance_valid(share_cards_button):
+		return
+	share_cards_button.reset_size()
+	var btn_size := share_cards_button.get_combined_minimum_size()
+	if btn_size.x <= 1.0:
+		btn_size = share_cards_button.size
+	var btn_y := (row_h - btn_size.y) * 0.5
+	share_cards_button.position = Vector2(maxf(row.size.x - btn_size.x, 0.0), maxf(btn_y, 0.0))
+	share_cards_button.size = btn_size
 
-		var point_control_script = load("res://scenes/profile/chart_point.gd")
-		var point_control = point_control_script.new()
 
-		point_control.set_tooltip_text(tooltip_text)
-		point_control.point_color = color
-		point_control.point_radius = 6.0
-		point_control.border_width = 1.5
-		point_control.border_color = Color.BLACK
-		point_control._ready()
-		point_control.position = point_position - point_control.size / 2
-		point_control.name = "Point%d" % i
-		point_control.point_hovered.connect(_on_point_hovered.bind(i))
-		point_control.point_unhovered.connect(_on_point_unhovered)
-		accuracy_chart_points.add_child(point_control)
+func _on_share_cards_pressed() -> void:
+	if _share_modal == null or _share_recap_loading:
+		return
+	_open_share_recap_async()
 
-func _on_point_hovered(global_pos: Vector2, tooltip_text: String, index: int):
-	if tooltip_label:
-		tooltip_label.text = tooltip_text
-		tooltip_label.visible = true
-		var local_pos = accuracy_chart_points.to_local(global_pos)
-		tooltip_label.position = local_pos + Vector2(-tooltip_label.size.x / 2, -tooltip_label.size.y - 15)
 
-func _on_point_unhovered():
-	if tooltip_label:
-		tooltip_label.visible = false
+func _open_share_recap_async() -> void:
+	_share_recap_loading = true
+	if share_cards_button:
+		share_cards_button.disabled = true
+	if _share_modal:
+		await _share_modal.prepare_and_open()
+	if share_cards_button:
+		share_cards_button.disabled = false
+	_share_recap_loading = false
 
-func _on_chart_background_resized():
-	_update_accuracy_chart()
 
-func _execute_close_transition():
+func _on_share_modal_closed() -> void:
+	pass
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
+		get_viewport().set_input_as_handled()
+		return
+	if _share_modal and _share_modal.is_open():
+		if _share_modal.handle_hotkey(event):
+			get_viewport().set_input_as_handled()
+			return
+	if _handle_profile_hotkeys(event):
+		get_viewport().set_input_as_handled()
+		return
+	super._unhandled_input(event)
+
+
+func _handle_profile_hotkeys(event: InputEvent) -> bool:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return false
+	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+		return false
+	if event.keycode >= KEY_1 and event.keycode <= KEY_4:
+		var index := int(event.keycode - KEY_1)
+		_hotkey_select_profile_category(index)
+		return true
+	if current_profile_category == "stats" and stats_tab and stats_tab.has_method("hotkey_select_chart_metric"):
+		if event.keycode == KEY_Q:
+			stats_tab.hotkey_select_chart_metric(0)
+			return true
+		if event.keycode == KEY_W:
+			stats_tab.hotkey_select_chart_metric(1)
+			return true
+		if event.keycode == KEY_E:
+			stats_tab.hotkey_select_chart_metric(2)
+			return true
+	return false
+
+
+func _hotkey_select_profile_category(index: int) -> void:
+	if category_nav == null:
+		return
+	if index < 0 or index >= ProfileCategoryNav.CATEGORY_BUTTON_SPECS.size():
+		return
+	var category := String(ProfileCategoryNav.CATEGORY_BUTTON_SPECS[index][0])
+	_on_profile_category_selected(category)
+
+
+func _execute_close_transition() -> void:
 	if transitions:
 		transitions.close_profile()
 	if is_instance_valid(self):

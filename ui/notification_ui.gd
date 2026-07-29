@@ -15,7 +15,15 @@ var on_retry: Callable = Callable()
 @export var cancel_hide_keywords: Array[String] = ["отмен", "cancel"]
 
 func _ready():
+	set_process_unhandled_input(true)
+	apply_locale()
 	_clear_immediate()
+
+func apply_locale() -> void:
+	if cancel_btn:
+		cancel_btn.text = tr("NOTIF_CANCEL")
+	if retry_btn:
+		retry_btn.text = tr("NOTIF_RETRY")
 
 func show_progress(text: String, cancel_callable: Callable):
 	label.text = text
@@ -93,3 +101,14 @@ func _schedule_clear():
 func _on_clear_timeout():
 	if _clear_token == _pending_token:
 		_clear_immediate()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	if cancel_btn == null or not cancel_btn.visible:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SPACE or event.is_action_pressed("ui_accept"):
+			_on_cancel_pressed()
+			accept_event()

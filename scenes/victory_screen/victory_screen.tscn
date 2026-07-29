@@ -1,9 +1,28 @@
-[gd_scene load_steps=11 format=3 uid="uid://wr4xw6kkexww"]
+[gd_scene load_steps=15 format=3 uid="uid://wr4xw6kkexww"]
 
 [ext_resource type="Script" uid="uid://b6kah7w6sh3i6" path="res://scenes/victory_screen/victory_screen.gd" id="1_rgl4p"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_rygy8"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="3_diamond"]
 [ext_resource type="Texture2D" path="res://assets/icons/gauge.svg" id="4_gauge"]
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_accuracy_chart.gd" id="5_accchart"]
+[ext_resource type="Script" path="res://logic/ui/chart_difficulty_meter.gd" id="chart_meter"]
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_lane_stats.gd" id="6_lanestats"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_tile"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.07, 0.08, 0.11, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.05)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="Animation" id="Animation_rygy8"]
 resource_name = "AllCountupsSeq"
@@ -15,8 +34,8 @@ tracks/0/path = NodePath(".")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.9, 1.5, 2.1, 3, 3.6, 4.2, 5.1, 6),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.8, 1.35, 1.9, 2.45, 2.9, 3.35, 4.0, 4.55, 5.35),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "values": [{
 "args": ["score"],
 "method": &"set_count_kind"
@@ -30,7 +49,10 @@ tracks/0/keys = {
 "args": ["accuracy"],
 "method": &"set_count_kind"
 }, {
-"args": ["hit"],
+"args": ["perfect"],
+"method": &"set_count_kind"
+}, {
+"args": ["good"],
 "method": &"set_count_kind"
 }, {
 "args": ["miss"],
@@ -53,10 +75,10 @@ tracks/1/path = NodePath(".:count_progress")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.8999, 0.9, 1.4999, 1.5, 2.0999, 2.1, 2.9999, 3, 3.5999, 3.6, 4.1999, 4.2, 5.0999, 5.1, 5.9999, 6),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.7999, 0.8, 1.3499, 1.35, 1.8999, 1.9, 2.4499, 2.45, 2.8999, 2.9, 3.3499, 3.35, 3.9999, 4.0, 4.5499, 4.55, 5.3499, 5.35, 5.9999, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0]
+"values": [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0]
 }
 
 [sub_resource type="Animation" id="Animation_12ckx"]
@@ -109,10 +131,10 @@ _data = {
 }
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_card"]
-content_margin_left = 20.0
-content_margin_top = 18.0
-content_margin_right = 20.0
-content_margin_bottom = 18.0
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
 bg_color = Color(0.108, 0.118, 0.158, 0.96)
 border_width_left = 1
 border_width_top = 1
@@ -127,10 +149,25 @@ shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 8
 shadow_offset = Vector2(0, 3)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_sep"]
-content_margin_top = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(1, 1, 1, 0.1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_recommend"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.09, 0.11, 0.15, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34902, 0.819608, 0.745098, 0.42)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
 [node name="VictoryScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -147,7 +184,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.047059, 0.054902, 0.090196, 0.94)
+color = Color(0, 0, 0, 0)
 
 [node name="MainMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -156,193 +193,760 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 56
-theme_override_constants/margin_top = 36
-theme_override_constants/margin_right = 56
-theme_override_constants/margin_bottom = 40
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 28
 
 [node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="HeaderVBox" type="VBoxContainer" parent="MainMargin/MainVBox"]
+[node name="PbBanner" type="PanelContainer" parent="MainMargin/MainVBox"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_constants/separation = 6
+mouse_filter = 2
 
-[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
+[node name="PbBannerMargin" type="MarginContainer" parent="MainMargin/MainVBox/PbBanner"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.683074, 0.756592, 1, 1)
-theme_override_font_sizes/font_size = 52
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
+
+[node name="PbBannerLabel" type="Label" parent="MainMargin/MainVBox/PbBanner/PbBannerMargin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.9, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "NEW PERSONAL BEST"
+horizontal_alignment = 1
+
+[node name="TopRowHBox" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CoverPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+custom_minimum_size = Vector2(320, 320)
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="CoverMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/CoverPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="CoverTextureRect" type="TextureRect" parent="MainMargin/MainVBox/TopRowHBox/CoverPanel/CoverMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeroVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.15
+size_flags_vertical = 0
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 36
 text = "ПОБЕДА"
 horizontal_alignment = 1
 
-[node name="SongLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
-custom_minimum_size = Vector2(720, 0)
+[node name="SongLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85098, 0.878431, 0.94902, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.92, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 22
 text = "Название песни"
 horizontal_alignment = 1
-clip_text = true
-text_overrun_behavior = 4
+autowrap_mode = 3
 
-[node name="StatsFrame" type="PanelContainer" parent="MainMargin/MainVBox"]
-custom_minimum_size = Vector2(760, 0)
+[node name="SongMetaLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "03:52 · 5 lanes · Guitar · Basic"
+horizontal_alignment = 1
+
+[node name="ChartDifficultyRow" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="ChartDifficultyLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ChartDifficultyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Сложность:"
+
+[node name="ChartDifficultyIcons" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ChartDifficultyRow"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ChartDifficultyMeter" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ChartDifficultyRow"]
+layout_mode = 2
+script = ExtResource("chart_meter")
+
+[node name="ChartDifficultyValueLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ChartDifficultyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "—"
+
+[node name="ModifiersRow" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="ModifiersChips" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ModifiersRow"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="ModifiersMultLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/ModifiersRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 0.95)
+theme_override_font_sizes/font_size = 16
+vertical_alignment = 1
+
+[node name="ModifiersLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+visible = false
+layout_mode = 2
+
+[node name="GradeCard" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox"]
+custom_minimum_size = Vector2(208, 184)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="GradeCardMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="GradeCardVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard/GradeCardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="GradeLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard/GradeCardMargin/GradeCardVBox"]
+custom_minimum_size = Vector2(0, 112)
+layout_mode = 2
+theme_override_font_sizes/font_size = 126
+text = "SS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FirstClearLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard/GradeCardMargin/GradeCardVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.92, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "FIRST CLEAR"
+horizontal_alignment = 1
+
+[node name="RrLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard/GradeCardMargin/GradeCardVBox"]
+visible = false
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 19
+text = "RR +0"
+horizontal_alignment = 1
+
+[node name="RunMedalsRow" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/HeroVBox/GradeCard/GradeCardMargin/GradeCardVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="RightColVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox"]
+custom_minimum_size = Vector2(304, 320)
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 8
+
+[node name="RewardsPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox"]
+layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
 
-[node name="MarginContainer" type="MarginContainer" parent="MainMargin/MainVBox/StatsFrame"]
+[node name="RewardsMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer"]
+[node name="RewardsVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
-[node name="GradeLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
-custom_minimum_size = Vector2(0, 88)
+[node name="RewardsTitleLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 72
-text = "Оценка: S"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "НАГРАДЫ"
+horizontal_alignment = 0
 
-[node name="Separator" type="HSeparator" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+[node name="RewardsBodyHBox" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CurrencyCol" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 4
-theme_override_styles/separator = SubResource("StyleBoxFlat_victory_sep")
+alignment = 1
 
-[node name="StatsGrid" type="GridContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+[node name="CurrencyTop" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol"]
 layout_mode = 2
-theme_override_constants/h_separation = 24
-theme_override_constants/v_separation = 8
-columns = 2
-
-[node name="ScoreLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
-theme_override_font_sizes/font_size = 22
-text = "Счёт: 0"
-horizontal_alignment = 1
-
-[node name="ComboLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
-theme_override_font_sizes/font_size = 22
-text = "Комбо: 0"
-horizontal_alignment = 1
-
-[node name="MaxComboLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
-theme_override_font_sizes/font_size = 22
-text = "Максимальное комбо: 0"
-horizontal_alignment = 1
-
-[node name="AccuracyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
-theme_override_font_sizes/font_size = 22
-text = "Точность: 0"
-horizontal_alignment = 1
-
-[node name="HitNotesLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
-theme_override_font_sizes/font_size = 22
-text = "Попаданий: 0"
-horizontal_alignment = 1
-
-[node name="MissedNotesLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.882353, 0.415686, 0.466667, 1)
-theme_override_font_sizes/font_size = 22
-text = "Промахов: 0"
-horizontal_alignment = 1
-
-[node name="CurrencyRow" type="HBoxContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="CurrencyIcon" type="TextureRect" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/CurrencyRow"]
+[node name="CurrencyIcon" type="TextureRect" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyTop"]
 custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 texture = ExtResource("3_diamond")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CurrencyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/CurrencyRow"]
+[node name="CurrencyLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyTop"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
-theme_override_font_sizes/font_size = 22
-text = "Валюта за уровень: 0"
+theme_override_font_sizes/font_size = 26
+text = "0"
 horizontal_alignment = 1
 
-[node name="XPRow" type="HBoxContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+[node name="CurrencyCaption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 11
+text = "ВАЛЮТА"
+horizontal_alignment = 1
+
+[node name="XPCol" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="XPTop" type="HBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol"]
+layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="XPIcon" type="TextureRect" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/XPRow"]
+[node name="XPIcon" type="TextureRect" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol/XPTop"]
 custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 texture = ExtResource("4_gauge")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="XPLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid/XPRow"]
+[node name="XPLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol/XPTop"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="XPCaption" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 11
+text = "XP"
+horizontal_alignment = 1
+
+[node name="XpProgressRow" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="XpProgressBar" type="ProgressBar" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/XpProgressRow"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+value = 0.0
+show_percentage = false
+
+[node name="XpLevelHintLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/XpProgressRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 10
+text = "82% · 290 XP"
+horizontal_alignment = 1
+
+[node name="RewardsHintLabel" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.72)
+theme_override_font_sizes/font_size = 10
+text = "Кликните для деталей"
+horizontal_alignment = 1
+
+[node name="ChartPanel" type="PanelContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="ChartMargin" type="MarginContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ChartVBox" type="VBoxContainer" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="AccuracyChartTitle" type="Label" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin/ChartVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "ТОЧНОСТЬ ПО ВРЕМЕНИ"
+horizontal_alignment = 0
+
+[node name="VictoryAccuracyChart" type="Control" parent="MainMargin/MainVBox/TopRowHBox/RightColVBox/ChartPanel/ChartMargin/ChartVBox"]
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("5_accchart")
+
+[node name="BottomRowHBox" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 148)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_constants/separation = 12
+alignment = 3
+
+[node name="StatsPanel" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.68
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="StatsMargin" type="MarginContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="StatsGrid" type="GridContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 4
+
+[node name="ScoreTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "SCORE"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+
+[node name="ScoreDeltaLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ScoreTile/StatVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.88, 0.62, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "NEW BEST"
+horizontal_alignment = 1
+
+[node name="ComboTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "COMBO"
+horizontal_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+horizontal_alignment = 1
+
+[node name="ComboDeltaLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/ComboTile/StatVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.88, 0.62, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "(+0)"
+horizontal_alignment = 1
+
+[node name="MaxComboTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "MAX COMBO"
+horizontal_alignment = 1
+
+[node name="MaxComboLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+horizontal_alignment = 1
+
+[node name="MaxComboDeltaLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MaxComboTile/StatVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.88, 0.62, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "(+0)"
+horizontal_alignment = 1
+
+[node name="AccuracyTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "ACCURACY"
+horizontal_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
 theme_override_font_sizes/font_size = 22
-text = "XP за уровень: 0"
+text = "0%"
 horizontal_alignment = 1
 
-[node name="ButtonsContainer" type="HBoxContainer" parent="MainMargin/MainVBox"]
+[node name="AccuracyDeltaLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox"]
+visible = false
 layout_mode = 2
-size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.42, 0.88, 0.62, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "(+0.00%)"
+horizontal_alignment = 1
+
+[node name="PerfectTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "PERFECT"
+horizontal_alignment = 1
+
+[node name="PerfectLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+horizontal_alignment = 1
+
+[node name="GoodTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "GOOD"
+horizontal_alignment = 1
+
+[node name="GoodLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/GoodTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.82, 0.92, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+horizontal_alignment = 1
+
+[node name="MissTile" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tile")
+
+[node name="StatVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CaptionLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "MISS"
+horizontal_alignment = 1
+
+[node name="MissLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/MissTile/StatVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.882353, 0.415686, 0.466667, 1)
+theme_override_font_sizes/font_size = 22
+text = "0"
+horizontal_alignment = 1
+
+[node name="RecommendPanel" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.48
+size_flags_vertical = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_recommend")
+
+[node name="RecommendMargin" type="MarginContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="RecommendVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="RecommendTitleLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "РЕКОМЕНДАЦИЯ"
+horizontal_alignment = 0
+
+[node name="RecommendHBox" type="HBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox"]
+layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="ReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
-custom_minimum_size = Vector2(220, 52)
+[node name="RecommendIconPanel" type="PanelContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox"]
+custom_minimum_size = Vector2(104, 104)
 layout_mode = 2
-theme = ExtResource("2_rygy8")
-theme_type_variation = &"FlatGenerateButton"
-theme_override_font_sizes/font_size = 20
-text = "Повторить"
+
+[node name="RecommendIconMargin" type="MarginContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendIconPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="RecommendIconRect" type="TextureRect" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendIconPanel/RecommendIconMargin"]
+custom_minimum_size = Vector2(92, 92)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RecommendTextVBox" type="VBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 0
+
+[node name="RecommendNextLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 11
+text = "Следующий трек"
+
+[node name="RecommendSongLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.98, 1)
+theme_override_font_sizes/font_size = 17
+text = "Artist — Title"
+autowrap_mode = 2
+
+[node name="RecommendDifficultyRow" type="HBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="RecommendDifficultyMeter" type="HBoxContainer" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox/RecommendDifficultyRow"]
+layout_mode = 2
+scale = Vector2(0.72, 0.72)
+pivot_offset = Vector2(0, 0)
+script = ExtResource("chart_meter")
+
+[node name="RecommendDifficultyValueLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox/RecommendDifficultyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "4.2/10"
+vertical_alignment = 1
+
+[node name="RecommendReasonLabel" type="Label" parent="MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "похожий BPM · 128"
+autowrap_mode = 2
+
+[node name="LaneStatsPanel" type="PanelContainer" parent="MainMargin/MainVBox"]
+visible = false
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_victory_card")
+
+[node name="LaneStatsMargin" type="MarginContainer" parent="MainMargin/MainVBox/LaneStatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="LaneStatsVBox" type="VBoxContainer" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LaneStatsTitle" type="Label" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin/LaneStatsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "СТАТИСТИКА ЛИНИЙ"
+
+[node name="VictoryLaneStats" type="Control" parent="MainMargin/MainVBox/LaneStatsPanel/LaneStatsMargin/LaneStatsVBox"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("6_lanestats")
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(1140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 12
+alignment = 1
 
 [node name="SongSelectButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
-custom_minimum_size = Vector2(220, 52)
+custom_minimum_size = Vector2(210, 44)
 layout_mode = 2
 theme = ExtResource("2_rygy8")
 theme_type_variation = &"FlatMenuSongButton"
-theme_override_font_sizes/font_size = 20
-text = "К списку песен"
+theme_override_font_sizes/font_size = 13
+text = "Выбор песни"
+
+[node name="ReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(210, 44)
+layout_mode = 2
+theme = ExtResource("2_rygy8")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 13
+text = "Ещё раз"
+
+[node name="NextTrackButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+visible = false
+custom_minimum_size = Vector2(420, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_rygy8")
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 16
+text = "Продолжить"
 
 [node name="HintLabel" type="Label" parent="MainMargin/MainVBox"]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 0.88)
-theme_override_font_sizes/font_size = 17
-text = "Нажмите на валюту или XP, чтобы посмотреть детальный расчёт"
+theme_override_font_sizes/font_size = 14
+text = "Нажмите на валюту или ХР, чтобы посмотреть детальный расчёт"
 horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="StatsFrame" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
@@ -350,5 +954,5 @@ libraries = {
 }
 
 [node name="CountupsDelayTimer" type="Timer" parent="."]
-wait_time = 1.5
+	wait_time = 1.5
 one_shot = true

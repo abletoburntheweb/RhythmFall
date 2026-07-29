@@ -10,6 +10,42 @@ data_*/
 build/
 bin/
 export_presets.cfg
+RhythmFallServer.exe
+RFALL/RhythmFall/
+RFALL/dist/
+
+# Local RhythmFallServer copy (server lives in its own repo — do not commit here)
+RhythmFallServer/*
+!RhythmFallServer/README.txt
+!RhythmFallServer/.gitkeep
+
+# Server runtime / dev-only (if a full checkout sits beside the client)
+RhythmFallServer/.venv/
+RhythmFallServer/temp_uploads/
+RhythmFallServer/songs/
+RhythmFallServer/reports/
+RhythmFallServer/baseline/
+RhythmFallServer/reference_tracks/
+RhythmFallServer/scripts/
+
+RhythmFallServer-main/.venv/
+RhythmFallServer-main/temp_uploads/
+RhythmFallServer-main/songs/
+RhythmFallServer-main/reports/
+RhythmFallServer-main/baseline/
+RhythmFallServer-main/reference_tracks/
+RhythmFallServer-main/scripts/
+RhythmFallServer-main/temp_uploads/**/*.import
+
+# Worker — machine-specific paths
+worker/server_root.path
+worker/windows_python.path
+
+# Local QA / regression output
+reports/
+
+# Legacy snapshot tree
+Rhythmfallold/
 
 *.tmp
 *.log

@@ -1,0 +1,171 @@
+[gd_scene load_steps=3 format=3 uid="uid://crunmoddetail01"]
+
+[ext_resource type="Script" uid="uid://c6novvxkw81c7" path="res://scenes/song_select/run_modifiers/run_modifier_detail_panel.gd" id="1_detail"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_preview"]
+bg_color = Color(0.06, 0.07, 0.1, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="RunModifierDetailPanel" type="VBoxContainer"]
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 0
+script = ExtResource("1_detail")
+
+[node name="DetailScroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="DetailBody" type="VBoxContainer" parent="DetailScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="PreviewPanel" type="PanelContainer" parent="DetailScroll/DetailBody"]
+custom_minimum_size = Vector2(0, 248)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
+
+[node name="PreviewStack" type="Control" parent="DetailScroll/DetailBody/PreviewPanel"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(0, 248)
+
+[node name="PreviewImage" type="TextureRect" parent="DetailScroll/DetailBody/PreviewPanel/PreviewStack"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="PreviewVideo" type="VideoStreamPlayer" parent="DetailScroll/DetailBody/PreviewPanel/PreviewStack"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand = true
+
+[node name="TitleLabel" type="Label" parent="DetailScroll/DetailBody"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "—"
+autowrap_mode = 3
+
+[node name="SubtitleLabel" type="Label" parent="DetailScroll/DetailBody"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.88)
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="DescriptionLabel" type="Label" parent="DetailScroll/DetailBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "MOD_DETAIL_SELECT_HINT"
+autowrap_mode = 3
+max_lines_visible = -1
+clip_text = false
+
+[node name="ConflictsSection" type="VBoxContainer" parent="DetailScroll/DetailBody"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 4
+
+[node name="ConflictsHeader" type="Label" parent="DetailScroll/DetailBody/ConflictsSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "MOD_CONFLICTS_CAPTION"
+
+[node name="ConflictsBodyLabel" type="Label" parent="DetailScroll/DetailBody/ConflictsSection"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "MOD_CONFLICTS_NONE"
+autowrap_mode = 3
+
+[node name="DifficultyRow" type="HBoxContainer" parent="DetailScroll/DetailBody"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DifficultyCaption" type="Label" parent="DetailScroll/DetailBody/DifficultyRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "MOD_DETAIL_DIFFICULTY"
+
+[node name="StarsRow" type="HBoxContainer" parent="DetailScroll/DetailBody/DifficultyRow"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Star1" type="Label" parent="DetailScroll/DetailBody/DifficultyRow/StarsRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "★"
+metadata/star_index = 1
+
+[node name="Star2" type="Label" parent="DetailScroll/DetailBody/DifficultyRow/StarsRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "★"
+metadata/star_index = 2
+
+[node name="Star3" type="Label" parent="DetailScroll/DetailBody/DifficultyRow/StarsRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "★"
+metadata/star_index = 3
+
+[node name="Star4" type="Label" parent="DetailScroll/DetailBody/DifficultyRow/StarsRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "★"
+metadata/star_index = 4
+
+[node name="Star5" type="Label" parent="DetailScroll/DetailBody/DifficultyRow/StarsRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "★"
+metadata/star_index = 5
+
+[node name="RewardRow" type="HBoxContainer" parent="DetailScroll/DetailBody"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RewardCaption" type="Label" parent="DetailScroll/DetailBody/RewardRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "MOD_DETAIL_REWARD"
+
+[node name="RewardValueLabel" type="Label" parent="DetailScroll/DetailBody/RewardRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "—"

@@ -1,0 +1,349 @@
+keys,en,ru
+ACH_1_TITLE,Day novice,Новичок дня
+ACH_1_DESC,Complete 5 daily quests,Выполнить 5 ежедневных заданий
+ACH_2_TITLE,True diligence,Настоящее усердие
+ACH_2_DESC,Complete 20 daily quests,Выполнить 20 ежедневных заданий
+ACH_3_TITLE,Day worker,Работник дня
+ACH_3_DESC,Complete 50 daily quests,Выполнить 50 ежедневных заданий
+ACH_4_TITLE,Daily hero,Ежедневный герой
+ACH_4_DESC,Complete 100 daily quests,Выполнить 100 ежедневных заданий
+ACH_5_TITLE,Habit master,Мастер привычки
+ACH_5_DESC,Complete 250 daily quests,Выполнить 250 ежедневных заданий
+ACH_6_TITLE,First purchase,Первая покупка
+ACH_6_DESC,Make your first shop purchase,Совершить первую покупку в магазине
+ACH_7_TITLE,Collector I,Коллекционер I
+ACH_7_DESC,Buy 3 shop items,Купить 3 предмета в магазине
+ACH_8_TITLE,Collector II,Коллекционер II
+ACH_8_DESC,Buy 5 shop items,Купить 5 предметов в магазине
+ACH_9_TITLE,Collector III,Коллекционер III
+ACH_9_DESC,Buy 10 shop items,Купить 10 предметов в магазине
+ACH_10_TITLE,Collector IV,Коллекционер IV
+ACH_10_DESC,Buy 15 shop items,Купить 15 предметов в магазине
+ACH_11_TITLE,Hoarder I,Собиратель I
+ACH_11_DESC,Collect 5 000 currency,Собрать 5 000 единиц валюты
+ACH_12_TITLE,Hoarder II,Собиратель II
+ACH_12_DESC,Collect 15 000 currency,Собрать 15 000 единиц валюты
+ACH_13_TITLE,Hoarder III,Собиратель III
+ACH_13_DESC,Collect 50 000 currency,Собрать 50 000 единиц валюты
+ACH_14_TITLE,Generous hand I,Щедрая рука I
+ACH_14_DESC,Spend 2 000 currency,Потратить 2 000 единиц валюты
+ACH_15_TITLE,Generous hand II,Щедрая рука II
+ACH_15_DESC,Spend 5 000 currency,Потратить 5 000 единиц валюты
+ACH_16_TITLE,Generous hand III,Щедрая рука III
+ACH_16_DESC,Spend 15 000 currency,Потратить 15 000 единиц валюты
+ACH_17_TITLE,Style hunter,Охотник за стилем
+ACH_17_DESC,Buy one item from each category,Купить по одному предмету из каждой категории
+ACH_18_TITLE,Collection complete,Коллекция завершена
+ACH_18_DESC,Collect every coin-priced item in the current shop,Собрать все предметы за валюту из текущего ассортимента магазина
+ACH_19_TITLE,First day,Первый день
+ACH_19_DESC,Log in for the first time,Зайти в игру впервые
+ACH_20_TITLE,Week in rhythm,В ритме недели
+ACH_20_DESC,Log in 7 days in a row,Заходить в игру 7 дней подряд
+ACH_21_TITLE,No days off,Без выходных
+ACH_21_DESC,Log in 30 days in a row,Заходить 30 дней подряд
+ACH_22_TITLE,Faithful musician,Верный музыкант
+ACH_22_DESC,Log in 365 days in a row,Заходить 365 дней подряд
+ACH_23_TITLE,Note explorer,Нотный исследователь
+ACH_23_DESC,Generate your first chart with the analysis system,Сгенерировать свой первый уровень с помощью системы анализа
+ACH_24_TITLE,First chord,Первый аккорд
+ACH_24_DESC,Complete your first level,Пройти первый уровень
+ACH_25_TITLE,Perfect pitch,Безупречный слух
+ACH_25_DESC,Complete a level with 100% accuracy,Пройти уровень с 100% точностью
+ACH_26_TITLE,Rhythm novice,Новичок ритма
+ACH_26_DESC,Complete 5 levels,Завершить 5 уровней
+ACH_27_TITLE,Rhythm master,Ритм-мастер
+ACH_27_DESC,Complete 20 levels,Завершить 20 уровней
+ACH_28_TITLE,In the groove,В ритме
+ACH_28_DESC,Land 1000 accurate hits,Набрать 1000 точных попаданий
+ACH_29_TITLE,First hit,Первый удар
+ACH_29_DESC,Complete your first percussion level,Пройти первый уровень в режиме перкуссии
+ACH_30_TITLE,Clean rhythm,Чистый ритм
+ACH_30_DESC,Complete a percussion level with 100% accuracy,Пройти уровень в режиме перкуссии с 100% точностью
+ACH_31_TITLE,Rhythm build-up,Ритм-разгон
+ACH_31_DESC,Hit 50 consecutive accurate percussion notes,Совершить серию из 50 точных ударов подряд в режиме перкуссии
+ACH_32_TITLE,Drum storm,Барабанный шторм
+ACH_32_DESC,Hit 100 consecutive accurate drum hits,Совершить серию из 100 точных ударов подряд в режиме перкуссии
+ACH_33_TITLE,Musical memory,Музыкальная память
+ACH_33_DESC,Complete the same level twice,Пройти один и тот же уровень дважды
+ACH_34_TITLE,Budding melomaniac,Начинающий меломан
+ACH_34_DESC,Play for 1 hour,Провести в игре 1 час
+ACH_35_TITLE,Passionate listener,Страстный слушатель
+ACH_35_DESC,Play for 5 hours,Провести в игре 5 часов
+ACH_36_TITLE,Rhythm devotee,Поклонник ритма
+ACH_36_DESC,Play for 10 hours,Провести в игре 10 часов
+ACH_37_TITLE,Syncopation master,Мастер синкоп
+ACH_37_DESC,Play for 50 hours,Провести в игре 50 часов
+ACH_38_TITLE,Stage legend,Легенда сцены
+ACH_38_DESC,Play for 200 hours,Провести в игре 200 часов
+ACH_39_TITLE,First step,Первый шаг
+ACH_39_DESC,Score 300 000 points,Набрать 300 000 очков
+ACH_40_TITLE,Rhythm counter,Счётчик ритма
+ACH_40_DESC,Score 600 000 points,Набрать 600 000 очков
+ACH_41_TITLE,Professional,Профессионал
+ACH_41_DESC,Score 1 200 000 points,Набрать 1 200 000 очков
+ACH_42_TITLE,Legend,Легенда
+ACH_42_DESC,Score 2 400 000 points,Набрать 2 400 000 очков
+ACH_43_TITLE,Rising star,Восходящий
+ACH_43_DESC,Earn 5 SS grades,Выбить 5 оценок SS
+ACH_44_TITLE,Star path,Звёздный путь
+ACH_44_DESC,Earn 10 SS grades,Выбить 10 оценок SS
+ACH_45_TITLE,Accuracy genius,Гений точности
+ACH_45_DESC,Earn 25 SS grades,Выбить 25 оценок SS
+ACH_46_TITLE,Perfection master,Мастер совершенства
+ACH_46_DESC,Earn 50 SS grades,Выбить 50 оценок SS
+ACH_47_TITLE,Festive rhythm,Праздничный ритм
+ACH_47_DESC,Log in on the game's birthday,Зайти в игру в день рождения игры
+ACH_48_TITLE,Winter jam,Зимний джем
+ACH_48_DESC,Log in during the winter holidays,Зайти в игру в зимние праздники
+ACH_49_TITLE,Beat,Такт
+ACH_49_DESC,Reach level 10,Достичь 10 уровня
+ACH_50_TITLE,Tempo,Темп
+ACH_50_DESC,Reach level 16,Достичь 16 уровня
+ACH_51_TITLE,Rhythm,Ритм
+ACH_51_DESC,Reach level 25,Достичь 25 уровня
+ACH_52_TITLE,Arrangement,Аранжировка
+ACH_52_DESC,Reach level 50,Достичь 50 уровня
+ACH_53_TITLE,Composition,Композиция
+ACH_53_DESC,Reach level 100,Достичь 100 уровня
+ACH_54_TITLE,Electric foundation,Электрический фундамент
+ACH_54_DESC,Play 3 electronic genre tracks,Сыграть 3 раза в электронных жанрах
+ACH_55_TITLE,Guitar energy,Гитарная энергия
+ACH_55_DESC,Play 3 guitar genre tracks,Сыграть 3 раза в гитарных жанрах
+ACH_56_TITLE,Voice of the streets,Голос улиц
+ACH_56_DESC,Play 3 rap genre tracks,Сыграть 3 раза в рэп‑жанрах
+ACH_57_TITLE,Melodies off mainstream,Мелодии вне мейнстрима
+ACH_57_DESC,Play 3 indie and alternative genre tracks,Сыграть 3 раза в независимых и альтернативных жанрах
+ACH_58_TITLE,Beyond genres,За гранью жанров
+ACH_58_DESC,Play 3 experimental genre tracks,Сыграть 3 раза в экспериментальных жанрах
+ACH_59_TITLE,Uniqueness I,Уникальность I
+ACH_59_DESC,Complete 10 unique levels,Пройти 10 уникальных уровней
+ACH_60_TITLE,Uniqueness II,Уникальность II
+ACH_60_DESC,Complete 25 unique levels,Пройти 25 уникальных уровней
+ACH_61_TITLE,Uniqueness III,Уникальность III
+ACH_61_DESC,Complete 50 unique levels,Пройти 50 уникальных уровней
+ACH_62_TITLE,Experienced rhythm,Опытный ритм
+ACH_62_DESC,Complete 50 levels,Завершить 50 уровней
+ACH_63_TITLE,Rhythm veteran,Ветеран ритма
+ACH_63_DESC,Complete 100 levels,Завершить 100 уровней
+ACH_64_TITLE,Rhythm legend,Легенда ритма
+ACH_64_DESC,Complete 200 levels,Завершить 200 уровней
+ACH_65_TITLE,Absolute accuracy,Абсолютная точность
+ACH_65_DESC,Complete 10 unique levels with 100% accuracy,Пройти 10 уникальных уровней со 100% точностью
+ACH_66_TITLE,Stable form,Стабильная форма
+ACH_66_DESC,Complete 15 unique levels with ≥95% accuracy,Пройти 15 уникальных уровней с точностью ≥95%
+ACH_67_TITLE,Groove pulse,Пульс грува
+ACH_67_DESC,Complete 25 percussion levels,Пройти 25 уровней в режиме перкуссии
+ACH_68_TITLE,Precise pulse,Точный пульс
+ACH_68_DESC,Land 1000 perfect hits in percussion mode,Набрать 1000 идеальных попаданий в режиме перкуссии
+ACH_69_TITLE,Dense wall,Плотная стена
+ACH_69_DESC,Clear a percussion level on Dense difficulty,Пройти уровень перкуссии на сложности Dense (Плотная)
+ACH_70_TITLE,Pop wave,Поп‑волна
+ACH_70_DESC,Play 3 pop genre tracks,Сыграть 3 раза в поп‑жанрах
+ACH_71_TITLE,Classical stage,Классическая сцена
+ACH_71_DESC,Play 3 classical and orchestral genre tracks,Сыграть 3 раза в классических и оркестровых жанрах
+ACH_72_TITLE,Jazz club,Джаз‑клуб
+ACH_72_DESC,Play 3 jazz and soul genre tracks,Сыграть 3 раза в джазовых и соул‑жанрах
+ACH_73_TITLE,World of music,Мир музыки
+ACH_73_DESC,Play 3 folk and world genre tracks,Сыграть 3 раза в фолк и мировых жанрах
+ACH_74_TITLE,Industrial noise,Индастриал‑шум
+ACH_74_DESC,Play 3 industrial and noise genre tracks,Сыграть 3 раза в индастриал и нойз‑жанрах
+ACH_75_TITLE,First beat,Первый такт
+ACH_75_DESC,Detect a song's tempo with the analysis system,Определить темп песни с помощью системы анализа
+ACH_76_TITLE,Not today,Не сегодня
+ACH_76_DESC,Cancel an active analysis task,Отменить активную задачу системы анализа
+ACH_77_TITLE,Machine rhythm,Машинный ритм
+ACH_77_DESC,Play 3 industrial genre tracks,Сыграть 3 раза в индастриал‑жанрах
+ACH_78_TITLE,Jamaican groove,Ямайский грув
+ACH_78_DESC,Play 3 reggae/dub genre tracks,Сыграть 3 раза в регги/даб‑жанрах
+ACH_79_TITLE,Blue blues,Синий блюз
+ACH_79_DESC,Play 3 blues genre tracks,Сыграть 3 раза в блюз‑жанрах
+ACH_80_TITLE,Folk songs,Песни народа
+ACH_80_DESC,Play 3 folk genre tracks,Сыграть 3 раза в фолк‑жанрах
+ACH_81_TITLE,Disco pulse,Диско‑пульс
+ACH_81_DESC,Play 3 disco genre tracks,Сыграть 3 раза в диско‑жанрах
+ACH_82_TITLE,First mod,Первый мод
+ACH_82_DESC,Complete a level with any run modifier (Autoplay does not count),Завершить уровень с любым модификатором (Автопилот не считается)
+ACH_83_TITLE,Hidden master,Скрытый мастер
+ACH_83_DESC,Complete a level with Hidden modifier,Завершить уровень с модификатором Скрытые (СК)
+ACH_84_TITLE,Sudden surprise,Внезапность
+ACH_84_DESC,Complete a level with Sudden modifier,Завершить уровень с модификатором Внезапные (ВН)
+ACH_85_TITLE,On the edge,На грани
+ACH_85_DESC,Complete a level with Sudden Death modifier,Завершить уровень с модификатором Внезапная смерть (ВС)
+ACH_86_TITLE,No forgiveness,Без права на ошибку
+ACH_86_DESC,Complete a level with Empty Lane modifier,Завершить уровень с модификатором Без права на ошибку (БП)
+ACH_87_TITLE,Strict mode,Строгий режим
+ACH_87_DESC,Complete a level with Strict Timing modifier,Завершить уровень с модификатором Строгий тайминг (СТ)
+ACH_88_TITLE,Difficulty duo,Дуэт сложности
+ACH_88_DESC,Complete a level with at least two run modifiers (Autoplay does not count),Завершить уровень с двумя или более модификаторами (Автопилот не считается)
+ACH_89_TITLE,Triple challenge,Тройной вызов
+ACH_89_DESC,Complete a level with at least three run modifiers (Autoplay does not count),Завершить уровень с тремя или более модификаторами (Автопилот не считается)
+ACH_90_TITLE,Full hardcore set,Полный набор хардкора
+ACH_90_DESC,Complete a level with Strict Timing + Empty Lane + Sudden Death in one run,"Завершить уровень с СТ, БП и ВС в одном забеге"
+ACH_91_TITLE,Mods I,Моды I
+ACH_91_DESC,Complete 5 levels with any run modifier (Autoplay does not count),Завершить 5 уровней с любым модификатором (Автопилот не считается)
+ACH_92_TITLE,Mods II,Моды II
+ACH_92_DESC,Complete 15 levels with any run modifier (Autoplay does not count),Завершить 15 уровней с любым модификатором (Автопилот не считается)
+ACH_93_TITLE,Mods III,Моды III
+ACH_93_DESC,Complete 30 levels with any run modifier (Autoplay does not count),Завершить 30 уровней с любым модификатором (Автопилот не считается)
+ACH_94_TITLE,Hidden ×10,СК ×10
+ACH_94_DESC,Complete 10 levels with Hidden modifier,Завершить 10 уровней с модификатором Скрытые (СК)
+ACH_95_TITLE,Sudden Death ×5,ВС ×5
+ACH_95_DESC,Complete 5 levels with Sudden Death modifier,Завершить 5 уровней с модификатором Внезапная смерть (ВС)
+ACH_96_TITLE,Note archive,Нотный архив
+ACH_96_DESC,Generate notes with the analysis system 10 times,Сгенерировать ноты с помощью системы анализа 10 раз
+ACH_97_TITLE,Tempo graph,Темпограф
+ACH_97_DESC,Detect song tempo with the analysis system 10 times,Определить темп песни с помощью системы анализа 10 раз
+ACH_98_TITLE,Not this time,Не в этот раз
+ACH_98_DESC,Cancel an active analysis task 3 times,Отменить активную задачу системы анализа 3 раза
+ACH_99_TITLE,New Year beat,Новогодний бит
+ACH_99_DESC,Log in on January 1,Зайти в игру 1 января
+ACH_100_TITLE,Spring jam,Весенний джем
+ACH_100_DESC,Log in during the first half of March,Зайти в игру в первой половине марта
+ACH_101_TITLE,Autumn masquerade,Осенний маскарад
+ACH_101_DESC,Log in during the last week of October,Зайти в игру в последнюю неделю октября
+ACH_102_TITLE,First medal,Первая медаль
+ACH_102_DESC,Earn your first track medal,Получить первую медаль трека
+ACH_103_TITLE,Medal trail,Медальный след
+ACH_103_DESC,Collect 10 track medals,Собрать 10 медалей треков
+ACH_104_TITLE,Medallion I,Медальон I
+ACH_104_DESC,Collect 25 track medals,Собрать 25 медалей треков
+ACH_105_TITLE,Medallion II,Медальон II
+ACH_105_DESC,Collect 50 track medals,Собрать 50 медалей треков
+ACH_106_TITLE,Full album,Полный альбом
+ACH_106_DESC,Earn all 8 medals on a single track,Собрать все 8 медалей на одном треке
+ACH_107_TITLE,Five stars,Пять звёзд
+ACH_107_DESC,Earn the SS medal on 5 different tracks,Получить медаль SS на 5 разных треках
+ACH_108_TITLE,Hard mode explorer,Исследователь усложнений
+ACH_108_DESC,Earn the Hard Mode medal on 5 different tracks,Получить медаль «Усложнённый режим» на 5 разных треках
+ACH_109_TITLE,Comfort zone,Средний уровень
+ACH_109_DESC,Clear a chart rated 5/10 or higher,Пройти чарт со сложностью 5/10 или выше
+ACH_110_TITLE,Raised bar,Высокая планка
+ACH_110_DESC,Clear a chart rated 7/10 or higher,Пройти чарт со сложностью 7/10 или выше
+ACH_111_TITLE,Extreme chart,Экстрим
+ACH_111_DESC,Clear a chart rated 9/10 or higher,Пройти чарт со сложностью 9/10 или выше
+ACH_112_TITLE,Peak difficulty,Максимум
+ACH_112_DESC,Clear a chart with maximum difficulty 10/10,Пройти чарт с максимальной сложностью 10/10
+ACH_113_TITLE,Steady training,Упорный тренинг
+ACH_113_DESC,Clear 10 charts rated 6/10 or higher,Пройти 10 чартов со сложностью 6/10 или выше
+ACH_114_TITLE,Hardcore streak,Хардкорная серия
+ACH_114_DESC,Clear 5 charts rated 8/10 or higher,Пройти 5 чартов со сложностью 8/10 или выше
+ACH_115_TITLE,Five albums,Пять альбомов
+ACH_115_DESC,Earn all 8 medals on 5 different tracks,Собрать все 8 медалей на 5 разных треках
+ACH_116_TITLE,Media library,Медиатека
+ACH_116_DESC,Earn all 8 medals on 15 different tracks,Собрать все 8 медалей на 15 разных треках
+ACH_117_TITLE,Taste of style,Вкус стиля
+ACH_117_DESC,Reach genre mastery level 3 in any style,Достичь 3 уровня мастерства в любом жанре
+ACH_118_TITLE,Your genre,Свой жанр
+ACH_118_DESC,Reach genre mastery level 5 in any style,Достичь 5 уровня мастерства в любом жанре
+ACH_119_TITLE,Confident style,Уверенный стиль
+ACH_119_DESC,Reach genre mastery level 7 in any style,Достичь 7 уровня мастерства в любом жанре
+ACH_120_TITLE,Genre veteran,Жанровый ветеран
+ACH_120_DESC,Reach genre mastery level 10 in any style,Достичь 10 уровня мастерства в любом жанре
+ACH_121_TITLE,Deep dive,Глубокое погружение
+ACH_121_DESC,Reach genre mastery level 12 in any style,Достичь 12 уровня мастерства в любом жанре
+ACH_122_TITLE,Style master,Мастер стиля
+ACH_122_DESC,Reach genre mastery level 15 in any style,Достичь 15 уровня мастерства в любом жанре
+ACH_123_TITLE,Genre legend,Легенда жанра
+ACH_123_DESC,Reach genre mastery level 20 in any style,Достичь 20 уровня мастерства в любом жанре
+ACH_124_TITLE,First RR,Первый RR
+ACH_124_DESC,Earn 1500 total Rhythm Rating,Набрать 1 500 суммарного Rhythm Rating
+ACH_125_TITLE,Rhythm collector,Ритм-рейт
+ACH_125_DESC,Earn 5000 total Rhythm Rating,Набрать 5 000 суммарного Rhythm Rating
+ACH_126_TITLE,Rating veteran,Оценка мастерства
+ACH_126_DESC,Earn 15000 total Rhythm Rating,Набрать 15 000 суммарного Rhythm Rating
+ACH_127_TITLE,RR master,RR-ветеран
+ACH_127_DESC,Earn 30000 total Rhythm Rating,Набрать 30 000 суммарного Rhythm Rating
+ACH_128_TITLE,RR legend,Легенда RR
+ACH_128_DESC,Earn 50000 total Rhythm Rating,Набрать 50 000 суммарного Rhythm Rating
+ACH_129_TITLE,Genre ear,Слух на жанр
+ACH_129_DESC,Analyze a track genre on the server,Проанализировать жанр трека с помощью сервера
+ACH_130_TITLE,Discographer,Дискограф
+ACH_130_DESC,Analyze track genre on the server 10 times,Проанализировать жанр с помощью сервера 10 раз
+ACH_131_TITLE,Server hint,По подсказке сервера
+ACH_131_DESC,Pick a primary genre from server suggestions,Выбрать основной жанр из подсказок сервера
+ACH_132_TITLE,Metadata sorted,Метаданные в порядке
+ACH_132_DESC,Save changes in the metadata editor,Сохранить изменения в редакторе метаданных
+ACH_133_TITLE,First discoveries,Первые открытия
+ACH_133_DESC,Discover 5 unique genres from the catalog,Открыть 5 разных жанров из каталога
+ACH_134_TITLE,Curious ear,Любопытный слух
+ACH_134_DESC,Discover 15 unique genres from the catalog,Открыть 15 разных жанров из каталога
+ACH_135_TITLE,Broad taste,Широкий вкус
+ACH_135_DESC,Discover 30 unique genres from the catalog,Открыть 30 разных жанров из каталога
+ACH_136_TITLE,Genre collector,Коллекционер
+ACH_136_DESC,Discover 50 unique genres from the catalog,Открыть 50 разных жанров из каталога
+ACH_137_TITLE,Genre encyclopedia,Энциклопедия жанров
+ACH_137_DESC,Discover 100 unique genres from the catalog,Открыть 100 разных жанров из каталога
+ACH_138_TITLE,Five in a collection,Пятёрка в коллекции
+ACH_138_DESC,Discover 5 genres in one collection,Открыть 5 жанров в одной коллекции
+ACH_139_TITLE,Mini album,Мини-альбом
+ACH_139_DESC,Complete every genre in a compact collection (10 tags or fewer),Собрать все жанры в компактной коллекции (до 10 тегов)
+ACH_140_TITLE,Complete collection,Полная коллекция
+ACH_140_DESC,Complete every genre in any collection,Собрать все жанры в любой коллекции
+ACH_141_TITLE,First decode,Первый разбор
+ACH_141_DESC,Open a Rhythm DNA report for any track,Открыть отчёт Rhythm DNA для любого трека
+ACH_142_TITLE,Memory lane,Память на ноты
+ACH_142_DESC,Complete a level with Memory Mode modifier,Завершить уровень с модификатором Режим памяти (ПМ)
+ACH_143_TITLE,Shifting lanes,Меняющийся ритм
+ACH_143_DESC,Complete a level with Dynamic Lanes modifier,Завершить уровень с модификатором Динамические дорожки (ДД)
+ACH_144_TITLE,Lane remap,Перекройка
+ACH_144_DESC,Complete a level with Mirror Shuffle or Random lanes modifier,"Завершить уровень с Зеркалом, Перемешиванием или Случайными дорожками"
+ACH_145_TITLE,Escalation,Эскалация
+ACH_145_DESC,Complete a level with Combo Escalation modifier,Завершить уровень с модификатором Эскалация комбо (ЭК)
+ACH_146_TITLE,Tick-tock,Тик-так
+ACH_146_DESC,Complete a level with Metronome Only modifier,Завершить уровень с модификатором Только метроном (МТ)
+ACH_147_TITLE,Reverse flow,Наоборот
+ACH_147_DESC,Complete a level with Reverse Scroll modifier,Завершить уровень с модификатором Обратная прокрутка (ОП)
+ACH_148_TITLE,Time warp,Искажение
+ACH_148_DESC,Complete a level with Time Warp modifier,Завершить уровень с модификатором Искривление времени (ИВ)
+ACH_149_TITLE,Pick mode,Отбор
+ACH_149_DESC,Complete a level with Pick Mode modifier,Завершить уровень с модификатором Режим отбора (РО)
+ACH_150_TITLE,Quad mod,Кватро-мод
+ACH_150_DESC,Complete a level with 4+ run modifiers (Autoplay does not count),Завершить уровень с четырьмя или более модификаторами (Автопилот не считается)
+ACH_151_TITLE,Penta mod,Пентамод
+ACH_151_DESC,Complete a level with 5+ run modifiers (Autoplay does not count),Завершить уровень с пятью или более модификаторами (Автопилот не считается)
+ACH_152_TITLE,Boundless,Без границ
+ACH_152_DESC,Unlock Endless play mode,Открыть режим «Бесконечный»
+ACH_153_TITLE,First run,Первый забег
+ACH_153_DESC,Clear at least 1 track in one Endless run,Пройти хотя бы 1 песню за один забег в «Бесконечном»
+ACH_154_TITLE,The ten,Десятка
+ACH_154_DESC,Clear 10 tracks in one Endless run,Пройти 10 песен подряд за один забег в «Бесконечном»
+ACH_155_TITLE,Marathoner,Марафонец
+ACH_155_DESC,Clear 25 tracks in one Endless run,Пройти 25 песен подряд за один забег в «Бесконечном»
+ACH_156_TITLE,Streak ×5,Серия ×5
+ACH_156_DESC,Set a personal best: clear 5 tracks in one run without failing,Личный рекорд: 5 песен подряд за один забег (до первого промаха)
+ACH_157_TITLE,Streak ×10,Серия ×10
+ACH_157_DESC,Set a personal best: clear 10 tracks in one run without failing,Личный рекорд: 10 песен подряд за один забег (до первого промаха)
+ACH_158_TITLE,Flawless series,Безупречная серия
+ACH_158_DESC,Finish an Endless run with no missed notes (min. 3 tracks),Завершить серию в «Бесконечном» без промахов (мин. 3 трека)
+ACH_159_TITLE,Route runner,Маршрутный бегун
+ACH_159_DESC,Unlock Marathon play mode,Открыть режим «Марафон»
+ACH_160_TITLE,First route,Первый маршрут
+ACH_160_DESC,Complete your first Marathon route,Пройти первый маршрут в режиме «Марафон»
+ACH_161_TITLE,Route veteran,Ветеран маршрутов
+ACH_161_DESC,Complete 5 different Marathon routes,Пройти 5 разных маршрутов в «Марафоне»
+ACH_162_TITLE,Daily route,Дневной маршрут
+ACH_162_DESC,Complete the Daily Marathon route,Пройти дневной маршрут марафона
+ACH_163_TITLE,Boss slayer,Убийца боссов
+ACH_163_DESC,Complete a Boss Rush route,Пройти маршрут «Босс-раш»
+ACH_164_TITLE,Journey's end,Конец пути
+ACH_164_DESC,Complete a Journey route,Пройти маршрут «Путешествие»
+ACH_165_TITLE,Ultimate crown,Корона ультимейта
+ACH_165_DESC,Complete an Ultimate route,Пройти маршрут «Ультимейт»
+ACH_166_TITLE,First fret,Первый гриф
+ACH_166_DESC,Complete your first bass level,Пройти первый уровень в режиме баса
+ACH_167_TITLE,Clean fret,Чистый гриф
+ACH_167_DESC,Complete a bass level with 100% accuracy,Пройти уровень в режиме баса с 100% точностью
+ACH_168_TITLE,Iron fingers,Железные пальцы
+ACH_168_DESC,"Clear a bass level holding every sustain to the end (no early release)","Пройти уровень баса, удержав все hold до конца (без early release)"
+ACH_169_TITLE,Bass storm,Басовый шторм
+ACH_169_DESC,Hit 100 consecutive accurate bass notes,Совершить серию из 100 точных попаданий подряд в режиме баса
+ACH_170_TITLE,Bass pulse,Пульс баса
+ACH_170_DESC,Complete 25 bass levels,Пройти 25 уровней в режиме баса
+ACH_171_TITLE,Fret shadow,Тень грифа
+ACH_171_DESC,Catch 50 ghost notes in bass mode,Поймать 50 ghost-нот в режиме баса
+ACH_172_TITLE,Double string,Двойная струна
+ACH_172_DESC,Hit 50 multi-lane notes in bass mode,Попасть по 50 multi-lane нотам в режиме баса
+ACH_173_TITLE,Percussion record,Ударный рекорд
+ACH_173_DESC,Score 200000 points in a single percussion run,Набрать 200000 очков за один забег в режиме перкуссии
+ACH_174_TITLE,Long bass,Долгий бас
+ACH_174_DESC,Complete 100 hold notes to the end in bass mode,Довести до конца 100 hold-нот в режиме баса

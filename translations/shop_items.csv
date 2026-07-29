@@ -1,0 +1,117 @@
+keys,en,ru
+SHOP_ITEM_KICK_DEFAULT,Standard kick,Стандартный кик
+SHOP_ITEM_COVERS_DEFAULT,Wavy gradient,Волнистый градиент
+SHOP_ITEM_LANES_HIGHLIGHT_DEFAULT,Standard stripes,Стандартные полосы
+SHOP_ITEM_NOTES_DEFAULT,Standard notes,Стандартные ноты
+SHOP_ITEM_KICK_1,Standard Bass Drum,Стандартная бочка
+SHOP_ITEM_KICK_2,Heavy Step,Тяжёлый шаг
+SHOP_ITEM_KICK_3,Iron Beat,Железный бит
+SHOP_ITEM_KICK_4,Deep Thump,Глубокий удар
+SHOP_ITEM_KICK_5,Neon Punch,Неон-панч
+SHOP_ITEM_KICK_6,Deep Dry Bass Drum,Глубокая сухая бочка
+SHOP_ITEM_KICK_7,Reactor Hit,Реакторный удар
+SHOP_ITEM_KICK_8,Tight Dry Bass Drum,Плотная сухая бочка
+SHOP_ITEM_KICK_9,Storm kick,Штормовой кик
+SHOP_ITEM_KICK_10,Memorial kick,Памятный кик
+SHOP_ITEM_KICK_11,Granite Strike,Гранитный удар
+SHOP_ITEM_KICK_12,Crystal Pulse,Хрустальный импульс
+SHOP_ITEM_KICK_13,Twilight Strike,Сумеречный удар
+SHOP_ITEM_KICK_14,Midnight Pulse,Полуночный импульс
+SHOP_ITEM_COVERS_GEOMETRIC,Crystal facets,Кристальные грани
+SHOP_ITEM_COVERS_FLOWING_LINES,Flowing lines,Текучие линии
+SHOP_ITEM_COVERS_MUSIC_NOTE,Single note,Одиночная нота
+SHOP_ITEM_COVERS_INK_SPLASH,Ink splashes,Брызги чернил
+SHOP_ITEM_COVERS_VINYL,Vinyl record,Виниловая пластинка
+SHOP_ITEM_COVERS_SPIDERWEB,Ink spiderweb,Чернильная паутина
+SHOP_ITEM_COVERS_EXPLOSION,Radial splashes,Радиальные брызги
+SHOP_ITEM_COVERS_SHARDS,Shards,Осколки
+SHOP_ITEM_COVERS_CROSS,Cross lines,Крестообразные линии
+SHOP_ITEM_COVERS_BRUSH,Graphic strokes,Графические штрихи
+SHOP_ITEM_COVERS_FALLING_BLOCKS,Falling blocks,Падающие блоки
+SHOP_ITEM_PIXEL_AMP,Pixel amp,Пиксельный усилитель
+SHOP_ITEM_COVERS_SHATTER,Broken shards,Разбитые осколки
+SHOP_ITEM_COVERS_MARBLE_FLOW,Marble flow,Мраморный поток
+SHOP_ITEM_NOTES_MONOCHROME_RED,Monochrome Red notes,Красные ноты
+SHOP_ITEM_NOTES_PURE_WHITE,Pure White notes,Чистый белый
+SHOP_ITEM_NOTES_SOFT_GRAY,Soft Gray notes,Мягкий серый
+SHOP_ITEM_NOTES_NEON_CYAN,Neon Cyan notes,Неон-циан
+SHOP_ITEM_NOTES_ACID_GREEN,Acid Green notes,Кислотный зелёный
+SHOP_ITEM_NOTES_WARM_PINK,Warm Pink notes,Тёплый розовый
+SHOP_ITEM_NOTES_GUITAR_HERO,Guitar Hero notes,Guitar Hero
+SHOP_ITEM_NOTES_PASTEL,Pastel notes,Пастельные ноты
+SHOP_ITEM_NOTES_RGB_SPREAD,Rgb Spread notes,RGB Спектр
+SHOP_ITEM_NOTES_OSU_SOFT,Osu Soft notes,Osu!
+SHOP_ITEM_NOTES_NEON_ARCADE,Neon Arcade notes,Аркадный неон
+SHOP_ITEM_NOTES_SYNTHWAVE,Synthwave notes,Синтвейв
+SHOP_ITEM_NOTES_CYBERPUNK,Cyberpunk notes,Киберпанк
+SHOP_ITEM_NOTES_NEON_NIGHT,Neon Night notes,Неоновая ночь
+SHOP_ITEM_NOTES_FOREST,Forest notes,Лесная глубина
+SHOP_ITEM_NOTES_PASTEL_DREAM,Pastel Dream notes,Пастельный сон
+SHOP_ITEM_NOTES_SUNSET_GRADIENT,Sunset Gradient notes,Закатный градиент
+SHOP_ITEM_NOTES_HIGH_CONTRAST,High Contrast notes,Высокий контраст
+SHOP_ITEM_NOTES_SAKURA,Sakura notes,Сакура-сон
+SHOP_ITEM_NOTES_FOG,Fog notes,Утренний туман
+SHOP_ITEM_NOTES_FOREST_SOFT,Forest Soft notes,Лесной покой
+SHOP_ITEM_NOTES_SUNSET_SOFT,Sunset Soft notes,Закат в облаках
+SHOP_ITEM_NOTES_PRO_SOFT,Pro Soft notes,Чёткий фокус
+SHOP_ITEM_NOTES_SYNTH_SOFT,Synth Soft notes,Неон-сон
+SHOP_ITEM_NOTES_CANDY,Candy notes,Конфетный дождь
+SHOP_ITEM_NOTES_MINIMAL,Minimal notes,Белый шум
+SHOP_ITEM_NOTES_CREAMY_BLUE_PALETTE,Creamy Blue Palette notes,Кремово-голубая палитра
+SHOP_ITEM_NOTES_NEON_PALETTE,Neon Palette notes,Неоновая палитра
+SHOP_ITEM_NOTES_ICE_PALETTE,Ice Palette notes,Ледяная палитра
+SHOP_ITEM_NOTES_SOLAR_PALETTE,Solar Palette notes,Солнечная палитра
+SHOP_ITEM_NOTES_PASTEL_DAILY,Pastel Breeze notes,Пастельный бриз
+SHOP_ITEM_NOTES_DEEP_FRET,Deep Fret notes,Глубокие лады
+SHOP_ITEM_NOTES_MIDNIGHT_MUTE,Midnight Mute notes,Полночные оттенки
+SHOP_ITEM_NOTES_SMOKE_EMBER,Smoke & Ember notes,Дым и янтарь
+SHOP_ITEM_NOTES_CHARCOAL,Charcoal notes,Уголь
+SHOP_ITEM_NOTES_DUSK_VIOLET,Dusk Violet notes,Сумеречный фиол
+SHOP_ITEM_NOTES_MOSS_STONE,Moss & Stone notes,Мох и камень
+SHOP_ITEM_NOTES_INK_WELL,Ink Well notes,Чернильница
+SHOP_ITEM_NOTES_COPPER_DUSK,Copper Dusk notes,Медные сумерки
+SHOP_ITEM_NOTES_ABYSS,Abyss notes,Бездна
+SHOP_ITEM_NOTES_RUST_NIGHT,Rust Night notes,Ржавая ночь
+SHOP_ITEM_LANES_HIGHLIGHT_1,Fiery sunset,Огненный закат
+SHOP_ITEM_LANES_HIGHLIGHT_2,Ocean wave,Океанская волна
+SHOP_ITEM_LANES_HIGHLIGHT_3,Lime basalt,Лайм-базальт
+SHOP_ITEM_LANES_HIGHLIGHT_4,Violet darkness,Фиолетовая тьма
+SHOP_ITEM_LANES_HIGHLIGHT_5,Sunny glare,Солнечный блик
+SHOP_ITEM_LANES_HIGHLIGHT_6,Sea foam,Морская пена
+SHOP_ITEM_LANES_HIGHLIGHT_7,Crimson dawn,Багровый рассвет
+SHOP_ITEM_LANES_HIGHLIGHT_8,Emerald forest,Изумрудный лес
+SHOP_ITEM_LANES_HIGHLIGHT_9,Lilac haze,Сиреневая дымка
+SHOP_ITEM_LANES_HIGHLIGHT_10,Caramel veil,Карамельная вуаль
+SHOP_ITEM_LANES_HIGHLIGHT_11,Electric blue,Электрический синий
+SHOP_ITEM_LANES_HIGHLIGHT_12,Pink quartz,Розовый кварц
+SHOP_ITEM_LANES_HIGHLIGHT_13,Dark graphite,Темный графит
+SHOP_ITEM_LANES_HIGHLIGHT_14,Golden sand,Золотой песок
+SHOP_ITEM_LANES_HIGHLIGHT_15,Scarlet charm,Алый шарм
+SHOP_ITEM_LANES_HIGHLIGHT_16,Lavender mist,Лавандовый туман
+SHOP_ITEM_LANES_HIGHLIGHT_17,Warm amber,Тёплый янтарь
+SHOP_ITEM_LANES_HIGHLIGHT_18,Cold steel,Холодный сталь
+SHOP_ITEM_LANES_HIGHLIGHT_19,Neon green,Неон-зелёный
+SHOP_ITEM_LANES_HIGHLIGHT_20,Deep indigo,Глубокий индиго
+SHOP_ITEM_LANES_HIGHLIGHT_24,Scarlet storm,Алый шторм
+SHOP_ITEM_LANES_HIGHLIGHT_25,Amethyst accent,Аметистовый акцент
+SHOP_ITEM_LANES_HIGHLIGHT_21,Turquoise wave,Бирюзовая волна
+SHOP_ITEM_LANES_HIGHLIGHT_22,Orange dawn,Оранжевый рассвет
+SHOP_ITEM_LANES_HIGHLIGHT_23,Neon turquoise,Неоновая бирюза
+SHOP_ITEM_PARTICLES_DEFAULT,Standard particles,Стандартные частицы
+SHOP_ITEM_PARTICLES_SPARK_BURST,Spark burst,Искры
+SHOP_ITEM_PARTICLES_SOFT_RISE,Soft rise,Мягкий подъём
+SHOP_ITEM_PARTICLES_RING_POP,Ring pop,Кольцо
+SHOP_ITEM_PARTICLES_DENSE_FLARE,Dense flare,Вспышка
+SHOP_ITEM_PARTICLES_FOREST_POLLEN,Forest pollen,Лесная пыльца
+SHOP_ITEM_PARTICLES_NEON_RING,Neon ring,Неоновое кольцо
+SHOP_ITEM_PARTICLES_SUNSET_SPARKS,Sunset sparks,Закатные искры
+SHOP_ITEM_PARTICLES_SAKURA_PETALS,Petals,Лепестки
+SHOP_ITEM_KICK_MEDAL_EMBER,Coal kick,Угольный кик
+SHOP_ITEM_KICK_MEDAL_CRYSTAL,Crystal kick,Хрустальный кик
+SHOP_ITEM_NOTES_MEDAL_AURORA,Northern lights,Северное сияние
+SHOP_ITEM_NOTES_MEDAL_SAKURA,Sakura,Сакура
+SHOP_ITEM_NOTES_MEDAL_METALLIC,Metallic,Металлик
+SHOP_ITEM_LANES_HIGHLIGHT_26,Purple haze,Лиловый туман
+SHOP_ITEM_LANES_HIGHLIGHT_27,Copper sunset,Медный закат
+SHOP_ITEM_LANES_HIGHLIGHT_28,Mint dawn,Мятный рассвет
+SHOP_ITEM_LANES_HIGHLIGHT_29,Rhythm pulse,Пульс ритма

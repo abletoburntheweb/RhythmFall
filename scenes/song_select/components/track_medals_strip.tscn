@@ -1,0 +1,210 @@
+[gd_scene load_steps=3 format=3 uid="uid://btrackmedalsstrip"]
+
+[ext_resource type="Script" path="res://scenes/song_select/components/track_medals_strip.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="TrackMedalsStrip" type="PanelContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 2
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MedalsTitleLabel" type="Label" parent="Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "Медали трека"
+
+[node name="MedalsCountLabel" type="Label" parent="Margin/VBox/HeaderRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 16
+text = "0 / 8"
+horizontal_alignment = 2
+
+[node name="MedalsDetailLabel" type="Label" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 13
+text = "Наведите на медаль — условие получения в подсказке."
+autowrap_mode = 3
+
+[node name="MedalsGrid" type="GridContainer" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
+
+[node name="MedalSlot0" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot0"]
+layout_mode = 2
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot0/Center"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+text = "1C"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot1" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot1"]
+layout_mode = 2
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot1/Center"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 14
+text = "SS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot2" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot2"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot2/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "HD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot3" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot3"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot3/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "M2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot4" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot4"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot4/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "SD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot5" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot5"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot5/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "HM"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot6" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot6"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot6/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "x3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MedalSlot7" type="PanelContainer" parent="Margin/VBox/MedalsGrid"]
+custom_minimum_size = Vector2(72, 44)
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+size_flags_horizontal = 3
+
+[node name="Center" type="CenterContainer" parent="Margin/VBox/MedalsGrid/MedalSlot7"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbbrLabel" type="Label" parent="Margin/VBox/MedalsGrid/MedalSlot7/Center"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "SP"
+horizontal_alignment = 1
+vertical_alignment = 1

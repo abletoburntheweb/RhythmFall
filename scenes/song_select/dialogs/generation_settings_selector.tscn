@@ -1,0 +1,653 @@
+[gd_scene load_steps=6 format=3 uid="uid://bpb227su36cld"]
+
+[ext_resource type="Script" uid="uid://dphx6bvvcj4j2" path="res://scenes/song_select/dialogs/generation_settings_selector.gd" id="1_script"]
+[ext_resource type="Theme" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://dch7sv26bsey" path="res://scenes/song_select/components/generation_select_card.tscn" id="3_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.0784314, 0.0862745, 0.117647, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.12)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="GenerationSettingsSelector" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.97)
+
+[node name="ScreenMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 68
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 14
+
+[node name="Container" type="VBoxContainer" parent="ScreenMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderTop" type="HBoxContainer" parent="ScreenMargin/Container"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderSpacer" type="Control" parent="ScreenMargin/Container/HeaderTop"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TrackStatusPanel" type="PanelContainer" parent="ScreenMargin/Container/HeaderTop"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="StatusVBox" type="VBoxContainer" parent="ScreenMargin/Container/HeaderTop/TrackStatusPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StatusTitleLabel" type="Label" parent="ScreenMargin/Container/HeaderTop/TrackStatusPanel/StatusVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "Для текущего трека"
+horizontal_alignment = 2
+
+[node name="StatusLabel" type="Label" parent="ScreenMargin/Container/HeaderTop/TrackStatusPanel/StatusVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.82, 0.58, 1)
+theme_override_font_sizes/font_size = 17
+text = "Ноты готовы"
+horizontal_alignment = 2
+
+[node name="HeaderTitle" type="VBoxContainer" parent="ScreenMargin/Container"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TitleLabel" type="Label" parent="ScreenMargin/Container/HeaderTitle"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 30
+text = "Как построить чарт"
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="ScreenMargin/Container/HeaderTitle"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 15
+text = "Параметры сохраняются и используются при каждой генерации"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyHBox" type="HBoxContainer" parent="ScreenMargin/Container"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="InstrumentPanel" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="InstrumentPanelVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="InstrumentTitle" type="Label" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "Инструмент"
+
+[node name="InstrumentSubtitle" type="Label" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Что генерировать"
+
+[node name="InstrumentGrid" type="GridContainer" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 1
+
+[node name="InstDrums" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+card_id = "drums"
+
+[node name="InstFullmix" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+visible = false
+card_id = "fullmix"
+
+[node name="InstBass" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+card_id = "bass"
+
+[node name="InstGuitar" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+visible = false
+card_id = "guitar"
+
+[node name="InstKeys" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+visible = false
+card_id = "keys"
+
+[node name="InstVocals" parent="ScreenMargin/Container/BodyHBox/InstrumentPanel/InstrumentPanelVBox/InstrumentGrid" instance=ExtResource("3_card")]
+visible = false
+card_id = "vocals"
+
+[node name="MainScroll" type="ScrollContainer" parent="ScreenMargin/Container/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="MainVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="ModeSection" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="ModeSectionVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ModeTitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "Цель генерации"
+
+[node name="ModeSubtitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Что важнее при построении карты"
+
+[node name="ModeCardsRow" type="HBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IntentOriginal" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeCardsRow" instance=ExtResource("3_card")]
+custom_minimum_size = Vector2(220, 118)
+size_flags_horizontal = 3
+card_id = "original"
+
+[node name="IntentGroove" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeCardsRow" instance=ExtResource("3_card")]
+visible = false
+custom_minimum_size = Vector2(148, 118)
+card_id = "groove"
+
+[node name="IntentArcade" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeCardsRow" instance=ExtResource("3_card")]
+custom_minimum_size = Vector2(220, 118)
+size_flags_horizontal = 3
+card_id = "arcade"
+
+[node name="IntentSparse" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeCardsRow" instance=ExtResource("3_card")]
+visible = false
+custom_minimum_size = Vector2(148, 118)
+card_id = "sparse"
+
+[node name="DifficultySection" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="DifficultySectionVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DifficultyTitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection/DifficultySectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "Сложность карты"
+
+[node name="DifficultySubtitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection/DifficultySectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Насколько плотной будет карта"
+
+[node name="DifficultyOptionRow" type="HBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection/DifficultySectionVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DifficultyOption" type="OptionButton" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection/DifficultySectionVBox/DifficultyOptionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DifficultyBlurb" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/DifficultySection/DifficultySectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "GEN_GOAL_DIFF_BLURB_ORIGINAL_STANDARD"
+autowrap_mode = 3
+
+[node name="LanesSection" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="LanesSectionVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LanesTitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "Количество линий"
+
+[node name="LanesSubtitle" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Ширина игрового поля"
+
+[node name="LanesButtons" type="HBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LaneButton3" type="Button" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox/LanesButtons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "3 линии"
+
+[node name="LaneButton4" type="Button" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox/LanesButtons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "4 линии"
+
+[node name="LaneButton5" type="Button" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox/LanesButtons"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "5 линий"
+
+[node name="AdvancedSection" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="AdvancedSectionVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AdvancedToggleButton" type="Button" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 20
+toggle_mode = true
+text = "> Показать расширенные параметры"
+
+[node name="AdvancedHintLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Тонкая настройка алгоритма генерации"
+horizontal_alignment = 1
+
+[node name="SlidersContainer" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SliderColumns" type="HBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SliderColLeft" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="FillRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft"]
+layout_mode = 2
+
+[node name="FillLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/FillRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.96, 0.98)
+theme_override_font_sizes/font_size = 20
+text = "Заполнение"
+horizontal_alignment = 1
+
+[node name="FillSlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/FillRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+step = 5.0
+
+[node name="GrooveRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft"]
+layout_mode = 2
+
+[node name="GrooveLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/GrooveRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Живость"
+horizontal_alignment = 1
+
+[node name="GrooveSlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/GrooveRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+step = 5.0
+
+[node name="DensityRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft"]
+layout_mode = 2
+
+[node name="DensityLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/DensityRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Плотность"
+horizontal_alignment = 1
+
+[node name="DensitySlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/DensityRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+step = 5.0
+
+[node name="SliderColRight" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="GridSnapRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight"]
+layout_mode = 2
+
+[node name="GridSnapLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GridSnapRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Привязка к сетке"
+horizontal_alignment = 1
+
+[node name="GridSnapStrengthSlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GridSnapRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+step = 5.0
+
+[node name="GenreTemplateRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight"]
+layout_mode = 2
+
+[node name="GenreTemplateLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GenreTemplateRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Сила жанрового шаблона"
+horizontal_alignment = 1
+
+[node name="GenreTemplateStrengthSlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GenreTemplateRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+step = 5.0
+
+[node name="CriticStrengthRow" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight"]
+layout_mode = 2
+
+[node name="CriticStrengthLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/CriticStrengthRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 20
+text = "Чистка шума"
+horizontal_alignment = 1
+
+[node name="CriticStrengthSlider" type="HSlider" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/CriticStrengthRow"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+max_value = 100.0
+step = 5.0
+
+[node name="CheckboxesContainer" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AccentStrongBeatsCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Акцент сильной доли"
+
+[node name="IncludeHiHatsCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Включать тарелки"
+
+[node name="GrooveCompletionCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Достраивать пропуски"
+
+[node name="EnableGenreDetectionCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Включить определение жанров"
+
+[node name="EnableStemsCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Включить разделение на stem'ы"
+
+[node name="RawAdtofCheckBox" type="CheckBox" parent="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer"]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 20
+text = "Минимум обработки (сырой ADTOF)"
+
+[node name="PreviewPanel" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="PreviewMargin" type="MarginContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="PreviewVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PreviewTitleLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 16
+text = "GEN_PREVIEW_TITLE"
+
+[node name="PreviewHeroLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 18
+text = "GEN_PREVIEW_HERO_PLACEHOLDER"
+autowrap_mode = 3
+
+[node name="PreviewBlurbLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "GEN_PREVIEW_BLURB_PLACEHOLDER"
+autowrap_mode = 3
+
+[node name="PreviewRowsVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PreviewSpacer" type="Control" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewStatusPanel" type="PanelContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="PreviewStatusMargin" type="MarginContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewStatusPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="PreviewStatusVBox" type="VBoxContainer" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewStatusPanel/PreviewStatusMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PreviewStatusTitleLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewStatusPanel/PreviewStatusMargin/PreviewStatusVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "GEN_TRACK_STATUS_TITLE"
+
+[node name="PreviewStatusLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewStatusPanel/PreviewStatusMargin/PreviewStatusVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.82, 0.58, 1)
+theme_override_font_sizes/font_size = 17
+text = "SONG_STATUS_NOTES_READY"
+
+[node name="PreviewStatusHintLabel" type="Label" parent="ScreenMargin/Container/BodyHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewStatusPanel/PreviewStatusMargin/PreviewStatusVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.35, 0.9)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+
+[node name="FooterRow" type="HBoxContainer" parent="ScreenMargin/Container"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ResetButton" type="Button" parent="ScreenMargin/Container/FooterRow"]
+custom_minimum_size = Vector2(220, 48)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Сбросить настройки"
+
+[node name="FooterSpacer" type="Control" parent="ScreenMargin/Container/FooterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConfirmButton" type="Button" parent="ScreenMargin/Container/FooterRow"]
+clip_contents = true
+custom_minimum_size = Vector2(300, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Подтвердить"
+
+[node name="FooterHintLabel" type="Label" parent="ScreenMargin/Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.58, 0.75)
+theme_override_font_sizes/font_size = 14
+text = "Esc — назад · 1 инструмент · Q/W цель · E/R/T сложность · A/S/D линии · Z расширенные · Enter подтвердить"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="."]
+z_index = 10
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 1
+offset_left = 16.0
+offset_top = 16.0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="PresetsButton" type="Button" parent="."]
+z_index = 10
+clip_contents = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 1
+offset_left = 16.0
+offset_top = 68.0
+offset_right = 236.0
+offset_bottom = 130.0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Пресеты"
+
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/CriticStrengthRow/CriticStrengthSlider" to="." method="_on_critic_strength_changed"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/GrooveCompletionCheckBox" to="." method="_on_groove_completion_toggled"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/RawAdtofCheckBox" to="." method="_on_raw_adtof_toggled"]
+[connection signal="pressed" from="PresetsButton" to="." method="_on_presets_pressed"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/IncludeHiHatsCheckBox" to="." method="_on_include_hi_hats_toggled"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/AdvancedToggleButton" to="." method="_on_advanced_section_toggled"]
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/FillRow/FillSlider" to="." method="_on_fill_slider_changed"]
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/GrooveRow/GrooveSlider" to="." method="_on_groove_slider_changed"]
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColLeft/DensityRow/DensitySlider" to="." method="_on_density_slider_changed"]
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GridSnapRow/GridSnapStrengthSlider" to="." method="_on_grid_snap_strength_changed"]
+[connection signal="value_changed" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/SliderColumns/SliderColRight/GenreTemplateRow/GenreTemplateStrengthSlider" to="." method="_on_genre_template_strength_changed"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/AccentStrongBeatsCheckBox" to="." method="_on_accent_strong_beats_toggled"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/EnableGenreDetectionCheckBox" to="." method="_on_enable_genre_detection_toggled"]
+[connection signal="toggled" from="ScreenMargin/Container/BodyHBox/MainScroll/MainVBox/AdvancedSection/AdvancedSectionVBox/SlidersContainer/CheckboxesContainer/EnableStemsCheckBox" to="." method="_on_enable_stems_toggled"]
+[connection signal="pressed" from="ScreenMargin/Container/FooterRow/ResetButton" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="ScreenMargin/Container/FooterRow/ConfirmButton" to="." method="_on_confirm_pressed"]
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]

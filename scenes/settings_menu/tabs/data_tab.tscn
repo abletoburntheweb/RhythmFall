@@ -1,0 +1,146 @@
+[gd_scene load_steps=5 format=3 uid="uid://bdatasettings0001"]
+
+[ext_resource type="Script" path="res://scenes/settings_menu/tabs/data_tab.gd" id="1_data"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="3_notice"]
+[ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="4_confirm"]
+
+[node name="DataTab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_data")
+
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="BackupPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSlate"
+
+[node name="BackupPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="BackupRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackupHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSlate"
+theme_override_font_sizes/font_size = 22
+text = "Резервная копия прогресса"
+
+[node name="BackupHintLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Валюта, покупки, статистика, достижения и метаданные треков."
+
+[node name="BackupButtonsHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ExportProgressButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 54)
+theme_type_variation = &"FlatButtonGreen"
+theme_override_font_sizes/font_size = 20
+text = "Экспорт прогресса"
+
+[node name="ImportProgressButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 54)
+theme_type_variation = &"FlatButtonGreen"
+theme_override_font_sizes/font_size = 20
+text = "Импорт прогресса"
+
+[node name="ToolsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSlate"
+
+[node name="ToolsPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="ToolsRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ToolsHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSlate"
+theme_override_font_sizes/font_size = 22
+text = "Кэш"
+
+[node name="ToolsHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Сброс локального кэша BPM. Чарты и прогресс не удаляются."
+
+[node name="BpmButtonRow" type="CenterContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows"]
+layout_mode = 2
+
+[node name="ResetBPMBatchButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows/BpmButtonRow"]
+custom_minimum_size = Vector2(280, 50)
+layout_mode = 2
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 20
+text = "Сбросить кэш BPM"
+
+[node name="ExportProgressDialog" type="FileDialog" parent="."]
+unresizable = true
+file_mode = 0
+access = 2
+use_native_dialog = true
+
+[node name="ImportProgressDialog" type="FileDialog" parent="."]
+unresizable = true
+file_mode = 0
+access = 2
+use_native_dialog = true
+
+[node name="NoticeOverlay" parent="." instance=ExtResource("3_notice")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="ConfirmOverlay" parent="." instance=ExtResource("4_confirm")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox/ExportProgressButton" to="." method="_on_export_progress_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox/ImportProgressButton" to="." method="_on_import_progress_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows/BpmButtonRow/ResetBPMBatchButton" to="." method="_on_reset_bpm_batch_pressed"]
+[connection signal="file_selected" from="ExportProgressDialog" to="." method="_on_export_progress_file_selected"]
+[connection signal="file_selected" from="ImportProgressDialog" to="." method="_on_import_progress_file_selected"]

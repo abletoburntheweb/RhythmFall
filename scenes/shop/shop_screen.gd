@@ -1,7 +1,17 @@
 # scenes/shop/shop_screen.gd
 extends BaseScreen
 
-const ITEM_CARD_SCENE := preload("res://scenes/shop/item_card.tscn")
+const ITEM_CARD_SCENE := preload("res://scenes/shop/components/item_card.tscn")
+const COLLECTION_CARD_SCENE := preload("res://scenes/shop/components/shop_collection_card.tscn")
+const _ShopItemLocale = preload("res://logic/i18n/shop_item_locale.gd")
+const _ShopCollectionLocale = preload("res://logic/i18n/shop_collection_locale.gd")
+const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
+const SHOP_DATA_USER_PATH := "user://shop_data.json"
+const SHOP_DATA_RES_PATH := "res://data/shop_data.json"
+const _SpotlightTutorialScene := preload("res://ui/spotlight_tutorial.tscn")
+const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
+const _UiListSlideTransition = preload("res://logic/ui/ui_list_slide_transition.gd")
+const _UiCategoryButton = preload("res://logic/ui/ui_category_button.gd")
 const _SHOP_ITEM_CELL_HEIGHT := 350
 
 var currency: int = 0
@@ -9,28 +19,133 @@ var shop_data: Dictionary = {}
 var item_cards: Array[Node] = []
 var achievements_data: Dictionary = {} 
 var current_category: String = "Все"
+var current_collection_filter: String = ""
 
-var current_cover_gallery: Node = null
-var current_cover_item_data: Dictionary = {}
 var _scroll_step := 60
 var _page_step := 480
 
 const _CATEGORIES_HBOX_PATH := "MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"
+var _categories_hbox: HBoxContainer = null
 const _CATEGORY_BUTTON_SPECS: Array = [
 	["Все", "CategoryButtonAll"],
 	["Кик", "CategoryButtonKick"],
-	["Обложки", "CategoryButtonCover"],
 	["Ноты", "CategoryButtonNotes"],
 	["Подсветка линий", "CategoryButtonLaneHighlight"],
+	["Частицы хита", "CategoryButtonParticles"],
+]
+const _CATEGORY_LOCALE_KEYS := {
+	"Все": "SHOP_CAT_ALL",
+	"Кик": "SHOP_CAT_KICK",
+	"Ноты": "SHOP_CAT_NOTES",
+	"Подсветка линий": "SHOP_CAT_LANE",
+	"Частицы хита": "SHOP_CAT_PARTICLES",
+}
+
+const _CATEGORY_DISPLAY_ORDER: Array[String] = [
+	"Кик",
+	"Ноты",
+	"Подсветка линий",
+	"Частицы хита",
 ]
 
+const _CATEGORY_ICON_PAD := 26.0
 var _category_badges: Dictionary = {}
 var _unseen_reward_stats: Dictionary = {}
+var _achievement_title_cache: Dictionary = {}
+var _preview_warm_queue: Array = []
+var _preview_warming := false
+var _kick_waveform_prewarm: AudioWaveformSampler = null
+var _sorted_shop_items: Array = []
+var _cards_by_item_id: Dictionary = {}
+const _INITIAL_CARD_BATCH := 12
+const _CARD_SPAWN_PER_FRAME := 4
+const _CARD_SPAWN_PER_FRAME_BG := 2
+const _PREVIEW_WARM_BATCH := 8
+const _KICK_WAVEFORM_BAR_COUNT := 56
+var _bg_spawn_generation := 0
+var _shop_initializing := false
+var _badge_update_queued := false
+var _spotlight_tutorial: CanvasLayer = null
+var _collection_cards: Array = []
 
+@onready var _items_scroll: ScrollContainer = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
+@onready var _category_bar: PanelContainer = $MainContent/MainVBox/VBoxContainer/CategoryBarPanel
+
+@onready var _back_button: Button = $MainContent/MainVBox/BackButton
+@onready var _title_label: Label = $MainContent/MainVBox/TitleLabel
 @onready var _unlock_progress_bar: ProgressBar = $MainContent/MainVBox/UnlockProgressBar
 @onready var _counter_label: Label = $MainContent/MainVBox/CounterLabel
+@onready var _collections_title: Label = $MainContent/MainVBox/CollectionsPanel/CollectionsTitleLabel
+@onready var _collections_row: HBoxContainer = $MainContent/MainVBox/CollectionsPanel/CollectionsRow
+@onready var _footer_label: Label = $MainContent/MainVBox/FooterLabel
+
+
+func apply_locale() -> void:
+	if _back_button:
+		_back_button.text = tr("BTN_BACK")
+	if _title_label:
+		_title_label.text = tr("SHOP_TITLE")
+	if _footer_label:
+		_footer_label.text = tr("SHOP_FOOTER_HINT")
+	if _collections_title:
+		_collections_title.text = tr("SHOP_COLLECTIONS_TITLE")
+	_apply_category_button_labels()
+	_update_shop_progress_label()
+	_update_category_buttons(current_category)
+	_sync_all_category_button_layouts()
+	for card in item_cards:
+		if card and card.has_method("apply_locale"):
+			card.apply_locale()
+	_refresh_collection_cards_locale()
+
+
+func _get_categories_hbox() -> HBoxContainer:
+	if _categories_hbox and is_instance_valid(_categories_hbox):
+		return _categories_hbox
+	_categories_hbox = find_child("CategoriesHBox", true, false) as HBoxContainer
+	if _categories_hbox == null:
+		_categories_hbox = get_node_or_null(_CATEGORIES_HBOX_PATH) as HBoxContainer
+	return _categories_hbox
+
+func _load_shop_data() -> Dictionary:
+	var data := JsonUtils.read_json_dict(SHOP_DATA_USER_PATH)
+	if data.is_empty():
+		data = JsonUtils.read_json_dict(SHOP_DATA_RES_PATH)
+	else:
+		var bundled := JsonUtils.read_json_dict(SHOP_DATA_RES_PATH)
+		if not bundled.is_empty():
+			data = CatalogDataSync.merge_shop_items(data, bundled)
+	if data.is_empty():
+		return {}
+	_ensure_collections_in_shop_data(data)
+	return data
+
+
+func _ensure_collections_in_shop_data(data: Dictionary) -> void:
+	var bundled := JsonUtils.read_json_dict(SHOP_DATA_RES_PATH)
+	var bundled_collections: Variant = bundled.get("collections", [])
+	if bundled_collections is Array and not (bundled_collections as Array).is_empty():
+		data["collections"] = (bundled_collections as Array).duplicate(true)
+	if current_collection_filter == "mushroom":
+		current_collection_filter = "sunset"
+
+func _apply_category_button_labels() -> void:
+	var hbox := _get_categories_hbox()
+	if not hbox:
+		return
+	for spec in _CATEGORY_BUTTON_SPECS:
+		var category := String(spec[0])
+		var btn := hbox.get_node_or_null(String(spec[1])) as Button
+		if btn and _CATEGORY_LOCALE_KEYS.has(category):
+			var locale_key: String = _CATEGORY_LOCALE_KEYS[category]
+			var label := tr(locale_key)
+			btn.text = category if label == locale_key else label
+	_sync_all_category_button_layouts()
 
 func _ready():
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_SHOP"), true)
 	var started_ms := Time.get_ticks_msec()
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
@@ -40,34 +155,12 @@ func _ready():
 		printerr("ShopScreen.gd: Не удалось получить transitions через GameEngine.")
 
 	var user_shop = "user://shop_data.json"
-	var file_access = FileAccess.open(user_shop, FileAccess.READ)
-	if file_access:
-		var json_text = file_access.get_as_text()
-		file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			shop_data = json_result
-		else:
-			printerr("ShopScreen.gd: Ошибка парсинга JSON или данные не являются словарём.")
-	else:
+	shop_data = _load_shop_data()
+	if shop_data.is_empty():
 		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", user_shop)
-
-	var user_ach = "user://achievements_data.json"
-	var achievements_file_access = FileAccess.open(user_ach, FileAccess.READ)
-	if achievements_file_access:
-		var json_text = achievements_file_access.get_as_text()
-		achievements_file_access.close()
-		var json_result = JSON.parse_string(json_text)
-		if json_result is Dictionary:
-			achievements_data = json_result
-		else:
-			printerr("ShopScreen.gd: Ошибка парсинга achievements_data.json или данные не являются словарём.")
-	else:
-		printerr("ShopScreen.gd: Файл achievements_data.json не найден: ", user_ach)
 
 	currency = PlayerDataManager.get_currency()  
 	_update_shop_progress_label()
-	
 
 	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 	if items_scroll:
@@ -99,14 +192,357 @@ func _ready():
 	else:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsScroll не найден.")
 
-	_sync_achievement_rewards()
+	_sync_achievement_rewards_deferred()
+	_apply_category_button_labels()
 	_ensure_category_badges()
+	_sync_all_category_button_layouts()
+	_prepare_shop_badge_stats()
+	_build_collection_cards()
+	call_deferred("_build_achievement_title_cache")
 	if PlayerDataManager.has_signal("shop_new_rewards_changed"):
-		PlayerDataManager.shop_new_rewards_changed.connect(_update_category_badges)
+		PlayerDataManager.shop_new_rewards_changed.connect(_on_shop_new_rewards_changed)
+	_restore_shop_category_from_settings()
+	_shop_initializing = true
+	call_deferred("_preload_shop_category_textures")
+	_start_shop_card_build()
+	call_deferred("_maybe_show_shop_tutorial")
+	print("[Perf] ShopScreen shell ready: %d ms, category=%s" % [Time.get_ticks_msec() - started_ms, current_category])
+
+
+func _maybe_show_shop_tutorial(force: bool = false) -> void:
+	if not SettingsManager or not SettingsManager.has_method("get_tutorial_shop_done"):
+		return
+	if not force and SettingsManager.get_tutorial_shop_done():
+		return
+	if _spotlight_tutorial == null:
+		_spotlight_tutorial = _SpotlightTutorialScene.instantiate() as CanvasLayer
+		if _spotlight_tutorial == null:
+			return
+		add_child(_spotlight_tutorial)
+		if not _spotlight_tutorial.finished.is_connected(_on_shop_tutorial_closed):
+			_spotlight_tutorial.finished.connect(_on_shop_tutorial_closed)
+		if not _spotlight_tutorial.skipped.is_connected(_on_shop_tutorial_closed):
+			_spotlight_tutorial.skipped.connect(_on_shop_tutorial_closed)
+	var steps: Array = [
+		{
+			"title_key": "TUTORIAL_SHOP_1_TITLE",
+			"body_key": "TUTORIAL_SHOP_1_BODY",
+			"target": _category_bar,
+		},
+		{
+			"title_key": "TUTORIAL_SHOP_2_TITLE",
+			"body_key": "TUTORIAL_SHOP_2_BODY",
+			"target": _items_scroll,
+		},
+		{
+			"title_key": "TUTORIAL_SHOP_3_TITLE",
+			"body_key": "TUTORIAL_SHOP_3_BODY",
+			"target": _unlock_progress_bar,
+		},
+	]
+	if _spotlight_tutorial.has_method("start"):
+		_spotlight_tutorial.start(steps)
+
+
+func _on_shop_tutorial_closed() -> void:
+	if SettingsManager and SettingsManager.has_method("set_tutorial_shop_done"):
+		SettingsManager.set_tutorial_shop_done(true)
+
+
+func debug_show_tutorial() -> void:
+	_maybe_show_shop_tutorial(true)
+
+
+func _restore_shop_category_from_settings() -> void:
+	var saved := String(SettingsManager.get_setting("last_shop_category", "Все"))
+	if saved == "Обложки":
+		saved = "Все"
+	if _is_valid_shop_category(saved):
+		current_category = saved
+	else:
+		current_category = "Все"
+	_update_category_buttons(current_category)
+
+
+func _is_valid_shop_category(category: String) -> bool:
+	for spec in _CATEGORY_BUTTON_SPECS:
+		if String(spec[0]) == category:
+			return true
+	return false
+
+
+func _item_in_shop_category(item: Dictionary, category: String) -> bool:
+	if category == "Все":
+		return true
+	return String(item.get("category", "")) == category
+
+
+func _item_in_collection_filter(item: Dictionary) -> bool:
+	if current_collection_filter == "":
+		return true
+	return str(item.get("collection_id", "")) == current_collection_filter
+
+
+func _is_shop_item_unlocked(item: Dictionary) -> bool:
+	var item_id := str(item.get("item_id", ""))
+	if item_id == "":
+		return false
+	if PlayerDataManager.is_item_unlocked(item_id):
+		return true
+	if bool(item.get("is_default", false)):
+		return true
+	if bool(item.get("is_level_reward", false)):
+		var req_level := int(item.get("required_level", 0))
+		if PlayerDataManager.get_current_level() >= req_level:
+			return true
+	if bool(item.get("is_achievement_reward", false)):
+		var ach_req_str := str(item.get("achievement_required", ""))
+		if ach_req_str != "" and ach_req_str.is_valid_int():
+			if PlayerDataManager.is_achievement_unlocked(int(ach_req_str)):
+				return true
+	if bool(item.get("is_daily_reward", false)):
+		var req_daily := int(item.get("required_daily_completed", 0))
+		if PlayerDataManager.get_daily_quests_completed_total() >= req_daily:
+			return true
+	return false
+
+
+func _visible_item_count_for_category(category: String) -> int:
+	var count := 0
+	for item_data in _items_for_category(category):
+		if item_data is Dictionary and _item_in_collection_filter(item_data):
+			count += 1
+	return count
+
+
+func _compute_collection_progress(collection_id: String) -> Dictionary:
+	var unlocked := 0
+	var total := 0
+	var items: Array = shop_data.get("items", [])
+	for item_data in items:
+		if not (item_data is Dictionary):
+			continue
+		if str(item_data.get("collection_id", "")) != collection_id:
+			continue
+		total += 1
+		if _is_shop_item_unlocked(item_data):
+			unlocked += 1
+	return {"unlocked": unlocked, "total": total}
+
+
+func _build_collection_cards() -> void:
+	if _collections_row == null:
+		return
+	_ensure_collections_in_shop_data(shop_data)
+	for child in _collections_row.get_children():
+		child.queue_free()
+	_collection_cards.clear()
+	var collections: Array = _ShopCollectionLocale.collections_from_shop_data(shop_data)
+	for entry in collections:
+		if not (entry is Dictionary):
+			continue
+		var card = COLLECTION_CARD_SCENE.instantiate()
+		_collections_row.add_child(card)
+		var collection_id := str(entry.get("collection_id", ""))
+		var stats := _compute_collection_progress(collection_id)
+		if card.has_method("setup"):
+			card.setup(entry, stats.unlocked, stats.total)
+		if card.has_signal("pressed") and not card.pressed.is_connected(_on_collection_pressed):
+			card.pressed.connect(_on_collection_pressed)
+		if card is Control:
+			var ctrl := card as Control
+			ctrl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			ctrl.size_flags_stretch_ratio = 1.0
+		_collection_cards.append(card)
+	_update_collection_selection()
+
+
+func _refresh_collection_cards() -> void:
+	for card in _collection_cards:
+		if not is_instance_valid(card):
+			continue
+		var collection_id := ""
+		if card.has_method("get_collection_id"):
+			collection_id = card.get_collection_id()
+		var stats := _compute_collection_progress(collection_id)
+		if card.has_method("refresh_progress"):
+			card.refresh_progress(stats.unlocked, stats.total)
+
+
+func _refresh_collection_cards_locale() -> void:
+	for card in _collection_cards:
+		if is_instance_valid(card) and card.has_method("apply_locale"):
+			card.apply_locale()
+
+
+func _update_collection_selection() -> void:
+	for card in _collection_cards:
+		if not is_instance_valid(card):
+			continue
+		var selected := false
+		if card.has_method("get_collection_id"):
+			selected = card.get_collection_id() == current_collection_filter
+		if card.has_method("set_selected"):
+			card.set_selected(selected)
+
+
+func _on_collection_pressed(collection_id: String) -> void:
+	if collection_id == "":
+		return
+	if current_collection_filter == collection_id:
+		current_collection_filter = ""
+		UiModifierSounds.play_deselect()
+	else:
+		current_collection_filter = collection_id
+		UiScreenHotkeys.play_section_switch_sound()
+	_update_collection_selection()
+	_apply_category_visibility(current_category)
+	var grid_container := _get_items_grid()
+	if grid_container:
+		_update_grid_min_height(grid_container, _visible_item_count_for_category(current_category))
+	_reset_shop_scroll()
+
+
+func _preload_shop_category_textures() -> void:
+	ScreenTexturePreload.warmup_shop_category(current_category, _INITIAL_CARD_BATCH * 2)
+
+func _get_items_grid() -> GridContainer:
+	var main_vbox = $MainContent/MainVBox
+	if main_vbox:
+		return main_vbox.find_child("ItemsGrid", true, false) as GridContainer
+	return null
+
+func _sorted_global_index(item_id: String) -> int:
+	for i in range(_sorted_shop_items.size()):
+		var item = _sorted_shop_items[i]
+		if item is Dictionary and String(item.get("item_id", "")) == item_id:
+			return i
+	return _sorted_shop_items.size()
+
+
+func _items_for_category(category: String) -> Array:
+	var result: Array = []
+	for item_data in _sorted_shop_items:
+		if item_data is Dictionary and item_data.has("item_id") and _item_in_shop_category(item_data, category):
+			result.append(item_data)
+	return result
+
+func _pending_items_for_category(category: String) -> Array:
+	var result: Array = []
+	for item_data in _items_for_category(category):
+		var item_id_str := String(item_data.get("item_id", ""))
+		if item_id_str != "" and not _cards_by_item_id.has(item_id_str):
+			result.append(item_data)
+	return result
+
+func _apply_category_visibility(category: String) -> void:
+	for card in item_cards:
+		if not is_instance_valid(card):
+			continue
+		var card_category := ""
+		var item_dict: Dictionary = {}
+		if card.item_data and card.item_data is Dictionary:
+			item_dict = card.item_data
+			card_category = String(item_dict.get("category", ""))
+		var category_match: bool = category == "Все" or card_category == category
+		var collection_match: bool = _item_in_collection_filter(item_dict)
+		card.visible = category_match and collection_match
+
+func _update_grid_min_height(grid_container: GridContainer, item_count: int) -> void:
+	var cols: int = int(grid_container.columns)
+	if cols < 1:
+		cols = 5
+	var rows: int = int(ceil(float(item_count) / float(cols))) if item_count > 0 else 0
+	var vs: int = int(grid_container.get_theme_constant("v_separation", "GridContainer"))
+	if vs < 0:
+		vs = 30
+	var scroll_pos := _capture_shop_scroll()
+	if rows > 0:
+		grid_container.custom_minimum_size.y = float(rows * _SHOP_ITEM_CELL_HEIGHT + max(0, rows - 1) * vs)
+	else:
+		grid_container.custom_minimum_size.y = 0.0
+	call_deferred("_restore_shop_scroll", scroll_pos)
+
+func _reset_shop_scroll() -> void:
+	var items_scroll = _get_items_scroll()
+	if items_scroll:
+		items_scroll.scroll_vertical = 0
+		items_scroll.scroll_horizontal = 0
+
+func _get_items_scroll() -> ScrollContainer:
+	if _items_scroll and is_instance_valid(_items_scroll):
+		return _items_scroll
+	return $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll as ScrollContainer
+
+func _capture_shop_scroll() -> Vector2i:
+	var sc := _get_items_scroll()
+	if sc == null:
+		return Vector2i.ZERO
+	return Vector2i(sc.scroll_horizontal, sc.scroll_vertical)
+
+func _restore_shop_scroll(pos: Vector2i) -> void:
+	var sc := _get_items_scroll()
+	if sc == null:
+		return
+	sc.scroll_horizontal = pos.x
+	sc.scroll_vertical = pos.y
+
+func _prepare_shop_badge_stats() -> void:
+	if _sorted_shop_items.is_empty():
+		_sorted_shop_items = _sort_shop_items_for_display(shop_data.get("items", []))
+	_unseen_reward_stats = _compute_unseen_reward_stats(_sorted_shop_items)
+	_apply_category_badge_counts()
+
+func _on_shop_new_rewards_changed() -> void:
+	if _shop_initializing:
+		_queue_category_badge_update()
+		return
+	_update_category_badges()
+
+func _queue_category_badge_update() -> void:
+	if _badge_update_queued:
+		return
+	_badge_update_queued = true
+	call_deferred("_flush_queued_category_badge_update")
+
+func _flush_queued_category_badge_update() -> void:
+	_badge_update_queued = false
+	if not is_inside_tree():
+		return
+	_update_category_badges()
+
+func _start_shop_card_build() -> void:
+	var started_ms := Time.get_ticks_msec()
+	var overlay := _get_loading_overlay()
+	if overlay and not overlay.is_active():
+		overlay.show_loading(tr("UI_LOADING_SHOP"), true)
 	await _create_item_cards()
-	_update_category_badges(false)
+	if overlay:
+		overlay.hide_loading()
+	_shop_initializing = false
+	_flush_queued_category_badge_update()
 	_set_buttons_focus_to_none()
-	print("[Perf] ShopScreen ready: %d ms, cards=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size()])
+	print("[Perf] ShopScreen cards ready: %d ms, cards=%d, category=%s" % [
+		Time.get_ticks_msec() - started_ms, item_cards.size(), current_category
+	])
+
+
+func _get_shop_items_container() -> Control:
+	if _items_scroll == null:
+		return null
+	return _items_scroll.get_node_or_null("ItemsListContainer") as Control
+
+
+func _set_shop_grid_busy(busy: bool) -> void:
+	var container := _get_shop_items_container()
+	if container:
+		container.modulate.a = 0.0 if busy else 1.0
+		container.mouse_filter = Control.MOUSE_FILTER_IGNORE if busy else Control.MOUSE_FILTER_PASS
+
+
+func _sync_achievement_rewards_deferred() -> void:
+	call_deferred("_sync_achievement_rewards")
+
 
 func _sync_achievement_rewards() -> void:
 	var game_engine = get_parent()
@@ -117,7 +553,7 @@ func _sync_achievement_rewards() -> void:
 		return
 	var am = ach_sys.achievement_manager
 	am.check_playtime_achievements(PlayerDataManager)
-	am.sync_unlocked_achievements_to_player_data()
+	am.sync_unlocked_achievements_to_player_data(true)
 
 func _get_currency_label() -> Label:
 	var main_vbox = $MainContent/MainVBox
@@ -140,6 +576,24 @@ func _pulse_currency_label() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(lbl, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(lbl, "modulate", Color(1, 1, 1, 1), 0.25)
+
+
+func _hud_currency_global_center() -> Vector2:
+	var ge := get_parent()
+	while ge and ge.name != "GameEngine":
+		ge = ge.get_parent()
+	if ge == null:
+		ge = get_tree().root.find_child("GameEngine", true, false)
+	if ge and ge.has_method("get_currency_hud_global_center"):
+		return ge.get_currency_hud_global_center()
+	return Vector2.ZERO
+
+
+func _fly_diamond_after_buy(origin: Vector2) -> void:
+	await get_tree().process_frame
+	var target := _hud_currency_global_center()
+	if origin != Vector2.ZERO:
+		_UiMotionEffects.fly_diamond(get_tree(), origin, target)
 
 func _update_shop_progress_label():
 	var items = shop_data.get("items", [])
@@ -171,28 +625,81 @@ func _update_shop_progress_label():
 		if is_unlocked_purchase or is_default_item or available_by_level or available_by_achievement or available_by_daily:
 			unlocked += 1
 	if _counter_label:
-		_counter_label.text = "Открыто: %d / %d" % [unlocked, total_items]
+		_counter_label.text = tr("SHOP_UNLOCKED") % [unlocked, total_items]
+	if _footer_label:
+		_footer_label.text = tr("SHOP_FOOTER_HINT")
 	if _unlock_progress_bar:
 		_unlock_progress_bar.max_value = maxf(float(total_items), 1.0)
 		_unlock_progress_bar.value = float(unlocked)
+	_refresh_collection_cards()
 func _initialize_categories_default():
 	_update_category_buttons("Все")
 	current_category = "Все"
 
 func _update_category_buttons(selected: String):
-	var hbox = $MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox
+	_apply_category_buttons(selected)
+	var tree := get_tree()
+	if tree:
+		tree.create_timer(0.05).timeout.connect(
+			func() -> void: _apply_category_buttons(selected),
+			CONNECT_ONE_SHOT
+		)
+
+
+func _apply_category_buttons(selected: String) -> void:
+	var hbox = _get_categories_hbox()
 	if not hbox:
 		return
-	var all_btn: Button = hbox.get_node("CategoryButtonAll")
-	var kick_btn: Button = hbox.get_node("CategoryButtonKick")
-	var cover_btn: Button = hbox.get_node("CategoryButtonCover")
-	var notes_btn: Button = hbox.get_node("CategoryButtonNotes")
-	var lane_btn: Button = hbox.get_node("CategoryButtonLaneHighlight")
-	if all_btn: all_btn.theme_type_variation = "ActiveAll" if selected == "Все" else "CategoryAll"
-	if kick_btn: kick_btn.theme_type_variation = "ActiveKick" if selected == "Кик" else "CategoryKick"
-	if cover_btn: cover_btn.theme_type_variation = "ActiveCover" if selected == "Обложки" else "CategoryCover"
-	if notes_btn: notes_btn.theme_type_variation = "ActiveNotes" if selected == "Ноты" else "CategoryNotes"
-	if lane_btn: lane_btn.theme_type_variation = "ActiveLane" if selected == "Подсветка линий" else "CategoryLane"
+	for spec in _CATEGORY_BUTTON_SPECS:
+		var category := String(spec[0])
+		var btn := hbox.get_node_or_null(String(spec[1])) as Button
+		if btn:
+			_UiCategoryButton.apply_selection(btn, selected == category, 14)
+
+
+func _reset_shop_hover(previous_category: String) -> void:
+	var hbox := _get_categories_hbox()
+	if hbox:
+		for spec in _CATEGORY_BUTTON_SPECS:
+			var btn := hbox.get_node_or_null(String(spec[1])) as Button
+			_UiCategoryButton.reset_hover_state(btn)
+	for card in item_cards:
+		if not is_instance_valid(card):
+			continue
+		var card_category := ""
+		if card.item_data and card.item_data is Dictionary:
+			card_category = String((card.item_data as Dictionary).get("category", ""))
+		if previous_category == "Все" or card_category == previous_category:
+			_UiCategoryButton.reset_hover_in_subtree(card)
+
+
+const _CATEGORY_BTN_HORIZONTAL_PAD := 36.0
+const _CATEGORY_BTN_MIN_HEIGHT := 42.0
+
+func _measure_category_button_min_width(btn: Button) -> float:
+	var font := btn.get_theme_font("font")
+	var font_size := btn.get_theme_font_size("font_size")
+	if font == null:
+		return 96.0
+	var text_size := font.get_string_size(btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	return text_size.x + _CATEGORY_BADGE_RESERVE + _CATEGORY_BTN_HORIZONTAL_PAD + _CATEGORY_ICON_PAD
+
+func _sync_category_button_layout(btn: Button) -> void:
+	btn.clip_text = false
+	btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	if not btn.has_meta("_badge_space_reserved"):
+		_reserve_category_badge_space(btn)
+		btn.set_meta("_badge_space_reserved", true)
+	btn.custom_minimum_size = Vector2(_measure_category_button_min_width(btn), _CATEGORY_BTN_MIN_HEIGHT)
+
+func _sync_all_category_button_layouts() -> void:
+	var hbox := _get_categories_hbox()
+	if not hbox:
+		return
+	for spec in _CATEGORY_BUTTON_SPECS:
+		var btn := hbox.get_node_or_null(String(spec[1])) as Button
+		if btn:
+			_sync_category_button_layout(btn)
 
 func _compute_unseen_reward_stats(items: Array) -> Dictionary:
 	var unseen_ids := PlayerDataManager.get_unseen_shop_reward_ids(items)
@@ -214,53 +721,57 @@ func _compute_unseen_reward_stats(items: Array) -> Dictionary:
 			counts[category] = int(counts[category]) + 1
 	return {"unseen_set": unseen_set, "counts": counts}
 
+const _CATEGORY_BADGE_RESERVE := 32.0
+
+func _reserve_category_badge_space(btn: Button) -> void:
+	var hover_override: StyleBox = null
+	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var stylebox := btn.get_theme_stylebox(style_name)
+		if stylebox == null:
+			continue
+		var dup := stylebox.duplicate()
+		if dup is StyleBoxFlat:
+			dup.content_margin_right = maxf(dup.content_margin_right, _CATEGORY_BADGE_RESERVE)
+		if style_name == "hover":
+			hover_override = dup
+		btn.add_theme_stylebox_override(style_name, dup)
+	if hover_override:
+		btn.add_theme_stylebox_override("focus", hover_override.duplicate())
+
+
 func _ensure_category_badges() -> void:
 	if not _category_badges.is_empty():
 		return
-	var hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as HBoxContainer
+	var hbox := _get_categories_hbox()
 	if not hbox:
 		return
-	var badge_style := StyleBoxFlat.new()
-	badge_style.bg_color = Color(0.91, 0.36, 0.36, 1.0)
-	badge_style.set_corner_radius_all(10)
-	badge_style.content_margin_left = 6.0
-	badge_style.content_margin_top = 2.0
-	badge_style.content_margin_right = 6.0
-	badge_style.content_margin_bottom = 2.0
 	for spec in _CATEGORY_BUTTON_SPECS:
 		var category := String(spec[0])
 		var btn := hbox.get_node_or_null(String(spec[1])) as Button
 		if not btn:
 			continue
-		var badge := PanelContainer.new()
-		badge.name = "NewRewardsBadge"
-		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge.visible = false
-		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		badge.anchor_left = 1.0
-		badge.anchor_right = 1.0
-		badge.offset_left = -26.0
-		badge.offset_top = 2.0
-		badge.offset_right = -4.0
-		badge.offset_bottom = 22.0
-		badge.add_theme_stylebox_override("panel", badge_style.duplicate())
-		var count_label := Label.new()
-		count_label.name = "CountLabel"
-		count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		count_label.add_theme_font_size_override("font_size", 13)
-		count_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-		count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.45))
-		count_label.add_theme_constant_override("outline_size", 1)
-		badge.add_child(count_label)
-		btn.add_child(badge)
+		btn.focus_mode = Control.FOCUS_NONE
+		if not btn.has_meta("_badge_space_reserved"):
+			_reserve_category_badge_space(btn)
+			btn.set_meta("_badge_space_reserved", true)
+		var badge := btn.get_node_or_null("NewRewardsBadge") as PanelContainer
+		var count_label := badge.get_node_or_null("CountLabel") as Label if badge else null
+		if badge == null or count_label == null:
+			continue
+		badge.modulate = Color(1, 1, 1, 0)
 		_category_badges[category] = {"panel": badge, "label": count_label}
 
 func _update_category_badges(recompute: bool = true) -> void:
 	if _category_badges.is_empty():
 		return
 	if recompute or _unseen_reward_stats.is_empty():
-		_unseen_reward_stats = _compute_unseen_reward_stats(shop_data.get("items", []))
+		var items: Array = _sorted_shop_items if not _sorted_shop_items.is_empty() else shop_data.get("items", [])
+		_unseen_reward_stats = _compute_unseen_reward_stats(items)
+	_apply_category_badge_counts()
+
+func _apply_category_badge_counts() -> void:
+	if _category_badges.is_empty():
+		return
 	var counts: Dictionary = _unseen_reward_stats.get("counts", {})
 	for category in _category_badges.keys():
 		var entry: Dictionary = _category_badges[category]
@@ -269,96 +780,322 @@ func _update_category_badges(recompute: bool = true) -> void:
 		if not badge or not count_label:
 			continue
 		var count := int(counts.get(category, 0))
+		var next_text: String = "99+" if count > 99 else str(count)
 		if count <= 0:
-			badge.visible = false
+			if badge.modulate.a > 0.01:
+				badge.modulate = Color(1, 1, 1, 0)
+			count_label.text = "0"
 		else:
-			badge.visible = true
-			count_label.text = "99+" if count > 99 else str(count)
+			if badge.modulate.a < 0.99:
+				badge.modulate = Color(1, 1, 1, 1)
+			if count_label.text != next_text:
+				count_label.text = next_text
+
+func _shop_item_category_rank(category: String) -> int:
+	var idx := _CATEGORY_DISPLAY_ORDER.find(category)
+	return idx if idx >= 0 else _CATEGORY_DISPLAY_ORDER.size()
+
+
+func _shop_item_is_standard(item: Dictionary) -> bool:
+	if bool(item.get("is_default", false)):
+		return true
+	var item_id := str(item.get("item_id", ""))
+	return PlayerDataManager.DEFAULT_UNLOCKED_ITEMS.has(item_id)
+
+
+func _sort_shop_items_for_display(items: Array) -> Array:
+	var ranked: Array = []
+	for orig_idx in items.size():
+		var item = items[orig_idx]
+		if not (item is Dictionary) or not item.has("item_id"):
+			continue
+		var category := String(item.get("category", ""))
+		ranked.append({
+			"standard_block": 0 if _shop_item_is_standard(item) else 1,
+			"rank": _shop_item_category_rank(category),
+			"orig": orig_idx,
+			"item": item,
+		})
+	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var std_a: int = int(a.get("standard_block", 1))
+		var std_b: int = int(b.get("standard_block", 1))
+		if std_a != std_b:
+			return std_a < std_b
+		var rank_a: int = int(a.get("rank", 999))
+		var rank_b: int = int(b.get("rank", 999))
+		if rank_a != rank_b:
+			return rank_a < rank_b
+		return int(a.get("orig", 0)) < int(b.get("orig", 0))
+	)
+	var sorted: Array = []
+	for entry in ranked:
+		sorted.append(entry.get("item"))
+	return sorted
+
 
 func _create_item_cards() -> void:
 	var started_ms := Time.get_ticks_msec()
+	_bg_spawn_generation += 1
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
-	var items = shop_data.get("items", [])
-	_unseen_reward_stats = _compute_unseen_reward_stats(items)
-	var unseen_set: Dictionary = _unseen_reward_stats["unseen_set"]
-	var main_vbox = $MainContent/MainVBox
-	var grid_container = null
-	if main_vbox:
-		grid_container = main_vbox.find_child("ItemsGrid", true, false)
-	if not grid_container:
+	_cards_by_item_id.clear()
+	_sorted_shop_items = _sort_shop_items_for_display(shop_data.get("items", []))
+	if _unseen_reward_stats.is_empty():
+		_unseen_reward_stats = _compute_unseen_reward_stats(_sorted_shop_items)
+	else:
+		_apply_category_badge_counts()
+	var grid_container := _get_items_grid()
+	if grid_container == null:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
 		return
 
-	var valid_n: int = 0
-	for item in items:
-		if item is Dictionary and item.has("item_id"):
-			valid_n += 1
-	var cols: int = int(grid_container.columns)
-	if cols < 1:
-		cols = 5
-	var rows: int = int(ceil(float(valid_n) / float(cols))) if valid_n > 0 else 0
-	var vs: int = int(grid_container.get_theme_constant("v_separation", "GridContainer"))
-	if vs < 0:
-		vs = 30
-	if rows > 0:
-		grid_container.custom_minimum_size.y = float(rows * _SHOP_ITEM_CELL_HEIGHT + max(0, rows - 1) * vs)
-	else:
-		grid_container.custom_minimum_size.y = 0.0
+	var pending := _items_for_category(current_category)
+	_update_grid_min_height(grid_container, pending.size())
+	var unseen_set: Dictionary = _unseen_reward_stats.get("unseen_set", {})
+	if current_category == "Кик" or current_category == "Все":
+		await _prewarm_kick_waveforms_async(_kick_items_from_pending(pending))
+	await _spawn_cards_progressive(pending, unseen_set, grid_container, _bg_spawn_generation)
 
-	var batch_size = 8
-	var i = 0
-	while i < items.size():
-		var end = min(i + batch_size, items.size())
-		for j in range(i, end):
-			var item_data = items[j]
-			if not (item_data is Dictionary) or not item_data.has("item_id"):
-				continue
-			var new_card = ITEM_CARD_SCENE.instantiate()
-			new_card.item_data = item_data
-			var is_purchased = PlayerDataManager.is_item_unlocked(String(item_data.get("item_id", "")))
-			var is_active = false
-			var category_map = _get_category_map()
-			var internal_category = category_map.get(String(item_data.get("category", "")), "")
-			if internal_category:
-				is_active = (PlayerDataManager.get_active_item(internal_category) == String(item_data.get("item_id", "")))
-			var achievement_name = ""
-			var achievement_unlocked = false
-			var level_unlocked = false
-			var daily_unlocked = false
-			if item_data.get("is_level_reward", false):
-				var required_level = item_data.get("required_level", 0)
-				var current_level = PlayerDataManager.get_current_level()
-				level_unlocked = current_level >= required_level
-			elif item_data.get("is_achievement_reward", false):
-				var achievement_id = item_data.get("achievement_required", "")
-				achievement_name = _get_achievement_name_by_id(achievement_id)
-				if achievement_id != "" and achievement_id.is_valid_int():
-					achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id))
-			elif item_data.get("is_daily_reward", false):
-				var required_daily = int(item_data.get("required_daily_completed", 0))
-				var total_completed = PlayerDataManager.get_daily_quests_completed_total()
-				daily_unlocked = total_completed >= required_daily
-			new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
-			var item_id_str := String(item_data.get("item_id", ""))
-			if new_card.has_method("set_new_reward_highlight"):
-				new_card.set_new_reward_highlight(unseen_set.has(item_id_str))
-			new_card.buy_pressed.connect(_on_item_buy_pressed)
-			new_card.use_pressed.connect(_on_item_use_pressed)
-			new_card.preview_pressed.connect(_on_item_preview_pressed)
-			new_card.cover_click_pressed.connect(_on_cover_click_pressed)
-			grid_container.add_child(new_card)
-			item_cards.append(new_card)
-		await get_tree().process_frame
-		i = end
 	call_deferred("_shop_grid_clear_min_height")
-	var items_scroll = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
-	if items_scroll:
-		items_scroll.scroll_vertical = 0
-		items_scroll.scroll_horizontal = 0
 	call_deferred("_apply_shop_ui_interactions")
-	print("[Perf] ShopScreen create cards: %d ms, items=%d, batch=%d" % [Time.get_ticks_msec() - started_ms, item_cards.size(), batch_size])
+	print("[Perf] ShopScreen create cards: %d ms, items=%d, category=%s" % [
+		Time.get_ticks_msec() - started_ms, item_cards.size(), current_category
+	])
+
+
+func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_container: GridContainer, generation: int) -> void:
+	if pending.is_empty():
+		_set_shop_grid_busy(false)
+		return
+	var hide_until_batch := true
+	for card in item_cards:
+		if is_instance_valid(card) and card.visible:
+			hide_until_batch = false
+			break
+	if hide_until_batch:
+		_set_shop_grid_busy(true)
+	var spawned := 0
+	var first_batch_cards: Array = []
+	for item_data in pending:
+		if generation != _bg_spawn_generation:
+			return
+		if not (item_data is Dictionary) or not item_data.has("item_id"):
+			continue
+		var before_count := item_cards.size()
+		_spawn_shop_card(item_data, unseen_set, grid_container)
+		spawned += 1
+		if spawned <= _INITIAL_CARD_BATCH:
+			first_batch_cards.append(item_cards[before_count])
+		if hide_until_batch and spawned == _INITIAL_CARD_BATCH:
+			_set_shop_grid_busy(false)
+			for card in first_batch_cards:
+				_queue_preview_warm(card)
+		var frame_budget: int = _CARD_SPAWN_PER_FRAME if spawned <= _INITIAL_CARD_BATCH else _CARD_SPAWN_PER_FRAME_BG
+		if spawned % frame_budget == 0:
+			var scroll_pos := _capture_shop_scroll()
+			await get_tree().process_frame
+			if spawned > _INITIAL_CARD_BATCH and scroll_pos.y > 0:
+				_restore_shop_scroll(scroll_pos)
+	if hide_until_batch and spawned <= _INITIAL_CARD_BATCH:
+		_set_shop_grid_busy(false)
+		for card in first_batch_cards:
+			_queue_preview_warm(card)
+	for item_data in pending:
+		if generation != _bg_spawn_generation:
+			return
+		var item_id_str := String(item_data.get("item_id", ""))
+		var card: Node = _cards_by_item_id.get(item_id_str)
+		if card and not first_batch_cards.has(card):
+			_queue_preview_warm(card)
+	await _finish_kick_preview_warm(pending, generation)
+
+
+func _spawn_card_insert_index(grid_container: GridContainer, item_id_str: String) -> int:
+	var insert_idx := 0
+	for child in grid_container.get_children():
+		if not ("item_data" in child) or not (child.item_data is Dictionary):
+			continue
+		var child_id := String(child.item_data.get("item_id", ""))
+		if _sorted_global_index(child_id) < _sorted_global_index(item_id_str):
+			insert_idx += 1
+	return insert_idx
+
+
+func _spawn_shop_card(item_data: Dictionary, unseen_set: Dictionary, grid_container: Node) -> void:
+	var new_card = ITEM_CARD_SCENE.instantiate()
+	new_card.item_data = item_data
+	var item_id_str := String(item_data.get("item_id", ""))
+	var is_purchased = PlayerDataManager.is_item_unlocked(item_id_str)
+	var is_active = false
+	var category_map = _get_category_map()
+	var internal_category = category_map.get(String(item_data.get("category", "")), "")
+	if internal_category:
+		is_active = (PlayerDataManager.get_active_item(internal_category) == item_id_str)
+	var achievement_name = ""
+	var achievement_unlocked = false
+	var level_unlocked = false
+	var daily_unlocked = false
+	if item_data.get("is_level_reward", false):
+		var required_level = item_data.get("required_level", 0)
+		level_unlocked = PlayerDataManager.get_current_level() >= int(required_level)
+	elif item_data.get("is_achievement_reward", false):
+		var achievement_id = item_data.get("achievement_required", "")
+		achievement_name = _get_achievement_name_by_id(achievement_id)
+		if achievement_id != "" and achievement_id.is_valid_int():
+			achievement_unlocked = PlayerDataManager.is_achievement_unlocked(int(achievement_id))
+	elif item_data.get("is_daily_reward", false):
+		var required_daily = int(item_data.get("required_daily_completed", 0))
+		daily_unlocked = PlayerDataManager.get_daily_quests_completed_total() >= required_daily
+	new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
+	var item_category := String(item_data.get("category", ""))
+	var category_match: bool = current_category == "Все" or item_category == current_category
+	var collection_match: bool = _item_in_collection_filter(item_data)
+	new_card.visible = category_match and collection_match
+	var insert_idx := _spawn_card_insert_index(grid_container, item_id_str)
+	grid_container.add_child(new_card)
+	if insert_idx < grid_container.get_child_count() - 1:
+		grid_container.move_child(new_card, insert_idx)
+	if new_card.has_method("set_new_reward_highlight"):
+		new_card.set_new_reward_highlight(unseen_set.has(item_id_str))
+	new_card.buy_pressed.connect(_on_item_buy_pressed)
+	if new_card.has_signal("medal_buy_pressed"):
+		new_card.medal_buy_pressed.connect(_on_item_medal_buy_pressed)
+	new_card.use_pressed.connect(_on_item_use_pressed)
+	new_card.preview_pressed.connect(_on_item_preview_pressed)
+	item_cards.append(new_card)
+	_cards_by_item_id[item_id_str] = new_card
+
+
+func _ensure_cards_for_category(category: String) -> void:
+	if _sorted_shop_items.is_empty():
+		return
+	var grid_container := _get_items_grid()
+	if grid_container == null:
+		return
+	var pending := _pending_items_for_category(category)
+	if pending.is_empty():
+		return
+	var unseen_set: Dictionary = _unseen_reward_stats.get("unseen_set", {})
+	var generation := _bg_spawn_generation
+	_update_grid_min_height(grid_container, _visible_item_count_for_category(category))
+	if category == "Кик":
+		await _prewarm_kick_waveforms_async(_items_for_category(category))
+	await _spawn_cards_progressive(pending, unseen_set, grid_container, generation)
+
+
+func _build_achievement_title_cache() -> void:
+	_achievement_title_cache.clear()
+	_ensure_achievements_data_loaded()
+	var achievements_list = achievements_data.get("achievements", [])
+	if not (achievements_list is Array):
+		return
+	for achievement in achievements_list:
+		if not (achievement is Dictionary):
+			continue
+		var ach_id := str(int(achievement.get("id", -1)))
+		if ach_id == "-1":
+			continue
+		_achievement_title_cache[ach_id] = _AchievementLocale.localized_title(achievement)
+
+
+func _ensure_achievements_data_loaded() -> void:
+	if achievements_data.get("achievements") is Array:
+		return
+	var game_engine = get_parent()
+	if game_engine and game_engine.has_method("get_achievement_system"):
+		var ach_sys = game_engine.get_achievement_system()
+		if ach_sys and ach_sys.achievement_manager and ach_sys.achievement_manager.achievements.size() > 0:
+			achievements_data = {"achievements": ach_sys.achievement_manager.achievements}
+			return
+	var user_ach := "user://achievements_data.json"
+	if not FileAccess.file_exists(user_ach):
+		return
+	var file_access := FileAccess.open(user_ach, FileAccess.READ)
+	if file_access == null:
+		return
+	var json_result: Variant = JSON.parse_string(file_access.get_as_text())
+	file_access.close()
+	if json_result is Dictionary:
+		achievements_data = json_result
+
+
+func _queue_preview_warm(card: Node) -> void:
+	if card == null or not card.has_method("ensure_preview_fx"):
+		return
+	var category := ""
+	if card.item_data is Dictionary:
+		category = str(card.item_data.get("category", ""))
+	if category == "Кик":
+		if SettingsManager and not SettingsManager.get_shop_kick_waveform_preview():
+			return
+	elif category != "Частицы хита":
+		return
+	_preview_warm_queue.append(card)
+	if not _preview_warming:
+		_preview_warming = true
+		call_deferred("_warm_previews_step")
+
+
+func _warm_previews_step() -> void:
+	if _preview_warm_queue.size() == 0:
+		_preview_warming = false
+		return
+	var batch := mini(_PREVIEW_WARM_BATCH, _preview_warm_queue.size())
+	for _i in batch:
+		var card: Node = _preview_warm_queue.pop_front()
+		if is_instance_valid(card) and card.has_method("ensure_preview_fx"):
+			card.ensure_preview_fx()
+	if _preview_warm_queue.size() > 0:
+		await get_tree().process_frame
+		_warm_previews_step()
+	else:
+		_preview_warming = false
+
+
+func _prewarm_kick_waveforms_async(items: Array) -> void:
+	if SettingsManager == null or not SettingsManager.get_shop_kick_waveform_preview():
+		return
+	if _kick_waveform_prewarm == null:
+		_kick_waveform_prewarm = AudioWaveformSampler.new()
+	var warmed := 0
+	for item in items:
+		if not item is Dictionary:
+			continue
+		if str(item.get("category", "")) != "Кик":
+			continue
+		var audio_path := str(item.get("audio", ""))
+		if audio_path != "" and FileAccess.file_exists(audio_path):
+			_kick_waveform_prewarm.analyze_hit_envelope(audio_path, _KICK_WAVEFORM_BAR_COUNT)
+			warmed += 1
+			if warmed % _PREVIEW_WARM_BATCH == 0:
+				await get_tree().process_frame
+
+
+func _kick_items_from_pending(pending: Array) -> Array:
+	var kicks: Array = []
+	for item in pending:
+		if item is Dictionary and str(item.get("category", "")) == "Кик":
+			kicks.append(item)
+	return kicks
+
+
+func _finish_kick_preview_warm(pending: Array, generation: int) -> void:
+	if generation != _bg_spawn_generation:
+		return
+	if SettingsManager == null or not SettingsManager.get_shop_kick_waveform_preview():
+		return
+	if current_category != "Кик" and current_category != "Все":
+		return
+	for item_data in pending:
+		if generation != _bg_spawn_generation:
+			return
+		if not item_data is Dictionary or str(item_data.get("category", "")) != "Кик":
+			continue
+		var card: Node = _cards_by_item_id.get(String(item_data.get("item_id", "")))
+		if card and is_instance_valid(card) and card.has_method("ensure_preview_fx"):
+			card.ensure_preview_fx()
+		await get_tree().process_frame
 
 
 func _apply_shop_ui_interactions() -> void:
@@ -371,61 +1108,100 @@ func _shop_grid_clear_min_height() -> void:
 		return
 	var grid_container = main_vbox.find_child("ItemsGrid", true, false)
 	if grid_container and is_instance_valid(grid_container):
+		var scroll_pos := _capture_shop_scroll()
 		grid_container.custom_minimum_size.y = 0.0
+		call_deferred("_restore_shop_scroll", scroll_pos)
 
 
 func _get_category_map() -> Dictionary:
 	return {
 		"Кик": "Kick",
-		"Обложки": "Covers",
 		"Подсветка линий": "LaneHighlight",
-		"Ноты": "Notes"
+		"Ноты": "Notes",
+		"Частицы хита": "HitParticles",
 	}
 
 func _on_category_selected(category: String):
 	if category == current_category:
 		_update_category_buttons(category)
 		return
-	var root_container = $MainContent/MainVBox
-	var grid_container = null
-	if root_container:
-		grid_container = root_container.find_child("ItemsGrid", true, false)
-	if not grid_container:
-		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _on_category_selected")
+	var previous_category := current_category
+	_reset_shop_hover(previous_category)
+	UiScreenHotkeys.play_section_switch_sound()
+	_bg_spawn_generation += 1
+	SettingsManager.set_setting("last_shop_category", category)
+	SettingsManager.save_settings()
+	var container := _get_shop_items_container()
+	var apply := func() -> void:
+		current_category = category
+		_update_category_buttons(category)
+		_apply_category_visibility(category)
+		var grid_container := _get_items_grid()
+		if grid_container:
+			_update_grid_min_height(grid_container, _visible_item_count_for_category(category))
+		_reset_shop_scroll()
+	_UiListSlideTransition.crossfade(container, apply, _shop_initializing)
+	ScreenTexturePreload.warmup_shop_category(category, _INITIAL_CARD_BATCH * 2)
+	var pending := _pending_items_for_category(category)
+	if not pending.is_empty():
+		var overlay := _get_loading_overlay()
+		if overlay:
+			overlay.show_loading(tr("UI_LOADING_SHOP"), true)
+		await _ensure_cards_for_category(category)
+		if overlay:
+			overlay.hide_loading()
+		_apply_category_visibility(category)
+	_reset_shop_scroll()
+	call_deferred("_finalize_category_switch")
+
+func _finalize_category_switch() -> void:
+	if not is_inside_tree():
 		return
-	var ops_per_frame = 100
-	var processed = 0
-	for card in item_cards:
-		if is_instance_valid(card):
-			var card_category = ""
-			if card.item_data and card.item_data.has("category"):
-				card_category = String(card.item_data.get("category", ""))
-			card.visible = (category == "Все" or card_category == category)
-			processed += 1
-			if processed >= ops_per_frame:
-				await get_tree().process_frame
-				processed = 0
-	_update_category_buttons(category)
-	current_category = category
-	var items_scroll = null
-	if root_container:
-		items_scroll = root_container.find_child("ItemsScroll", true, false)
+	await get_tree().process_frame
+	_shop_grid_clear_min_height()
+	_invalidate_shop_scroll_layout()
+	_refresh_visible_shop_previews()
+
+func _invalidate_shop_scroll_layout() -> void:
+	var grid_container := _get_items_grid()
+	if grid_container:
+		grid_container.queue_sort()
+		grid_container.update_minimum_size()
+	var items_scroll := _get_items_scroll()
 	if items_scroll:
-		items_scroll.scroll_vertical = 0
-		items_scroll.scroll_horizontal = 0
+		items_scroll.queue_sort()
+		call_deferred("_nudge_shop_scroll")
+
+func _nudge_shop_scroll() -> void:
+	var items_scroll := _get_items_scroll()
+	if items_scroll == null:
+		return
+	var v := items_scroll.scroll_vertical
+	items_scroll.scroll_vertical = v + 1
+	items_scroll.scroll_vertical = v
+
+func _refresh_visible_shop_previews() -> void:
+	for card in item_cards:
+		if not is_instance_valid(card) or not card.visible:
+			continue
+		if card.has_method("refresh_shop_preview"):
+			card.refresh_shop_preview()
 
 func _get_achievement_name_by_id(achievement_id: String) -> String:
 	if not achievement_id.is_valid_int():
-		return "Неизвестная ачивка"
+		return tr("SHOP_UNKNOWN_ACH")
+	if _achievement_title_cache.is_empty():
+		_build_achievement_title_cache()
+	if _achievement_title_cache.has(achievement_id):
+		return str(_achievement_title_cache[achievement_id])
 	var target_id = float(achievement_id)
 
 	var achievements_list = achievements_data.get("achievements", [])
 	for achievement in achievements_list:
 		var ach_id_float = achievement.get("id", -1.0)
 		if ach_id_float == target_id:
-			var title = achievement.get("title", "Неизвестная ачивка")
-			return title
-	return "Неизвестная ачивка"
+			return _AchievementLocale.localized_title(achievement)
+	return tr("SHOP_UNKNOWN_ACH")
 
 func _on_item_buy_pressed(item_id: String):
 	var item_data = _find_item_by_id(item_id)
@@ -438,12 +1214,18 @@ func _on_item_buy_pressed(item_id: String):
 		var current_currency = PlayerDataManager.get_currency()
 
 		if current_currency >= price:
+			var origin := Vector2.ZERO
+			if _cards_by_item_id.has(item_id):
+				var card = _cards_by_item_id[item_id]
+				if card.has_method("get_purchase_fx_origin_global"):
+					origin = card.get_purchase_fx_origin_global()
 			PlayerDataManager.add_currency(-price)
 			PlayerDataManager.unlock_item(item_id)
 			
 			MusicManager.play_shop_purchase()  
 			
 			_pulse_currency_label()
+			_fly_diamond_after_buy(origin)
 			_update_shop_progress_label()
 			_update_item_card_state(item_id, true, false)
 		else:
@@ -451,6 +1233,33 @@ func _on_item_buy_pressed(item_id: String):
 			printerr("ShopScreen.gd: Недостаточно валюты для покупки: ", item_id)
 	else:
 		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
+
+
+func _on_item_medal_buy_pressed(item_id: String) -> void:
+	var item_data := _find_item_by_id(item_id)
+	if item_data.is_empty():
+		printerr("ShopScreen.gd: Предмет с ID ", item_id, " не найден в данных магазина.")
+		return
+	if PlayerDataManager.is_item_unlocked(item_id):
+		_update_item_card_state(item_id, true, false)
+		return
+	var medal_price := int(item_data.get("medal_price", 0))
+	if medal_price <= 0:
+		return
+	if PlayerDataManager.get_total_medals_earned() >= medal_price:
+		PlayerDataManager.unlock_item(item_id)
+		PlayerDataManager.mark_shop_reward_seen(item_id)
+		_update_shop_progress_label()
+		_update_category_badges()
+		_update_item_card_state(item_id, true, false)
+		for card in item_cards:
+			if card.item_data.get("item_id", "") == item_id and card.has_method("set_new_reward_highlight"):
+				card.set_new_reward_highlight(false)
+				break
+	else:
+		MusicManager.play_default_shop_sound()
+		printerr("ShopScreen.gd: Недостаточно медалей для открытия: ", item_id)
+
 
 func _is_item_file_available(item_data: Dictionary) -> bool:
 	var audio_path = item_data.get("audio", "")
@@ -465,15 +1274,6 @@ func _is_item_file_available(item_data: Dictionary) -> bool:
 			return false
 	if image_path != "":
 		if not FileAccess.file_exists(image_path):
-			return false
-	if images_folder != "" and images_count > 0:
-		var cover_exists = false
-		for i in range(1, images_count + 1):
-			var cover_path = images_folder + "/cover%d.png" % i
-			if FileAccess.file_exists(cover_path):
-				cover_exists = true
-				break
-		if not cover_exists:
 			return false
 	return true
 
@@ -510,76 +1310,16 @@ func _preview_sound(item: Dictionary):
 		MusicManager.play_default_shop_sound()
 	print("[Perf] ShopScreen preview_sound request: %d ms" % [Time.get_ticks_msec() - started_ms])
 
-func _on_cover_click_pressed(item_data: Dictionary):
-	MusicManager.play_cover_click_sound()
-	_open_cover_gallery(item_data)
-
-func _open_cover_gallery(item_data: Dictionary):
-	var started_ms := Time.get_ticks_msec()
-	if current_cover_gallery:
-		if is_instance_valid(current_cover_gallery):
-			current_cover_gallery.queue_free()
-		current_cover_item_data = {}
-
-	current_cover_item_data = item_data
-
-	var gallery_scene = preload("res://scenes/shop/cover_gallery.tscn")
-	current_cover_gallery = gallery_scene.instantiate()
-
-	current_cover_gallery.images_folder = item_data.get("images_folder", "")
-	current_cover_gallery.images_count = item_data.get("images_count", 0)
-	current_cover_gallery.item_title = str(item_data.get("title", item_data.get("name", "")))
-
-	current_cover_gallery.connect("gallery_closed", _on_gallery_closed, CONNECT_ONE_SHOT)
-	current_cover_gallery.connect("cover_selected", _on_cover_selected_stub, CONNECT_ONE_SHOT)
-
-	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(current_cover_gallery):
-		call_deferred("_deferred_add_child", current_cover_gallery)
-	else:
-		if is_instance_valid(current_cover_gallery):
-			current_cover_gallery.queue_free()
-		current_cover_item_data = {}
-	print("[Perf] ShopScreen open cover gallery request: %d ms" % [Time.get_ticks_msec() - started_ms])
-
-func _deferred_add_child(gallery_node: Node):
-	if is_instance_valid(self) and not is_queued_for_deletion() and is_inside_tree() and is_instance_valid(gallery_node):
-		add_child(gallery_node)
-		UiInteractionApplier.apply_from_engine(gallery_node)
-		gallery_node.grab_focus()
-	else:
-		if is_instance_valid(gallery_node):
-			gallery_node.queue_free()
-		if current_cover_gallery == gallery_node:
-			current_cover_gallery = null
-		current_cover_item_data = {}
-
-func _on_cover_selected_stub(index: int):
-	pass
-
-func _on_gallery_closed():
-	if is_instance_valid(current_cover_gallery):
-		if current_cover_gallery.is_connected("gallery_closed", _on_gallery_closed):
-			current_cover_gallery.disconnect("gallery_closed", _on_gallery_closed)
-		if current_cover_gallery.is_connected("cover_selected", _on_cover_selected_stub):
-			current_cover_gallery.disconnect("cover_selected", _on_cover_selected_stub)
-		current_cover_gallery = null
-	current_cover_item_data = {}
-
-func _on_cover_selected(index: int):
-	pass
-
 func cleanup_before_exit():
-	_cleanup_gallery_internal()
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.reset_loading()
 
 func _execute_close_transition():
 	if transitions:
 		transitions.close_shop()
 	else:
 		printerr("ShopScreen.gd: transitions не установлен, невозможно закрыть магазин через Transitions.")
-
-func _get_items_scroll() -> ScrollContainer:
-	var sc = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
-	return sc as ScrollContainer
 
 func _set_buttons_focus_to_none():
 	var stack: Array = [self]
@@ -601,11 +1341,22 @@ func _scroll_to(pos: int):
 		sc.scroll_vertical = clamp(pos, 0, max_val if max_val > 0 else pos)
 
 func _unhandled_input(event):
+	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
+		get_viewport().set_input_as_handled()
+		return
 	if ((event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) or event.is_action_pressed("ui_cancel")):
 		accept_event()
 		_on_back_pressed()
 		return
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+			return
+		if event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			var index := int(event.keycode - KEY_1)
+			if index < _CATEGORY_BUTTON_SPECS.size():
+				_on_category_selected(String(_CATEGORY_BUTTON_SPECS[index][0]))
+				accept_event()
+				return
 		var owner = get_viewport().gui_get_focus_owner()
 		if owner and (owner is LineEdit or owner is OptionButton):
 			return
@@ -687,18 +1438,5 @@ func _update_all_item_cards_in_category(category: String, active_item_id: String
 			var st = _compute_unlock_state(card.item_data)
 			card.update_state(is_purchased, is_active, true, st.achievement_unlocked, st.achievement_name, st.level_unlocked, st.daily_unlocked)
 
-func _cleanup_gallery_internal():
-	if current_cover_gallery:
-		if is_instance_valid(current_cover_gallery):
-			if current_cover_gallery.is_connected("gallery_closed", _on_gallery_closed):
-				current_cover_gallery.disconnect("gallery_closed", _on_gallery_closed)
-			if current_cover_gallery.is_connected("cover_selected", _on_cover_selected_stub):
-				current_cover_gallery.disconnect("cover_selected", _on_cover_selected_stub)
-		if is_instance_valid(current_cover_gallery):
-			current_cover_gallery.queue_free()
-		current_cover_gallery = null
-		current_cover_item_data = {}
-
 func _exit_tree():
-	_cleanup_gallery_internal()
-  
+	pass

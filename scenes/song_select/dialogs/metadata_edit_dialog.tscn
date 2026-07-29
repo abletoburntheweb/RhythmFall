@@ -1,0 +1,439 @@
+[gd_scene load_steps=6 format=3 uid="uid://cu1d70grsqgto"]
+
+[ext_resource type="Script" uid="uid://dqeodkbw7omxc" path="res://scenes/song_select/dialogs/metadata_edit_dialog.gd" id="1_meta"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_meta_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner_panel"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_server_badge"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.12, 0.22, 0.28, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.78, 0.74, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="MetadataEdit" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_meta")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.97)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Container"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="TitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
+text = "Редактирование метаданных"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 17
+text = "Измените поля и сохраните — в список попадут только отличия"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyCenter" type="MarginContainer" parent="Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_right = 48
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(0, 620)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_meta_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="BodyHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="LeftVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.44
+theme_override_constants/separation = 12
+
+[node name="CoverPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner_panel")
+
+[node name="CoverVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/CoverPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CoverTextureRect" type="TextureRect" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/CoverPanel/CoverVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 360)
+layout_mode = 2
+size_flags_horizontal = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TrackTitleLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/CoverPanel/CoverVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Без названия"
+autowrap_mode = 3
+
+[node name="TrackArtistLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/CoverPanel/CoverVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.62, 0.74, 1)
+theme_override_font_sizes/font_size = 16
+text = "Неизвестен"
+
+[node name="FormatBadge" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/CoverPanel/CoverVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.82, 0.72, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "MP3"
+
+[node name="ReadOnlyPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner_panel")
+
+[node name="ReadOnlyVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DurationRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DurationIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/DurationRow"]
+layout_mode = 2
+
+[node name="DurationLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/DurationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "03:45"
+
+[node name="FileSizeRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FileSizeIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/FileSizeRow"]
+layout_mode = 2
+
+[node name="FileSizeLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/FileSizeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "8.7 MB"
+
+[node name="FilePathRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FilePathIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/FilePathRow"]
+layout_mode = 2
+
+[node name="FilePathLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/FilePathRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 14
+text = "Songs/track.mp3"
+autowrap_mode = 3
+
+[node name="DateAddedRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DateAddedIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/DateAddedRow"]
+layout_mode = 2
+
+[node name="DateAddedLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ReadOnlyPanel/ReadOnlyVBox/DateAddedRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+text = "12.05.2024 22:41"
+
+[node name="RightVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.56
+theme_override_constants/separation = 14
+
+[node name="FormVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="TitleRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/TitleRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Название"
+
+[node name="TitleEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/TitleRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Название трека"
+
+[node name="ArtistRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ArtistFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/ArtistRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Исполнитель"
+
+[node name="ArtistEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/ArtistRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"SearchField"
+theme_override_font_sizes/font_size = 20
+placeholder_text = "Имя исполнителя"
+
+[node name="YearRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="YearFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/YearRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Год"
+
+[node name="YearSpin" type="SpinBox" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/YearRow"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+min_value = 1900.0
+max_value = 2100.0
+value = 2020.0
+
+[node name="BpmRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BpmFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "BPM"
+
+[node name="BpmControlsHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BpmSpin" type="SpinBox" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow/BpmControlsHBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+min_value = 90.0
+max_value = 400.0
+value = 120.0
+
+[node name="BpmFromServerBadge" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow/BpmControlsHBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_server_badge")
+
+[node name="BadgeHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow/BpmControlsHBox/BpmFromServerBadge"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BadgeIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow/BpmControlsHBox/BpmFromServerBadge/BadgeHBox"]
+layout_mode = 2
+
+[node name="BpmFromServerLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/BpmRow/BpmControlsHBox/BpmFromServerBadge/BadgeHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.92, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "От сервера"
+
+[node name="GenreRow" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GenreFieldLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.86, 1)
+theme_override_font_sizes/font_size = 16
+text = "Жанр"
+
+[node name="GenreControlsHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GenreButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
+text = "не указан"
+
+[node name="GenreFromServerBadge" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_server_badge")
+
+[node name="BadgeHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox/GenreFromServerBadge"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BadgeIconSlot" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox/GenreFromServerBadge/BadgeHBox"]
+layout_mode = 2
+
+[node name="GenreFromServerLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox/GenreFromServerBadge/BadgeHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.92, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "От сервера"
+
+[node name="GenreHintSlot" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InfoCalloutSlot" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FooterHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FooterHBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 20
+text = "Сохранить изменения"
+
+[node name="EscHintLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.7, 0.88)
+theme_override_font_sizes/font_size = 15
+text = "[Esc] Нажмите Esc для отмены"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="Container/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FormVBox/GenreRow/GenreControlsHBox/GenreButton" to="." method="_on_genre_button_pressed"]
+[connection signal="pressed" from="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/FooterHBox/SaveButton" to="." method="_on_save_button_pressed"]

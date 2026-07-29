@@ -2,7 +2,20 @@
 extends Node
 class_name GenerationApiClient
 
+const _RhythmDnaServerFetch = preload("res://server/rhythm_dna_server_fetch.gd")
+const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
 const _CONNECT_TIMEOUT_MS := 20000
+
+const SERVER_STATUS_ALIASES: Dictionary = {
+	"Идентификация трека...": "GEN_API_TRACK_IDENTIFY",
+	"Определение жанров...": "GEN_API_DETECTING_GENRES",
+	"Разделение на стемы...": "GEN_API_SPLITTING_STEMS",
+	"Детекция ударных...": "GEN_API_DRUM_DETECTION",
+	"Анализ басовой линии...": "GEN_API_BASS_LINE_ANALYSIS",
+	"Сборка бас-чарта...": "GEN_API_BASS_CHART_BUILD",
+	"Сохранение нот...": "GEN_API_SAVING_NOTES",
+	"Формирование ответа...": "GEN_API_BUILDING_RESPONSE",
+}
 
 
 func _api_host() -> String:
@@ -31,34 +44,52 @@ signal genres_completed(artist: String, title: String, genres: Array)
 signal genres_error(error_message: String)
 
 signal notes_started
-signal notes_completed(notes_data: Array, bpm_value: float, instrument_type: String, notes_variants: Dictionary)
+signal notes_completed(notes_data: Array, bpm_value: float, instrument_type: String, notes_variants: Dictionary, rhythm_dna: Dictionary)
 signal notes_error(error_message: String)
 signal bpm_status(status: String)
 signal genres_status(status: String)
 signal notes_status(status: String)
 
+signal genre_analysis_started
+signal genre_analysis_status(status_key: String, detail: String)
+signal genre_analysis_completed(song_path: String, predictions: Array)
+signal genre_analysis_error(error_message: String)
+
 var _bpm_thread: Thread = null
 var _genres_thread: Thread = null
+var _genre_analysis_thread: Thread = null
 var _notes_thread: Thread = null
 
 var _bpm_req: Dictionary = {}
 var _genres_req: Dictionary = {}
+var _genre_analysis_req: Dictionary = {}
 var _notes_req: Dictionary = {}
 
 var _bpm_res: Dictionary = {}
 var _genres_res: Dictionary = {}
+var _genre_analysis_res: Dictionary = {}
 var _notes_res: Dictionary = {}
 var _bpm_status_queue: Array = []
 var _genres_status_queue: Array = []
+var _genre_analysis_status_queue: Array = []
 var _notes_status_queue: Array = []
 
 var _bpm_done: bool = false
 var _genres_done: bool = false
+var _genre_analysis_done: bool = false
 var _notes_done: bool = false
 
 var _cancel_bpm: bool = false
 var _cancel_notes: bool = false
 var _notes_active_task_id: String = ""
+var _next_chart_intent: String = ""
+var _next_goal: String = ""
+var _next_difficulty: String = ""
+var _next_chart_stem: String = ""
+var _bpm_poll_timer: Timer = null
+var _notes_poll_timer: Timer = null
+var _genres_poll_timer: Timer = null
+var _genre_analysis_poll_timer: Timer = null
 
 func analyze_bpm(song_path: String):
 	if _bpm_thread:
@@ -75,7 +106,23 @@ func analyze_bpm(song_path: String):
 		_bpm_thread = null
 		emit_signal("bpm_error", "Ошибка запуска потока")
 		return
-	_start_timer(_check_bpm)
+	_bpm_poll_timer = _replace_poll_timer(_bpm_poll_timer, _check_bpm)
+
+func analyze_genre_predictions(song_path: String):
+	if _genre_analysis_thread:
+		return
+	_genre_analysis_req = {"song_path": song_path}
+	_genre_analysis_res = {}
+	_genre_analysis_done = false
+	_genre_analysis_status_queue.clear()
+	emit_signal("genre_analysis_started")
+	_genre_analysis_thread = Thread.new()
+	var err = _genre_analysis_thread.start(func(): _genre_analysis_worker(_genre_analysis_req.duplicate()))
+	if err != OK:
+		_genre_analysis_thread = null
+		emit_signal("genre_analysis_error", "Ошибка запуска потока")
+		return
+	_genre_analysis_poll_timer = _replace_poll_timer(_genre_analysis_poll_timer, _check_genre_analysis)
 
 func detect_genres(artist: String, title: String):
 	if _genres_thread:
@@ -91,12 +138,96 @@ func detect_genres(artist: String, title: String):
 		_genres_thread = null
 		emit_signal("genres_error", "Ошибка запуска потока")
 		return
-	_start_timer(_check_genres)
+	_genres_poll_timer = _replace_poll_timer(_genres_poll_timer, _check_genres)
 
-func generate_notes(song_path: String, instrument_type: String, bpm: float, lanes: int, sync_tolerance: float, auto_identify: bool, manual_artist: String, manual_title: String, generation_mode: String):
+func set_chart_intent_for_next_request(intent: String) -> void:
+	_next_chart_intent = str(intent).strip_edges()
+
+
+func set_goal_difficulty_for_next_request(goal: String, difficulty: String) -> void:
+	_next_goal = str(goal).strip_edges().to_lower()
+	_next_difficulty = str(difficulty).strip_edges().to_lower()
+
+
+func set_chart_stem_for_next_request(stem: String) -> void:
+	_next_chart_stem = str(stem).strip_edges().to_lower()
+
+
+func generate_notes_for_task(task: Dictionary) -> void:
+	print(
+		"[GenAPI] generate_notes_for_task goal=%s difficulty=%s stem=%s"
+		% [str(task.get("goal", "")), str(task.get("difficulty", "")), str(task.get("chart_stem", ""))]
+	)
+	generate_notes(
+		str(task.get("path", "")),
+		str(task.get("instrument", task.get("instrument_type", "drums"))),
+		float(task.get("bpm", 120.0)),
+		int(task.get("lanes", 4)),
+		float(task.get("tolerance", task.get("sync_tolerance", 0.2))),
+		bool(task.get("auto_identify", true)),
+		str(task.get("artist", "")),
+		str(task.get("title", "")),
+		str(task.get("mode", task.get("generation_mode", "basic"))),
+		str(task.get("goal", "")),
+		str(task.get("difficulty", "")),
+		str(task.get("chart_stem", "")),
+		str(task.get("chart_intent", "")),
+	)
+
+
+func generate_notes(
+	song_path: String,
+	instrument_type: String,
+	bpm: float,
+	lanes: int,
+	sync_tolerance: float,
+	auto_identify: bool,
+	manual_artist: String,
+	manual_title: String,
+	generation_mode: String,
+	job_goal: String = "",
+	job_difficulty: String = "",
+	chart_stem: String = "",
+	chart_intent_override: String = "",
+):
 	if _notes_thread:
 		return
 	_notes_active_task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
+	var chart_intent := str(chart_intent_override).strip_edges()
+	if chart_intent == "":
+		chart_intent = _next_chart_intent
+	_next_chart_intent = ""
+	var goal := str(job_goal).strip_edges().to_lower()
+	if goal == "":
+		goal = _next_goal
+	var difficulty := str(job_difficulty).strip_edges().to_lower()
+	if difficulty == "":
+		difficulty = _next_difficulty
+	chart_stem = str(chart_stem).strip_edges().to_lower()
+	if chart_stem == "":
+		chart_stem = _next_chart_stem
+	_next_goal = ""
+	_next_difficulty = ""
+	_next_chart_stem = ""
+	if chart_stem == "" and goal != "" and difficulty != "":
+		chart_stem = _GoalDiff.chart_stem(goal, difficulty)
+	if goal == "" or difficulty == "":
+		if chart_stem != "":
+			var stem_pair := _GoalDiff.pair_from_stem(chart_stem)
+			if goal == "":
+				goal = str(stem_pair.get("goal", _GoalDiff.DEFAULT_GOAL)).strip_edges().to_lower()
+			if difficulty == "":
+				difficulty = str(stem_pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)).strip_edges().to_lower()
+	if chart_intent == "" and goal != "" and difficulty != "":
+		chart_intent = _GoalDiff.intent_for(goal, difficulty)
+	push_warning(
+		"GenAPI request goal=%s difficulty=%s stem=%s intent=%s mode=%s"
+		% [goal, difficulty, chart_stem, chart_intent, generation_mode]
+	)
+	print(
+		"[GenAPI] request goal=%s difficulty=%s stem=%s intent=%s mode=%s"
+		% [goal, difficulty, chart_stem, chart_intent, generation_mode]
+	)
 	_notes_req = {
 		"song_path": song_path,
 		"instrument_type": instrument_type,
@@ -107,6 +238,10 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		"manual_artist": manual_artist,
 		"manual_title": manual_title,
 		"generation_mode": generation_mode,
+		"chart_intent": chart_intent,
+		"goal": goal,
+		"difficulty": difficulty,
+		"chart_stem": chart_stem,
 		"task_id": _notes_active_task_id
 	}
 	_notes_res = {}
@@ -120,7 +255,7 @@ func generate_notes(song_path: String, instrument_type: String, bpm: float, lane
 		_notes_thread = null
 		emit_signal("notes_error", "Ошибка запуска потока")
 		return
-	_start_timer(_check_notes)
+	_notes_poll_timer = _replace_poll_timer(_notes_poll_timer, _check_notes)
 
 func request_cancel_bpm():
 	_cancel_bpm = true
@@ -186,6 +321,75 @@ func _http_get_json(path: String, cancel_getter: Callable) -> Dictionary:
 	return out
 
 
+func _extract_rhythm_dna(payload: Variant) -> Dictionary:
+	if payload is Dictionary:
+		return payload
+	if payload is String:
+		var text := String(payload).strip_edges()
+		if text.is_empty():
+			return {}
+		var parsed: Variant = JSON.parse_string(text)
+		if parsed is Dictionary:
+			return parsed
+	return {}
+
+
+func _fetch_rhythm_dna_for_task(task_id: String, _cancel_getter: Callable = Callable()) -> Dictionary:
+	return _RhythmDnaServerFetch.fetch_by_task_id(task_id)
+
+
+func _server_track_stem(song_path: String) -> String:
+	return _RhythmDnaServerFetch.track_stem_from_song_path(song_path)
+
+
+func _fetch_rhythm_dna_sidecar_for_song(
+	song_path: String,
+	mode: String,
+	instrument: String = "drums",
+	_cancel_getter: Callable = Callable()
+) -> Dictionary:
+	return _RhythmDnaServerFetch.fetch_sidecar(song_path, mode, instrument)
+
+
+func fetch_rhythm_dna_for_song(
+	song_path: String,
+	mode: String,
+	instrument: String = "drums",
+	task_id: String = ""
+) -> Dictionary:
+	return _RhythmDnaServerFetch.fetch_for_song(song_path, mode, instrument, task_id)
+
+
+func get_last_notes_task_id() -> String:
+	return str(_notes_res.get("task_id", ""))
+
+
+func _resolve_rhythm_dna_for_result(
+	result: Dictionary,
+	task_id: String,
+	song_path: String,
+	mode: String,
+	instrument: String,
+	cancel_getter: Callable
+) -> Dictionary:
+	if not result is Dictionary:
+		return {}
+	var rhythm_dna := _extract_rhythm_dna(result.get("rhythm_dna", null))
+	if not rhythm_dna.is_empty() and not NotesUtils.is_minimal_rhythm_dna(rhythm_dna):
+		push_warning("RhythmDNA: present in POST/task_result JSON")
+		return rhythm_dna
+	rhythm_dna = _RhythmDnaServerFetch.fetch_for_song(song_path, mode, instrument, task_id)
+	if not rhythm_dna.is_empty():
+		result["rhythm_dna"] = rhythm_dna
+		return rhythm_dna
+	if task_id.strip_edges() != "":
+		push_warning("RhythmFall: Rhythm DNA missing after API + sidecar fetch (task_id=%s, track=%s)" % [
+			task_id,
+			_server_track_stem(song_path),
+		])
+	return {}
+
+
 func _notes_payload_from_json(response_json: Variant, song_path: String, bpm: float, lanes: int, instrument_type: String) -> Dictionary:
 	if not response_json is Dictionary:
 		return {"error": "Некорректный ответ сервера"}
@@ -209,6 +413,11 @@ func _notes_payload_from_json(response_json: Variant, song_path: String, bpm: fl
 		result_dict["lanes"] = response_json.get("lanes", lanes)
 		result_dict["instrument_type"] = response_json.get("instrument_type", instrument_type)
 		result_dict["track_info"] = response_json.get("track_info", {})
+		if response_json.has("task_id"):
+			result_dict["task_id"] = str(response_json.get("task_id", ""))
+		var rhythm_dna := _extract_rhythm_dna(response_json.get("rhythm_dna", null))
+		if not rhythm_dna.is_empty():
+			result_dict["rhythm_dna"] = rhythm_dna
 		return {"result": result_dict}
 	return {"error": "Ответ не содержит нот"}
 
@@ -245,8 +454,10 @@ func _send_cancel_task_request(task_id: String) -> void:
 
 
 func _fetch_notes_task_result(task_id: String, song_path: String, bpm: float, lanes: int, instrument_type: String, cancel_getter: Callable) -> Dictionary:
+	_notes_status_queue.append("GEN_API_FETCHING_RESULT")
 	var start_ms := Time.get_ticks_msec()
 	var timeout_ms := 600000
+	var last_heartbeat := start_ms
 	while Time.get_ticks_msec() - start_ms < timeout_ms:
 		if cancel_getter.is_valid() and cancel_getter.call():
 			_send_cancel_task_request(task_id)
@@ -254,27 +465,68 @@ func _fetch_notes_task_result(task_id: String, song_path: String, bpm: float, la
 		var parsed = _try_notes_task_result(task_id, song_path, bpm, lanes, instrument_type, cancel_getter)
 		if parsed.has("result") or parsed.has("error"):
 			return parsed
+		# Keep dock honest while server is still on Basic Pitch / stem passes (202).
+		if Time.get_ticks_msec() - last_heartbeat >= 8000:
+			_notes_status_queue.append("GEN_API_FETCHING_RESULT")
+			last_heartbeat = Time.get_ticks_msec()
 		OS.delay_msec(500)
 	return {"error": "Таймаут ожидания результата с сервера"}
 
 
 func _start_timer(cb: Callable):
-	var t = Timer.new()
+	# Legacy entry — prefer typed poll timers below.
+	_start_poll_timer_generic(cb)
+
+
+func _start_poll_timer_generic(cb: Callable) -> Timer:
+	var t := Timer.new()
 	t.wait_time = 0.1
 	t.timeout.connect(cb)
 	add_child(t)
 	t.start()
+	return t
+
+
+func _replace_poll_timer(existing: Timer, cb: Callable) -> Timer:
+	if existing != null and is_instance_valid(existing):
+		existing.stop()
+		existing.queue_free()
+	return _start_poll_timer_generic(cb)
+
+
+func _stop_poll_timer(existing: Timer) -> void:
+	if existing != null and is_instance_valid(existing):
+		existing.stop()
+		existing.queue_free()
+
+func _localize_text(raw: String) -> String:
+	var s := String(raw).strip_edges()
+	if s == "":
+		return s
+	if s.begins_with("GEN_"):
+		return tr(s)
+	if SERVER_STATUS_ALIASES.has(s):
+		return tr(str(SERVER_STATUS_ALIASES[s]))
+	return s
+
+
+func _emit_genre_analysis_status(status_key: String, detail: String = "") -> void:
+	emit_signal("genre_analysis_status", status_key, detail)
+
+
+func _post_genre_analysis_status(status_key: String, detail: String = "") -> void:
+	call_deferred("_emit_genre_analysis_status", status_key, detail)
+
 
 func _check_bpm():
 	if _bpm_status_queue.size() > 0:
 		for s in _bpm_status_queue:
-			emit_signal("bpm_status", s)
+			emit_signal("bpm_status", _localize_text(s))
 		_bpm_status_queue.clear()
 	if _bpm_done:
-		var t = get_child(get_child_count() - 1)
-		if t and t is Timer:
-			t.stop()
-			t.queue_free()
+		_stop_poll_timer(_bpm_poll_timer)
+		_bpm_poll_timer = null
+		_bpm_done = false
 		if _bpm_thread:
 			_bpm_thread.wait_to_finish()
 			_bpm_thread = null
@@ -285,16 +537,38 @@ func _check_bpm():
 		else:
 			emit_signal("bpm_error", "Неизвестная ошибка")
 
+func _check_genre_analysis():
+	if _genre_analysis_status_queue.size() > 0:
+		for s in _genre_analysis_status_queue:
+			var parts := str(s).split("|", false, 1)
+			var key := parts[0]
+			var detail := parts[1] if parts.size() > 1 else ""
+			emit_signal("genre_analysis_status", key, detail)
+		_genre_analysis_status_queue.clear()
+	if _genre_analysis_done:
+		_stop_poll_timer(_genre_analysis_poll_timer)
+		_genre_analysis_poll_timer = null
+		_genre_analysis_done = false
+		if _genre_analysis_thread:
+			_genre_analysis_thread.wait_to_finish()
+			_genre_analysis_thread = null
+		var song_path := str(_genre_analysis_req.get("song_path", ""))
+		if _genre_analysis_res.has("error"):
+			emit_signal("genre_analysis_error", _genre_analysis_res.error)
+		elif _genre_analysis_res.has("predictions"):
+			emit_signal("genre_analysis_completed", song_path, _genre_analysis_res.predictions)
+		else:
+			emit_signal("genre_analysis_error", "Неизвестная ошибка")
+
 func _check_genres():
 	if _genres_status_queue.size() > 0:
 		for s in _genres_status_queue:
-			emit_signal("genres_status", s)
+			emit_signal("genres_status", _localize_text(s))
 		_genres_status_queue.clear()
 	if _genres_done:
-		var t = get_child(get_child_count() - 1)
-		if t and t is Timer:
-			t.stop()
-			t.queue_free()
+		_stop_poll_timer(_genres_poll_timer)
+		_genres_poll_timer = null
+		_genres_done = false
 		if _genres_thread:
 			_genres_thread.wait_to_finish()
 			_genres_thread = null
@@ -307,13 +581,12 @@ func _check_genres():
 
 func _check_notes():
 	if _notes_status_queue.size() > 0:
-		emit_signal("notes_status", _notes_status_queue.pop_front())
+		emit_signal("notes_status", _localize_text(_notes_status_queue.pop_front()))
 		return
 	if _notes_done:
-		var t = get_child(get_child_count() - 1)
-		if t and t is Timer:
-			t.stop()
-			t.queue_free()
+		_stop_poll_timer(_notes_poll_timer)
+		_notes_poll_timer = null
+		_notes_done = false
 		if _notes_thread:
 			_notes_thread.wait_to_finish()
 			_notes_thread = null
@@ -321,10 +594,36 @@ func _check_notes():
 		if _notes_res.has("error"):
 			emit_signal("notes_error", _notes_res.error)
 		elif _notes_res.has("manual_identification_required"):
-			_notes_status_queue.append("Требуется ручная идентификация трека")
+			_notes_status_queue.append("GEN_API_MANUAL_ID_REQUIRED")
 			var req = _notes_req
-			generate_notes(req.song_path, req.instrument_type, req.bpm, req.lanes, req.sync_tolerance, false, "Unknown", "Unknown", req.generation_mode)
+			if has_method("generate_notes_for_task"):
+				generate_notes_for_task(req)
+			else:
+				set_goal_difficulty_for_next_request(
+					str(req.get("goal", "")),
+					str(req.get("difficulty", ""))
+				)
+				set_chart_stem_for_next_request(str(req.get("chart_stem", "")))
+				set_chart_intent_for_next_request(str(req.get("chart_intent", "")))
+				generate_notes(
+					req.song_path,
+					req.instrument_type,
+					req.bpm,
+					req.lanes,
+					req.sync_tolerance,
+					false,
+					"Unknown",
+					"Unknown",
+					req.generation_mode,
+				)
 		elif _notes_res.has("notes") or _notes_res.has("notes_variants"):
+			var task_id := str(_notes_res.get("task_id", _notes_active_task_id))
+			var song_path := str(_notes_req.get("song_path", ""))
+			var gen_mode := str(_notes_req.get("generation_mode", "basic"))
+			var instrument := str(_notes_req.get("instrument_type", "drums"))
+			var rhythm_dna := _resolve_rhythm_dna_for_result(
+				_notes_res, task_id, song_path, gen_mode, instrument, Callable()
+			)
 			if _notes_res.has("notes_variants"):
 				var variants = _notes_res.notes_variants
 				var requested_lanes = int(_notes_req.get("lanes", 4))
@@ -339,9 +638,9 @@ func _check_notes():
 						var first_k = variants.keys()[0]
 						arr = variants[first_k]
 				if arr is Array:
-					emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type, variants)
+					emit_signal("notes_completed", arr, float(_notes_res.bpm), _notes_res.instrument_type, variants, rhythm_dna)
 			else:
-				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type, {})
+				emit_signal("notes_completed", _notes_res.notes, float(_notes_res.bpm), _notes_res.instrument_type, {}, rhythm_dna)
 			if _notes_res.has("track_info"):
 				var ti = _notes_res.track_info
 				var source = str(ti.get("genres_source", "")).strip_edges().to_lower()
@@ -358,6 +657,11 @@ func _check_notes():
 					allow_update = (source == "server")
 				if allow_update and genres is Array:
 					emit_signal("genres_completed", artist, title, genres)
+				if path != "":
+					var preds = ti.get("genre_predictions", [])
+					if preds is Array and preds.size() > 0:
+						SongLibrary.update_metadata(path, {"genre_predictions": preds})
+						_notify_genre_analysis_achievement()
 		else:
 			emit_signal("notes_error", "Неизвестная ошибка")
 
@@ -370,7 +674,7 @@ func _bpm_worker(data_dict: Dictionary):
 		_bpm_res = {"error": "Пустой путь"}
 		_bpm_done = true
 		return
-	_bpm_status_queue.append("Подключение к серверу...")
+	_bpm_status_queue.append("GEN_API_CONNECTING")
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
@@ -384,18 +688,18 @@ func _bpm_worker(data_dict: Dictionary):
 			http_client.close()
 			_bpm_done = true
 			return
-		_bpm_status_queue.append("Соединение установлено")
+		_bpm_status_queue.append("GEN_API_CONNECTED")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
-			_bpm_status_queue.append("Открытие файла")
+			_bpm_status_queue.append("GEN_API_OPENING_FILE")
 			var file_access = FileAccess.open(song_path, FileAccess.READ)
 			if not file_access:
 				local_error = "Не удалось открыть файл: " + song_path
 			else:
 				var file_data = file_access.get_buffer(file_access.get_length())
 				file_access.close()
-				_bpm_status_queue.append("Формирование запроса")
+				_bpm_status_queue.append("GEN_API_BUILDING_REQUEST")
 				var boundary = "bpm_boundary_" + str(Time.get_ticks_msec())
 				var body = PackedByteArray()
 				var header = ("--%s\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"%s\"\r\n" + "Content-Type: application/octet-stream\r\n\r\n") % [boundary, song_path.get_file()]
@@ -403,7 +707,7 @@ func _bpm_worker(data_dict: Dictionary):
 				body.append_array(file_data)
 				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
 				var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
-				_bpm_status_queue.append("Отправка данных")
+				_bpm_status_queue.append("GEN_API_SENDING_DATA")
 				http_client.request_raw(HTTPClient.METHOD_POST, "/analyze_bpm", headers, body)
 				http_client.poll()
 				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
@@ -414,10 +718,10 @@ func _bpm_worker(data_dict: Dictionary):
 						http_client.close()
 						_bpm_done = true
 						return
-				_bpm_status_queue.append("Получение ответа")
+				_bpm_status_queue.append("GEN_API_RECEIVING_RESPONSE")
 				var response_code = http_client.get_response_code()
 				var response_body = _read_http_response_body(http_client)
-				_bpm_status_queue.append("Обработка ответа")
+				_bpm_status_queue.append("GEN_API_PROCESSING_RESPONSE")
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
 				if response_code == 200 and response_json and response_json.has("bpm"):
@@ -428,6 +732,66 @@ func _bpm_worker(data_dict: Dictionary):
 	_bpm_res = local_result if local_error == "" else {"error": local_error}
 	_bpm_done = true
 
+func _genre_analysis_worker(data_dict: Dictionary):
+	var local_result = {}
+	var local_error = ""
+	var song_path = data_dict.get("song_path", "")
+	if song_path == "":
+		_genre_analysis_res = {"error": "Пустой путь"}
+		_genre_analysis_done = true
+		return
+	_post_genre_analysis_status("GEN_API_CONNECTING")
+	var http_client = HTTPClient.new()
+	var err = http_client.connect_to_host(_api_host(), _api_port())
+	if err != OK:
+		local_error = "Не удалось подключиться: " + str(err)
+	else:
+		if not _poll_until_http_connected(http_client, Callable()):
+			local_error = "Таймаут подключения к серверу (%s:%d)" % [_api_host(), _api_port()]
+			http_client.close()
+			_genre_analysis_res = {"error": local_error}
+			_genre_analysis_done = true
+			return
+		_post_genre_analysis_status("GEN_API_CONNECTED")
+		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
+			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
+		else:
+			_post_genre_analysis_status("reading_file")
+			var file_access = FileAccess.open(song_path, FileAccess.READ)
+			if not file_access:
+				local_error = "Не удалось открыть файл: " + song_path
+			else:
+				var file_data = file_access.get_buffer(file_access.get_length())
+				file_access.close()
+				var size_mb := float(file_data.size()) / (1024.0 * 1024.0)
+				_post_genre_analysis_status("uploading", str(size_mb))
+				var boundary = "genre_boundary_" + str(Time.get_ticks_msec())
+				var body = PackedByteArray()
+				var header = ("--%s\r\n" + "Content-Disposition: form-data; name=\"audio_file\"; filename=\"%s\"\r\n" + "Content-Type: application/octet-stream\r\n\r\n") % [boundary, song_path.get_file()]
+				body.append_array(header.to_utf8_buffer())
+				body.append_array(file_data)
+				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
+				var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
+				http_client.request_raw(HTTPClient.METHOD_POST, "/detect_genres_audio", headers, body)
+				http_client.poll()
+				while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+					http_client.poll()
+					OS.delay_msec(100)
+				_post_genre_analysis_status("analyzing")
+				var response_code = http_client.get_response_code()
+				var response_body = _read_http_response_body(http_client)
+				var response_json = JSON.parse_string(response_body.get_string_from_utf8())
+				if response_code == 200 and response_json and response_json.has("predictions"):
+					local_result = {"predictions": response_json["predictions"]}
+				else:
+					var err_msg := "Ошибка: " + str(response_code)
+					if response_json is Dictionary and response_json.has("error"):
+						err_msg = str(response_json["error"])
+					local_error = err_msg
+	http_client.close()
+	_genre_analysis_res = local_result if local_error == "" else {"error": local_error}
+	_genre_analysis_done = true
+
 func _genres_worker(data_dict: Dictionary):
 	var local_result = {}
 	var local_error = ""
@@ -437,7 +801,7 @@ func _genres_worker(data_dict: Dictionary):
 		_genres_res = {"error": "Пустые поля"}
 		_genres_done = true
 		return
-	_genres_status_queue.append("Подключение к серверу...")
+	_genres_status_queue.append("GEN_API_CONNECTING")
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
@@ -449,11 +813,11 @@ func _genres_worker(data_dict: Dictionary):
 			_genres_res = {"error": local_error}
 			_genres_done = true
 			return
-		_genres_status_queue.append("Соединение установлено")
+		_genres_status_queue.append("GEN_API_CONNECTED")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
-			_genres_status_queue.append("Отправка запроса")
+			_genres_status_queue.append("GEN_API_SENDING_REQUEST")
 			var payload = JSON.stringify({"artist": artist, "title": title}).to_utf8_buffer()
 			var headers = PackedStringArray(["Content-Type: application/json", "Content-Length: " + str(payload.size())])
 			http_client.request_raw(HTTPClient.METHOD_POST, "/get_genres_manual", headers, payload)
@@ -461,10 +825,10 @@ func _genres_worker(data_dict: Dictionary):
 			while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
 				http_client.poll()
 				OS.delay_msec(100)
-			_genres_status_queue.append("Получение ответа")
+			_genres_status_queue.append("GEN_API_RECEIVING_RESPONSE")
 			var response_code = http_client.get_response_code()
 			var response_body = _read_http_response_body(http_client)
-			_genres_status_queue.append("Обработка ответа")
+			_genres_status_queue.append("GEN_API_PROCESSING_RESPONSE")
 			var response_text = response_body.get_string_from_utf8()
 			var response_json = JSON.parse_string(response_text)
 			if response_code == 200 and response_json and response_json.has("genres"):
@@ -483,15 +847,16 @@ func _notes_worker(data_dict: Dictionary):
 		_notes_res = {"error": "Пустой путь"}
 		_notes_done = true
 		return
-	_notes_status_queue.append("Подключение к серверу...")
+	_notes_status_queue.append("GEN_API_CONNECTING")
 	var instrument_type = data_dict.get("instrument_type", "drums")
 	var bpm = data_dict.get("bpm", 120.0)
 	var lanes = data_dict.get("lanes", 4)
 	var sync_tolerance = data_dict.get("sync_tolerance", 0.2)
-	var auto_identify = data_dict.get("auto_identify", true)
+	var auto_identify := bool(data_dict.get("auto_identify", true))
 	var manual_artist = data_dict.get("manual_artist", "")
 	var manual_title = data_dict.get("manual_title", "")
 	var generation_mode = data_dict.get("generation_mode", "basic")
+	var chart_intent_req := str(data_dict.get("chart_intent", "")).strip_edges()
 	var http_client = HTTPClient.new()
 	var err = http_client.connect_to_host(_api_host(), _api_port())
 	if err != OK:
@@ -505,7 +870,7 @@ func _notes_worker(data_dict: Dictionary):
 			http_client.close()
 			_notes_done = true
 			return
-		_notes_status_queue.append("Соединение установлено")
+		_notes_status_queue.append("GEN_API_CONNECTED")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
@@ -541,30 +906,92 @@ func _notes_worker(data_dict: Dictionary):
 			var client_primary_genre = str(client_meta.get("primary_genre", ""))
 			if client_primary_genre.strip_edges() == "" and client_genres_arr.size() > 0:
 				client_primary_genre = str(client_genres_arr[0])
+			var needs_genre_detection := auto_identify and client_genres_arr.is_empty()
+			if needs_genre_detection:
+				client_genres_arr = []
+				client_primary_genre = ""
+			else:
+				auto_identify = false
 			var preset_id = generation_mode
+			var chart_intent := chart_intent_req
+			var goal_meta := str(data_dict.get("goal", "")).strip_edges().to_lower()
+			var difficulty_meta := str(data_dict.get("difficulty", "")).strip_edges().to_lower()
+			var chart_stem_meta := str(data_dict.get("chart_stem", "")).strip_edges().to_lower()
+			var has_job_style := goal_meta != "" or difficulty_meta != "" or chart_stem_meta != ""
+			if goal_meta == "" and difficulty_meta == "" and chart_stem_meta != "":
+				var stem_pair := _GoalDiff.pair_from_stem(chart_stem_meta)
+				goal_meta = str(stem_pair.get("goal", _GoalDiff.DEFAULT_GOAL)).strip_edges().to_lower()
+				difficulty_meta = str(stem_pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)).strip_edges().to_lower()
+			if not has_job_style:
+				if goal_meta == "":
+					goal_meta = str(SettingsManager.get_setting("generation_goal", "original")).strip_edges().to_lower()
+				if difficulty_meta == "":
+					difficulty_meta = str(SettingsManager.get_setting("generation_difficulty", "standard")).strip_edges().to_lower()
+			elif goal_meta == "" or difficulty_meta == "":
+				push_error(
+					"GenAPI: incomplete job style metadata goal=%s difficulty=%s stem=%s — check queue task"
+					% [goal_meta, difficulty_meta, chart_stem_meta]
+				)
+			if chart_stem_meta == "" and goal_meta != "" and difficulty_meta != "":
+				chart_stem_meta = _GoalDiff.chart_stem(goal_meta, difficulty_meta)
+			push_warning(
+				"GenAPI metadata goal=%s difficulty=%s stem=%s intent=%s"
+				% [goal_meta, difficulty_meta, chart_stem_meta, chart_intent_req]
+			)
+			print(
+				"[GenAPI] metadata goal=%s difficulty=%s stem=%s intent=%s task=%s"
+				% [goal_meta, difficulty_meta, chart_stem_meta, chart_intent_req, task_id]
+			)
+			if chart_intent == "":
+				chart_intent = str(SettingsManager.get_setting("last_generation_intent", "")).strip_edges()
+			if chart_intent == "" and goal_meta != "" and difficulty_meta != "":
+				chart_intent = _GoalDiff.intent_for(goal_meta, difficulty_meta)
+			if chart_intent == "":
+				chart_intent = "original"
 			var metadata := {
 				"original_filename": song_path.get_file(),
+				"song_path": song_path.replace("\\", "/"),
+				"chart_id": NotesUtils.chart_id_from_song_path(song_path),
 				"bpm": bpm,
 				"lanes": lanes,
 				"instrument_type": instrument_type,
 				"sync_tolerance": sync_tolerance,
 				"generation_mode": generation_mode,
+				"chart_intent": chart_intent,
+				"goal": goal_meta,
+				"difficulty": difficulty_meta,
+				"generation_goal": goal_meta,
+				"generation_difficulty": difficulty_meta,
+				"chart_stem": chart_stem_meta,
 				"preset_id": preset_id,
 				"auto_identify_track": auto_identify,
 				"manual_artist": manual_artist,
 				"manual_title": manual_title,
-				"progress_delay_seconds": 2.0,
+				"progress_delay_seconds": 0.0,
 				"use_stems": false if instrument_type == "fullmix" else bool(SettingsManager.get_setting("use_stems_in_generation", true)),
 				"genres": client_genres_arr,
-				"primary_genre": client_primary_genre
+				"primary_genre": client_primary_genre,
+				"include_hi_hats": bool(SettingsManager.get_setting("generation_include_hi_hats", true)),
+				"stem_keep_all": bool(SettingsManager.get_setting("generation_stem_keep_all", true)),
+				"stem_retention_mode": str(SettingsManager.get_setting("generation_stem_retention_mode", "after_job")),
+				"stem_keep_count": 10,
+				"stem_ttl_seconds": 900,
 			}
-			if generation_mode == "custom":
+			# Goal×difficulty pairs carry density/fill/groove on the server preset.
+			# Client sliders apply only in custom mode or legacy intent requests.
+			var use_goal_diff_preset := (
+				_GoalDiff.is_goal(goal_meta) and _GoalDiff.is_difficulty(difficulty_meta)
+			)
+			if generation_mode == "custom" or (not use_goal_diff_preset and chart_intent != ""):
 				metadata["fill"] = int(SettingsManager.get_setting("generation_fill", 30))
 				metadata["groove"] = int(SettingsManager.get_setting("generation_groove", 50))
 				metadata["density"] = int(SettingsManager.get_setting("generation_density", 50))
 				metadata["grid_snap_strength"] = int(SettingsManager.get_setting("generation_grid_snap_strength", 80))
 				metadata["accent_strong_beats"] = bool(SettingsManager.get_setting("generation_accent_strong_beats", true))
 				metadata["genre_template_strength"] = int(SettingsManager.get_setting("generation_genre_template_strength", 60))
+				metadata["critic_strength"] = int(SettingsManager.get_setting("generation_critic_strength", 50))
+				metadata["groove_completion"] = bool(SettingsManager.get_setting("generation_groove_completion", true))
+				metadata["raw_adtof"] = bool(SettingsManager.get_setting("generation_raw_adtof", false))
 			var metadata_json = JSON.stringify(metadata)
 			var metadata_part = "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"metadata\"\r\n" + "Content-Type: application/json\r\n\r\n" + metadata_json + "\r\n"
 			body.append_array(metadata_part.to_utf8_buffer())
@@ -574,7 +1001,8 @@ func _notes_worker(data_dict: Dictionary):
 			var closing_boundary = "\r\n--" + boundary + "--\r\n"
 			body.append_array(closing_boundary.to_utf8_buffer())
 			var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary, "X-Task-Id: " + task_id])
-			err = http_client.request_raw(HTTPClient.METHOD_POST, "/generate_drums", headers, body)
+			var gen_endpoint := "/generate_bass" if instrument_type == "bass" else "/generate_drums"
+			err = http_client.request_raw(HTTPClient.METHOD_POST, gen_endpoint, headers, body)
 			if err != OK:
 				local_error = "Ошибка отправки: " + str(err)
 			else:
@@ -629,7 +1057,7 @@ func _notes_worker(data_dict: Dictionary):
 						return
 				if not task_result_done:
 					if use_remote:
-						_notes_status_queue.append("Получение результата с сервера")
+						_notes_status_queue.append("GEN_API_FETCHING_RESULT")
 						var fetched = _fetch_notes_task_result(
 							task_id, song_path, bpm, lanes, instrument_type, func(): return _cancel_notes
 						)
@@ -638,10 +1066,10 @@ func _notes_worker(data_dict: Dictionary):
 						elif fetched.has("error"):
 							local_error = fetched.error
 					else:
-						_notes_status_queue.append("Получение ответа")
+						_notes_status_queue.append("GEN_API_RECEIVING_RESPONSE")
 						var response_code = http_client.get_response_code()
 						var response_body = _read_http_response_body(http_client)
-						_notes_status_queue.append("Обработка ответа")
+						_notes_status_queue.append("GEN_API_PROCESSING_RESPONSE")
 						var response_json = JSON.parse_string(response_body.get_string_from_utf8())
 						if response_code == 200 and response_json != null:
 							var parsed = _notes_payload_from_json(
@@ -667,5 +1095,20 @@ func _notes_worker(data_dict: Dictionary):
 							elif fetched.has("error") and local_error == "":
 								local_error = fetched.error
 				http_client.close()
+			if local_error == "" and local_result is Dictionary:
+				local_result["task_id"] = task_id
 	_notes_res = local_result if local_error == "" else {"error": local_error}
 	_notes_done = true
+
+
+func _notify_genre_analysis_achievement() -> void:
+	var tree := Engine.get_main_loop()
+	if tree == null or not (tree is SceneTree):
+		return
+	var ge := (tree as SceneTree).root.get_node_or_null("GameEngine")
+	if ge == null:
+		ge = (tree as SceneTree).root.find_child("GameEngine", true, false)
+	if ge and ge.has_method("get_achievement_system"):
+		var ach = ge.get_achievement_system()
+		if ach and ach.has_method("on_genre_analyzed"):
+			ach.on_genre_analyzed()

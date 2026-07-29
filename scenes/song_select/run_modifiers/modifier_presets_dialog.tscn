@@ -1,0 +1,359 @@
+[gd_scene load_steps=6 format=3 uid="uid://dk8m7presetsdlg"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/modifier_presets_dialog.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0.06, 0.07, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.11, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.82, 0.45, 0.22)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_list"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.07, 0.08, 0.11, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="ModifierPresetsDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.78)
+
+[node name="BackButton" type="Button" parent="."]
+z_index = 10
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 1
+offset_left = 16.0
+offset_top = 16.0
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 56.0
+offset_right = -24.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
+text = "Пресеты модификаторов"
+horizontal_alignment = 1
+
+[node name="ActivePresetLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.72, 0.88, 0.95)
+theme_override_font_sizes/font_size = 16
+text = "Активный: —"
+horizontal_alignment = 1
+
+[node name="TabsRow" type="HBoxContainer" parent="Container"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="TabMineBtn" type="Button" parent="Container/TabsRow"]
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Мои пресеты"
+
+[node name="TabFavBtn" type="Button" parent="Container/TabsRow"]
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Избранные"
+
+[node name="BodyCenter" type="MarginContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_right = 40
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(0, 560)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="BodyHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="LeftVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="ListScroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/LeftVBox/ListScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="RightVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="DetailPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="DetailMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="DetailVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailCaption" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.68, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "ТЕКУЩИЕ НАСТРОЙКИ"
+
+[node name="SaveAsHintLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 0.95)
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+
+[node name="DetailNameEdit" type="LineEdit" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+placeholder_text = ""
+max_length = 32
+
+[node name="DetailHeroPanel" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hero")
+
+[node name="HeroVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailHeroPanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="DetailMult" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailHeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_font_sizes/font_size = 32
+text = "1.00×"
+horizontal_alignment = 1
+
+[node name="DetailMultCaption" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailHeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "Множитель награды"
+horizontal_alignment = 1
+
+[node name="DetailModCount" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailHeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "0 модов выбрано"
+horizontal_alignment = 1
+
+[node name="DetailStatsRow" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="DetailEaseStat" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailStatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.42, 0.88, 0.58, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Упр.: 0"
+horizontal_alignment = 1
+
+[node name="DetailHardStat" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailStatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Усл.: 0"
+horizontal_alignment = 1
+
+[node name="DetailSpecialStat" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailStatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.98, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Ос.: 0"
+horizontal_alignment = 1
+
+[node name="DetailModsHeader" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Активные модификаторы"
+
+[node name="DetailModsArea" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_list")
+
+[node name="DetailModsScroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailModsArea"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="DetailModsVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox/DetailModsArea/DetailModsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="DetailMeta" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.68, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Обновлён 01.07.2026 · пройдено 5 раз"
+autowrap_mode = 3
+
+[node name="ActionsVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LoadButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Загрузить"
+
+[node name="ClearActiveButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Играть без пресета"
+
+[node name="EditButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Сохранить"
+
+[node name="SaveAsButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "Сохранить как…"
+
+[node name="DeleteButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalDangerButton"
+text = "Удалить"
+
+[node name="FavoriteButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyHBox/RightVBox/ActionsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatModalPrimaryButton"
+text = "В избранное"
+
+[node name="FooterHintLabel" type="Label" parent="Container"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.58, 0.75)
+theme_override_font_sizes/font_size = 14
+text = "Esc — назад · 1–9, 0 слот 10 · Q/W вкладки"
+horizontal_alignment = 1

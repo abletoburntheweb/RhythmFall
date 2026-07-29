@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/profile/components/profile_record_detail_row.gd" id="1"]
+
+[node name="RecordDetailRow" type="HBoxContainer"]
+theme_override_constants/separation = 10
+script = ExtResource("1")
+
+[node name="CaptionLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
+theme_override_font_sizes/font_size = 15
+text = "Caption"
+
+[node name="ValueLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.784314, 0.823529, 0.901961, 1)
+theme_override_font_sizes/font_size = 15
+text = "Value"
+autowrap_mode = 3

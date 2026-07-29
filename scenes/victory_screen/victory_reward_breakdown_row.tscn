@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_reward_breakdown_row.gd" id="1_row"]
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_reward_bar.gd" id="2_bar"]
+
+[node name="RewardBreakdownRow" type="HBoxContainer"]
+custom_minimum_size = Vector2(0, 34)
+theme_override_constants/separation = 10
+alignment = 1
+script = ExtResource("1_row")
+
+[node name="Icon" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 15
+text = "Row"
+
+[node name="BarSlot" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+custom_minimum_size = Vector2(120, 14)
+
+[node name="RewardBar" type="Control" parent="BarSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_bar")
+
+[node name="ValueLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "+0"
+horizontal_alignment = 2

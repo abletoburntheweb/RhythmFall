@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3 uid="uid://crunmodparamrow1"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/run_modifier_param_row.gd" id="1_row"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_row"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.08, 0.09, 0.12, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="RunModifierParamRow" type="PanelContainer"]
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+script = ExtResource("1_row")
+
+[node name="RowMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="RowHBox" type="HBoxContainer" parent="RowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="RowMargin/RowHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
+theme_override_font_sizes/font_size = 17
+text = "Parameter"
+
+[node name="Slider" type="HSlider" parent="RowMargin/RowHBox"]
+custom_minimum_size = Vector2(160, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 25.0
+max_value = 250.0
+step = 5.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="RowMargin/RowHBox"]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_font_sizes/font_size = 17
+text = "100%"
+horizontal_alignment = 2
+
+[node name="DeltaLabel" type="Label" parent="RowMargin/RowHBox"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.92, 0.62, 1)
+theme_override_font_sizes/font_size = 14
+text = "+0%"
+horizontal_alignment = 2

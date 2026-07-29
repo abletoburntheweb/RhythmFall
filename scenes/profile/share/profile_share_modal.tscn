@@ -1,0 +1,156 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsharemodal01"]
+
+[ext_resource type="Script" path="res://scenes/profile/share/profile_share_modal.gd" id="1_modal"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://bshareexportresult01" path="res://scenes/profile/share/profile_share_export_result.tscn" id="3_result"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[node name="ProfileShareModal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_modal")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.82)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Container"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="TitleLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 34
+text = "Карточки статистики"
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 16
+text = "Wrapped-постеры — сохраните и поделитесь."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyCenter" type="CenterContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Card" type="PanelContainer" parent="Container/BodyCenter"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="ContentVBox" type="VBoxContainer" parent="Container/BodyCenter/Card/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CardsRow" type="HBoxContainer" parent="Container/BodyCenter/Card/CardMargin/ContentVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ButtonsRow" type="HBoxContainer" parent="Container/BodyCenter/Card/CardMargin/ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="SaveButton" type="Button" parent="Container/BodyCenter/Card/CardMargin/ContentVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Сохранить выбранную"
+
+[node name="SaveAllButton" type="Button" parent="Container/BodyCenter/Card/CardMargin/ContentVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Сохранить все"
+
+[node name="FooterHintLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "1–5 или клик · Enter · Shift+Enter · Esc"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+title = "Save card"
+size = Vector2i(640, 420)
+ok_button_text = "Save"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.png ; PNG Images")
+
+[node name="SaveDirDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+title = "Save all cards"
+size = Vector2i(640, 420)
+ok_button_text = "Save"
+file_mode = 2
+access = 2
+
+[node name="ExportResultOverlay" parent="." instance=ExtResource("3_result")]
+unique_name_in_owner = true
+layout_mode = 1

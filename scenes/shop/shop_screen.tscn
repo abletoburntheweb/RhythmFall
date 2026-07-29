@@ -1,4 +1,4 @@
-[gd_scene load_steps=74 format=3 uid="uid://b78etu3dej4um"]
+[gd_scene load_steps=75 format=3 uid="uid://b78etu3dej4um"]
 
 [ext_resource type="Script" uid="uid://5nqeco11y0n3" path="res://scenes/shop/shop_screen.gd" id="1_bjeu6"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_bjeu6"]
@@ -1009,6 +1009,17 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_category_badge"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.91, 0.36, 0.36, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
 [sub_resource type="Theme" id="Theme_38ec2"]
 ActiveAll/base_type = &"Button"
 ActiveAll/colors/font_color = Color(0.42, 0.57, 0.82, 1)
@@ -1046,6 +1057,15 @@ ActiveLane/styles/focus = SubResource("StyleBoxFlat_6vwq7")
 ActiveLane/styles/hover = SubResource("StyleBoxFlat_6vwq7")
 ActiveLane/styles/normal = SubResource("StyleBoxFlat_6vwq7")
 ActiveLane/styles/pressed = SubResource("StyleBoxFlat_6vwq7")
+ActiveParticles/base_type = &"Button"
+ActiveParticles/colors/font_color = Color(0.92, 0.68, 0.32, 1)
+ActiveParticles/colors/font_disabled_color = Color(0.552, 0.408, 0.192, 1)
+ActiveParticles/colors/font_hover_color = Color(0.944, 0.7216, 0.384, 1)
+ActiveParticles/colors/font_pressed_color = Color(0.864, 0.6416, 0.304, 1)
+ActiveParticles/styles/focus = SubResource("StyleBoxFlat_6vwq7")
+ActiveParticles/styles/hover = SubResource("StyleBoxFlat_6vwq7")
+ActiveParticles/styles/normal = SubResource("StyleBoxFlat_6vwq7")
+ActiveParticles/styles/pressed = SubResource("StyleBoxFlat_6vwq7")
 ActiveMisc/base_type = &"Button"
 ActiveMisc/colors/font_color = Color(0.8, 0.86, 0.94, 1)
 ActiveMisc/colors/font_disabled_color = Color(0.48000002, 0.51600003, 0.564, 1)
@@ -1124,6 +1144,15 @@ CategoryLane/styles/focus = SubResource("StyleBoxFlat_yjg8t")
 CategoryLane/styles/hover = SubResource("StyleBoxFlat_n4q5m")
 CategoryLane/styles/normal = SubResource("StyleBoxFlat_a0x0r")
 CategoryLane/styles/pressed = SubResource("StyleBoxFlat_8w1y6")
+CategoryParticles/base_type = &"Button"
+CategoryParticles/colors/font_color = Color(0.92, 0.68, 0.32, 1)
+CategoryParticles/colors/font_disabled_color = Color(0.552, 0.408, 0.192, 1)
+CategoryParticles/colors/font_hover_color = Color(0.944, 0.7216, 0.384, 1)
+CategoryParticles/colors/font_pressed_color = Color(0.864, 0.6416, 0.304, 1)
+CategoryParticles/styles/focus = SubResource("StyleBoxFlat_yjg8t")
+CategoryParticles/styles/hover = SubResource("StyleBoxFlat_n4q5m")
+CategoryParticles/styles/normal = SubResource("StyleBoxFlat_a0x0r")
+CategoryParticles/styles/pressed = SubResource("StyleBoxFlat_8w1y6")
 CategoryMisc/base_type = &"Button"
 CategoryMisc/colors/font_color = Color(0.8, 0.86, 0.94, 1)
 CategoryMisc/colors/font_disabled_color = Color(0.48000002, 0.51600003, 0.564, 1)
@@ -1327,6 +1356,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 12
 
 [node name="MainVBox" type="VBoxContainer" parent="MainContent"]
 layout_mode = 2
@@ -1362,6 +1395,24 @@ theme_override_styles/background = SubResource("StyleBoxFlat_shop_progress_track
 theme_override_styles/fill = SubResource("StyleBoxFlat_shop_progress_fill")
 show_percentage = false
 
+[node name="CollectionsPanel" type="VBoxContainer" parent="MainContent/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CollectionsTitleLabel" type="Label" parent="MainContent/MainVBox/CollectionsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 1)
+theme_override_font_sizes/font_size = 13
+text = "КОЛЛЕКЦИИ"
+horizontal_alignment = 1
+
+[node name="CollectionsRow" type="HBoxContainer" parent="MainContent/MainVBox/CollectionsPanel"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContent/MainVBox"]
 layout_mode = 2
 alignment = 1
@@ -1380,34 +1431,185 @@ alignment = 1
 layout_mode = 2
 theme = ExtResource("2_bjeu6")
 theme_type_variation = &"CategoryAll"
+metadata/ui_icon_file = "layers-2.svg"
+metadata/ui_variation_inactive = &"CategoryAll"
+metadata/ui_variation_active = &"ActiveAll"
 text = "Все"
+
+[node name="NewRewardsBadge" type="PanelContainer" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonAll"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CountLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonAll/NewRewardsBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.45)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CategoryButtonKick" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"]
 layout_mode = 2
 theme = SubResource("Theme_38ec2")
 theme_type_variation = &"CategoryKick"
-text = "Кик"
+metadata/ui_icon_file = "drum.svg"
+metadata/ui_variation_inactive = &"CategoryKick"
+metadata/ui_variation_active = &"ActiveKick"
+text = "Звук попаданий"
 
-[node name="CategoryButtonCover" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"]
+[node name="NewRewardsBadge" type="PanelContainer" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonKick"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CountLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonKick/NewRewardsBadge"]
 layout_mode = 2
-theme = SubResource("Theme_38ec2")
-theme_type_variation = &"CategoryCover"
-text = "Обложки"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.45)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CategoryButtonNotes" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"]
 layout_mode = 2
 theme = SubResource("Theme_38ec2")
 theme_type_variation = &"CategoryNotes"
+metadata/ui_icon_file = "audio-lines.svg"
+metadata/ui_variation_inactive = &"CategoryNotes"
+metadata/ui_variation_active = &"ActiveNotes"
 text = "Ноты"
+
+[node name="NewRewardsBadge" type="PanelContainer" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonNotes"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CountLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonNotes/NewRewardsBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.45)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CategoryButtonLaneHighlight" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"]
 layout_mode = 2
 theme = SubResource("Theme_38ec2")
 theme_type_variation = &"CategoryLane"
+metadata/ui_icon_file = "between-horizontal-start.svg"
+metadata/ui_variation_inactive = &"CategoryLane"
+metadata/ui_variation_active = &"ActiveLane"
 text = "Подсветка линий"
+
+[node name="NewRewardsBadge" type="PanelContainer" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonLaneHighlight"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CountLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonLaneHighlight/NewRewardsBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.45)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CategoryButtonParticles" type="Button" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox"]
+layout_mode = 2
+theme = SubResource("Theme_38ec2")
+theme_type_variation = &"CategoryParticles"
+metadata/ui_icon_file = "sparkles.svg"
+metadata/ui_variation_inactive = &"CategoryParticles"
+metadata/ui_variation_active = &"ActiveParticles"
+text = "Частицы попаданий"
+
+[node name="NewRewardsBadge" type="PanelContainer" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonParticles"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -26.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CountLabel" type="Label" parent="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonParticles/NewRewardsBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.45)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ContentMargin" type="MarginContainer" parent="MainContent/MainVBox"]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="ContentHBox" type="HBoxContainer" parent="MainContent/MainVBox/ContentMargin"]
 layout_mode = 2
@@ -1436,9 +1638,16 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 columns = 5
 
+[node name="FooterLabel" type="Label" parent="MainContent/MainVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.58, 0.75)
+theme_override_font_sizes/font_size = 14
+text = "Esc — выход · 1–5 категории · ↑↓ прокрутка"
+horizontal_alignment = 1
+
 [connection signal="pressed" from="MainContent/MainVBox/BackButton" to="." method="_on_back_pressed"]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonAll" to="." method="_on_category_selected" binds= ["Все"]]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonKick" to="." method="_on_category_selected" binds= ["Кик"]]
-[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonCover" to="." method="_on_category_selected" binds= ["Обложки"]]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonNotes" to="." method="_on_category_selected" binds= ["Ноты"]]
 [connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonLaneHighlight" to="." method="_on_category_selected" binds= ["Подсветка линий"]]
+[connection signal="pressed" from="MainContent/MainVBox/VBoxContainer/CategoryBarPanel/CategoriesHBox/CategoryButtonParticles" to="." method="_on_category_selected" binds= ["Частицы хита"]]

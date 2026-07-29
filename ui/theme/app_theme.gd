@@ -21,31 +21,6 @@ static func _make_accent_section_panel(accent: Color) -> StyleBoxFlat:
 	return sb
 
 
-static func _make_cover_gallery_slot(accent: Color, hover: bool = false) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	var base_bg := Color(0.088, 0.092, 0.118, 0.96)
-	sb.bg_color = base_bg.lerp(accent.darkened(0.62), 0.12)
-	sb.border_color = Color(accent.r, accent.g, accent.b, 0.78 if hover else 0.52)
-	if hover:
-		sb.bg_color = sb.bg_color.lerp(accent.lightened(0.18), 0.14)
-	sb.border_width_left = 2
-	sb.border_width_top = 2
-	sb.border_width_right = 2
-	sb.border_width_bottom = 2
-	sb.corner_radius_top_left = 12
-	sb.corner_radius_top_right = 12
-	sb.corner_radius_bottom_right = 12
-	sb.corner_radius_bottom_left = 12
-	sb.content_margin_left = 6.0
-	sb.content_margin_top = 6.0
-	sb.content_margin_right = 6.0
-	sb.content_margin_bottom = 6.0
-	sb.shadow_color = Color(0, 0, 0, 0.22)
-	sb.shadow_size = 4
-	sb.shadow_offset = Vector2(0, 2)
-	return sb
-
-
 static func _register_section_theme(theme: Theme, prefix: String, accent: Color) -> void:
 	var header_name := "SectionHeader%s" % prefix
 	var panel_name := "SectionPanel%s" % prefix
@@ -80,6 +55,13 @@ static func _make_button_hover_box(border_col: Color, bg_alpha: float = 0.06) ->
 	return sb
 
 
+static func _make_category_active_style(base: StyleBoxFlat, cat_bg: Color, accent: Color) -> StyleBoxFlat:
+	var box: StyleBoxFlat = base.duplicate()
+	box.border_color = accent.lightened(0.14)
+	box.bg_color = Color(accent.r, accent.g, accent.b, 0.14).lerp(cat_bg.lightened(0.12), 0.55)
+	return box
+
+
 static func _make_button_box(bg: Color, border_col: Color, draw_center := true, border_w := 0) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -102,6 +84,78 @@ static func _make_button_box(bg: Color, border_col: Color, draw_center := true, 
 	sb.content_margin_bottom = 10
 	return sb
 
+
+static func _make_flat_modal_styleboxes(
+	modal_bg: Color,
+	outline: Color,
+	btn_outline_normal: StyleBoxFlat,
+	btn_outline_hover: StyleBoxFlat,
+	btn_outline_pressed: StyleBoxFlat,
+	btn_outline_disabled: StyleBoxFlat,
+	btn_outline_focus: StyleBoxFlat,
+) -> Dictionary:
+	var normal := btn_outline_normal.duplicate() as StyleBoxFlat
+	normal.draw_center = true
+	normal.bg_color = modal_bg
+	normal.border_color = outline
+	var hover := btn_outline_hover.duplicate() as StyleBoxFlat
+	hover.draw_center = true
+	hover.bg_color = modal_bg.lightened(0.06)
+	hover.border_color = outline
+	var pressed := btn_outline_pressed.duplicate() as StyleBoxFlat
+	pressed.draw_center = true
+	pressed.bg_color = modal_bg.darkened(0.08)
+	pressed.border_color = outline.darkened(0.2)
+	var disabled := btn_outline_disabled.duplicate() as StyleBoxFlat
+	disabled.draw_center = true
+	disabled.bg_color = modal_bg.darkened(0.12)
+	disabled.border_color = outline.darkened(0.5)
+	var focus := btn_outline_focus.duplicate() as StyleBoxFlat
+	focus.draw_center = true
+	focus.bg_color = modal_bg
+	focus.border_color = outline
+	return {
+		"normal": normal,
+		"hover": hover,
+		"pressed": pressed,
+		"disabled": disabled,
+		"focus": focus,
+	}
+
+
+static func _register_flat_modal_button(
+	theme: Theme,
+	variation_name: String,
+	modal_bg: Color,
+	outline: Color,
+	text: Color,
+	btn_outline_normal: StyleBoxFlat,
+	btn_outline_hover: StyleBoxFlat,
+	btn_outline_pressed: StyleBoxFlat,
+	btn_outline_disabled: StyleBoxFlat,
+	btn_outline_focus: StyleBoxFlat,
+) -> void:
+	var boxes := _make_flat_modal_styleboxes(
+		modal_bg,
+		outline,
+		btn_outline_normal,
+		btn_outline_hover,
+		btn_outline_pressed,
+		btn_outline_disabled,
+		btn_outline_focus,
+	)
+	theme.set_type_variation(variation_name, "Button")
+	theme.set_stylebox("normal", variation_name, boxes.normal)
+	theme.set_stylebox("hover", variation_name, boxes.hover)
+	theme.set_stylebox("pressed", variation_name, boxes.pressed)
+	theme.set_stylebox("disabled", variation_name, boxes.disabled)
+	theme.set_stylebox("focus", variation_name, boxes.focus)
+	theme.set_color("font_color", variation_name, text)
+	theme.set_color("font_hover_color", variation_name, text)
+	theme.set_color("font_pressed_color", variation_name, text)
+	theme.set_color("font_disabled_color", variation_name, text.darkened(0.5))
+
+
 static func build_theme() -> Theme:
 	var theme := Theme.new()
 	theme.add_type("Palette")
@@ -121,6 +175,7 @@ static func build_theme() -> Theme:
 	theme.set_color("accent_slate", "Palette", Color(0.80, 0.86, 0.94, 1.0))
 	theme.set_color("accent_yellow", "Palette", Color(0.95, 0.81, 0.35, 1.0))
 	theme.set_color("accent_orange", "Palette", Color(0.98, 0.64, 0.30, 1.0))
+	theme.set_color("accent_amber", "Palette", Color(0.92, 0.78, 0.45, 1.0))
 	theme.set_color("accent_green", "Palette", Color(0.52, 0.82, 0.56, 1.0))
 	var blue := theme.get_color("primary", "Palette")
 	var blue_hover := blue.lightened(0.1)
@@ -211,6 +266,27 @@ static func build_theme() -> Theme:
 	theme.set_color("font_hover_color", "FlatButtonYellow", text)
 	theme.set_color("font_pressed_color", "FlatButtonYellow", text)
 	theme.set_color("font_disabled_color", "FlatButtonYellow", text.darkened(0.5))
+
+	var amber_outline := theme.get_color("accent_amber", "Palette")
+	var fb_amber_normal := btn_outline_normal.duplicate()
+	fb_amber_normal.border_color = amber_outline
+	var fb_amber_hover := _make_button_hover_box(amber_outline)
+	var fb_amber_pressed := btn_outline_pressed.duplicate()
+	fb_amber_pressed.border_color = amber_outline.darkened(0.2)
+	var fb_amber_disabled := btn_outline_disabled.duplicate()
+	fb_amber_disabled.border_color = amber_outline.darkened(0.5)
+	var fb_amber_focus := btn_outline_focus.duplicate()
+	fb_amber_focus.border_color = amber_outline
+	theme.set_type_variation("FlatButtonAmber", "Button")
+	theme.set_stylebox("normal", "FlatButtonAmber", fb_amber_normal)
+	theme.set_stylebox("hover", "FlatButtonAmber", fb_amber_hover)
+	theme.set_stylebox("pressed", "FlatButtonAmber", fb_amber_pressed)
+	theme.set_stylebox("disabled", "FlatButtonAmber", fb_amber_disabled)
+	theme.set_stylebox("focus", "FlatButtonAmber", fb_amber_focus)
+	theme.set_color("font_color", "FlatButtonAmber", text)
+	theme.set_color("font_hover_color", "FlatButtonAmber", text)
+	theme.set_color("font_pressed_color", "FlatButtonAmber", text)
+	theme.set_color("font_disabled_color", "FlatButtonAmber", text.darkened(0.5))
 
 	var orange_outline := theme.get_color("accent_orange", "Palette")
 	var fb_orange_normal := btn_outline_normal.duplicate()
@@ -429,6 +505,43 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "FlatMenuSettingsButton", text)
 	theme.set_color("font_disabled_color", "FlatMenuSettingsButton", text.darkened(0.5))
 
+	var help_accent := theme.get_color("accent_slate", "Palette")
+	var help_base_bg := theme.get_color("panel_bg", "Palette")
+	var help_panel_bg := help_base_bg.lerp(help_accent.darkened(0.62), 0.14)
+	var help_border := Color(help_accent.r, help_accent.g, help_accent.b, 0.50)
+	var fb_menu_help_normal := _make_button_box(help_panel_bg, help_border, true, 1)
+	fb_menu_help_normal.content_margin_left = 4
+	fb_menu_help_normal.content_margin_top = 4
+	fb_menu_help_normal.content_margin_right = 4
+	fb_menu_help_normal.content_margin_bottom = 4
+	fb_menu_help_normal.shadow_size = 4
+	fb_menu_help_normal.shadow_color = Color(0, 0, 0, 0.32)
+	var fb_menu_help_hover := fb_menu_help_normal.duplicate() as StyleBoxFlat
+	fb_menu_help_hover.bg_color = help_panel_bg.lerp(help_accent.lightened(0.12), 0.16)
+	fb_menu_help_hover.border_color = Color(help_accent.r, help_accent.g, help_accent.b, 0.68)
+	var fb_menu_help_pressed := fb_menu_help_normal.duplicate() as StyleBoxFlat
+	fb_menu_help_pressed.bg_color = help_panel_bg.darkened(0.06)
+	fb_menu_help_pressed.border_color = Color(help_accent.r, help_accent.g, help_accent.b, 0.42)
+	var fb_menu_help_disabled := fb_menu_help_normal.duplicate() as StyleBoxFlat
+	fb_menu_help_disabled.bg_color = help_panel_bg.darkened(0.12)
+	fb_menu_help_disabled.border_color = Color(help_accent.r, help_accent.g, help_accent.b, 0.28)
+	var fb_menu_help_focus := fb_menu_help_normal.duplicate() as StyleBoxFlat
+	fb_menu_help_focus.border_width_left = 2
+	fb_menu_help_focus.border_width_top = 2
+	fb_menu_help_focus.border_width_right = 2
+	fb_menu_help_focus.border_width_bottom = 2
+	fb_menu_help_focus.border_color = Color(help_accent.r, help_accent.g, help_accent.b, 0.72)
+	theme.set_type_variation("FlatMenuHelpButton", "Button")
+	theme.set_stylebox("normal", "FlatMenuHelpButton", fb_menu_help_normal)
+	theme.set_stylebox("hover", "FlatMenuHelpButton", fb_menu_help_hover)
+	theme.set_stylebox("pressed", "FlatMenuHelpButton", fb_menu_help_pressed)
+	theme.set_stylebox("disabled", "FlatMenuHelpButton", fb_menu_help_disabled)
+	theme.set_stylebox("focus", "FlatMenuHelpButton", fb_menu_help_focus)
+	theme.set_color("font_color", "FlatMenuHelpButton", text)
+	theme.set_color("font_hover_color", "FlatMenuHelpButton", text)
+	theme.set_color("font_pressed_color", "FlatMenuHelpButton", text)
+	theme.set_color("font_disabled_color", "FlatMenuHelpButton", text.darkened(0.5))
+
 	var panel_bg := theme.get_color("panel_bg", "Palette")
 	var panel_border := theme.get_color("panel_border", "Palette")
 	var primary := theme.get_color("primary", "Palette")
@@ -516,36 +629,31 @@ static func build_theme() -> Theme:
 	
 	var modal_bg := theme.get_color("panel_bg", "Palette").lightened(0.06)
 	var modal_primary_outline := theme.get_color("accent_mint", "Palette")
-	var fb_modal_primary_normal := btn_outline_normal.duplicate()
-	fb_modal_primary_normal.draw_center = true
-	fb_modal_primary_normal.bg_color = modal_bg
-	fb_modal_primary_normal.border_color = modal_primary_outline
-	var fb_modal_primary_hover := btn_outline_hover.duplicate()
-	fb_modal_primary_hover.draw_center = true
-	fb_modal_primary_hover.bg_color = modal_bg.lightened(0.06)
-	fb_modal_primary_hover.border_color = modal_primary_outline
-	var fb_modal_primary_pressed := btn_outline_pressed.duplicate()
-	fb_modal_primary_pressed.draw_center = true
-	fb_modal_primary_pressed.bg_color = modal_bg.darkened(0.08)
-	fb_modal_primary_pressed.border_color = modal_primary_outline.darkened(0.2)
-	var fb_modal_primary_disabled := btn_outline_disabled.duplicate()
-	fb_modal_primary_disabled.draw_center = true
-	fb_modal_primary_disabled.bg_color = modal_bg.darkened(0.12)
-	fb_modal_primary_disabled.border_color = modal_primary_outline.darkened(0.5)
-	var fb_modal_primary_focus := btn_outline_focus.duplicate()
-	fb_modal_primary_focus.draw_center = true
-	fb_modal_primary_focus.bg_color = modal_bg
-	fb_modal_primary_focus.border_color = modal_primary_outline
-	theme.set_type_variation("FlatModalPrimaryButton", "Button")
-	theme.set_stylebox("normal", "FlatModalPrimaryButton", fb_modal_primary_normal)
-	theme.set_stylebox("hover", "FlatModalPrimaryButton", fb_modal_primary_hover)
-	theme.set_stylebox("pressed", "FlatModalPrimaryButton", fb_modal_primary_pressed)
-	theme.set_stylebox("disabled", "FlatModalPrimaryButton", fb_modal_primary_disabled)
-	theme.set_stylebox("focus", "FlatModalPrimaryButton", fb_modal_primary_focus)
-	theme.set_color("font_color", "FlatModalPrimaryButton", text)
-	theme.set_color("font_hover_color", "FlatModalPrimaryButton", text)
-	theme.set_color("font_pressed_color", "FlatModalPrimaryButton", text)
-	theme.set_color("font_disabled_color", "FlatModalPrimaryButton", text.darkened(0.5))
+	var modal_danger_outline := theme.get_color("danger", "Palette")
+	_register_flat_modal_button(
+		theme,
+		"FlatModalPrimaryButton",
+		modal_bg,
+		modal_primary_outline,
+		text,
+		btn_outline_normal,
+		btn_outline_hover,
+		btn_outline_pressed,
+		btn_outline_disabled,
+		btn_outline_focus,
+	)
+	_register_flat_modal_button(
+		theme,
+		"FlatModalDangerButton",
+		modal_bg,
+		modal_danger_outline,
+		text,
+		btn_outline_normal,
+		btn_outline_hover,
+		btn_outline_pressed,
+		btn_outline_disabled,
+		btn_outline_focus,
+	)
 
 	var modal_back_outline := theme.get_color("accent_slate", "Palette")
 	var fb_modal_back_normal := btn_outline_normal.duplicate()
@@ -894,28 +1002,40 @@ static func build_theme() -> Theme:
 	theme.set_color("font_selected_color", "ItemList", Color.WHITE)
 	theme.set_color("font_hovered_selected_color", "ItemList", Color.WHITE)
 
-	var cb_normal := _make_button_box(transparent, Color(0, 0, 0, 0), true, 0)
+	# CheckBox / CheckButton: keep the same 1px frame on/off. Only the mark/switch
+	# and a slight fill change indicate state — never drop the border when unchecked.
+	var cb_frame_border := theme.get_color("panel_border", "Palette")
+	var cb_normal := _make_button_box(Color(1, 1, 1, 0.03), cb_frame_border, true, 1)
 	cb_normal.content_margin_left = 8
 	cb_normal.content_margin_right = 8
 	cb_normal.content_margin_top = 4
 	cb_normal.content_margin_bottom = 4
+	cb_normal.shadow_size = 0
 	var cb_hover := cb_normal.duplicate()
-	cb_hover.bg_color = Color(1, 1, 1, 0.06)
+	cb_hover.bg_color = Color(1, 1, 1, 0.07)
+	cb_hover.border_color = cb_frame_border.lightened(0.08)
 	var cb_pressed := cb_normal.duplicate()
-	cb_pressed.bg_color = Color(1, 1, 1, 0.1)
+	cb_pressed.bg_color = Color(1, 1, 1, 0.09)
+	cb_pressed.border_color = cb_frame_border
 	var cb_disabled := cb_normal.duplicate()
 	cb_disabled.bg_color = Color(1, 1, 1, 0.02)
+	cb_disabled.border_color = cb_frame_border.darkened(0.25)
 	var cb_focus := cb_normal.duplicate()
 	cb_focus.border_color = blue
-	cb_focus.border_width_left = 2
-	cb_focus.border_width_right = 2
-	cb_focus.border_width_top = 2
-	cb_focus.border_width_bottom = 2
+	cb_focus.border_width_left = 1
+	cb_focus.border_width_right = 1
+	cb_focus.border_width_top = 1
+	cb_focus.border_width_bottom = 1
+	var cb_hover_pressed := cb_pressed.duplicate()
+	cb_hover_pressed.bg_color = cb_hover.bg_color
+	cb_hover_pressed.border_color = cb_hover.border_color
 	theme.set_stylebox("normal", "CheckBox", cb_normal)
 	theme.set_stylebox("hover", "CheckBox", cb_hover)
 	theme.set_stylebox("pressed", "CheckBox", cb_pressed)
+	theme.set_stylebox("hover_pressed", "CheckBox", cb_hover_pressed)
 	theme.set_stylebox("disabled", "CheckBox", cb_disabled)
 	theme.set_stylebox("focus", "CheckBox", cb_focus)
+	theme.set_constant("h_separation", "CheckBox", 10)
 	theme.set_color("font_color", "CheckBox", text)
 	theme.set_color("font_hover_color", "CheckBox", text)
 	theme.set_color("font_pressed_color", "CheckBox", text)
@@ -923,6 +1043,93 @@ static func build_theme() -> Theme:
 	theme.set_color("checkbox_checked_color", "CheckBox", blue)
 	theme.set_color("checkbox_unchecked_color", "CheckBox", Color(0.75, 0.80, 0.90, 1.0))
 
+	# CheckButton previously had no styleboxes and fell back to Button "pressed"
+	# (filled / stronger outline) when toggled on — same visual bug as settings.
+	theme.set_stylebox("normal", "CheckButton", cb_normal)
+	theme.set_stylebox("hover", "CheckButton", cb_hover)
+	theme.set_stylebox("pressed", "CheckButton", cb_pressed)
+	theme.set_stylebox("hover_pressed", "CheckButton", cb_hover_pressed)
+	theme.set_stylebox("disabled", "CheckButton", cb_disabled)
+	theme.set_stylebox("focus", "CheckButton", cb_focus)
+	theme.set_constant("h_separation", "CheckButton", 10)
+	theme.set_color("font_color", "CheckButton", text)
+	theme.set_color("font_hover_color", "CheckButton", text)
+	theme.set_color("font_pressed_color", "CheckButton", text)
+	theme.set_color("font_disabled_color", "CheckButton", text.darkened(0.5))
+
+	var scb_normal := cb_normal.duplicate()
+	scb_normal.bg_color = Color(1, 1, 1, 0.04)
+	scb_normal.content_margin_left = 12
+	scb_normal.content_margin_right = 12
+	scb_normal.content_margin_top = 10
+	scb_normal.content_margin_bottom = 10
+	scb_normal.set_corner_radius_all(10)
+	var scb_hover := scb_normal.duplicate()
+	scb_hover.bg_color = Color(1, 1, 1, 0.08)
+	scb_hover.border_color = cb_frame_border.lightened(0.08)
+	var scb_pressed := scb_normal.duplicate()
+	scb_pressed.bg_color = Color(1, 1, 1, 0.1)
+	scb_pressed.border_color = cb_frame_border
+	var scb_hover_pressed := scb_pressed.duplicate()
+	scb_hover_pressed.bg_color = scb_hover.bg_color
+	scb_hover_pressed.border_color = scb_hover.border_color
+	var scb_disabled := scb_normal.duplicate()
+	scb_disabled.bg_color = Color(1, 1, 1, 0.02)
+	scb_disabled.border_color = cb_frame_border.darkened(0.25)
+	var scb_focus := scb_normal.duplicate()
+	scb_focus.border_color = blue
+	scb_focus.border_width_left = 1
+	scb_focus.border_width_right = 1
+	scb_focus.border_width_top = 1
+	scb_focus.border_width_bottom = 1
+	scb_focus.set_corner_radius_all(10)
+	theme.set_type_variation("SettingsCheckBox", "CheckBox")
+	theme.set_stylebox("normal", "SettingsCheckBox", scb_normal)
+	theme.set_stylebox("hover", "SettingsCheckBox", scb_hover)
+	theme.set_stylebox("pressed", "SettingsCheckBox", scb_pressed)
+	theme.set_stylebox("hover_pressed", "SettingsCheckBox", scb_hover_pressed)
+	theme.set_stylebox("disabled", "SettingsCheckBox", scb_disabled)
+	theme.set_stylebox("focus", "SettingsCheckBox", scb_focus)
+	theme.set_constant("h_separation", "SettingsCheckBox", 12)
+	theme.set_color("font_color", "SettingsCheckBox", text)
+	theme.set_color("font_hover_color", "SettingsCheckBox", text)
+	theme.set_color("font_pressed_color", "SettingsCheckBox", text)
+	theme.set_color("font_disabled_color", "SettingsCheckBox", text.darkened(0.5))
+	theme.set_color("checkbox_checked_color", "SettingsCheckBox", blue)
+	theme.set_color("checkbox_unchecked_color", "SettingsCheckBox", Color(0.75, 0.80, 0.90, 1.0))
+
+	var scbc_normal := scb_normal.duplicate()
+	scbc_normal.content_margin_left = 8
+	scbc_normal.content_margin_right = 8
+	scbc_normal.content_margin_top = 4
+	scbc_normal.content_margin_bottom = 4
+	var scbc_hover := scbc_normal.duplicate()
+	scbc_hover.bg_color = Color(1, 1, 1, 0.08)
+	scbc_hover.border_color = cb_frame_border.lightened(0.08)
+	var scbc_pressed := scbc_normal.duplicate()
+	scbc_pressed.bg_color = Color(1, 1, 1, 0.1)
+	scbc_pressed.border_color = cb_frame_border
+	var scbc_hover_pressed := scbc_pressed.duplicate()
+	scbc_hover_pressed.bg_color = scbc_hover.bg_color
+	scbc_hover_pressed.border_color = scbc_hover.border_color
+	var scbc_disabled := scbc_normal.duplicate()
+	scbc_disabled.bg_color = Color(1, 1, 1, 0.02)
+	scbc_disabled.border_color = cb_frame_border.darkened(0.25)
+	var scbc_focus := scb_focus.duplicate()
+	theme.set_type_variation("SettingsCheckBoxCompact", "CheckBox")
+	theme.set_stylebox("normal", "SettingsCheckBoxCompact", scbc_normal)
+	theme.set_stylebox("hover", "SettingsCheckBoxCompact", scbc_hover)
+	theme.set_stylebox("pressed", "SettingsCheckBoxCompact", scbc_pressed)
+	theme.set_stylebox("hover_pressed", "SettingsCheckBoxCompact", scbc_hover_pressed)
+	theme.set_stylebox("disabled", "SettingsCheckBoxCompact", scbc_disabled)
+	theme.set_stylebox("focus", "SettingsCheckBoxCompact", scbc_focus)
+	theme.set_constant("h_separation", "SettingsCheckBoxCompact", 10)
+	theme.set_color("font_color", "SettingsCheckBoxCompact", text)
+	theme.set_color("font_hover_color", "SettingsCheckBoxCompact", text)
+	theme.set_color("font_pressed_color", "SettingsCheckBoxCompact", text)
+	theme.set_color("font_disabled_color", "SettingsCheckBoxCompact", text.darkened(0.5))
+	theme.set_color("checkbox_checked_color", "SettingsCheckBoxCompact", blue)
+	theme.set_color("checkbox_unchecked_color", "SettingsCheckBoxCompact", Color(0.75, 0.80, 0.90, 1.0))
 	theme.set_type_variation("ShopCurrencyLabel", "Label")
 	theme.set_color("font_color", "ShopCurrencyLabel", Color(0.82, 0.92, 1.0, 1.0))
 	theme.set_color("font_outline_color", "ShopCurrencyLabel", Color(0, 0, 0, 0.6))
@@ -1003,6 +1210,17 @@ static func build_theme() -> Theme:
 	theme.set_color("font_pressed_color", "CategoryLane", col_lane.darkened(0.08))
 	theme.set_color("font_disabled_color", "CategoryLane", col_lane.darkened(0.4))
 
+	var col_particles := Color(0.92, 0.68, 0.32, 1.0)
+	theme.set_type_variation("CategoryParticles", "Button")
+	theme.set_stylebox("normal", "CategoryParticles", cat_base)
+	theme.set_stylebox("hover", "CategoryParticles", cat_base_hover)
+	theme.set_stylebox("pressed", "CategoryParticles", cat_base_pressed)
+	theme.set_stylebox("focus", "CategoryParticles", cat_base_hover)
+	theme.set_color("font_color", "CategoryParticles", col_particles)
+	theme.set_color("font_hover_color", "CategoryParticles", col_particles.lightened(0.08))
+	theme.set_color("font_pressed_color", "CategoryParticles", col_particles.darkened(0.08))
+	theme.set_color("font_disabled_color", "CategoryParticles", col_particles.darkened(0.4))
+
 	theme.set_type_variation("CategoryMisc", "Button")
 	theme.set_stylebox("normal", "CategoryMisc", cat_base)
 	theme.set_stylebox("hover", "CategoryMisc", cat_base_hover)
@@ -1022,70 +1240,88 @@ static func build_theme() -> Theme:
 	act.border_width_bottom = 2
 
 	theme.set_type_variation("ActiveAll", "Button")
-	theme.set_stylebox("normal", "ActiveAll", act)
-	theme.set_stylebox("hover", "ActiveAll", act)
-	theme.set_stylebox("pressed", "ActiveAll", act)
-	theme.set_stylebox("focus", "ActiveAll", act)
+	var act_all: StyleBoxFlat = _make_category_active_style(act, cat_bg, blue)
+	theme.set_stylebox("normal", "ActiveAll", act_all)
+	theme.set_stylebox("hover", "ActiveAll", act_all)
+	theme.set_stylebox("pressed", "ActiveAll", act_all)
+	theme.set_stylebox("focus", "ActiveAll", act_all)
 	theme.set_color("font_color", "ActiveAll", blue.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveAll", blue.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveAll", blue.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveAll", blue.darkened(0.4))
 
 	theme.set_type_variation("ActiveKick", "Button")
-	theme.set_stylebox("normal", "ActiveKick", act)
-	theme.set_stylebox("hover", "ActiveKick", act)
-	theme.set_stylebox("pressed", "ActiveKick", act)
-	theme.set_stylebox("focus", "ActiveKick", act)
+	var act_kick: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_kick)
+	theme.set_stylebox("normal", "ActiveKick", act_kick)
+	theme.set_stylebox("hover", "ActiveKick", act_kick)
+	theme.set_stylebox("pressed", "ActiveKick", act_kick)
+	theme.set_stylebox("focus", "ActiveKick", act_kick)
 	theme.set_color("font_color", "ActiveKick", col_kick.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveKick", col_kick.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveKick", col_kick.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveKick", col_kick.darkened(0.4))
 
 	theme.set_type_variation("ActiveSnare", "Button")
-	theme.set_stylebox("normal", "ActiveSnare", act)
-	theme.set_stylebox("hover", "ActiveSnare", act)
-	theme.set_stylebox("pressed", "ActiveSnare", act)
-	theme.set_stylebox("focus", "ActiveSnare", act)
+	var act_snare: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_snare)
+	theme.set_stylebox("normal", "ActiveSnare", act_snare)
+	theme.set_stylebox("hover", "ActiveSnare", act_snare)
+	theme.set_stylebox("pressed", "ActiveSnare", act_snare)
+	theme.set_stylebox("focus", "ActiveSnare", act_snare)
 	theme.set_color("font_color", "ActiveSnare", col_snare.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveSnare", col_snare.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveSnare", col_snare.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveSnare", col_snare.darkened(0.4))
 
 	theme.set_type_variation("ActiveCover", "Button")
-	theme.set_stylebox("normal", "ActiveCover", act)
-	theme.set_stylebox("hover", "ActiveCover", act)
-	theme.set_stylebox("pressed", "ActiveCover", act)
-	theme.set_stylebox("focus", "ActiveCover", act)
+	var act_cover: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_cover)
+	theme.set_stylebox("normal", "ActiveCover", act_cover)
+	theme.set_stylebox("hover", "ActiveCover", act_cover)
+	theme.set_stylebox("pressed", "ActiveCover", act_cover)
+	theme.set_stylebox("focus", "ActiveCover", act_cover)
 	theme.set_color("font_color", "ActiveCover", col_cover.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveCover", col_cover.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveCover", col_cover.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveCover", col_cover.darkened(0.4))
 
 	theme.set_type_variation("ActiveNotes", "Button")
-	theme.set_stylebox("normal", "ActiveNotes", act)
-	theme.set_stylebox("hover", "ActiveNotes", act)
-	theme.set_stylebox("pressed", "ActiveNotes", act)
-	theme.set_stylebox("focus", "ActiveNotes", act)
+	var act_notes: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_notes)
+	theme.set_stylebox("normal", "ActiveNotes", act_notes)
+	theme.set_stylebox("hover", "ActiveNotes", act_notes)
+	theme.set_stylebox("pressed", "ActiveNotes", act_notes)
+	theme.set_stylebox("focus", "ActiveNotes", act_notes)
 	theme.set_color("font_color", "ActiveNotes", col_notes.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveNotes", col_notes.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveNotes", col_notes.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveNotes", col_notes.darkened(0.4))
 
 	theme.set_type_variation("ActiveLane", "Button")
-	theme.set_stylebox("normal", "ActiveLane", act)
-	theme.set_stylebox("hover", "ActiveLane", act)
-	theme.set_stylebox("pressed", "ActiveLane", act)
-	theme.set_stylebox("focus", "ActiveLane", act)
+	var act_lane: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_lane)
+	theme.set_stylebox("normal", "ActiveLane", act_lane)
+	theme.set_stylebox("hover", "ActiveLane", act_lane)
+	theme.set_stylebox("pressed", "ActiveLane", act_lane)
+	theme.set_stylebox("focus", "ActiveLane", act_lane)
 	theme.set_color("font_color", "ActiveLane", col_lane.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveLane", col_lane.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveLane", col_lane.lightened(0.16))
 	theme.set_color("font_disabled_color", "ActiveLane", col_lane.darkened(0.4))
 
+	theme.set_type_variation("ActiveParticles", "Button")
+	var act_particles: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_particles)
+	theme.set_stylebox("normal", "ActiveParticles", act_particles)
+	theme.set_stylebox("hover", "ActiveParticles", act_particles)
+	theme.set_stylebox("pressed", "ActiveParticles", act_particles)
+	theme.set_stylebox("focus", "ActiveParticles", act_particles)
+	theme.set_color("font_color", "ActiveParticles", col_particles.lightened(0.16))
+	theme.set_color("font_hover_color", "ActiveParticles", col_particles.lightened(0.16))
+	theme.set_color("font_pressed_color", "ActiveParticles", col_particles.lightened(0.16))
+	theme.set_color("font_disabled_color", "ActiveParticles", col_particles.darkened(0.4))
+
 	theme.set_type_variation("ActiveMisc", "Button")
-	theme.set_stylebox("normal", "ActiveMisc", act)
-	theme.set_stylebox("hover", "ActiveMisc", act)
-	theme.set_stylebox("pressed", "ActiveMisc", act)
-	theme.set_stylebox("focus", "ActiveMisc", act)
+	var act_misc: StyleBoxFlat = _make_category_active_style(act, cat_bg, col_misc)
+	theme.set_stylebox("normal", "ActiveMisc", act_misc)
+	theme.set_stylebox("hover", "ActiveMisc", act_misc)
+	theme.set_stylebox("pressed", "ActiveMisc", act_misc)
+	theme.set_stylebox("focus", "ActiveMisc", act_misc)
 	theme.set_color("font_color", "ActiveMisc", col_misc.lightened(0.16))
 	theme.set_color("font_hover_color", "ActiveMisc", col_misc.lightened(0.16))
 	theme.set_color("font_pressed_color", "ActiveMisc", col_misc.lightened(0.16))
@@ -1132,13 +1368,10 @@ static func build_theme() -> Theme:
 	_register_section_theme(theme, "Mint", theme.get_color("accent_mint", "Palette"))
 	_register_section_theme(theme, "Purple", theme.get_color("accent_purple", "Palette"))
 	_register_section_theme(theme, "Pink", theme.get_color("accent_pink", "Palette"))
+	_register_section_theme(theme, "Amber", theme.get_color("accent_amber", "Palette"))
+	_register_section_theme(theme, "Orange", theme.get_color("accent_orange", "Palette"))
+	_register_section_theme(theme, "Slate", theme.get_color("accent_slate", "Palette"))
 	_register_section_theme(theme, "Danger", theme.get_color("danger", "Palette"))
-
-	var cover_accent := theme.get_color("accent_pink", "Palette")
-	theme.set_type_variation("CoverGallerySlot", "PanelContainer")
-	theme.set_stylebox("panel", "CoverGallerySlot", _make_cover_gallery_slot(cover_accent, false))
-	theme.set_type_variation("CoverGallerySlotHover", "PanelContainer")
-	theme.set_stylebox("panel", "CoverGallerySlotHover", _make_cover_gallery_slot(cover_accent, true))
 
 	_apply_interaction_cursors(theme)
 

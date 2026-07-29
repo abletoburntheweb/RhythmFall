@@ -1,0 +1,160 @@
+[gd_scene load_steps=3 format=3 uid="uid://bsharecardshell"]
+
+[ext_resource type="Script" path="res://scenes/profile/share/profile_share_card_base.gd" id="1_base"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ProfileShareCardShell" type="PanelContainer"]
+clip_contents = true
+theme = ExtResource("2_theme")
+script = ExtResource("1_base")
+
+[node name="ClickButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+flat = true
+mouse_default_cursor_shape = 2
+text = ""
+
+[node name="BgLayer" type="Control" parent="ClickButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BgFill" type="ColorRect" parent="ClickButton/BgLayer"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.05, 0.03, 0.1, 1)
+
+[node name="GlowA" type="ColorRect" parent="ClickButton/BgLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 2
+color = Color(0.72, 0.32, 0.95, 0.35)
+size = Vector2(420, 420)
+
+[node name="GlowB" type="ColorRect" parent="ClickButton/BgLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+mouse_filter = 2
+color = Color(0.95, 0.35, 0.65, 0.2)
+size = Vector2(360, 360)
+
+[node name="MainMargin" type="MarginContainer" parent="ClickButton"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 28
+
+[node name="MainVBox" type="VBoxContainer" parent="ClickButton/MainMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderRow" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="CardIndexLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.92, 0.85)
+theme_override_font_sizes/font_size = 20
+text = "01"
+
+[node name="WrappedBrandLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+theme_override_font_sizes/font_size = 18
+text = "RHYTHMFALL WRAPPED"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="HotkeyLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.9)
+theme_override_font_sizes/font_size = 18
+text = "[1]"
+
+[node name="HeroTitle" type="Label" parent="ClickButton/MainMargin/MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 52
+text = "TITLE"
+autowrap_mode = 2
+
+[node name="HeroAccentLine" type="ColorRect" parent="ClickButton/MainMargin/MainVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.62, 0.52, 0.92, 0.85)
+
+[node name="ContentVBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="FooterRow" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="LogoRect" type="TextureRect" parent="ClickButton/MainMargin/MainVBox/FooterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FooterSiteLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 16
+text = "rhythmfall.gg"
+
+[node name="FooterDateLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 16
+text = "—"

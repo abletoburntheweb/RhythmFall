@@ -1,0 +1,220 @@
+[gd_scene load_steps=4 format=3 uid="uid://crunmodsummary01"]
+
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/run_modifier_summary_panel.gd" id="1_summary"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(0.06, 0.07, 0.11, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.82, 0.45, 0.22)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_empty"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.08, 0.09, 0.13, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_list"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.07, 0.08, 0.11, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="RunModifierSummaryPanel" type="VBoxContainer"]
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 10
+size_flags_vertical = 3
+script = ExtResource("1_summary")
+
+[node name="SummaryTitleLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Итог забега"
+
+[node name="HeroPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hero")
+
+[node name="HeroVBox" type="VBoxContainer" parent="HeroPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="MultiplierValueLabel" type="Label" parent="HeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.45, 1)
+theme_override_font_sizes/font_size = 36
+text = "1.00×"
+horizontal_alignment = 1
+
+[node name="MultiplierCaptionLabel" type="Label" parent="HeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Множитель награды"
+horizontal_alignment = 1
+
+[node name="ModCountLabel" type="Label" parent="HeroPanel/HeroVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.88)
+theme_override_font_sizes/font_size = 13
+text = "0 модов"
+horizontal_alignment = 1
+
+[node name="StatsRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="EaseStatLabel" type="Label" parent="StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.42, 0.88, 0.58, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Упр.: 0"
+horizontal_alignment = 1
+
+[node name="HardStatLabel" type="Label" parent="StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Усл.: 0"
+horizontal_alignment = 1
+
+[node name="SpecialStatLabel" type="Label" parent="StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.98, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "Ос.: 0"
+horizontal_alignment = 1
+
+[node name="DnaStatLabel" type="Label" parent="StatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.98, 0.72, 0.32, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "DNA: 0"
+horizontal_alignment = 1
+
+[node name="ActiveHeader" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Активные модификаторы"
+
+[node name="ActiveArea" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_list")
+
+[node name="ActiveStack" type="Control" parent="ActiveArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="EmptyPanel" type="PanelContainer" parent="ActiveArea/ActiveStack"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_empty")
+
+[node name="EmptyVBox" type="VBoxContainer" parent="ActiveArea/ActiveStack/EmptyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="EmptyIconHost" type="HBoxContainer" parent="ActiveArea/ActiveStack/EmptyPanel/EmptyVBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="EmptyIconLabel" type="Label" parent="ActiveArea/ActiveStack/EmptyPanel/EmptyVBox/EmptyIconHost"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "◆"
+
+[node name="EmptyTitleLabel" type="Label" parent="ActiveArea/ActiveStack/EmptyPanel/EmptyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "Моды не выбраны"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="EmptyHintLabel" type="Label" parent="ActiveArea/ActiveStack/EmptyPanel/EmptyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.88)
+theme_override_font_sizes/font_size = 13
+text = "Включите карточки слева — здесь появится список."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ActiveScroll" type="ScrollContainer" parent="ActiveArea/ActiveStack"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="ActiveVBox" type="VBoxContainer" parent="ActiveArea/ActiveStack/ActiveScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ConfirmButton" type="Button" parent="."]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 18
+text = "Подтвердить"
+
+[node name="ResetButton" type="Button" parent="."]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalDangerButton"
+theme_override_font_sizes/font_size = 16
+text = "Сбросить все моды"

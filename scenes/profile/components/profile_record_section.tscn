@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/profile/components/profile_record_section.gd" id="1"]
+
+[node name="RecordSection" type="VBoxContainer"]
+theme_override_constants/separation = 6
+script = ExtResource("1")
+
+[node name="TitleRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="TitleRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.419608, 0.568627, 0.823529, 1)
+theme_override_font_sizes/font_size = 18
+text = "Section"
+
+[node name="CardPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="BodyVBox" type="VBoxContainer" parent="CardPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8

@@ -1,0 +1,189 @@
+[gd_scene load_steps=4 format=3 uid="uid://playmodecard01"]
+
+[ext_resource type="Script" path="res://scenes/play_modes/mode_card.gd" id="1_card"]
+[ext_resource type="Script" path="res://scenes/play_modes/mode_card_hero.gd" id="2_hero"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="3_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_content"]
+bg_color = Color(0.06, 0.08, 0.12, 1)
+border_width_top = 1
+border_color = Color(1, 1, 1, 0.06)
+
+[node name="PlayModeCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("3_theme")
+clip_contents = false
+clip_children = 2
+script = ExtResource("1_card")
+
+[node name="RootVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HeroStack" type="Control" parent="RootVBox"]
+custom_minimum_size = Vector2(0, 108)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="HeroDraw" type="Control" parent="RootVBox/HeroStack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+clip_contents = true
+mouse_filter = 2
+script = ExtResource("2_hero")
+
+[node name="HeroIconBadge" type="PanelContainer" parent="RootVBox/HeroStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -28.0
+offset_top = -16.0
+offset_right = 28.0
+offset_bottom = 40.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+z_index = 2
+
+[node name="IconCenter" type="CenterContainer" parent="RootVBox/HeroStack/HeroIconBadge"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="HeroIcon" type="TextureRect" parent="RootVBox/HeroStack/HeroIconBadge/IconCenter"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="ContentPanel" type="PanelContainer" parent="RootVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_content")
+
+[node name="ContentMargin" type="MarginContainer" parent="RootVBox/ContentPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="RootVBox/ContentPanel/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+layout_mode = 2
+
+[node name="BadgePanel" type="PanelContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BadgeLabel" type="Label" parent="RootVBox/ContentPanel/ContentMargin/VBox/TopRow/BadgePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Badge"
+
+[node name="Spacer" type="Control" parent="RootVBox/ContentPanel/ContentMargin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LockIcon" type="TextureRect" parent="RootVBox/ContentPanel/ContentMargin/VBox/TopRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleRow" type="HBoxContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 0
+theme_override_constants/separation = 10
+
+[node name="IconTexture" type="TextureRect" parent="RootVBox/ContentPanel/ContentMargin/VBox/TitleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="RootVBox/ContentPanel/ContentMargin/VBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Title"
+autowrap_mode = 3
+
+[node name="DescLabel" type="Label" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "Description"
+autowrap_mode = 3
+max_lines_visible = 2
+
+[node name="AccentHintsFlow" type="FlowContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="BodyVBox" type="VBoxContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = false
+theme_override_constants/separation = 6
+
+[node name="ZonesVBox" type="VBoxContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox/BodyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+clip_contents = false
+theme_override_constants/separation = 4
+
+[node name="BodySpacer" type="Control" parent="RootVBox/ContentPanel/ContentMargin/VBox/BodyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="UnlockRows" type="VBoxContainer" parent="RootVBox/ContentPanel/ContentMargin/VBox/BodyVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 4
+
+[node name="ActionButton" type="Button" parent="RootVBox/ContentPanel/ContentMargin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"FlatGenerateButton"
+text = "Action"

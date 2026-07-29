@@ -1,0 +1,202 @@
+[gd_scene load_steps=5 format=3 uid="uid://toho33u048yq"]
+
+[ext_resource type="Script" uid="uid://dy5cclbrkmv4s" path="res://scenes/song_select/run_modifiers/run_modifier_ce_setup_dialog.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="RunModifierCeSetupDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.58)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="Container"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatBackButton"
+text = "Back"
+
+[node name="TitleLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 30
+text = "Escalation setup"
+horizontal_alignment = 1
+
+[node name="BodyCenter" type="CenterContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(760, 520)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="BodyVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BodyHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="PoolSection" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="PoolVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/PoolSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PoolHintLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/PoolSection/PoolVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.94, 1)
+theme_override_font_sizes/font_size = 16
+text = "Pool mods"
+autowrap_mode = 3
+
+[node name="PoolScroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/PoolSection/PoolVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PoolList" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/PoolSection/PoolVBox/PoolScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="OrderSection" type="PanelContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="OrderVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OrderHintLabel" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.94, 1)
+theme_override_font_sizes/font_size = 16
+text = "Custom order"
+autowrap_mode = 3
+
+[node name="OrderScroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="OrderList" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox/OrderScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="OrderButtons" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="UpButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox/OrderButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Move up"
+
+[node name="DownButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/BodyHBox/OrderSection/OrderVBox/OrderButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Move down"
+
+[node name="FooterHBox" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 12
+
+[node name="ConfirmButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/BodyVBox/FooterHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Confirm"

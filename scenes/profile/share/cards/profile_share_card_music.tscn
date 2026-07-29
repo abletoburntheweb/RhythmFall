@@ -1,0 +1,310 @@
+[gd_scene load_steps=3 format=3 uid="uid://bsharemusic"]
+
+[ext_resource type="PackedScene" path="res://scenes/profile/share/profile_share_card_shell.tscn" id="1_shell"]
+[ext_resource type="Script" path="res://scenes/profile/share/cards/profile_share_card_music.gd" id="2_script"]
+
+[node name="ProfileShareCardMusic" instance=ExtResource("1_shell")]
+script = ExtResource("2_script")
+
+[node name="SectionHeaderGenres" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "TOP GENRES"
+
+[node name="GenresList" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="1"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="GenreRow0" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow0"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow0"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow0"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="GenreRow1" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow1"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow1"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow1"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="GenreRow2" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow2"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow2"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow2"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="GenreRow3" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow3"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow3"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow3"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="GenreRow4" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow4"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow4"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow4"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="GenreRow5" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow5"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Bar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow5"]
+custom_minimum_size = Vector2(48, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="PctLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenresList/GenreRow5"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="SectionHeaderMastery" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MASTERY"
+
+[node name="MasteryPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="3"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MHBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MasteryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BestLevelValue" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MasteryPanel/MHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "0"
+
+[node name="MasteryInfoVBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MasteryPanel/MHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 1
+
+[node name="MasteryCountLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MasteryPanel/MHBox/MasteryInfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 / 0"
+
+[node name="MasteryCaption" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/MasteryPanel/MHBox/MasteryInfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "groups unlocked"
+
+[node name="SectionHeaderLeaders" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="4"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "COLLECTION LEADERS"
+
+[node name="LeadersList" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="5"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeaderRow0" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow0"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow0"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LvLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow0"]
+layout_mode = 2
+
+[node name="LeaderRow1" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow1"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow1"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LvLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow1"]
+layout_mode = 2
+
+[node name="LeaderRow2" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow2"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow2"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LvLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow2"]
+layout_mode = 2
+
+[node name="LeaderRow3" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow3"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow3"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LvLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow3"]
+layout_mode = 2
+
+[node name="LeaderRow4" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow4"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow4"]
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="LvLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LeadersList/LeaderRow4"]
+layout_mode = 2
+
+[node name="SectionHeaderFact" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="6"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "INTERESTING FACT"
+
+[node name="FactPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="7"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FactLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FactPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "Fact"

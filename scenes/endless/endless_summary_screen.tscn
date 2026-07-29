@@ -1,0 +1,148 @@
+[gd_scene load_steps=3 format=3 uid="uid://endlesssummary01"]
+
+[ext_resource type="Script" path="res://scenes/endless/endless_summary_screen.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="EndlessSummaryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="MainMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 48
+
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 34
+text = "Endless summary"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="MainMargin/MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Series ended"
+horizontal_alignment = 1
+
+[node name="StatsFrame" type="PanelContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="StatsMargin" type="MarginContainer" parent="MainMargin/MainVBox/StatsFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="StatsVBox" type="VBoxContainer" parent="MainMargin/MainVBox/StatsFrame/StatsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StreakLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Tracks cleared: 0"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Total score: 0"
+horizontal_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Average accuracy: 0%"
+horizontal_alignment = 1
+
+[node name="NotesLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Notes hit: 0"
+horizontal_alignment = 1
+
+[node name="RrLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "Series RR: 0"
+horizontal_alignment = 1
+
+[node name="XpLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.82, 0.72, 1)
+theme_override_font_sizes/font_size = 18
+text = "+0 XP"
+horizontal_alignment = 1
+
+[node name="CurrencyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.78, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "+0 coins"
+horizontal_alignment = 1
+
+[node name="BestLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 16
+text = "New best streak!"
+horizontal_alignment = 1
+
+[node name="BestRrLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/StatsMargin/StatsVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.42, 1)
+theme_override_font_sizes/font_size = 16
+text = "New best series RR!"
+horizontal_alignment = 1
+
+[node name="ButtonsRow" type="HBoxContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PlayModesButton" type="Button" parent="MainMargin/MainVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+text = "To play modes"
+
+[node name="PlayAgainButton" type="Button" parent="MainMargin/MainVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+text = "Play again"

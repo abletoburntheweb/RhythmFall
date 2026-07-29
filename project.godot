@@ -15,15 +15,21 @@ run/main_scene="uid://5vghv31ksise"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="RhythmFall"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="uid://lyk67yko8cka"
+config/icon="res://assets/app_icons/default_multi.png"
+config/windows_native_icon="res://assets/app_icons/default_multi.ico"
 
 [autoload]
 
-PlayerDataManager="*res://logic/player_data_manager.gd"
-TrackStatsManager="*res://logic/track_stats_manager.gd"
-SettingsManager="*res://logic/settings_manager.gd"
-MusicManager="*res://logic/music_manager.gd"
-SongLibrary="*res://logic/song_library.gd"
+PlayerDataManager="*res://logic/data/player_data_manager.gd"
+TrackStatsManager="*res://logic/data/track_stats_manager.gd"
+SettingsManager="*res://logic/core/settings_manager.gd"
+LocaleManager="*res://logic/core/locale_manager.gd"
+UpdateChecker="*res://logic/services/update_checker.gd"
+GenerationProcessManager="*res://logic/services/generation_process_manager.gd"
+ProfileMilestonesManager="*res://logic/data/profile_milestones_manager.gd"
+MusicManager="*res://logic/services/music_manager.gd"
+AppWindowManager="*res://logic/services/app_window_manager.gd"
+SongLibrary="*res://logic/data/song_library.gd"
 Console="*res://addons/console/console.gd"
 DebugCommands="*res://addons/console/debug_commands.gd"
 
@@ -31,7 +37,7 @@ DebugCommands="*res://addons/console/debug_commands.gd"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/mode=1
+window/size/mode=4
 window/size/resizable=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
@@ -56,3 +62,4 @@ anti_aliasing/screen_space_roughness_limiter/enabled=false
 
 generation_api/host="127.0.0.1"
 generation_api/port=5000
+releases_url="https://github.com/abletoburntheweb/RhythmFall/releases"

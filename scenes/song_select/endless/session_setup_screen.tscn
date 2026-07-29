@@ -1,0 +1,626 @@
+[gd_scene load_steps=3 format=3 uid="uid://csessionsetupend01"]
+
+[ext_resource type="Script" path="res://scenes/song_select/endless/session_setup_screen.gd" id="1_screen"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.1089, 0.1188, 0.1584, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[node name="SessionSetupScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_screen")
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="MainVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatButton"
+text = "Назад"
+
+[node name="ScreenTitleLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 28
+text = "ENDLESS MODE"
+horizontal_alignment = 1
+
+[node name="ScreenSubtitleLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Configure your endless series"
+horizontal_alignment = 1
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="SetupPanel" type="PanelContainer" parent="MainVBox/ContentHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.45
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SetupMargin" type="MarginContainer" parent="MainVBox/ContentHBox/SetupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 2
+
+[node name="SetupScroll" type="ScrollContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SetupVBox" type="VBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+theme_override_constants/margin_right = 14
+
+[node name="TracksSectionTitle" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 17
+text = "1. Tracks"
+
+[node name="SourceCardsRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RandomFavoritesCheck" type="CheckButton" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_RANDOM_FAVORITES"
+
+[node name="UniqueSongsCheck" type="CheckButton" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_UNIQUE_SONGS"
+
+[node name="GenreCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_GENRE_POLICY"
+
+[node name="GenrePolicyRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GenreGroupsToolbar" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GenreGroupsHint" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.52, 0.6, 0.72, 0.92)
+theme_override_font_sizes/font_size = 12
+text = "SESSION_SETUP_GENRE_GROUPS_HINT"
+
+[node name="GenreGroupsSelectAllButton" type="Button" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SESSION_BULK_SELECT_ALL"
+flat = true
+
+[node name="GenreGroupsResetButton" type="Button" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsToolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SESSION_BULK_RESET"
+flat = true
+
+[node name="GenreGroupsCountLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "0 / 0"
+horizontal_alignment = 2
+
+[node name="GenreGroupsPanel" type="PanelContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GenreGroupsMargin" type="MarginContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="GenreGroupsFlow" type="FlowContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsPanel/GenreGroupsMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="SelectedTracksPanel" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SelectedTracksButton" type="Button" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/SelectedTracksPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
+theme_type_variation = &"FlatButton"
+text = "0 / 20"
+horizontal_alignment = 0
+
+[node name="SelectedPoolAfterPanel" type="VBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SelectedPoolAfterCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/SelectedPoolAfterPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "After playlist ends"
+
+[node name="SelectedPoolAfterOption" type="OptionButton" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/SelectedPoolAfterPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+theme_type_variation = &"Dropdown"
+
+[node name="InstrumentsCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_INSTRUMENTS"
+
+[node name="InstrumentsRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DifficultyCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "Chart difficulty"
+
+[node name="DifficultyRangeRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DifficultyRangeFromLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "SESSION_SETUP_RANGE_FROM"
+vertical_alignment = 1
+
+[node name="DifficultyMinSlider" type="HSlider" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 10.0
+step = 0.5
+value = 2.0
+
+[node name="DifficultyMinValueLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+text = "2.0★"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DifficultyRangeDash" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.68, 0.9)
+theme_override_font_sizes/font_size = 15
+text = "–"
+vertical_alignment = 1
+
+[node name="DifficultyRangeToLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "SESSION_SETUP_RANGE_TO"
+vertical_alignment = 1
+
+[node name="DifficultyMaxSlider" type="HSlider" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 10.0
+step = 0.5
+value = 8.0
+
+[node name="DifficultyMaxValueLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+text = "8.0★"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DifficultyMaxOverCapCheck" type="CheckButton" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DifficultyRangeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "10+"
+
+[node name="DurationCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_DURATION"
+
+[node name="DurationRangeRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DurationRangeFromLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "SESSION_SETUP_RANGE_FROM"
+vertical_alignment = 1
+
+[node name="DurationMinSlider" type="HSlider" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 60.0
+max_value = 360.0
+step = 30.0
+value = 90.0
+
+[node name="DurationMinValueLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+text = "1:30"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DurationRangeDash" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.68, 0.9)
+theme_override_font_sizes/font_size = 15
+text = "–"
+vertical_alignment = 1
+
+[node name="DurationRangeToLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.64, 0.76, 0.95)
+theme_override_font_sizes/font_size = 15
+text = "SESSION_SETUP_RANGE_TO"
+vertical_alignment = 1
+
+[node name="DurationMaxSlider" type="HSlider" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 60.0
+max_value = 360.0
+step = 30.0
+value = 360.0
+
+[node name="DurationMaxValueLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+text = "6:00"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DurationMaxOpenCheck" type="CheckButton" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/DurationRangeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "SESSION_SETUP_DURATION_MAX_OPEN"
+
+[node name="ModsSectionDivider" type="HSeparator" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ModifiersSectionTitle" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 17
+text = "SESSION_SETUP_SECTION_MODS"
+
+[node name="ModPolicyRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ModPoolPanel" type="PanelContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ModPoolVBox" type="VBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ModPoolHeaderRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ModPoolCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox/ModPoolHeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "SESSION_SETUP_MOD_POOL"
+
+[node name="ModPoolCountLabel" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox/ModPoolHeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "0 / 0"
+horizontal_alignment = 2
+
+[node name="ModPoolSelectAllButton" type="Button" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox/ModPoolHeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SESSION_BULK_SELECT_ALL"
+flat = true
+
+[node name="ModPoolResetButton" type="Button" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox/ModPoolHeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SESSION_BULK_RESET"
+flat = true
+
+[node name="ModPoolFlow" type="FlowContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/ModPoolPanel/ModPoolVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="ModCountCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "SESSION_SETUP_MOD_COUNT"
+
+[node name="ModCountRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ModPickCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "SESSION_SETUP_MOD_PICK_CAPTION"
+
+[node name="ModPickRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GenSectionDivider" type="HSeparator" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GenerationSectionTitle" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 17
+text = "SESSION_SETUP_SECTION_GEN"
+
+[node name="GenModeCaption" type="Label" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.92, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "SESSION_SETUP_GEN_MODE_POLICY"
+
+[node name="GenModePolicyRow" type="HBoxContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GenModeChecksPanel" type="PanelContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GenModeChecksMargin" type="MarginContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenModeChecksPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="GenModeChecksFlow" type="FlowContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenModeChecksPanel/GenModeChecksMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 6
+
+[node name="PreviewPanel" type="PanelContainer" parent="MainVBox/ContentHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="PreviewMargin" type="MarginContainer" parent="MainVBox/ContentHBox/PreviewPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="PreviewVBox" type="VBoxContainer" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PreviewTitleLabel" type="Label" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 16
+text = "Settings preview"
+
+[node name="PreviewScopePanel" type="PanelContainer" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PreviewScopeMargin" type="MarginContainer" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewScopePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="PreviewScopeVBox" type="VBoxContainer" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewScopePanel/PreviewScopeMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="PreviewScopeCountLabel" type="Label" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewScopePanel/PreviewScopeMargin/PreviewScopeVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.48, 0.95, 1)
+theme_override_font_sizes/font_size = 34
+text = "0"
+horizontal_alignment = 1
+
+[node name="PreviewScopeSubLabel" type="Label" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox/PreviewScopePanel/PreviewScopeMargin/PreviewScopeVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "SESSION_SETUP_PREVIEW_SCOPE_HERO_SUB"
+horizontal_alignment = 1
+
+[node name="PreviewRowsVBox" type="VBoxContainer" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PreviewSpacer" type="Control" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StartBlockHintLabel" type="Label" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.62, 0.48, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "SESSION_SETUP_START_BLOCK_HINT"
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="MainVBox/ContentHBox/PreviewPanel/PreviewMargin/PreviewVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"FlatPlayButton"
+theme_override_font_sizes/font_size = 18
+metadata/ui_icon_file = "circle-play.svg"
+text = "Start series"
+
+[node name="FooterHintLabel" type="Label" parent="MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.58, 0.68, 0.88)
+theme_override_font_sizes/font_size = 12
+text = "1 library · 2 favorites · Enter start · Esc back"
+horizontal_alignment = 1

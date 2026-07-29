@@ -1,0 +1,144 @@
+[gd_scene load_steps=5 format=3 uid="uid://bsystemsettings01"]
+
+[ext_resource type="Script" path="res://scenes/settings_menu/tabs/system_tab.gd" id="1_sys"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="3_notice"]
+[ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="4_confirm"]
+
+[node name="SystemTab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_sys")
+
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="LanguagePanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelPurple"
+
+[node name="LanguagePanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="LanguageRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LanguageHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderPurple"
+theme_override_font_sizes/font_size = 22
+text = "Язык"
+
+[node name="LanguageHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Switch interface language."
+autowrap_mode = 3
+
+[node name="LanguageRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LanguageLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows/LanguageRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Язык"
+
+[node name="LanguageOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows/LanguageRow"]
+custom_minimum_size = Vector2(360, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+item_count = 2
+popup/item_0/text = "Русский"
+popup/item_0/id = 0
+popup/item_1/text = "English"
+popup/item_1/id = 1
+
+[node name="UpdatesPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelPurple"
+
+[node name="UpdatesPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="UpdatesRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="UpdatesHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderPurple"
+theme_override_font_sizes/font_size = 22
+text = "Обновления"
+
+[node name="UpdatesHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Check for new versions."
+autowrap_mode = 3
+
+[node name="VersionRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="VersionInfoLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows/VersionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Версия"
+
+[node name="CheckUpdatesButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows/VersionRow"]
+custom_minimum_size = Vector2(280, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Проверить обновления"
+
+[node name="CheckUpdatesOnStartupCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+button_pressed = true
+text = "Проверять при запуске"
+
+[node name="NoticeOverlay" parent="." instance=ExtResource("3_notice")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="ConfirmOverlay" parent="." instance=ExtResource("4_confirm")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/LanguagePanel/LanguagePanelMargin/LanguageRows/LanguageRow/LanguageOption" to="." method="_on_language_selected"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows/VersionRow/CheckUpdatesButton" to="." method="_on_check_updates_pressed"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/UpdatesPanel/UpdatesPanelMargin/UpdatesRows/CheckUpdatesOnStartupCheckBox" to="." method="_on_check_updates_on_startup_toggled"]

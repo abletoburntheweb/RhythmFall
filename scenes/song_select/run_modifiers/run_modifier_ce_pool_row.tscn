@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7kcepoolrow1"]
+
+[ext_resource type="Script" uid="uid://b7kcepoolrow1" path="res://scenes/song_select/run_modifiers/run_modifier_ce_pool_row.gd" id="1_script"]
+
+[node name="RunModifierCePoolRow" type="HBoxContainer"]
+theme_override_constants/separation = 8
+script = ExtResource("1_script")
+
+[node name="Icon" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Check" type="CheckButton" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15

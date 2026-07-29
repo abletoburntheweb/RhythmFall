@@ -1,0 +1,245 @@
+[gd_scene load_steps=7 format=3 uid="uid://crfdefeatscreen1"]
+
+[ext_resource type="Script" path="res://scenes/defeat_screen/defeat_screen.gd" id="1_defeat"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="Animation" id="Animation_stats"]
+resource_name = "StatsCountupsSeq"
+length = 2.4
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.8, 1.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [{
+"args": ["score"],
+"method": &"set_count_kind"
+}, {
+"args": ["max_combo"],
+"method": &"set_count_kind"
+}, {
+"args": ["accuracy"],
+"method": &"set_count_kind"
+}]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:count_progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.7999, 0.8, 1.5999, 1.6, 2.3999, 2.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0]
+}
+
+[sub_resource type="Animation" id="Animation_reset"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:count_progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_intro"]
+resource_name = "DefeatIntro"
+length = 0.85
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.85),
+"transitions": PackedFloat32Array(0.3186403, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_defeat"]
+_data = {
+&"DefeatIntro": SubResource("Animation_intro"),
+&"RESET": SubResource("Animation_reset"),
+&"StatsCountupsSeq": SubResource("Animation_stats")
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.108, 0.118, 0.158, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.38, 0.62, 0.35)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[node name="DefeatScreen" type="Control"]
+z_index = 200
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_defeat")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.047059, 0.054902, 0.090196, 0.78)
+
+[node name="MainMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 56
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 56
+theme_override_constants/margin_bottom = 40
+
+[node name="MainVBox" type="VBoxContainer" parent="MainMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="HeaderVBox" type="VBoxContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.48, 0.62, 1)
+theme_override_font_sizes/font_size = 52
+text = "DEFEAT"
+horizontal_alignment = 1
+
+[node name="SongLabel" type="Label" parent="MainMargin/MainVBox/HeaderVBox"]
+custom_minimum_size = Vector2(720, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85098, 0.878431, 0.94902, 1)
+theme_override_font_sizes/font_size = 28
+text = "Song title"
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 4
+
+[node name="StatsFrame" type="PanelContainer" parent="MainMargin/MainVBox"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMargin/MainVBox/StatsFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="ContentVBox" type="VBoxContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatsGrid" type="GridContainer" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="ScoreLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.584314, 0.717647, 0.921569, 1)
+theme_override_font_sizes/font_size = 22
+text = "Score: 0"
+horizontal_alignment = 1
+
+[node name="MaxComboLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.647059, 0.556863, 0.858824, 1)
+theme_override_font_sizes/font_size = 22
+text = "Max combo: 0"
+horizontal_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="MainMargin/MainVBox/StatsFrame/MarginContainer/ContentVBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.52, 0.72, 0.92, 1)
+theme_override_font_sizes/font_size = 22
+text = "Accuracy: 0"
+horizontal_alignment = 1
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="MainMargin/MainVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="ReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatGenerateButton"
+theme_override_font_sizes/font_size = 20
+text = "Replay"
+
+[node name="SongSelectButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 20
+text = "Back to song list"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_defeat")
+}

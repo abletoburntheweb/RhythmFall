@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.094118, 0.094118, 0.121569, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="GenrePortraitCard" type="PanelContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41960785, 0.5686275, 0.8235294, 1)
+text = "Жанровый портрет"
+horizontal_alignment = 1
+
+[node name="RowsGrid" type="GridContainer" parent="ContentVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 6
+columns = 4
+
+[node name="PortraitBottomSpacer" type="Control" parent="ContentVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="EmptyLabel" type="Label" parent="ContentVBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
+text = "Сыграйте треки с жанрами, чтобы увидеть портрет"
+horizontal_alignment = 1
+autowrap_mode = 3

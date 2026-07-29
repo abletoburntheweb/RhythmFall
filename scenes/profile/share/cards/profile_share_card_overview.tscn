@@ -1,0 +1,181 @@
+[gd_scene load_steps=3 format=3 uid="uid://bshareoverview"]
+
+[ext_resource type="PackedScene" path="res://scenes/profile/share/profile_share_card_shell.tscn" id="1_shell"]
+[ext_resource type="Script" path="res://scenes/profile/share/cards/profile_share_card_overview.gd" id="2_script"]
+
+[node name="ProfileShareCardOverview" instance=ExtResource("1_shell")]
+script = ExtResource("2_script")
+
+[node name="LevelPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LevelPanel"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="HeroLevel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LevelPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "LEVEL 1"
+
+[node name="XPBar" type="ProgressBar" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LevelPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="XPText" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/LevelPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 9
+text = "XP"
+
+[node name="StatsGrid" type="GridContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="1"]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
+
+[node name="ChipRR" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "RR"
+
+[node name="ChipAcc" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAcc"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAcc/VBox"]
+layout_mode = 2
+text = "0%"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAcc/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "Acc"
+
+[node name="ChipTime" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTime"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTime/VBox"]
+layout_mode = 2
+text = "0h"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTime/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "Time"
+
+[node name="ChipTracks" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "Tracks"
+
+[node name="FavoritePanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="2"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Cover" type="TextureRect" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="InfoVBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="FavTitle" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel/HBox/InfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Track"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="FavArtist" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel/HBox/InfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 9
+text = "Artist"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="FavMeta" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/FavoritePanel/HBox/InfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "Meta"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="GenrePanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="3"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenrePanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GenreIconHost" type="Control" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenrePanel/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="GenreVBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenrePanel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GenreName" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenrePanel/HBox/GenreVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Genre"
+
+[node name="GenrePct" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GenrePanel/HBox/GenreVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 8
+text = "0%"

@@ -12,10 +12,31 @@ var game_engine: Node = null
 
 func _ready():
 	_setup_overlay_visibility()
-	if play_intro_music:
-		MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
 	if animation_player:
 		animation_player.play("fade_in_out")
+	call_deferred("_start_intro_music")
+
+
+func _start_intro_music() -> void:
+	if not play_intro_music or MusicManager == null:
+		return
+	if MusicManager.has_method("load_audio_stream_async"):
+		MusicManager.load_audio_stream_async(
+			MusicManager.DEFAULT_INTRO_MUSIC,
+			MusicManager.BGM_DIR,
+			_on_intro_music_ready
+		)
+		return
+	MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+
+
+func _on_intro_music_ready(stream: Variant) -> void:
+	if not is_inside_tree() or not play_intro_music:
+		return
+	if stream == null:
+		return
+	MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+
 
 func _setup_overlay_visibility():
 	var game_engine = get_parent()

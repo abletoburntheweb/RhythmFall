@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/profile/components/profile_stat_tile.tscn" id="1_stat_tile"]
+
+[node name="StatsGrid" type="GridContainer"]
+columns = 4
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="unique_tracksTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="total_scoreTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="notes_hitTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="notes_missTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="max_streakTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="total_rrTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="medals_totalTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="daily_questsTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="member_sinceTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="earnedTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2
+
+[node name="spentTile" parent="." instance=ExtResource("1_stat_tile")]
+layout_mode = 2

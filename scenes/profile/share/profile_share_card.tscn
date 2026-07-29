@@ -1,0 +1,81 @@
+[gd_scene load_steps=3 format=3 uid="uid://bsharecard01"]
+
+[ext_resource type="Script" path="res://scenes/profile/share/profile_share_card.gd" id="1_card"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ProfileShareCard" type="PanelContainer"]
+custom_minimum_size = Vector2(190, 340)
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+script = ExtResource("1_card")
+
+[node name="ClickButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+flat = true
+mouse_default_cursor_shape = 2
+text = ""
+
+[node name="Margin" type="MarginContainer" parent="ClickButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="HotkeyLabel" type="Label" parent="ClickButton/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.63, 0.76, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "[1]"
+
+[node name="ContentVBox" type="VBoxContainer" parent="ClickButton/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="FooterRow" type="HBoxContainer" parent="ClickButton/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="LogoRect" type="TextureRect" parent="ClickButton/Margin/VBox/FooterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FooterSiteLabel" type="Label" parent="ClickButton/Margin/VBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 9
+text = "rhythmfall.gg"
+
+[node name="FooterDateLabel" type="Label" parent="ClickButton/Margin/VBox/FooterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.5, 0.56, 0.66, 0.9)
+theme_override_font_sizes/font_size = 9
+text = "—"

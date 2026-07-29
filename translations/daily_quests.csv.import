@@ -1,0 +1,10 @@
+[remap]
+
+importer="keep"
+uid="uid://dosk4fykifnr4"
+
+[deps]
+
+source_file="res://translations/daily_quests.csv"
+
+[params]

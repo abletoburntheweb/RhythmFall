@@ -1,0 +1,218 @@
+[gd_scene load_steps=3 format=3 uid="uid://bexperimentaltab01"]
+
+[ext_resource type="Script" path="res://scenes/settings_menu/tabs/experimental_tab.gd" id="1_exp"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ExperimentalTab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_exp")
+
+[node name="ScrollWrap" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CenterWrap" type="CenterContainer" parent="ScrollWrap"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollWrap/CenterWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(780, 0)
+theme_override_constants/separation = 20
+
+[node name="ConsolePanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSky"
+
+[node name="ConsolePanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="ConsoleRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ConsoleHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin/ConsoleRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Debug"
+
+[node name="ConsoleHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin/ConsoleRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Developer console for debug commands."
+autowrap_mode = 3
+
+[node name="DebugMenuCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin/ConsoleRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Enable console"
+
+[node name="ComparePanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSky"
+
+[node name="ComparePanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="CompareRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CompareHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Split compare"
+
+[node name="CompareHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Two charts, one song. Scoring only on the left field."
+autowrap_mode = 3
+
+[node name="SplitCompareCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Enable chart compare in game"
+
+[node name="CompareModeRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CompareModeLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows/CompareModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Compare mode"
+
+[node name="CompareModeOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows/CompareModeRow"]
+custom_minimum_size = Vector2(280, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+
+[node name="VariantTagRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="VariantTagLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows/VariantTagRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Chart tag (suffix)"
+
+[node name="VariantTagEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/ComparePanel/ComparePanelMargin/CompareRows/VariantTagRow"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 18
+text = "exp"
+
+[node name="GenVariantPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSky"
+
+[node name="GenVariantPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="GenVariantRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel/GenVariantPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="GenVariantHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel/GenVariantPanelMargin/GenVariantRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Experimental generation"
+
+[node name="GenVariantHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel/GenVariantPanelMargin/GenVariantRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Saves charts with a suffix; production chart is not overwritten."
+autowrap_mode = 3
+
+[node name="SaveExperimentalCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel/GenVariantPanelMargin/GenVariantRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Save experimental chart (not production)"
+
+[node name="RhythmDnaCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/GenVariantPanel/GenVariantPanelMargin/GenVariantRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Show generation report button (Rhythm DNA)"
+
+[node name="TimingDebugPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSky"
+
+[node name="TimingDebugPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="TimingDebugRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TimingDebugHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Timing & drum debug"
+
+[node name="TimingDebugHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Yellow overlay and hit log for tuning judgement windows."
+autowrap_mode = 3
+
+[node name="TimingLogCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Log hits to CSV and console"
+
+[node name="TimingOverlayCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Timing debug overlay (yellow)"
+
+[node name="TimingAutoplayCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Autoplay uses human hit windows"
+
+[node name="DrumColorsCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Kick blue / snare green note colors"
+
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin/ConsoleRows/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]

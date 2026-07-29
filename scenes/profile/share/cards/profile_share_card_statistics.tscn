@@ -1,0 +1,240 @@
+[gd_scene load_steps=3 format=3 uid="uid://bsharestatistics"]
+
+[ext_resource type="PackedScene" path="res://scenes/profile/share/profile_share_card_shell.tscn" id="1_shell"]
+[ext_resource type="Script" path="res://scenes/profile/share/cards/profile_share_card_statistics.gd" id="2_script"]
+
+[node name="ProfileShareCardStatistics" instance=ExtResource("1_shell")]
+script = ExtResource("2_script")
+
+[node name="HeroPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/HeroPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="HeroValue" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/HeroPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "0"
+
+[node name="HeroCaption" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/HeroPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.95)
+theme_override_font_sizes/font_size = 9
+text = "Hits"
+
+[node name="SectionHeaderStats" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="1"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "STATISTICS"
+
+[node name="StatsGrid" type="GridContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="2"]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="ChipHit" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipHit"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipHit/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipHit/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Hit"
+
+[node name="ChipMiss" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMiss"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMiss/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMiss/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Miss"
+
+[node name="ChipCombo" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipCombo"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipCombo/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipCombo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Combo"
+
+[node name="ChipScore" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipScore"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipScore/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipScore/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Score"
+
+[node name="ChipTracks" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipTracks/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Tracks"
+
+[node name="ChipMedals" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMedals"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMedals/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipMedals/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Medals"
+
+[node name="ChipRR" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipRR/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "RR"
+
+[node name="ChipDailyQ" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipDailyQ"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipDailyQ/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipDailyQ/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Quests"
+
+[node name="ChipAvgDiff" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAvgDiff"]
+layout_mode = 2
+
+[node name="ValueLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAvgDiff/VBox"]
+layout_mode = 2
+text = "—"
+
+[node name="CaptionLabel" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/StatsGrid/ChipAvgDiff/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Avg Diff"
+
+[node name="SectionHeaderGrades" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="3"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BEST GRADES"
+
+[node name="GradesPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="4"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GradesRow" type="HBoxContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GradesPanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="GradeSS" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GradesPanel/GradesRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SS"
+
+[node name="GradeS" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GradesPanel/GradesRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "S"
+
+[node name="GradeA" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GradesPanel/GradesRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "A"
+
+[node name="GradeB" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox/GradesPanel/GradesRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "B"
+
+[node name="SectionHeaderChart" type="Label" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="5"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "DIFFICULTY CURVE"
+
+[node name="ChartPanel" type="PanelContainer" parent="ClickButton/MainMargin/MainVBox/ContentVBox" index="6"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ChartFrame" type="Control" parent="ClickButton/MainMargin/MainVBox/ContentVBox/ChartPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChartFill" type="Polygon2D" parent="ClickButton/MainMargin/MainVBox/ContentVBox/ChartPanel/ChartFrame"]
+unique_name_in_owner = true
+
+[node name="ChartLine" type="Line2D" parent="ClickButton/MainMargin/MainVBox/ContentVBox/ChartPanel/ChartFrame"]
+unique_name_in_owner = true
+width = 2.0

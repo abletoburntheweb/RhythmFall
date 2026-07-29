@@ -1,0 +1,102 @@
+[gd_scene load_steps=3 format=3 uid="uid://cappchoiceoverlay01"]
+
+[ext_resource type="Script" path="res://ui/overlays/app_choice_overlay.gd" id="1_choice"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="AppChoiceOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_choice")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.06, 0.58)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+
+[node name="Row" type="HBoxContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="AccentBar" type="ColorRect" parent="Center/Card/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.95, 0.55, 0.35, 1)
+
+[node name="BodyMargin" type="MarginContainer" parent="Center/Card/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="Center/Card/Row/BodyMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="Center/Card/Row/BodyMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Title"
+autowrap_mode = 3
+
+[node name="MessageLabel" type="Label" parent="Center/Card/Row/BodyMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.9, 0.96, 1)
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 3
+
+[node name="ButtonsRow" type="HBoxContainer" parent="Center/Card/Row/BodyMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="ExtraButton" type="Button" parent="Center/Card/Row/BodyMargin/VBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Extra"
+
+[node name="CancelButton" type="Button" parent="Center/Card/Row/BodyMargin/VBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Cancel"
+
+[node name="ConfirmButton" type="Button" parent="Center/Card/Row/BodyMargin/VBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "OK"

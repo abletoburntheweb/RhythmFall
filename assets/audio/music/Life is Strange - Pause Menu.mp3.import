@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b1upmdb3yeck4"
+path="res://.godot/imported/Life is Strange - Pause Menu.mp3-8eea0eb0fe24e9cc72efa8626114ca78.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/Life is Strange - Pause Menu.mp3"
+dest_files=["res://.godot/imported/Life is Strange - Pause Menu.mp3-8eea0eb0fe24e9cc72efa8626114ca78.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
