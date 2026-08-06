@@ -10,10 +10,10 @@ const EXTREME_SPECS: Array = [
 ]
 
 const MILESTONE_SPECS: Array = [
-	["first_ss",          "PROFILE_RECORD_MILESTONE_FIRST_SS"],
-	["first_fc",          "PROFILE_RECORD_MILESTONE_FIRST_FC"],
+	["first_ss", "PROFILE_RECORD_MILESTONE_FIRST_SS"],
+	["first_fc", "PROFILE_RECORD_MILESTONE_FIRST_FC"],
 	["unique_100_tracks", "PROFILE_RECORD_MILESTONE_UNIQUE_100"],
-	["first_s",           "PROFILE_RECORD_MILESTONE_FIRST_S"],
+	["clears_250", "PROFILE_RECORD_MILESTONE_CLEARS_250"],
 ]
 
 @onready var _section_milestones: Label = %SectionHeaderMilestones

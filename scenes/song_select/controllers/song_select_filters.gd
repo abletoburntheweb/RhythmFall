@@ -1,4 +1,4 @@
-# scenes/song_select/song_select_filters.gd
+# scenes/song_select/controllers/song_select_filters.gd
 class_name SongSelectFilters
 extends Node
 

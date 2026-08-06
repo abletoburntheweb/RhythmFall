@@ -83,11 +83,15 @@ static func _roll_mod_policy(out: Dictionary, rng: RandomNumberGenerator) -> voi
 
 
 static func _roll_chart_styles(out: Dictionary, rng: RandomNumberGenerator) -> void:
+	# Prefer wider pools so open routes are playable more often on mixed libraries.
 	var roll := rng.randf()
-	if roll < 0.62:
+	if roll < 0.28:
 		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
 		out["rolled_generation_modes_allowed"] = ["arcade"]
-	elif roll < 0.88:
+	elif roll < 0.48:
+		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
+		out["rolled_generation_modes_allowed"] = ["original"]
+	elif roll < 0.72:
 		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
 		out["rolled_generation_modes_allowed"] = ["arcade", "original"]
 	else:

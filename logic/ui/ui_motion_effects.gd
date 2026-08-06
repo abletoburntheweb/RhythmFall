@@ -1,4 +1,4 @@
-# logic/utils/ui_motion_effects.gd
+# logic/ui/ui_motion_effects.gd
 extends RefCounted
 class_name UiMotionEffects
 
@@ -175,6 +175,8 @@ static func pulse_control_border(
 		control.add_theme_stylebox_override(state, captured.duplicate())
 	control.set_meta(META_BORDER_PULSE_BASE, base_styles)
 	control.set_meta(META_BORDER_PULSE_ACCENT, accent)
+	if not control.is_inside_tree():
+		return
 	var tw := control.create_tween()
 	control.set_meta(META_BORDER_PULSE_TW, tw)
 	tw.set_loops()

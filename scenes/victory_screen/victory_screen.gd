@@ -13,6 +13,10 @@ const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
 const _SpotlightTutorialScene = preload("res://ui/spotlight_tutorial.tscn")
 const ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
+const _ReplayLauncher = preload("res://logic/domain/replay/replay_launcher.gd")
+const _RfrCodec = preload("res://logic/platform/rfr_replay_codec.gd")
+const _ReplayStore = preload("res://logic/domain/replay/replay_store.gd")
+const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const MEDAL_ICON_SLOT_SCENE := preload("res://scenes/ui/medal_icon_slot.tscn")
 
 signal song_select_requested
@@ -450,6 +454,7 @@ var victory_animation_player: AnimationPlayer = null
 	$MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox/RecommendDifficultyRow/RecommendDifficultyValueLabel
 )
 @onready var replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/ReplayButton
+@onready var save_run_replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/SaveRunReplayButton
 @onready var song_select_button: Button = $MainMargin/MainVBox/ButtonsContainer/SongSelectButton
 @onready var next_track_button: Button = $MainMargin/MainVBox/ButtonsContainer/NextTrackButton
 @onready var countups_delay_timer: Timer = $CountupsDelayTimer
@@ -472,6 +477,8 @@ var _chart_difficulty_icon_texture: Texture2D = null
 func _ready():
 	add_to_group("locale_refresh")
 	replay_button.pressed.connect(_on_replay_button_pressed)
+	if save_run_replay_button:
+		save_run_replay_button.pressed.connect(_on_save_run_replay_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
 	if next_track_button:
 		next_track_button.pressed.connect(_on_next_track_button_pressed)
@@ -511,6 +518,8 @@ func _setup_ui_icons() -> void:
 	_setup_recommend_icon()
 	_refresh_next_track_button_chrome()
 	UiIconHelper.configure_button_icon(replay_button, "repeat.svg", UiIconHelper.ICON_NEUTRAL_BTN)
+	if save_run_replay_button:
+		UiIconHelper.configure_button_icon(save_run_replay_button, "rotate-ccw.svg", Color(0.45, 0.78, 0.98, 1.0))
 	UiIconHelper.configure_button_icon(song_select_button, "music.svg", _ICON_MUSIC)
 
 
@@ -670,6 +679,9 @@ func apply_locale() -> void:
 		title_label.text = tr("VICTORY_TITLE")
 	if replay_button:
 		replay_button.text = tr("VICTORY_REPLAY").to_upper()
+	if save_run_replay_button:
+		save_run_replay_button.text = tr("REPLAY_SAVE_BUTTON").to_upper()
+		_refresh_save_run_replay_button()
 	if song_select_button:
 		song_select_button.text = tr("VICTORY_SONG_SELECT").to_upper()
 	if next_track_button:
@@ -1509,6 +1521,8 @@ func _notify_profile_milestones(
 		"primary_genre": primary_genre,
 		"medals_new": medals_new,
 	})
+	var _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	_DiaryCelebration.flush_from_node(self)
 
 func _setup_recommendation() -> void:
 	_recommendation = {}
@@ -1740,10 +1754,12 @@ func _on_replay_button_pressed():
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_game_with_song"):
-			var instrument_to_use = song_info.get("instrument", "standard")
-			var mode_to_use = str(song_info.get("mode", "basic"))
+			var instrument_to_use = song_info.get("instrument", "drums")
+			# Never replay legacy "basic" as-is — resolve to current chart stem (original / arcade_*).
+			var mode_to_use := _RhythmRating.normalize_mode(str(song_info.get("mode", "original")))
 			var lanes_to_use = int(song_info.get("lanes", 4))
 			var mods: Array = song_info.get("modifiers", [])
+			song_info["mode"] = mode_to_use
 			transitions.open_game_with_song(song_info, instrument_to_use, results_manager, mode_to_use, lanes_to_use, mods)
 	
 	queue_free()
@@ -1758,6 +1774,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var bindings := {
 		KEY_R: _on_replay_button_pressed,
 		KEY_M: _on_song_select_button_pressed,
+		KEY_C: _hotkey_currency_details,
+		KEY_X: _hotkey_xp_details,
 	}
 	if next_track_button and next_track_button.visible:
 		bindings[KEY_N] = _on_next_track_button_pressed
@@ -1765,6 +1783,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		bindings[KEY_KP_ENTER] = _on_next_track_button_pressed
 	if UiScreenHotkeys.try_handle(bindings, event, get_viewport()):
 		get_viewport().set_input_as_handled()
+
+
+func _hotkey_currency_details() -> void:
+	if _rewards_detail_clickable:
+		_show_currency_details()
+
+
+func _hotkey_xp_details() -> void:
+	if _rewards_detail_clickable:
+		_show_xp_details()
 
 
 func _on_song_select_button_pressed():
@@ -1999,6 +2027,50 @@ func _finish_deferred_update_ui() -> void:
 	await get_tree().process_frame
 	if is_inside_tree():
 		_persist_run_results()
+		_notify_auto_saved_replay()
+
+
+func _refresh_save_run_replay_button() -> void:
+	if save_run_replay_button == null:
+		return
+	save_run_replay_button.visible = _has_replay_export_source()
+
+
+func _has_replay_export_source() -> bool:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path != "":
+		return true
+	var payload: Variant = song_info.get("replay_payload", {})
+	return payload is Dictionary and not (payload as Dictionary).is_empty()
+
+
+func _replay_export_payload() -> Dictionary:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path != "":
+		var abs := ProjectSettings.globalize_path(replay_path)
+		return _RfrCodec.read_file(abs)
+	var payload: Variant = song_info.get("replay_payload", {})
+	if payload is Dictionary:
+		return (payload as Dictionary).duplicate(true)
+	return {}
+
+
+func _notify_auto_saved_replay() -> void:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path == "":
+		return
+	_refresh_save_run_replay_button()
+	_StatusToast.show_from_node(self, "replay", tr("REPLAY_SAVED_AUTO_TOAST"), "success")
+
+
+func _on_save_run_replay_pressed() -> void:
+	var payload := _replay_export_payload()
+	if payload.is_empty():
+		return
+	var default_name := str(song_info.get("replay_path", "")).get_file()
+	if default_name == "":
+		default_name = _ReplayStore.default_filename(payload)
+	_ReplayLauncher.save_file_dialog(self, default_name, payload)
 
 
 func _persist_run_results() -> void:
@@ -2056,11 +2128,16 @@ func _persist_run_results() -> void:
 	if song_path != "" and _chart_baseline.is_empty():
 		_chart_baseline = _capture_chart_baseline(song_path)
 	if should_save_result_later:
-		var instrument_for_result = song_info.get("instrument", "standard")
-		if instrument_for_result == "drums":
-			instrument_for_result = "Перкуссия"
+		var instrument_for_result := str(song_info.get("instrument", "drums")).strip_edges().to_lower()
+		if instrument_for_result in ["", "standard", "стандарт", "перкуссия", "percussion"]:
+			instrument_for_result = "drums"
+		elif instrument_for_result == "бас":
+			instrument_for_result = "bass"
+		# Defense-in-depth: series modes skip victory, but never write museum rows if tagged.
+		var play_mode := str(song_info.get("play_mode", "")).strip_edges().to_lower()
+		var save_to_museum := play_mode not in ["endless", "marathon"]
 		var result_datetime_for_result = _TimeUtils.now_local_datetime_string()
-		var mode_for_result = str(song_info.get("mode", ""))
+		var mode_for_result := _RhythmRating.normalize_mode(str(song_info.get("mode", "basic")))
 		var run_modifiers: Array = song_info.get("modifiers", [])
 		if not run_modifiers is Array:
 			run_modifiers = []
@@ -2075,25 +2152,36 @@ func _persist_run_results() -> void:
 		var title_for_result := str(song_info.get("title", ""))
 		var artist_for_result := str(song_info.get("artist", ""))
 		var lanes_for_result := int(song_info.get("lanes", 4))
-		var medals_new: Array = results_manager.save_result_for_song(
-			song_info.get("path", ""), 
-			instrument_for_result,          
-			score,                    
-			accuracy,                  
-			final_grade,                   
-			grade_color_for_result,              
-			result_datetime_for_result,
-			mode_for_result,
-			is_repeat_ss,
-			medals_earned,
-			run_modifiers,
-			full_combo_for_result,
-			max_combo,
-			chart_rating_for_run,
-			title_for_result,
-			artist_for_result,
-			lanes_for_result
-		)
+		var play_sec_for_result := int(song_info.get("duration_sec", song_info.get("duration", 0)))
+		if play_sec_for_result <= 0:
+			play_sec_for_result = int(round(float(song_info.get("length", 0))))
+		if play_sec_for_result <= 0 and SongLibrary:
+			var md := SongLibrary.get_metadata_for_song(str(song_info.get("path", "")))
+			if md is Dictionary:
+				play_sec_for_result = int(round(ChartDifficultyAnalyzer.parse_duration_seconds(md.get("duration", "00:00"))))
+		var medals_new: Array = []
+		if save_to_museum:
+			medals_new = results_manager.save_result_for_song(
+				song_info.get("path", ""),
+				instrument_for_result,
+				score,
+				accuracy,
+				final_grade,
+				grade_color_for_result,
+				result_datetime_for_result,
+				mode_for_result,
+				is_repeat_ss,
+				medals_earned,
+				run_modifiers,
+				full_combo_for_result,
+				max_combo,
+				chart_rating_for_run,
+				title_for_result,
+				artist_for_result,
+				lanes_for_result,
+				run_rr,
+				play_sec_for_result
+			)
 		_first_clear_this_run = false
 		for medal_id in medals_new:
 			if str(medal_id) == _TrackMedals.ID_FIRST_CLEAR:
@@ -2102,23 +2190,24 @@ func _persist_run_results() -> void:
 		_medals_new_run = medals_new.duplicate()
 		if _run_highlights.is_empty():
 			_run_highlights = _compute_run_highlights(_chart_baseline)
-		_notify_profile_milestones(
-			song_path,
-			str(song_info.get("instrument", "standard")),
-			mode_for_result,
-			lanes_for_result,
-			run_modifiers,
-			accuracy,
-			final_grade,
-			chart_rating_for_run,
-			full_combo_for_result,
-			max_combo,
-			score,
-			title_for_result,
-			artist_for_result,
-			result_datetime_for_result,
-			medals_new
-		)
+		if save_to_museum:
+			_notify_profile_milestones(
+				song_path,
+				instrument_for_result,
+				mode_for_result,
+				lanes_for_result,
+				run_modifiers,
+				accuracy,
+				final_grade,
+				chart_rating_for_run,
+				full_combo_for_result,
+				max_combo,
+				score,
+				title_for_result,
+				artist_for_result,
+				result_datetime_for_result,
+				medals_new
+			)
 
 	else:
 		_medals_new_run = []
@@ -2204,6 +2293,20 @@ func _persist_run_results() -> void:
 		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)
+	var activity_mode := _RhythmRating.normalize_mode(str(song_info.get("mode", "basic")))
+	var play_sec := int(song_info.get("duration_sec", song_info.get("duration", 0)))
+	if play_sec <= 0:
+		play_sec = int(round(float(song_info.get("length", 0))))
+	PlayerDataManager.record_activity_run({
+		"grade": final_grade,
+		"mode": activity_mode,
+		"instrument": str(song_info.get("instrument", "drums")),
+		"play_seconds": maxi(0, play_sec),
+		"currency_earned": maxi(0, int(earned_currency)),
+		"cleared": true,
+		"score": int(score),
+		"max_combo": int(max_combo),
+	})
 	# Единственная немедленная запись на диск за весь блок: остальные мутации данных
 	# планируют отложенный дебаунс-сейв, а здесь мы форсируем их разом.
 	PlayerDataManager.flush_save()

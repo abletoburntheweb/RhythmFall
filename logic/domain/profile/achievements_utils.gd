@@ -1,4 +1,4 @@
-# logic/utils/achievements_utils.gd
+# logic/domain/profile/achievements_utils.gd
 extends RefCounted
 
 static var _icon_texture_cache: Dictionary = {}

@@ -1,17 +1,17 @@
-# logic/utils/modifier_icon_strip.gd
+# logic/ui/modifier_icon_strip.gd
 extends RefCounted
 class_name ModifierIconStrip
 
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 
-const _DETAIL_ICON_SIZE := 18
-const _DETAIL_FRAME_SIZE := 34
-const _SLOT_CHIP_ICON_SIZE := 18
-const _ROW_CHIP_ICON_SIZE := 16
-const _HUD_CHIP_ICON_SIZE := 16
-const _HUD_CHIP_FRAME_PAD := 6
+const _DETAIL_ICON_SIZE := 20
+const _DETAIL_FRAME_SIZE := 36
+const _SLOT_CHIP_ICON_SIZE := 22
+const _ROW_CHIP_ICON_SIZE := 20
+const _HUD_CHIP_ICON_SIZE := 18
+const _HUD_CHIP_FRAME_PAD := 8
 const MAX_SLOT_LIST_ICONS := 10
-const MAX_ROW_LIST_ICONS := 5
+const MAX_ROW_LIST_ICONS := 10
 const MAX_HUD_ICONS := 24
 
 
@@ -42,6 +42,7 @@ static func fill_row_chips(
 	_params: Dictionary = {},
 	max_icons: int = MAX_ROW_LIST_ICONS,
 	show_tooltips: bool = true,
+	show_overflow: bool = false,
 ) -> void:
 	fill_slot_chips(
 		container,
@@ -50,8 +51,9 @@ static func fill_row_chips(
 		max_icons,
 		show_tooltips,
 		_ROW_CHIP_ICON_SIZE,
-		8,
+		10,
 		6,
+		show_overflow,
 	)
 
 
@@ -64,6 +66,7 @@ static func fill_slot_chips(
 	icon_size: int = _SLOT_CHIP_ICON_SIZE,
 	frame_pad: int = 10,
 	separation: int = 8,
+	show_overflow: bool = true,
 ) -> void:
 	if container == null:
 		return
@@ -87,7 +90,7 @@ static func fill_slot_chips(
 		)
 		shown += 1
 	var remaining := mods.size() - shown
-	if remaining > 0:
+	if show_overflow and remaining > 0:
 		container.add_child(_make_overflow_chip(remaining))
 
 
@@ -138,10 +141,15 @@ static func make_mod_chip(mod_id: String, icon_size: int = _SLOT_CHIP_ICON_SIZE,
 	if icon_file.strip_edges() == "":
 		return Control.new()
 	var tint := _RunModifiers.category_tint(mod_id, true)
-	return _make_mod_chip(mod_id, icon_file, tint, icon_size, show_tooltip, 10)
+	return _make_mod_chip(mod_id, icon_file, tint, icon_size, show_tooltip, 12)
 
 
-static func fill_mod_rows(container: VBoxContainer, modifiers: Array, empty_text: String = "") -> void:
+static func fill_mod_rows(
+	container: VBoxContainer,
+	modifiers: Array,
+	empty_text: String = "",
+	params: Dictionary = {},
+) -> void:
 	if container == null:
 		return
 	for child in container.get_children():
@@ -156,8 +164,9 @@ static func fill_mod_rows(container: VBoxContainer, modifiers: Array, empty_text
 			empty.add_theme_color_override("font_color", Color(0.5, 0.58, 0.68, 0.88))
 			container.add_child(empty)
 		return
+	var safe_params := _RunModifiers.sanitize_params(params)
 	for raw_id in mods:
-		container.add_child(_make_mod_row(str(raw_id)))
+		container.add_child(_make_mod_row(str(raw_id), safe_params))
 
 
 static func _make_mod_chip(
@@ -195,7 +204,7 @@ static func _make_overflow_chip(extra: int) -> Label:
 	return lbl
 
 
-static func _make_mod_row(modifier_id: String) -> PanelContainer:
+static func _make_mod_row(modifier_id: String, params: Dictionary = {}) -> PanelContainer:
 	var row := PanelContainer.new()
 	row.custom_minimum_size = Vector2(0, 38)
 	var box := StyleBoxFlat.new()
@@ -221,6 +230,11 @@ static func _make_mod_row(modifier_id: String) -> PanelContainer:
 			UiIconHelper.make_icon_frame(icon_file, _DETAIL_FRAME_SIZE, _DETAIL_ICON_SIZE, tint)
 		)
 
+	var text_col := VBoxContainer.new()
+	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_col.add_theme_constant_override("separation", 1)
+	hbox.add_child(text_col)
+
 	var title := Label.new()
 	title.text = TranslationServer.translate(_RunModifiers.title_i18n_key(modifier_id))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -228,5 +242,18 @@ static func _make_mod_row(modifier_id: String) -> PanelContainer:
 	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title.add_theme_font_size_override("font_size", 14)
 	title.add_theme_color_override("font_color", Color(0.86, 0.92, 0.98, 0.98))
-	hbox.add_child(title)
+	text_col.add_child(title)
+
+	var param_line := _RunModifiers.format_modifier_description(modifier_id, params)
+	var base_desc := TranslationServer.translate(_RunModifiers.desc_i18n_key(modifier_id))
+	# Show compact param line when it differs from the long narrative description.
+	if param_line.strip_edges() != "" and param_line != base_desc:
+		var param_lbl := Label.new()
+		param_lbl.text = param_line
+		param_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		param_lbl.clip_text = true
+		param_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		param_lbl.add_theme_font_size_override("font_size", 12)
+		param_lbl.add_theme_color_override("font_color", Color(0.58, 0.72, 0.86, 0.95))
+		text_col.add_child(param_lbl)
 	return row

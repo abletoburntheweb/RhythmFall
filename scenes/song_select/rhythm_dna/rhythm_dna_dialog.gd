@@ -1,4 +1,4 @@
-# scenes/song_select/rhythm_dna_dialog.gd
+# scenes/song_select/rhythm_dna/rhythm_dna_dialog.gd
 extends Control
 class_name RhythmDnaDialog
 

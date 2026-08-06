@@ -205,6 +205,18 @@ func _make_last_track_zone(zone: Dictionary) -> VBoxContainer:
 		title_lbl.add_theme_font_size_override("font_size", 15)
 		title_lbl.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0, 1.0))
 		text_col.add_child(title_lbl)
+	var diff_text := str(zone.get("difficulty_text", "")).strip_edges()
+	if diff_text != "":
+		var diff_row := HBoxContainer.new()
+		diff_row.add_theme_constant_override("separation", 6)
+		var diff_color: Color = zone.get("difficulty_color", Color(0.72, 0.58, 0.95, 1))
+		diff_row.add_child(_UiIconHelper.make_icon_frame("zap.svg", 16, 10, diff_color))
+		var diff_lbl := Label.new()
+		diff_lbl.text = diff_text
+		diff_lbl.add_theme_font_size_override("font_size", 13)
+		diff_lbl.add_theme_color_override("font_color", diff_color)
+		diff_row.add_child(diff_lbl)
+		text_col.add_child(diff_row)
 	var meta_row := HBoxContainer.new()
 	meta_row.add_theme_constant_override("separation", 6)
 	var grade := str(zone.get("grade", "")).strip_edges()
@@ -213,7 +225,7 @@ func _make_last_track_zone(zone: Dictionary) -> VBoxContainer:
 		grade_lbl.text = grade
 		grade_lbl.add_theme_font_size_override("font_size", 22)
 		var grade_color: Color = zone.get("grade_color", Color.WHITE)
-		grade_lbl.add_theme_color_override("font_color", grade_color.lightened(0.12))
+		grade_lbl.add_theme_color_override("font_color", grade_color)
 		meta_row.add_child(grade_lbl)
 	var when := str(zone.get("when", "")).strip_edges()
 	if when != "":
@@ -242,7 +254,7 @@ func _make_play_style_button(text: String, callback: Callable) -> Button:
 	btn.text = text
 	btn.custom_minimum_size = Vector2(0, 40)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.add_theme_font_size_override("font_size", 16)
+	btn.add_theme_font_size_override("font_size", 17)
 	_UiIconHelper.configure_button_icon(btn, "circle-play.svg", _UiIconHelper.ACCENT_MINT, 18)
 	btn.pressed.connect(callback)
 	return btn
@@ -404,7 +416,7 @@ func _make_replay_run_zone(zone: Dictionary) -> VBoxContainer:
 func _load_last_track_cover(root: VBoxContainer, cover_path: String) -> void:
 	if not is_instance_valid(root):
 		return
-	var cover_tex := _RhythmDnaCoverLoader.load_cover_for_display(cover_path, 72)
+	var cover_tex := _RhythmDnaCoverLoader.load_cover_for_display(cover_path, 180)
 	if cover_tex == null:
 		return
 	for child in root.get_children():
@@ -425,11 +437,12 @@ func _load_last_track_cover(root: VBoxContainer, cover_path: String) -> void:
 
 
 func _make_cover_wrap(cover_tex: Texture2D) -> PanelContainer:
-	const COVER_PX := 72
+	# Tall left tile: stretch to last-track row height (title → replay CTA), stop before "Your progress".
+	const COVER_W := 108
 	var cover_wrap := PanelContainer.new()
-	cover_wrap.custom_minimum_size = Vector2(COVER_PX + 8, COVER_PX + 8)
+	cover_wrap.custom_minimum_size = Vector2(COVER_W + 8, COVER_W + 8)
 	cover_wrap.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	cover_wrap.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	cover_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var cover_style := StyleBoxFlat.new()
 	cover_style.bg_color = Color(0.05, 0.06, 0.09, 1.0)
 	cover_style.border_color = Color(_accent.r, _accent.g, _accent.b, 0.5)
@@ -446,11 +459,11 @@ func _make_cover_wrap(cover_tex: Texture2D) -> PanelContainer:
 	cover_wrap.add_theme_stylebox_override("panel", cover_style)
 	var cover := TextureRect.new()
 	cover.texture = cover_tex
-	cover.custom_minimum_size = Vector2(COVER_PX, COVER_PX)
+	cover.custom_minimum_size = Vector2(COVER_W, COVER_W)
 	cover.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cover.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cover.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	cover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	cover.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var mat := ShaderMaterial.new()
 	mat.shader = _ACHIEVEMENT_COVER_SHADER
@@ -502,16 +515,20 @@ func _make_bullet_label(text: String) -> Label:
 
 func _make_icon_row(icon_file: String, text: String, font_size: int = 15) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 8)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var icon := TextureRect.new()
-	icon.custom_minimum_size = Vector2(16, 16)
+	icon.custom_minimum_size = Vector2(20, 20)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture = UiIconHelper.load_tinted_icon(icon_file, _accent.lerp(Color.WHITE, 0.25), 16)
+	icon.texture = UiIconHelper.load_tinted_icon(icon_file, _accent.lerp(Color.WHITE, 0.25), 20)
 	row.add_child(icon)
 	var label := Label.new()
 	label.text = text
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color(0.82, 0.88, 0.94, 1.0))
@@ -748,7 +765,7 @@ func _apply_action_button_visuals(accent: Color) -> void:
 		_action_button.theme_type_variation = &"FlatButtonYellow"
 		for state in ["normal", "hover", "pressed", "focus", "disabled"]:
 			_action_button.remove_theme_stylebox_override(state)
-		_action_button.add_theme_font_size_override("font_size", 15)
+		_action_button.add_theme_font_size_override("font_size", 18)
 		_action_button.icon = null
 		return
 	if mode_id == _PlayModeIds.LIBRARY:
@@ -798,7 +815,7 @@ func _apply_action_button_style(accent: Color) -> void:
 		box.content_margin_left = 14
 		box.content_margin_right = 14
 		_action_button.add_theme_stylebox_override(state, box)
-	_action_button.add_theme_font_size_override("font_size", 15)
+	_action_button.add_theme_font_size_override("font_size", 18)
 
 
 func badge_color_for_panel(accent: Color) -> Color:

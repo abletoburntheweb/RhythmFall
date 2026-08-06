@@ -20,6 +20,8 @@ var item_cards: Array[Node] = []
 var achievements_data: Dictionary = {} 
 var current_category: String = "Все"
 var current_collection_filter: String = ""
+var _focus_card_index := -1
+var _keyboard_nav_active := false
 
 var _scroll_step := 60
 var _page_step := 480
@@ -114,7 +116,11 @@ func _load_shop_data() -> Dictionary:
 	else:
 		var bundled := JsonUtils.read_json_dict(SHOP_DATA_RES_PATH)
 		if not bundled.is_empty():
+			var before := JSON.stringify(data)
 			data = CatalogDataSync.merge_shop_items(data, bundled)
+			# Persist purge of removed covers so stale user:// rows don't linger.
+			if before != JSON.stringify(data):
+				JsonUtils.write_json(SHOP_DATA_USER_PATH, data, false, true)
 	if data.is_empty():
 		return {}
 	_ensure_collections_in_shop_data(data)
@@ -803,6 +809,24 @@ func _shop_item_is_standard(item: Dictionary) -> bool:
 	return PlayerDataManager.DEFAULT_UNLOCKED_ITEMS.has(item_id)
 
 
+## Internal unlock-source order (not a user-facing filter):
+## currency → achievements → level → daily → medals.
+func _shop_item_unlock_rank(item: Dictionary) -> int:
+	if _shop_item_is_standard(item):
+		return -1
+	if int(item.get("price", 0)) > 0:
+		return 0
+	if bool(item.get("is_achievement_reward", false)):
+		return 1
+	if bool(item.get("is_level_reward", false)):
+		return 2
+	if bool(item.get("is_daily_reward", false)):
+		return 3
+	if int(item.get("medal_price", 0)) > 0:
+		return 4
+	return 5
+
+
 func _sort_shop_items_for_display(items: Array) -> Array:
 	var ranked: Array = []
 	for orig_idx in items.size():
@@ -812,7 +836,10 @@ func _sort_shop_items_for_display(items: Array) -> Array:
 		var category := String(item.get("category", ""))
 		ranked.append({
 			"standard_block": 0 if _shop_item_is_standard(item) else 1,
+			# Keep category sections in «Все» (Kick → Notes → Lane → Particles),
+			# then order by unlock source inside each section.
 			"rank": _shop_item_category_rank(category),
+			"unlock_rank": _shop_item_unlock_rank(item),
 			"orig": orig_idx,
 			"item": item,
 		})
@@ -825,6 +852,10 @@ func _sort_shop_items_for_display(items: Array) -> Array:
 		var rank_b: int = int(b.get("rank", 999))
 		if rank_a != rank_b:
 			return rank_a < rank_b
+		var unlock_a: int = int(a.get("unlock_rank", 5))
+		var unlock_b: int = int(b.get("unlock_rank", 5))
+		if unlock_a != unlock_b:
+			return unlock_a < unlock_b
 		return int(a.get("orig", 0)) < int(b.get("orig", 0))
 	)
 	var sorted: Array = []
@@ -901,6 +932,7 @@ func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_conta
 		_set_shop_grid_busy(false)
 		for card in first_batch_cards:
 			_queue_preview_warm(card)
+	_reorder_shop_grid_to_sorted(grid_container)
 	for item_data in pending:
 		if generation != _bg_spawn_generation:
 			return
@@ -909,6 +941,25 @@ func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_conta
 		if card and not first_batch_cards.has(card):
 			_queue_preview_warm(card)
 	await _finish_kick_preview_warm(pending, generation)
+
+
+func _reorder_shop_grid_to_sorted(grid_container: GridContainer) -> void:
+	if grid_container == null or _sorted_shop_items.is_empty():
+		return
+	var desired: Array = []
+	for item_data in _sorted_shop_items:
+		if not (item_data is Dictionary):
+			continue
+		var item_id := String(item_data.get("item_id", ""))
+		if item_id == "":
+			continue
+		var card: Node = _cards_by_item_id.get(item_id)
+		if card != null and is_instance_valid(card) and card.get_parent() == grid_container:
+			desired.append(card)
+	for i in desired.size():
+		var card: Node = desired[i]
+		if grid_container.get_child(i) != card:
+			grid_container.move_child(card, i)
 
 
 func _spawn_card_insert_index(grid_container: GridContainer, item_id_str: String) -> int:
@@ -1136,6 +1187,11 @@ func _on_category_selected(category: String):
 		current_category = category
 		_update_category_buttons(category)
 		_apply_category_visibility(category)
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		for card in item_cards:
+			if card and card.has_method("set_keyboard_selected"):
+				card.set_keyboard_selected(false)
 		var grid_container := _get_items_grid()
 		if grid_container:
 			_update_grid_min_height(grid_container, _visible_item_count_for_category(category))
@@ -1340,6 +1396,11 @@ func _scroll_to(pos: int):
 				max_val = int(vbar.max_value)
 		sc.scroll_vertical = clamp(pos, 0, max_val if max_val > 0 else pos)
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		_clear_keyboard_item_focus()
+
+
 func _unhandled_input(event):
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
@@ -1348,46 +1409,151 @@ func _unhandled_input(event):
 		accept_event()
 		_on_back_pressed()
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var key_event := event as InputEventKey
+	var is_nav_key := key_event.keycode in [
+		KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_PAGEUP, KEY_PAGEDOWN, KEY_HOME, KEY_END
+	]
+	if key_event.echo and not is_nav_key:
+		return
+	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+		return
+	if not key_event.echo and key_event.keycode >= KEY_1 and key_event.keycode <= KEY_5:
+		var index := int(key_event.keycode - KEY_1)
+		if index < _CATEGORY_BUTTON_SPECS.size():
+			_on_category_selected(String(_CATEGORY_BUTTON_SPECS[index][0]))
+			accept_event()
 			return
-		if event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			var index := int(event.keycode - KEY_1)
-			if index < _CATEGORY_BUTTON_SPECS.size():
-				_on_category_selected(String(_CATEGORY_BUTTON_SPECS[index][0]))
-				accept_event()
-				return
-		var owner = get_viewport().gui_get_focus_owner()
-		if owner and (owner is LineEdit or owner is OptionButton):
+	var owner = get_viewport().gui_get_focus_owner()
+	if owner and (owner is LineEdit or owner is OptionButton):
+		return
+	match key_event.keycode:
+		KEY_LEFT:
+			_move_item_focus(-1)
+			accept_event()
 			return
-		var sc = _get_items_scroll()
-		if not sc:
+		KEY_RIGHT:
+			_move_item_focus(1)
+			accept_event()
 			return
-		match event.keycode:
-			KEY_UP:
-				_scroll_to(sc.scroll_vertical - _scroll_step)
+		KEY_SPACE:
+			if not key_event.echo:
+				_preview_focused_item()
 				accept_event()
-			KEY_DOWN:
-				_scroll_to(sc.scroll_vertical + _scroll_step)
+			return
+		KEY_ENTER, KEY_KP_ENTER:
+			if not key_event.echo:
+				_activate_focused_item()
 				accept_event()
-			KEY_PAGEUP:
-				_scroll_to(sc.scroll_vertical - _page_step)
-				accept_event()
-			KEY_PAGEDOWN:
-				_scroll_to(sc.scroll_vertical + _page_step)
-				accept_event()
-			KEY_HOME:
-				_scroll_to(0)
-				accept_event()
-			KEY_END:
-				if sc.has_method("get_v_scroll_bar"):
-					var vbar = sc.get_v_scroll_bar()
-					if vbar:
-						_scroll_to(int(vbar.max_value))
-						accept_event()
-				else:
-					_scroll_to(sc.scroll_vertical + 999999)
+			return
+	var sc = _get_items_scroll()
+	if not sc:
+		return
+	match key_event.keycode:
+		KEY_UP:
+			_scroll_to(sc.scroll_vertical - _scroll_step)
+			accept_event()
+		KEY_DOWN:
+			_scroll_to(sc.scroll_vertical + _scroll_step)
+			accept_event()
+		KEY_PAGEUP:
+			_scroll_to(sc.scroll_vertical - _page_step)
+			accept_event()
+		KEY_PAGEDOWN:
+			_scroll_to(sc.scroll_vertical + _page_step)
+			accept_event()
+		KEY_HOME:
+			_scroll_to(0)
+			accept_event()
+		KEY_END:
+			if sc.has_method("get_v_scroll_bar"):
+				var vbar = sc.get_v_scroll_bar()
+				if vbar:
+					_scroll_to(int(vbar.max_value))
 					accept_event()
+			else:
+				_scroll_to(sc.scroll_vertical + 999999)
+				accept_event()
+
+
+func _visible_item_cards() -> Array[Node]:
+	var out: Array[Node] = []
+	for card in item_cards:
+		if card and is_instance_valid(card) and card.visible:
+			out.append(card)
+	return out
+
+
+func _clear_keyboard_item_focus() -> void:
+	if not _keyboard_nav_active and _focus_card_index < 0:
+		return
+	_keyboard_nav_active = false
+	_focus_card_index = -1
+	for card in _visible_item_cards():
+		if card and card.has_method("set_keyboard_selected"):
+			card.set_keyboard_selected(false)
+
+
+func _move_item_focus(delta: int) -> void:
+	var visible_cards := _visible_item_cards()
+	if visible_cards.is_empty():
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		return
+	_keyboard_nav_active = true
+	var next := _focus_card_index
+	if next < 0 or next >= visible_cards.size():
+		next = 0 if delta > 0 else visible_cards.size() - 1
+	else:
+		next = clampi(next + delta, 0, visible_cards.size() - 1)
+	_set_item_focus_index(next, visible_cards, true)
+
+
+func _set_item_focus_index(index: int, visible_cards: Array[Node] = [], play_sound: bool = false) -> void:
+	if visible_cards.is_empty():
+		visible_cards = _visible_item_cards()
+	if visible_cards.is_empty():
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		return
+	index = clampi(index, 0, visible_cards.size() - 1)
+	if play_sound and index != _focus_card_index:
+		UiScreenHotkeys.play_section_switch_sound()
+	_focus_card_index = index
+	_keyboard_nav_active = true
+	for i in range(visible_cards.size()):
+		var card = visible_cards[i]
+		if card and card.has_method("set_keyboard_selected"):
+			card.set_keyboard_selected(_keyboard_nav_active and i == _focus_card_index)
+	var focused = visible_cards[_focus_card_index]
+	var sc = _get_items_scroll()
+	if focused is Control and sc:
+		sc.ensure_control_visible(focused as Control)
+
+
+func _preview_focused_item() -> void:
+	var visible_cards := _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		_move_item_focus(1)
+		visible_cards = _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		return
+	var card = visible_cards[_focus_card_index]
+	if card and card.has_method("activate_preview"):
+		card.activate_preview()
+
+
+func _activate_focused_item() -> void:
+	var visible_cards := _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		_move_item_focus(1)
+		visible_cards = _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		return
+	var card = visible_cards[_focus_card_index]
+	if card and card.has_method("activate_primary_action"):
+		card.activate_primary_action()
 
 func _find_item_by_id(item_id: String) -> Dictionary:
 	for item in shop_data.get("items", []):

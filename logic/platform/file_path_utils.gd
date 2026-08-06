@@ -1,4 +1,4 @@
-# logic/utils/file_path_utils.gd
+# logic/platform/file_path_utils.gd
 extends RefCounted
 class_name FilePathUtils
 

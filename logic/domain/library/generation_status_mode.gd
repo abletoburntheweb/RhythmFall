@@ -1,4 +1,4 @@
-# logic/utils/generation_status_mode.gd
+# logic/domain/library/generation_status_mode.gd
 extends RefCounted
 class_name GenerationStatusMode
 

@@ -51,6 +51,17 @@ const PAGE_ACCENT: Dictionary = {
 	PAGE_DANGER: Color(0.95, 0.45, 0.42, 1.0),
 }
 
+## Primary action buttons → lucide icon (optional). Danger / reset-all stay red via FlatExitButton.
+const PAGE_ACTION_ICONS := {
+	"StartCalibrationButton": "metronome.svg",
+	"ResetCalibrationButton": "rotate-ccw.svg",
+	"ScanSongsButton": "folder-search.svg",
+	"ChooseSongsFolderButton": "folder.svg",
+	"OpenSongsFolderButton": "folder-open.svg",
+	"ChooseNotesFolderButton": "folder.svg",
+	"OpenNotesFolderButton": "folder-open.svg",
+}
+
 var game_screen = null
 var achievement_manager = null
 
@@ -88,6 +99,7 @@ var _back_prompt_active := false
 func apply_locale() -> void:
 	if back_button:
 		back_button.text = tr("BTN_BACK")
+		apply_back_button_style()
 	if reset_all_button:
 		reset_all_button.text = tr("MISC_RESET_ALL_SETTINGS")
 		reset_all_button.tooltip_text = tr("MISC_RESET_ALL_SETTINGS_TOOLTIP")
@@ -230,7 +242,22 @@ func _connect_signals() -> void:
 		back_button.focus_mode = Control.FOCUS_NONE
 	if reset_all_button:
 		reset_all_button.pressed.connect(_on_reset_all_pressed)
-	UiIconHelper.configure_button_icon(back_button, "arrow-left.svg", UiIconHelper.ACCENT, 16)
+	apply_back_button_style()
+
+
+func _is_overlay_mode() -> bool:
+	if transitions == null or transitions.game_engine == null:
+		return false
+	return self != transitions.game_engine.current_screen
+
+
+func apply_back_button_style() -> void:
+	if back_button == null:
+		return
+	# Full-width sidebar row (match nav items). FlatBackButton fill, not hub outline chip.
+	UiIconHelper.apply_standard_back_button(back_button)
+	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	back_button.custom_minimum_size = Vector2(0, maxf(back_button.custom_minimum_size.y, 40.0))
 
 
 func _apply_dialog_styles() -> void:
@@ -311,8 +338,22 @@ func _switch_page(page_id: String) -> void:
 		if tab_container:
 			tab_container.current_tab = int(PAGE_TAB_INDEX.get(page_id, 0))
 		_update_page_header()
+		_notify_page_shown(page_id)
 	var skip := _settings_skip_transition or not changed
 	_UiListSlideTransition.crossfade(content_card, apply, skip, false)
+
+
+func _notify_page_shown(page_id: String) -> void:
+	var tab: Control = null
+	match page_id:
+		PAGE_DATA:
+			tab = _data_tab
+		PAGE_SYSTEM:
+			tab = _system_tab
+		_:
+			return
+	if tab and tab.has_method("on_settings_page_shown"):
+		tab.on_settings_page_shown()
 
 
 func _update_page_header() -> void:
@@ -329,10 +370,124 @@ func _update_page_header() -> void:
 	_apply_content_shell_accent(accent)
 
 
-func _apply_content_shell_accent(_accent: Color) -> void:
+func _apply_content_shell_accent(accent: Color) -> void:
 	if content_card == null or _content_shell_default == null:
 		return
-	content_card.add_theme_stylebox_override("panel", _content_shell_default.duplicate())
+	var box := _content_shell_default.duplicate() as StyleBoxFlat
+	if box:
+		box.border_color = Color(accent.r, accent.g, accent.b, 0.45)
+		content_card.add_theme_stylebox_override("panel", box)
+	_tint_page_action_buttons(accent)
+
+
+func _tint_page_action_buttons(accent: Color) -> void:
+	if tab_container == null:
+		return
+	var tab := tab_container.get_current_tab_control()
+	if tab == null:
+		return
+	var targets: Array[Button] = []
+	_collect_tintable_buttons(tab, targets)
+	var n := targets.size()
+	for i in range(n):
+		var btn := targets[i]
+		var shade := _page_accent_shade(accent, i, n, btn.name)
+		var variation := btn.theme_type_variation
+		UiIconHelper.apply_outline_accent(btn, shade, variation if variation != &"" else &"FlatButton")
+		var icon_file := str(PAGE_ACTION_ICONS.get(btn.name, ""))
+		if icon_file != "":
+			UiIconHelper.configure_button_icon(btn, icon_file, shade, 16)
+		_wire_settings_button_sfx(btn)
+	# Also wire sounds on non-tinted action buttons (segmented stay silent — they already play).
+	_wire_settings_button_sfx_under(tab)
+
+
+func _wire_settings_button_sfx_under(node: Node) -> void:
+	if node == null:
+		return
+	if node is Button and not (node is CheckButton) and not (node is OptionButton):
+		var btn := node as Button
+		if not btn.has_meta("option_id"):
+			_wire_settings_button_sfx(btn)
+	for child in node.get_children():
+		_wire_settings_button_sfx_under(child)
+
+
+func _wire_settings_button_sfx(btn: Button) -> void:
+	if btn == null or btn.get_meta("ui_mod_sfx_wired", false):
+		return
+	if UiIconHelper.is_danger_button_variation(btn.theme_type_variation):
+		# Danger keeps cancel-like feedback on press via existing patterns; still soft select.
+		pass
+	btn.set_meta("ui_mod_sfx_wired", true)
+	btn.pressed.connect(func() -> void:
+		UiModifierSounds.play_select()
+	)
+
+
+func _collect_tintable_buttons(node: Node, out: Array[Button]) -> void:
+	if node == null:
+		return
+	if node is Button and not (node is CheckButton) and not (node is OptionButton):
+		var btn := node as Button
+		if _should_tint_settings_button(btn):
+			out.append(btn)
+	for child in node.get_children():
+		_collect_tintable_buttons(child, out)
+
+
+func _should_tint_settings_button(btn: Button) -> bool:
+	if btn == null:
+		return false
+	# Segmented one-of-many (FPS / quality / …) — keep shared FlatModal look.
+	if btn.has_meta("option_id"):
+		return false
+	var parent := btn.get_parent()
+	if parent and str(parent.name).ends_with("Segmented"):
+		return false
+	if btn.button_group != null:
+		return false
+	var variation := btn.theme_type_variation
+	if UiIconHelper.is_danger_button_variation(variation):
+		return false
+	return (
+		variation == &"FlatButton"
+		or variation == &"FlatGenerateButton"
+		or variation == &"FlatModalPrimaryButton"
+		or variation == &"FlatButtonAmber"
+		or variation == &"FlatButtonGreen"
+		or variation == &"FlatButtonOrange"
+		or variation == &"FlatButtonYellow"
+		or variation == &""
+	)
+
+
+func _page_accent_shade(base: Color, index: int, total: int, seed_name: String = "") -> Color:
+	## Same hue family, different tone — not one flat accent for every button.
+	if total <= 1:
+		return base
+	var h := base.h
+	var s := base.s
+	var v := base.v
+	# Stable-ish offset from name so order reshuffles less across locale refreshes.
+	var name_hash := int(hash(seed_name))
+	var step := index + (absi(name_hash) % 5)
+	var hue_nudge := ((step % 7) - 3) * 0.012  # ~±4° within blue/teal/…
+	var sat_nudge := ((step % 5) - 2) * 0.07
+	var val_nudge := ((step % 4) - 1) * 0.05
+	# Primary action (Generate / Start…) slightly brighter; later buttons cooler/dimmer.
+	if index == 0:
+		val_nudge += 0.04
+		sat_nudge += 0.04
+	elif index >= total - 1 and total > 2:
+		val_nudge -= 0.03
+		sat_nudge -= 0.05
+	return Color.from_hsv(
+		fposmod(h + hue_nudge, 1.0),
+		clampf(s + sat_nudge, 0.28, 0.92),
+		clampf(v + val_nudge, 0.48, 0.96),
+		base.a
+	)
 
 
 func _on_reset_all_pressed() -> void:
@@ -342,10 +497,10 @@ func _on_reset_all_pressed() -> void:
 
 func _execute_close_transition() -> void:
 	if transitions:
-		var current_parent = get_parent()
+		# Overlay when Settings is not the GameEngine current_screen (pause / contextual).
 		var from_pause := false
 		if transitions.game_engine:
-			from_pause = current_parent == transitions.game_engine.current_screen
+			from_pause = self != transitions.game_engine.current_screen
 		transitions.close_settings(from_pause)
 
 

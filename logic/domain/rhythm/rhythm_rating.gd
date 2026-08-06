@@ -1,9 +1,10 @@
-# logic/utils/rhythm_rating.gd
+# logic/domain/rhythm/rhythm_rating.gd
 class_name RhythmRating
 extends RefCounted
 
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _ChartDifficulty = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
+const _GenerationIntents = preload("res://logic/domain/generation/generation_intents.gd")
 
 const ACCURACY_WEIGHT := 8.0
 const CHART_RATING_WEIGHT := 92.0
@@ -21,9 +22,11 @@ const GRADE_BONUS := {
 static func normalize_instrument(instrument: String) -> String:
 	var key := instrument.strip_edges().to_lower()
 	match key:
-		"drums", "перкуссия":
+		"drums", "перкуссия", "ударные", "ударные инструменты":
 			return "drums"
-		"fullmix", "микс":
+		"bass", "бас", "бас-гитара", "бас гитара":
+			return "bass"
+		"fullmix", "микс", "full mix":
 			return "fullmix"
 		"standard", "стандарт":
 			return "standard"
@@ -33,7 +36,10 @@ static func normalize_instrument(instrument: String) -> String:
 
 static func normalize_mode(mode: String) -> String:
 	var key := mode.strip_edges().to_lower()
-	return key if key != "" else "basic"
+	if key == "":
+		key = "basic"
+	# Canonical chart stem (arcade_dense, original, …) so legacy aliases share one RR bucket.
+	return _GenerationIntents.resolve_chart_stem(key)
 
 
 static func chart_key(

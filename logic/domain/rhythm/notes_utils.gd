@@ -1,4 +1,4 @@
-# logic/utils/notes_utils.gd
+# logic/domain/rhythm/notes_utils.gd
 extends RefCounted
 class_name NotesUtils
 

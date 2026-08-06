@@ -17,15 +17,15 @@ const ACTIVE_MODULATE := SegmentedOptionUtils.ACTIVE_COLOR
 const INACTIVE_MODULATE := SegmentedOptionUtils.DEFAULT_COLOR
 
 const DIFFICULTY_ICONS := {
-	"relaxed": "feather.svg",
-	"standard": "circle-check.svg",
-	"dense": "flame_gen.svg",
+	"easy": "feather.svg",
+	"medium": "circle-check.svg",
+	"hard": "flame_gen.svg",
 }
 
 const DIFFICULTY_COLORS := {
-	"relaxed": Color(0.62, 0.82, 0.96, 1.0),
-	"standard": Color(0.55, 0.78, 0.98, 1.0),
-	"dense": Color(1.0, 0.58, 0.32, 1.0),
+	"easy": Color(0.62, 0.82, 0.96, 1.0),
+	"medium": Color(0.55, 0.78, 0.98, 1.0),
+	"hard": Color(1.0, 0.58, 0.32, 1.0),
 }
 
 var _view_filter: Dictionary = {}
@@ -33,7 +33,7 @@ var _instrument_icons: Dictionary = {}
 var _display_buttons: Array[Button] = []
 var _goal_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
-var _selected_goal := _GoalDiff.DEFAULT_GOAL
+var _selected_goals: Array[String] = []
 var _selected_diffs: Array[String] = []
 var _display_filtered := true
 
@@ -126,6 +126,7 @@ func _build_goal_row() -> void:
 		var accent: Color = _GenPresetUi.INTENT_ICON_COLORS.get(goal_id, _UiIconHelper.ACCENT) as Color
 		var btn := _make_option_button(tr("GEN_GOAL_%s" % goal_id.to_upper()), icon_file, accent)
 		btn.set_meta("option_id", goal_id)
+		btn.toggle_mode = true
 		btn.pressed.connect(_on_goal_pressed.bind(goal_id))
 		_goal_row.add_child(btn)
 		_goal_buttons[goal_id] = btn
@@ -141,7 +142,7 @@ func _build_difficulty_row() -> void:
 		var icon_file := str(DIFFICULTY_ICONS.get(diff_id, "layers.svg"))
 		var accent: Color = DIFFICULTY_COLORS.get(diff_id, _UiIconHelper.ACCENT) as Color
 		var btn := _make_option_button(
-			tr(_GoalDiff.difficulty_label_key(_selected_goal, diff_id)),
+			tr(_GoalDiff.difficulty_label_key("arcade", diff_id)),
 			icon_file,
 			accent,
 		)
@@ -182,7 +183,7 @@ func _refresh_option_button_labels() -> void:
 	for diff_id in _diff_buttons.keys():
 		var btn: Button = _diff_buttons[diff_id]
 		if btn:
-			btn.text = tr(_GoalDiff.difficulty_label_key(_selected_goal, str(diff_id)))
+			btn.text = tr(_GoalDiff.difficulty_label_key("arcade", str(diff_id)))
 
 
 func _sync_ui_from_filter() -> void:
@@ -191,10 +192,13 @@ func _sync_ui_from_filter() -> void:
 		== _PlaylistCatalog.DISPLAY_MODE_FILTERED
 	)
 	_sync_display_mode_buttons(_display_filtered)
-	var goals: Array = _view_filter.get("goals", [])
-	_selected_goal = str(goals[0] if not goals.is_empty() else _GoalDiff.DEFAULT_GOAL)
-	if _selected_goal not in _GoalDiff.GOALS:
-		_selected_goal = _GoalDiff.DEFAULT_GOAL
+	_selected_goals.clear()
+	for goal_raw in _view_filter.get("goals", []):
+		var goal_id := str(goal_raw).strip_edges().to_lower()
+		if goal_id in _GoalDiff.GOALS and not _selected_goals.has(goal_id):
+			_selected_goals.append(goal_id)
+	if _selected_goals.is_empty():
+		_selected_goals = [_GoalDiff.DEFAULT_GOAL]
 	_sync_goal_buttons()
 	_selected_diffs.clear()
 	for diff_raw in _view_filter.get("difficulties", []):
@@ -204,6 +208,7 @@ func _sync_ui_from_filter() -> void:
 	if _selected_diffs.is_empty():
 		_selected_diffs = _GoalDiff.DIFFICULTIES.duplicate()
 	_sync_difficulty_buttons()
+	_sync_difficulty_section_visibility()
 	if _notes_ready:
 		_notes_ready.button_pressed = bool(_view_filter.get("notes_ready_only", true))
 	_sync_instrument_icons()
@@ -225,7 +230,9 @@ func _sync_goal_buttons() -> void:
 	for goal_id in _goal_buttons.keys():
 		var btn: Button = _goal_buttons[goal_id]
 		if btn:
-			btn.self_modulate = ACTIVE_MODULATE if goal_id == _selected_goal else INACTIVE_MODULATE
+			var active := _selected_goals.has(goal_id)
+			btn.button_pressed = active
+			btn.self_modulate = ACTIVE_MODULATE if active else INACTIVE_MODULATE
 
 
 func _sync_difficulty_buttons() -> void:
@@ -235,6 +242,18 @@ func _sync_difficulty_buttons() -> void:
 			var active := _selected_diffs.has(diff_id)
 			btn.button_pressed = active
 			btn.self_modulate = ACTIVE_MODULATE if active else INACTIVE_MODULATE
+
+
+func _has_arcade_goal() -> bool:
+	return _selected_goals.has("arcade")
+
+
+func _sync_difficulty_section_visibility() -> void:
+	var show_diffs := _has_arcade_goal()
+	if _diff_caption:
+		_diff_caption.visible = show_diffs
+	if _diff_row:
+		_diff_row.visible = show_diffs
 
 
 func _on_display_mode_pressed(btn: Button) -> void:
@@ -248,12 +267,18 @@ func _on_display_mode_pressed(btn: Button) -> void:
 func _on_goal_pressed(goal_id: String) -> void:
 	if goal_id not in _GoalDiff.GOALS:
 		return
-	_selected_goal = goal_id
+	if _selected_goals.has(goal_id):
+		if _selected_goals.size() <= 1:
+			_sync_goal_buttons()
+			return
+		_selected_goals.erase(goal_id)
+	else:
+		_selected_goals.append(goal_id)
+	_selected_goals.sort_custom(func(a: String, b: String) -> bool:
+		return _GoalDiff.GOALS.find(a) < _GoalDiff.GOALS.find(b)
+	)
 	_sync_goal_buttons()
-	for diff_id in _diff_buttons.keys():
-		var btn: Button = _diff_buttons[diff_id]
-		if btn:
-			btn.text = tr(_GoalDiff.difficulty_label_key(_selected_goal, str(diff_id)))
+	_sync_difficulty_section_visibility()
 	if MusicManager:
 		MusicManager.play_modifier_select_sound()
 
@@ -284,22 +309,21 @@ func _setup_instrument_icons() -> void:
 	_instrument_icons.clear()
 	for spec in [
 		{"id": "drums", "locked": false},
-		{"id": "bass", "locked": true},
+		{"id": "bass", "locked": false},
 	]:
 		var icon := _InstrumentIconScript.new() as SessionInstrumentIcon
 		var inst_id := str(spec.get("id", "drums"))
 		icon.setup(inst_id, bool(spec.get("locked", false)))
-		if not bool(spec.get("locked", false)):
-			if not icon.instrument_selected.is_connected(_on_instrument_selected):
-				icon.instrument_selected.connect(_on_instrument_selected)
+		if not icon.instrument_selected.is_connected(_on_instrument_selected):
+			icon.instrument_selected.connect(_on_instrument_selected)
 		_instrument_row.add_child(icon)
 		_instrument_icons[inst_id] = icon
 	_sync_instrument_icons()
 
 
 func _sync_instrument_icons() -> void:
-	var inst := str(_view_filter.get("instrument", "drums")).strip_edges()
-	if inst != "drums":
+	var inst := str(_view_filter.get("instrument", "drums")).strip_edges().to_lower()
+	if inst != "drums" and inst != "bass":
 		inst = "drums"
 		_view_filter["instrument"] = inst
 	for inst_id in _instrument_icons.keys():
@@ -309,9 +333,10 @@ func _sync_instrument_icons() -> void:
 
 
 func _on_instrument_selected(instrument_id: String) -> void:
-	if str(instrument_id).strip_edges() != "drums":
+	var inst := str(instrument_id).strip_edges().to_lower()
+	if inst != "drums" and inst != "bass":
 		return
-	_view_filter["instrument"] = "drums"
+	_view_filter["instrument"] = inst
 	_sync_instrument_icons()
 	if MusicManager:
 		MusicManager.play_modifier_select_sound()
@@ -323,9 +348,12 @@ func _collect_filter() -> Dictionary:
 		if _display_filtered
 		else _PlaylistCatalog.DISPLAY_MODE_ALL_CHARTS
 	)
+	var goals := _selected_goals.duplicate()
+	if goals.is_empty():
+		goals = [_GoalDiff.DEFAULT_GOAL]
 	return _PlaylistCatalog.normalize_view_filter({
 		"display_mode": mode,
-		"goals": [_selected_goal],
+		"goals": goals,
 		"difficulties": _selected_diffs.duplicate(),
 		"instrument": _view_filter.get("instrument", "drums"),
 		"lanes": _view_filter.get("lanes", 4),

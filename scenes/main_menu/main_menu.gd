@@ -12,12 +12,17 @@ const _MainMenuTipOfDay = preload("res://scenes/main_menu/lib/main_menu_tip_of_d
 const _RhythmDnaCoverLoader = preload("res://scenes/song_select/rhythm_dna/lib/rhythm_dna_cover_loader.gd")
 const _ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
 const _MainMenuNearestAchievement = preload("res://scenes/main_menu/lib/main_menu_nearest_achievement.gd")
-const _LAST_TRACK_COVER_PX := 100
 const _MainMenuActivityFeed = preload("res://scenes/main_menu/lib/main_menu_activity_feed.gd")
 const _SongSelectStrings = preload("res://logic/domain/library/song_select_strings.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
+const _GradeDisplay = preload("res://logic/ui/grade_display.gd")
+const _UiFramedCover = preload("res://logic/ui/ui_framed_cover.gd")
 const _AchievementCardScene = preload("res://scenes/achievements/achievement_card.tscn")
-const _LAST_TRACK_COVER_ACCENT := Color(0.62, 0.86, 0.72, 1.0)
+## Base size; grows to LastTrackBody height so the square fills the row.
+const _LAST_TRACK_COVER_PX := 128
+const _LAST_TRACK_COVER_RADIUS := 10
+const _LAST_TRACK_COVER_BORDER := 2
+const _LAST_TRACK_COVER_ACCENT := Color(0.62, 0.86, 0.72, 0.85)
 
 var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
 @onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
@@ -54,6 +59,8 @@ const _MENU_ICON_SIZE := 20
 @onready var _last_track_difficulty: Label = %LastTrackDifficulty
 @onready var _last_track_accuracy: Label = %LastTrackAccuracy
 @onready var _last_track_grade: Label = %LastTrackGrade
+var _last_track_diff_row: HBoxContainer = null
+var _last_track_diff_zap: Control = null
 @onready var _tip_title_label: Label = %TipTitleLabel
 @onready var _tip_body_label: Label = %TipBodyLabel
 @onready var _tip_icon: TextureRect = %TipIcon
@@ -64,6 +71,12 @@ const _MENU_ICON_SIZE := 20
 @onready var _stat_accuracy_caption: Label = get_node("%s/MiddleRow/StatsPanel/StatsMargin/StatsVBox/StatAccuracyRow/StatAccuracyCaption" % _HUB)
 @onready var _last_track_header_label: Label = get_node("%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackHeaderLabel" % _HUB)
 @onready var _last_track_panel: PanelContainer = get_node("%s/MiddleRow/LastTrackPanel" % _HUB)
+@onready var _last_track_body: HBoxContainer = get_node_or_null(
+	"%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody" % _HUB
+) as HBoxContainer
+@onready var _last_track_cover_frame: PanelContainer = get_node_or_null(
+	"%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody/LastTrackCoverFrame" % _HUB
+) as PanelContainer
 @onready var _nearest_ach_header_label: Label = get_node("%s/NearestAchievementPanel/NearestAchHeaderLabel" % _HUB)
 @onready var _nearest_ach_card_slot: VBoxContainer = %NearestAchCardSlot
 @onready var _nearest_ach_empty_label: Label = %NearestAchEmptyLabel
@@ -74,6 +87,7 @@ const _MENU_ICON_SIZE := 20
 var _nearest_ach_card: PanelContainer = null
 var _refresh_on_show_pending := false
 var _last_track_cover_path := ""
+var _last_track_cover_side := 0.0
 var _nearest_ach_id := ""
 const _QUEST_ICON_FILE := "list-checks.svg"
 const _QUEST_ICON_COLORS: Array[Color] = [
@@ -116,46 +130,118 @@ func _ready():
 		LocaleManager.locale_changed.connect(_on_locale_changed)
 	visibility_changed.connect(_on_visibility_changed)
 	_setup_last_track_cover_frame()
+	_ensure_last_track_diff_row()
+
+
+func _ensure_last_track_diff_row() -> void:
+	if _last_track_diff_row != null or _last_track_difficulty == null:
+		return
+	var parent := _last_track_difficulty.get_parent() as Control
+	if parent == null:
+		return
+	var idx := _last_track_difficulty.get_index()
+	_last_track_diff_row = HBoxContainer.new()
+	_last_track_diff_row.name = "LastTrackDiffRow"
+	_last_track_diff_row.add_theme_constant_override("separation", 6)
+	_last_track_diff_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_last_track_diff_row.visible = false
+	parent.add_child(_last_track_diff_row)
+	parent.move_child(_last_track_diff_row, idx)
+	parent.remove_child(_last_track_difficulty)
+	_last_track_diff_row.add_child(_last_track_difficulty)
+
+
+func _set_last_track_difficulty_row(text: String, tint: Color) -> void:
+	_ensure_last_track_diff_row()
+	if _last_track_difficulty == null:
+		return
+	var show := text.strip_edges() != ""
+	if _last_track_diff_row:
+		_last_track_diff_row.visible = show
+	_last_track_difficulty.visible = show
+	_last_track_difficulty.text = text
+	if not show:
+		if _last_track_diff_zap and is_instance_valid(_last_track_diff_zap):
+			_last_track_diff_zap.queue_free()
+			_last_track_diff_zap = null
+		return
+	_last_track_difficulty.add_theme_color_override("font_color", tint)
+	if _last_track_diff_zap and is_instance_valid(_last_track_diff_zap):
+		_last_track_diff_zap.queue_free()
+		_last_track_diff_zap = null
+	if _last_track_diff_row == null:
+		return
+	_last_track_diff_zap = _UiIconHelper.make_icon_frame("zap.svg", 22, 13, tint)
+	_last_track_diff_row.add_child(_last_track_diff_zap)
+	_last_track_diff_row.move_child(_last_track_diff_zap, 0)
 
 
 func _setup_last_track_cover_frame() -> void:
-	## Match nearest-achievement icon frame, with a slightly tighter pad.
+	## Framed square cover via UiFramedCover (clip + border overlay).
 	if _last_track_cover == null:
 		return
-	var frame := _last_track_cover.get_parent() as PanelContainer
+	var frame := _last_track_cover_frame
+	if frame == null:
+		frame = _find_last_track_cover_frame(_last_track_cover)
 	if frame == null:
 		return
-	var stale := _last_track_cover.get_node_or_null("UiRoundedBorderOverlay")
-	if stale:
-		_last_track_cover.remove_child(stale)
-		stale.queue_free()
-	frame.clip_contents = false
-	frame.clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
-	frame.custom_minimum_size = Vector2(108, 108)
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.05, 0.06, 0.09)
-	box.border_color = Color(
-		_LAST_TRACK_COVER_ACCENT.r,
-		_LAST_TRACK_COVER_ACCENT.g,
-		_LAST_TRACK_COVER_ACCENT.b,
-		0.5
+	_last_track_cover_frame = frame
+	_apply_last_track_cover_frame_style(frame, float(_LAST_TRACK_COVER_PX))
+	if _last_track_body and not _last_track_body.resized.is_connected(_on_last_track_body_resized):
+		_last_track_body.resized.connect(_on_last_track_body_resized)
+	call_deferred("_sync_last_track_cover_to_body")
+
+
+func _find_last_track_cover_frame(from: Node) -> PanelContainer:
+	var n: Node = from
+	while n != null:
+		if n is PanelContainer and str(n.name).begins_with("LastTrackCover"):
+			return n as PanelContainer
+		n = n.get_parent()
+	return null
+
+
+func _on_last_track_body_resized() -> void:
+	_sync_last_track_cover_to_body()
+
+
+func _sync_last_track_cover_to_body() -> void:
+	if _last_track_cover_frame == null or _last_track_body == null:
+		return
+	var body_h := int(round(_last_track_body.size.y))
+	if body_h <= 0:
+		return
+	var side := float(clampi(body_h, _LAST_TRACK_COVER_PX, 168))
+	if is_equal_approx(side, _last_track_cover_side):
+		return
+	_apply_last_track_cover_frame_style(_last_track_cover_frame, side)
+
+
+func _apply_last_track_cover_frame_style(frame: PanelContainer, side: float) -> void:
+	if frame == null or _last_track_cover == null:
+		return
+	_last_track_cover_side = side
+	frame.visible = true
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_UiFramedCover.apply(
+		frame,
+		_last_track_cover,
+		_LAST_TRACK_COVER_RADIUS,
+		_LAST_TRACK_COVER_BORDER,
+		_LAST_TRACK_COVER_ACCENT,
+		Color(0.05, 0.06, 0.09, 1.0),
+		side
 	)
-	box.border_width_top = 3
-	box.border_width_left = 1
-	box.border_width_right = 1
-	box.border_width_bottom = 1
-	box.set_corner_radius_all(10)
-	box.corner_detail = 12
-	box.content_margin_left = 4.0
-	box.content_margin_top = 4.0
-	box.content_margin_right = 4.0
-	box.content_margin_bottom = 4.0
-	frame.add_theme_stylebox_override("panel", box)
-	_last_track_cover.custom_minimum_size = Vector2(100, 100)
-	_last_track_cover.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	_last_track_cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_last_track_cover.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	# Drop heavy rounded-clip helper; achievement shader is already on the TextureRect.
+	_last_track_cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
+
+func _refresh_last_track_cover_mask() -> void:
+	pass
+
+
+func _sync_last_track_cover_mask_size() -> void:
+	pass
 
 
 func _on_visibility_changed() -> void:
@@ -536,6 +622,7 @@ func _on_calendar_day_changed(_new_date: String) -> void:
 	_render_tip_of_day()
 	_update_daily_reset_label()
 
+
 func _on_daily_reset_timer_timeout() -> void:
 	_update_daily_reset_label()
 
@@ -564,7 +651,8 @@ func _render_daily_quests():
 		if not item:
 			continue
 		if item is Control:
-			item.clip_contents = true
+			# clip_contents chops icons against rounded quest-card corners.
+			item.clip_contents = false
 
 		var title_label = item.find_child("QuestTitleLabel", true, false)
 		var desc_label = item.find_child("QuestDescriptionLabel", true, false)
@@ -640,6 +728,11 @@ func _apply_quest_item_style(item: PanelContainer, completed: bool) -> void:
 	shell.border_width_right = 1
 	shell.border_width_bottom = 1
 	shell.set_corner_radius_all(10)
+	# Keep icons clear of the rounded stroke (clip_contents off alone is not enough).
+	shell.content_margin_left = 2.0
+	shell.content_margin_top = 2.0
+	shell.content_margin_right = 2.0
+	shell.content_margin_bottom = 2.0
 	item.add_theme_stylebox_override("panel", shell)
 
 func _apply_quest_progress_style(pb: ProgressBar, completed: bool) -> void:
@@ -694,6 +787,7 @@ func _render_last_track_panel() -> void:
 	var accuracy_text := ""
 	var grade_text := ""
 	var difficulty_text := ""
+	var difficulty_tint := Color(0.72, 0.58, 0.95, 1)
 
 	if has_session:
 		var labels := _resolve_last_track_labels(session, song_path)
@@ -705,17 +799,13 @@ func _render_last_track_panel() -> void:
 		var accuracy := float(session.get("accuracy", 0.0))
 		accuracy_text = "%.2f%%" % accuracy
 		grade_text = str(session.get("grade", ""))
-		difficulty_text = _resolve_last_track_difficulty_label(song_path, session)
-		var grade_color_data = session.get("grade_color", {})
-		if grade_text != "" and _last_track_grade and grade_color_data is Dictionary:
+		var diff_info := _resolve_last_track_difficulty_info(song_path, session)
+		difficulty_text = str(diff_info.get("text", ""))
+		difficulty_tint = diff_info.get("color", difficulty_tint) as Color
+		if grade_text != "" and _last_track_grade:
 			_last_track_grade.add_theme_color_override(
 				"font_color",
-				Color(
-					float(grade_color_data.get("r", 0.95)),
-					float(grade_color_data.get("g", 0.82)),
-					float(grade_color_data.get("b", 0.35)),
-					float(grade_color_data.get("a", 1.0)),
-				)
+				_GradeDisplay.color_from_saved_result(session)
 			)
 
 	var title_label := _last_track_title_label()
@@ -728,9 +818,7 @@ func _render_last_track_panel() -> void:
 		artist_label.text = artist_text
 		artist_label.visible = has_session
 		artist_label.modulate = Color.WHITE
-	if _last_track_difficulty:
-		_last_track_difficulty.text = difficulty_text
-		_last_track_difficulty.visible = difficulty_text != ""
+	_set_last_track_difficulty_row(difficulty_text if has_session else "", difficulty_tint)
 	if _last_track_accuracy:
 		_last_track_accuracy.text = accuracy_text
 		_last_track_accuracy.visible = accuracy_text != ""
@@ -763,6 +851,8 @@ func _render_last_track_panel() -> void:
 				0.78,
 				0.95
 			)
+	call_deferred("_sync_last_track_cover_to_body")
+
 
 func _resolve_last_track_cover(song_path: String) -> Texture2D:
 	return _RhythmDnaCoverLoader.load_cover_for_display(song_path, _LAST_TRACK_COVER_PX)
@@ -774,6 +864,8 @@ func _apply_last_track_cover(song_path: String) -> void:
 	if song_path != _last_track_cover_path:
 		return
 	_last_track_cover.texture = _resolve_last_track_cover(song_path)
+	_refresh_last_track_cover_mask()
+	call_deferred("_refresh_last_track_cover_mask")
 
 
 func _render_activity_feed() -> void:
@@ -1194,12 +1286,20 @@ func _clean_track_label(value: String) -> String:
 	return text
 
 func _resolve_last_track_difficulty_label(song_path: String, session: Dictionary) -> String:
+	return str(_resolve_last_track_difficulty_info(song_path, session).get("text", ""))
+
+
+func _resolve_last_track_difficulty_info(song_path: String, session: Dictionary) -> Dictionary:
+	var empty := {"text": "", "decimal": 0.0, "color": Color(0.72, 0.58, 0.95, 1)}
 	if song_path == "" or SongLibrary == null:
-		return ""
+		return empty
 	var instrument := str(session.get("instrument", ""))
 	var inst_key := "drums"
 	if instrument.find("еркусс") != -1 or instrument.to_lower().find("drum") != -1:
 		inst_key = "drums"
+	var lanes := int(session.get("lanes", ChartDifficultyAnalyzer.CANONICAL_STATS_LANES))
+	if lanes <= 0:
+		lanes = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES
 	var modes_to_try: Array[String] = []
 	var session_mode := str(session.get("generation_mode", session.get("mode", ""))).strip_edges().to_lower()
 	if session_mode != "":
@@ -1208,14 +1308,18 @@ func _resolve_last_track_difficulty_label(song_path: String, session: Dictionary
 		if mode not in modes_to_try:
 			modes_to_try.append(mode)
 	for mode in modes_to_try:
-		var variant := SongLibrary.get_chart_difficulty_variant(song_path, inst_key, mode)
+		var variant := SongLibrary.get_chart_difficulty_variant(song_path, inst_key, mode, lanes)
 		if variant.is_empty():
 			continue
 		var decimal := ChartDifficultyAnalyzer.decimal_rating_from_stats(variant)
 		if decimal <= 0.0:
 			continue
-		return ChartDifficultyAnalyzer.format_decimal_rating(decimal, true)
-	return ""
+		return {
+			"text": ChartDifficultyAnalyzer.format_decimal_rating(decimal, true),
+			"decimal": decimal,
+			"color": ChartDifficultyAnalyzer.rating_color_for_decimal(decimal),
+		}
+	return empty
 
 func _compute_overall_accuracy() -> float:
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()

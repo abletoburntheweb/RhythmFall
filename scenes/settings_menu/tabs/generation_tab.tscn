@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://bgensettings0001"]
+[gd_scene load_steps=5 format=3 uid="uid://bgensettings0001"]
 
 [ext_resource type="Script" path="res://scenes/settings_menu/tabs/generation_tab.gd" id="1_gen"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="3_confirm"]
+[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="4_notice"]
 
 [node name="GenerationTab" type="Control"]
 layout_mode = 3
@@ -126,6 +127,66 @@ min_value = 1.0
 max_value = 65535.0
 value = 5000.0
 alignment = 1
+
+[node name="GpuStackHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Ускорение стемов (GPU). Нужны интернет и несколько минут; игра будет заблокирована."
+autowrap_mode = 3
+
+[node name="GpuStackStatusLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.9, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "Сейчас: —"
+autowrap_mode = 3
+
+[node name="GpuStackRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GpuStackLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Ускорение стемов"
+
+[node name="GpuStackOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackRow"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
+selected = 0
+item_count = 4
+popup/item_0/text = "Авто"
+popup/item_0/id = 0
+popup/item_1/text = "NVIDIA"
+popup/item_1/id = 1
+popup/item_2/text = "AMD"
+popup/item_2/id = 2
+popup/item_3/text = "CPU"
+popup/item_3/id = 3
+
+[node name="GpuStackActionsRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="GpuStackScanButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+text = "Сканировать"
+
+[node name="GpuStackApplyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+text = "Применить"
 
 [node name="ParamsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
@@ -318,6 +379,10 @@ text = "Ноты для всех треков"
 unique_name_in_owner = true
 layout_mode = 1
 
+[node name="NoticeOverlay" parent="." instance=ExtResource("4_notice")]
+unique_name_in_owner = true
+layout_mode = 1
+
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/ServerHelpLink" to="." method="_on_server_help_link_pressed"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/ScopeHelpLink" to="." method="_on_scope_help_link_pressed"]
 [connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/GenerationStatusModeRow/GenerationStatusModeOption" to="." method="_on_generation_status_mode_selected"]
@@ -332,3 +397,5 @@ layout_mode = 1
 [connection signal="focus_exited" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_focus_exited"]
 [connection signal="text_submitted" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_submitted"]
 [connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerPortHBox/GenerationServerPortSpin" to="." method="_on_generation_server_port_changed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow/GpuStackScanButton" to="." method="_on_gpu_stack_scan_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow/GpuStackApplyButton" to="." method="_on_gpu_stack_apply_pressed"]

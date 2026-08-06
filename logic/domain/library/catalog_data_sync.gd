@@ -1,4 +1,4 @@
-# logic/utils/catalog_data_sync.gd
+# logic/domain/library/catalog_data_sync.gd
 extends RefCounted
 class_name CatalogDataSync
 
@@ -104,6 +104,35 @@ static func _sync_shop_data() -> void:
 	JsonUtils.write_json(user_path, merged, false, true)
 
 
+const _REMOVED_COVER_ITEM_IDS := [
+	"covers_default",
+	"covers_geometric",
+	"covers_flowing_lines",
+	"covers_music_note",
+	"covers_ink_splash",
+	"covers_vinyl",
+	"covers_spiderweb",
+	"covers_explosion",
+	"covers_shards",
+	"covers_cross",
+	"covers_brush",
+	"covers_falling_blocks",
+	"pixel_amp",
+	"covers_shatter",
+	"covers_marble_flow",
+]
+
+
+static func _is_removed_shop_item(item: Dictionary) -> bool:
+	var item_id := str(item.get("item_id", "")).strip_edges()
+	if item_id == "":
+		return false
+	if item_id in _REMOVED_COVER_ITEM_IDS or item_id.begins_with("covers_"):
+		return true
+	var category := str(item.get("category", "")).strip_edges()
+	return category == "Обложки" or category.to_lower() == "covers"
+
+
 static func merge_shop_items(user: Dictionary, bundled: Dictionary) -> Dictionary:
 	var user_items: Array = user.get("items", []) if user.get("items") is Array else []
 	var bundled_items: Array = bundled.get("items", [])
@@ -128,6 +157,9 @@ static func merge_shop_items(user: Dictionary, bundled: Dictionary) -> Dictionar
 			continue
 		var item_id := str(raw["item_id"])
 		if bundled_ids.has(item_id):
+			continue
+		# Covers removed from shop; orphaned user:// rows must not reappear under «Все».
+		if _is_removed_shop_item(raw as Dictionary):
 			continue
 		merged_items.append(raw.duplicate(true))
 

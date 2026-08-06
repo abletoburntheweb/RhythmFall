@@ -3,12 +3,19 @@ extends RefCounted
 class_name GenerationGoalDifficulty
 
 const GOALS := ["original", "arcade"]
-const DIFFICULTIES := ["relaxed", "standard", "dense"]
+const DIFFICULTIES := ["easy", "medium", "hard"]
 const READY_INSTRUMENTS := ["drums", "bass"]
 
 const DEFAULT_GOAL := "original"
-const DEFAULT_DIFFICULTY := "standard"
+const DEFAULT_DIFFICULTY := "medium"
 const DEFAULT_READY_INSTRUMENT := "drums"
+
+# Legacy difficulty ids still present in settings / on-disk stems.
+const _LEGACY_DIFFICULTY := {
+	"relaxed": "easy",
+	"standard": "medium",
+	"dense": "hard",
+}
 
 # Legacy int scope (migrated to ready-axes on settings load). Kept for one-shot remap only.
 const SCOPE_CURRENT := 0
@@ -18,32 +25,32 @@ const SCOPE_ALL := 3
 const SCOPE_MAX := 3
 
 const _INTENT_TO_PAIR := {
-	"original": {"goal": "original", "difficulty": "standard"},
-	"groove": {"goal": "arcade", "difficulty": "standard"},
-	"sparse": {"goal": "original", "difficulty": "relaxed"},
-	"arcade": {"goal": "arcade", "difficulty": "standard"},
+	"original": {"goal": "original", "difficulty": "medium"},
+	"groove": {"goal": "arcade", "difficulty": "medium"},
+	"sparse": {"goal": "original", "difficulty": "easy"},
+	"arcade": {"goal": "arcade", "difficulty": "medium"},
 }
 
 const _PAIR_TO_INTENT := {
-	"original|relaxed": "sparse",
-	"original|standard": "original",
-	"original|dense": "original",
-	"arcade|relaxed": "sparse",
-	"arcade|standard": "groove",
-	"arcade|dense": "groove",
+	"original|easy": "sparse",
+	"original|medium": "original",
+	"original|hard": "original",
+	"arcade|easy": "sparse",
+	"arcade|medium": "groove",
+	"arcade|hard": "groove",
 }
 
 const _DIFFICULTY_OPTION_IDS := {
-	"relaxed": 0,
-	"standard": 1,
-	"dense": 2,
+	"easy": 0,
+	"medium": 1,
+	"hard": 2,
 }
 
 
 static func pair_key(goal: String, difficulty: String) -> String:
 	return "%s|%s" % [
 		goal.strip_edges().to_lower(),
-		difficulty.strip_edges().to_lower(),
+		sanitize_difficulty(difficulty),
 	]
 
 
@@ -52,7 +59,7 @@ static func is_goal(value: String) -> bool:
 
 
 static func is_difficulty(value: String) -> bool:
-	return value.strip_edges().to_lower() in DIFFICULTIES
+	return sanitize_difficulty(value) in DIFFICULTIES
 
 
 static func intent_for(goal: String, difficulty: String) -> String:
@@ -67,7 +74,7 @@ static func from_intent(intent_id: String) -> Dictionary:
 
 
 static func difficulty_option_id(difficulty: String) -> int:
-	return int(_DIFFICULTY_OPTION_IDS.get(difficulty.strip_edges().to_lower(), 1))
+	return int(_DIFFICULTY_OPTION_IDS.get(sanitize_difficulty(difficulty), 1))
 
 
 static func difficulty_from_option_id(option_id: int) -> String:
@@ -80,7 +87,7 @@ static func difficulty_from_option_id(option_id: int) -> String:
 static func blurb_key(goal: String, difficulty: String) -> String:
 	return "GEN_GOAL_DIFF_BLURB_%s_%s" % [
 		goal.strip_edges().to_upper(),
-		difficulty.strip_edges().to_upper(),
+		sanitize_difficulty(difficulty).to_upper(),
 	]
 
 
@@ -109,11 +116,13 @@ static func sanitize_goal(value: String) -> String:
 
 static func sanitize_difficulty(value: String) -> String:
 	var key := value.strip_edges().to_lower()
+	if _LEGACY_DIFFICULTY.has(key):
+		key = str(_LEGACY_DIFFICULTY[key])
 	return key if key in DIFFICULTIES else DEFAULT_DIFFICULTY
 
 
 static func chart_stem(goal: String, difficulty: String) -> String:
-	# Original is one documentary chart → filename stem "original" (not original_standard).
+	# Original is one documentary chart → filename stem "original" (not original_medium).
 	if sanitize_goal(goal) == "original":
 		return "original"
 	return "%s_%s" % [sanitize_goal(goal), sanitize_difficulty(difficulty)]
@@ -130,9 +139,13 @@ static func is_chart_stem(value: String) -> bool:
 	var key := value.strip_edges().to_lower()
 	if key in all_stems():
 		return true
-	# Legacy on-disk / metadata stems: original_standard, original_relaxed, original_dense.
+	# Legacy on-disk / metadata stems.
 	if key.begins_with("original_"):
-		return key.substr("original_".length()) in DIFFICULTIES
+		var legacy_d := key.substr("original_".length())
+		return sanitize_difficulty(legacy_d) in DIFFICULTIES
+	if key.begins_with("arcade_"):
+		var legacy_d2 := key.substr("arcade_".length())
+		return sanitize_difficulty(legacy_d2) in DIFFICULTIES
 	return false
 
 
@@ -141,8 +154,28 @@ static func stem_read_aliases(stem: String) -> Array[String]:
 	var key := stem.strip_edges().to_lower()
 	var out: Array[String] = []
 	if key == "original" or key.begins_with("original_"):
-		for s in ["original", "original_standard", "original_relaxed", "original_dense"]:
+		for s in ["original", "original_standard", "original_medium", "original_relaxed", "original_easy", "original_dense", "original_hard"]:
 			out.append(s)
+		return out
+	var pair := pair_from_stem(key)
+	var goal := str(pair.get("goal", ""))
+	var diff := sanitize_difficulty(str(pair.get("difficulty", DEFAULT_DIFFICULTY)))
+	if goal == "arcade":
+		var canonical := chart_stem("arcade", diff)
+		out.append(canonical)
+		# Legacy difficulty tokens in filenames.
+		var legacy_token: String = ""
+		match diff:
+			"easy":
+				legacy_token = "relaxed"
+			"medium":
+				legacy_token = "standard"
+			"hard":
+				legacy_token = "dense"
+		if legacy_token != "":
+			var legacy_stem := "arcade_%s" % legacy_token
+			if not out.has(legacy_stem):
+				out.append(legacy_stem)
 		return out
 	out.append(key)
 	return out
@@ -162,6 +195,8 @@ static func sanitize_ready_string_list(raw: Variant, allowed: Array, fallback: S
 	if raw is Array or raw is PackedStringArray:
 		for item in raw:
 			var key := str(item).strip_edges().to_lower()
+			if allowed == DIFFICULTIES:
+				key = sanitize_difficulty(key)
 			if key == "" or not allowed.has(key):
 				continue
 			if out.has(key):
@@ -195,12 +230,17 @@ static func resolve_ready_axes(
 	var instrument := sanitize_ready_instrument(
 		cur_instrument if cur_instrument != "" else str(src.get("last_generation_instrument", DEFAULT_READY_INSTRUMENT))
 	)
+	var instruments := sanitize_ready_string_list(
+		src.get("generation_ready_instruments", []), READY_INSTRUMENTS, instrument
+	)
+	# Style chip instrument must always be in the ready set — otherwise Play looks for
+	# bass while Generate/ready checks only drums (default ready list).
+	if not instruments.has(instrument):
+		instruments.append(instrument)
 	return {
 		"goals": sanitize_ready_string_list(src.get("generation_ready_goals", []), GOALS, goal),
 		"diffs": sanitize_ready_string_list(src.get("generation_ready_diffs", []), DIFFICULTIES, diff),
-		"instruments": sanitize_ready_string_list(
-			src.get("generation_ready_instruments", []), READY_INSTRUMENTS, instrument
-		),
+		"instruments": instruments,
 	}
 
 
@@ -302,9 +342,13 @@ static func pair_from_stem(stem: String) -> Dictionary:
 	if key == "original" or key.begins_with("original_"):
 		if key.begins_with("original_"):
 			var legacy_d := key.substr("original_".length())
-			if legacy_d in DIFFICULTIES:
-				return {"goal": "original", "difficulty": legacy_d}
+			return {"goal": "original", "difficulty": sanitize_difficulty(legacy_d)}
 		return {"goal": "original", "difficulty": DEFAULT_DIFFICULTY}
+	if key.begins_with("arcade_"):
+		var d_token := key.substr("arcade_".length())
+		# Tag / lanes suffixes: arcade_hard_p03, arcade_dense_lanes4
+		var base := d_token.split("_")[0]
+		return {"goal": "arcade", "difficulty": sanitize_difficulty(base)}
 	for d in DIFFICULTIES:
 		if chart_stem("arcade", d) == key:
 			return {"goal": "arcade", "difficulty": d}
@@ -347,9 +391,9 @@ static func _difficulty_abbrev(goal: String, difficulty: String) -> String:
 			return orig_abbrev
 		var ru := TranslationServer.get_locale().begins_with("ru")
 		match d:
-			"relaxed":
+			"easy":
 				return "К" if ru else "B"
-			"dense":
+			"hard":
 				return "А" if ru else "A"
 			_:
 				return "Ч" if ru else "R"
@@ -358,9 +402,9 @@ static func _difficulty_abbrev(goal: String, difficulty: String) -> String:
 	if abbrev != key:
 		return abbrev
 	match d:
-		"relaxed":
+		"easy":
 			return "E"
-		"dense":
+		"hard":
 			return "H"
 		_:
 			return "M"

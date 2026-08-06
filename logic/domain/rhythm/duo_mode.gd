@@ -1,4 +1,4 @@
-# logic/utils/duo_mode.gd
+# logic/domain/rhythm/duo_mode.gd
 extends RefCounted
 class_name DuoMode
 

@@ -111,19 +111,24 @@ func _input(event: InputEvent) -> void:
 func _try_handle_nav_input(event: InputEvent) -> bool:
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return false
+	var key_event := event as InputEventKey
+	if key_event.keycode == KEY_SLASH and search_bar:
+		if not search_bar.has_focus():
+			search_bar.grab_focus()
+		return true
 	if search_bar and search_bar.has_focus():
 		return false
 	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
 		return false
-	if event.keycode >= KEY_1 and event.keycode <= KEY_6:
-		var index := int(event.keycode - KEY_1)
+	if key_event.keycode >= KEY_1 and key_event.keycode <= KEY_6:
+		var index := int(key_event.keycode - KEY_1)
 		return _select_section_by_index(index)
 	if _section_nodes.is_empty():
 		return false
-	match event.keycode:
-		KEY_UP, KEY_LEFT:
+	match key_event.keycode:
+		KEY_UP, KEY_LEFT, KEY_BRACKETLEFT, KEY_COMMA:
 			return _navigate_question(-1)
-		KEY_DOWN, KEY_RIGHT:
+		KEY_DOWN, KEY_RIGHT, KEY_BRACKETRIGHT, KEY_PERIOD:
 			return _navigate_question(1)
 	return false
 
@@ -173,10 +178,10 @@ func _apply_layout_balance() -> void:
 
 
 func apply_contextual_overlay_layout() -> void:
-	# Full-screen help over the current host (keep host alive). Soft dim only.
+	# Full-screen help over the current host (keep host alive). Dense dim so Back stays readable.
 	var bg := get_node_or_null("Background") as ColorRect
 	if bg:
-		bg.color = Color(0.02, 0.03, 0.05, 0.72)
+		bg.color = Color(0.02, 0.03, 0.05, 0.94)
 		bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	var main := get_node_or_null("MainVBox") as Control
 	if main:
@@ -186,6 +191,8 @@ func apply_contextual_overlay_layout() -> void:
 		main.offset_top = 10.0
 		main.offset_right = -24.0
 		main.offset_bottom = -10.0
+	if back_button:
+		UiIconHelper.apply_standard_back_button(back_button)
 	_apply_layout_balance()
 	set_meta("help_contextual_overlay", true)
 

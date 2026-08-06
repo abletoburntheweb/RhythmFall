@@ -245,7 +245,7 @@ static func _format_genre_gap(genres: Variant) -> String:
 	var gap := int(round(pct1 - pct2))
 	if gap < 3:
 		return ""
-	return TranslationServer.translate("PROFILE_SHARE_FACT_GENRE_GAP") % [name1, gap, name2]
+	return TranslationServer.translate("PROFILE_SHARE_FACT_GENRE_GAP") % [name1, name2, gap]
 
 
 static func _genre_row_name(row: Dictionary) -> String:

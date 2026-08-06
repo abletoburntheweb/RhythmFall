@@ -1,4 +1,4 @@
-# logic/music_manager.gd
+# logic/services/music_manager.gd
 extends Node
 
 const BGM_DIR = "res://assets/audio/music/"
@@ -16,6 +16,8 @@ const DEFAULT_CANCEL_SOUND = "cancel_click.wav"
 const ANALYSIS_SUCCESS_SOUND = "analysis_success.wav"
 const ANALYSIS_ERROR_SOUND = "analysis_error.wav"
 const STATUS_TOAST_SOUND = "status_toast.wav"
+## Optional sparkle/diary toast; falls back to achievement SFX if missing.
+const DIARY_CELEBRATION_SOUND = "diary_celebration.wav"
 const DEFAULT_ACHIEVEMENT_SOUND = "achievement_unlocked.wav"
 const SHOP_PURCHASE_SOUND = "shop_purchase.wav"
 const SHOP_APPLY_SOUND = "shop_apply.wav"
@@ -194,11 +196,23 @@ func _play_stream_on(player: AudioStreamPlayer, stream: AudioStream, volume_pct:
 		return
 	if restart_if_playing and player.playing:
 		player.stop()
+	_enable_stream_loop_if_supported(stream)
 	player.stream = stream
 	player.volume_db = linear_to_db(volume_pct / 100.0)
 	if player == music_player:
 		_apply_game_playback_rate_to_player()
 	player.play(position)
+
+
+func _enable_stream_loop_if_supported(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	# Native loop survives OS suspend better than finished→play(0) alone.
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+	elif stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+	# WAV keeps finished→replay via _connect_menu_loop (loop_end needs sample frames).
 
 
 func _ensure_music_bus() -> int:
@@ -432,12 +446,17 @@ func cancel_menu_music_fade() -> void:
 func fade_out_menu_music(duration: float = 1.0) -> void:
 	_cancel_menu_music_fade()
 	_menu_music_intentionally_silent = true
-	if music_player == null or not music_player.playing:
-		return
-	if current_menu_music_file == "" and current_screen_ambient_file == "":
-		return
 	was_menu_music_playing_before_shop = false
 	menu_music_position_before_shop = 0.0
+	if music_player == null:
+		return
+	if current_menu_music_file == "" and current_screen_ambient_file == "":
+		if music_player.playing:
+			music_player.stop()
+		return
+	if not music_player.playing:
+		music_player.volume_db = -80.0
+		return
 	var start_db := music_player.volume_db
 	var tween := create_tween()
 	_menu_music_fade_tween = tween
@@ -445,6 +464,7 @@ func fade_out_menu_music(duration: float = 1.0) -> void:
 	tween.tween_callback(func() -> void:
 		if music_player:
 			music_player.stop()
+			music_player.volume_db = -80.0
 		_menu_music_fade_tween = null
 	)
 
@@ -457,6 +477,11 @@ func fade_in_menu_music(duration: float = 1.0, restart: bool = true) -> void:
 	var track := current_menu_music_file
 	if track == "":
 		track = DEFAULT_MENU_MUSIC
+	# Stop any faded mid-track playback first so volume restore cannot unmute it.
+	if music_player and music_player.playing:
+		music_player.stop()
+	if music_player:
+		music_player.volume_db = -80.0
 	play_menu_music(track, restart)
 	if music_player == null:
 		return
@@ -470,6 +495,10 @@ func fade_in_menu_music(duration: float = 1.0, restart: bool = true) -> void:
 
 func should_restart_menu_music() -> bool:
 	return music_player == null or not music_player.playing
+
+
+func is_menu_music_intentionally_silent() -> bool:
+	return _menu_music_intentionally_silent
 
 func resume_menu_music():
 	if current_menu_music_file != "":
@@ -530,14 +559,30 @@ func on_app_focus_restored() -> void:
 		is_ambient = menu_track != ""
 	if menu_track == "":
 		return
-	var pos := _saved_playback_position_on_unfocus
-	music_player.stop()
-	if is_ambient:
-		play_screen_ambient_music(menu_track, true)
-	else:
-		play_menu_music(menu_track, true)
-	if pos > 0.05:
+	# Prefer resume on the already-loaded stream. restart=true reloads/decodes
+	# the whole file and feels like a long stall after a long minimize.
+	var pos := _menu_resume_position(_saved_playback_position_on_unfocus)
+	if music_player.stream != null:
 		music_player.play(pos)
+		_connect_menu_loop()
+		return
+	if is_ambient:
+		play_screen_ambient_music(menu_track, false)
+	else:
+		play_menu_music(menu_track, false)
+	if pos > 0.05 and music_player:
+		music_player.play(pos)
+
+
+func _menu_resume_position(saved_pos: float) -> float:
+	var pos := maxf(0.0, saved_pos)
+	if music_player == null or music_player.stream == null:
+		return pos
+	var length := music_player.stream.get_length()
+	# Track finished (or nearly) while backgrounded — loop from the start.
+	if length > 0.0 and (pos <= 0.05 or pos >= length - 0.35):
+		return 0.0
+	return pos
 
 func _update_active_sound_paths():
 	var active_kick_id = PlayerDataManager.get_active_item("Kick")
@@ -573,6 +618,10 @@ func set_music_volume(volume: float):
 
 func set_menu_music_volume(volume: float):
 	_menu_music_volume_pct = volume
+	# While menu BGM is intentionally faded out (settings/shop/library), do not
+	# snap volume back — that briefly unmutes the old playback position.
+	if _menu_music_intentionally_silent:
+		return
 	if music_player and (current_menu_music_file != "" or current_screen_ambient_file != ""):
 		music_player.volume_db = linear_to_db(volume / 100.0)
 
@@ -772,6 +821,15 @@ func play_status_toast() -> void:
 	if FileAccess.file_exists(full_path):
 		play_sfx(STATUS_TOAST_SOUND)
 
+
+func play_diary_celebration() -> void:
+	var full_path := SFX_DIR + DIARY_CELEBRATION_SOUND
+	if FileAccess.file_exists(full_path):
+		play_sfx(DIARY_CELEBRATION_SOUND)
+		return
+	play_achievement_sound()
+
+
 func play_modal_popup():
 	play_sfx(MODAL_POPUP_SOUND)
 
@@ -948,10 +1006,13 @@ func update_volumes_from_settings():
 	_menu_music_volume_pct = SettingsManager.get_menu_music_volume() if SettingsManager.has_method("get_menu_music_volume") else _menu_music_volume_pct
 	if current_game_music_file != "":
 		set_music_volume(_game_music_volume_pct)
-	if current_menu_music_file != "":
-		set_menu_music_volume(_menu_music_volume_pct)
-	if current_screen_ambient_file != "":
-		set_menu_music_volume(_menu_music_volume_pct)
+	# While menu BGM is intentionally silent (settings/shop/…), do not snap volume
+	# back onto a still-fading stream — that briefly restores the old position.
+	if not _menu_music_intentionally_silent:
+		if current_menu_music_file != "":
+			set_menu_music_volume(_menu_music_volume_pct)
+		if current_screen_ambient_file != "":
+			set_menu_music_volume(_menu_music_volume_pct)
 	set_sfx_volume(SettingsManager.get_effects_volume())
 	set_hit_sounds_volume(SettingsManager.get_hit_sounds_volume())
 	set_metronome_volume(SettingsManager.get_metronome_volume())

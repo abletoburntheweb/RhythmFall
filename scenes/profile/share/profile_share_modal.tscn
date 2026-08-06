@@ -48,9 +48,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 0.0
+offset_right = -24.0
+offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="BackButton" type="Button" parent="Container"]
 unique_name_in_owner = true
@@ -108,6 +112,13 @@ alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
+
+[node name="CopyButton" type="Button" parent="Container/BodyCenter/Card/CardMargin/ContentVBox/ButtonsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Copy"
 
 [node name="SaveButton" type="Button" parent="Container/BodyCenter/Card/CardMargin/ContentVBox/ButtonsRow"]
 unique_name_in_owner = true

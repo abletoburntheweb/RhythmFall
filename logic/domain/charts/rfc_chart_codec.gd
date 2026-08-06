@@ -1,4 +1,4 @@
-# logic/utils/rfc_chart_codec.gd
+# logic/domain/charts/rfc_chart_codec.gd
 extends RefCounted
 class_name RfcChartCodec
 

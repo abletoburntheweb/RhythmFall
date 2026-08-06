@@ -43,6 +43,28 @@ const INTENT_ICON_ALTERNATES := {
 	"sparse": ["between-horizontal-start.svg", "eraser.svg"],
 }
 
+const GOAL_ICONS := {
+	"original": "audio-lines.svg",
+	"arcade": "gamepad-2.svg",
+}
+
+const GOAL_ICON_COLORS := {
+	"original": Color(0.52, 0.88, 0.72, 1.0),
+	"arcade": Color(1.0, 0.58, 0.32, 1.0),
+}
+
+const DIFF_ICONS := {
+	"easy": "feather.svg",
+	"medium": "circle-check.svg",
+	"hard": "flame_gen.svg",
+}
+
+const DIFF_ICON_COLORS := {
+	"easy": Color(0.62, 0.82, 0.96, 1.0),
+	"medium": Color(0.55, 0.78, 0.98, 1.0),
+	"hard": Color(1.0, 0.58, 0.32, 1.0),
+}
+
 const MODE_ICON_COLORS := {
 	"minimal": Color(0.62, 0.82, 0.96, 1.0),
 	"basic": Color(0.55, 0.78, 0.98, 1.0),
@@ -120,6 +142,25 @@ const _INSTRUMENT_TITLE_KEYS := {
 }
 
 
+static func localized_goal(goal_id: String) -> String:
+	var goal := goal_id.strip_edges().to_lower()
+	if goal in GOAL_ICONS:
+		return TranslationServer.translate("GEN_GOAL_%s" % goal.to_upper())
+	return localized_mode(goal_id)
+
+
+static func resolve_goal_difficulty(entry: Dictionary) -> Dictionary:
+	var goal := _GoalDiff.sanitize_goal(str(entry.get("goal", "")))
+	var difficulty := _GoalDiff.sanitize_difficulty(str(entry.get("difficulty", "")))
+	if goal == "" or difficulty == "":
+		var pair := _GoalDiff.from_intent(str(entry.get("intent", "")).strip_edges().to_lower())
+		if goal == "":
+			goal = str(pair.get("goal", _GoalDiff.DEFAULT_GOAL))
+		if difficulty == "":
+			difficulty = str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+	return {"goal": goal, "difficulty": difficulty}
+
+
 static func localized_intent(intent_id: String) -> String:
 	var intent := intent_id.strip_edges().to_lower()
 	if intent in INTENT_ICONS:
@@ -191,31 +232,40 @@ static func fill_slot_chips(container: BoxContainer, entry: Dictionary) -> void:
 		return
 	container.add_theme_constant_override("separation", 12)
 	var instrument_id := str(entry.get("instrument", "drums")).to_lower()
-	var intent := str(entry.get("intent", "")).strip_edges().to_lower()
-	var mode := str(entry.get("mode", "basic")).to_lower()
-	var display_key := intent if intent in INTENT_ICONS else mode
+	var style := resolve_goal_difficulty(entry)
+	var goal := str(style.get("goal", "original"))
+	var difficulty := str(style.get("difficulty", "medium"))
 	var lanes := int(entry.get("lanes", 4))
 	var inst_icon_key := entry_instrument_icon_key(instrument_id)
 	var inst_tint: Color = INSTRUMENT_ICON_COLORS.get(instrument_id, Color(0.38, 0.78, 0.74, 1.0))
-	var tag_icon: String = INTENT_ICONS.get(display_key, MODE_ICONS.get(mode, "circle-check.svg"))
-	var tag_tint: Color = INTENT_ICON_COLORS.get(display_key, MODE_ICON_COLORS.get(mode, Color(0.55, 0.78, 0.98, 1.0)))
-	var tag_label := localized_intent(display_key) if display_key in INTENT_ICONS else localized_mode(mode)
+	var goal_icon: String = GOAL_ICONS.get(goal, INTENT_ICONS.get("original", "audio-lines.svg"))
+	var goal_tint: Color = GOAL_ICON_COLORS.get(goal, INTENT_ICON_COLORS.get("original", Color.WHITE))
+	var goal_label := localized_goal(goal)
 	container.add_child(_make_slot_tag(
 		_slot_label_letter(localized_instrument(instrument_id)),
 		INSTRUMENT_ICONS.get(inst_icon_key, "drum.svg"),
 		inst_tint,
 	))
 	container.add_child(_make_slot_tag(
-		_slot_label_letter(tag_label),
-		tag_icon,
-		tag_tint,
+		_slot_label_letter(goal_label),
+		goal_icon,
+		goal_tint,
 	))
+	if goal == "arcade":
+		var diff_icon: String = DIFF_ICONS.get(difficulty, "circle-check.svg")
+		var diff_tint: Color = DIFF_ICON_COLORS.get(difficulty, Color(0.55, 0.78, 0.98, 1.0))
+		var diff_label := TranslationServer.translate(_GoalDiff.difficulty_label_key(goal, difficulty))
+		container.add_child(_make_slot_tag(
+			_slot_label_letter(diff_label),
+			diff_icon,
+			diff_tint,
+		))
 	container.add_child(_make_slot_tag(
 		str(lanes),
 		"layers.svg",
 		Color(0.55, 0.72, 0.88, 1.0),
 	))
-	if mode == "custom":
+	if str(entry.get("mode", "custom")).to_lower() == "custom":
 		for param in _CUSTOM_SLOT_PARAMS:
 			var entry_key: String = "grid_snap_strength" if param == "grid_snap" else param
 			container.add_child(_make_value_chip(param, int(entry.get(entry_key, 0))))
@@ -255,7 +305,7 @@ static func _slot_label_letter(localized: String) -> String:
 	return text.substr(0, 1).to_upper()
 
 
-static func _make_slot_tag(text: String, icon_file: String, tint: Color, icon_px: int = 20) -> HBoxContainer:
+static func _make_slot_tag(text: String, icon_file: String, tint: Color, icon_px: int = 22) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	row.size_flags_vertical = Control.SIZE_SHRINK_CENTER

@@ -45,6 +45,44 @@ static func build_for_route(
 		return _fail(ERROR_EMPTY_SCOPE, template)
 	var effective_config := run_config.duplicate(true) if not run_config.is_empty() else _MarathonRouteRolls.rolled_config(template)
 	effective_config = _MarathonSessionConfig.resolve_effective_run_config(effective_config, template)
+	var built := _build_route_with_config(template, group_id, effective_config, require_playable)
+	if bool(built.get("ok", false)):
+		return built
+	# Narrow chart style (e.g. Arcade-only roll) often blocks routes that work with both styles.
+	# When the player can edit style, widen once and retry.
+	var err := str(built.get("error", ""))
+	var style_locked := _MarathonSessionConfig.is_setup_field_locked(template, "chart_style")
+	if (
+		not style_locked
+		and (err == ERROR_NOT_ENOUGH_SONGS or err == ERROR_EMPTY_SCOPE or err == ERROR_DURATION_SHORT)
+		and _is_narrow_chart_style(effective_config)
+	):
+		var widened := effective_config.duplicate(true)
+		widened["generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_ALL
+		widened["generation_modes_allowed"] = []
+		var retry := _build_route_with_config(template, group_id, widened, require_playable)
+		if bool(retry.get("ok", false)):
+			retry["chart_style_auto_widened"] = true
+			return retry
+	return built
+
+
+static func _is_narrow_chart_style(config: Dictionary) -> bool:
+	var policy := str(config.get("generation_mode_policy", _EndlessSessionConfig.GEN_MODE_POLICY_ALL))
+	if policy == _EndlessSessionConfig.GEN_MODE_POLICY_ALL:
+		return false
+	var allowed: Array = config.get("generation_modes_allowed", [])
+	if allowed.is_empty():
+		return false
+	return allowed.size() < _EndlessSessionConfig.UI_CHART_STYLE_GOALS.size()
+
+
+static func _build_route_with_config(
+	template: Dictionary,
+	group_id: String,
+	effective_config: Dictionary,
+	require_playable: bool
+) -> Dictionary:
 	var scope_config := _scope_config_for_template(template, effective_config)
 	var policy := _MarathonRouteLength.policy_from_template(template)
 	var min_required := int(policy.get("min_songs_required", 3))
@@ -124,6 +162,7 @@ static func build_for_route(
 		"length_policy": policy,
 		"estimated_duration_sec": estimated_sec,
 		"has_finale": bool(policy.get("has_finale", false)),
+		"chart_style_auto_widened": false,
 	}
 
 

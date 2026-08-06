@@ -1,4 +1,4 @@
-# logic/utils/accuracy_timeline.gd
+# scenes/victory_screen/lib/accuracy_timeline.gd
 extends RefCounted
 class_name AccuracyTimeline
 

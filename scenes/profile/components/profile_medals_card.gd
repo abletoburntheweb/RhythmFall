@@ -1,4 +1,4 @@
-# scenes/profile/profile_medals_card.gd
+# scenes/profile/components/profile_medals_card.gd
 extends PanelContainer
 
 const _TrackMedals = preload("res://logic/domain/library/track_medals.gd")

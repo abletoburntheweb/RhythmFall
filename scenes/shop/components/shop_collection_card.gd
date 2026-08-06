@@ -1,4 +1,4 @@
-# scenes/shop/shop_collection_card.gd
+# scenes/shop/components/shop_collection_card.gd
 extends PanelContainer
 
 signal pressed(collection_id: String)

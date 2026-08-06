@@ -1,4 +1,4 @@
-# logic/utils/track_medals.gd
+# logic/domain/library/track_medals.gd
 class_name TrackMedals
 extends RefCounted
 

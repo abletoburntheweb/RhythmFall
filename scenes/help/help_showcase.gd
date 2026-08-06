@@ -90,6 +90,13 @@ const _CHART_FILES := [
 		"icon_px": 48.0,
 	},
 	{
+		"raster_path": "res://assets/app_icons/rfr_128.png",
+		"color": Color(0.45, 0.78, 0.98, 1.0),
+		"label": "HELP_SHOWCASE_CHART_RFR",
+		"tip": "HELP_SHOWCASE_CHART_RFR_TIP",
+		"icon_px": 48.0,
+	},
+	{
 		"icon": "music.svg",
 		"color": Color(0.62, 0.86, 0.72, 1.0),
 		"label": "HELP_SHOWCASE_CHART_AUDIO",

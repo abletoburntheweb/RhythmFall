@@ -1,4 +1,4 @@
-# logic/utils/hit_particle_presets.gd
+# logic/domain/rhythm/hit_particle_presets.gd
 extends RefCounted
 class_name HitParticlePresets
 

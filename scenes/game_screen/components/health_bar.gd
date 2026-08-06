@@ -1,4 +1,4 @@
-# scenes/game_screen/health_bar.gd
+# scenes/game_screen/components/health_bar.gd
 extends Control
 class_name HealthBar
 

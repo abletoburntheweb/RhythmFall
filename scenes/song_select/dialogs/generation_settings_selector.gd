@@ -1,4 +1,4 @@
-# scenes/song_select/generation_settings_selector.gd
+# scenes/song_select/dialogs/generation_settings_selector.gd
 class_name GenerationSettingsSelector
 extends Control
 
@@ -14,6 +14,7 @@ const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficu
 const _SegmentedOptionUtils = preload("res://logic/ui/segmented_option_utils.gd")
 const _PreviewRowScene = preload("res://scenes/song_select/endless/session_setup_preview_row.gd")
 const PRESETS_DIALOG_SCENE = preload("res://scenes/song_select/run_modifiers/modifier_presets_dialog.tscn")
+const SCOPE_MODAL_SCENE = preload("res://scenes/song_select/dialogs/generation_scope_modal.tscn")
 const _PresetActiveHeader = preload("res://logic/ui/preset_active_header.gd")
 
 const _STATUS_PANEL_WIDTH := 220.0
@@ -76,6 +77,7 @@ var advanced_container: Control = null
 var _back_button: Button = null
 var _presets_button: Button = null
 var _mode_help_btn: Button = null
+var _gen_settings_btn: Button = null
 var _screen_margin: MarginContainer = null
 var _track_status_panel: PanelContainer = null
 var _preview_panel: PanelContainer = null
@@ -95,6 +97,7 @@ var _goal_cards: Dictionary = {}
 var _lane_buttons: Dictionary = {}
 var _spotlight_tutorial: CanvasLayer = null
 var _presets_dialog: Control = null
+var _scope_modal: Control = null
 var _preset_active_slot: int = 0
 var _preset_baseline: Dictionary = {}
 var _active_preset_row: HBoxContainer = null
@@ -207,6 +210,7 @@ func _ready() -> void:
 	_setup_presets_button()
 	_setup_section_icons()
 	_ensure_mode_help_icon()
+	_ensure_gen_settings_icon()
 	_setup_param_icons()
 	_apply_settings_checkbox_styles()
 	_bind_instrument_cards()
@@ -442,12 +446,16 @@ func _bind_goal_cards() -> void:
 	var row := get_node_or_null(GOAL_ROW) as HBoxContainer
 	if row == null:
 		return
+	# Same as instruments: no unpress — re-click must not clear the selected look.
+	var goal_group := ButtonGroup.new()
+	goal_group.allow_unpress = false
 	for child in row.get_children():
 		var card := child as GenerationSelectCard
 		if card == null or card.card_id.strip_edges() == "":
 			continue
 		if card.card_id not in _GoalDiff.GOALS:
 			continue
+		card.button_group = goal_group
 		if not card.card_selected.is_connected(_on_goal_card_selected):
 			card.card_selected.connect(_on_goal_card_selected)
 		_goal_cards[card.card_id] = card
@@ -462,9 +470,9 @@ func _find_goal_spec(goal_id: String) -> Dictionary:
 
 func _difficulty_option_labels() -> PackedStringArray:
 	return PackedStringArray([
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "relaxed")),
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "standard")),
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "dense")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "easy")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "medium")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "hard")),
 	])
 
 
@@ -474,16 +482,16 @@ func _setup_difficulty_segmented() -> void:
 	if _difficulty_seg.is_empty():
 		_difficulty_option.clear()
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "relaxed")),
-			_GoalDiff.difficulty_option_id("relaxed"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "easy")),
+			_GoalDiff.difficulty_option_id("easy"),
 		)
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "standard")),
-			_GoalDiff.difficulty_option_id("standard"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "medium")),
+			_GoalDiff.difficulty_option_id("medium"),
 		)
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "dense")),
-			_GoalDiff.difficulty_option_id("dense"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "hard")),
+			_GoalDiff.difficulty_option_id("hard"),
 		)
 		_difficulty_seg = _SegmentedOptionUtils.build_from_option_button(
 			_difficulty_option,
@@ -522,6 +530,8 @@ func _on_difficulty_segment_pressed(btn: Button) -> void:
 	var option_id := _SegmentedOptionUtils.id_from_button(btn)
 	var new_difficulty := _GoalDiff.difficulty_from_option_id(option_id)
 	if new_difficulty == selected_difficulty:
+		# Re-click: keep highlight in sync (segment buttons are not a ButtonGroup).
+		_sync_difficulty_segment()
 		return
 	_apply_goal_difficulty(selected_goal, new_difficulty, true)
 	UiScreenHotkeys.play_section_switch_sound()
@@ -672,7 +682,8 @@ func _sync_preview_status() -> void:
 	var label := _preview_status_label if _preview_status_label else status_label
 	if label:
 		if exists:
-			label.text = tr("SONG_STATUS_NOTES_READY")
+			const _VoiceLibrary = preload("res://logic/ui/voice_library.gd")
+			label.text = _VoiceLibrary.notes_ready(str(current_song_path))
 			label.add_theme_color_override("font_color", Color(0.45, 0.82, 0.58, 1.0))
 		else:
 			label.text = tr("SONG_STATUS_NO_NOTES")
@@ -765,6 +776,8 @@ func apply_locale() -> void:
 	_set_section_label(ROOT + "/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeSubtitle", "GEN_GOAL_SECTION_SUB")
 	if _mode_help_btn:
 		_mode_help_btn.tooltip_text = tr("HELP_LINK_CHART_STYLE")
+	if _gen_settings_btn:
+		_gen_settings_btn.tooltip_text = tr("SESSION_CHART_STYLE_GEN_SETTINGS_TIP")
 	_set_section_label_in(DIFFICULTY_SECTION, "DifficultyTitle", "GEN_DIFF_SECTION_TITLE")
 	_set_section_label(DIFFICULTY_SECTION + "/DifficultySubtitle", "GEN_DIFF_SECTION_SUB")
 	_set_section_label_in(ROOT + "/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox", "LanesTitle", "GEN_LANES_LABEL")
@@ -900,8 +913,48 @@ func _ensure_mode_help_icon() -> void:
 	row.add_child(_mode_help_btn)
 
 
+func _ensure_gen_settings_icon() -> void:
+	if _gen_settings_btn != null and is_instance_valid(_gen_settings_btn):
+		return
+	_ensure_mode_help_icon()
+	if _mode_help_btn == null or not is_instance_valid(_mode_help_btn):
+		return
+	var parent := _mode_help_btn.get_parent()
+	if parent == null:
+		return
+	_gen_settings_btn = _SettingsSectionUi.make_settings_icon_button(
+		tr("SESSION_CHART_STYLE_GEN_SETTINGS_TIP")
+	)
+	_gen_settings_btn.pressed.connect(_on_gen_settings_pressed)
+	parent.add_child(_gen_settings_btn)
+	parent.move_child(_gen_settings_btn, _mode_help_btn.get_index() + 1)
+
+
 func _on_mode_help_pressed() -> void:
 	_open_help_item("modes")
+
+
+func _on_gen_settings_pressed() -> void:
+	if _scope_modal and is_instance_valid(_scope_modal):
+		if _scope_modal.has_method("open"):
+			_scope_modal.open()
+		return
+	_scope_modal = SCOPE_MODAL_SCENE.instantiate()
+	add_child(_scope_modal)
+	move_child(_scope_modal, -1)
+	if _scope_modal.has_signal("closed"):
+		_scope_modal.closed.connect(_on_scope_modal_closed)
+	if _scope_modal.has_method("apply_locale"):
+		_scope_modal.apply_locale()
+	UiInteractionApplier.apply_from_engine(_scope_modal)
+	if _scope_modal.has_method("open"):
+		_scope_modal.open()
+
+
+func _on_scope_modal_closed() -> void:
+	if _scope_modal and is_instance_valid(_scope_modal):
+		_scope_modal.queue_free()
+	_scope_modal = null
 
 
 func _open_help_item(item_id: String) -> void:
@@ -1087,7 +1140,8 @@ func _on_goal_card_selected(goal_id: String) -> void:
 		_intent_card_pick_guard = true
 		call_deferred("_release_intent_card_pick_guard")
 		return
-	_on_confirm_pressed()
+	# Already on this goal with default params — stay open; confirm via Enter / Confirm.
+	_update_selection_visuals()
 
 
 func _on_intent_card_selected(intent_id: String) -> void:
@@ -1100,6 +1154,7 @@ func _release_intent_card_pick_guard() -> void:
 
 func _on_lane_button_pressed(lanes: int) -> void:
 	if lanes == selected_lanes:
+		_update_selection_visuals()
 		return
 	selected_lanes = lanes
 	UiScreenHotkeys.play_section_switch_sound()
@@ -1657,11 +1712,25 @@ func _on_reset_pressed() -> void:
 	_sync_preview()
 
 
+func _sync_ready_instruments_with_selection(instrument: String) -> void:
+	## Keep chart-readiness instrument axis aligned with the style chip.
+	var inst := _GoalDiff.sanitize_ready_instrument(instrument)
+	var raw: Variant = SettingsManager.get_setting("generation_ready_instruments", [inst])
+	var ready := _GoalDiff.sanitize_ready_string_list(raw, _GoalDiff.READY_INSTRUMENTS, inst)
+	if ready.size() <= 1:
+		SettingsManager.set_setting("generation_ready_instruments", [inst])
+		return
+	if not ready.has(inst):
+		ready.append(inst)
+		SettingsManager.set_setting("generation_ready_instruments", ready)
+
+
 func _on_confirm_pressed() -> void:
 	selected_goal = _GoalDiff.sanitize_goal(selected_goal)
 	selected_difficulty = _GoalDiff.sanitize_difficulty(selected_difficulty)
 	selected_intent = _GoalDiff.intent_for(selected_goal, selected_difficulty)
 	SettingsManager.set_setting("last_generation_instrument", selected_instrument)
+	_sync_ready_instruments_with_selection(selected_instrument)
 	SettingsManager.set_setting("generation_goal", selected_goal)
 	SettingsManager.set_setting("generation_difficulty", selected_difficulty)
 	SettingsManager.set_setting("last_generation_intent", selected_intent)
@@ -1829,6 +1898,10 @@ func _notes_exist_for_selection() -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
+	if _scope_modal and is_instance_valid(_scope_modal) and _scope_modal.has_method("is_open") and _scope_modal.is_open():
+		if _scope_modal.has_method("handle_hotkey") and _scope_modal.handle_hotkey(event):
+			get_viewport().set_input_as_handled()
+		return
 	var viewport := get_viewport()
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
@@ -1849,9 +1922,9 @@ func _generation_hotkey_bindings() -> Dictionary:
 		KEY_2: _hotkey_select_instrument.bind("bass"),
 		KEY_Q: _hotkey_select_goal.bind("original"),
 		KEY_W: _hotkey_select_goal.bind("arcade"),
-		KEY_E: _hotkey_select_difficulty.bind("relaxed"),
-		KEY_R: _hotkey_select_difficulty.bind("standard"),
-		KEY_T: _hotkey_select_difficulty.bind("dense"),
+		KEY_E: _hotkey_select_difficulty.bind("easy"),
+		KEY_R: _hotkey_select_difficulty.bind("medium"),
+		KEY_T: _hotkey_select_difficulty.bind("hard"),
 		KEY_Z: _hotkey_toggle_advanced,
 		KEY_A: _hotkey_select_lanes.bind(3),
 		KEY_S: _hotkey_select_lanes.bind(4),
@@ -2134,5 +2207,8 @@ func preset_host_clear_active() -> void:
 func _on_presets_dialog_closed(preset_loaded: bool = false) -> void:
 	_presets_dialog = null
 	_update_active_preset_header()
+	if _scope_modal and is_instance_valid(_scope_modal) and _scope_modal.has_method("is_open") and _scope_modal.is_open():
+		if _scope_modal.has_method("_sync_ready_axes_ui_from_settings"):
+			_scope_modal.call("_sync_ready_axes_ui_from_settings")
 	if not preset_loaded:
 		_UiModifierSounds.play_deselect()

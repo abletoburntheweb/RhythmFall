@@ -1,4 +1,4 @@
-# logic/utils/directory_utils.gd
+# logic/platform/directory_utils.gd
 extends RefCounted
 class_name DirectoryUtils
 

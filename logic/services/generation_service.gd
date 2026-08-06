@@ -5,6 +5,7 @@ class_name GenerationService
 const _RhythmDnaServerFetch = preload("res://server/rhythm_dna_server_fetch.gd")
 const _GenerationIntents = preload("res://logic/domain/generation/generation_intents.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const _UserPresets = preload("res://logic/domain/modifiers/user_presets.gd")
 
 signal bpm_started(song_path: String, display_name: String)
 signal bpm_completed(song_path: String, bpm_value: int, display_name: String)
@@ -374,15 +375,33 @@ func _show_offline_banner(task_type: String) -> void:
 		"error",
 		0.0,
 		"retry_offline_pipeline",
-		"dismiss_offline_banner"
+		"cancel_offline_pipeline"
 	)
 
 
 func dismiss_offline_banner() -> void:
+	## «Отменить» на баннере offline — не просто скрыть, а бросить ожидание ретрая.
 	_offline_banner_dismissed = true
 	var dock := _status_dock()
 	if dock:
 		dock.clear_operation(_offline_status_op_id())
+	cancel_offline_pipeline()
+
+
+func cancel_offline_pipeline() -> void:
+	## Остановить авто-ретрай, снять несохранённую задачу и очистить ожидающую очередь.
+	_offline_banner_dismissed = true
+	_clear_backend_retry_if_idle()
+	_clear_offline_pause()
+	_bpm_queue.clear()
+	_notes_queue.clear()
+	if _active_notes_task.has("path") and not _notes_request_sent:
+		cancel_notes()
+		return
+	if _active_bpm_task.has("path") and not _bpm_request_sent:
+		cancel_bpm()
+		return
+	_emit_queue_changed()
 
 
 func _enter_offline_pause(task_type: String, backend: Dictionary) -> void:
@@ -472,10 +491,6 @@ func clear_all_queue_work(cancel_active: bool = true) -> void:
 func _try_start_active_bpm() -> void:
 	if not _active_bpm_task.has("path") or _bpm_request_sent:
 		return
-	if is_notes_pipeline_busy():
-		_push_pipeline_waiting_status("bpm")
-		_schedule_backend_retry()
-		return
 	var backend := _ensure_generation_backend()
 	if backend.get("ok", false):
 		_clear_offline_pause()
@@ -494,10 +509,9 @@ func _try_start_active_bpm() -> void:
 func _try_start_active_notes() -> void:
 	if not _active_notes_task.has("path") or _notes_request_sent:
 		return
-	if is_bpm_pipeline_busy():
-		_push_pipeline_waiting_status("notes")
-		_schedule_backend_retry()
-		return
+	var preset_slot := int(_active_notes_task.get("preset_slot", 0))
+	if preset_slot > 0:
+		_UserPresets.apply_generation_slot_body_to_settings(preset_slot)
 	var backend := _ensure_generation_backend()
 	if backend.get("ok", false):
 		_clear_offline_pause()
@@ -547,7 +561,7 @@ func start_bpm_analysis(song_path: String) -> int:
 	var existing_pos := get_bpm_queue_position(song_path)
 	if existing_pos > 0:
 		return 0
-	if _active_bpm_task.has("path") or is_notes_pipeline_busy():
+	if _active_bpm_task.has("path"):
 		_bpm_queue.append(song_path)
 		_emit_queue_changed()
 		return get_bpm_queue_position(song_path)
@@ -572,7 +586,8 @@ func start_notes_generation(
 	chart_tag: String = "",
 	chart_intent: String = "",
 	goal: String = "",
-	difficulty: String = ""
+	difficulty: String = "",
+	preset_slot: int = 0,
 ) -> int:
 	var intent := str(chart_intent).strip_edges()
 	if intent == "":
@@ -612,11 +627,8 @@ func start_notes_generation(
 		"chart_tag": chart_tag,
 		"goal": goal_v,
 		"difficulty": difficulty_v,
+		"preset_slot": preset_slot,
 	}
-	if is_bpm_pipeline_busy():
-		_notes_queue.append(queued)
-		_emit_queue_changed()
-		return get_notes_queue_position(song_path, instrument, chart_stem, lanes)
 	if _active_notes_task.has("path"):
 		_notes_queue.append(queued)
 		_emit_queue_changed()
@@ -637,6 +649,7 @@ func start_notes_generation(
 		"chart_tag": chart_tag,
 		"goal": goal_v,
 		"difficulty": difficulty_v,
+		"preset_slot": preset_slot,
 	}
 	_last_notes_task = _active_notes_task.duplicate(true)
 	_notes_request_sent = false
@@ -676,10 +689,15 @@ func cancel_bpm():
 		_active_bpm_task.clear()
 		_bpm_request_sent = false
 		_record_active_task_duration()
-		bpm_error.emit(cancelled_path, tr("GEN_NOTIF_BPM_CANCELLED"), cancelled_disp)
 	_clear_offline_pause()
+	if cancelled_path != "":
+		bpm_error.emit(cancelled_path, tr("GEN_NOTIF_BPM_CANCELLED"), cancelled_disp)
 	_clear_backend_retry_if_idle()
 	_active_bpm_progress.clear()
+	if _bpm_queue.size() > 0:
+		_start_next_bpm_from_queue()
+	elif _notes_queue.size() > 0 and not _active_notes_task.has("path"):
+		_start_next_notes_from_queue()
 	_emit_queue_changed()
 
 func cancel_notes():
@@ -708,10 +726,15 @@ func cancel_notes():
 		_active_notes_task.clear()
 		_notes_request_sent = false
 		_record_active_task_duration()
-		notes_error.emit(cancelled_path, tr("GEN_NOTIF_NOTES_CANCELLED"), cancelled_disp)
 	_clear_offline_pause()
+	if cancelled_path != "":
+		notes_error.emit(cancelled_path, tr("GEN_NOTIF_NOTES_CANCELLED"), cancelled_disp)
 	_clear_backend_retry_if_idle()
 	_active_notes_progress.clear()
+	if _notes_queue.size() > 0:
+		_start_next_notes_from_queue()
+	elif _bpm_queue.size() > 0 and not _active_bpm_task.has("path"):
+		_start_next_bpm_from_queue()
 	_emit_queue_changed()
 
 func retry_bpm():
@@ -740,6 +763,7 @@ func retry_notes():
 			str(t.get("chart_intent", "")),
 			str(t.get("goal", "")),
 			str(t.get("difficulty", "")),
+			int(t.get("preset_slot", 0)),
 		)
 
 func _on_bpm_started():
@@ -1250,8 +1274,6 @@ func _start_next_notes_from_queue() -> void:
 		return
 	if _notes_queue.is_empty():
 		return
-	if is_bpm_pipeline_busy():
-		return
 	var next = _notes_queue[0]
 	_notes_queue.remove_at(0)
 	var song_path := str(next.get("path", ""))
@@ -1272,6 +1294,7 @@ func _start_next_notes_from_queue() -> void:
 		str(next.get("chart_intent", "")),
 		str(next.get("goal", "")),
 		str(next.get("difficulty", "")),
+		int(next.get("preset_slot", 0)),
 	)
 	_emit_queue_changed()
 
@@ -1340,7 +1363,27 @@ func _emit_queue_changed() -> void:
 
 func _flush_queue_changed() -> void:
 	_queue_emit_pending = false
-	queue_changed.emit(get_queue_snapshot())
+	var snapshot := get_queue_snapshot()
+	queue_changed.emit(snapshot)
+	_sync_queue_dock_hint(snapshot)
+
+
+func _sync_queue_dock_hint(snapshot: Dictionary) -> void:
+	if not _gen_status_enabled():
+		return
+	var counts: Dictionary = snapshot.get("counts", {})
+	var waiting := int(counts.get("waiting", 0))
+	var active := int(counts.get("active", 0))
+	if waiting <= 0:
+		if active <= 0 and not _offline_paused:
+			var dock := _status_dock()
+			if dock:
+				dock.clear_operation("queue")
+		return
+	if active > 0 or _offline_paused:
+		return
+	var title := tr("GEN_QUEUE_DOCK_WAITING_FMT") % waiting
+	_push_gen_operation("queue", title, tr("GEN_QUEUE_OPEN_HINT"), 0, 1, "", "queue")
 
 
 func _store_bpm_progress(stage_index: int, stage_label: String, stage_key: String) -> void:
@@ -1389,8 +1432,6 @@ func _notes_job_display(job: Dictionary) -> String:
 
 
 func _pending_notes_blocked_by() -> String:
-	if is_bpm_pipeline_busy():
-		return "bpm"
 	if _active_notes_task.has("path"):
 		return "notes"
 	return ""
@@ -1443,6 +1484,18 @@ func _serialize_notes_item(
 
 
 func _notes_settings_line(job: Dictionary) -> String:
+	var preset_slot := int(job.get("preset_slot", 0))
+	if preset_slot > 0:
+		var presets := SettingsManager.get_generation_presets()
+		var name := _UserPresets.generation_display_name(presets, preset_slot)
+		var instrument := str(job.get("instrument", "drums")).strip_edges().to_lower()
+		if instrument == "" or instrument == "standard":
+			instrument = "drums"
+		var inst_key := "GEN_INST_%s" % instrument.to_upper()
+		var inst_label := tr(inst_key)
+		if inst_label == inst_key:
+			inst_label = instrument.capitalize()
+		return tr("GEN_QUEUE_ROW_PRESET_FMT") % [inst_label, name]
 	var intent := str(job.get("chart_intent", "")).strip_edges()
 	if intent == "":
 		intent = _GenerationIntents.resolve_chart_stem(str(job.get("mode", "")))

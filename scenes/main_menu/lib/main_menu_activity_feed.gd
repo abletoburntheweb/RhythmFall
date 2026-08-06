@@ -1,4 +1,4 @@
-# logic/utils/main_menu_activity_feed.gd
+# scenes/main_menu/lib/main_menu_activity_feed.gd
 extends RefCounted
 class_name MainMenuActivityFeed
 

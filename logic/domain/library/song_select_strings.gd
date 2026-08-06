@@ -98,11 +98,76 @@ static func format_gen_settings_toast(
 	var inst := _translate(inst_key)
 	if inst == inst_key:
 		inst = _instrument_abbrev(instrument)
-	var goal_label := _translate("GEN_GOAL_%s" % goal.strip_edges().to_upper())
+	var mode_label := format_goal_difficulty_label(goal, difficulty)
+	return "%s · %s" % [inst, mode_label]
+
+
+## Human label for a chart stem / intent / legacy mode: «Аркада · Средняя», «Оригинал».
+static func format_instrument_label(instrument: String) -> String:
+	var inst_key := "GEN_INST_%s" % instrument.strip_edges().to_upper()
+	var label := _translate(inst_key)
+	if label == inst_key:
+		return _instrument_abbrev(instrument)
+	return label
+
+
+static func format_chart_mode_label(mode_raw: String) -> String:
+	var mode := mode_raw.strip_edges().to_lower()
+	if mode == "":
+		return ""
+	if _GoalDiff.is_chart_stem(mode):
+		return format_goal_difficulty_label_from_pair(_GoalDiff.pair_from_stem(mode))
+	if mode in ["original", "groove", "sparse", "arcade"]:
+		return format_goal_difficulty_label_from_pair(_GoalDiff.from_intent(mode))
+	var mode_key := "GEN_MODE_%s" % mode.to_upper()
+	var label := _translate(mode_key)
+	if label == mode_key:
+		return mode_raw
+	return label
+
+
+static func format_goal_difficulty_label(goal: String, difficulty: String) -> String:
+	return format_goal_difficulty_label_from_pair({
+		"goal": goal,
+		"difficulty": difficulty,
+	})
+
+
+static func format_goal_difficulty_label_from_pair(pair: Dictionary) -> String:
+	var goal := str(pair.get("goal", _GoalDiff.DEFAULT_GOAL))
+	var difficulty := str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+	var goal_label := _translate("GEN_GOAL_%s" % goal.to_upper())
 	if _GoalDiff.sanitize_goal(goal) == "original":
-		return "%s · %s" % [inst, goal_label]
+		return goal_label
 	var diff_label := _translate(_GoalDiff.difficulty_label_key(goal, difficulty))
-	return "%s · %s · %s" % [inst, goal_label, diff_label]
+	return "%s · %s" % [goal_label, diff_label]
+
+
+## Compact label for Generate confirm: jobs from Chart readiness, not the play-style button.
+static func format_ready_jobs_label(jobs: Array) -> String:
+	if jobs.is_empty():
+		return "—"
+	var parts: PackedStringArray = []
+	var seen: Dictionary = {}
+	for job in jobs:
+		if not job is Dictionary:
+			continue
+		var d := job as Dictionary
+		var inst := str(d.get("instrument", "drums"))
+		var goal := str(d.get("goal", _GoalDiff.DEFAULT_GOAL))
+		var difficulty := str(d.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+		var key := "%s|%s|%s" % [inst, goal, difficulty]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		parts.append(format_gen_settings_label(inst, 0, goal, difficulty))
+	if parts.is_empty():
+		return "—"
+	if parts.size() == 1:
+		return parts[0]
+	if parts.size() <= 3:
+		return ", ".join(parts)
+	return _translate("SONG_GEN_READY_JOBS_MANY_FMT") % [parts[0], parts.size() - 1]
 
 
 static func format_lanes_button_label(lanes: int) -> String:
@@ -149,9 +214,9 @@ static func _difficulty_abbrev(goal: String, difficulty: String) -> String:
 			return orig_abbrev
 		# Hard fallback if CSV not reimported yet (Читаемая → Ч, not Средняя → С).
 		match d:
-			"relaxed":
+			"easy":
 				return "К" if TranslationServer.get_locale().begins_with("ru") else "B"
-			"dense":
+			"hard":
 				return "А" if TranslationServer.get_locale().begins_with("ru") else "A"
 			_:
 				return "Ч" if TranslationServer.get_locale().begins_with("ru") else "R"
@@ -220,6 +285,26 @@ const _RU_FALLBACKS := {
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_RELAXED": "К",
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_STANDARD": "Ч",
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_DENSE": "А",
+	"SONG_MUSEUM_TITLE": "Музей трека",
+	"SONG_MUSEUM_FIRST_CAPTION": "Первый забег",
+	"SONG_MUSEUM_RUNS_CAPTION": "Забегов",
+	"SONG_MUSEUM_AVG_ACC_CAPTION": "Средняя точность",
+	"SONG_MUSEUM_BEST_RR_CAPTION": "Лучший RR",
+	"SONG_MUSEUM_TIME_CAPTION": "В игре",
+	"SONG_MUSEUM_FC_CAPTION": "Full Combo",
+	"SONG_MUSEUM_SS_CAPTION": "Оценки SS",
+	"SONG_MUSEUM_FAV_STYLE_CAPTION": "Любимый стиль",
+	"SONG_MUSEUM_FAV_INST_CAPTION": "Любимый инструмент",
+	"SONG_MUSEUM_LAST_CAPTION": "Последний забег",
+	"SONG_MUSEUM_MEDALS_CAPTION": "Медали",
+	"SONG_MUSEUM_MODS": "Частые моды",
+	"SONG_MUSEUM_RR_FMT": "RR %s",
+	"SONG_MUSEUM_COMBO_FMT": "Комбо %d",
+	"SONG_MUSEUM_SHOWN_OF": "Показано %d из %d",
+	"SONG_MUSEUM_SHOWN_ALL": "Показаны все %d попыток",
+	"SONG_STAT_PLAYS_CAPTION": "Прохождений",
+	"SONG_STAT_GRADE_CAPTION": "Лучший ранг",
+	"SONG_STAT_RR_CAPTION": "Лучший RR",
 }
 
 const _EN_FALLBACKS := {
@@ -253,4 +338,24 @@ const _EN_FALLBACKS := {
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_RELAXED": "B",
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_STANDARD": "R",
 	"SONG_GEN_ABBR_DIFF_ORIGINAL_DENSE": "A",
+	"SONG_MUSEUM_TITLE": "Track museum",
+	"SONG_MUSEUM_FIRST_CAPTION": "First play",
+	"SONG_MUSEUM_RUNS_CAPTION": "Runs",
+	"SONG_MUSEUM_AVG_ACC_CAPTION": "Avg accuracy",
+	"SONG_MUSEUM_BEST_RR_CAPTION": "Best RR",
+	"SONG_MUSEUM_TIME_CAPTION": "Time played",
+	"SONG_MUSEUM_FC_CAPTION": "Full combos",
+	"SONG_MUSEUM_SS_CAPTION": "SS ranks",
+	"SONG_MUSEUM_FAV_STYLE_CAPTION": "Favorite style",
+	"SONG_MUSEUM_FAV_INST_CAPTION": "Favorite instrument",
+	"SONG_MUSEUM_LAST_CAPTION": "Last play",
+	"SONG_MUSEUM_MEDALS_CAPTION": "Medals",
+	"SONG_MUSEUM_MODS": "Common mods",
+	"SONG_MUSEUM_RR_FMT": "RR %s",
+	"SONG_MUSEUM_COMBO_FMT": "Combo %d",
+	"SONG_MUSEUM_SHOWN_OF": "Showing %d of %d",
+	"SONG_MUSEUM_SHOWN_ALL": "All %d attempts shown",
+	"SONG_STAT_PLAYS_CAPTION": "Clears",
+	"SONG_STAT_GRADE_CAPTION": "Best rank",
+	"SONG_STAT_RR_CAPTION": "Best RR",
 }

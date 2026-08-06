@@ -1,4 +1,4 @@
-# scenes/song_select/generation_select_card.gd
+# scenes/song_select/components/generation_select_card.gd
 extends Button
 class_name GenerationSelectCard
 

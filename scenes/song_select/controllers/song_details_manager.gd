@@ -6,12 +6,15 @@ const GradeDisplay = preload("res://logic/ui/grade_display.gd")
 const _SS = preload("res://logic/domain/library/song_select_strings.gd")
 const _SongPreviewSegment = preload("res://logic/domain/library/song_preview_segment.gd")
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
+const _RhythmDnaCoverLoader = preload("res://scenes/song_select/rhythm_dna/lib/rhythm_dna_cover_loader.gd")
+const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const _DNA_CAPTION_ACTIVE := Color(0.55, 0.78, 0.98, 0.92)
 const _DNA_CAPTION_MUTED := Color(0.42, 0.45, 0.52, 0.72)
 const _DNA_ICON_MUTED := Color(0.45, 0.48, 0.55, 0.75)
 
 var title_label: Label = null
 var artist_label: Label = null
+var living_insight_label: Label = null
 var year_label: Label = null
 var bpm_label: Label = null
 var duration_label: Label = null
@@ -47,6 +50,8 @@ static var _pending_play_glow: Dictionary = {}
 var _cover_loader: ThreadedTextureLoader = null
 var _cover_loader_connected: bool = false
 var _cover_request_id: int = 0
+var _cover_loading_path: String = ""
+var _pending_cover_path: String = ""
 var _real_cover_applied_for_request_id: int = -1
 var _fallback_applies_to_request_id: int = -1
 var _sidecar_cover_thread: Thread = null
@@ -108,9 +113,10 @@ func _consume_play_glow_pending() -> bool:
 	return true
 
 
-func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, genre_lbl: Label, play_count_lbl: Label, best_grade_lbl: Label, chart_difficulty_lbl: Label, chart_difficulty_meter_node: ChartDifficultyMeter, chart_difficulty_value_lbl: Label, chart_difficulty_mod_lbl: Label, chart_density_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button, chart_id_lbl: Label = null, rhythm_rating_lbl: Label = null, rhythm_dna_btn: Button = null, chart_difficulty_effective_row_node: HBoxContainer = null, chart_difficulty_effective_lbl: Label = null, chart_difficulty_effective_meter_node: ChartDifficultyMeter = null, chart_difficulty_effective_value_lbl: Label = null):
+func setup_ui_nodes(title_lbl: Label, artist_lbl: Label, year_lbl: Label, bpm_lbl: Label, duration_lbl: Label, genre_lbl: Label, play_count_lbl: Label, best_grade_lbl: Label, chart_difficulty_lbl: Label, chart_difficulty_meter_node: ChartDifficultyMeter, chart_difficulty_value_lbl: Label, chart_difficulty_mod_lbl: Label, chart_density_lbl: Label, cover_tex_rect: TextureRect, play_btn: Button, chart_id_lbl: Label = null, rhythm_rating_lbl: Label = null, rhythm_dna_btn: Button = null, chart_difficulty_effective_row_node: HBoxContainer = null, chart_difficulty_effective_lbl: Label = null, chart_difficulty_effective_meter_node: ChartDifficultyMeter = null, chart_difficulty_effective_value_lbl: Label = null, living_insight_lbl: Label = null):
 	title_label = title_lbl
 	artist_label = artist_lbl
+	living_insight_label = living_insight_lbl
 	year_label = year_lbl
 	bpm_label = bpm_lbl
 	duration_label = duration_lbl
@@ -284,6 +290,7 @@ func _on_chart_id_gui_input(event: InputEvent) -> void:
 		return
 	DisplayServer.clipboard_set(chart_id)
 	_flash_chart_id_copied()
+	_StatusToast.show_from_node(self, "chart_id_copied", tr("SONG_CHART_ID_COPIED"), "success", 2.0)
 
 
 func _flash_chart_id_copied() -> void:
@@ -344,10 +351,23 @@ func _apply_empty_details_labels() -> void:
 		best_grade_label.text = _SS._translate("SONG_BEST_GRADE_NONE")
 		best_grade_label.add_theme_color_override("font_color", Color.WHITE)
 		best_grade_label.modulate = Color(0.72, 0.8, 0.92, 1.0)
+	_set_living_insight("")
 	_hide_chart_difficulty_display()
 	_update_chart_id_display("")
 	if cover_texture_rect:
 		cover_texture_rect.texture = null
+
+func _set_living_insight(text: String) -> void:
+	if living_insight_label == null:
+		return
+	var line := text.strip_edges()
+	living_insight_label.text = line
+	living_insight_label.visible = line != ""
+
+
+func _update_living_insight(song_path: String) -> void:
+	const _DiaryVoice = preload("res://logic/domain/profile/diary_voice.gd")
+	_set_living_insight(_DiaryVoice.living_library_line(song_path))
 
 func update_details(song_data: Dictionary):
 	var song_path := String(song_data.get("path", "")).strip_edges()
@@ -364,6 +384,7 @@ func update_details(song_data: Dictionary):
 		title_label.text = _SS._translate("SONG_FIELD_TITLE") % _SS.display_metadata_value(song_data.get("title", ""))
 	if artist_label:
 		artist_label.text = _SS._translate("SONG_FIELD_ARTIST") % _SS.display_metadata_value(song_data.get("artist", ""))
+	_update_living_insight(song_path)
 	if year_label:
 		year_label.text = _SS._translate("SONG_FIELD_YEAR") % _SS.display_metadata_value(song_data.get("year", ""))
 	if bpm_label:
@@ -409,8 +430,9 @@ func update_details(song_data: Dictionary):
 		var best_rr := 0
 		if ProfileMilestonesManager and song_path != "":
 			best_rr = ProfileMilestonesManager.get_best_rr_for_song(song_path)
+		const _VoiceLibrary = preload("res://logic/ui/voice_library.gd")
 		if best_rr > 0:
-			rhythm_rating_label.text = _SS._translate("SONG_BEST_RR") % best_rr
+			rhythm_rating_label.text = _VoiceLibrary.best_rr_value(best_rr, song_path)
 			rhythm_rating_label.visible = true
 		else:
 			rhythm_rating_label.text = _SS._translate("SONG_BEST_RR_NONE")
@@ -754,7 +776,8 @@ func set_generation_status(status: String, is_error: bool = false):
 func _update_generation_status():
 	if _current_preview_file_path != "":
 		if _has_notes_for_instrument(_current_preview_file_path, current_instrument):
-			set_generation_status(_SS._translate("SONG_STATUS_READY"), false)
+			const _VoiceLibrary = preload("res://logic/ui/voice_library.gd")
+			set_generation_status(_VoiceLibrary.chart_ready(_current_preview_file_path), false)
 		else:
 			set_generation_status(_SS._translate("SONG_STATUS_NO_NOTES"), false)
 	else:
@@ -943,24 +966,68 @@ func _apply_cover_texture(song_data: Dictionary) -> void:
 	var cover_texture = song_data.get("cover", null)
 	if cover_texture and cover_texture is ImageTexture:
 		cover_texture_rect.texture = cover_texture
+		_cover_loading_path = ""
+		_pending_cover_path = ""
 		return
-	var path_for_cover = song_data.get("path", "")
+	var path_for_cover = String(song_data.get("path", "")).replace("\\", "/").strip_edges()
+	# Same path already loading — keep the in-flight request (do not bump id).
+	if path_for_cover != "" and path_for_cover == _cover_loading_path and _cover_threads_busy():
+		return
+	# Shared loader used by feed/list rows — cache hit after feed open.
+	if path_for_cover != "":
+		var shared: Texture2D = _RhythmDnaCoverLoader.load_cover(path_for_cover)
+		if shared:
+			cover_texture_rect.texture = shared
+			_cover_loading_path = ""
+			_pending_cover_path = ""
+			_cover_request_id += 1
+			_real_cover_applied_for_request_id = _cover_request_id
+			return
 	_cover_request_id += 1
 	var request_id := _cover_request_id
 	_real_cover_applied_for_request_id = -1
+	_cover_loading_path = path_for_cover
+	_pending_cover_path = ""
 	if path_for_cover != "":
-		var global_path = ProjectSettings.globalize_path(path_for_cover)
+		var global_path = _RhythmDnaCoverLoader._readable_audio_path(path_for_cover)
+		if global_path == "":
+			global_path = ProjectSettings.globalize_path(path_for_cover)
 		if _embedded_cover_cache.has(global_path):
 			cover_texture_rect.texture = _embedded_cover_cache[global_path]
 			_real_cover_applied_for_request_id = request_id
+			_cover_loading_path = ""
 			return
 		if _sidecar_cover_cache.has(global_path):
 			cover_texture_rect.texture = _sidecar_cover_cache[global_path]
 			_real_cover_applied_for_request_id = request_id
+			_cover_loading_path = ""
+			return
+		if _cover_threads_busy():
+			_pending_cover_path = path_for_cover
+			_request_fallback_cover_texture(request_id)
 			return
 		_start_embedded_cover_load(global_path, request_id)
 		_start_sidecar_cover_load(global_path, request_id)
 	_request_fallback_cover_texture(request_id)
+
+
+func _cover_threads_busy() -> bool:
+	return (_embedded_cover_thread != null and _embedded_cover_thread.is_alive()) \
+			or (_sidecar_cover_thread != null and _sidecar_cover_thread.is_alive())
+
+
+func _flush_pending_cover_load() -> void:
+	if _pending_cover_path == "" or _cover_threads_busy():
+		return
+	if _last_song_data.is_empty():
+		_pending_cover_path = ""
+		return
+	var pending := _pending_cover_path
+	_pending_cover_path = ""
+	if String(_last_song_data.get("path", "")).replace("\\", "/").strip_edges() != pending:
+		return
+	_apply_cover_texture(_last_song_data)
+
 
 func _start_embedded_cover_load(global_audio_path: String, request_id: int) -> void:
 	if _embedded_cover_thread and _embedded_cover_thread.is_alive():
@@ -1024,18 +1091,17 @@ func _poll_embedded_cover_thread() -> void:
 		return
 	var result = _embedded_cover_thread.wait_to_finish()
 	_embedded_cover_thread = null
-	if not result is Dictionary or result.is_empty():
-		return
-	if _embedded_cover_request_id != _cover_request_id:
-		return
-	var image = result.get("image", null)
-	var audio_path := str(result.get("audio_path", ""))
-	if image and image is Image:
-		var tex := ImageTexture.create_from_image(image)
-		_embedded_cover_cache[audio_path] = tex
-		if cover_texture_rect:
-			cover_texture_rect.texture = tex
-			_real_cover_applied_for_request_id = _cover_request_id
+	if result is Dictionary and not result.is_empty() and _embedded_cover_request_id == _cover_request_id:
+		var image = result.get("image", null)
+		var audio_path := str(result.get("audio_path", ""))
+		if image and image is Image:
+			var tex := ImageTexture.create_from_image(image)
+			_embedded_cover_cache[audio_path] = tex
+			if cover_texture_rect:
+				cover_texture_rect.texture = tex
+				_real_cover_applied_for_request_id = _cover_request_id
+			_cover_loading_path = ""
+	call_deferred("_flush_pending_cover_load")
 
 func _start_sidecar_cover_load(global_audio_path: String, request_id: int) -> void:
 	if _sidecar_cover_thread and _sidecar_cover_thread.is_alive():
@@ -1083,19 +1149,17 @@ func _poll_sidecar_cover_thread() -> void:
 		return
 	var result = _sidecar_cover_thread.wait_to_finish()
 	_sidecar_cover_thread = null
-	if not result is Dictionary or result.is_empty():
-		return
-	if _sidecar_cover_request_id != _cover_request_id:
-		return
-	var image = result.get("image", null)
-	var audio_path := str(result.get("audio_path", ""))
-	if image and image is Image:
-		var tex := ImageTexture.create_from_image(image)
-		_sidecar_cover_cache[audio_path] = tex
-		if cover_texture_rect:
-			cover_texture_rect.texture = tex
-			_real_cover_applied_for_request_id = _cover_request_id
-
+	if result is Dictionary and not result.is_empty() and _sidecar_cover_request_id == _cover_request_id:
+		var image = result.get("image", null)
+		var audio_path := str(result.get("audio_path", ""))
+		if image and image is Image:
+			var tex := ImageTexture.create_from_image(image)
+			_sidecar_cover_cache[audio_path] = tex
+			if cover_texture_rect:
+				cover_texture_rect.texture = tex
+				_real_cover_applied_for_request_id = _cover_request_id
+			_cover_loading_path = ""
+	call_deferred("_flush_pending_cover_load")
 func _request_fallback_cover_texture(request_id: int) -> void:
 	_fallback_applies_to_request_id = request_id
 	var fallback_path := _get_fallback_cover_path()

@@ -5,6 +5,7 @@ signal popup_finished
 
 const DEFAULT_ICON_PATH := "res://assets/achievements/default.png"
 const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
+const _LabelFitUtils = preload("res://logic/ui/label_fit_utils.gd")
 var AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.gd").new()
 
 @onready var animation_player: AnimationPlayer = $PopupAnimator
@@ -14,14 +15,28 @@ var AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.g
 @onready var icon_texture_rect: TextureRect = $ContentContainer/TopRowContainer/IconTexture
 
 var achievement_data: Dictionary = {}
+var _title_base_font: int = 32
+var _description_base_font: int = 18
+var _fonts_captured: bool = false
+var _fit_retries: int = 0
 
 
 func _ready() -> void:
 	z_index = 100
+	_capture_base_fonts()
 	if not achievement_data.is_empty():
 		_apply_data()
 	if animation_player:
 		animation_player.animation_finished.connect(_on_animation_player_animation_finished)
+
+
+func _capture_base_fonts() -> void:
+	_ensure_nodes()
+	if title_label:
+		_title_base_font = title_label.get_theme_font_size("font_size")
+	if description_label:
+		_description_base_font = description_label.get_theme_font_size("font_size")
+	_fonts_captured = true
 
 
 func set_achievement_data(ach_data: Dictionary) -> void:
@@ -81,6 +96,8 @@ func _apply_data() -> void:
 	if title_label == null or description_label == null or icon_texture_rect == null:
 		call_deferred("_apply_data")
 		return
+	if not _fonts_captured:
+		_capture_base_fonts()
 	if header_label:
 		header_label.text = tr("ACH_POPUP_UNLOCKED")
 	if title_label:
@@ -88,7 +105,29 @@ func _apply_data() -> void:
 	if description_label:
 		description_label.text = _AchievementLocale.localized_description(achievement_data)
 	_load_achievement_icon(achievement_data)
+	call_deferred("_fit_text_labels")
 	show_popup()
+
+
+func _fit_text_labels() -> void:
+	_ensure_nodes()
+	if title_label == null:
+		return
+	var width := 0.0
+	var info := title_label.get_parent() as Control
+	if info and info.size.x > 1.0:
+		width = info.size.x
+	elif title_label.size.x > 1.0:
+		width = title_label.size.x
+	if width <= 1.0:
+		_fit_retries += 1
+		if _fit_retries <= 8:
+			call_deferred("_fit_text_labels")
+		return
+	_fit_retries = 0
+	_LabelFitUtils.fit_label(title_label, width, _title_base_font, 18, true, 2)
+	if description_label:
+		_LabelFitUtils.fit_label(description_label, width, _description_base_font, 12, true, 3)
 
 
 func show_popup() -> void:

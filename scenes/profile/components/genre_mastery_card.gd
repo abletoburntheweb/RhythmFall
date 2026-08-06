@@ -1,4 +1,4 @@
-# scenes/profile/genre_mastery_card.gd
+# scenes/profile/components/genre_mastery_card.gd
 extends PanelContainer
 
 signal expanded_changed(group_id: String, expanded: bool)

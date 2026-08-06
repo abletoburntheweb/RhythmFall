@@ -25,18 +25,22 @@ var genres_tab
 var records_tab
 
 var _share_recap_loading := false
+var _nav_loading_held := false
 var _spotlight_tutorial: CanvasLayer = null
 var _refresh_stats_scheduled := false
-var _pending_records_section_id := ""
 var _applying_locale := false
 var _initial_profile_refresh_running := false
 
 @onready var back_button: Button = get_node_or_null("MainVBox/BackButton") as Button
 @onready var title_label: Label = get_node_or_null("MainVBox/TitleRow/TitleLabel") as Label
 @onready var subtitle_label: Label = get_node_or_null("MainVBox/TitleRow/SubtitleLabel") as Label
+@onready var calendar_button: Button = get_node_or_null("%CalendarButton") as Button
+@onready var history_button: Button = get_node_or_null("%HistoryButton") as Button
 @onready var share_cards_button: Button = get_node_or_null("%ShareCardsButton") as Button
 @onready var footer_label: Label = get_node_or_null("MainVBox/FooterLabel") as Label
 @onready var _share_modal: ProfileShareModal = get_node_or_null("ProfileShareModal") as ProfileShareModal
+@onready var _activity_calendar_dialog: Control = get_node_or_null("ActivityCalendarDialog") as Control
+@onready var _history_dialog: Control = get_node_or_null("ProfileHistoryDialog") as Control
 @onready var profile_root: Control = get_node_or_null(_ROOT) as Control
 @onready var category_bar_panel: PanelContainer = get_node_or_null(
 	"MainVBox/CategoryRow/CategoryBarPanel"
@@ -57,15 +61,28 @@ func apply_locale() -> void:
 		subtitle_label.text = tr("PROFILE_SUBTITLE")
 		subtitle_label.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.9))
 		subtitle_label.add_theme_font_size_override("font_size", 15)
+	if calendar_button:
+		calendar_button.text = tr("PROFILE_CALENDAR_OPEN_BUTTON")
+		calendar_button.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
+		calendar_button.set_meta("ui_icon_file", "calendar.svg")
+		UiIconHelper.apply_icon_from_meta(calendar_button, 18)
+	if history_button:
+		history_button.text = tr("PROFILE_HISTORY_OPEN_BUTTON")
+		history_button.tooltip_text = tr("PROFILE_HISTORY_OPEN_TIP")
+		history_button.set_meta("ui_icon_file", "scroll-text.svg")
+		UiIconHelper.apply_icon_from_meta(history_button, 18)
 	if share_cards_button:
 		share_cards_button.text = tr("PROFILE_SHARE_OPEN_BUTTON")
+		share_cards_button.tooltip_text = tr("PROFILE_SHARE_OPEN_TIP")
 		share_cards_button.set_meta("ui_icon_file", "file-chart-column.svg")
 		UiIconHelper.apply_icon_from_meta(share_cards_button, 18)
-		call_deferred("_balance_category_export_row")
+	call_deferred("_balance_category_export_row")
 	if footer_label:
-		footer_label.text = tr("PROFILE_FOOTER_HINT")
+		_refresh_footer_hint()
 	if category_nav:
 		category_nav.apply_button_labels()
+	if _history_dialog and _history_dialog.has_method("apply_locale"):
+		_history_dialog.apply_locale()
 	if _profile_initial_refresh_done and not _initial_profile_refresh_running:
 		_apply_profile_category_visibility(current_profile_category)
 	if overview_tab and overview_tab.has_method("apply_locale"):
@@ -93,9 +110,6 @@ func _ready() -> void:
 		stats_tab.bind(self)
 	if genres_tab and genres_tab.has_method("bind"):
 		genres_tab.bind(self)
-	if records_tab and records_tab.has_method("bind"):
-		records_tab.bind(self)
-
 	var game_engine = get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		var trans = game_engine.get_transitions()
@@ -134,14 +148,21 @@ func _ready() -> void:
 
 	_restore_profile_category_from_settings()
 	_migrate_legacy_profile_layout()
-	category_nav.ensure_records_button()
+	if category_nav.has_method("remove_records_category_button"):
+		category_nav.remove_records_category_button()
 	_setup_profile_categories()
 
+	if calendar_button and not calendar_button.pressed.is_connected(_on_calendar_button_pressed):
+		calendar_button.pressed.connect(_on_calendar_button_pressed)
+	if history_button and not history_button.pressed.is_connected(_on_history_button_pressed):
+		history_button.pressed.connect(_on_history_button_pressed)
 	if share_cards_button and not share_cards_button.pressed.is_connected(_on_share_cards_pressed):
 		share_cards_button.pressed.connect(_on_share_cards_pressed)
 		call_deferred("_balance_category_export_row")
 	if _share_modal and not _share_modal.closed.is_connected(_on_share_modal_closed):
 		_share_modal.closed.connect(_on_share_modal_closed)
+	if _history_dialog and _history_dialog.has_signal("closed") and not _history_dialog.closed.is_connected(_on_history_dialog_closed):
+		_history_dialog.closed.connect(_on_history_dialog_closed)
 	var category_row := get_node_or_null("MainVBox/CategoryRow") as Control
 	if category_row and not category_row.resized.is_connected(_balance_category_export_row):
 		category_row.resized.connect(_balance_category_export_row)
@@ -152,17 +173,122 @@ func _ready() -> void:
 		printerr("ProfileScreen: Кнопка back_button не найдена!")
 
 
+func open_activity_calendar() -> void:
+	_close_profile_overlays("calendar")
+	if _activity_calendar_dialog and _activity_calendar_dialog.has_method("open"):
+		_activity_calendar_dialog.open()
+
+
+func open_activity_calendar_month(month_key: String) -> void:
+	var key := str(month_key).strip_edges()
+	if key.length() < 7:
+		open_activity_calendar()
+		return
+	var parts := key.split("-")
+	if parts.size() < 2:
+		open_activity_calendar()
+		return
+	_close_profile_overlays("calendar")
+	if _activity_calendar_dialog and _activity_calendar_dialog.has_method("open_month"):
+		_activity_calendar_dialog.open_month(int(parts[0]), int(parts[1]))
+	else:
+		open_activity_calendar()
+
+
+func open_activity_calendar_day(date_iso: String) -> void:
+	var raw := str(date_iso).strip_edges()
+	if raw == "":
+		open_activity_calendar()
+		return
+	_close_profile_overlays("calendar")
+	if _activity_calendar_dialog and _activity_calendar_dialog.has_method("open_day"):
+		_activity_calendar_dialog.open_day(raw)
+	else:
+		open_activity_calendar()
+
+
+func open_library_song(song_path: String) -> void:
+	var path := str(song_path).replace("\\", "/").strip_edges()
+	if path == "":
+		return
+	var open_museum := bool(SettingsManager.get_setting("diary_open_track_museum", false))
+	_close_profile_overlays("")
+	if transitions and transitions.has_method("open_song_select_focusing"):
+		transitions.open_song_select_focusing(path, open_museum)
+
+
+func open_history(section: String = "timeline", focus_section_id: String = "") -> void:
+	_close_profile_overlays("history")
+	if _history_dialog and _history_dialog.has_method("open"):
+		_history_dialog.open(section, focus_section_id)
+		_refresh_footer_hint()
+
+
+func _on_history_dialog_closed() -> void:
+	_refresh_footer_hint()
+
+
+func _refresh_footer_hint() -> void:
+	if footer_label == null:
+		return
+	var history_open: bool = (
+		_history_dialog != null
+		and _history_dialog.has_method("is_open")
+		and bool(_history_dialog.is_open())
+	)
+	if history_open and _history_dialog.has_method("get_footer_hint"):
+		footer_label.text = str(_history_dialog.get_footer_hint())
+	elif history_open:
+		footer_label.text = tr("PROFILE_HISTORY_FOOTER_HINT")
+	elif current_profile_category == "stats":
+		footer_label.text = tr("PROFILE_FOOTER_HINT_STATS")
+	else:
+		footer_label.text = tr("PROFILE_FOOTER_HINT")
+
+
 func get_total_rr_earned() -> int:
 	if ProfileMilestonesManager:
 		return ProfileMilestonesManager.get_total_rr_earned()
 	return 0
 
 
-func with_profile_loading(action: Callable) -> void:
+func hold_nav_loading() -> void:
+	## Called from Transitions before the nav overlay hide — keeps spinner through first paint.
+	if _nav_loading_held:
+		return
+	var overlay := _resolve_loading_overlay()
+	if overlay == null:
+		return
+	overlay.show_loading(tr("UI_LOADING_PROFILE"), true)
+	_nav_loading_held = true
+
+
+func _resolve_loading_overlay() -> LoadingOverlay:
 	var overlay := _get_loading_overlay()
 	if overlay:
-		overlay.show_loading(tr("UI_LOADING_PROFILE"), true)
+		return overlay
+	# Before enter_tree, get_parent() is null — fall back via Transitions.
+	if transitions and transitions.get("game_engine") and transitions.game_engine.has_method("get_loading_overlay"):
+		return transitions.game_engine.get_loading_overlay()
+	return null
+
+
+func _release_nav_loading() -> void:
+	if not _nav_loading_held:
+		return
+	_nav_loading_held = false
+	var overlay := _resolve_loading_overlay()
+	if overlay:
+		overlay.hide_loading()
+
+
+func with_profile_loading(action: Callable, message_key: String = "UI_LOADING_PROFILE") -> void:
+	var overlay := _resolve_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr(message_key), true)
+	# Let the spinner paint before heavy sync work freezes the main thread.
 	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
 	await action.call()
 	if overlay:
 		overlay.hide_loading()
@@ -198,9 +324,6 @@ func _run_refresh_stats() -> void:
 		overview_tab.schedule_heavy_refresh()
 	elif current_profile_category == "stats" and stats_tab and stats_tab.has_method("request_chart_update"):
 		stats_tab.request_chart_update()
-	elif current_profile_category == "records" and records_tab and records_tab.has_method("is_built"):
-		if records_tab.is_built():
-			call_deferred("_refresh_records_panel")
 	if achievement_manager:
 		achievement_manager.check_rr_mastery_achievements()
 
@@ -208,6 +331,7 @@ func _run_refresh_stats() -> void:
 func on_category_nav_changed(category: String) -> void:
 	current_profile_category = category
 	_apply_profile_category_visibility(category)
+	_refresh_footer_hint()
 	if category == "stats" and stats_tab and stats_tab.has_method("on_tab_shown"):
 		stats_tab.on_tab_shown()
 
@@ -219,7 +343,13 @@ func _on_profile_category_selected(category: String) -> void:
 
 func _initial_profile_refresh() -> void:
 	_initial_profile_refresh_running = true
-	await with_profile_loading(_run_initial_profile_data_refresh)
+	if _nav_loading_held:
+		await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		await _run_initial_profile_data_refresh()
+		_release_nav_loading()
+	else:
+		await with_profile_loading(_run_initial_profile_data_refresh)
 	_initial_profile_refresh_running = false
 	_profile_initial_refresh_done = true
 	_profile_skip_category_transition = false
@@ -237,9 +367,6 @@ func _run_initial_profile_data_refresh() -> void:
 			if stats_tab and stats_tab.has_method("update_session_chart"):
 				stats_tab.update_session_chart()
 			await get_tree().process_frame
-		"records":
-			if records_tab and records_tab.has_method("rebuild_async"):
-				await records_tab.rebuild_async()
 		"genres":
 			if genres_tab and genres_tab.has_method("rebuild_async"):
 				await genres_tab.rebuild_async()
@@ -277,9 +404,15 @@ func _migrate_legacy_profile_layout() -> void:
 		if medals_btn:
 			hbox.remove_child(medals_btn)
 			medals_btn.queue_free()
+		var records_btn := hbox.get_node_or_null("CategoryButtonRecords") as Button
+		if records_btn:
+			hbox.remove_child(records_btn)
+			records_btn.queue_free()
 
-	if current_profile_category == "medals":
+	if current_profile_category == "medals" or current_profile_category == "records":
 		current_profile_category = "overview"
+		if category_nav:
+			category_nav.current_category = "overview"
 
 	if overview_tab and overview_tab.has_method("migrate_legacy_layout"):
 		overview_tab.migrate_legacy_layout()
@@ -301,14 +434,11 @@ func _apply_profile_category_visibility(category: String) -> void:
 	if genres_tab:
 		genres_tab.visible = category == "genres"
 	if records_tab:
-		records_tab.visible = category == "records"
+		records_tab.visible = false
 	if not _profile_initial_refresh_done or _initial_profile_refresh_running:
 		return
 	if category == "stats" and stats_tab and stats_tab.has_method("request_chart_update"):
 		stats_tab.request_chart_update()
-	if category == "records" and _profile_initial_refresh_done:
-		if records_tab and records_tab.has_method("is_built") and not records_tab.is_built():
-			call_deferred("_refresh_records_panel")
 	if category == "genres" and _profile_initial_refresh_done:
 		if genres_tab:
 			var panel = genres_tab.get_genres_panel() if genres_tab.has_method("get_genres_panel") else null
@@ -321,23 +451,9 @@ func _apply_profile_category_visibility(category: String) -> void:
 
 
 func open_records_section(section_id: String = "") -> void:
-	_pending_records_section_id = str(section_id).strip_edges()
-	if category_nav:
-		category_nav.select("records", false)
-	else:
-		current_profile_category = "records"
-		_apply_profile_category_visibility("records")
-	call_deferred("_focus_pending_records_section")
-
-
-func _focus_pending_records_section() -> void:
-	var section_id := _pending_records_section_id
-	_pending_records_section_id = ""
-	if records_tab and records_tab.has_method("focus_section"):
-		if not records_tab.is_built():
-			await records_tab.rebuild_async()
-		if section_id != "":
-			records_tab.focus_section(section_id)
+	var sid := str(section_id).strip_edges()
+	var group := ProfileRecordsView.group_for_section_id(sid)
+	open_history(group, sid)
 
 
 func _schedule_overview_heavy_refresh() -> void:
@@ -348,11 +464,6 @@ func _schedule_overview_heavy_refresh() -> void:
 func _refresh_genres_panel() -> void:
 	if genres_tab and genres_tab.has_method("refresh_panel"):
 		genres_tab.refresh_panel()
-
-
-func _refresh_records_panel() -> void:
-	if records_tab and records_tab.has_method("refresh_panel"):
-		records_tab.refresh_panel()
 
 
 func _maybe_show_profile_tutorial(force: bool = false) -> void:
@@ -388,7 +499,6 @@ func _run_profile_tutorial(force: bool) -> void:
 	var chart_card: Control = null
 	var chart_metric_accuracy: Button = null
 	var genres_panel_node: Node = null
-	var records_content: VBoxContainer = null
 	if stats_tab and stats_tab.has_method("get_chart_card"):
 		chart_card = stats_tab.get_chart_card()
 	if stats_tab and stats_tab.has_method("get_chart_metric_button"):
@@ -397,10 +507,6 @@ func _run_profile_tutorial(force: bool) -> void:
 		genres_panel_node = genres_tab.get_genres_panel()
 	elif genres_tab:
 		genres_panel_node = genres_tab
-	if records_tab and records_tab.has_method("get_content_vbox"):
-		records_content = records_tab.get_content_vbox()
-	elif records_tab:
-		records_content = records_tab as VBoxContainer
 	var steps: Array = [
 		{
 			"title_key": "TUTORIAL_PRO_1_TITLE",
@@ -420,7 +526,7 @@ func _run_profile_tutorial(force: bool) -> void:
 		{
 			"title_key": "TUTORIAL_PRO_4_TITLE",
 			"body_key": "TUTORIAL_PRO_4_BODY",
-			"target": records_content if records_content else records_tab,
+			"target": history_button if history_button else calendar_button,
 		},
 		{
 			"title_key": "TUTORIAL_PRO_5_TITLE",
@@ -453,7 +559,8 @@ func _switch_profile_category_for_tutorial(category: String) -> void:
 
 
 func _on_profile_tutorial_step_shown(step_index: int) -> void:
-	var categories := ["overview", "stats", "genres", "records", "records"]
+	# After optional CategoryBar intro: overview, stats, genres/music; history+export stay on overview.
+	var categories := ["overview", "stats", "genres", "overview", "overview"]
 	var category_hbox := get_node_or_null(_CATEGORIES_HBOX_PATH) as Control
 	var offset := 1 if category_hbox else 0
 	if step_index < offset:
@@ -474,14 +581,14 @@ func debug_show_tutorial() -> void:
 
 
 func cleanup_before_exit() -> void:
+	_nav_loading_held = false
 	var overlay := _get_loading_overlay()
 	if overlay:
 		overlay.reset_loading()
 
 
 func _balance_category_export_row() -> void:
-	# Tabs are truly centered under the title; Export is overlaid on the right
-	# and does not participate in the centering math.
+	# Tabs centered; Calendar / History / Export overlaid on the right (rightmost = Export).
 	var row := get_node_or_null("MainVBox/CategoryRow") as Control
 	if row == null or category_bar_panel == null:
 		return
@@ -495,15 +602,44 @@ func _balance_category_export_row() -> void:
 	var bar_y := (row_h - bar_size.y) * 0.5
 	category_bar_panel.position = Vector2(maxf(bar_x, 0.0), maxf(bar_y, 0.0))
 	category_bar_panel.size = bar_size
-	if share_cards_button == null or not is_instance_valid(share_cards_button):
-		return
-	share_cards_button.reset_size()
-	var btn_size := share_cards_button.get_combined_minimum_size()
-	if btn_size.x <= 1.0:
-		btn_size = share_cards_button.size
-	var btn_y := (row_h - btn_size.y) * 0.5
-	share_cards_button.position = Vector2(maxf(row.size.x - btn_size.x, 0.0), maxf(btn_y, 0.0))
-	share_cards_button.size = btn_size
+	var gap := 8.0
+	var right_x := row.size.x
+	if share_cards_button and is_instance_valid(share_cards_button):
+		share_cards_button.reset_size()
+		var share_size := share_cards_button.get_combined_minimum_size()
+		if share_size.x <= 1.0:
+			share_size = share_cards_button.size
+		var share_y := (row_h - share_size.y) * 0.5
+		share_cards_button.position = Vector2(maxf(right_x - share_size.x, 0.0), maxf(share_y, 0.0))
+		share_cards_button.size = share_size
+		right_x = share_cards_button.position.x - gap
+	if history_button and is_instance_valid(history_button):
+		history_button.reset_size()
+		var hist_size := history_button.get_combined_minimum_size()
+		if hist_size.x <= 1.0:
+			hist_size = history_button.size
+		var hist_y := (row_h - hist_size.y) * 0.5
+		history_button.position = Vector2(maxf(right_x - hist_size.x, 0.0), maxf(hist_y, 0.0))
+		history_button.size = hist_size
+		right_x = history_button.position.x - gap
+	if calendar_button and is_instance_valid(calendar_button):
+		calendar_button.reset_size()
+		var cal_size := calendar_button.get_combined_minimum_size()
+		if cal_size.x <= 1.0:
+			cal_size = calendar_button.size
+		var cal_y := (row_h - cal_size.y) * 0.5
+		calendar_button.position = Vector2(maxf(right_x - cal_size.x, 0.0), maxf(cal_y, 0.0))
+		calendar_button.size = cal_size
+
+
+func _on_calendar_button_pressed() -> void:
+	# Dialog open() plays modifier_select — avoid stacking MusicManager select.
+	open_activity_calendar()
+
+
+func _on_history_button_pressed() -> void:
+	# Dialog open() plays modifier_select — avoid stacking MusicManager select.
+	open_history("timeline")
 
 
 func _on_share_cards_pressed() -> void:
@@ -513,6 +649,7 @@ func _on_share_cards_pressed() -> void:
 
 
 func _open_share_recap_async() -> void:
+	_close_profile_overlays("share")
 	_share_recap_loading = true
 	if share_cards_button:
 		share_cards_button.disabled = true
@@ -527,11 +664,62 @@ func _on_share_modal_closed() -> void:
 	pass
 
 
+func _is_calendar_open() -> bool:
+	return (
+		_activity_calendar_dialog != null
+		and _activity_calendar_dialog.has_method("is_open")
+		and bool(_activity_calendar_dialog.is_open())
+	)
+
+
+func _is_history_open() -> bool:
+	return (
+		_history_dialog != null
+		and _history_dialog.has_method("is_open")
+		and bool(_history_dialog.is_open())
+	)
+
+
+func _is_share_open() -> bool:
+	return _share_modal != null and _share_modal.is_open()
+
+
+func _close_profile_overlays(except: String = "") -> void:
+	## Silently dismiss Calendar / History / Recap except the named surface.
+	if except != "history" and _is_history_open():
+		if _history_dialog.has_method("close"):
+			_history_dialog.close(false)
+		else:
+			_history_dialog.visible = false
+	if except != "calendar" and _is_calendar_open():
+		if _activity_calendar_dialog.has_method("close"):
+			_activity_calendar_dialog.close(false)
+		else:
+			_activity_calendar_dialog.visible = false
+	if except != "share" and _is_share_open():
+		_share_modal.close_modal(false)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
 		return
-	if _share_modal and _share_modal.is_open():
+	# Calendar on top of History: handle first so Q/E change months, not feed filters.
+	if (
+		_is_calendar_open()
+		and _activity_calendar_dialog.has_method("handle_hotkey")
+		and _activity_calendar_dialog.handle_hotkey(event)
+	):
+		get_viewport().set_input_as_handled()
+		return
+	if (
+		_is_history_open()
+		and _history_dialog.has_method("handle_hotkey")
+		and _history_dialog.handle_hotkey(event)
+	):
+		get_viewport().set_input_as_handled()
+		return
+	if _is_share_open():
 		if _share_modal.handle_hotkey(event):
 			get_viewport().set_input_as_handled()
 			return
@@ -546,9 +734,18 @@ func _handle_profile_hotkeys(event: InputEvent) -> bool:
 		return false
 	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
 		return false
-	if event.keycode >= KEY_1 and event.keycode <= KEY_4:
+	if event.keycode >= KEY_1 and event.keycode <= KEY_3:
 		var index := int(event.keycode - KEY_1)
 		_hotkey_select_profile_category(index)
+		return true
+	if event.keycode == KEY_4:
+		_hotkey_open_calendar()
+		return true
+	if event.keycode == KEY_5:
+		_hotkey_open_history()
+		return true
+	if event.keycode == KEY_6:
+		_hotkey_open_share()
 		return true
 	if current_profile_category == "stats" and stats_tab and stats_tab.has_method("hotkey_select_chart_metric"):
 		if event.keycode == KEY_Q:
@@ -570,6 +767,24 @@ func _hotkey_select_profile_category(index: int) -> void:
 		return
 	var category := String(ProfileCategoryNav.CATEGORY_BUTTON_SPECS[index][0])
 	_on_profile_category_selected(category)
+
+
+func _hotkey_open_calendar() -> void:
+	if _is_calendar_open():
+		return
+	open_activity_calendar()
+
+
+func _hotkey_open_history() -> void:
+	if _is_history_open():
+		return
+	open_history("timeline")
+
+
+func _hotkey_open_share() -> void:
+	if _is_share_open() or _share_recap_loading:
+		return
+	_open_share_recap_async()
 
 
 func _execute_close_transition() -> void:

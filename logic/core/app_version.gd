@@ -1,10 +1,10 @@
-# logic/app_version.gd
+# logic/core/app_version.gd
 extends RefCounted
 class_name AppVersion
 
 ## Единственное место для версии клиента (HUD, проверка обновлений, сборка installer).
-const CLIENT_VERSION = "1.2.0"
-const CLIENT_BUILD = 416
+const CLIENT_VERSION = "1.2.1"
+const CLIENT_BUILD = 417
 
 
 static func get_version() -> String:

@@ -1,3 +1,9 @@
-# Copy to worker/windows_python.path (one line, no comments in the actual file)
-# Example:
+# Optional. Copy to worker/windows_python.path (one line, no comments in the actual file).
+# Prefer omitting this file in release — RhythmFallServer.exe looks for:
+#   <game>\RhythmFallServer\.venv\Scripts\python.exe
+#
+# Relative to game root (recommended if you need a hint file):
+# RhythmFallServer\.venv\Scripts\python.exe
+#
+# Absolute only for non-standard layouts:
 # C:\Users\YOU\AppData\Local\Programs\Python\Python311\python.exe

@@ -8,7 +8,9 @@ func set_forced_size(size: Vector2) -> void:
 	forced_size = size
 	custom_minimum_size = size
 	size = size
-	queue_sort()
+	# Control has no queue_sort() (that's Container); refresh min-size for parents.
+	update_minimum_size()
+	queue_redraw()
 
 
 func _get_minimum_size() -> Vector2:

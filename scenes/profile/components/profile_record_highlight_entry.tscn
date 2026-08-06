@@ -11,11 +11,13 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="CaptionLabel" type="Label" parent="TopRow"]
-custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.654902, 0.654902, 0.678431, 1)
 theme_override_font_sizes/font_size = 15
 text = "Caption"
+text_overrun_behavior = 3
+clip_text = true
 
 [node name="ValueLabel" type="Label" parent="TopRow"]
 layout_mode = 2

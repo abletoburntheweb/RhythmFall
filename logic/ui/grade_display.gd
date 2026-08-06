@@ -1,4 +1,4 @@
-# logic/utils/grade_display.gd
+# logic/ui/grade_display.gd
 class_name GradeDisplay
 extends RefCounted
 

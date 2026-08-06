@@ -169,14 +169,15 @@ func apply_locale() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(debug_menu_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(split_compare_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(save_experimental_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(rhythm_dna_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_log_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_overlay_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_autoplay_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(drum_colors_checkbox)
+	const ACCENT := Color(0.52, 0.76, 0.92, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(debug_menu_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(split_compare_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(save_experimental_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(rhythm_dna_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_log_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_overlay_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_autoplay_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(drum_colors_checkbox, 22, false, ACCENT)
 
 
 func _apply_tooltips() -> void:

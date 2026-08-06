@@ -6,7 +6,6 @@ signal settings_changed
 const _OptionButtonPopupUtils = preload("res://logic/ui/option_button_popup_utils.gd")
 const _Overlay = preload("res://logic/ui/app_overlay_helpers.gd")
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
-
 const _CV := "ScrollWrap/CenterWrap/ContentVBox"
 const _LANG := "%s/LanguagePanel/LanguagePanelMargin/LanguageRows" % _CV
 const _UPDATES := "%s/UpdatesPanel/UpdatesPanelMargin/UpdatesRows" % _CV
@@ -16,6 +15,8 @@ const _UPDATES := "%s/UpdatesPanel/UpdatesPanelMargin/UpdatesRows" % _CV
 @onready var version_info_label: Label = get_node("%s/VersionRow/VersionInfoLabel" % _UPDATES)
 @onready var check_updates_button: Button = get_node("%s/VersionRow/CheckUpdatesButton" % _UPDATES)
 @onready var check_updates_on_startup_checkbox: CheckBox = get_node("%s/CheckUpdatesOnStartupCheckBox" % _UPDATES)
+@onready var whats_new_button: Button = %WhatsNewButton
+@onready var about_button: Button = %AboutButton
 @onready var language_header: Label = get_node("%s/LanguageHeader" % _LANG)
 @onready var language_hint: Label = get_node("%s/LanguageHint" % _LANG)
 @onready var updates_header: Label = get_node("%s/UpdatesHeader" % _UPDATES)
@@ -24,6 +25,8 @@ const _UPDATES := "%s/UpdatesPanel/UpdatesPanelMargin/UpdatesRows" % _CV
 @onready var _confirm_overlay: AppConfirmOverlay = %ConfirmOverlay
 
 var _pending_update_url: String = ""
+var _whats_new_overlay: WhatsNewOverlay = null
+var _about_overlay: AboutProjectOverlay = null
 
 
 func _ready() -> void:
@@ -53,10 +56,30 @@ func apply_locale() -> void:
 		check_updates_button.text = tr("UPDATE_CHECK_BUTTON") if not UpdateChecker or not UpdateChecker.is_busy() else tr("UPDATE_CHECKING")
 	if check_updates_on_startup_checkbox:
 		check_updates_on_startup_checkbox.text = tr("UPDATE_CHECK_ON_STARTUP")
+	if whats_new_button:
+		whats_new_button.text = tr("WHATS_NEW_BUTTON")
+	if about_button:
+		about_button.text = tr("ABOUT_BUTTON")
+	if _whats_new_overlay and is_instance_valid(_whats_new_overlay):
+		_whats_new_overlay.apply_locale()
+	if _about_overlay and is_instance_valid(_about_overlay):
+		_about_overlay.apply_locale()
 	_apply_update_dialog_locale()
 	_apply_language_option_items()
 	_sync_language_option_selection()
 	_apply_tooltips()
+
+
+func _ensure_whats_new_overlay() -> WhatsNewOverlay:
+	if _whats_new_overlay and is_instance_valid(_whats_new_overlay):
+		return _whats_new_overlay
+	# Load on first open so Settings boot does not pull MarkdownLabel / overlay tree.
+	var packed: PackedScene = load("res://ui/overlays/whats_new_overlay.tscn") as PackedScene
+	if packed == null:
+		return null
+	_whats_new_overlay = packed.instantiate() as WhatsNewOverlay
+	add_child(_whats_new_overlay)
+	return _whats_new_overlay
 
 
 func _setup_language_option_popup_font() -> void:
@@ -64,7 +87,9 @@ func _setup_language_option_popup_font() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(check_updates_on_startup_checkbox)
+	_SettingsSectionUi.apply_settings_checkbox(
+		check_updates_on_startup_checkbox, 22, false, Color(0.66, 0.58, 0.86, 1.0)
+	)
 
 
 func _apply_tooltips() -> void:
@@ -76,6 +101,33 @@ func _apply_tooltips() -> void:
 		check_updates_button.tooltip_text = tr("UPDATE_CHECK_BUTTON_TOOLTIP")
 	if check_updates_on_startup_checkbox:
 		check_updates_on_startup_checkbox.tooltip_text = tr("MISC_CHECK_UPDATES_ON_STARTUP_TOOLTIP")
+	if whats_new_button:
+		whats_new_button.tooltip_text = tr("WHATS_NEW_BUTTON_TOOLTIP")
+	if about_button:
+		about_button.tooltip_text = tr("ABOUT_BUTTON_TOOLTIP")
+
+
+func _ensure_about_overlay() -> AboutProjectOverlay:
+	if _about_overlay and is_instance_valid(_about_overlay):
+		return _about_overlay
+	var packed: PackedScene = load("res://ui/overlays/about_project_overlay.tscn") as PackedScene
+	if packed == null:
+		return null
+	_about_overlay = packed.instantiate() as AboutProjectOverlay
+	add_child(_about_overlay)
+	return _about_overlay
+
+
+func _on_whats_new_pressed() -> void:
+	var overlay := _ensure_whats_new_overlay()
+	if overlay:
+		overlay.show_latest()
+
+
+func _on_about_pressed() -> void:
+	var overlay := _ensure_about_overlay()
+	if overlay:
+		overlay.show_about()
 
 
 func _apply_update_dialog_locale() -> void:

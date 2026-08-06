@@ -321,7 +321,7 @@ func _apply_snapshot_progress(snapshot: Dictionary) -> void:
 		var item_id := str(d.get("id", ""))
 		if item_id == "":
 			continue
-		var row := _list_vbox.get_node_or_null("Row_%s" % item_id)
+		var row := _find_queue_row(item_id)
 		if row:
 			_update_row_progress(row, d.get("progress", {}) as Dictionary)
 
@@ -394,6 +394,23 @@ func _toggle_song_detail(song_path: String, instrument: String, lanes: int) -> v
 
 func _song_node_key(song_path: String) -> String:
 	return String(song_path).replace("\\", "/").md5_text()
+
+
+## Item ids embed absolute paths (`notes:D:/…|…`); `/` and `:` break NodePath.
+func _row_node_name(item_id: String) -> String:
+	var id := str(item_id).strip_edges()
+	if id == "":
+		return ""
+	return "Row_%s" % id.md5_text()
+
+
+func _find_queue_row(item_id: String) -> Control:
+	if _list_vbox == null:
+		return null
+	var row_name := _row_node_name(item_id)
+	if row_name == "":
+		return null
+	return _list_vbox.find_child(row_name, true, false) as Control
 
 
 func _sync_detail_panels() -> void:
@@ -622,8 +639,9 @@ func _make_kind_icon(kind: String, active: bool) -> TextureRect:
 func _make_row(item: Dictionary, indent_px: int, highlight_active: bool = false) -> Control:
 	var item_id := str(item.get("id", ""))
 	var wrap := MarginContainer.new()
-	if item_id != "":
-		wrap.name = "Row_%s" % item_id
+	var row_name := _row_node_name(item_id)
+	if row_name != "":
+		wrap.name = row_name
 	if indent_px > 0:
 		wrap.add_theme_constant_override("margin_left", indent_px)
 	var panel := _new_row_panel()
@@ -877,8 +895,13 @@ func _update_active_progress_only() -> void:
 		var item_id := str(item.get("id", ""))
 		if item_id == "":
 			continue
-		var row := _list_vbox.get_node_or_null("Row_%s" % item_id)
+		var row := _find_queue_row(item_id)
 		if row == null:
+			_last_queue_layout_key = ""
+			_on_queue_changed(snapshot)
+			return
+		if row.find_child("ProgressBar", true, false) == null:
+			_last_queue_layout_key = ""
 			_on_queue_changed(snapshot)
 			return
 		_update_row_progress(row, item.get("progress", {}) as Dictionary)

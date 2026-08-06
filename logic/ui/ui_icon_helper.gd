@@ -1,4 +1,4 @@
-# logic/utils/ui_icon_helper.gd
+# logic/ui/ui_icon_helper.gd
 extends RefCounted
 class_name UiIconHelper
 
@@ -22,7 +22,7 @@ static var _svg_source_cache: Dictionary = {}
 # display resolution keeps icons crisp instead of upscaling the small
 # imported bitmap (which caused blurry "staircase" edges).
 const _SVG_NATIVE_SIZE := 24.0
-const _RASTER_SCALE := 4
+const _RASTER_SCALE := 6
 
 
 static func raster_size_for_display(display_px: int) -> int:
@@ -74,7 +74,10 @@ static func make_texture_rect(texture: Texture2D, size: int) -> TextureRect:
 	icon.custom_minimum_size = Vector2(size, size)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	# Nearest is crisp for integer scales; linear softens odd downscales of tinted SVGs.
+	icon.texture_filter = (
+		CanvasItem.TEXTURE_FILTER_NEAREST if size >= 16 else CanvasItem.TEXTURE_FILTER_LINEAR
+	)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.texture = texture
 	icon.modulate = Color.WHITE
@@ -267,8 +270,29 @@ static func setup_modal_accent_button(
 	if button == null:
 		return
 	button.theme_type_variation = variation
+	apply_outline_accent(button, border_accent, variation)
+	if icon_file.strip_edges() != "":
+		configure_button_icon(button, icon_file, border_accent, icon_size)
+
+
+## Tint Flat* outline buttons to a page accent (settings tabs, etc.).
+## Keeps existing theme_type_variation; skips exit/danger styles.
+static func apply_outline_accent(
+	button: BaseButton,
+	border_accent: Color,
+	variation: StringName = &""
+) -> void:
+	if button == null:
+		return
+	var type_name: StringName = variation if variation != &"" else button.theme_type_variation
+	if type_name == &"":
+		type_name = &"FlatButton"
+	if is_danger_button_variation(type_name):
+		return
 	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var base := button.get_theme_stylebox(state, variation)
+		var base := button.get_theme_stylebox(state, type_name)
+		if base == null:
+			base = button.get_theme_stylebox(state)
 		if base == null:
 			continue
 		var box := base.duplicate() as StyleBoxFlat
@@ -281,9 +305,25 @@ static func setup_modal_accent_button(
 			border = border.lerp(Color(1, 1, 1, 1), 0.12)
 		elif state == "pressed":
 			border = border.darkened(0.08)
+		else:
+			border = Color(border.r, border.g, border.b, 0.85)
 		box.border_color = border
+		# Soft fill wash in the accent hue (keeps dark slate base).
+		if state != "disabled":
+			var wash_a := 0.14 if state == "normal" else (0.2 if state == "hover" else 0.18)
+			box.bg_color = Color(border_accent.r, border_accent.g, border_accent.b, wash_a).lerp(
+				Color(0.10, 0.11, 0.15, 0.96),
+				0.55
+			)
 		button.add_theme_stylebox_override(state, box)
-	configure_button_icon(button, icon_file, border_accent, icon_size)
+
+
+static func is_danger_button_variation(variation: StringName) -> bool:
+	return (
+		variation == &"FlatExitButton"
+		or variation == &"FlatModalDangerButton"
+		or variation == &"FlatDangerButton"
+	)
 
 
 static func configure_modal_overlay(control: Control, layer: int = 100) -> void:

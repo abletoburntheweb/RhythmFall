@@ -173,15 +173,31 @@ func filter_items(filter_text: String, skip_transition: bool = false):
 func find_item_list_index_for_path(song_path: String) -> int:
 	if song_path == "":
 		return -1
-	var norm_path := String(song_path).replace("\\", "/")
+	var norm_path := String(song_path).replace("\\", "/").strip_edges()
+	var norm_lower := norm_path.to_lower()
+	var file_lower := norm_path.get_file().to_lower()
+	var file_match := -1
 	for i in range(current_grouped_data.size()):
 		var item_data = current_grouped_data[i]
 		if item_data.type != "song":
 			continue
-		var item_path := String(item_data.data.get("path", "")).replace("\\", "/")
-		if item_path == norm_path:
+		var p := String(item_data.data.get("path", "")).replace("\\", "/").strip_edges()
+		if p == norm_path or p.to_lower() == norm_lower:
 			return i
-	return -1
+		# Diary paths sometimes differ only by absolute/relative prefix.
+		if file_lower != "" and file_match < 0 and p.get_file().to_lower() == file_lower:
+			file_match = i
+	return file_match
+
+
+func select_song_by_path(song_path: String) -> bool:
+	var idx := find_item_list_index_for_path(song_path)
+	if idx < 0 or item_list == null:
+		return false
+	item_list.select(idx, true)
+	item_list.ensure_current_is_visible()
+	_on_item_selected(idx)
+	return true
 
 
 func _run_grouped_rebuild(rebuild: Callable, skip_transition: bool = false) -> void:
@@ -1224,7 +1240,10 @@ func _reselect_previous(previous_path: String) -> void:
 	for i in range(current_grouped_data.size()):
 		var it = current_grouped_data[i]
 		if it.type == "song" and it.data.get("path", "") == previous_path:
+			# ItemList.select() does not emit item_selected — sync details panel explicitly.
 			item_list.select(i, true)
+			item_list.ensure_current_is_visible()
+			_on_item_selected(i)
 			break
 
 

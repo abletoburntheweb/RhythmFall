@@ -107,12 +107,11 @@ static func normalize_view_filter(raw: Variant) -> Dictionary:
 	var goals := _sanitize_string_list(src.get("goals", []), _GoalDiff.GOALS)
 	if goals.is_empty():
 		goals = [_GoalDiff.DEFAULT_GOAL]
-	elif goals.size() > 1:
-		goals = [goals[0]]
 	out["goals"] = goals
 	out["difficulties"] = _sanitize_string_list(src.get("difficulties", []), _GoalDiff.DIFFICULTIES)
 	if out["difficulties"].is_empty():
 		out["difficulties"] = _GoalDiff.DIFFICULTIES.duplicate()
+	# Original has no difficulty tiers — keep stored diffs only for Arcade stems.
 	var inst := str(src.get("instrument", "drums")).strip_edges().to_lower()
 	out["instrument"] = inst if inst != "" else "drums"
 	out["lanes"] = clampi(int(src.get("lanes", 4)), 1, 8)
@@ -404,3 +403,70 @@ static func _sanitize_paths(raw: Variant) -> Array[String]:
 				continue
 			out.append(path)
 	return out
+
+
+## Endless playlist activity (launches + clears inside those runs).
+static func get_activity(playlist_id: String) -> Dictionary:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var root: Variant = PlayerDataManager.data.get("playlist_activity", {})
+	if root is not Dictionary:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var entry: Variant = (root as Dictionary).get(pid, {})
+	if entry is not Dictionary:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var d := entry as Dictionary
+	return {
+		"run_count": maxi(0, int(d.get("run_count", 0))),
+		"session_clears": maxi(0, int(d.get("session_clears", 0))),
+		"last_played": str(d.get("last_played", "")).strip_edges(),
+	}
+
+
+static func _ensure_activity_root() -> Dictionary:
+	if PlayerDataManager == null:
+		return {}
+	if not PlayerDataManager.data.has("playlist_activity") \
+		or not PlayerDataManager.data["playlist_activity"] is Dictionary:
+		PlayerDataManager.data["playlist_activity"] = {}
+	return PlayerDataManager.data["playlist_activity"] as Dictionary
+
+
+static func _write_activity_entry(playlist_id: String, entry: Dictionary) -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var root := _ensure_activity_root()
+	root[pid] = entry
+	PlayerDataManager.data["playlist_activity"] = root
+	if PlayerDataManager.has_method("flush_save"):
+		PlayerDataManager.flush_save()
+
+
+static func record_playlist_run(playlist_id: String, datetime_iso: String = "") -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var prev := get_activity(pid)
+	var iso := datetime_iso.strip_edges()
+	if iso == "":
+		iso = TimeUtils.now_local_datetime_string() if typeof(TimeUtils) != TYPE_NIL else ""
+	_write_activity_entry(pid, {
+		"run_count": int(prev.get("run_count", 0)) + 1,
+		"session_clears": int(prev.get("session_clears", 0)),
+		"last_played": iso if iso != "" else str(prev.get("last_played", "")),
+	})
+
+
+static func record_playlist_session_clear(playlist_id: String) -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var prev := get_activity(pid)
+	var iso := TimeUtils.now_local_datetime_string() if typeof(TimeUtils) != TYPE_NIL else ""
+	_write_activity_entry(pid, {
+		"run_count": int(prev.get("run_count", 0)),
+		"session_clears": int(prev.get("session_clears", 0)) + 1,
+		"last_played": iso if iso != "" else str(prev.get("last_played", "")),
+	})

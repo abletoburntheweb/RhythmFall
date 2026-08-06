@@ -34,6 +34,56 @@ static func pick_random_insight(history: Array, avoid_title: String = "") -> Dic
 	return eligible[pick_idx]
 
 
+static func pick_dynamic_insight(history: Array, visit_index: int = 0) -> Dictionary:
+	## Deterministic rotation for the overview insights panel (by visit counter).
+	var eligible := _collect_eligible_insights(history)
+	if eligible.is_empty():
+		return _fallback_insight()
+	var idx := posmod(int(visit_index), eligible.size())
+	return eligible[idx]
+
+
+static func build_persistent_facts() -> Array:
+	## Compact chips above the rotating insight card: streak / XP / days in game.
+	var facts: Array = []
+	var streak := PlayerDataManager.get_login_streak() if PlayerDataManager else 0
+	if streak >= 1:
+		facts.append(_fact(
+			"flame.svg",
+			Color(0.95, 0.62, 0.32, 1.0),
+			TranslationServer.translate("PROFILE_INSIGHT_STREAK_FMT") % streak,
+		))
+	var xp_left := PlayerDataManager.get_xp_remaining_to_next_level() if PlayerDataManager else 0
+	if xp_left > 0:
+		facts.append(_fact(
+			"star.svg",
+			Color(0.72, 0.58, 0.95, 1.0),
+			TranslationServer.translate("PROFILE_INSIGHT_XP_FMT") % xp_left,
+		))
+	else:
+		facts.append(_fact(
+			"star.svg",
+			Color(0.92, 0.78, 0.42, 1.0),
+			TranslationServer.translate("PROFILE_INSIGHT_XP_MAX"),
+		))
+	var days := PlayerDataManager.get_days_in_rhythmfall() if PlayerDataManager else 0
+	if days >= 1:
+		facts.append(_fact(
+			"trees.svg",
+			Color(0.45, 0.82, 0.58, 1.0),
+			TranslationServer.translate("PROFILE_INSIGHT_MEMBER_DAY_FMT") % days,
+		))
+	return facts
+
+
+static func _fact(icon: String, accent: Color, text: String) -> Dictionary:
+	return {
+		"icon": icon,
+		"accent": accent,
+		"text": text,
+	}
+
+
 static func _collect_eligible_insights(history: Array) -> Array:
 	var eligible: Array = []
 

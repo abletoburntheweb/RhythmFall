@@ -115,6 +115,8 @@ var _preview_rows: Dictionary = {}
 var _last_scope_count: int = -1
 ## Coalesce rapid toggles into one scope scan per frame.
 var _preview_sync_queued: bool = false
+var _scope_count_token := 0
+const SCOPE_COUNT_YIELD_EVERY := 10
 var _track_filters_panel: VBoxContainer = null
 var _track_filter_bodies_container: VBoxContainer = null
 var _track_filter_chips_row: HBoxContainer = null
@@ -730,7 +732,6 @@ func _sync_playlist_ui() -> void:
 			_PlaylistCatalog.display_name(playlist_id),
 			int(stats.get("track_count", 0)),
 			PlaylistStats.format_duration(float(stats.get("duration_sec", 0.0))),
-			PlaylistStats.format_avg_rating(float(stats.get("avg_rating", 0.0))),
 		]
 	if _playlist_favorites_button:
 		var is_fav := playlist_id == _PlaylistCatalog.BUILTIN_FAVORITES_ID
@@ -991,7 +992,8 @@ func _sync_start_button_state(
 	fav_count: int,
 	selected_count: int,
 	genre_groups: Array,
-	pool: Array
+	pool: Array,
+	scope_count: int = 0
 ) -> void:
 	if _start_button == null:
 		return
@@ -999,7 +1001,7 @@ func _sync_start_button_state(
 	_start_button.disabled = not enabled
 	_start_button.modulate = Color.WHITE if enabled else Color(0.58, 0.62, 0.72, 0.72)
 	var reasons := _start_block_reasons(
-		fav_ok, mods_ok, scope_ok, genre_ok, selected_ok, favorites_only, fav_count, selected_count, genre_groups, pool
+		fav_ok, mods_ok, scope_ok, genre_ok, selected_ok, favorites_only, fav_count, selected_count, genre_groups, pool, scope_count
 	)
 	if _start_block_hint_label:
 		if enabled:
@@ -1024,13 +1026,18 @@ func _start_block_reasons(
 	fav_count: int,
 	selected_count: int,
 	genre_groups: Array,
-	pool: Array
+	pool: Array,
+	scope_count: int = 0
 ) -> PackedStringArray:
 	var reasons: PackedStringArray = []
+	var min_tracks := _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
 	if not fav_ok and favorites_only:
-		reasons.append(tr("SESSION_SETUP_START_BLOCK_FAVORITES") % fav_count)
+		reasons.append(tr("SESSION_SETUP_START_BLOCK_TRACKS") % [min_tracks, fav_count])
 	if not scope_ok:
-		reasons.append(tr("SESSION_SETUP_START_BLOCK_SCOPE"))
+		if scope_count > 0:
+			reasons.append(tr("SESSION_SETUP_START_BLOCK_TRACKS") % [min_tracks, scope_count])
+		else:
+			reasons.append(tr("SESSION_SETUP_START_BLOCK_SCOPE"))
 	if not genre_ok:
 		reasons.append(tr("SESSION_SETUP_START_BLOCK_GENRE") % genre_groups.size())
 	if not mods_ok:
@@ -1038,7 +1045,7 @@ func _start_block_reasons(
 	if not selected_ok:
 		reasons.append(
 			tr("SESSION_SETUP_START_BLOCK_TRACKS") % [
-				_EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN,
+				min_tracks,
 				selected_count,
 			]
 		)
@@ -1983,12 +1990,14 @@ func _sync_preview() -> void:
 	var dmin := float(_config.get("difficulty_min", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MIN))
 	var dmax := float(_config.get("difficulty_max", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MAX))
 	var max_over_cap := bool(_config.get("difficulty_max_over_cap", false))
-	var source_text := _EndlessSessionConfig.preview_source_text(source, false)
+	# Fold favorites-only into the source line when on; hide the redundant OFF row
+	# ("All library") that duplicated genre policy's "All library" wording.
+	var source_text := _EndlessSessionConfig.preview_source_text(source, favorites_only)
 	_set_preview_row("source", source_text, true)
 	_set_preview_row(
 		"favorites",
-		tr("SESSION_SETUP_PREVIEW_FAVORITES_ON") if favorites_only else tr("SESSION_SETUP_PREVIEW_FAVORITES_OFF"),
-		source == _EndlessSessionConfig.TRACK_SOURCE_RANDOM
+		tr("SESSION_SETUP_PREVIEW_FAVORITES_ON"),
+		source == _EndlessSessionConfig.TRACK_SOURCE_RANDOM and favorites_only
 	)
 	var unique_only := bool(_config.get("unique_songs_only", false))
 	_set_preview_row(
@@ -2066,16 +2075,78 @@ func _sync_preview() -> void:
 		true
 	)
 	_set_preview_row("mods", tr("SESSION_SETUP_PREVIEW_MODS_FMT") % _preview_mods_text(), true)
-	var scope_count := _SessionScopeResolver.scope_count(_config)
-	var scope_ok := scope_count > 0
-	_sync_scope_hero(scope_count, scope_ok)
-	_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % scope_count, false)
+	# Keep last known scope while async recount runs (avoids UI freeze on every toggle).
+	if _last_scope_count >= 0:
+		_sync_scope_hero(_last_scope_count, _last_scope_count > 0)
+		_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % _last_scope_count, false)
 	_sync_genre_policy_buttons()
 	_sync_genre_group_icons()
 	_sync_genre_visibility()
 	_sync_playlist_ui()
 	_sync_instrument_icons()
-	var fav_ok := not favorites_only or fav_count > 0
+	_apply_start_gates_with_scope(_last_scope_count if _last_scope_count >= 0 else 0)
+	_sync_filter_chip_summaries()
+	_sync_setup_option_styles()
+	_persist_config()
+	_kick_scope_count_async()
+
+
+func _kick_scope_count_async() -> void:
+	_scope_count_token += 1
+	var token := _scope_count_token
+	var cfg := _config.duplicate(true)
+	var engine := get_parent()
+	if engine and engine.has_method("run_async"):
+		engine.run_async(_scope_count_coro.bind(token, cfg))
+	else:
+		var count := _SessionScopeResolver.scope_count_fast(cfg)
+		if token == _scope_count_token:
+			_apply_scope_count_result(count)
+
+
+func _scope_count_coro(token: int, cfg: Dictionary) -> void:
+	if token != _scope_count_token or not is_inside_tree():
+		return
+	var plan := _SessionScopeResolver.scope_scan_plan(cfg)
+	var count := 0
+	if bool(plan.get("playlist_mode", false)):
+		count = _SessionScopeResolver.scope_count_fast(cfg)
+	else:
+		var paths: Array = plan.get("paths", [])
+		var instruments: Array = plan.get("instruments", [])
+		var sanitized: Dictionary = plan.get("cfg", cfg)
+		var n := 0
+		for song_path in paths:
+			if token != _scope_count_token:
+				return
+			for inst in instruments:
+				count += _SessionScopeResolver.count_entries_for_song(
+					str(song_path), sanitized, str(inst)
+				)
+			n += 1
+			if n % SCOPE_COUNT_YIELD_EVERY == 0:
+				await get_tree().process_frame
+	if token != _scope_count_token or not is_inside_tree():
+		return
+	_apply_scope_count_result(count)
+
+
+func _apply_scope_count_result(scope_count: int) -> void:
+	var scope_ok := scope_count > 0
+	_sync_scope_hero(scope_count, scope_ok)
+	_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % scope_count, false)
+	_apply_start_gates_with_scope(scope_count)
+
+
+func _apply_start_gates_with_scope(scope_count: int) -> void:
+	var source := str(_config.get("track_source", _EndlessSessionConfig.TRACK_SOURCE_RANDOM))
+	var favorites_only := bool(_config.get("random_favorites_only", false))
+	var fav_count := _favorite_track_count()
+	var genre_policy := str(_config.get("genre_policy", _EndlessSessionConfig.GENRE_POLICY_ALL))
+	var genre_groups: Array = _config.get("genre_group_ids", [])
+	var selected_paths: Array = _config.get("selected_song_paths", [])
+	var scope_ok := scope_count >= _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
+	var fav_ok := not favorites_only or fav_count >= _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
 	var mod_policy := str(_config.get("mod_policy", _EndlessSessionConfig.MOD_POLICY_NONE))
 	var pool: Array = _config.get("mod_pool", [])
 	var mods_ok := (
@@ -2113,11 +2184,9 @@ func _sync_preview() -> void:
 		fav_count,
 		selected_paths.size(),
 		genre_groups,
-		pool
+		pool,
+		scope_count
 	)
-	_sync_filter_chip_summaries()
-	_sync_setup_option_styles()
-	_persist_config()
 
 
 func _preview_mods_text() -> String:
@@ -2313,11 +2382,28 @@ func _execute_close_transition() -> void:
 
 func _on_start_pressed() -> void:
 	var config := _EndlessSessionConfig.sanitize(_config)
+	var scope_n := _SessionScopeResolver.scope_count_fast(config)
+	if scope_n <= 0:
+		if _notice_overlay:
+			_notice_overlay.show_with_actions(
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_TITLE"),
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_BODY"),
+			)
+		if MusicManager:
+			MusicManager.play_modifier_deselect_sound()
+		return
 	if transitions and transitions.has_method("stage_endless_session_config"):
 		transitions.stage_endless_session_config(config)
 	if transitions and transitions.has_method("open_endless_run"):
 		transitions.open_endless_run(config)
-		MusicManager.play_modifier_select_sound()
+		# open_endless_run may still fail if deck build races; only play select on attempt.
+		if transitions.get_endless_run() != null:
+			MusicManager.play_modifier_select_sound()
+		elif _notice_overlay:
+			_notice_overlay.show_with_actions(
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_TITLE"),
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_BODY"),
+			)
 		return
 	if _notice_overlay:
 		_notice_overlay.show_with_actions(

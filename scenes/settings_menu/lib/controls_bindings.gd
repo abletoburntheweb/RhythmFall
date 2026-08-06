@@ -1,4 +1,4 @@
-# logic/utils/controls_bindings.gd
+# scenes/settings_menu/lib/controls_bindings.gd
 extends RefCounted
 class_name ControlsBindings
 

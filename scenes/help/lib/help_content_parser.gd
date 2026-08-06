@@ -1,4 +1,4 @@
-# logic/utils/help_content_parser.gd
+# scenes/help/lib/help_content_parser.gd
 extends RefCounted
 class_name HelpContentParser
 

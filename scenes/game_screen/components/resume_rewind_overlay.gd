@@ -24,17 +24,19 @@ func play(host: Control, duration: float, hint_text: String = "") -> void:
 	_build_ui(hint_text)
 	modulate = Color(1, 1, 1, 0)
 	visible = true
+	await get_tree().process_frame
+	if _icon:
+		_icon.pivot_offset = _icon.size * 0.5
 	if _tween and _tween.is_valid():
 		_tween.kill()
-	var fade_in := minf(0.18, duration * 0.12)
-	var fade_out := minf(0.28, duration * 0.15)
+	var fade_in := minf(0.22, duration * 0.1)
+	var fade_out := minf(0.35, duration * 0.12)
 	var hold := maxf(duration - fade_in - fade_out, 0.05)
 	var spin_duration := fade_in + hold
 	_tween = create_tween()
 	_tween.set_parallel(true)
 	_tween.tween_property(self, "modulate:a", 1.0, fade_in)
 	if _icon:
-		_icon.pivot_offset = _icon.size * 0.5
 		_tween.tween_property(_icon, "rotation", TAU * -1.25, spin_duration)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if _tint:

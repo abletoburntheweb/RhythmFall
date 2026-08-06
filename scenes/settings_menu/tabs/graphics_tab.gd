@@ -735,6 +735,7 @@ func _apply_segmented_tooltips() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
+	const ACCENT := Color(0.42, 0.57, 0.82, 1.0)
 	for checkbox in [
 		show_error_meter_checkbox,
 		show_health_bar_checkbox,
@@ -745,4 +746,4 @@ func _apply_settings_checkbox_styles() -> void:
 		shop_kick_waveform_checkbox,
 		series_inter_track_countdown_checkbox,
 	]:
-		_SettingsSectionUi.apply_settings_checkbox(checkbox)
+		_SettingsSectionUi.apply_settings_checkbox(checkbox, 22, false, ACCENT)

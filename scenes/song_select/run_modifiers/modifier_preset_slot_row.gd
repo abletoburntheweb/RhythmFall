@@ -98,6 +98,9 @@ func setup(
 				_icons_row,
 				entry.get("modifiers", []),
 				entry.get("params", {}),
+				10,
+				true,
+				false,
 			)
 		else:
 			_IconStrip.fill_slot_chips(_icons_row, [], {})

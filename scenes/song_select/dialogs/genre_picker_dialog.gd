@@ -1,4 +1,4 @@
-# scenes/song_select/genre_picker_dialog.gd
+# scenes/song_select/dialogs/genre_picker_dialog.gd
 extends Control
 class_name GenrePickerDialog
 

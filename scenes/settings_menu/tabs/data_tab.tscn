@@ -81,6 +81,159 @@ theme_type_variation = &"FlatButtonGreen"
 theme_override_font_sizes/font_size = 20
 text = "Импорт прогресса"
 
+[node name="RecapPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSlate"
+
+[node name="RecapPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="RecapRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RecapHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSlate"
+theme_override_font_sizes/font_size = 22
+text = "PNG export (Recap)"
+
+[node name="RecapHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Share cards from Profile → Export."
+
+[node name="RecapStatusLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.94, 0.96)
+theme_override_font_sizes/font_size = 16
+autowrap_mode = 3
+text = "Status: —"
+
+[node name="RecapButtonsHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RecapCheckButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows/RecapButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 54)
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 20
+text = "Check setup"
+
+[node name="RecapInstallButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows/RecapButtonsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 54)
+theme_type_variation = &"FlatButtonGreen"
+theme_override_font_sizes/font_size = 20
+text = "Install / repair"
+
+[node name="FoldersPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSlate"
+
+[node name="FoldersPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="FoldersRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FoldersHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSlate"
+theme_override_font_sizes/font_size = 22
+text = "Folders"
+
+[node name="FoldersHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Open local folders used by the game."
+
+[node name="OpenDataFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 20
+text = "Open data folder"
+
+[node name="ReplayFolderHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSlate"
+theme_override_font_sizes/font_size = 20
+text = "Run replays"
+
+[node name="ReplayFolderHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Folder for auto-saved .rfr files."
+
+[node name="ReplayFolderHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ReplayFolderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Path"
+
+[node name="ReplayFolderLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme_override_font_sizes/font_size = 18
+editable = false
+
+[node name="ChooseReplayFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 18
+text = "Choose…"
+
+[node name="OpenReplayFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 18
+text = "Open"
+
+[node name="ReplayAutoSaveCheckbox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Auto-save replays after victory"
+
 [node name="ToolsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 theme_type_variation = &"SectionPanelSlate"
@@ -100,14 +253,14 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_type_variation = &"SectionHeaderSlate"
 theme_override_font_sizes/font_size = 22
-text = "Кэш"
+text = "Cache"
 
 [node name="ToolsHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
 theme_override_font_sizes/font_size = 14
 autowrap_mode = 3
-text = "Сброс локального кэша BPM. Чарты и прогресс не удаляются."
+text = "Reset the local BPM cache. Charts and progress are kept."
 
 [node name="BpmButtonRow" type="CenterContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows"]
 layout_mode = 2
@@ -131,6 +284,13 @@ file_mode = 0
 access = 2
 use_native_dialog = true
 
+[node name="ReplayFolderDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+unresizable = true
+file_mode = 2
+access = 2
+use_native_dialog = true
+
 [node name="NoticeOverlay" parent="." instance=ExtResource("3_notice")]
 unique_name_in_owner = true
 layout_mode = 1
@@ -141,6 +301,13 @@ layout_mode = 1
 
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox/ExportProgressButton" to="." method="_on_export_progress_pressed"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/BackupPanel/BackupPanelMargin/BackupRows/BackupButtonsHBox/ImportProgressButton" to="." method="_on_import_progress_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows/RecapButtonsHBox/RecapCheckButton" to="." method="_on_recap_check_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/RecapPanel/RecapPanelMargin/RecapRows/RecapButtonsHBox/RecapInstallButton" to="." method="_on_recap_install_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/OpenDataFolderButton" to="." method="_on_open_data_folder_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox/ChooseReplayFolderButton" to="." method="_on_choose_replay_folder_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayFolderHBox/OpenReplayFolderButton" to="." method="_on_open_replay_folder_pressed"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/FoldersPanel/FoldersPanelMargin/FoldersRows/ReplayAutoSaveCheckbox" to="." method="_on_replay_auto_save_toggled"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ToolsPanel/ToolsPanelMargin/ToolsRows/BpmButtonRow/ResetBPMBatchButton" to="." method="_on_reset_bpm_batch_pressed"]
 [connection signal="file_selected" from="ExportProgressDialog" to="." method="_on_export_progress_file_selected"]
 [connection signal="file_selected" from="ImportProgressDialog" to="." method="_on_import_progress_file_selected"]
+[connection signal="dir_selected" from="ReplayFolderDialog" to="." method="_on_replay_folder_dir_selected"]

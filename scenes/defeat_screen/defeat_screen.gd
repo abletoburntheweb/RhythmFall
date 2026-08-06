@@ -175,6 +175,20 @@ func _deferred_update_ui() -> void:
 
 	var is_drum_mode: bool = String(song_info.get("instrument", "standard")) == "drums"
 	PlayerDataManager.add_score_to_total(score, is_drum_mode)
+	var defeat_mode := str(song_info.get("mode", "basic"))
+	var play_sec := int(song_info.get("duration_sec", song_info.get("duration", 0)))
+	if play_sec <= 0:
+		play_sec = int(round(float(song_info.get("length", 0))))
+	PlayerDataManager.record_activity_run({
+		"grade": "F",
+		"mode": defeat_mode,
+		"instrument": str(song_info.get("instrument", "drums")),
+		"play_seconds": maxi(0, play_sec),
+		"currency_earned": 0,
+		"cleared": false,
+		"score": int(score),
+		"max_combo": int(max_combo),
+	})
 
 	if defeat_animation_player:
 		modulate = Color(1.0, 1.0, 1.0, 0.0)

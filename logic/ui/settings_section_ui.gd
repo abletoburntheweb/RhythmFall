@@ -1,4 +1,4 @@
-# logic/utils/settings_section_ui.gd
+# logic/ui/settings_section_ui.gd
 extends RefCounted
 class_name SettingsSectionUi
 
@@ -100,7 +100,12 @@ static func make_setting_block(title: String, description: String, control: Cont
 	return block
 
 
-static func apply_settings_checkbox(checkbox: CheckBox, font_size: int = 22, compact: bool = false) -> void:
+static func apply_settings_checkbox(
+	checkbox: CheckBox,
+	font_size: int = 22,
+	compact: bool = false,
+	accent: Color = Color(0.42, 0.57, 0.82, 1.0)
+) -> void:
 	if checkbox == null:
 		return
 	checkbox.theme_type_variation = &"SettingsCheckBoxCompact" if compact else &"SettingsCheckBox"
@@ -110,15 +115,26 @@ static func apply_settings_checkbox(checkbox: CheckBox, font_size: int = 22, com
 		checkbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# Force stable frame overrides so on/off never lose the border even when a
 	# Control embeds a stale app_theme.tres (theme_type_variation alone is not enough).
-	_apply_stable_check_frame(checkbox, compact)
+	_apply_stable_check_frame(checkbox, compact, accent)
+	_wire_settings_checkbox_sound(checkbox)
 
 
-static func _apply_stable_check_frame(checkbox: CheckBox, compact: bool) -> void:
-	var border := Color(1, 1, 1, 0.22)
-	var focus_border := Color(0.42, 0.57, 0.82, 1.0)
+static func _wire_settings_checkbox_sound(checkbox: CheckBox) -> void:
+	if checkbox == null or checkbox.get_meta("ui_mod_sfx_wired", false):
+		return
+	checkbox.set_meta("ui_mod_sfx_wired", true)
+	checkbox.toggled.connect(func(on: bool) -> void:
+		UiModifierSounds.play_toggle(on)
+	)
+
+
+static func _apply_stable_check_frame(checkbox: CheckBox, compact: bool, accent: Color = Color(0.42, 0.57, 0.82, 1.0)) -> void:
+	var border := Color(accent.r, accent.g, accent.b, 0.38)
+	var focus_border := accent.lightened(0.08)
 	var pad_h := 8.0 if compact else 12.0
 	var pad_v := 4.0 if compact else 10.0
-	var normal := AppTheme._make_button_box(Color(1, 1, 1, 0.04), border, true, 1)
+	var wash := Color(accent.r, accent.g, accent.b, 0.06).lerp(Color(1, 1, 1, 0.04), 0.35)
+	var normal := AppTheme._make_button_box(wash, border, true, 1)
 	normal.shadow_size = 0
 	normal.content_margin_left = pad_h
 	normal.content_margin_right = pad_h
@@ -126,11 +142,11 @@ static func _apply_stable_check_frame(checkbox: CheckBox, compact: bool) -> void
 	normal.content_margin_bottom = pad_v
 	normal.set_corner_radius_all(10)
 	var hover := normal.duplicate()
-	hover.bg_color = Color(1, 1, 1, 0.08)
-	hover.border_color = border.lightened(0.08)
+	hover.bg_color = Color(accent.r, accent.g, accent.b, 0.12).lerp(Color(1, 1, 1, 0.06), 0.3)
+	hover.border_color = Color(accent.r, accent.g, accent.b, 0.55)
 	var pressed := normal.duplicate()
-	pressed.bg_color = Color(1, 1, 1, 0.1)
-	pressed.border_color = border
+	pressed.bg_color = Color(accent.r, accent.g, accent.b, 0.16)
+	pressed.border_color = Color(accent.r, accent.g, accent.b, 0.7)
 	var hover_pressed := pressed.duplicate()
 	hover_pressed.bg_color = hover.bg_color
 	hover_pressed.border_color = hover.border_color
@@ -146,6 +162,9 @@ static func _apply_stable_check_frame(checkbox: CheckBox, compact: bool) -> void
 	checkbox.add_theme_stylebox_override("hover_pressed", hover_pressed)
 	checkbox.add_theme_stylebox_override("disabled", disabled)
 	checkbox.add_theme_stylebox_override("focus", focus)
+	# Checkmark / box glyph follow the section accent (amber on Library, teal on Sound, …).
+	checkbox.add_theme_color_override("checkbox_checked_color", accent.lightened(0.05))
+	checkbox.add_theme_color_override("checkbox_unchecked_color", Color(accent.r, accent.g, accent.b, 0.55).lerp(Color(0.75, 0.80, 0.90, 1.0), 0.45))
 
 
 static func make_section_hint_label(text: String) -> Label:
@@ -172,6 +191,23 @@ static func make_help_link_button(text: String) -> LinkButton:
 static func make_help_icon_button(tooltip: String = "") -> Button:
 	# Mint chip — readable on blue UI without amber “warning” vibe.
 	const HELP_TINT := Color(0.48, 0.90, 0.76, 1.0)
+	var btn := _make_round_icon_chip("circle-question-mark.svg", HELP_TINT, tooltip)
+	btn.pressed.connect(_play_help_click_sound)
+	return btn
+
+
+static func make_settings_icon_button(tooltip: String = "") -> Button:
+	const SETTINGS_TINT := Color(0.55, 0.78, 0.98, 1.0)
+	var btn := _make_round_icon_chip("settings.svg", SETTINGS_TINT, tooltip)
+	btn.pressed.connect(_play_help_click_sound)
+	return btn
+
+
+static func _play_help_click_sound() -> void:
+	UiModifierSounds.play_select()
+
+
+static func _make_round_icon_chip(icon_file: String, tint: Color, tooltip: String = "") -> Button:
 	const ICON_PX := 22
 	var btn := Button.new()
 	btn.text = ""
@@ -184,7 +220,7 @@ static func make_help_icon_button(tooltip: String = "") -> Button:
 	btn.tooltip_text = tooltip
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(0.08, 0.12, 0.12, 0.94)
-	normal.border_color = Color(0.48, 0.90, 0.76, 0.50)
+	normal.border_color = Color(tint.r, tint.g, tint.b, 0.50)
 	normal.set_border_width_all(1)
 	normal.set_corner_radius_all(18)
 	normal.content_margin_left = 6
@@ -193,7 +229,7 @@ static func make_help_icon_button(tooltip: String = "") -> Button:
 	normal.content_margin_bottom = 6
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = Color(0.10, 0.18, 0.16, 0.96)
-	hover.border_color = Color(0.62, 0.96, 0.84, 0.85)
+	hover.border_color = Color(tint.r, tint.g, tint.b, 0.85)
 	var pressed := normal.duplicate() as StyleBoxFlat
 	pressed.bg_color = Color(0.06, 0.10, 0.10, 0.96)
 	for state in ["normal", "hover", "pressed", "focus"]:
@@ -203,7 +239,7 @@ static func make_help_icon_button(tooltip: String = "") -> Button:
 		elif state == "pressed":
 			box = pressed
 		btn.add_theme_stylebox_override(state, box)
-	UiIconHelper.configure_button_icon(btn, "circle-question-mark.svg", HELP_TINT, ICON_PX)
+	UiIconHelper.configure_button_icon(btn, icon_file, tint, ICON_PX)
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.add_theme_constant_override("h_separation", 0)
 	btn.add_theme_constant_override("icon_max_width", ICON_PX)

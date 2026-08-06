@@ -59,6 +59,7 @@ var _cached_marathon_tier: String = ""
 @onready var difficulty_caption_label: Label = get_node_or_null("%s/DifficultyHighlight/VBox/CaptionLabel" % _HIGHLIGHTS) as Label
 @onready var recent_achievements_title: Label = get_node_or_null("%s/ContentVBox/CardTitle" % _ACHIEVEMENTS) as Label
 @onready var profile_medals_card: PanelContainer = get_node_or_null("TrackMedalsCard") as PanelContainer
+@onready var activity_calendar_card: PanelContainer = get_node_or_null("ActivityCalendarCard") as PanelContainer
 @onready var level_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/LevelLabel" % _HIGHLIGHTS) as Label
 @onready var xp_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPLabel" % _HIGHLIGHTS) as Label
 @onready var xp_progress_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressLabel" % _HIGHLIGHTS) as Label
@@ -97,6 +98,8 @@ func apply_locale() -> void:
 		favorite_track_card_title.text = tr("PROFILE_FAVORITE_TRACK")
 	if profile_medals_card and profile_medals_card.has_method("apply_locale"):
 		profile_medals_card.apply_locale()
+	if activity_calendar_card and activity_calendar_card.has_method("apply_locale"):
+		activity_calendar_card.apply_locale()
 	if level_card_title:
 		level_card_title.text = tr("PROFILE_LEVEL_TITLE")
 	if play_time_caption_label:
@@ -113,6 +116,9 @@ func apply_locale() -> void:
 		achievements_empty_label.text = tr("PROFILE_NO_RECENT_ACHIEVEMENTS")
 	if _login_streak_highlight_caption:
 		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % PlayerDataManager.get_best_login_streak()
+	var streak_tile := highlights_row.get_node_or_null("LoginStreakHighlight") as Control if highlights_row else null
+	if streak_tile:
+		streak_tile.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
 	if _rr_highlight_caption:
 		_rr_highlight_caption.text = tr("PROFILE_STAT_TOTAL_RR")
 	if _genre_portrait_title:
@@ -155,6 +161,8 @@ func refresh_fast() -> void:
 		xp_progress_bar.value = PlayerDataManager.get_xp_progress()
 	_update_highlight_tiles(overall_accuracy)
 	_update_login_streak_display()
+	if activity_calendar_card and activity_calendar_card.has_method("refresh"):
+		activity_calendar_card.refresh()
 
 
 func schedule_heavy_refresh() -> void:
@@ -181,6 +189,8 @@ func on_play_time_changed() -> void:
 
 func on_calendar_day_changed() -> void:
 	_update_login_streak_display()
+	if activity_calendar_card and activity_calendar_card.has_method("refresh"):
+		activity_calendar_card.refresh()
 
 
 func _refresh_heavy(token: int) -> void:
@@ -800,6 +810,7 @@ func _setup_overview_extras() -> void:
 	_remove_legacy_login_streak_card()
 	if _login_streak_highlight_value == null:
 		_setup_login_streak_highlight()
+	_wire_login_streak_highlight_click()
 	if _rr_highlight_value == null:
 		_setup_rr_highlight()
 	_bind_genre_portrait_card()
@@ -811,6 +822,28 @@ func _setup_overview_extras() -> void:
 		_genre_portrait_title.text = tr("PROFILE_GENRE_PORTRAIT_TITLE")
 	if _genre_portrait_empty_label:
 		_genre_portrait_empty_label.text = tr("PROFILE_GENRE_PORTRAIT_EMPTY")
+
+
+func _wire_login_streak_highlight_click() -> void:
+	if highlights_row == null:
+		return
+	var tile := highlights_row.get_node_or_null("LoginStreakHighlight") as Control
+	if tile == null:
+		return
+	tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	tile.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
+	if not tile.gui_input.is_connected(_on_login_streak_highlight_gui_input):
+		tile.gui_input.connect(_on_login_streak_highlight_gui_input)
+
+
+func _on_login_streak_highlight_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			if screen and screen.has_method("open_activity_calendar"):
+				screen.open_activity_calendar()
+			get_viewport().set_input_as_handled()
 
 
 func _bind_genre_portrait_card() -> void:

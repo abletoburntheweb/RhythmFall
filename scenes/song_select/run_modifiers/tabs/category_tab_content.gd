@@ -56,6 +56,15 @@ func get_card(modifier_id: String):
 	return _cards.get(modifier_id, null)
 
 
+func get_ordered_visible_modifier_ids() -> Array[String]:
+	var out: Array[String] = []
+	for mod_id in _cards.keys():
+		var card = _cards.get(mod_id, null)
+		if card is Control and (card as Control).visible:
+			out.append(str(mod_id))
+	return out
+
+
 func set_card_visible(modifier_id: String, visible: bool) -> void:
 	var card = _cards.get(modifier_id, null)
 	if card is Control:

@@ -131,6 +131,7 @@ mouse_filter = 2
 
 [node name="FPSLayer" type="CanvasLayer" parent="."]
 layer = 100
+visible = false
 
 [node name="FPSBackground" type="ColorRect" parent="FPSLayer"]
 offset_right = 45.0
@@ -159,6 +160,7 @@ theme_override_font_sizes/font_size = 12
 text = "v1.2.0 • Release (Build 416)"
 
 [node name="XPContainer" type="Control" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0

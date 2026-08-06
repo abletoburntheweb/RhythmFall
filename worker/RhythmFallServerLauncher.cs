@@ -120,23 +120,47 @@ internal static class RhythmFallServerLauncher
         return text;
     }
 
-    private static int RunNativeServer(string serverDir, string port)
+    /// <summary>
+    /// Resolve python path from env / sibling .venv / optional worker\windows_python.path.
+    /// Path file may be absolute or relative to the game root (exe directory).
+    /// Prefer omitting windows_python.path in release — default is RhythmFallServer\.venv\Scripts\python.exe.
+    /// </summary>
+    private static string ResolvePythonPath(string serverDir, string gameRoot)
     {
         string python = Environment.GetEnvironmentVariable("RFALL_PYTHON");
-        if (string.IsNullOrWhiteSpace(python))
+        if (!string.IsNullOrWhiteSpace(python) && File.Exists(python))
         {
-            string venvPython = Path.Combine(serverDir, ".venv", "Scripts", "python.exe");
-            if (File.Exists(venvPython))
-            {
-                python = venvPython;
-            }
+            return python;
         }
-        if (string.IsNullOrWhiteSpace(python))
+
+        string venvPython = Path.Combine(serverDir, ".venv", "Scripts", "python.exe");
+        if (File.Exists(venvPython))
         {
-            string root = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
-            string pathFile = Path.Combine(root, "worker", "windows_python.path");
-            python = ReadPathFile(pathFile);
+            return venvPython;
         }
+
+        string pathFile = Path.Combine(gameRoot, "worker", "windows_python.path");
+        string fromFile = ReadPathFile(pathFile);
+        if (string.IsNullOrWhiteSpace(fromFile))
+        {
+            return null;
+        }
+        if (!Path.IsPathRooted(fromFile))
+        {
+            fromFile = Path.GetFullPath(Path.Combine(gameRoot, fromFile));
+        }
+        if (File.Exists(fromFile))
+        {
+            return fromFile;
+        }
+        Console.Error.WriteLine("[RhythmFall] Python not found: " + fromFile);
+        return null;
+    }
+
+    private static int RunNativeServer(string serverDir, string port)
+    {
+        string root = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+        string python = ResolvePythonPath(serverDir, root);
         if (!string.IsNullOrWhiteSpace(python) && !File.Exists(python))
         {
             Console.Error.WriteLine("[RhythmFall] Python not found: " + python);

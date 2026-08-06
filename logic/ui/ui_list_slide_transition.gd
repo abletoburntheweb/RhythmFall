@@ -1,4 +1,4 @@
-# logic/utils/ui_list_slide_transition.gd
+# logic/ui/ui_list_slide_transition.gd
 extends RefCounted
 class_name UiListSlideTransition
 

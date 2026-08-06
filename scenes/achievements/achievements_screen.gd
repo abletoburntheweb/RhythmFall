@@ -365,23 +365,41 @@ func _pick_overview_preview(items: Array) -> Array:
 	return result
 
 
+func _is_catalog_visible(ach: Dictionary) -> bool:
+	# Deprecated achievements are fully retired from the catalog.
+	return not bool(ach.get("deprecated", false))
+
+
+func _is_active_achievement(ach: Dictionary) -> bool:
+	return not bool(ach.get("deprecated", false))
+
+
 func _update_counter() -> void:
 	var scope := _counter_scope_achievements()
 	var unlocked_count := 0
+	var total_active := 0
 	for a in scope:
-		if a.get("unlocked", false):
-			unlocked_count += 1
+		if not (a is Dictionary):
+			continue
+		if _is_active_achievement(a):
+			total_active += 1
+			if a.get("unlocked", false):
+				unlocked_count += 1
 	if counter_label:
-		counter_label.text = tr("ACH_UNLOCKED") % [unlocked_count, scope.size()]
+		counter_label.text = tr("ACH_UNLOCKED") % [unlocked_count, total_active]
 	if unlock_progress_bar:
-		unlock_progress_bar.max_value = maxf(float(scope.size()), 1.0)
+		unlock_progress_bar.max_value = maxf(float(total_active), 1.0)
 		unlock_progress_bar.value = float(unlocked_count)
 
 
 func _counter_scope_achievements() -> Array:
 	if _view_mode == ViewMode.LIST and _list_kind == ListKind.CATEGORY and _active_category_id != "":
 		return _achievements_for_category(_active_category_id, false)
-	return achievements
+	var all_visible: Array = []
+	for ach in achievements:
+		if ach is Dictionary and _is_catalog_visible(ach):
+			all_visible.append(ach)
+	return all_visible
 
 
 func _category_unlock_counts(category_id: String) -> Dictionary:
@@ -392,6 +410,8 @@ func _category_unlock_counts(category_id: String) -> Dictionary:
 		if not (ach is Dictionary):
 			continue
 		if str(ach.get("category", "")).to_lower() != target:
+			continue
+		if not _is_active_achievement(ach):
 			continue
 		total += 1
 		if ach.get("unlocked", false):
@@ -407,6 +427,8 @@ func _achievements_for_category(category_id: String, apply_status: bool) -> Arra
 			continue
 		if str(ach.get("category", "")).to_lower() != target:
 			continue
+		if not _is_catalog_visible(ach):
+			continue
 		scoped.append(ach)
 	if apply_status:
 		scoped = _apply_status_filter(scoped, current_status_filter)
@@ -416,14 +438,20 @@ func _achievements_for_category(category_id: String, apply_status: bool) -> Arra
 
 func _apply_status_filter(achievements_to_filter: Array, filter_type: String) -> Array:
 	if filter_type == "all":
-		return achievements_to_filter.duplicate()
+		return achievements_to_filter.filter(func(ach):
+			return ach is Dictionary and _is_catalog_visible(ach)
+		)
 	if filter_type == "unlocked":
 		return achievements_to_filter.filter(func(ach):
-			return ach is Dictionary and ach.get("unlocked", false)
+			return ach is Dictionary and ach.get("unlocked", false) and _is_catalog_visible(ach)
 		)
 	if filter_type == "locked":
 		return achievements_to_filter.filter(func(ach):
-			return ach is Dictionary and not ach.get("unlocked", false)
+			return (
+				ach is Dictionary
+				and not ach.get("unlocked", false)
+				and _is_active_achievement(ach)
+			)
 		)
 	return achievements_to_filter.duplicate()
 
@@ -690,6 +718,7 @@ func _make_overview_section(category_id: String, locale_key: String, items: Arra
 
 	var show_all_btn := _create_show_all_button(category_id, accent)
 	header.add_child(show_all_btn)
+	_UiCategoryButton.apply_selection(show_all_btn, true, 14, true)
 
 	var cards_row := HBoxContainer.new()
 	cards_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -711,7 +740,6 @@ func _make_overview_section(category_id: String, locale_key: String, items: Arra
 func _create_show_all_button(category_id: String, accent: Color) -> Button:
 	var btn := _create_filter_chip(_tr_ui("ACH_SHOW_ALL"), "chevron-right.svg", accent)
 	btn.pressed.connect(_open_category_list.bind(category_id))
-	_UiCategoryButton.apply_selection(btn, true, 14, true)
 	return btn
 
 
@@ -776,16 +804,49 @@ func _on_back_pressed() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_SLASH and search_bar:
-			search_bar.grab_focus()
-			get_viewport().set_input_as_handled()
-			return
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
 		return
-	if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed and not event.echo) \
-			or event.is_action_pressed("ui_cancel"):
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed and not event.echo) \
+				or event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()
+			_on_back_pressed()
+		return
+	var key_event := event as InputEventKey
+	if key_event.keycode == KEY_SLASH and search_bar:
+		if not search_bar.has_focus():
+			search_bar.grab_focus()
+		get_viewport().set_input_as_handled()
+		return
+	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+		if key_event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()
+			_on_back_pressed()
+		return
+	# Q / W / E — status filters (all / unlocked / locked).
+	if key_event.keycode == KEY_Q:
+		_on_status_chip_pressed("all")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_W:
+		_on_status_chip_pressed("unlocked")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_E:
+		_on_status_chip_pressed("locked")
+		get_viewport().set_input_as_handled()
+		return
+	# 1 / 2 — overview / full list.
+	if key_event.keycode == KEY_1:
+		_on_view_chip_pressed("overview")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_2:
+		_on_view_chip_pressed("full")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_back_pressed()
 
@@ -840,6 +901,9 @@ func _render_cards_chunked(achievements_to_display: Array[Dictionary], generatio
 			if not ach.has("title") or ach.title == null:
 				continue
 			var card = ACHIEVEMENT_CARD_SCENE.instantiate()
+			if card is Control:
+				(card as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				(card as Control).size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 			achievements_list.add_child(card)
 			card.apply_achievement(ach, achievement_manager)
 		if achievements_list and not achievements_list.visible:

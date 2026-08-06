@@ -454,6 +454,8 @@ func transition_open_game(
 	run_modifiers: Array = [],
 	chart_tag: String = "",
 	play_mode: String = "",
+	replay_payload: Dictionary = {},
+	replay_source_path: String = "",
 ):
 	hide_level_ui()
 	# Stale flag after song select / victory / defeat used to abort launch and open main menu.
@@ -486,6 +488,9 @@ func transition_open_game(
 
 		if new_game_screen.has_method("_set_play_mode"):
 			new_game_screen._set_play_mode(play_mode)
+
+		if not replay_payload.is_empty() and new_game_screen.has_method("_set_replay_watch"):
+			new_game_screen._set_replay_watch(replay_payload, replay_source_path)
 
 		if play_mode == _PlayModeIds.ENDLESS and _endless_run != null:
 			if new_game_screen.has_method("configure_endless_run"):
@@ -530,6 +535,12 @@ func _setup_song_select_screen(new_screen: Node) -> void:
 		MusicManager.fade_out_menu_music(2.0)
 	if new_screen.has_method("apply_playlist_browse"):
 		new_screen.apply_playlist_browse(_song_select_browse_playlist_id)
+	if _pending_song_select_path != "" and new_screen.has_method("focus_song_path"):
+		var path := _pending_song_select_path
+		var museum := _pending_song_select_museum
+		_pending_song_select_path = ""
+		_pending_song_select_museum = false
+		new_screen.call_deferred("focus_song_path", path, museum)
 
 func transition_close_song_select():
 	if _song_select_return_to_play_modes:
@@ -556,9 +567,14 @@ func _setup_play_modes_screen(new_screen: Node) -> void:
 		if MusicManager.has_method("stop_screen_ambient_music"):
 			MusicManager.stop_screen_ambient_music()
 		MusicManager.cancel_menu_music_fade()
+		var intentionally_silent := (
+			MusicManager.has_method("is_menu_music_intentionally_silent")
+			and MusicManager.is_menu_music_intentionally_silent()
+		)
 		var mp := MusicManager.music_player
 		var menu_audible := (
-			mp != null
+			not intentionally_silent
+			and mp != null
 			and mp.playing
 			and (
 				MusicManager.current_menu_music_file != ""
@@ -572,7 +588,7 @@ func _setup_play_modes_screen(new_screen: Node) -> void:
 				MusicManager.update_volumes_from_settings()
 		else:
 			# Возврат из библиотеки / настройки endless — там музыка затухла или уже остановлена.
-			MusicManager.fade_in_menu_music(2.0)
+			MusicManager.fade_in_menu_music(2.0, true)
 
 
 func transition_close_play_modes():
@@ -772,10 +788,13 @@ func _setup_playlist_editor_screen(new_screen: Node) -> void:
 		new_screen.setup_editor(_playlist_editor_playlist_id)
 
 
-func close_playlist_editor_to_hub() -> void:
+func close_playlist_editor_to_hub(success: bool = false) -> void:
 	_playlist_editor_playlist_id = ""
 	if MusicManager:
-		MusicManager.play_modifier_deselect_sound()
+		if success:
+			MusicManager.play_modifier_select_sound()
+		else:
+			MusicManager.play_modifier_deselect_sound()
 	_open_playlist_hub_screen_async()
 
 
@@ -802,6 +821,8 @@ func open_endless_run(config: Dictionary) -> void:
 	if not _endless_run.start(sanitized):
 		_endless_run = null
 		printerr("Transitions: Endless run could not start — empty track scope.")
+		if MusicManager:
+			MusicManager.play_modifier_deselect_sound()
 		return
 	stage_endless_session_config(sanitized)
 	_launch_endless_track(null)
@@ -866,9 +887,14 @@ func transition_open_endless_summary(summary: Dictionary) -> void:
 	if new_screen.has_method("set_summary_data"):
 		new_screen.set_summary_data(summary, _endless_summary_return_to_play_modes)
 	_endless_summary_return_to_play_modes = false
+	if MusicManager:
+		if MusicManager.has_method("stop_game_music"):
+			MusicManager.stop_game_music()
+		if MusicManager.has_method("play_screen_ambient_music"):
+			MusicManager.play_screen_ambient_music(MusicManager.DEFAULT_VICTORY_SCREEN_MUSIC, true)
+		elif MusicManager.has_method("play_victory_screen_music"):
+			MusicManager.play_victory_screen_music()
 	_switch_to_screen_instance(new_screen)
-	if MusicManager and MusicManager.has_method("play_victory_screen_music"):
-		MusicManager.play_victory_screen_music()
 
 
 func _launch_endless_track(results_mgr) -> void:
@@ -1012,9 +1038,14 @@ func transition_open_marathon_finish(summary: Dictionary) -> void:
 	if new_screen.has_method("set_summary_data"):
 		new_screen.set_summary_data(summary, _marathon_finish_return_to_catalog)
 	_marathon_finish_return_to_catalog = false
+	if MusicManager:
+		if MusicManager.has_method("stop_game_music"):
+			MusicManager.stop_game_music()
+		if MusicManager.has_method("play_screen_ambient_music"):
+			MusicManager.play_screen_ambient_music(MusicManager.DEFAULT_VICTORY_SCREEN_MUSIC, true)
+		elif MusicManager.has_method("play_victory_screen_music"):
+			MusicManager.play_victory_screen_music()
 	_switch_to_screen_instance(new_screen)
-	if MusicManager and MusicManager.has_method("play_victory_screen_music"):
-		MusicManager.play_victory_screen_music()
 
 
 func _launch_marathon_track(results_mgr) -> void:
@@ -1038,6 +1069,8 @@ func _launch_marathon_track(results_mgr) -> void:
 
 
 func transition_open_main_menu():
+	if game_engine and game_engine.has_method("unlock_hud_chrome"):
+		game_engine.unlock_hud_chrome()
 	show_level_ui_instant()
 	if not is_instance_valid(main_menu_instance):
 		var new_main_menu_instance = _instantiate_if_exists("res://scenes/main_menu/main_menu.tscn")
@@ -1057,16 +1090,24 @@ func transition_open_main_menu():
 		_switch_to_screen_instance(main_menu_instance)
 	if MusicManager:
 		MusicManager.stop_game_music()
-		var menu_playing := (
-			MusicManager.music_player != null
-			and MusicManager.music_player.playing
-			and MusicManager.current_menu_music_file != ""
+		var intentionally_silent := (
+			MusicManager.has_method("is_menu_music_intentionally_silent")
+			and MusicManager.is_menu_music_intentionally_silent()
 		)
-		if menu_playing:
+		var mp := MusicManager.music_player
+		var menu_audible := (
+			not intentionally_silent
+			and mp != null
+			and mp.playing
+			and MusicManager.current_menu_music_file != ""
+			and mp.volume_db > -30.0
+		)
+		if menu_audible:
 			if MusicManager.has_method("update_volumes_from_settings"):
 				MusicManager.update_volumes_from_settings()
 		else:
-			MusicManager.fade_in_menu_music(2.0)
+			# After settings/shop fade-out: always restart from the beginning.
+			MusicManager.fade_in_menu_music(2.0, true)
 	if main_menu_instance and main_menu_instance.has_method("apply_locale"):
 		main_menu_instance.apply_locale()
 	elif main_menu_instance and main_menu_instance.has_method("queue_refresh_on_show"):
@@ -1079,7 +1120,24 @@ func transition_close_achievements():
 	_return_to_main_menu()
 
 func transition_open_profile():
-	_open_screen_async("res://scenes/profile/profile_screen.tscn", _setup_profile_screen)
+	_open_screen_async(
+		"res://scenes/profile/profile_screen.tscn",
+		_setup_profile_screen,
+		"UI_LOADING_PROFILE"
+	)
+
+
+func open_profile_activity_calendar() -> void:
+	_pending_open_activity_calendar = true
+	if SettingsManager and SettingsManager.has_method("set_setting"):
+		SettingsManager.set_setting("last_profile_category", "overview")
+	open_profile()
+
+
+func consume_pending_activity_calendar() -> bool:
+	var pending := _pending_open_activity_calendar
+	_pending_open_activity_calendar = false
+	return pending
 
 
 func _setup_profile_screen(new_screen: Node) -> void:
@@ -1087,6 +1145,12 @@ func _setup_profile_screen(new_screen: Node) -> void:
 		new_screen.setup_managers(self)
 	else:
 		printerr("Transitions.gd: Экземпляр ProfileScreen не имеет метода setup_managers!")
+	# Keep LoadingOverlay alive across switch → initial refresh (ref-count handoff).
+	if new_screen.has_method("hold_nav_loading"):
+		new_screen.hold_nav_loading()
+	if _pending_open_activity_calendar and new_screen.has_method("open_activity_calendar"):
+		new_screen.call_deferred("open_activity_calendar")
+		_pending_open_activity_calendar = false
 
 func transition_close_profile():
 	_return_to_main_menu()
@@ -1150,6 +1214,17 @@ func _open_help_contextual() -> void:
 var _pending_help_search: String = ""
 var _pending_help_item_id: String = ""
 var _pending_settings_page: String = ""
+var _pending_open_activity_calendar: bool = false
+var _pending_song_select_path: String = ""
+var _pending_song_select_museum: bool = false
+
+
+## Open Song Select focused on a library path (optional Results / museum swap).
+func open_song_select_focusing(song_path: String, open_museum: bool = false) -> void:
+	_pending_song_select_path = str(song_path).replace("\\", "/").strip_edges()
+	_pending_song_select_museum = open_museum and _pending_song_select_path != ""
+	_song_select_return_to_play_modes = false
+	transition_open_song_select()
 
 
 func _setup_help_screen(new_screen: Node) -> void:
@@ -1177,16 +1252,33 @@ func _is_help_screen_node(node: Node) -> bool:
 	return scr != null and str(scr.resource_path).ends_with("help_screen.gd")
 
 
+func _is_settings_menu_node(node: Node) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	var scr: Script = node.get_script() as Script
+	return scr != null and str(scr.resource_path).ends_with("settings_menu.gd")
+
+
 func _find_settings_overlay() -> Control:
 	if game_engine == null or not is_instance_valid(game_engine):
 		return null
 	for child in game_engine.get_children():
-		if child is Control and child.has_method("open_help_topic") and child.has_method("cleanup_before_exit"):
+		if child is Control and _is_settings_menu_node(child):
 			return child as Control
+		# Overlay parented on contextual host (chart builder / modifiers / help).
+		if child is Control and not _is_settings_menu_node(child):
+			for sub in child.get_children():
+				if sub is Control and _is_settings_menu_node(sub):
+					return sub as Control
 	if game_engine.current_screen:
 		for child in game_engine.current_screen.get_children():
-			if child is Control and child.has_method("open_help_topic") and child.has_method("cleanup_before_exit"):
+			if child is Control and _is_settings_menu_node(child):
 				return child as Control
+			# Settings opened while Help was the current screen: nested under Help.
+			if _is_help_screen_node(child):
+				for sub in child.get_children():
+					if sub is Control and _is_settings_menu_node(sub):
+						return sub as Control
 	return null
 
 
@@ -1276,9 +1368,12 @@ func _cleanup_settings_overlays() -> void:
 	if game_engine == null or not is_instance_valid(game_engine):
 		return
 	for child in game_engine.get_children():
-		if child is Control and child.has_method("cleanup_before_exit") and child.has_method("open_help_topic"):
-			child.cleanup_before_exit()
+		if child is Control and _is_settings_menu_node(child):
+			if child.has_method("cleanup_before_exit"):
+				child.cleanup_before_exit()
 			child.queue_free()
+
+
 func transition_open_shop():
 	show_level_ui()
 	ScreenTexturePreload.warmup_shop_textures(24)
@@ -1326,15 +1421,21 @@ func _open_settings_overlay_task(from_pause: bool) -> void:
 	if new_screen.has_method("setup_managers"):
 		new_screen.setup_managers(self)
 	if from_pause:
-		if game_engine.current_screen:
-			game_engine.current_screen.add_child(new_screen)
-		else:
+		var host := _find_help_overlay_host()
+		if host == null and game_engine and game_engine.current_screen:
+			host = game_engine.current_screen as Control
+		if host == null:
 			printerr("Transitions.gd: Нет активного экрана для паузы!")
 			new_screen.queue_free()
 			return
-		new_screen.z_index = 150
-		new_screen.mouse_filter = Control.MOUSE_FILTER_STOP
-		game_engine.current_screen.move_child(new_screen, -1)
+		host.add_child(new_screen)
+		if new_screen is Control:
+			(new_screen as Control).z_as_relative = false
+			(new_screen as Control).z_index = 150
+			(new_screen as Control).mouse_filter = Control.MOUSE_FILTER_STOP
+		host.move_child(new_screen, -1)
+		if new_screen.has_method("apply_back_button_style"):
+			new_screen.call_deferred("apply_back_button_style")
 	UiInteractionApplier.apply_to_tree(new_screen, game_engine.theme)
 	if _pending_settings_page != "" and new_screen.has_method("switch_to_page"):
 		new_screen.call_deferred("switch_to_page", _pending_settings_page)
@@ -1343,23 +1444,30 @@ func _open_settings_overlay_task(from_pause: bool) -> void:
 
 func open_settings_with_page(page_id: String, from_pause: bool = false) -> void:
 	_pending_settings_page = page_id.strip_edges()
+	# Contextual help is often an overlay; without closing it, settings links appear to do nothing.
+	var had_help_overlay := _remove_help_overlay()
+	var existing := _find_settings_overlay()
+	if existing != null:
+		if _pending_settings_page != "" and existing.has_method("switch_to_page"):
+			existing.call_deferred("switch_to_page", _pending_settings_page)
+		_pending_settings_page = ""
+		return
+	# Prefer overlay when leaving contextual help, or when Help itself is the current screen.
 	if not from_pause and game_engine and game_engine.current_screen:
-		var scr: Script = game_engine.current_screen.get_script() as Script
-		if scr and str(scr.resource_path).ends_with("help_screen.gd"):
+		if had_help_overlay or _is_help_screen_node(game_engine.current_screen):
 			from_pause = true
 	transition_open_settings(from_pause)
 
 
 func transition_close_settings(from_pause: bool = false) -> void:
 	if from_pause:
-		if game_engine.current_screen:
-			for child in game_engine.current_screen.get_children():
-				if child is Control and child.has_method("cleanup_before_exit"):
-					child.cleanup_before_exit()
-					child.queue_free()
-					break
-			if game_engine.current_screen.has_method("restore_pause_menu_after_settings"):
-				game_engine.current_screen.call_deferred("restore_pause_menu_after_settings")
+		var overlay := _find_settings_overlay()
+		if overlay != null:
+			if overlay.has_method("cleanup_before_exit"):
+				overlay.cleanup_before_exit()
+			overlay.queue_free()
+		if game_engine and game_engine.current_screen and game_engine.current_screen.has_method("restore_pause_menu_after_settings"):
+			game_engine.current_screen.call_deferred("restore_pause_menu_after_settings")
 	else:
 		_return_to_main_menu()
 
@@ -1500,12 +1608,37 @@ func open_game_with_song(
 	selected_song, 
 	instrument="standard", 
 	results_mgr = null, 
-	generation_mode: String = "basic",
+	generation_mode: String = "original",
 	lane_count: int = 4,
 	run_modifiers: Array = [],
 	chart_tag: String = "",
-): 
-	transition_open_game(null, selected_song, instrument, results_mgr, generation_mode, lane_count, run_modifiers, chart_tag) 
+):
+	transition_open_game(null, selected_song, instrument, results_mgr, generation_mode, lane_count, run_modifiers, chart_tag)
+
+
+func open_replay_run(
+	selected_song,
+	instrument: String = "drums",
+	generation_mode: String = "original",
+	lane_count: int = 4,
+	run_modifiers: Array = [],
+	chart_tag: String = "",
+	replay_payload: Dictionary = {},
+	replay_source_path: String = "",
+):
+	transition_open_game(
+		null,
+		selected_song,
+		instrument,
+		null,
+		generation_mode,
+		lane_count,
+		run_modifiers,
+		chart_tag,
+		"replay_watch",
+		replay_payload,
+		replay_source_path,
+	)
 
 func resume_game():
 	pass

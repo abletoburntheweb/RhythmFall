@@ -10,6 +10,10 @@ const _SegmentedOptionUtils = preload("res://logic/ui/segmented_option_utils.gd"
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
 const _GenerationBulkQueueActions = preload("res://logic/ui/generation_bulk_queue_actions.gd")
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
+const _AppOverlayHelpers = preload("res://logic/ui/app_overlay_helpers.gd")
+const _GenerationGpuStack = preload("res://logic/services/generation_gpu_stack.gd")
+
+const _GPU_OPTION_IDS := ["auto", "nvidia", "amd", "cpu"]
 
 const _GenStatusMode = preload("res://logic/domain/library/generation_status_mode.gd")
 
@@ -17,16 +21,17 @@ const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficu
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
 const _SongSelectUiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
 const _ToggleIconScript = preload("res://scenes/song_select/endless/session_toggle_icon.gd")
+const _GenReadyPresetsUi = preload("res://logic/ui/generation_ready_presets_ui.gd")
 
 const _READY_DIFF_ICONS := {
-	"relaxed": "feather.svg",
-	"standard": "circle-check.svg",
-	"dense": "flame_gen.svg",
+	"easy": "feather.svg",
+	"medium": "circle-check.svg",
+	"hard": "flame_gen.svg",
 }
 const _READY_DIFF_COLORS := {
-	"relaxed": Color(0.62, 0.82, 0.96, 1.0),
-	"standard": Color(0.55, 0.78, 0.98, 1.0),
-	"dense": Color(1.0, 0.58, 0.32, 1.0),
+	"easy": Color(0.62, 0.82, 0.96, 1.0),
+	"medium": Color(0.55, 0.78, 0.98, 1.0),
+	"hard": Color(1.0, 0.58, 0.32, 1.0),
 }
 
 const _CV := "ScrollWrap/CenterWrap/ContentVBox"
@@ -45,11 +50,18 @@ const _BULK := "%s/BulkPanel/BulkPanelMargin/BulkRows" % _CV
 @onready var bulk_bpm_button: Button = get_node("%s/BulkButtonsRow/BulkBpmButton" % _BULK)
 @onready var bulk_notes_button: Button = get_node("%s/BulkButtonsRow/BulkNotesButton" % _BULK)
 @onready var _confirm_overlay: AppConfirmOverlay = %ConfirmOverlay
+@onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
 @onready var ready_axes_host: VBoxContainer = get_node_or_null("%s/GenerationReadyAxesBlock/ReadyAxesHost" % _PARAMS)
 @onready var generation_server_location_option: OptionButton = get_node("%s/GenerationServerLocation/GenerationServerLocationOption" % _SERVER)
 @onready var generation_server_lan_host_hbox: HBoxContainer = get_node("%s/GenerationServerLanHostHBox" % _SERVER)
 @onready var generation_server_lan_host_line_edit: LineEdit = get_node("%s/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" % _SERVER)
 @onready var generation_server_port_spin: SpinBox = get_node("%s/GenerationServerPortHBox/GenerationServerPortSpin" % _SERVER)
+@onready var gpu_stack_hint: Label = get_node_or_null("%s/GpuStackHint" % _SERVER)
+@onready var gpu_stack_status_label: Label = get_node_or_null("%s/GpuStackStatusLabel" % _SERVER)
+@onready var gpu_stack_label: Label = get_node_or_null("%s/GpuStackRow/GpuStackLabel" % _SERVER)
+@onready var gpu_stack_option: OptionButton = get_node_or_null("%s/GpuStackRow/GpuStackOption" % _SERVER)
+@onready var gpu_stack_scan_button: Button = get_node_or_null("%s/GpuStackActionsRow/GpuStackScanButton" % _SERVER)
+@onready var gpu_stack_apply_button: Button = get_node_or_null("%s/GpuStackActionsRow/GpuStackApplyButton" % _SERVER)
 
 @onready var server_hint: Label = get_node_or_null("%s/ServerHint" % _SERVER)
 @onready var server_help_link: LinkButton = get_node_or_null("%s/ServerHelpLink" % _SERVER)
@@ -61,13 +73,20 @@ const _BULK := "%s/BulkPanel/BulkPanelMargin/BulkRows" % _CV
 @onready var bulk_hint: Label = get_node_or_null("%s/BulkHint" % _BULK)
 var _server_loc_seg: Dictionary = {}
 var _status_mode_seg: Dictionary = {}
+var _gpu_stack_seg: Dictionary = {}
 var _lan_host_ipv4_format_lock := false
 var _ready_axis_captions: Dictionary = {}
+var _ready_axis_sections: Dictionary = {}
 var _ready_value_icons: Dictionary = {}
 var _ready_axes_built := false
 var _ready_axes_syncing := false
+var _ready_presets_state: Dictionary = {}
 var _ready_accent := Color(0.42, 0.72, 0.98, 1.0)
-
+var _gpu_stack_busy := false
+var _installed_gpu_mode := ""
+var _recommended_gpu_mode := ""
+var _gpu_scan_adapters := ""
+var _gpu_scan_loaded := false
 
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_VISIBILITY_CHANGED:
@@ -75,6 +94,9 @@ func _notification(what: int) -> void:
 	if not is_visible_in_tree():
 		return
 	call_deferred("_sync_generation_server_lan_row_visibility")
+	call_deferred("_refresh_gpu_stack_status")
+	if _ready_axes_built:
+		call_deferred("_sync_ready_axes_ui_from_settings")
 
 
 func _ready() -> void:
@@ -86,10 +108,13 @@ func _ready() -> void:
 	call_deferred("_setup_generation_server_location_popup_font")
 	call_deferred("_setup_generation_server_port_spin_font")
 	call_deferred("_setup_stem_retention_popup_font")
+	call_deferred("_setup_gpu_stack_popup_font")
 	call_deferred("_build_server_location_segmented")
 	call_deferred("_build_status_mode_segmented")
 	call_deferred("apply_locale")
+	call_deferred("_build_gpu_stack_segmented")
 	call_deferred("_apply_settings_checkbox_styles")
+	call_deferred("_refresh_gpu_stack_status")
 
 
 func apply_locale() -> void:
@@ -117,8 +142,11 @@ func apply_locale() -> void:
 		bulk_notes_button.text = tr("GEN_BULK_QUEUE_NOTES_ALL")
 	if _confirm_overlay:
 		_confirm_overlay.apply_locale()
+	if _notice_overlay:
+		_notice_overlay.apply_locale()
 	_apply_labels()
 	_apply_tooltips()
+	_refresh_gpu_stack_status()
 
 
 func _setup_generation_server_location_popup_font() -> void:
@@ -135,11 +163,17 @@ func _setup_stem_retention_popup_font() -> void:
 		_OptionButtonPopupUtils.apply_popup_font_size(stem_retention_option, 24)
 
 
+func _setup_gpu_stack_popup_font() -> void:
+	if gpu_stack_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(gpu_stack_option, 24)
+
+
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(confirm_before_rerun_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(bulk_force_regen_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(stem_keep_all_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(notify_done_minimized_checkbox)
+	const ACCENT := Color(0.62, 0.86, 0.72, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(confirm_before_rerun_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(bulk_force_regen_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(stem_keep_all_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(notify_done_minimized_checkbox, 22, false, ACCENT)
 
 
 func _apply_labels() -> void:
@@ -208,6 +242,99 @@ func _apply_labels() -> void:
 	var port_label: Label = get_node_or_null("%s/GenerationServerPortHBox/GenerationServerPortLabel" % _SERVER)
 	if port_label:
 		port_label.text = tr("MISC_SERVER_PORT_LABEL")
+	_apply_gpu_stack_labels()
+
+
+func _apply_gpu_stack_labels() -> void:
+	if gpu_stack_hint:
+		gpu_stack_hint.text = tr("MISC_GPU_STACK_HINT")
+	if gpu_stack_label:
+		gpu_stack_label.text = tr("MISC_GPU_STACK_LABEL")
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.text = tr("MISC_GPU_STACK_SCAN")
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.text = tr("MISC_GPU_STACK_APPLY")
+	if gpu_stack_option:
+		gpu_stack_option.set_block_signals(true)
+		if gpu_stack_option.item_count < 4:
+			gpu_stack_option.clear()
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AUTO"), 0)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_NVIDIA"), 1)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AMD"), 2)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_CPU"), 3)
+		else:
+			gpu_stack_option.set_item_text(0, tr("MISC_GPU_STACK_AUTO"))
+			gpu_stack_option.set_item_text(1, tr("MISC_GPU_STACK_NVIDIA"))
+			gpu_stack_option.set_item_text(2, tr("MISC_GPU_STACK_AMD"))
+			gpu_stack_option.set_item_text(3, tr("MISC_GPU_STACK_CPU"))
+		var mode := _GenerationGpuStack.normalize_mode(str(SettingsManager.get_setting("generation_gpu_stack", "auto")))
+		var idx := _GPU_OPTION_IDS.find(mode)
+		gpu_stack_option.select(maxi(idx, 0))
+		gpu_stack_option.set_block_signals(false)
+	_load_gpu_scan_cache()
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _build_gpu_stack_segmented() -> void:
+	if _gpu_stack_seg.is_empty() and gpu_stack_option:
+		if gpu_stack_option.item_count < 4:
+			gpu_stack_option.clear()
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AUTO"), 0)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_NVIDIA"), 1)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AMD"), 2)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_CPU"), 3)
+		_gpu_stack_seg = _SegmentedOptionUtils.build_from_option_button(
+			gpu_stack_option,
+			16,
+			44,
+			420.0
+		)
+		for btn in _gpu_stack_seg.get("buttons", []):
+			(btn as Button).pressed.connect(_on_gpu_stack_segment_pressed.bind(btn))
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _on_gpu_stack_segment_pressed(btn: Button) -> void:
+	if gpu_stack_option == null or _gpu_stack_busy:
+		return
+	var id := _SegmentedOptionUtils.id_from_button(btn)
+	for i in range(gpu_stack_option.item_count):
+		if gpu_stack_option.get_item_id(i) == id:
+			_SegmentedOptionUtils.play_segment_select_sound()
+			gpu_stack_option.set_block_signals(true)
+			gpu_stack_option.select(i)
+			gpu_stack_option.set_block_signals(false)
+			var mode := _selected_gpu_mode()
+			SettingsManager.set_setting("generation_gpu_stack", mode)
+			_SegmentedOptionUtils.select_id(_gpu_stack_seg.get("buttons", []), id)
+			_update_gpu_stack_enabled()
+			emit_signal("settings_changed")
+			return
+
+
+func _sync_gpu_stack_segment_texts() -> void:
+	if _gpu_stack_seg.is_empty():
+		return
+	var installed := _installed_gpu_mode
+	var texts := PackedStringArray([
+		tr("MISC_GPU_STACK_AUTO"),
+		tr("MISC_GPU_STACK_NVIDIA"),
+		tr("MISC_GPU_STACK_AMD"),
+		tr("MISC_GPU_STACK_CPU"),
+	])
+	var mark := tr("MISC_GPU_STACK_INSTALLED_SUFFIX")
+	for i in range(_GPU_OPTION_IDS.size()):
+		var mode := str(_GPU_OPTION_IDS[i])
+		if mode != "auto" and mode == installed and mark.strip_edges() != "":
+			texts[i] = "%s %s" % [texts[i], mark]
+	_SegmentedOptionUtils.apply_texts(_gpu_stack_seg.get("buttons", []), texts)
+	if gpu_stack_option:
+		_SegmentedOptionUtils.select_id(
+			_gpu_stack_seg.get("buttons", []),
+			gpu_stack_option.get_item_id(maxi(gpu_stack_option.selected, 0))
+		)
 
 
 func _apply_tooltips() -> void:
@@ -242,6 +369,14 @@ func _apply_tooltips() -> void:
 		port_label.tooltip_text = tr("MISC_SERVER_PORT_TOOLTIP")
 	if generation_server_port_spin:
 		generation_server_port_spin.tooltip_text = tr("MISC_SERVER_PORT_TOOLTIP")
+	if gpu_stack_option:
+		gpu_stack_option.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.tooltip_text = tr("MISC_GPU_STACK_SCAN_TOOLTIP")
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+	if gpu_stack_label:
+		gpu_stack_label.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
 
 
 func _on_server_help_link_pressed() -> void:
@@ -451,6 +586,8 @@ func _ensure_ready_axes_ui() -> void:
 	_add_ready_axis_icons("instruments", "MISC_GEN_SCOPE_AXIS_INSTRUMENTS", _GoalDiff.READY_INSTRUMENTS)
 	_add_ready_axis_icons("goals", "MISC_GEN_SCOPE_AXIS_GOALS", _GoalDiff.GOALS)
 	_add_ready_axis_icons("diffs", "MISC_GEN_SCOPE_AXIS_DIFFS", _GoalDiff.DIFFICULTIES)
+	_ready_presets_state = _GenReadyPresetsUi.attach(ready_axes_host, _ready_accent)
+	_GenReadyPresetsUi.apply_labels(_ready_presets_state)
 	_sync_ready_axes_ui_from_settings()
 
 
@@ -494,6 +631,7 @@ func _add_ready_axis_icons(axis_id: String, caption_key: String, values: Array) 
 	var section := VBoxContainer.new()
 	section.add_theme_constant_override("separation", 6)
 	ready_axes_host.add_child(section)
+	_ready_axis_sections[axis_id] = section
 	var caption := Label.new()
 	caption.text = tr(caption_key)
 	caption.add_theme_font_size_override("font_size", 14)
@@ -517,6 +655,26 @@ func _add_ready_axis_icons(axis_id: String, caption_key: String, values: Array) 
 		_ready_value_icons[axis_id][vid] = icon
 
 
+func _ready_goals_include_arcade() -> bool:
+	var icons: Dictionary = _ready_value_icons.get("goals", {})
+	var arcade: SessionToggleIcon = icons.get("arcade")
+	if arcade:
+		return arcade.button_pressed
+	var goals: Variant = SettingsManager.get_setting("generation_ready_goals", [_GoalDiff.DEFAULT_GOAL])
+	if goals is Array or goals is PackedStringArray:
+		for g in goals:
+			if str(g).strip_edges().to_lower() == "arcade":
+				return true
+	return false
+
+
+func _sync_ready_diffs_row_visibility() -> void:
+	## Original is one documentary chart — Arcade difficulties row only when Arcade is selected.
+	var section: Control = _ready_axis_sections.get("diffs")
+	if section:
+		section.visible = _ready_goals_include_arcade()
+
+
 func _apply_ready_axes_labels() -> void:
 	var caption_keys := {
 		"goals": "MISC_GEN_SCOPE_AXIS_GOALS",
@@ -532,6 +690,7 @@ func _apply_ready_axes_labels() -> void:
 			var icon: SessionToggleIcon = icons[value_id]
 			if icon:
 				icon.set_tooltip_text_value(_ready_value_tooltip(str(axis_id), str(value_id)))
+	_GenReadyPresetsUi.apply_labels(_ready_presets_state)
 
 
 func _sync_ready_axes_ui_from_settings() -> void:
@@ -556,6 +715,8 @@ func _sync_ready_axes_ui_from_settings() -> void:
 		_GoalDiff.READY_INSTRUMENTS,
 		str(SettingsManager.get_setting("last_generation_instrument", _GoalDiff.DEFAULT_READY_INSTRUMENT))
 	)
+	_sync_ready_diffs_row_visibility()
+	_GenReadyPresetsUi.sync_from_settings(_ready_presets_state)
 	_ready_axes_syncing = false
 
 
@@ -581,6 +742,8 @@ func _on_ready_icon_toggled(_value_id: String, pressed: bool, axis_id: String) -
 			_UiModifierSounds.play_deselect()
 		return
 	_persist_ready_axis_values(axis_id)
+	if axis_id == "goals":
+		_sync_ready_diffs_row_visibility()
 	_UiModifierSounds.play_toggle(pressed)
 	NotesUtils.invalidate_notes_cache()
 	emit_signal("settings_changed")
@@ -803,6 +966,305 @@ func _on_bulk_notes_pressed() -> void:
 	await _GenerationBulkQueueActions.enqueue_notes_for_library(self, _confirm_overlay)
 
 
+func _selected_gpu_mode() -> String:
+	if gpu_stack_option == null:
+		return "auto"
+	var idx := clampi(gpu_stack_option.selected, 0, _GPU_OPTION_IDS.size() - 1)
+	return str(_GPU_OPTION_IDS[idx])
+
+
+func _load_gpu_scan_cache() -> void:
+	_gpu_scan_loaded = false
+	_recommended_gpu_mode = ""
+	_gpu_scan_adapters = ""
+	if SettingsManager == null:
+		return
+	var raw: Variant = SettingsManager.get_setting("generation_gpu_scan", {})
+	if not (raw is Dictionary) or (raw as Dictionary).is_empty():
+		return
+	var scan: Dictionary = raw
+	_gpu_scan_adapters = str(scan.get("adapters", "")).strip_edges()
+	_recommended_gpu_mode = _GenerationGpuStack.normalize_mode(str(scan.get("recommended", "")))
+	if _recommended_gpu_mode == "auto":
+		_recommended_gpu_mode = ""
+	var cached_installed := str(scan.get("installed", "")).strip_edges().to_lower()
+	if cached_installed in ["nvidia", "amd", "cpu"] and _installed_gpu_mode == "":
+		_installed_gpu_mode = cached_installed
+	_gpu_scan_loaded = _gpu_scan_adapters != "" or _recommended_gpu_mode != "" or cached_installed != ""
+
+
+func _save_gpu_scan_cache(hw: Dictionary, installed: String) -> void:
+	var names: PackedStringArray = hw.get("names", PackedStringArray())
+	var adapters := ", ".join(names)
+	var recommended := str(hw.get("recommended", "cpu"))
+	var payload := {
+		"adapters": adapters,
+		"recommended": recommended,
+		"installed": installed,
+		"has_nvidia": bool(hw.get("has_nvidia", false)),
+		"has_amd": bool(hw.get("has_amd", false)),
+		"unix": int(Time.get_unix_time_from_system()),
+	}
+	if SettingsManager:
+		SettingsManager.set_setting("generation_gpu_scan", payload)
+	_gpu_scan_adapters = adapters
+	_recommended_gpu_mode = recommended if recommended in ["nvidia", "amd", "cpu"] else ""
+	_gpu_scan_loaded = true
+
+
+func _gpu_stack_already_ok(selected: String, install_mode: String = "") -> bool:
+	if _installed_gpu_mode == "":
+		return false
+	if selected != "auto" and selected == _installed_gpu_mode:
+		return true
+	if selected == "auto":
+		var target := install_mode
+		if target == "" or target == "auto":
+			target = _recommended_gpu_mode
+		return target != "" and target == _installed_gpu_mode
+	return false
+
+
+func _update_gpu_stack_enabled() -> void:
+	var local_ok := _GenerationGpuStack.is_windows() and not _GenerationGpuStack.is_lan_mode() and not _gpu_stack_busy
+	if gpu_stack_option:
+		gpu_stack_option.disabled = not local_ok
+	for btn in _gpu_stack_seg.get("buttons", []):
+		if btn is Button:
+			(btn as Button).disabled = not local_ok
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.disabled = not local_ok
+	var already := _gpu_stack_already_ok(_selected_gpu_mode())
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.disabled = not local_ok or already
+		if already:
+			gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_ALREADY")
+		else:
+			gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+
+
+func _refresh_gpu_stack_status() -> void:
+	if gpu_stack_status_label == null:
+		return
+	_load_gpu_scan_cache()
+	if _GenerationGpuStack.is_lan_mode():
+		gpu_stack_status_label.text = tr("MISC_GPU_STACK_STATUS_LAN")
+		_installed_gpu_mode = ""
+		_sync_gpu_stack_segment_texts()
+		_update_gpu_stack_enabled()
+		return
+	if not _GenerationGpuStack.is_windows():
+		gpu_stack_status_label.text = tr("MISC_GPU_STACK_WINDOWS_ONLY")
+		_installed_gpu_mode = ""
+		_sync_gpu_stack_segment_texts()
+		_update_gpu_stack_enabled()
+		return
+	var health := {}
+	if GenerationProcessManager:
+		health = GenerationProcessManager.fetch_health_payload()
+	var live_installed := _GenerationGpuStack.resolve_installed_mode(health)
+	if live_installed != "":
+		_installed_gpu_mode = live_installed
+	var status := ""
+	if health.get("ok", false):
+		status = _GenerationGpuStack.format_backend_status(health)
+	if status == "":
+		status = _GenerationGpuStack.format_backend_status({})
+	var lines: PackedStringArray = PackedStringArray()
+	if status != "":
+		lines.append(tr("MISC_GPU_STACK_STATUS_FMT") % status)
+	elif _installed_gpu_mode != "":
+		lines.append(tr("MISC_GPU_STACK_STATUS_FMT") % _gpu_mode_label(_installed_gpu_mode))
+	else:
+		lines.append(tr("MISC_GPU_STACK_STATUS_UNKNOWN"))
+	if _gpu_scan_loaded:
+		var rec := _gpu_mode_label(_recommended_gpu_mode) if _recommended_gpu_mode != "" else "—"
+		var inst := _gpu_mode_label(_installed_gpu_mode) if _installed_gpu_mode != "" else "—"
+		var adapters := _gpu_scan_adapters if _gpu_scan_adapters != "" else "—"
+		lines.append(tr("MISC_GPU_STACK_SCAN_SUMMARY_FMT") % [adapters, rec, inst])
+	else:
+		lines.append(tr("MISC_GPU_STACK_SCAN_NEEDED"))
+	gpu_stack_status_label.text = "\n".join(lines)
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _gpu_mode_label(mode: String) -> String:
+	if mode.strip_edges() == "":
+		return "—"
+	return tr(_GenerationGpuStack.mode_label_key(mode))
+
+
+func _gpu_adapters_text(hw: Dictionary) -> String:
+	var names: PackedStringArray = hw.get("names", PackedStringArray())
+	if names.is_empty():
+		return tr("MISC_GPU_STACK_DETECT_NONE")
+	return tr("MISC_GPU_STACK_DETECT_ADAPTERS_FMT") % ", ".join(names)
+
+
+func _gpu_selection_mismatch(selected: String, hw: Dictionary) -> bool:
+	match selected:
+		"nvidia":
+			return not bool(hw.get("has_nvidia", false))
+		"amd":
+			return not bool(hw.get("has_amd", false))
+		_:
+			return false
+
+
+func _build_gpu_stack_plan_message(selected: String, install_mode: String, hw: Dictionary) -> String:
+	var adapters := _gpu_adapters_text(hw)
+	var install_label := _gpu_mode_label(install_mode)
+	var footer := tr("DLG_GPU_STACK_REINSTALL_FOOTER")
+	if selected == "auto":
+		return "%s\n%s\n\n%s\n\n%s" % [
+			adapters,
+			tr("MISC_GPU_STACK_DETECT_RECOMMENDED_FMT") % install_label,
+			tr("DLG_GPU_STACK_PLAN_AUTO_BODY") % install_label,
+			footer,
+		]
+	if _gpu_selection_mismatch(selected, hw):
+		var expected := _gpu_mode_label(str(hw.get("recommended", "cpu")))
+		return "%s\n\n%s\n\n%s" % [
+			adapters,
+			tr("DLG_GPU_STACK_PLAN_MISMATCH_BODY") % [_gpu_mode_label(selected), expected, install_label],
+			footer,
+		]
+	if install_mode == "cpu":
+		return "%s\n\n%s\n\n%s" % [adapters, tr("DLG_GPU_STACK_PLAN_CPU_BODY"), footer]
+	return "%s\n\n%s\n\n%s" % [
+		adapters,
+		tr("DLG_GPU_STACK_PLAN_MATCH_BODY") % install_label,
+		footer,
+	]
+
+
+func _run_gpu_probe_with_overlay() -> Dictionary:
+	var overlay: LoadingOverlay = null
+	var ge := get_tree().root.get_node_or_null("GameEngine")
+	if ge and ge.has_method("get_loading_overlay"):
+		overlay = ge.get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_GPU_DETECT"), true)
+		await get_tree().process_frame
+	var hw: Dictionary = _GenerationGpuStack.detect_hardware()
+	var health := {}
+	if GenerationProcessManager:
+		health = GenerationProcessManager.fetch_health_payload()
+	var installed := _GenerationGpuStack.resolve_installed_mode(health)
+	if installed == "":
+		installed = _installed_gpu_mode
+	_installed_gpu_mode = installed
+	_save_gpu_scan_cache(hw, installed)
+	if overlay:
+		overlay.hide_loading()
+	return hw
+
+
+func _on_gpu_stack_scan_pressed() -> void:
+	if _gpu_stack_busy:
+		return
+	if not _GenerationGpuStack.is_windows():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_WINDOWS_ONLY"))
+		return
+	if _GenerationGpuStack.is_lan_mode():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_LAN_BLOCKED"))
+		return
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var hw: Dictionary = await _run_gpu_probe_with_overlay()
+	_gpu_stack_busy = false
+	_refresh_gpu_stack_status()
+	var rec := _gpu_mode_label(str(hw.get("recommended", "cpu")))
+	var inst := _gpu_mode_label(_installed_gpu_mode) if _installed_gpu_mode != "" else "—"
+	var adapters := _gpu_adapters_text(hw)
+	_AppOverlayHelpers.notify(
+		_notice_overlay,
+		tr("MISC_GPU_STACK_SCAN_DONE_FMT") % [adapters, rec, inst]
+	)
+	emit_signal("settings_changed")
+
+
+func _on_gpu_stack_apply_pressed() -> void:
+	if _gpu_stack_busy:
+		return
+	if not _GenerationGpuStack.is_windows():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_WINDOWS_ONLY"))
+		return
+	if _GenerationGpuStack.is_lan_mode():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_LAN_BLOCKED"))
+		return
+	var selected := _selected_gpu_mode()
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var hw: Dictionary = await _run_gpu_probe_with_overlay()
+	_gpu_stack_busy = false
+	_update_gpu_stack_enabled()
+
+	var install_mode := selected
+	if selected == "auto":
+		install_mode = str(hw.get("recommended", "cpu"))
+
+	if _gpu_stack_already_ok(selected, install_mode):
+		_refresh_gpu_stack_status()
+		_AppOverlayHelpers.notify(
+			_notice_overlay,
+			tr("MISC_GPU_STACK_ALREADY_AUTO_FMT") % _gpu_mode_label(_installed_gpu_mode)
+		)
+		return
+
+	var plan_msg := _build_gpu_stack_plan_message(selected, install_mode, hw)
+	var plan_title := tr("DLG_GPU_STACK_REINSTALL_TITLE")
+	if _gpu_selection_mismatch(selected, hw):
+		plan_title = tr("DLG_GPU_STACK_MISMATCH_TITLE")
+	var accepted := await _AppOverlayHelpers.ask(
+		_confirm_overlay,
+		plan_msg,
+		"warning" if _gpu_selection_mismatch(selected, hw) else "info",
+		plan_title,
+		tr("MISC_GPU_STACK_APPLY"),
+		tr("BTN_CANCEL"),
+	)
+	if not accepted:
+		_refresh_gpu_stack_status()
+		return
+
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var overlay: LoadingOverlay = null
+	var ge := get_tree().root.get_node_or_null("GameEngine")
+	if ge and ge.has_method("get_loading_overlay"):
+		overlay = ge.get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_GPU_STACK"), true)
+	var result: Dictionary = await _GenerationGpuStack.reinstall_async(install_mode, selected)
+	if overlay:
+		overlay.hide_loading()
+	_gpu_stack_busy = false
+	# Refresh installed from marker/health after install.
+	if GenerationProcessManager:
+		_installed_gpu_mode = _GenerationGpuStack.resolve_installed_mode(
+			GenerationProcessManager.fetch_health_payload()
+		)
+	if _installed_gpu_mode == "":
+		_installed_gpu_mode = install_mode if install_mode in ["nvidia", "amd", "cpu"] else ""
+	_save_gpu_scan_cache(hw, _installed_gpu_mode)
+	_refresh_gpu_stack_status()
+	if result.get("ok", false):
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_DONE"))
+	else:
+		var err_key := str(result.get("error_key", "MISC_GPU_STACK_FAILED"))
+		var detail := str(result.get("detail", "")).strip_edges()
+		var msg := tr(err_key)
+		if detail != "":
+			var clipped := detail
+			if clipped.length() > 400:
+				clipped = clipped.substr(clipped.length() - 400, 400)
+			msg = "%s\n\n%s" % [msg, clipped]
+		_AppOverlayHelpers.notify(_notice_overlay, msg)
+	emit_signal("settings_changed")
+
+
 func _on_generation_server_location_selected(index: int) -> void:
 	var use_lan := index == 2
 	var auto_worker := index == 0
@@ -815,6 +1277,7 @@ func _on_generation_server_location_selected(index: int) -> void:
 	SettingsManager.set_setting("generation_auto_worker", auto_worker)
 	_apply_generation_server_lan_visibility(use_lan)
 	_select_server_location_index(index)
+	_refresh_gpu_stack_status()
 	emit_signal("settings_changed")
 
 

@@ -1,4 +1,4 @@
-# logic/settings_manager.gd
+# logic/core/settings_manager.gd
 extends Node
 
 const _LocaleDetect = preload("res://logic/platform/locale_detect.gd")
@@ -25,6 +25,8 @@ var default_settings = {
 	"enable_debug_menu": true,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
+	"replay_save_folder": "",
+	"replay_auto_save": true,
 	"lane_highlight_brightness": 100.0,
 	"note_brightness": 100.0,
 	"note_approach_hint": 3,
@@ -60,7 +62,7 @@ var default_settings = {
 	"last_generation_mode": "basic",
 	"last_generation_intent": "original",
 	"generation_goal": "original",
-	"generation_difficulty": "standard",
+	"generation_difficulty": "medium",
 	"last_generation_lanes": 4,
 	"use_stems_in_generation": true,
 	"scroll_speed": 10.0,
@@ -88,8 +90,9 @@ var default_settings = {
 	"generation_custom_raw_adtof": false,
 	"generation_notes_ready_scope": 0,
 	"generation_ready_goals": ["original"],
-	"generation_ready_diffs": ["standard"],
+	"generation_ready_diffs": ["medium"],
 	"generation_ready_instruments": ["drums"],
+	"generation_ready_preset_slots": [],
 	"generation_confirm_before_rerun": true,
 	"generation_bulk_force_regen": true,
 	"generation_stem_retention_mode": "after_job",
@@ -103,6 +106,8 @@ var default_settings = {
 	"generation_server_port": 5000,
 	"generation_auto_worker": true,
 	"generation_worker_path": "",
+	"generation_gpu_stack": "auto",
+	"generation_gpu_scan": {},
 	"seen_server_setup_notice": false,
 	"tutorial_song_select_done": false,
 	"tutorial_shop_done": false,
@@ -155,6 +160,9 @@ var default_settings = {
 	"series_inter_track_countdown_enabled": false,
 	"user_notes_path": "",
 	"show_chart_id": false,
+	"diary_history_open_day": false,
+	"diary_history_open_track": false,
+	"diary_open_track_museum": false,
 	"library_last_scan_unix": 0,
 	"playfield_width_3_lanes": 100.0,
 	"playfield_width_4_lanes": 100.0,
@@ -235,7 +243,7 @@ func _load_settings():
 			)
 			if had_expand:
 				var cur_goal := _GoalDiff.sanitize_goal(str(loaded_settings.get("generation_goal", "original")))
-				var cur_diff := _GoalDiff.sanitize_difficulty(str(loaded_settings.get("generation_difficulty", "standard")))
+				var cur_diff := _GoalDiff.sanitize_difficulty(str(loaded_settings.get("generation_difficulty", "medium")))
 				var cur_inst := _GoalDiff.sanitize_ready_instrument(
 					str(loaded_settings.get("last_generation_instrument", "drums"))
 				)
@@ -264,6 +272,15 @@ func _load_settings():
 			loaded_settings.erase("generation_ready_expand_instruments")
 			loaded_settings["generation_ready_icons_v1"] = true
 		settings = loaded_settings
+		# Map legacy difficulty ids (relaxed/standard/dense) → easy/medium/hard.
+		settings["generation_difficulty"] = _GoalDiff.sanitize_difficulty(
+			str(settings.get("generation_difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+		)
+		settings["generation_ready_diffs"] = _GoalDiff.sanitize_ready_string_list(
+			settings.get("generation_ready_diffs", []),
+			_GoalDiff.DIFFICULTIES,
+			str(settings.get("generation_difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+		)
 		settings["controls_keymap_alt"] = ControlsBindings.sanitize_lane_keymap(
 			settings.get("controls_keymap_alt", {}),
 			default_settings["controls_keymap_alt"]
@@ -435,6 +452,36 @@ func _merge_defaults_with_loaded(defaults: Dictionary, loaded: Dictionary) -> Di
 		else:
 			merged[key] = loaded[key]
 	return merged
+
+
+const DEFAULT_REPLAYS_DIR := "user://replays/"
+
+
+func get_replay_save_folder() -> String:
+	var stored := String(settings.get("replay_save_folder", "")).strip_edges()
+	if stored == "":
+		return DEFAULT_REPLAYS_DIR
+	if not stored.ends_with("/"):
+		stored += "/"
+	return stored
+
+
+func set_replay_save_folder(path: String) -> void:
+	var normalized := String(path).strip_edges().replace("\\", "/")
+	if normalized == "" or normalized == DEFAULT_REPLAYS_DIR:
+		settings["replay_save_folder"] = ""
+		return
+	if not normalized.ends_with("/"):
+		normalized += "/"
+	settings["replay_save_folder"] = normalized
+
+
+func get_replay_auto_save() -> bool:
+	return bool(settings.get("replay_auto_save", default_settings.get("replay_auto_save", true)))
+
+
+func set_replay_auto_save(enabled: bool) -> void:
+	settings["replay_auto_save"] = enabled
 
 
 func get_setting(setting_name: String, default_value=null):

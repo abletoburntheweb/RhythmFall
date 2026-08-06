@@ -75,16 +75,17 @@ func _on_app_focus_in() -> void:
 	_exclusive_fullscreen_when_focused = _is_exclusive_fullscreen()
 	_restore_low_power_mode()
 	_restore_unfocus_mute()
-	if _should_mute():
-		_notify_music_focus_restored()
+	# Always resume BGM if it died while backgrounded. Mute/throttle stay exclusive-FS only.
+	# (Do not gate on _should_mute() — that is false once _focused is true.)
+	_notify_music_focus_restored()
 
 
 func _apply_focus_lost_now() -> void:
 	if not _focused:
 		return
 	_focused = false
-	if _should_mute():
-		_notify_music_focus_lost()
+	# Save playback position in every window mode so restore can continue after OS suspend.
+	_notify_music_focus_lost()
 	_apply_low_power_mode()
 	_apply_unfocus_mute()
 	_try_auto_pause_gameplay()

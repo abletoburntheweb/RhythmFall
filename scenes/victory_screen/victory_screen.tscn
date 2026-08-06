@@ -913,16 +913,24 @@ custom_minimum_size = Vector2(210, 44)
 layout_mode = 2
 theme = ExtResource("2_rygy8")
 theme_type_variation = &"FlatMenuSongButton"
-theme_override_font_sizes/font_size = 13
-text = "Выбор песни"
+theme_override_font_sizes/font_size = 17
+text = "ВЫБОР ПЕСНИ"
 
 [node name="ReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
 custom_minimum_size = Vector2(210, 44)
 layout_mode = 2
 theme = ExtResource("2_rygy8")
 theme_type_variation = &"FlatMenuSongButton"
-theme_override_font_sizes/font_size = 13
-text = "Ещё раз"
+theme_override_font_sizes/font_size = 17
+text = "ЕЩЁ РАЗ"
+
+[node name="SaveRunReplayButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
+custom_minimum_size = Vector2(210, 44)
+layout_mode = 2
+theme = ExtResource("2_rygy8")
+theme_type_variation = &"FlatMenuSongButton"
+theme_override_font_sizes/font_size = 17
+text = "СОХРАНИТЬ ПОВТОР"
 
 [node name="NextTrackButton" type="Button" parent="MainMargin/MainVBox/ButtonsContainer"]
 visible = false
@@ -931,8 +939,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("2_rygy8")
 theme_type_variation = &"FlatGenerateButton"
-theme_override_font_sizes/font_size = 16
-text = "Продолжить"
+theme_override_font_sizes/font_size = 18
+text = "ПРОДОЛЖИТЬ"
 
 [node name="HintLabel" type="Label" parent="MainMargin/MainVBox"]
 visible = false

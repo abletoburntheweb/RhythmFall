@@ -1,17 +1,76 @@
-[gd_scene load_steps=19 format=3 uid="uid://c8e1wfq8466sn"]
+[gd_scene load_steps=22 format=3 uid="uid://c8e1wfq8466sn"]
 
 [ext_resource type="Script" uid="uid://cfbhb0lir4ia4" path="res://scenes/main_menu/main_menu.gd" id="1_06t4h"]
-[ext_resource type="Script" path="res://scenes/main_menu/main_menu_stats_waveform.gd" id="1_wave"]
+[ext_resource type="Script" uid="uid://dmljb51y4lm4h" path="res://scenes/main_menu/main_menu_stats_waveform.gd" id="1_wave"]
 [ext_resource type="Texture2D" uid="uid://ddvlltgrwj1ka" path="res://assets/textures/github-mark.png" id="2_0ebjn"]
 [ext_resource type="Texture2D" uid="uid://cgbr3rs6wjlna" path="res://assets/textures/logo.png" id="3"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="4_uqeha"]
 [ext_resource type="Texture2D" uid="uid://c83uixpcfnoe5" path="res://assets/icons/diamond.svg" id="5_diamond"]
-[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="6_notice"]
-[ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="7_confirm"]
-[ext_resource type="Shader" uid="uid://ddil7047wqbwv" path="res://shaders/achievement_card.gdshader" id="8_cover_shader"]
+[ext_resource type="PackedScene" uid="uid://buajx3ftqxrd1" path="res://ui/overlays/app_notice_overlay.tscn" id="6_notice"]
+[ext_resource type="PackedScene" uid="uid://bsp2yfqus83hw" path="res://ui/overlays/app_confirm_overlay.tscn" id="7_confirm"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_panel"]
 bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shop_badge"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.91, 0.36, 0.36, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_shell"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(0.09, 0.1, 0.14, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.86, 0.72, 0.35)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quest_card"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.11, 0.12, 0.16, 1)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.86, 0.72, 0.45)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_prog_track"]
+bg_color = Color(0.09, 0.1, 0.14, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_prog_fill"]
+bg_color = Color(0.62, 0.86, 0.72, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glass_panel"]
 content_margin_left = 14.0
@@ -33,24 +92,22 @@ shadow_color = Color(0, 0, 0, 0.28)
 shadow_size = 8
 shadow_offset = Vector2(0, 3)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_shell"]
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 14.0
-bg_color = Color(0.09, 0.1, 0.14, 0.82)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.62, 0.86, 0.72, 0.35)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.28)
-shadow_size = 8
-shadow_offset = Vector2(0, 3)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cover_frame"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.05, 0.06, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.86, 0.72, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+corner_detail = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tip_shell"]
 content_margin_left = 16.0
@@ -67,64 +124,6 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quest_card"]
-bg_color = Color(0.11, 0.12, 0.16, 1)
-border_width_left = 1
-border_width_top = 2
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.62, 0.86, 0.72, 0.45)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cover_frame"]
-content_margin_left = 4.0
-content_margin_top = 4.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
-bg_color = Color(0.05, 0.06, 0.09, 1)
-border_width_left = 1
-border_width_top = 3
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.62, 0.86, 0.72, 0.5)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-corner_detail = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_prog_track"]
-bg_color = Color(0.09, 0.1, 0.14, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_daily_prog_fill"]
-bg_color = Color(0.62, 0.86, 0.72, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shop_badge"]
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 6.0
-content_margin_bottom = 2.0
-bg_color = Color(0.91, 0.36, 0.36, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_last_track_cover"]
-shader = ExtResource("8_cover_shader")
-shader_parameter/corner_radius_px = 16.0
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -178,8 +177,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 1)
 theme_override_font_sizes/font_size = 15
 text = "Ритм-игра с генерацией нот под ваши треки"
-autowrap_mode = 2
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="NavSpacer" type="Control" parent="RootMargin/RootHBox/LeftSidebar"]
 custom_minimum_size = Vector2(0, 8)
@@ -206,8 +205,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatPlayButton"
-metadata/ui_icon_file = "circle-play.svg"
 text = "ИГРАТЬ"
+metadata/ui_icon_file = "circle-play.svg"
 
 [node name="AchievementsButton" type="Button" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer"]
 unique_name_in_owner = true
@@ -216,8 +215,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatMenuAchievementsButton"
-metadata/ui_icon_file = "trophy.svg"
 text = "ДОСТИЖЕНИЯ"
+metadata/ui_icon_file = "trophy.svg"
 
 [node name="ProfileButton" type="Button" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer"]
 unique_name_in_owner = true
@@ -226,19 +225,19 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatMenuProfileButton"
-metadata/ui_icon_file = "fingerprint-pattern.svg"
 text = "ПРОФИЛЬ"
+metadata/ui_icon_file = "fingerprint-pattern.svg"
 
 [node name="ShopButton" type="Button" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer"]
 unique_name_in_owner = true
+clip_contents = true
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatMenuShopButton"
-metadata/ui_icon_file = "diamond.svg"
 text = "МАГАЗИН"
-clip_contents = true
+metadata/ui_icon_file = "diamond.svg"
 
 [node name="NewRewardsBadge" type="PanelContainer" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer/ShopButton"]
 visible = false
@@ -271,8 +270,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatMenuSettingsButton"
-metadata/ui_icon_file = "settings.svg"
 text = "НАСТРОЙКИ"
+metadata/ui_icon_file = "settings.svg"
 
 [node name="ExitButton" type="Button" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer"]
 unique_name_in_owner = true
@@ -281,8 +280,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatExitButton"
-metadata/ui_icon_file = "log-out.svg"
 text = "ВЫЙТИ"
+metadata/ui_icon_file = "log-out.svg"
 
 [node name="SidebarBottomSpacer" type="Control" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox"]
 layout_mode = 2
@@ -292,18 +291,16 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
-alignment = 0
 
 [node name="HelpButton" type="Button" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/FooterRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 size_flags_horizontal = 0
+tooltip_text = "Справка"
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatMenuHelpButton"
 metadata/ui_icon_file = "circle-question-mark.svg"
-tooltip_text = "Справка"
-text = ""
 
 [node name="GitHubButton" type="TextureButton" parent="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/FooterRow"]
 unique_name_in_owner = true
@@ -334,6 +331,7 @@ theme_override_constants/separation = 10
 
 [node name="DailyHeaderRow" type="HBoxContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox"]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="HeaderLabel" type="Label" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyHeaderRow"]
 layout_mode = 2
@@ -345,6 +343,7 @@ text = "Ежедневные задания"
 [node name="DailyResetLabel" type="Label" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyHeaderRow"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 0
 theme_override_colors/font_color = Color(0.58, 0.66, 0.76, 1)
 theme_override_font_sizes/font_size = 15
 text = "Обновится через 00:00:00"
@@ -357,15 +356,14 @@ theme_override_constants/separation = 10
 [node name="QuestItem1" type="PanelContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_quest_card")
 
 [node name="QuestMargin" type="MarginContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="ContentVBox" type="VBoxContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/QuestMargin"]
 layout_mode = 2
@@ -376,7 +374,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="QuestIcon" type="TextureRect" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/QuestMargin/ContentVBox/QuestHeaderRow"]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -411,22 +409,21 @@ autowrap_mode = 2
 [node name="QuestProgressBar" type="ProgressBar" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem1/QuestMargin/ContentVBox"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
-show_percentage = false
 theme_override_styles/background = SubResource("StyleBoxFlat_daily_prog_track")
 theme_override_styles/fill = SubResource("StyleBoxFlat_daily_prog_fill")
+show_percentage = false
 
 [node name="QuestItem2" type="PanelContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_quest_card")
 
 [node name="QuestMargin" type="MarginContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="ContentVBox" type="VBoxContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/QuestMargin"]
 layout_mode = 2
@@ -437,7 +434,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="QuestIcon" type="TextureRect" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/QuestMargin/ContentVBox/QuestHeaderRow"]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -472,22 +469,21 @@ autowrap_mode = 2
 [node name="QuestProgressBar" type="ProgressBar" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem2/QuestMargin/ContentVBox"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
-show_percentage = false
 theme_override_styles/background = SubResource("StyleBoxFlat_daily_prog_track")
 theme_override_styles/fill = SubResource("StyleBoxFlat_daily_prog_fill")
+show_percentage = false
 
 [node name="QuestItem3" type="PanelContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_quest_card")
 
 [node name="QuestMargin" type="MarginContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="ContentVBox" type="VBoxContainer" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/QuestMargin"]
 layout_mode = 2
@@ -498,7 +494,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="QuestIcon" type="TextureRect" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/QuestMargin/ContentVBox/QuestHeaderRow"]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -533,21 +529,20 @@ autowrap_mode = 2
 [node name="QuestProgressBar" type="ProgressBar" parent="RootMargin/RootHBox/RightHub/DailyQuestsPanel/ContentVBox/DailyQuestsList/QuestItem3/QuestMargin/ContentVBox"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
-show_percentage = false
 theme_override_styles/background = SubResource("StyleBoxFlat_daily_prog_track")
 theme_override_styles/fill = SubResource("StyleBoxFlat_daily_prog_fill")
+show_percentage = false
 
 [node name="MiddleRow" type="HBoxContainer" parent="RootMargin/RootHBox/RightHub"]
 layout_mode = 2
 size_flags_vertical = 0
-alignment = 3
 theme_override_constants/separation = 8
+alignment = 3
 
 [node name="StatsPanel" type="PanelContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_glass_panel")
 
 [node name="StatsMargin" type="MarginContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/StatsPanel"]
@@ -649,7 +644,6 @@ script = ExtResource("1_wave")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_glass_panel")
 
 [node name="LastTrackMargin" type="MarginContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel"]
@@ -669,35 +663,32 @@ text = "Последний трек"
 [node name="LastTrackBody" type="HBoxContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox"]
 layout_mode = 2
 size_flags_vertical = 0
-theme_override_constants/separation = 6
-alignment = 0
+theme_override_constants/separation = 10
+alignment = 1
 
 [node name="LastTrackCoverFrame" type="PanelContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody"]
-clip_contents = false
-custom_minimum_size = Vector2(108, 108)
+custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 0
-size_flags_vertical = 0
+size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_cover_frame")
 
 [node name="LastTrackCover" type="TextureRect" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody/LastTrackCoverFrame"]
 unique_name_in_owner = true
 z_as_relative = false
 texture_filter = 4
-material = SubResource("ShaderMaterial_last_track_cover")
-custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-expand_mode = 3
-stretch_mode = 5
+expand_mode = 1
+stretch_mode = 6
 
 [node name="LastTrackMetaVBox" type="VBoxContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 0
+size_flags_vertical = 4
 theme_override_constants/separation = 2
-alignment = 0
+alignment = 1
 
 [node name="LastTrackTitle" type="Label" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody/LastTrackMetaVBox"]
 unique_name_in_owner = true
@@ -707,8 +698,6 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.94, 0.98, 1)
 theme_override_font_sizes/font_size = 19
 text = "—"
-horizontal_alignment = 0
-vertical_alignment = 0
 autowrap_mode = 3
 max_lines_visible = 2
 
@@ -720,8 +709,6 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 1)
 theme_override_font_sizes/font_size = 15
 text = "—"
-horizontal_alignment = 0
-vertical_alignment = 0
 autowrap_mode = 3
 max_lines_visible = 2
 
@@ -730,16 +717,14 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.72, 0.58, 0.95, 1)
-theme_override_font_sizes/font_size = 13
-text = ""
-horizontal_alignment = 0
+theme_override_font_sizes/font_size = 14
 
 [node name="LastTrackMetaSpacer" type="Control" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody/LastTrackMetaVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="LastTrackScoreVBox" type="VBoxContainer" parent="RootMargin/RootHBox/RightHub/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody"]
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -750,7 +735,7 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.92, 0.78, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 2
 
@@ -758,7 +743,7 @@ horizontal_alignment = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 56
 text = "—"
 horizontal_alignment = 2
 
@@ -769,8 +754,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("4_uqeha")
 theme_type_variation = &"FlatPlayButton"
-metadata/ui_icon_file = "circle-play.svg"
 text = "Играть снова"
+metadata/ui_icon_file = "circle-play.svg"
 
 [node name="ActivityFeedPanel" type="PanelContainer" parent="RootMargin/RootHBox/RightHub"]
 layout_mode = 2
@@ -873,7 +858,6 @@ unique_name_in_owner = true
 layout_mode = 1
 
 [node name="DailyResetTimer" type="Timer" parent="."]
-wait_time = 1.0
 autostart = true
 
 [connection signal="pressed" from="RootMargin/RootHBox/LeftSidebar/MenuPanel/MenuVBox/ButtonContainer/SongSelectButton" to="." method="_on_song_select_pressed"]

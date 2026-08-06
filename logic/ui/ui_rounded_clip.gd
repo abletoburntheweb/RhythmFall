@@ -3,16 +3,19 @@ extends RefCounted
 class_name UiRoundedClip
 
 ## Rounded StyleBox frames do not mask children: content fills the outer rect and
-## paints over the border's inner curve. Fix:
-## 1) clip_to_frame — StyleBox alpha clip only (never clip_contents; that kills border AA)
-## 2) apply_to_canvas_item — soft-mask TextureRect corners
-## 3) ensure_border_on_top — inset content under the border; optional overlay when safe
+## paints over the border's inner curve. Fix for photo covers:
+## 1) Soft-mask the TextureRect corners (shader) — never clip_contents / CLIP_CHILDREN_AND_DRAW
+##    on a framed Panel (those chop StyleBoxFlat corner AA — "frame corners look cut").
+## 2) Inset content under the border stroke.
+## 3) Draw a border-only overlay on top so the stroke always sits above the photo.
 
 const _CLIP_SHADER_PATH := "res://shaders/rounded_rect_clip.gdshader"
 const _FALLBACK_SHADER_PATH := "res://shaders/achievement_card.gdshader"
 const _META_SIZE_BOUND := &"ui_rounded_clip_size_bound"
 const _META_RADIUS := &"ui_rounded_clip_radius"
 const _META_BORDER_OVERLAY := &"ui_rounded_border_overlay"
+const _COVER_HOST_NAME := "UiRoundedCoverHost"
+const _BORDER_OVERLAY_NAME := "UiRoundedBorderOverlay"
 
 static var _clip_shader: Shader = null
 
@@ -28,9 +31,10 @@ static func _get_clip_shader() -> Shader:
 
 
 static func clip_to_frame(frame: CanvasItem) -> void:
+	## Soft alpha clip via StyleBox. Prefer for fill-only panels (playfield, HP track).
+	## Do NOT use on covers with a visible StyleBox border — use apply_cover instead.
 	if frame == null:
 		return
-	# clip_contents is a hard rect clip — it chops StyleBoxFlat corner AA.
 	if frame is Control:
 		(frame as Control).clip_contents = false
 	frame.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
@@ -66,33 +70,121 @@ static func ensure_border_on_top(frame: Control) -> void:
 	var src := _read_flat_style(frame)
 	if src == null:
 		return
-	var border_w := maxi(
+	var border_w := _max_border_width(src)
+	if border_w <= 0:
+		return
+	_inset_content_for_border(frame, src, border_w)
+	var host := _resolve_border_overlay_host(frame)
+	if host == null:
+		return
+	_apply_border_overlay(host, src)
+	frame.set_meta(_META_BORDER_OVERLAY, true)
+
+
+static func apply_cover(frame: Control, cover: CanvasItem, radius_px: float = 10.0) -> void:
+	## Photo inside a rounded StyleBox frame: soft-mask + border drawn on top.
+	if frame == null:
+		return
+	# Hard clips destroy StyleBoxFlat corner AA on the frame itself.
+	frame.clip_contents = false
+	frame.clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
+
+	var inner_radius := radius_px
+	var src := _read_flat_style(frame)
+	var bw := 0
+	if src != null:
+		bw = _max_border_width(src)
+		inner_radius = maxf(0.0, radius_px - float(bw))
+		_inset_content_for_border(frame, src, maxi(1, bw))
+		# Re-read after inset may have replaced the stylebox.
+		src = _read_flat_style(frame)
+
+	if cover is Node:
+		_remove_stale_overlay(cover as Node)
+	_remove_stale_overlay(frame)
+
+	apply_to_canvas_item(cover, inner_radius)
+
+	if src != null and bw > 0:
+		var host := _ensure_cover_host(frame)
+		if host != null:
+			_apply_border_overlay(host, src)
+			frame.set_meta(_META_BORDER_OVERLAY, true)
+
+
+static func _max_border_width(src: StyleBoxFlat) -> int:
+	if src == null:
+		return 0
+	return maxi(
 		src.border_width_left,
 		maxi(src.border_width_top, maxi(src.border_width_right, src.border_width_bottom))
 	)
-	if border_w <= 0:
-		return
-	# Always inset content so the StyleBox stroke is not covered by children.
-	_inset_content_for_border(frame, src, border_w)
-	# Choose a host for the border overlay without breaking layout:
-	# - Panel: free children → overlay on the frame itself
-	# - PanelContainer: nest only into a bare Control; never into Box/Margin/
-	#   AspectRatio/TextureRect (those broke covers / added extra slots)
-	var host: Control = frame
+
+
+static func _ensure_cover_host(frame: Control) -> Control:
+	## PanelContainer may only have one layout child. Wrap media in a bare Control so
+	## a border-only Panel can sit on top without fighting AspectRatio/Box layout.
+	if frame == null:
+		return null
+	if not (frame is PanelContainer):
+		return frame
+	var existing := frame.get_node_or_null(_COVER_HOST_NAME) as Control
+	if existing != null:
+		return existing
+	if frame.get_child_count() == 0:
+		var empty_host := Control.new()
+		empty_host.name = _COVER_HOST_NAME
+		empty_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		empty_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		frame.add_child(empty_host)
+		return empty_host
+	var first := frame.get_child(0) as Control
+	if first == null:
+		return frame
+	if first.name == _BORDER_OVERLAY_NAME:
+		return frame
+	if not _is_layout_container(first) and not (first is TextureRect) and not (first is VideoStreamPlayer):
+		# Already a bare Control / custom host — overlay can live here.
+		return first
+	var host := Control.new()
+	host.name = _COVER_HOST_NAME
+	host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var idx := first.get_index()
+	frame.remove_child(first)
+	host.add_child(first)
+	first.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	first.offset_left = 0.0
+	first.offset_top = 0.0
+	first.offset_right = 0.0
+	first.offset_bottom = 0.0
+	frame.add_child(host)
+	frame.move_child(host, idx)
+	return host
+
+
+static func _resolve_border_overlay_host(frame: Control) -> Control:
+	if frame == null:
+		return null
+	var cover_host := frame.get_node_or_null(_COVER_HOST_NAME) as Control
+	if cover_host != null:
+		return cover_host
 	if frame is PanelContainer and frame.get_child_count() > 0:
 		var first := frame.get_child(0) as Control
-		if first != null and first.name != "UiRoundedBorderOverlay":
+		if first != null and first.name != _BORDER_OVERLAY_NAME:
 			if _is_layout_container(first) or first is TextureRect or first is VideoStreamPlayer:
-				_remove_stale_overlay(first)
-				_remove_stale_overlay(frame)
-				return
-			host = first
-	var overlay := host.get_node_or_null("UiRoundedBorderOverlay") as Panel
-	if overlay == null and host != frame:
-		overlay = frame.get_node_or_null("UiRoundedBorderOverlay") as Panel
+				return _ensure_cover_host(frame)
+			return first
+	return frame
+
+
+static func _apply_border_overlay(host: Control, src: StyleBoxFlat) -> void:
+	if host == null or src == null:
+		return
+	var overlay := host.get_node_or_null(_BORDER_OVERLAY_NAME) as Panel
 	if overlay == null:
 		overlay = Panel.new()
-		overlay.name = "UiRoundedBorderOverlay"
+		overlay.name = _BORDER_OVERLAY_NAME
 		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		overlay.offset_left = 0.0
@@ -119,28 +211,6 @@ static func ensure_border_on_top(frame: Control) -> void:
 	overlay.add_theme_stylebox_override("panel", border_only)
 	if overlay.get_parent() == host:
 		host.move_child(overlay, host.get_child_count() - 1)
-	frame.set_meta(_META_BORDER_OVERLAY, true)
-
-
-static func apply_cover(frame: Control, cover: CanvasItem, radius_px: float = 10.0) -> void:
-	clip_to_frame(frame)
-	var inner_radius := radius_px
-	var src := _read_flat_style(frame)
-	var bw := 0.0
-	if src != null:
-		bw = float(
-			maxi(
-				src.border_width_left,
-				maxi(src.border_width_top, maxi(src.border_width_right, src.border_width_bottom))
-			)
-		)
-		inner_radius = maxf(0.0, radius_px - bw)
-		_inset_content_for_border(frame, src, maxi(1, int(bw)))
-	# Drop any overlay previously nested into the cover TextureRect (broke layout).
-	if cover is Node:
-		_remove_stale_overlay(cover as Node)
-	_remove_stale_overlay(frame)
-	apply_to_canvas_item(cover, inner_radius)
 
 
 static func _is_layout_container(node: Control) -> bool:
@@ -181,7 +251,7 @@ static func _inset_content_for_border(frame: Control, src: StyleBoxFlat, border_
 static func _remove_stale_overlay(host: Node) -> void:
 	if host == null:
 		return
-	var overlay := host.get_node_or_null("UiRoundedBorderOverlay")
+	var overlay := host.get_node_or_null(_BORDER_OVERLAY_NAME)
 	if overlay != null:
 		host.remove_child(overlay)
 		overlay.queue_free()

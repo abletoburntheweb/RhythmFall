@@ -1,4 +1,4 @@
-# logic/generation_process_manager.gd
+# logic/services/generation_process_manager.gd
 extends Node
 
 const HEALTH_PATH := "/health"
@@ -32,20 +32,73 @@ func shutdown_managed_worker() -> void:
 	if _prewarm_poll_timer and is_instance_valid(_prewarm_poll_timer):
 		_prewarm_poll_timer.stop()
 	stop_owned_worker()
-	if not should_auto_manage() or not _spawned_by_game:
-		return
-	var pid_path := _worker_pid_file_path()
-	if FileAccess.file_exists(pid_path):
-		var pid_text := FileAccess.get_file_as_string(pid_path).strip_edges()
-		if pid_text.is_valid_int():
-			var pid := int(pid_text)
-			if pid > 0 and OS.is_process_running(pid):
-				OS.kill(pid)
-		DirAccess.remove_absolute(pid_path)
+	_kill_pid_file_worker()
 	_spawned_by_game = false
 	_spawn_in_progress = false
 	_worker_pid = -1
 	_invalidate_port_probe_cache()
+
+
+## Stop any local generation process (owned PID, pid file, or listener on the API port).
+func force_stop_local_worker() -> void:
+	shutdown_managed_worker()
+	if OS.get_name() == "Windows":
+		_kill_listener_on_local_port(get_api_port())
+	_invalidate_port_probe_cache()
+
+
+func is_local_port_busy() -> bool:
+	return _is_local_port_listening(get_api_port())
+
+
+func resolve_server_root_dir() -> String:
+	for server_dir in _server_search_dirs():
+		var normalized := _normalize_dir(server_dir)
+		if normalized == "":
+			continue
+		if FileAccess.file_exists(normalized.path_join("run.py")):
+			return normalized
+	var exe_base := OS.get_executable_path().get_base_dir()
+	if exe_base != "":
+		var sibling := exe_base.path_join("RhythmFallServer")
+		if DirAccess.dir_exists_absolute(sibling):
+			return sibling.replace("\\", "/")
+	var res_server := ProjectSettings.globalize_path("res://RhythmFallServer-main")
+	if FileAccess.file_exists(res_server.path_join("run.py")):
+		return res_server.replace("\\", "/")
+	return ""
+
+
+func fetch_health_payload() -> Dictionary:
+	return _ping_health()
+
+
+func _kill_pid_file_worker() -> void:
+	var pid_path := _worker_pid_file_path()
+	if not FileAccess.file_exists(pid_path):
+		return
+	var pid_text := FileAccess.get_file_as_string(pid_path).strip_edges()
+	if pid_text.is_valid_int():
+		var pid := int(pid_text)
+		if pid > 0 and OS.is_process_running(pid):
+			OS.kill(pid)
+	DirAccess.remove_absolute(pid_path)
+
+
+func _kill_listener_on_local_port(port: int) -> void:
+	if port <= 0:
+		return
+	var ps := (
+		"$conns = Get-NetTCPConnection -LocalPort %d -State Listen -ErrorAction SilentlyContinue; "
+		+ "foreach ($c in $conns) { Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue }"
+	) % port
+	OS.execute(
+		"powershell.exe",
+		PackedStringArray(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps]),
+		[],
+		true,
+		false
+	)
 
 
 func _worker_pid_file_path() -> String:
@@ -274,7 +327,9 @@ func _ping_health() -> Dictionary:
 		return {"ok": false}
 	var parsed = JSON.parse_string(body.get_string_from_utf8())
 	if parsed is Dictionary and str(parsed.get("status", "")) == "healthy":
-		return {"ok": true}
+		var out: Dictionary = parsed
+		out["ok"] = true
+		return out
 	return {"ok": false}
 
 
@@ -343,6 +398,7 @@ func _server_search_dirs() -> PackedStringArray:
 	if custom != "":
 		dirs.append(custom)
 	dirs.append(ProjectSettings.globalize_path("res://RhythmFallServer"))
+	dirs.append(ProjectSettings.globalize_path("res://RhythmFallServer-main"))
 	var exe_base := OS.get_executable_path().get_base_dir()
 	if exe_base != "":
 		dirs.append(exe_base.path_join("RhythmFallServer"))
@@ -377,6 +433,15 @@ func _normalize_dir(path: String) -> String:
 	return p
 
 
+func _gpu_env_fragment() -> String:
+	var mode := "auto"
+	if SettingsManager:
+		mode = str(SettingsManager.get_setting("generation_gpu_stack", "auto")).strip_edges().to_lower()
+	if mode not in ["auto", "nvidia", "amd", "cpu"]:
+		mode = "auto"
+	return "set RFALL_GPU=%s&& " % mode
+
+
 func _chart_variant_env_fragment() -> String:
 	if SettingsManager == null:
 		return ""
@@ -390,13 +455,18 @@ func _chart_variant_env_fragment() -> String:
 
 func _launch_server_exe(exe_path: String) -> Dictionary:
 	var variant_env := _chart_variant_env_fragment()
+	var gpu_env := _gpu_env_fragment()
+	var pid_file := _worker_pid_file_path().replace("/", "\\")
+	var pid_env := "set RF_PID_FILE=%s&& " % pid_file
 	if _prefer_wsl_worker() and OS.get_name() == "Windows":
 		return {
 			"ok": true,
 			"path": "cmd.exe",
 			"argv": PackedStringArray([
 				"/c",
-				"%sset RFALL_USE_WSL=1&& start \"RhythmFallServer\" /B \"%s\"" % [variant_env, exe_path.replace("\\", "/")],
+				"%s%s%sset RFALL_USE_WSL=1&& start \"RhythmFallServer\" /B \"%s\"" % [
+					variant_env, gpu_env, pid_env, exe_path.replace("\\", "/"),
+				],
 			]),
 			"open_console": false,
 			"track_pid": false,
@@ -404,7 +474,12 @@ func _launch_server_exe(exe_path: String) -> Dictionary:
 	return {
 		"ok": true,
 		"path": "cmd.exe",
-		"argv": PackedStringArray(["/c", "%sstart \"RhythmFallServer\" \"%s\"" % [variant_env, exe_path.replace("\\", "/")]]),
+		"argv": PackedStringArray([
+			"/c",
+			"%s%s%sstart \"RhythmFallServer\" \"%s\"" % [
+				variant_env, gpu_env, pid_env, exe_path.replace("\\", "/"),
+			],
+		]),
 		"open_console": true,
 		"track_pid": false,
 	}
@@ -428,15 +503,16 @@ func _launch_hidden_python_server(server_dir: String) -> Dictionary:
 		return {"ok": false, "error_key": "GEN_WORKER_NOT_CONFIGURED"}
 	var port := str(get_api_port())
 	var variant_env := _chart_variant_env_fragment()
+	var gpu_env := _gpu_env_fragment()
 	var server_win := server_dir.replace("/", "\\")
 	if OS.get_name() == "Windows":
 		var pid_file := _worker_pid_file_path().replace("/", "\\")
 		var cmd := (
-			"cd /d \"%s\" && %sset RF_BIND_HOST=127.0.0.1&& set RF_BIND_PORT=%s&& "
+			"cd /d \"%s\" && %s%sset RF_BIND_HOST=127.0.0.1&& set RF_BIND_PORT=%s&& "
 			+ "set RF_FLASK_DEBUG=0&& set PYTHONUNBUFFERED=1&& "
 			+ "set RF_PID_FILE=%s&& "
 			+ "start \"RhythmFallServer\" /B \"%s\" -u run.py"
-		) % [server_win, variant_env, port, pid_file, python]
+		) % [server_win, variant_env, gpu_env, port, pid_file, python]
 		return {
 			"ok": true,
 			"path": "cmd.exe",

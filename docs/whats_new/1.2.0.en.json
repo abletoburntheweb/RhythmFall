@@ -1,0 +1,48 @@
+{
+	"version": "1.2.0",
+	"tagline": "A bigger rhythm game — bilingual UI, play modes, Bass beta, modifiers, and a profile worth sharing.",
+	"sections": [
+		{
+			"icon": "sparkles.svg",
+			"tint": "#f0c65a",
+			"title": "Highlights",
+			"body": "- Full **English / Russian** UI — switch anytime in Settings → System\n- **Play modes hub** — Library, Endless, and Marathon\n- **Original / Arcade** chart goals, **Bass (beta)**, and **Rhythm DNA**\n- **36 run modifiers**, generation queue, Windows-native server\n- Profile **Rhythm Rating** and **Recap** share cards"
+		},
+		{
+			"icon": "gamepad-2.svg",
+			"tint": "#a78bfa",
+			"title": "Play modes",
+			"body": "- **Library** — your songs, filters, medals, and next-track suggestions\n- **Endless** — streaks from a playlist or random pool; setup chips and Same setup\n- **Marathon** — fixed routes, Daily Marathon, badges, and unlock gates\n- Main menu **Play** opens the hub first — not straight into the library"
+		},
+		{
+			"icon": "music.svg",
+			"tint": "#5eead4",
+			"title": "Library & generation",
+			"body": "- Card-style song details, richer filters, and a **genre picker** with server tips\n- Generation screen: **Original** vs **Arcade**, lanes, advanced sliders, **presets**\n- **Queue panel** — progress, reorder, cancel, mass BPM + notes\n- Track preview: loudest **15 s** highlight (or full track) in Settings → Sound"
+		},
+		{
+			"icon": "drum.svg",
+			"tint": "#fb923c",
+			"title": "Bass & charts",
+			"body": "- **Bass (beta)** — taps, holds, slides; same Original / Arcade goals as drums\n- Chart difficulty **1–10+** with decimal stars; mods shift effective difficulty\n- Health bar, defeat screen, **Last Chance**, and clearer pause / resume rewind"
+		},
+		{
+			"icon": "fingerprint-pattern.svg",
+			"tint": "#fbbf24",
+			"title": "Modifiers & Rhythm DNA",
+			"body": "- Full-screen modifier studio — video previews, conflicts, reward multiplier\n- **Rhythm DNA · Beta** mods need a `.rfd` sidecar from drum generation\n- Heat, Spotlight, Combo Escalation, and more — HUD strip shows the active set\n- Save **modifier presets** (10 slots) alongside generation presets"
+		},
+		{
+			"icon": "trophy.svg",
+			"tint": "#60a5fa",
+			"title": "Profile & progression",
+			"body": "- Overview, Statistics, Genres, Records — plus **RR Top 10** and medals\n- **165 achievements**, daily quests, and play-mode unlocks\n- **Recap** — five shareable PNG cards from Profile → Export\n- Shop collections, hit particles, and medal-priced cosmetics"
+		},
+		{
+			"icon": "settings-2.svg",
+			"tint": "#94a3b8",
+			"title": "Settings & polish",
+			"body": "- Nine settings pages with sidebar icons — Sound through Danger zone\n- Keyboard nav across menus; Guitar Hero control preset\n- Ambient menu washes, StatusDock toasts, and first-visit spotlight tutorials\n- Help deeplinks jump straight into the right Settings page"
+		}
+	]
+}

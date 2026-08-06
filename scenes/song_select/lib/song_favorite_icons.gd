@@ -1,4 +1,4 @@
-# logic/utils/song_favorite_icons.gd
+# scenes/song_select/lib/song_favorite_icons.gd
 class_name SongFavoriteIcons
 extends RefCounted
 

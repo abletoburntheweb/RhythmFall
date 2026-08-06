@@ -1,4 +1,4 @@
-# logic/utils/shop_collection_locale.gd
+# logic/i18n/shop_collection_locale.gd
 extends RefCounted
 class_name ShopCollectionLocale
 

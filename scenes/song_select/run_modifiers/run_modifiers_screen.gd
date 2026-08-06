@@ -118,6 +118,8 @@ var _secondary_tabs_built := false
 var _presets_dialog: Control = null
 var _preset_active_slot: int = 0
 var _preset_baseline: Dictionary = {}
+var _keyboard_nav_active := false
+var _kb_focus_mod_id := ""
 
 
 func _ready() -> void:
@@ -565,6 +567,7 @@ func _set_right_panel_view(view: String, refresh: bool = true) -> void:
 func _select_tab(tab_id: String, play_sound: bool = true) -> void:
 	var prev_tab := _current_tab_id
 	_current_tab_id = tab_id
+	_clear_keyboard_mod_focus()
 	for nav in _nav_items:
 		if nav:
 			nav.set_selected(nav.tab_id == tab_id)
@@ -1162,12 +1165,11 @@ func _update_card_preview_ui() -> void:
 		var tab = _tabs.get(tab_id, null)
 		if tab == null:
 			continue
-		if tab.has_method("set_card_preview_focus"):
-			tab.set_card_preview_focus("")
 		if tab.has_method("set_card_info_locked"):
 			tab.set_card_info_locked(info_lock_id)
 		if tab.has_method("set_conflict_previews"):
 			tab.set_conflict_previews(active_conflicts)
+	_apply_keyboard_preview_focus()
 	_refresh_card_params()
 
 
@@ -1314,6 +1316,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if _presets_dialog != null and is_instance_valid(_presets_dialog):
 		return
+	if event is InputEventMouseButton and event.pressed:
+		_clear_keyboard_mod_focus()
 	if event is InputEventKey and event.pressed and not event.echo:
 		# Пробел — сохранить изменения на месте (как в настройках).
 		if event.keycode == KEY_SPACE and not _is_text_input_focused():
@@ -1325,18 +1329,113 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_choice_overlay_blocking_input():
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
-			accept_event()
-			_on_back_pressed()
-		elif event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
-			accept_event()
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var key_event := event as InputEventKey
+	var is_card_nav := key_event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
+	if key_event.echo and not is_card_nav:
+		return
+	if key_event.keycode == KEY_ESCAPE:
+		accept_event()
+		_on_back_pressed()
+		return
+	if _is_text_input_focused():
+		return
+	if is_card_nav:
+		var delta := 0
+		match key_event.keycode:
+			KEY_LEFT, KEY_UP:
+				delta = -1
+			KEY_RIGHT, KEY_DOWN:
+				delta = 1
+		_move_keyboard_mod_focus(delta)
+		accept_event()
+		return
+	if key_event.echo:
+		return
+	if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
+		accept_event()
+		if _keyboard_nav_active and _kb_focus_mod_id != "":
+			_activate_keyboard_focused_modifier()
+		else:
 			_on_confirm_pressed()
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			accept_event()
-			var index := int(event.keycode - KEY_1)
-			if index < _nav_items.size() and _nav_items[index]:
-				_select_tab(_nav_items[index].tab_id)
+	elif key_event.keycode >= KEY_1 and key_event.keycode <= KEY_5:
+		accept_event()
+		var index := int(key_event.keycode - KEY_1)
+		if index < _nav_items.size() and _nav_items[index]:
+			_select_tab(_nav_items[index].tab_id)
+
+
+func _ordered_visible_mod_ids() -> Array[String]:
+	var tab = _tabs.get(_current_tab_id, null)
+	if tab and tab.has_method("get_ordered_visible_modifier_ids"):
+		return tab.get_ordered_visible_modifier_ids()
+	return []
+
+
+func _move_keyboard_mod_focus(delta: int) -> void:
+	var ids := _ordered_visible_mod_ids()
+	if ids.is_empty():
+		return
+	var prev_id := _kb_focus_mod_id
+	_keyboard_nav_active = true
+	var idx := ids.find(_kb_focus_mod_id)
+	if idx < 0:
+		idx = 0 if delta > 0 else ids.size() - 1
+	else:
+		idx = clampi(idx + delta, 0, ids.size() - 1)
+	_kb_focus_mod_id = ids[idx]
+	_focused_modifier_id = _kb_focus_mod_id
+	if _kb_focus_mod_id != prev_id:
+		UiScreenHotkeys.play_section_switch_sound()
+	_apply_keyboard_preview_focus()
+	_ensure_modifier_card_visible(_kb_focus_mod_id)
+
+
+func _activate_keyboard_focused_modifier() -> void:
+	var mod_id := _kb_focus_mod_id
+	if mod_id == "":
+		return
+	if _is_dna_gated(mod_id):
+		_open_modifier_preview(mod_id, _card_click_panel_view())
+		return
+	var new_pressed := not _is_modifier_active(mod_id)
+	var card: Control = _get_card(mod_id)
+	if card and card.has_method("set_modifier_active"):
+		card.set_modifier_active(new_pressed)
+	_on_card_toggled(mod_id, new_pressed)
+
+
+func _clear_keyboard_mod_focus() -> void:
+	if not _keyboard_nav_active and _kb_focus_mod_id == "":
+		return
+	_keyboard_nav_active = false
+	_kb_focus_mod_id = ""
+	_apply_keyboard_preview_focus()
+
+
+func _apply_keyboard_preview_focus() -> void:
+	var focus_id := _kb_focus_mod_id if _keyboard_nav_active else ""
+	for tab_id in [TAB_OVERVIEW, TAB_EASING, TAB_HARDENING, TAB_SPECIAL, TAB_DNA]:
+		var tab = _tabs.get(tab_id, null)
+		if tab == null or not tab.has_method("set_card_preview_focus"):
+			continue
+		if tab_id == _current_tab_id:
+			tab.set_card_preview_focus(focus_id)
+		else:
+			tab.set_card_preview_focus("")
+
+
+func _ensure_modifier_card_visible(mod_id: String) -> void:
+	var card: Control = _get_card(mod_id) as Control
+	if card == null:
+		return
+	var node: Node = card
+	while node:
+		if node is ScrollContainer:
+			(node as ScrollContainer).ensure_control_visible(card)
+			return
+		node = node.get_parent()
 
 
 func _is_choice_overlay_blocking_input() -> bool:

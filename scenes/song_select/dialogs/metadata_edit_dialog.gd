@@ -1,4 +1,4 @@
-# scenes/song_select/metadata_edit_dialog.gd
+# scenes/song_select/dialogs/metadata_edit_dialog.gd
 extends Control
 class_name MetadataEditDialog
 

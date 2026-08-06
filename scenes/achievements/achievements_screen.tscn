@@ -184,7 +184,7 @@ theme_override_constants/separation = 12
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin/ContentVBox/ListRoot"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="FooterLabel" type="Label" parent="MainVBox"]
 layout_mode = 2

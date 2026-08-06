@@ -1,4 +1,4 @@
-[gd_scene load_steps=71 format=3 uid="uid://hbupjp838y2b"]
+[gd_scene load_steps=72 format=3 uid="uid://hbupjp838y2b"]
 
 [ext_resource type="Script" uid="uid://dcjmvp0dga6d2" path="res://scenes/pause_menu/pause_menu.gd" id="1_5bgjm"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_qcmsd"]
@@ -979,6 +979,22 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_stats"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.05, 0.07, 0.11, 0.42)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
 [sub_resource type="Theme" id="Theme_qcmsd"]
 ActiveAll/base_type = &"Button"
 ActiveAll/colors/font_color = Color(0.42, 0.57, 0.82, 1)
@@ -1297,111 +1313,254 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.7058824)
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.52)
 
-[node name="MenuContainer" type="VBoxContainer" parent="."]
+[node name="SafeMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 28
 
-[node name="TitleLabel" type="Label" parent="MenuContainer"]
+[node name="RootVBox" type="VBoxContainer" parent="SafeMargin"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 32
-text = "ПАУЗА"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_constants/separation = 16
 
-[node name="EndlessStatsPanel" type="VBoxContainer" parent="MenuContainer"]
+[node name="MainRow" type="HBoxContainer" parent="SafeMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 32
+
+[node name="LeftStats" type="PanelContainer" parent="SafeMargin/RootVBox/MainRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pause_stats")
+
+[node name="LeftMargin" type="MarginContainer" parent="SafeMargin/RootVBox/MainRow/LeftStats"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="LeftVBox" type="VBoxContainer" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.92)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 36
+text = "ПАУЗА"
+
+[node name="RunStatsPanel" type="VBoxContainer" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ScoreCaption" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Score"
+
+[node name="ScoreValue" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
+text = "0"
+
+[node name="AccuracyCaption" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Accuracy"
+
+[node name="AccuracyValue" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.92, 0.86, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 24
+text = "100%"
+
+[node name="ComboCaption" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 13
+text = "Combo"
+
+[node name="ComboValue" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.86, 0.98, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+
+[node name="MultiplierCaption" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
 visible = false
 layout_mode = 2
-size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 0.9)
+theme_override_font_sizes/font_size = 13
+text = "Multiplier"
+
+[node name="MultiplierValue" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/RunStatsPanel"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.52, 1)
+theme_override_font_sizes/font_size = 22
+text = "x1.00"
+
+[node name="EndlessStatsPanel" type="VBoxContainer" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox"]
+visible = false
+layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="EndlessStreakLabel" type="Label" parent="MenuContainer/EndlessStatsPanel"]
+[node name="EndlessStreakLabel" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/EndlessStatsPanel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.72, 0.58, 0.98, 0.95)
+theme_override_colors/font_color = Color(0.78, 0.68, 0.98, 0.98)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_y = 1
 text = "Streak: 0"
-horizontal_alignment = 1
 
-[node name="EndlessXpLabel" type="Label" parent="MenuContainer/EndlessStatsPanel"]
+[node name="EndlessXpLabel" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/EndlessStatsPanel"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.55, 0.82, 0.72, 1)
 text = "+0 XP"
-horizontal_alignment = 1
 
-[node name="EndlessRrLabel" type="Label" parent="MenuContainer/EndlessStatsPanel"]
+[node name="EndlessRrLabel" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/EndlessStatsPanel"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 text = "0 RR"
-horizontal_alignment = 1
 
-[node name="EndlessSelectedLabel" type="Label" parent="MenuContainer/EndlessStatsPanel"]
+[node name="EndlessSelectedLabel" type="Label" parent="SafeMargin/RootVBox/MainRow/LeftStats/LeftMargin/LeftVBox/EndlessStatsPanel"]
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
 text = "Tracks left"
-horizontal_alignment = 1
 
-[node name="ResumeButton" type="Button" parent="MenuContainer"]
-custom_minimum_size = Vector2(250, 60)
+[node name="Spacer" type="Control" parent="SafeMargin/RootVBox/MainRow"]
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
+
+[node name="RightActions" type="VBoxContainer" parent="SafeMargin/RootVBox/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="ResumeButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
 theme = SubResource("Theme_qcmsd")
 theme_type_variation = &"FlatPlayButton"
 text = "ПРОДОЛЖИТЬ"
 
-[node name="RestartButton" type="Button" parent="MenuContainer"]
-custom_minimum_size = Vector2(250, 60)
+[node name="RestartButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 4
 theme = ExtResource("2_qcmsd")
 theme_type_variation = &"FlatGenerateButton"
 text = "ПЕРЕЗАПУСТИТЬ"
 
-[node name="SongSelectButton" type="Button" parent="MenuContainer"]
-custom_minimum_size = Vector2(250, 60)
+[node name="SongSelectButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 4
 theme = ExtResource("2_qcmsd")
 theme_type_variation = &"FlatMenuSongButton"
 text = "ВЫБОР ПЕСНИ"
 
-[node name="SettingsButton" type="Button" parent="MenuContainer"]
-custom_minimum_size = Vector2(250, 60)
+[node name="SettingsButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 4
 theme = ExtResource("2_qcmsd")
 theme_type_variation = &"FlatMenuSettingsButton"
 text = "НАСТРОЙКИ"
 
-[node name="EndSeriesButton" type="Button" parent="MenuContainer"]
+[node name="EndSeriesButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
 visible = false
-custom_minimum_size = Vector2(250, 60)
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 4
 theme = SubResource("Theme_qcmsd")
 theme_type_variation = &"FlatExitButton"
 text = "ЗАВЕРШИТЬ СЕРИЮ"
 
-[node name="ExitToMenuButton" type="Button" parent="MenuContainer"]
-custom_minimum_size = Vector2(250, 60)
+[node name="ExitToMenuButton" type="Button" parent="SafeMargin/RootVBox/MainRow/RightActions"]
+custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
-size_flags_horizontal = 4
-theme = SubResource("Theme_qcmsd")
-theme_type_variation = &"FlatExitButton"
+theme = ExtResource("2_qcmsd")
+theme_type_variation = &"FlatMenuSettingsButton"
 text = "ВЫЙТИ В МЕНЮ"
 
-[connection signal="pressed" from="MenuContainer/ResumeButton" to="." method="_on_resume_pressed"]
-[connection signal="pressed" from="MenuContainer/RestartButton" to="." method="_on_restart_pressed"]
-[connection signal="pressed" from="MenuContainer/SongSelectButton" to="." method="_on_song_select_pressed"]
-[connection signal="pressed" from="MenuContainer/SettingsButton" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="MenuContainer/EndSeriesButton" to="." method="_on_end_series_pressed"]
-[connection signal="pressed" from="MenuContainer/ExitToMenuButton" to="." method="_on_exit_to_menu_pressed"]
+[node name="Footer" type="VBoxContainer" parent="SafeMargin/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TrackProgress" type="ProgressBar" parent="SafeMargin/RootVBox/Footer"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme = SubResource("Theme_qcmsd")
+max_value = 1.0
+step = 0.001
+value = 0.0
+show_percentage = false
+
+[node name="FooterMeta" type="HBoxContainer" parent="SafeMargin/RootVBox/Footer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SongMetaLabel" type="Label" parent="SafeMargin/RootVBox/Footer/FooterMeta"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.86, 0.9, 0.96, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 14
+text = "—"
+text_overrun_behavior = 3
+clip_text = true
+
+[node name="TimeLabel" type="Label" parent="SafeMargin/RootVBox/Footer/FooterMeta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.55)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 14
+text = "0:00 / 0:00"
+horizontal_alignment = 2
+
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/SongSelectButton" to="." method="_on_song_select_pressed"]
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/EndSeriesButton" to="." method="_on_end_series_pressed"]
+[connection signal="pressed" from="SafeMargin/RootVBox/MainRow/RightActions/ExitToMenuButton" to="." method="_on_exit_to_menu_pressed"]

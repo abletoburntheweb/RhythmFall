@@ -5,16 +5,11 @@ const INT64_MAX := 9223372036854775807
 const MAX_INPUT_DELTA := 1000000000
 
 func _ready():
-	call_deferred("_register_console")
-
-func _register_console() -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	if not c:
-		push_warning("DebugCommands: Console autoload не найден")
-		return
-	_remove_aliases(c)
-	_register(c)
-	_refresh_autocomplete(c)
+	if c:
+		_remove_aliases(c)
+		_register(c)
+		_refresh_autocomplete(c)
 
 func _register(c):
 	c.add_command("achievement.unlock", _ach_unlock, ["id"], 1, "Разблокировать достижение по id")
@@ -50,39 +45,21 @@ func _register(c):
 	c.add_command("game.seek", _game_seek_to_time, ["pos"], 1, "Переместиться к позиции (сек или MM:SS)")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
+	c.add_command("game.series.win", _game_series_win, ["accuracy"], 0, "Выживание/марафон: очистить трек и перейти дальше (точность 0-100)")
+	c.add_command("series.win", _game_series_win, ["accuracy"], 0, "Алиас game.series.win")
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
-	c.add_command("game.autoplay.late_ms", _game_autoplay_late_ms, ["ms"], 0, "Смещение автоплея в мс (0=Perfect, ~80=Good на EZ / Miss на ST)")
-	c.add_command("game.autoplay_late", _game_autoplay_late_ms, ["ms"], 0, "То же что game.autoplay.late_ms")
-	c.add_command("game.autoplay", _game_autoplay_router, ["sub", "value"], 0, "Автоигра: toggle | status | late_ms <ms>")
-	c.add_command("mod.preview.ez", _mod_preview_ez, [], 0, "Превью Easy Windows: мод + автоплей + окна + overlay")
-	c.add_command("mod.preview.st", _mod_preview_st, [], 0, "Превью Strict Timing: мод + автоплей + окна + overlay")
+	c.add_command("game.autoplay", _game_autoplay_toggle, [], 0, "Переключить автоигру")
 	c.add_command("diag.verify_data", _diag_verify_data, [], 0, "Проверить целостность пользовательских данных")
-	c.add_command("timing.debug.status", _timing_debug_status, [], 0, "Флаги отладки тайминга (Experimental → Debug или settings.json)")
-	c.add_command("timing.debug.log", _timing_debug_log_toggle, [], 0, "Переключить CSV user://timing_hit_debug.csv и [TimingDebug]")
-	c.add_command("timing.debug.overlay", _timing_debug_overlay_toggle, [], 0, "Переключить жёлтый оверлей latency/drift")
-	c.add_command("timing.autoplay.windows", _timing_autoplay_windows_toggle, [], 0, "Автоплей с теми же окнами ±мс что и игрок")
+	c.add_command("timing.debug.status", _timing_debug_status, [], 0, "Флаги отладки тайминга (только до перезапуска игры, не в settings.json)")
+	c.add_command("timing.debug.log", _timing_debug_log_toggle, [], 0, "Переключить CSV user://timing_hit_debug.csv и [TimingDebug] (сессия)")
+	c.add_command("timing.debug.overlay", _timing_debug_overlay_toggle, [], 0, "Переключить оверлей latency/drift (сессия)")
+	c.add_command("timing.autoplay.windows", _timing_autoplay_windows_toggle, [], 0, "Автоплей с теми же окнами ±мс, что и игрок (сессия)")
 	c.add_command("tutorial.song_select.reset", _tutorial_song_select_reset, [], 0, "Сбросить флаг туториала библиотеки песен")
 	c.add_command("tutorial.song_select.show", _tutorial_song_select_show, [], 0, "Сбросить флаг и показать туториал (если открыта библиотека)")
 	c.add_command("tutorial.shop.reset", _tutorial_shop_reset, [], 0, "Сбросить флаг туториала магазина")
 	c.add_command("tutorial.shop.show", _tutorial_shop_show, [], 0, "Сбросить флаг и показать туториал (если открыт магазин)")
-	c.add_command("tutorial.gameplay.reset", Callable(self, "_tutorial_flag_reset").bind("gameplay"), [], 0, "Сбросить флаг туториала геймплея")
-	c.add_command("tutorial.gameplay.show", Callable(self, "_tutorial_flag_show").bind("gameplay"), [], 0, "Показать туториал геймплея на текущем экране")
-	c.add_command("tutorial.victory.reset", Callable(self, "_tutorial_flag_reset").bind("victory"), [], 0, "Сбросить флаг туториала победы")
-	c.add_command("tutorial.victory.show", Callable(self, "_tutorial_flag_show").bind("victory"), [], 0, "Показать туториал победы")
-	c.add_command("tutorial.profile.reset", Callable(self, "_tutorial_flag_reset").bind("profile"), [], 0, "Сбросить флаг туториала профиля")
-	c.add_command("tutorial.profile.show", Callable(self, "_tutorial_flag_show").bind("profile"), [], 0, "Показать туториал профиля")
-	c.add_command("tutorial.calibration.reset", Callable(self, "_tutorial_flag_reset").bind("calibration"), [], 0, "Сбросить флаг туториала калибровки")
-	c.add_command("tutorial.calibration.show", Callable(self, "_tutorial_flag_show").bind("calibration"), [], 0, "Показать туториал калибровки (вкладка Sound)")
-	c.add_command("tutorial.generation_settings.reset", Callable(self, "_tutorial_flag_reset").bind("generation_settings"), [], 0, "Сбросить флаг туториала параметров генерации")
-	c.add_command("tutorial.generation_settings.show", Callable(self, "_tutorial_flag_show").bind("generation_settings"), [], 0, "Показать туториал попапа параметров генерации")
-	c.add_command("tutorial.rhythm_dna_setting.reset", Callable(self, "_tutorial_flag_reset").bind("rhythm_dna_setting"), [], 0, "Сбросить флаг туториала Rhythm DNA (Experimental)")
-	c.add_command("tutorial.rhythm_dna_setting.show", Callable(self, "_tutorial_flag_show").bind("rhythm_dna_setting"), [], 0, "Показать туториал включения Rhythm DNA")
-	c.add_command("tutorial.rhythm_dna_usage.reset", Callable(self, "_tutorial_flag_reset").bind("rhythm_dna_usage"), [], 0, "Сбросить флаг туториала кнопки Rhythm DNA")
-	c.add_command("tutorial.rhythm_dna_usage.show", Callable(self, "_tutorial_flag_show").bind("rhythm_dna_usage"), [], 0, "Показать туториал кнопки Rhythm DNA в библиотеке")
-	c.add_command("tutorial.modifiers.reset", Callable(self, "_tutorial_flag_reset").bind("modifiers"), [], 0, "Сбросить флаг туториала экрана модификаторов")
-	c.add_command("tutorial.modifiers.show", Callable(self, "_tutorial_flag_show").bind("modifiers"), [], 0, "Показать туториал экрана модификаторов")
-	c.add_command("notice.welcome.reset", _notice_welcome_reset, [], 0, "Сбросить флаг welcome-notice (сервер)")
-	c.add_command("notice.welcome.show", _notice_welcome_show, [], 0, "Сбросить флаг и показать welcome-notice (если открыто главное меню)")
+	c.add_command("diary.toast.show", _diary_toast_show, ["kind"], 0, "Показать diary StatusDock toast: first_ss|first_fc|library|mastery|rr|genre_ss")
+	c.add_command("ui.notice.show", _ui_notice_show, ["message"], 0, "Показать AppNoticeOverlay на текущем экране (если есть %NoticeOverlay)")
 func _remove_aliases(c):
 	c.remove_command("ach.unlock")
 	c.remove_command("ach.show")
@@ -102,6 +79,9 @@ func _refresh_autocomplete(c):
 	if ach_ids.size() > 0:
 		c.add_command_autocomplete_list("achievement.unlock", ach_ids)
 		c.add_command_autocomplete_list("achievement.show", ach_ids)
+	c.add_command_autocomplete_list("diary.toast.show", [
+		"first_ss", "first_fc", "first_track", "library", "mastery", "rr", "genre_ss"
+	])
 	var categories = _get_item_categories()
 	if categories.size() > 0:
 		c.add_command_autocomplete_list("items.activate", categories)
@@ -124,9 +104,9 @@ func _refresh_autocomplete(c):
 	c.add_command_autocomplete_list("game.score.sub", PackedStringArray(["100","500","1000","5000"]))
 	c.add_command_autocomplete_list("game.combo.add", PackedStringArray(["1","5","10","25"]))
 	c.add_command_autocomplete_list("game.combo.sub", PackedStringArray(["1","5","10","25"]))
-	c.add_command_autocomplete_list("game.autoplay.late_ms", PackedStringArray(["0","60","75","80","100","110","120"]))
-	c.add_command_autocomplete_list("game.autoplay_late", PackedStringArray(["0","60","75","80","100","110","120"]))
-	c.add_command_autocomplete_list("game.autoplay", PackedStringArray(["status","late_ms"]))
+	c.add_command_autocomplete_list("game.win", PackedStringArray(["","90","95","100"]))
+	c.add_command_autocomplete_list("game.series.win", PackedStringArray(["","90","95","100"]))
+	c.add_command_autocomplete_list("series.win", PackedStringArray(["","90","95","100"]))
 func _get_engine():
 	return get_tree().root.get_node_or_null("GameEngine")
 
@@ -472,6 +452,8 @@ func _daily_context_for_quest(q: Dictionary) -> Dictionary:
 			return {"missed_notes": 0}
 		"play_drum_level":
 			return {"is_drum_mode": true}
+		"play_bass_level":
+			return {"is_bass_mode": true}
 		"play_genre_group":
 			var target_group := str(q.get("target_group", "")).strip_edges()
 			if target_group != "":
@@ -931,6 +913,24 @@ func _game_accuracy_set(percent_str: String):
 			% [stats.accuracy, stats.total_notes, stats.hit_notes, stats.missed_notes]
 		)
 
+func _game_series_win(accuracy_opt = ""):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen недоступен — открой уровень (игра), затем series.win")
+		return
+	if not gs.has_method("_is_series_mode") or not bool(gs.call("_is_series_mode")):
+		if c:
+			c.print_error("series.win работает только в выживании или марафоне")
+		return
+	_game_win(accuracy_opt)
+	if c:
+		var mode := "endless"
+		if gs.has_method("_is_marathon_mode") and bool(gs.call("_is_marathon_mode")):
+			mode = "marathon"
+		c.print_info("Серия (%s): трек засчитан, переход к следующему или итогам." % mode)
+
 func _game_win(accuracy_opt = ""):
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
@@ -966,6 +966,15 @@ func _game_win(accuracy_opt = ""):
 	var current_score = sm.get_score()
 	var recompute = override or current_score <= 0
 	if recompute:
+		# Recompute reward mult from active run mods (can be stale/1.0 if runtime apply was skipped).
+		var RunModifiers = load("res://logic/domain/modifiers/run_modifiers.gd")
+		if RunModifiers and ("run_modifiers_player" in gs):
+			var params: Dictionary = {}
+			if "run_modifier_params" in gs and gs.run_modifier_params is Dictionary:
+				params = gs.run_modifier_params
+			gs._score_reward_multiplier = RunModifiers.reward_multiplier(gs.run_modifiers_player, params)
+		if gs.has_method("_apply_score_reward_multiplier"):
+			gs._apply_score_reward_multiplier()
 		var hits_for_score = max(1, sm.get_hit_notes_count())
 		var raw_total := int(hits_for_score * base_score_per_hit * multiplier)
 		if sm.has_method("set_raw_score"):
@@ -979,9 +988,19 @@ func _game_win(accuracy_opt = ""):
 	if gs.has_method("end_game"):
 		gs.end_game()
 	if c:
+		var reward_mult := 1.0
+		if sm.has_method("get_score_reward_multiplier"):
+			reward_mult = float(sm.get_score_reward_multiplier())
 		c.print_info(
-			"Симулировано завершение уровня (точность: %.2f%%, hit=%d, miss=%d, score=%d)"
-			% [sm.get_accuracy(), sm.get_hit_notes_count(), sm.get_missed_notes_count(), sm.get_score()]
+			"Симулировано завершение уровня (точность: %.2f%%, hit=%d, miss=%d, raw=%d, mod×%.2f, score=%d)"
+			% [
+				sm.get_accuracy(),
+				sm.get_hit_notes_count(),
+				sm.get_missed_notes_count(),
+				sm.get_raw_score() if sm.has_method("get_raw_score") else sm.get_score(),
+				reward_mult,
+				sm.get_score(),
+			]
 		)
 func _game_autoplay_on():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -1003,30 +1022,9 @@ func _game_autoplay_status():
 		return
 	if gs.has_method("is_autoplay_enabled"):
 		var st = gs.is_autoplay_enabled()
-		var late := 0.0
-		if gs.has_method("get_autoplay_late_ms"):
-			late = gs.get_autoplay_late_ms()
-		if c:
-			c.print_info("Автоигра: " + ("ВКЛ." if st else "ВЫКЛ."))
-			if gs.has_method("get_autoplay_late_ms"):
-				c.print_info("Смещение late_ms: %.0f (0=Perfect, ~80=поздний тап)" % late)
+		if c: c.print_info("Автоигра: " + ("ВКЛ." if st else "ВЫКЛ."))
 	else:
 		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
-
-func _game_autoplay_router(sub: String = "", value: String = ""):
-	var key := sub.strip_edges().to_lower()
-	match key:
-		"":
-			_game_autoplay_toggle()
-		"status":
-			_game_autoplay_status()
-		"late_ms", "late":
-			_game_autoplay_late_ms(value)
-		_:
-			var c = get_tree().root.get_node_or_null("Console")
-			if c:
-				c.print_error("game.autoplay: неизвестно '%s'. Подкоманды: status, late_ms <ms>" % sub)
-				c.print_info("Пример: game.autoplay late_ms 80  или  game.autoplay.late_ms 80")
 
 func _game_autoplay_toggle():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -1041,76 +1039,6 @@ func _game_autoplay_toggle():
 	else:
 		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
 
-func _game_autoplay_late_ms(ms_str: String = ""):
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs:
-		if c:
-			c.print_error("GameScreen не найден")
-		return
-	if not gs.has_method("set_autoplay_late_ms") or not gs.has_method("get_autoplay_late_ms"):
-		if c:
-			c.print_error("Смещение автоплея не поддерживается — перезапусти игру после обновления")
-		return
-	var ms_text := ms_str.strip_edges()
-	if ms_text.is_empty():
-		if c:
-			c.print_info("game.autoplay.late_ms: %.0f" % gs.get_autoplay_late_ms())
-			c.print_info("0 = Perfect на линии; ~80 = Good (EZ); ~110 = Miss (ST)")
-			c.print_info("Синтаксис: game.autoplay.late_ms 80  или  game.autoplay late_ms 80")
-		return
-	if not ms_text.is_valid_float():
-		if c:
-			c.print_error("Нужно число миллисекунд, получено: '%s'" % ms_text)
-		return
-	var ms := float(ms_text)
-	gs.set_autoplay_late_ms(ms)
-	if c:
-		c.print_info("game.autoplay.late_ms: %.0f" % ms)
-		if ms <= 0.0:
-			c.print_info("Автоплей бьёт в Perfect-окно.")
-		else:
-			c.print_info("Автоплей бьёт на +%.0f ms после идеала." % ms)
-
-func _mod_preview_timing_setup(modifier_id: String, mod_label: String, late_hint: String) -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs:
-		if c:
-			c.print_error("GameScreen не найден — зайди в уровень")
-		return
-	if SettingsManager == null:
-		if c:
-			c.print_error("SettingsManager недоступен")
-		return
-	if not SettingsManager.has_method("set_autoplay_respects_hit_windows"):
-		if c:
-			c.print_error("Нет поддержки timing.autoplay.windows")
-		return
-	SettingsManager.set_autoplay_respects_hit_windows(true)
-	if SettingsManager.has_method("set_timing_debug_overlay"):
-		SettingsManager.set_timing_debug_overlay(true)
-	if gs.has_method("debug_apply_run_modifiers"):
-		gs.debug_apply_run_modifiers(["no_fail", modifier_id])
-	else:
-		if c:
-			c.print_error("GameScreen: нет debug_apply_run_modifiers")
-		return
-	if gs.has_method("set_autoplay_late_ms"):
-		gs.set_autoplay_late_ms(0.0)
-	if gs.has_method("set_autoplay_enabled"):
-		gs.set_autoplay_enabled(true)
-	if c:
-		c.print_info("Превью %s: мод + no_fail, автоплей, окна судьи, overlay." % mod_label)
-		c.print_info("Сначала идут Perfect (late_ms=0). Для демо: game.autoplay.late_ms %s" % late_hint)
-		c.print_info("timing.debug.overlay — meter/оверлей; game.autoplay.status — статус.")
-
-func _mod_preview_ez():
-	_mod_preview_timing_setup("easy_windows", "Easy Windows (ЛГ)", "80")
-
-func _mod_preview_st():
-	_mod_preview_timing_setup("strict_timing", "Strict Timing (СТ)", "110")
-
 func _timing_debug_status():
 	var c = get_tree().root.get_node_or_null("Console")
 	if SettingsManager == null:
@@ -1121,7 +1049,7 @@ func _timing_debug_status():
 	var ov_on := SettingsManager.get_timing_debug_overlay()
 	var apw := SettingsManager.get_autoplay_respects_hit_windows()
 	if c:
-		c.print_info("(Сохраняется в settings.json — вкладка Experimental → Debug)")
+		c.print_info("(Только до выхода из игры; не сохраняется в settings.json)")
 		c.print_info("Лог попаданий (CSV + консоль): " + ("ВКЛ." if log_on else "ВЫКЛ."))
 		c.print_info("Оверлей на игровом экране: " + ("ВКЛ." if ov_on else "ВЫКЛ."))
 		c.print_info("Автоплей с окнами судьи как у человека: " + ("ВКЛ." if apw else "ВЫКЛ."))
@@ -1214,121 +1142,39 @@ func _tutorial_shop_show() -> void:
 	if c:
 		c.print_info("Туториал сброшен. Открой магазин — overlay появится автоматически")
 
-func _tutorial_flag_reset(flag: String) -> void:
+
+func _diary_toast_show(kind: String = "first_ss") -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	var setter := "set_tutorial_%s_done" % flag
-	if SettingsManager == null or not SettingsManager.has_method(setter):
-		if c:
-			c.print_error("SettingsManager: нет метода %s" % setter)
-		return
-	SettingsManager.call(setter, false)
+	var ge = _get_engine()
+	var host: Node = ge if ge else get_tree().root
+	const _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	var sample := str(kind).strip_edges().to_lower()
+	if sample == "":
+		sample = "first_ss"
+	_DiaryCelebration.debug_show(host, sample)
 	if c:
-		c.print_info("Туториал '%s' сброшен" % flag)
+		c.print_info("Diary toast: " + sample)
 
 
-func _tutorial_flag_show(flag: String) -> void:
+func _ui_notice_show(message: String = "") -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	_tutorial_flag_reset(flag)
-	var shown := _tutorial_try_invoke_debug_show(flag)
-	if c:
-		if shown:
-			c.print_info("Туториал '%s' запущен" % flag)
-		else:
-			c.print_info("Туториал '%s' сброшен — открой нужный экран" % flag)
-
-
-func _tutorial_try_invoke_debug_show(flag: String) -> bool:
+	var text := str(message).strip_edges()
+	if text == "":
+		text = "Test notice"
+	var notice: Node = null
 	var ge = _get_engine()
 	var screen: Node = ge.get("current_screen") if ge else null
 	if screen:
-		if flag == "generation_settings":
-			for child in screen.get_children():
-				if child.has_method("debug_show_tutorial"):
-					child.debug_show_tutorial()
-					return true
-		if flag == "calibration" or flag == "rhythm_dna_setting":
-			var settings := _find_settings_shell()
-			if settings:
-				if flag == "calibration" and settings.has_method("switch_to_page"):
-					settings.switch_to_page("sound")
-				if flag == "rhythm_dna_setting" and settings.has_method("switch_to_page"):
-					settings.switch_to_page("experimental")
-				var tab_name := "SoundTab" if flag == "calibration" else "ExperimentalTab"
-				var tab: Node = settings.get_node_or_null("MainHBox/ContentColumn/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer/%s" % tab_name)
-				if tab == null:
-					tab = settings.get_node_or_null(tab_name)
-				if tab and tab.has_method("debug_show_tutorial"):
-					tab.debug_show_tutorial()
-					return true
-				if flag == "rhythm_dna_setting" and tab and tab.has_method("debug_show_rhythm_dna_tutorial"):
-					tab.debug_show_rhythm_dna_tutorial()
-					return true
-		if flag == "rhythm_dna_usage" and screen.has_method("debug_show_rhythm_dna_usage_tutorial"):
-			screen.debug_show_rhythm_dna_usage_tutorial()
-			return true
-		if flag == "modifiers":
-			var mods_screen := _find_run_modifiers_screen()
-			if mods_screen and mods_screen.has_method("debug_show_tutorial"):
-				mods_screen.debug_show_tutorial()
-				return true
-		if screen.has_method("debug_show_tutorial"):
-			screen.debug_show_tutorial()
-			return true
-	return false
-
-
-func _find_run_modifiers_screen() -> Node:
-	var ge = _get_engine()
-	if ge == null:
-		return null
-	for child in ge.get_children():
-		if child.name == "RunModifiersScreen" and child.has_method("debug_show_tutorial"):
-			return child
-	return null
-
-
-func _find_settings_shell() -> Node:
-	var ge = _get_engine()
-	if ge == null:
-		return null
-	for child in ge.get_children():
-		if child.has_method("switch_to_page"):
-			return child
-	var screen: Node = ge.get("current_screen") if ge else null
-	if screen:
-		for child in screen.get_children():
-			if child.has_method("switch_to_page"):
-				return child
-	return null
-
-
-func _notice_welcome_reset() -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	if SettingsManager == null or not SettingsManager.has_method("set_seen_server_setup_notice"):
+		notice = screen.find_child("NoticeOverlay", true, false)
+	if notice == null:
+		notice = get_tree().root.find_child("NoticeOverlay", true, false)
+	if notice == null or not notice.has_method("show_message"):
 		if c:
-			c.print_error("SettingsManager: нет флага seen_server_setup_notice")
+			c.print_error("NoticeOverlay не найден на текущем экране (нужен %NoticeOverlay / AppNoticeOverlay)")
 		return
-	SettingsManager.set_seen_server_setup_notice(false)
+	notice.show_message(text)
 	if c:
-		c.print_info("Welcome-notice сброшен. Перезайди в главное меню или выполни notice.welcome.show")
-
-
-func _notice_welcome_show() -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	if SettingsManager == null or not SettingsManager.has_method("set_seen_server_setup_notice"):
-		if c:
-			c.print_error("SettingsManager: нет флага seen_server_setup_notice")
-		return
-	SettingsManager.set_seen_server_setup_notice(false)
-	var ge = _get_engine()
-	var screen: Node = ge.get("current_screen") if ge else null
-	if screen and screen.has_method("debug_show_welcome_notice"):
-		screen.debug_show_welcome_notice()
-		if c:
-			c.print_info("Welcome-notice запущен на главном меню")
-		return
-	if c:
-		c.print_info("Welcome-notice сброшен. Открой главное меню — notice появится автоматически")
+		c.print_info("Notice shown")
 
 
 func _parse_int(s: String) -> int:

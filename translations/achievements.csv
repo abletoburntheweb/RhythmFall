@@ -136,7 +136,7 @@ ACH_67_DESC,Complete 25 percussion levels,Пройти 25 уровней в ре
 ACH_68_TITLE,Precise pulse,Точный пульс
 ACH_68_DESC,Land 1000 perfect hits in percussion mode,Набрать 1000 идеальных попаданий в режиме перкуссии
 ACH_69_TITLE,Dense wall,Плотная стена
-ACH_69_DESC,Clear a percussion level on Dense difficulty,Пройти уровень перкуссии на сложности Dense (Плотная)
+ACH_69_DESC,Clear a percussion level on Hard difficulty,Пройти перкуссию на сложности «Сложная»
 ACH_70_TITLE,Pop wave,Поп‑волна
 ACH_70_DESC,Play 3 pop genre tracks,Сыграть 3 раза в поп‑жанрах
 ACH_71_TITLE,Classical stage,Классическая сцена
@@ -162,7 +162,7 @@ ACH_80_DESC,Play 3 folk genre tracks,Сыграть 3 раза в фолк‑ж�
 ACH_81_TITLE,Disco pulse,Диско‑пульс
 ACH_81_DESC,Play 3 disco genre tracks,Сыграть 3 раза в диско‑жанрах
 ACH_82_TITLE,First mod,Первый мод
-ACH_82_DESC,Complete a level with any run modifier (Autoplay does not count),Завершить уровень с любым модификатором (Автопилот не считается)
+ACH_82_DESC,Clear a level with any modifier (no Autoplay),Пройти уровень с любым модификатором (без Автопилота)
 ACH_83_TITLE,Hidden master,Скрытый мастер
 ACH_83_DESC,Complete a level with Hidden modifier,Завершить уровень с модификатором Скрытые (СК)
 ACH_84_TITLE,Sudden surprise,Внезапность
@@ -174,17 +174,17 @@ ACH_86_DESC,Complete a level with Empty Lane modifier,Завершить уро�
 ACH_87_TITLE,Strict mode,Строгий режим
 ACH_87_DESC,Complete a level with Strict Timing modifier,Завершить уровень с модификатором Строгий тайминг (СТ)
 ACH_88_TITLE,Difficulty duo,Дуэт сложности
-ACH_88_DESC,Complete a level with at least two run modifiers (Autoplay does not count),Завершить уровень с двумя или более модификаторами (Автопилот не считается)
+ACH_88_DESC,Clear a level with 2+ modifiers (no Autoplay),Пройти уровень с 2+ модификаторами (без Автопилота)
 ACH_89_TITLE,Triple challenge,Тройной вызов
-ACH_89_DESC,Complete a level with at least three run modifiers (Autoplay does not count),Завершить уровень с тремя или более модификаторами (Автопилот не считается)
+ACH_89_DESC,Clear a level with 3+ modifiers (no Autoplay),Пройти уровень с 3+ модификаторами (без Автопилота)
 ACH_90_TITLE,Full hardcore set,Полный набор хардкора
 ACH_90_DESC,Complete a level with Strict Timing + Empty Lane + Sudden Death in one run,"Завершить уровень с СТ, БП и ВС в одном забеге"
 ACH_91_TITLE,Mods I,Моды I
-ACH_91_DESC,Complete 5 levels with any run modifier (Autoplay does not count),Завершить 5 уровней с любым модификатором (Автопилот не считается)
+ACH_91_DESC,Clear 5 levels with any modifier (no Autoplay),Пройти 5 уровней с любым модификатором (без Автопилота)
 ACH_92_TITLE,Mods II,Моды II
-ACH_92_DESC,Complete 15 levels with any run modifier (Autoplay does not count),Завершить 15 уровней с любым модификатором (Автопилот не считается)
+ACH_92_DESC,Clear 15 levels with any modifier (no Autoplay),Пройти 15 уровней с любым модификатором (без Автопилота)
 ACH_93_TITLE,Mods III,Моды III
-ACH_93_DESC,Complete 30 levels with any run modifier (Autoplay does not count),Завершить 30 уровней с любым модификатором (Автопилот не считается)
+ACH_93_DESC,Clear 30 levels with any modifier (no Autoplay),Пройти 30 уровней с любым модификатором (без Автопилота)
 ACH_94_TITLE,Hidden ×10,СК ×10
 ACH_94_DESC,Complete 10 levels with Hidden modifier,Завершить 10 уровней с модификатором Скрытые (СК)
 ACH_95_TITLE,Sudden Death ×5,ВС ×5
@@ -261,7 +261,7 @@ ACH_130_TITLE,Discographer,Дискограф
 ACH_130_DESC,Analyze track genre on the server 10 times,Проанализировать жанр с помощью сервера 10 раз
 ACH_131_TITLE,Server hint,По подсказке сервера
 ACH_131_DESC,Pick a primary genre from server suggestions,Выбрать основной жанр из подсказок сервера
-ACH_132_TITLE,Metadata sorted,Метаданные в порядке
+ACH_132_TITLE,Metadata sorted,Порядок метаданных
 ACH_132_DESC,Save changes in the metadata editor,Сохранить изменения в редакторе метаданных
 ACH_133_TITLE,First discoveries,Первые открытия
 ACH_133_DESC,Discover 5 unique genres from the catalog,Открыть 5 разных жанров из каталога
@@ -286,7 +286,7 @@ ACH_142_DESC,Complete a level with Memory Mode modifier,Завершить ур�
 ACH_143_TITLE,Shifting lanes,Меняющийся ритм
 ACH_143_DESC,Complete a level with Dynamic Lanes modifier,Завершить уровень с модификатором Динамические дорожки (ДД)
 ACH_144_TITLE,Lane remap,Перекройка
-ACH_144_DESC,Complete a level with Mirror Shuffle or Random lanes modifier,"Завершить уровень с Зеркалом, Перемешиванием или Случайными дорожками"
+ACH_144_DESC,"Clear a level with Mirror, Shuffle, or Random lanes","Пройти уровень с Зеркалом, Перемешиванием или Случайными дорожками"
 ACH_145_TITLE,Escalation,Эскалация
 ACH_145_DESC,Complete a level with Combo Escalation modifier,Завершить уровень с модификатором Эскалация комбо (ЭК)
 ACH_146_TITLE,Tick-tock,Тик-так
@@ -298,9 +298,9 @@ ACH_148_DESC,Complete a level with Time Warp modifier,Завершить уро�
 ACH_149_TITLE,Pick mode,Отбор
 ACH_149_DESC,Complete a level with Pick Mode modifier,Завершить уровень с модификатором Режим отбора (РО)
 ACH_150_TITLE,Quad mod,Кватро-мод
-ACH_150_DESC,Complete a level with 4+ run modifiers (Autoplay does not count),Завершить уровень с четырьмя или более модификаторами (Автопилот не считается)
+ACH_150_DESC,Clear a level with 4+ modifiers (no Autoplay),Пройти уровень с 4+ модификаторами (без Автопилота)
 ACH_151_TITLE,Penta mod,Пентамод
-ACH_151_DESC,Complete a level with 5+ run modifiers (Autoplay does not count),Завершить уровень с пятью или более модификаторами (Автопилот не считается)
+ACH_151_DESC,Clear a level with 5+ modifiers (no Autoplay),Пройти уровень с 5+ модификаторами (без Автопилота)
 ACH_152_TITLE,Boundless,Без границ
 ACH_152_DESC,Unlock Endless play mode,Открыть режим «Бесконечный»
 ACH_153_TITLE,First run,Первый забег
@@ -334,16 +334,28 @@ ACH_166_DESC,Complete your first bass level,Пройти первый урове
 ACH_167_TITLE,Clean fret,Чистый гриф
 ACH_167_DESC,Complete a bass level with 100% accuracy,Пройти уровень в режиме баса с 100% точностью
 ACH_168_TITLE,Iron fingers,Железные пальцы
-ACH_168_DESC,"Clear a bass level holding every sustain to the end (no early release)","Пройти уровень баса, удержав все hold до конца (без early release)"
+ACH_168_DESC,Clear a bass level holding every sustain to the end,"Пройти уровень баса, удержав все удержания до конца"
 ACH_169_TITLE,Bass storm,Басовый шторм
 ACH_169_DESC,Hit 100 consecutive accurate bass notes,Совершить серию из 100 точных попаданий подряд в режиме баса
 ACH_170_TITLE,Bass pulse,Пульс баса
 ACH_170_DESC,Complete 25 bass levels,Пройти 25 уровней в режиме баса
 ACH_171_TITLE,Fret shadow,Тень грифа
-ACH_171_DESC,Catch 50 ghost notes in bass mode,Поймать 50 ghost-нот в режиме баса
+ACH_171_DESC,Catch 50 shadow notes in bass mode,Поймать 50 теневых нот в режиме баса
 ACH_172_TITLE,Double string,Двойная струна
-ACH_172_DESC,Hit 50 multi-lane notes in bass mode,Попасть по 50 multi-lane нотам в режиме баса
+ACH_172_DESC,Hit 50 multi-lane notes in bass mode,Попасть по 50 многодорожечным нотам в режиме баса
 ACH_173_TITLE,Percussion record,Ударный рекорд
 ACH_173_DESC,Score 200000 points in a single percussion run,Набрать 200000 очков за один забег в режиме перкуссии
 ACH_174_TITLE,Long bass,Долгий бас
-ACH_174_DESC,Complete 100 hold notes to the end in bass mode,Довести до конца 100 hold-нот в режиме баса
+ACH_174_DESC,Complete 100 hold notes to the end in bass mode,Довести до конца 100 удержаний в режиме баса
+ACH_175_TITLE,On speed,На скорости
+ACH_175_DESC,Clear a level with a Speed-category modifier (no Autoplay),Пройти уровень с модификатором из категории «Скорость» (без Автопилота)
+ACH_176_TITLE,Note visibility,Видимость нот
+ACH_176_DESC,Clear a level with a Visibility-category modifier (no Autoplay),Пройти уровень с модификатором из категории «Видимость» (без Автопилота)
+ACH_177_TITLE,Strict timing,Жёсткий тайминг
+ACH_177_DESC,Clear a level with a Timing/Life-category modifier (no Autoplay),Пройти уровень с модификатором из категории «Тайминг / жизнь» (без Автопилота)
+ACH_178_TITLE,Lanes,Дорожки
+ACH_178_DESC,Clear a level with a Lanes-category modifier (no Autoplay),Пройти уровень с модификатором из категории «Дорожки» (без Автопилота)
+ACH_179_TITLE,Special mode,Особый режим
+ACH_179_DESC,Clear a level with a Special-category modifier (no Autoplay),Пройти уровень с модификатором из категории «Особые» (без Автопилота)
+ACH_180_TITLE,Rhythm DNA,Rhythm DNA
+ACH_180_DESC,Clear a level with any Rhythm DNA modifier (no Autoplay),Пройти уровень с любым модификатором Rhythm DNA (без Автопилота)

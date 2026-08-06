@@ -1,4 +1,4 @@
-# scenes/profile/chart_point.gd
+# scenes/profile/components/chart_point.gd
 class_name ChartPoint
 extends Control
 
@@ -68,8 +68,8 @@ func set_grade_label(text: String) -> void:
 
 func _update_layout_size() -> void:
 	var diameter := (point_radius + border_width) * 2.0 + HIT_PADDING
-	var extra_height := 12.0 if grade_label != "" else 0.0
-	size = Vector2(diameter, diameter + extra_height)
+	var extra_height := 14.0 if grade_label != "" else 0.0
+	size = Vector2(maxi(diameter, 22.0), diameter + extra_height)
 
 
 func _on_mouse_entered() -> void:

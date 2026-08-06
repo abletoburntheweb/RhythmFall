@@ -1,4 +1,4 @@
-# logic/score_manager.gd
+# logic/core/score_manager.gd
 extends RefCounted
 
 var score: int = 0

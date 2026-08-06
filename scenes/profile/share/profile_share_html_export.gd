@@ -31,6 +31,66 @@ static func is_available() -> bool:
 	return _html_available == 1
 
 
+static func has_cached_availability() -> bool:
+	return _html_available >= 0
+
+
+static func invalidate_availability() -> void:
+	_html_available = -1
+	_resolved_python = ""
+
+
+## True when Python + HTML templates exist so pip/playwright install can run (also for repair).
+static func can_install_export_toolchain() -> bool:
+	if _resolve_html_dir() == "":
+		return false
+	return _pick_python() != ""
+
+
+static func install_export_toolchain_async() -> Dictionary:
+	_last_error = ""
+	_last_error_code = ""
+	var html_dir := _resolve_html_dir()
+	if html_dir == "":
+		_set_error_code("E004")
+		return {"ok": false, "error_code": "E004", "detail": "HTML templates not found"}
+	var python := _pick_python()
+	if python == "":
+		_set_error_code("E001")
+		return {"ok": false, "error_code": "E001", "detail": "Python not found"}
+
+	var req_path := html_dir.path_join("requirements.txt").replace("\\", "/")
+	if not FileAccess.file_exists(req_path):
+		_set_error_code("E004")
+		return {"ok": false, "error_code": "E004", "detail": "requirements.txt missing"}
+
+	var pip_args := PackedStringArray(["-m", "pip", "install", "-r", req_path])
+	var pip_run: Dictionary = await _RenderWorker.execute_async(python, pip_args)
+	if int(pip_run.get("exit_code", 1)) != 0:
+		_last_error = str(pip_run.get("detail", ""))
+		_set_error_code("E002")
+		return {"ok": false, "error_code": "E002", "detail": _last_error}
+
+	var browser_ok := false
+	for browser in ["msedge", "chromium"]:
+		var br_args := PackedStringArray(["-m", "playwright", "install", browser])
+		var br_run: Dictionary = await _RenderWorker.execute_async(python, br_args)
+		if int(br_run.get("exit_code", 1)) == 0:
+			browser_ok = true
+			break
+		_last_error = str(br_run.get("detail", ""))
+
+	invalidate_availability()
+	_probe_availability()
+	if _html_available == 1:
+		return {"ok": true, "error_code": "", "detail": ""}
+	if not browser_ok:
+		_set_error_code("E003")
+		return {"ok": false, "error_code": "E003", "detail": _last_error}
+	_set_error_code("E002")
+	return {"ok": false, "error_code": _last_error_code, "detail": _last_error}
+
+
 static func render_to_png(card_id: String, data: Dictionary, out_path: String,
 		size: Vector2i = Vector2i(1080, 1920), device_scale: float = 1.0) -> Dictionary:
 	_last_error = ""
@@ -100,6 +160,7 @@ static func render_preview_batch(items: Array, render_size: Vector2i,
 		else:
 			all_cached = false
 	if all_cached and out.size() == items.size():
+		_prune_cache_except(stats_hash)
 		return out
 	out.clear()
 
@@ -164,6 +225,7 @@ static func render_preview_batch(items: Array, render_size: Vector2i,
 			out[card_id] = Image.load_from_file(abs_cache)
 		else:
 			out[card_id] = null
+	_prune_cache_except(stats_hash)
 	return out
 
 
@@ -178,12 +240,14 @@ static func render_preview_one(card_id: String, data: Dictionary, render_size: V
 	var cache_path := "%s/%s_preview_%dx%d_%s.png" % [CACHE_DIR, card_id, render_size.x, render_size.y, stats_hash]
 	var abs_cache := ProjectSettings.globalize_path(cache_path).replace("\\", "/")
 	if FileAccess.file_exists(abs_cache):
+		_prune_cache_except(stats_hash)
 		return Image.load_from_file(abs_cache)
 	if not is_available():
 		return null
 	var run := await render_to_png(card_id, data, abs_cache, render_size, device_scale)
 	if not run.get("ok", false):
 		return null
+	_prune_cache_except(stats_hash)
 	if FileAccess.file_exists(abs_cache):
 		return Image.load_from_file(abs_cache)
 	return null
@@ -377,9 +441,50 @@ static func _pick_python() -> String:
 
 
 static func _python_runnable(python: String) -> bool:
+	var cmd := python.strip_edges()
+	if cmd == "":
+		return false
+	# Absolute paths: skip missing files instead of waiting on a failed OS.execute.
+	var looks_path := cmd.contains("/") or cmd.contains("\\") or cmd.ends_with(".exe")
+	if looks_path and not FileAccess.file_exists(cmd):
+		return false
 	var output: Array = []
-	var code := OS.execute(python, ["--version"], output, true, false)
+	var code := OS.execute(cmd, ["--version"], output, true, false)
 	return code == 0
+
+
+static func probe_availability_async() -> bool:
+	## Non-blocking availability check for Settings → Data (Playwright probe).
+	if _html_available >= 0:
+		return _html_available == 1
+	_html_available = 0
+	_resolved_python = ""
+	_last_error = ""
+	_last_error_code = ""
+
+	if _resolve_html_dir() == "":
+		_last_error = "HTML templates not found"
+		_set_error_code("E004")
+		return false
+
+	var python := _pick_python()
+	if python == "":
+		_last_error = "Python not found"
+		_set_error_code("E001")
+		return false
+
+	var run: Dictionary = await _RenderWorker.execute_async(
+		python,
+		PackedStringArray(["-c", "import playwright"])
+	)
+	if int(run.get("exit_code", 1)) != 0:
+		_last_error = "Playwright missing"
+		_set_error_code("E002")
+		return false
+
+	_resolved_python = python
+	_html_available = 1
+	return true
 
 
 static func _python_candidates() -> Array[String]:
@@ -434,6 +539,24 @@ static func _items_data_hash(items: Array) -> String:
 static func _ensure_cache_dir() -> String:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(CACHE_DIR))
 	return CACHE_DIR
+
+
+## Drop stale preview PNGs / job JSON that do not belong to the current stats hash.
+static func _prune_cache_except(keep_token: String) -> void:
+	var token := keep_token.strip_edges()
+	if token == "":
+		return
+	var abs_dir := ProjectSettings.globalize_path(CACHE_DIR)
+	var dir := DirAccess.open(abs_dir)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and not file_name.contains(token):
+			dir.remove(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
 
 
 static func _write_json(path: String, payload: Dictionary) -> Error:

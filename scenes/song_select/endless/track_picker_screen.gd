@@ -10,6 +10,9 @@ const _ProfileGenrePortrait = preload("res://logic/domain/profile/profile_genre_
 const _UiScreenHotkeys = preload("res://logic/ui/ui_screen_hotkeys.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 const _OptionButtonPopupUtils = preload("res://logic/ui/option_button_popup_utils.gd")
+const _ChartExpandRows = preload("res://scenes/song_select/lib/chart_expand_rows.gd")
+const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const _NotesUtils = preload("res://logic/domain/rhythm/notes_utils.gd")
 
 const ROW_COVER_SIZE := 56
 const ROW_HEIGHT := 76
@@ -20,6 +23,8 @@ const SETTINGS_GROUP_MODE_KEY := "endless_track_picker_group_mode"
 const META_SONG_PATH := &"song_path"
 const META_ROW_STYLE := &"row_style"
 const META_ROW_STYLE_SELECTED := &"row_style_selected"
+const META_CHEVRON := &"chevron"
+const META_SONG_PANEL := &"song_panel"
 const REBUILD_DEBOUNCE_SEC := 0.12
 
 var _config: Dictionary = {}
@@ -30,6 +35,7 @@ var _group_mode: String = "title"
 var _catalog_cache: Array[Dictionary] = []
 var _catalog_cache_key: String = ""
 var _rebuild_timer: Timer
+var _expanded_paths: Dictionary = {}
 
 @onready var _back_button: Button = %BackButton
 @onready var _title_label: Label = %TitleLabel
@@ -399,9 +405,11 @@ func _duration_bucket_label(bucket: int) -> String:
 
 func _add_track_row(entry: Dictionary) -> void:
 	var path := str(entry.get("path", ""))
-	var row := _make_track_row(entry, _selected_paths.has(path))
-	_track_list_vbox.add_child(row)
-	_rows.append(row)
+	var wrap := _make_expandable_track_row(entry, _selected_paths.has(path))
+	_track_list_vbox.add_child(wrap)
+	var panel: PanelContainer = wrap.get_meta(META_SONG_PANEL, null) as PanelContainer
+	if panel:
+		_rows.append(panel)
 
 
 func _make_section_header(text: String) -> Label:
@@ -413,7 +421,23 @@ func _make_section_header(text: String) -> Label:
 	return label
 
 
-func _make_track_row(entry: Dictionary, selected: bool) -> PanelContainer:
+func _make_expandable_track_row(entry: Dictionary, selected: bool) -> VBoxContainer:
+	var wrap := VBoxContainer.new()
+	wrap.add_theme_constant_override("separation", 6)
+	var song_path := str(entry.get("path", "")).strip_edges()
+	wrap.set_meta(META_SONG_PATH, song_path)
+	var expanded := bool(_expanded_paths.get(song_path, false))
+	var built := _make_track_row(entry, selected, expanded)
+	var panel: PanelContainer = built.get("panel")
+	wrap.set_meta(META_SONG_PANEL, panel)
+	wrap.set_meta(META_CHEVRON, built.get("chevron"))
+	wrap.add_child(panel)
+	if expanded:
+		wrap.add_child(_make_session_chart_picker(song_path))
+	return wrap
+
+
+func _make_track_row(entry: Dictionary, selected: bool, expanded: bool) -> Dictionary:
 	var song_path := str(entry.get("path", "")).strip_edges()
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, ROW_HEIGHT)
@@ -441,16 +465,22 @@ func _make_track_row(entry: Dictionary, selected: bool) -> PanelContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(row)
 
 	var check := CheckBox.new()
 	check.focus_mode = Control.FOCUS_NONE
-	check.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	check.mouse_filter = Control.MOUSE_FILTER_STOP
 	check.button_pressed = selected
 	check.custom_minimum_size = Vector2(CHECKBOX_SIZE, CHECKBOX_SIZE)
 	check.add_theme_font_size_override("font_size", 18)
 	check.set_meta(META_SONG_PATH, song_path)
+	check.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton:
+			var mb := event as InputEventMouseButton
+			if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+				_toggle_row_selection(panel, check)
+				get_viewport().set_input_as_handled()
+	)
 	row.add_child(check)
 
 	var cover_parts: Dictionary = _SongSelectUiStyles.make_row_cover_thumbnail(ROW_COVER_SIZE)
@@ -466,76 +496,95 @@ func _make_track_row(entry: Dictionary, selected: bool) -> PanelContainer:
 		_SongSelectUiStyles.apply_row_cover_texture(cover, song_path, ROW_COVER_SIZE)
 		call_deferred("_load_row_cover", cover, song_path)
 
-	var title_label := Label.new()
-	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 16)
-	title_label.add_theme_color_override("font_color", Color(0.86, 0.9, 0.97, 1.0))
-	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	title_label.text = str(entry.get("display", ""))
-	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(title_label)
-
-	var stats := HBoxContainer.new()
-	stats.add_theme_constant_override("separation", 16)
-	stats.alignment = BoxContainer.ALIGNMENT_CENTER
-	stats.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(stats)
-
-	var rating := float(entry.get("rating", 0.0))
-	var mode_id := str(entry.get("rating_mode", ""))
-	stats.add_child(_make_rating_stat(rating, mode_id))
-	var bpm := str(entry.get("bpm", "")).strip_edges()
-	stats.add_child(_make_stat_label(
-		"BPM %s" % bpm if bpm != "" else "BPM —",
-		Color(0.62, 0.7, 0.82, 0.95)
+	row.add_child(_ChartExpandRows.make_title_artist_column(
+		str(entry.get("title", song_path.get_file())),
+		str(entry.get("artist", ""))
 	))
-	stats.add_child(_make_stat_label(str(entry.get("duration", "—")), Color(0.62, 0.7, 0.82, 0.95)))
+	row.add_child(_ChartExpandRows.make_bpm_duration_stats(
+		str(entry.get("bpm", "")),
+		str(entry.get("duration", "—")),
+		STAT_FONT_SIZE
+	))
+	var chevron := Label.new()
+	chevron.text = "▾" if expanded else "▸"
+	chevron.add_theme_font_size_override("font_size", 18)
+	chevron.add_theme_color_override("font_color", Color(0.72, 0.8, 0.9, 1.0))
+	chevron.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(chevron)
 
-	if not panel.gui_input.is_connected(_on_row_gui_input):
-		panel.gui_input.connect(_on_row_gui_input.bind(panel, check))
+	panel.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton:
+			var mb := event as InputEventMouseButton
+			if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+				var wrap := panel.get_parent() as VBoxContainer
+				if wrap:
+					_toggle_track_expand(song_path, wrap)
+				get_viewport().set_input_as_handled()
+		elif event is InputEventKey:
+			var key := event as InputEventKey
+			if key.pressed and (key.keycode == KEY_SPACE or key.keycode == KEY_ENTER):
+				_toggle_row_selection(panel, check)
+				get_viewport().set_input_as_handled()
+	)
+	return {"panel": panel, "chevron": chevron, "check": check}
+
+
+func _toggle_track_expand(song_path: String, wrap: VBoxContainer) -> void:
+	var expanded := not bool(_expanded_paths.get(song_path, false))
+	_expanded_paths[song_path] = expanded
+	while wrap.get_child_count() > 1:
+		var c := wrap.get_child(1)
+		wrap.remove_child(c)
+		c.queue_free()
+	var chevron: Label = wrap.get_meta(META_CHEVRON, null) as Label
+	if chevron:
+		chevron.text = "▾" if expanded else "▸"
+	if expanded:
+		wrap.add_child(_make_session_chart_picker(song_path))
+
+
+func _make_session_chart_picker(song_path: String) -> PanelContainer:
+	var instrument := str(_config.get("instrument", _EndlessSessionConfig.DEFAULT_INSTRUMENT))
+	var parts: Dictionary = _ChartExpandRows.make_picker_panel(tr("PLAYLIST_EDITOR_CHARTS_TITLE"))
+	var panel: PanelContainer = parts.get("panel")
+	var outer: VBoxContainer = parts.get("outer")
+	var stems := _session_stems_for_song(song_path, instrument)
+	if stems.is_empty():
+		var empty := Label.new()
+		empty.text = tr("PLAYLIST_EDITOR_CHARTS_EMPTY")
+		empty.add_theme_font_size_override("font_size", 13)
+		empty.add_theme_color_override("font_color", Color(0.62, 0.7, 0.82, 0.95))
+		outer.add_child(empty)
+		return panel
+	for stem_id in stems:
+		var lanes := _ChartDifficultyAnalyzer.canonical_lanes_for_notes(song_path, instrument, stem_id)
+		outer.add_child(_ChartExpandRows.make_chart_row(
+			song_path,
+			stem_id,
+			instrument,
+			lanes,
+			false,
+			false,
+			Callable(),
+			false
+		))
 	return panel
 
 
-func _make_rating_stat(rating: float, mode_id: String) -> HBoxContainer:
-	var box := HBoxContainer.new()
-	box.add_theme_constant_override("separation", 5)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var tint := _ChartDifficultyAnalyzer.rating_color_for_decimal(rating) if rating > 0.0 else Color(0.5, 0.56, 0.66, 0.9)
-	box.add_child(_UiIconHelper.make_icon_frame("zap.svg", 30, STAT_FONT_SIZE, tint))
-	var label := Label.new()
-	label.text = "%.1f" % snappedf(rating, 0.1) if rating > 0.0 else "—"
-	label.add_theme_font_size_override("font_size", STAT_FONT_SIZE)
-	label.add_theme_color_override("font_color", tint)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(label)
-	if mode_id != "":
-		box.tooltip_text = tr("SESSION_TRACK_PICKER_RATING_TOOLTIP_FMT") % tr(
-			_EndlessSessionConfig.generation_mode_label_key(mode_id)
-		)
-	return box
-
-
-func _make_stat_label(text: String, color: Color) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.add_theme_font_size_override("font_size", STAT_FONT_SIZE)
-	label.add_theme_color_override("font_color", color)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return label
-
-
-func _on_row_gui_input(event: InputEvent, panel: PanelContainer, check: CheckBox) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
-			_toggle_row_selection(panel, check)
-			get_viewport().set_input_as_handled()
-	elif event is InputEventKey:
-		var key := event as InputEventKey
-		if key.pressed and (key.keycode == KEY_SPACE or key.keycode == KEY_ENTER):
-			_toggle_row_selection(panel, check)
-			get_viewport().set_input_as_handled()
+func _session_stems_for_song(song_path: String, instrument: String) -> Array[String]:
+	# Match SessionScopeResolver stem set: goals from session styles, all GoalDiff axes.
+	# Rating tiers (easy/med/hard) filter scope, not stem ids.
+	var policy := str(_config.get("generation_mode_policy", _EndlessSessionConfig.GEN_MODE_POLICY_ALL))
+	var goals: Array = _config.get("generation_modes_allowed", [])
+	if policy == _EndlessSessionConfig.GEN_MODE_POLICY_ALL or goals.is_empty():
+		goals = _EndlessSessionConfig.UI_CHART_STYLE_GOALS.duplicate()
+	var out: Array[String] = []
+	for stem in _GoalDiff.stems_for_ready_axes(goals, _GoalDiff.DIFFICULTIES):
+		var stem_lanes := _ChartDifficultyAnalyzer.canonical_lanes_for_notes(song_path, instrument, stem)
+		if _NotesUtils.notes_exist(song_path, instrument, stem, stem_lanes):
+			if not out.has(stem):
+				out.append(stem)
+	return out
 
 
 func _toggle_row_selection(panel: PanelContainer, check: CheckBox) -> void:

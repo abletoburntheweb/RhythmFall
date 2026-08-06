@@ -19,6 +19,7 @@ const _SessionScopeResolver = preload("res://logic/domain/session/session_scope_
 const _MainMenuNearestAchievement = preload("res://scenes/main_menu/lib/main_menu_nearest_achievement.gd")
 const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
+const _ProfilePlayModesStats = preload("res://logic/domain/profile/profile_play_modes_stats.gd")
 const _LAST_TRACK_COVER_PX := 72
 
 var _focused_card_index := 0
@@ -309,12 +310,15 @@ func _build_library_zones() -> Array:
 		var song_path := _resolve_session_song_path(session)
 		var grade := str(session.get("grade", "")).strip_edges()
 		var grade_color := _GradeDisplay.color_from_saved_result(session)
+		var diff_info := _resolve_session_difficulty_info(song_path, session)
 		zones.append({
 			"type": "last_track",
 			"caption": tr("PLAY_MODE_ZONE_LAST_TRACK"),
 			"title": track_line,
 			"grade": grade,
 			"grade_color": grade_color,
+			"difficulty_text": str(diff_info.get("text", "")),
+			"difficulty_color": diff_info.get("color", Color(0.72, 0.58, 0.95, 1)),
 			"when": _TimeUtils.format_relative_ago_from_local_iso(str(session.get("date", ""))),
 			"cover_path": song_path,
 			"replay_enabled": true,
@@ -590,7 +594,9 @@ func _marathon_best_course_label() -> String:
 			best_id = str(course_id)
 	if best_id == "":
 		return tr("PLAY_MODE_PLACEHOLDER_DASH")
-	var title := best_id.replace("marathon_", "").replace("_", " ").capitalize()
+	var title := _ProfilePlayModesStats.route_display_title_light(best_id)
+	if title.strip_edges() == "":
+		title = best_id
 	if best_ratio >= 0.999:
 		return "%s · 100%%" % title
 	return "%s · %.0f%%" % [title, best_ratio * 100.0]
@@ -715,6 +721,39 @@ func _resolve_session_song_path(session: Dictionary) -> String:
 	if title == "":
 		return ""
 	return _find_library_song_path_by_labels(title, artist)
+
+
+func _resolve_session_difficulty_info(song_path: String, session: Dictionary) -> Dictionary:
+	var empty := {"text": "", "decimal": 0.0, "color": Color(0.72, 0.58, 0.95, 1)}
+	if song_path == "" or SongLibrary == null:
+		return empty
+	var instrument := str(session.get("instrument", ""))
+	var inst_key := "drums"
+	if instrument.find("еркусс") != -1 or instrument.to_lower().find("drum") != -1:
+		inst_key = "drums"
+	var lanes := int(session.get("lanes", ChartDifficultyAnalyzer.CANONICAL_STATS_LANES))
+	if lanes <= 0:
+		lanes = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES
+	var modes_to_try: Array[String] = []
+	var session_mode := str(session.get("generation_mode", session.get("mode", ""))).strip_edges().to_lower()
+	if session_mode != "":
+		modes_to_try.append(session_mode)
+	for mode in ["basic", "enhanced", "minimal", "natural", "custom"]:
+		if mode not in modes_to_try:
+			modes_to_try.append(mode)
+	for mode in modes_to_try:
+		var variant := SongLibrary.get_chart_difficulty_variant(song_path, inst_key, mode, lanes)
+		if variant.is_empty():
+			continue
+		var decimal := ChartDifficultyAnalyzer.decimal_rating_from_stats(variant)
+		if decimal <= 0.0:
+			continue
+		return {
+			"text": ChartDifficultyAnalyzer.format_decimal_rating(decimal, true),
+			"decimal": decimal,
+			"color": ChartDifficultyAnalyzer.rating_color_for_decimal(decimal),
+		}
+	return empty
 
 
 func _find_library_song_path(path: String) -> String:
@@ -854,6 +893,8 @@ func _nearest_play_mode_achievement_line() -> String:
 			continue
 		var ach: Dictionary = raw
 		if ach.get("unlocked", false):
+			continue
+		if bool(ach.get("deprecated", false)):
 			continue
 		var ach_id := int(ach.get("id", -1))
 		if ach_id < 152 or ach_id > 165:

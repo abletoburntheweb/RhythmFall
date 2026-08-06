@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c2lldxolkry8n"]
+[gd_scene load_steps=12 format=3 uid="uid://c2lldxolkry8n"]
 
 [ext_resource type="Script" uid="uid://b1v2f5xonk3m0" path="res://scenes/song_select/song_select.gd" id="1_yyygw"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_gqiy2"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scenes/song_select/components/song_item_list.gd" id="4_songlist"]
 [ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="5_notice"]
 [ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="6_confirm"]
+[ext_resource type="Script" path="res://scenes/song_select/controllers/song_museum_panel.gd" id="7_museum"]
+[ext_resource type="Script" path="res://scenes/song_select/controllers/song_results_view.gd" id="8_results_view"]
 [ext_resource type="Script" path="res://logic/ui/chart_difficulty_meter.gd" id="chart_meter"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ss_card"]
@@ -180,6 +182,17 @@ theme_override_font_sizes/font_size = 16
 text = "Количество:"
 vertical_alignment = 1
 
+[node name="OpenReplayButton" type="Button" parent="MainVBox/TopBarPanel/TopBarHBox"]
+clip_contents = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+focus_mode = 0
+theme = ExtResource("2_gqiy2")
+theme_type_variation = &"FlatButton"
+metadata/ui_icon_file = "rotate-ccw.svg"
+text = "Replay"
+
 [node name="ClearResultsButton" type="Button" parent="MainVBox/TopBarPanel/TopBarHBox"]
 visible = false
 clip_contents = true
@@ -226,7 +239,7 @@ theme = ExtResource("2_gqiy2")
 theme_override_font_sizes/font_size = 22
 script = ExtResource("4_songlist")
 
-[node name="ResultsItemList" type="ItemList" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox"]
+[node name="ResultsHost" type="HBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -234,8 +247,70 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("2_gqiy2")
-theme_override_font_sizes/font_size = 22
+theme_override_constants/separation = 12
+script = ExtResource("8_results_view")
+
+[node name="MuseumPassport" type="PanelContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost"]
+visible = false
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+script = ExtResource("7_museum")
+
+[node name="MainColumn" type="VBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="BestBlock" type="VBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BestHeader" type="Label" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/BestBlock"]
+layout_mode = 2
+text = "Лучший результат"
+
+[node name="BestSlot" type="VBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/BestBlock"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="HistoryBlock" type="VBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="HistoryHeader" type="Label" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/HistoryBlock"]
+layout_mode = 2
+text = "История попыток"
+
+[node name="HistoryScroll" type="ScrollContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/HistoryBlock"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="HistoryList" type="VBoxContainer" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/HistoryBlock/HistoryScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="TruncLabel" type="Label" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn/HistoryBlock"]
+visible = false
+layout_mode = 2
+
+[node name="EmptyLabel" type="Label" parent="MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost/MainColumn"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Нет результатов"
 
 [node name="DetailsPanel" type="PanelContainer" parent="MainVBox/ContentHBox"]
 custom_minimum_size = Vector2(380, 0)
@@ -320,6 +395,15 @@ text = "Исполнитель"
 clip_text = true
 text_overrun_behavior = 3
 max_lines_visible = 1
+
+[node name="LivingInsightLabel" type="Label" parent="MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.58, 0.68, 0.9)
+theme_override_font_sizes/font_size = 13
+text = ""
+autowrap_mode = 3
 
 [node name="MetaDivider" type="ColorRect" parent="MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox"]
 custom_minimum_size = Vector2(0, 1)

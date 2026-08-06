@@ -11,6 +11,7 @@ const DOMAIN_GENERATION := "generation"
 const MODIFIER_PRESETS_PATH := "user://run_modifier_presets.json"
 const GENERATION_PRESETS_PATH := "user://generation_presets.json"
 
+const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
 const _Intents = preload("res://logic/domain/generation/generation_intents.gd")
 
 const VALID_GENERATION_MODES := ["minimal", "basic", "enhanced", "natural", "custom"]
@@ -340,11 +341,22 @@ static func sanitize_generation_slot(raw: Variant) -> Dictionary:
 		mode = "basic"
 	var lanes := clampi(int(raw.get("lanes", 4)), 3, 5)
 	var saved_intent := str(raw.get("intent", "")).strip_edges().to_lower()
+	var goal := _GoalDiff.sanitize_goal(str(raw.get("goal", "")))
+	var difficulty := _GoalDiff.sanitize_difficulty(str(raw.get("difficulty", "")))
 	if saved_intent == "" or saved_intent not in _Intents.INTENTS:
 		saved_intent = _Intents.migrate_legacy_mode(mode)
+	if goal == "" or difficulty == "":
+		var pair := _GoalDiff.from_intent(saved_intent)
+		if goal == "":
+			goal = str(pair.get("goal", _GoalDiff.DEFAULT_GOAL))
+		if difficulty == "":
+			difficulty = str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+	saved_intent = _GoalDiff.intent_for(goal, difficulty)
 	return {
 		"name": _sanitize_name(raw.get("name", "")),
 		"instrument": instrument,
+		"goal": goal,
+		"difficulty": difficulty,
 		"intent": saved_intent,
 		"mode": "custom",
 		"lanes": lanes,
@@ -497,6 +509,8 @@ static func current_generation_body_from_settings() -> Dictionary:
 		return sanitize_generation_slot({})
 	return sanitize_generation_slot({
 		"instrument": SettingsManager.get_setting("last_generation_instrument", "drums"),
+		"goal": SettingsManager.get_setting("generation_goal", _GoalDiff.DEFAULT_GOAL),
+		"difficulty": SettingsManager.get_setting("generation_difficulty", _GoalDiff.DEFAULT_DIFFICULTY),
 		"intent": SettingsManager.get_setting("last_generation_intent", "original"),
 		"mode": "custom",
 		"lanes": SettingsManager.get_setting("last_generation_lanes", 4),
@@ -549,6 +563,33 @@ static func save_active_generation_preset_body() -> void:
 		"use_count": entry.get("use_count", 0),
 	})
 	SettingsManager.set_generation_presets(presets)
+
+
+static func apply_generation_slot_body_to_settings(slot: int) -> bool:
+	if SettingsManager == null or slot <= 0:
+		return false
+	var presets := SettingsManager.get_generation_presets()
+	if not is_generation_slot_filled(presets, slot):
+		return false
+	var body := generation_body_from_slot(get_generation_slot(presets, slot))
+	SettingsManager.set_setting("last_generation_instrument", str(body.get("instrument", "drums")))
+	SettingsManager.set_setting("last_generation_mode", "custom")
+	SettingsManager.set_setting("generation_goal", str(body.get("goal", _GoalDiff.DEFAULT_GOAL)))
+	SettingsManager.set_setting("generation_difficulty", str(body.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)))
+	SettingsManager.set_setting("last_generation_intent", str(body.get("intent", "groove")))
+	SettingsManager.set_setting("generation_fill", int(body.get("fill", 50)))
+	SettingsManager.set_setting("generation_groove", int(body.get("groove", 50)))
+	SettingsManager.set_setting("generation_density", int(body.get("density", 50)))
+	SettingsManager.set_setting("generation_grid_snap_strength", int(body.get("grid_snap_strength", 50)))
+	SettingsManager.set_setting("generation_accent_strong_beats", bool(body.get("accent_strong_beats", false)))
+	SettingsManager.set_setting("generation_genre_template_strength", int(body.get("genre_template_strength", 50)))
+	SettingsManager.set_setting("enable_genre_detection", bool(body.get("enable_genre_detection", true)))
+	SettingsManager.set_setting("use_stems_in_generation", bool(body.get("use_stems_in_generation", true)))
+	SettingsManager.set_setting("generation_include_hi_hats", bool(body.get("include_hi_hats", true)))
+	SettingsManager.set_setting("generation_critic_strength", int(body.get("critic_strength", 50)))
+	SettingsManager.set_setting("generation_groove_completion", bool(body.get("groove_completion", true)))
+	SettingsManager.set_setting("generation_raw_adtof", bool(body.get("raw_adtof", false)))
+	return true
 
 
 static func modifier_state_from_snapshot(snapshot: Dictionary) -> Dictionary:

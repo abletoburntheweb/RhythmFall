@@ -1,4 +1,4 @@
-# logic/utils/help_locale.gd
+# logic/i18n/help_locale.gd
 extends RefCounted
 class_name HelpLocale
 

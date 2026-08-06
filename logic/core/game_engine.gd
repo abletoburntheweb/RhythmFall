@@ -1,4 +1,4 @@
-# logic/game_engine.gd
+# logic/core/game_engine.gd
 extends Control
 
 const CatalogDataSyncLib = preload("res://logic/domain/library/catalog_data_sync.gd")
@@ -27,6 +27,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 1.0
 
 @onready var fps_label: Label = $FPSLayer/FPSLabel
 @onready var fps_background: ColorRect = $FPSLayer/FPSBackground
+@onready var fps_layer: CanvasLayer = $FPSLayer
 @onready var version_label: Label = $FPSLayer/VersionLabel
 
 @onready var level_label: Label = $XPContainer/LevelRow/LevelLabel
@@ -36,6 +37,8 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 1.0
 @onready var xp_anim_player: AnimationPlayer = $XPContainer/XpAnimationPlayer
 @onready var currency_anim_player: AnimationPlayer = $XPContainer/CurrencyAnimationPlayer
 @onready var level_layer: Control = $XPContainer
+## Locked until intro → main menu so boot doesn't flash FPS/XP over empty ambient.
+var _hud_chrome_unlocked: bool = false
 
 var _currency_anim_progress_internal: float = 0.0
 var currency_anim_start: float = 0.0
@@ -87,15 +90,48 @@ var background_service: GenerationService = null
 
 func _ready():
 	var started_ms := Time.get_ticks_msec()
+	_hide_hud_chrome_for_boot()
 	WindowIconApplier.apply_deferred(get_tree())
+	await _boot()
+	print("[Perf] GameEngine ready: %d ms" % [Time.get_ticks_msec() - started_ms])
+	call_deferred("set_ambient_motion_active", true)
+	call_deferred("_apply_ambient_particles_setting")
+
+
+func _hide_hud_chrome_for_boot() -> void:
+	_hud_chrome_unlocked = false
+	if fps_layer:
+		fps_layer.visible = false
+	if level_layer:
+		level_layer.visible = false
+
+
+func unlock_hud_chrome() -> void:
+	if _hud_chrome_unlocked:
+		return
+	_hud_chrome_unlocked = true
+	if fps_layer:
+		fps_layer.visible = true
+	_update_fps_visibility()
+	_apply_version_label()
+
+
+func _boot() -> void:
+	_hide_hud_chrome_for_boot()
+
 	initialize_logic()
 	initialize_screens()
-	call_deferred("show_intro")
-	_session_start_time_ticks = Time.get_ticks_msec() 
+	# Show intro before theme/display work — those awaits caused the empty HUD flash.
+	show_intro()
+	await get_tree().process_frame
+
+	_session_start_time_ticks = Time.get_ticks_msec()
 	_start_play_time_timer()
-	
+
 	_initialize_display_settings()
 	_connect_level_signals()
+	await get_tree().process_frame
+
 	_initialize_theme()
 	_apply_console_state()
 	_update_currency_ui()
@@ -107,9 +143,8 @@ func _ready():
 		level_layer.visibility_changed.connect(_on_level_layer_visibility_changed)
 	if xp_anim_player:
 		xp_anim_player.animation_finished.connect(_on_xp_anim_finished)
-	print("[Perf] GameEngine ready: %d ms" % [Time.get_ticks_msec() - started_ms])
-	call_deferred("set_ambient_motion_active", true)
-	call_deferred("_apply_ambient_particles_setting")
+	var _ReplayLauncher = preload("res://logic/domain/replay/replay_launcher.gd")
+	_ReplayLauncher.consume_cmdline_args(OS.get_cmdline_args())
 
 
 func _apply_ambient_particles_setting() -> void:
@@ -212,7 +247,15 @@ func apply_locale() -> void:
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
 		PlayerDataManager.level_changed.connect(_on_level_changed)
+	if PlayerDataManager.has_signal("library_milestone_reached"):
+		if not PlayerDataManager.library_milestone_reached.is_connected(_on_library_milestone_reached):
+			PlayerDataManager.library_milestone_reached.connect(_on_library_milestone_reached)
 	_update_level_ui()
+
+
+func _on_library_milestone_reached(count: int) -> void:
+	var _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	_DiaryCelebration.celebrate_library(self, count)
 
 func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	level_label.text = "%s %d" % [tr("HUD_LEVEL"), new_level]
@@ -430,6 +473,12 @@ func _apply_version_label() -> void:
 
 
 func _update_fps_visibility():
+	if not _hud_chrome_unlocked:
+		if fps_label:
+			fps_label.visible = false
+		if fps_background:
+			fps_background.visible = false
+		return
 	match SettingsManager.get_fps_mode():
 		0:
 			fps_label.visible = false
@@ -670,6 +719,7 @@ func show_intro():
 		show_main_menu() 
 
 func show_main_menu():
+	unlock_hud_chrome()
 	if transitions:
 		transitions.open_main_menu()
 	else:

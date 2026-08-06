@@ -158,11 +158,14 @@ func generate_notes_for_task(task: Dictionary) -> void:
 		"[GenAPI] generate_notes_for_task goal=%s difficulty=%s stem=%s"
 		% [str(task.get("goal", "")), str(task.get("difficulty", "")), str(task.get("chart_stem", ""))]
 	)
+	var lanes := int(task.get("lanes", 4))
+	if int(task.get("preset_slot", 0)) > 0 or str(task.get("chart_tag", "")).strip_edges() != "":
+		lanes = NotesUtils.CANONICAL_MAX_LANES
 	generate_notes(
 		str(task.get("path", "")),
 		str(task.get("instrument", task.get("instrument_type", "drums"))),
 		float(task.get("bpm", 120.0)),
-		int(task.get("lanes", 4)),
+		lanes,
 		float(task.get("tolerance", task.get("sync_tolerance", 0.2))),
 		bool(task.get("auto_identify", true)),
 		str(task.get("artist", "")),
@@ -926,7 +929,7 @@ func _notes_worker(data_dict: Dictionary):
 				if goal_meta == "":
 					goal_meta = str(SettingsManager.get_setting("generation_goal", "original")).strip_edges().to_lower()
 				if difficulty_meta == "":
-					difficulty_meta = str(SettingsManager.get_setting("generation_difficulty", "standard")).strip_edges().to_lower()
+					difficulty_meta = str(SettingsManager.get_setting("generation_difficulty", "medium")).strip_edges().to_lower()
 			elif goal_meta == "" or difficulty_meta == "":
 				push_error(
 					"GenAPI: incomplete job style metadata goal=%s difficulty=%s stem=%s — check queue task"

@@ -18,6 +18,7 @@ const KIND_ICONS := {
 	"queue": "list-checks.svg",
 	"scan": "folder-search.svg",
 	"network": "refresh-cw.svg",
+	"diary": "sparkles.svg",
 }
 
 const ICON_TINT := Color(0.62, 0.78, 0.96, 1.0)
@@ -31,6 +32,7 @@ const ICON_TINT_UPLOAD := Color(0.58, 0.82, 0.96, 1.0)
 const ICON_TINT_QUEUE := Color(0.72, 0.76, 0.92, 1.0)
 const ICON_TINT_SCAN := Color(0.62, 0.86, 0.78, 1.0)
 const ICON_TINT_NETWORK := Color(0.66, 0.74, 0.98, 1.0)
+const ICON_TINT_DIARY := Color(0.95, 0.78, 0.42, 1.0)
 
 const CRITICAL_SOUND_KINDS: Array[String] = ["error"]
 
@@ -266,6 +268,13 @@ func _play_notification_sound(kind: String, sound: String = "") -> void:
 		if MusicManager.has_method("play_analysis_error"):
 			MusicManager.play_analysis_error()
 		return
+	# Sparkle diary celebrations — distinct from ordinary status toasts.
+	if kind == "diary":
+		if MusicManager.has_method("play_diary_celebration"):
+			MusicManager.play_diary_celebration()
+		elif MusicManager.has_method("play_achievement_sound"):
+			MusicManager.play_achievement_sound()
+		return
 	if MusicManager.has_method("play_status_toast"):
 		MusicManager.play_status_toast()
 
@@ -307,7 +316,11 @@ func _ensure_primary_open_hint() -> void:
 
 
 func _sync_generation_click_hint() -> void:
-	_primary_clickable = _primary_operation_visible and _primary_id in ["bpm", "notes"]
+	_primary_clickable = (
+		_primary_panel
+		and _primary_panel.visible
+		and _primary_id in ["bpm", "notes", "queue"]
+	)
 	var text_col := get_node_or_null("VBox/PrimaryPanel/Body/TopRow/TextCol") as Control
 	if text_col:
 		text_col.mouse_default_cursor_shape = (
@@ -428,6 +441,8 @@ func _set_icon(target: TextureRect, kind: String) -> void:
 			tint = ICON_TINT_MUSIC
 		"drums":
 			tint = ICON_TINT_DRUMS
+		"diary":
+			tint = ICON_TINT_DIARY
 	target.texture = _UiIconHelper.load_tinted_icon(file_name, tint)
 
 

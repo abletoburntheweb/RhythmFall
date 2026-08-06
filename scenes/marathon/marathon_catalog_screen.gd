@@ -26,6 +26,7 @@ const _MarathonRouteCharacter = preload("res://logic/domain/session/marathon_rou
 const _MarathonSeason = preload("res://logic/domain/session/marathon_season.gd")
 const _TimeUtils = preload("res://logic/platform/time_utils.gd")
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
+const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 
 var _accent: Color = _PlayModeIds.accent_for(_PlayModeIds.MARATHON)
 
@@ -81,7 +82,6 @@ const _POOL_AFFECTING_KEYS: Array[String] = [
 	"difficulty_max",
 	"instrument",
 	"instruments",
-	"lanes",
 ]
 
 @onready var _back_button: Button = %BackButton
@@ -748,6 +748,22 @@ func _make_route_list_card(
 	meta.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88, 1.0) if playable else Color(0.82, 0.62, 0.58, 1.0))
 	text_col.add_child(meta)
 
+	var best_label := _best_completion_label(route_id) if selectable else ""
+	if best_label != "":
+		var best := Label.new()
+		best.text = best_label
+		best.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		best.add_theme_font_size_override("font_size", 12)
+		var done := _route_is_completed(route_id)
+		best.add_theme_color_override(
+			"font_color",
+			Color(0.55, 0.88, 0.7, 1.0) if done else Color(0.96, 0.78, 0.34, 1.0)
+		)
+		text_col.add_child(best)
+		if done:
+			box.border_color = Color(0.55, 0.88, 0.7, 0.55)
+			root.add_child(_UiIconHelper.make_icon_frame("circle-check.svg", 28, 16, Color(0.55, 0.88, 0.7, 1.0)))
+
 	if not playable and selectable:
 		panel.modulate = Color(0.88, 0.9, 0.94, 1.0)
 	if selectable:
@@ -835,7 +851,9 @@ func _on_course_settings_changed(config: Dictionary) -> void:
 		_pending_settings_full_refresh = true
 	elif order_changed:
 		_pending_settings_full_refresh = true
-	_schedule_settings_refresh(pool_changed or order_changed)
+	# Do not clear preview audio here — _sync_route_audio_preview restarts only when
+	# the first route song path actually changes.
+	_schedule_settings_refresh()
 
 
 func _pool_affecting_config_changed(prev: Dictionary, next: Dictionary) -> bool:
@@ -847,9 +865,7 @@ func _pool_affecting_config_changed(prev: Dictionary, next: Dictionary) -> bool:
 	return false
 
 
-func _schedule_settings_refresh(force_audio_resync: bool = false) -> void:
-	if force_audio_resync:
-		_preview_audio_song_path = ""
+func _schedule_settings_refresh() -> void:
 	if _settings_refresh_timer == null:
 		_settings_refresh_timer = Timer.new()
 		_settings_refresh_timer.one_shot = true
@@ -967,6 +983,25 @@ func _sync_instrument_from_preview(preview: Dictionary) -> void:
 		_course_settings.set_resolved_instrument(inst)
 
 
+func _sync_chart_style_from_preview(preview: Dictionary) -> void:
+	if preview.is_empty() or not bool(preview.get("chart_style_auto_widened", false)):
+		return
+	var rc: Variant = preview.get("run_config", {})
+	if rc is not Dictionary:
+		return
+	var policy := str((rc as Dictionary).get("generation_mode_policy", ""))
+	var allowed: Array = (rc as Dictionary).get("generation_modes_allowed", [])
+	if policy == "":
+		return
+	_run_config["generation_mode_policy"] = policy
+	_run_config["generation_modes_allowed"] = allowed.duplicate()
+	if _course_settings == null:
+		return
+	_suppress_settings_changed = true
+	_course_settings.set_config(_run_config)
+	_suppress_settings_changed = false
+
+
 func _refresh_selection_ui() -> void:
 	var preview := _selected_preview()
 	var playable := bool(preview.get("ok", false))
@@ -975,6 +1010,7 @@ func _refresh_selection_ui() -> void:
 	var route := _MarathonRouteCatalog.route_by_id(route_id)
 
 	_sync_instrument_from_preview(preview)
+	_sync_chart_style_from_preview(preview)
 	if _course_settings and _course_settings.has_method("set_route_preview"):
 		_course_settings.set_route_preview(preview)
 
@@ -1301,6 +1337,16 @@ func _best_completion_label(route_id: String) -> String:
 	if badge_text != "":
 		return tr("MARATHON_CATALOG_BEST_RATIO_BADGE_FMT") % [int(round(ratio * 100.0)), badge_text]
 	return tr("MARATHON_CATALOG_BEST_RATIO_FMT") % int(round(ratio * 100.0))
+
+
+func _route_is_completed(route_id: String) -> bool:
+	if PlayerDataManager == null or route_id == "":
+		return false
+	var completions: Variant = PlayerDataManager.data.get("marathon_completions", {})
+	if not completions is Dictionary:
+		return false
+	var entry: Variant = completions.get(route_id, {})
+	return entry is Dictionary and float(entry.get("best_ratio", 0.0)) >= 0.999
 
 
 func _earned_badges(route_id: String) -> Array:

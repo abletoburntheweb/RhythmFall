@@ -10,27 +10,36 @@ const _ProfileGenrePortrait = preload("res://logic/domain/profile/profile_genre_
 const _GenreGroupIcons = preload("res://logic/domain/library/genre_group_icons.gd")
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
+const _ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
+const _TimeUtils = preload("res://logic/platform/time_utils.gd")
 
 const GENRE_TAG_LIMIT := 3
 const DISPLAY_TAG_LIMIT := 5
 
 const DIFFICULTY_ICONS := {
-	"relaxed": "feather.svg",
-	"standard": "circle-check.svg",
-	"dense": "flame_gen.svg",
+	"easy": "feather.svg",
+	"medium": "circle-check.svg",
+	"hard": "flame_gen.svg",
 }
 
 const DIFFICULTY_COLORS := {
-	"relaxed": Color(0.62, 0.82, 0.96, 1.0),
-	"standard": Color(0.55, 0.78, 0.98, 1.0),
-	"dense": Color(1.0, 0.58, 0.32, 1.0),
+	"easy": Color(0.62, 0.82, 0.96, 1.0),
+	"medium": Color(0.55, 0.78, 0.98, 1.0),
+	"hard": Color(1.0, 0.58, 0.32, 1.0),
 }
 
 static func compute_stats(playlist_id: String) -> Dictionary:
-	return compute_stats_from_entries(
+	var out := compute_stats_from_entries(
 		_PlaylistCatalog.entries_for(playlist_id),
 		_PlaylistCatalog.view_filter_for(playlist_id),
 	)
+	var activity := _PlaylistCatalog.get_activity(playlist_id)
+	out["play_count"] = int(activity.get("run_count", 0))
+	out["session_clears"] = int(activity.get("session_clears", 0))
+	var last_run := str(activity.get("last_played", "")).strip_edges()
+	if last_run != "":
+		out["last_played"] = last_run
+	return out
 
 
 static func compute_stats_from_entries(entries: Array, view_filter: Dictionary) -> Dictionary:
@@ -42,11 +51,13 @@ static func compute_stats_from_entries(entries: Array, view_filter: Dictionary) 
 	var rating_sum := 0.0
 	var rating_count := 0
 	var genre_counts: Dictionary = {}
+	var unique_paths: Array[String] = []
+	var path_set: Dictionary = {}
 	for item in entries:
 		if item is not Dictionary:
 			continue
 		var entry := item as Dictionary
-		var song_path := str(entry.get("song_path", "")).strip_edges()
+		var song_path := _norm_song_path(str(entry.get("song_path", "")))
 		if song_path == "":
 			continue
 		track_count += 1
@@ -56,11 +67,26 @@ static func compute_stats_from_entries(entries: Array, view_filter: Dictionary) 
 			rating_sum += rating
 			rating_count += 1
 		_accumulate_genres(song_path, genre_counts)
+		if not path_set.has(song_path):
+			path_set[song_path] = true
+			unique_paths.append(song_path)
 	var avg_rating := rating_sum / float(rating_count) if rating_count > 0 else 0.0
+	var activity := _compute_activity(unique_paths, path_set)
+	var coverage := _compute_coverage(unique_paths)
+	var ready := _compute_chart_readiness(unique_paths, vf)
 	return {
 		"track_count": track_count,
+		"unique_track_count": unique_paths.size(),
 		"duration_sec": duration_sec,
 		"avg_rating": avg_rating,
+		"play_count": int(activity.get("play_count", 0)),
+		"track_clears": int(activity.get("track_clears", 0)),
+		"coverage_cleared": int(coverage.get("cleared", 0)),
+		"coverage_total": int(coverage.get("total", 0)),
+		"charts_ready": int(ready.get("ready", 0)),
+		"charts_total": int(ready.get("total", 0)),
+		"last_played": str(activity.get("last_played", "")),
+		"cover_paths": unique_paths.slice(0, 4),
 		"genre_tags": _top_genre_tags(genre_counts),
 		"display_tags": compute_display_tags(entries, vf),
 	}
@@ -111,9 +137,10 @@ static func compute_display_tags(entries: Array, view_filter: Dictionary) -> Arr
 	if out.size() < DISPLAY_TAG_LIMIT and rating_count > 0:
 		var avg := rating_sum / float(rating_count)
 		out.append({
-			"icon": "star.svg",
+			"icon": "zap.svg",
 			"text": TranslationServer.translate("PLAYLIST_TAG_AVG_RATING_FMT") % format_avg_rating(avg),
-			"accent": Color(0.98, 0.82, 0.38, 1.0),
+			# Match song_select rating tint (not Pop/genre yellow).
+			"accent": _ChartDifficultyAnalyzer.rating_color_for_decimal(avg),
 		})
 	if out.size() < DISPLAY_TAG_LIMIT and bpm_count > 0:
 		var avg_bpm := int(round(bpm_sum / float(bpm_count)))
@@ -160,7 +187,8 @@ static func format_duration_long(seconds: float) -> String:
 static func format_avg_rating(rating: float) -> String:
 	if rating <= 0.0:
 		return "—"
-	return _ChartDifficultyAnalyzer.format_compact_rating(rating)
+	# No ★ — playlist tags already use zap.svg.
+	return _ChartDifficultyAnalyzer.format_decimal_rating(rating, false)
 
 
 static func entry_rating(
@@ -301,3 +329,63 @@ static func _top_genre_tags(genre_counts: Dictionary) -> Array[String]:
 		if out.size() >= GENRE_TAG_LIMIT:
 			break
 	return out
+
+
+static func _norm_song_path(song_path: String) -> String:
+	return song_path.strip_edges().replace("\\", "/").trim_suffix("/")
+
+
+static func _compute_activity(unique_paths: Array[String], path_set: Dictionary) -> Dictionary:
+	# track_clears = sum of per-track completions (any mode) for songs in the playlist.
+	var track_clears := 0
+	if TrackStatsManager != null:
+		for path in unique_paths:
+			track_clears += TrackStatsManager.get_completion_count(path)
+	var last_iso := ""
+	var last_key := -1
+	var basename_set: Dictionary = {}
+	for path in unique_paths:
+		basename_set[path.get_file()] = true
+	var svc := _ResultsHistoryService.new()
+	for session in svc.get_history():
+		if session is not Dictionary:
+			continue
+		var sp := _norm_song_path(str(session.get("song_path", "")))
+		if sp == "":
+			continue
+		if not path_set.has(sp) and not basename_set.has(sp.get_file()):
+			continue
+		var date := str(session.get("date", "")).strip_edges()
+		var key := _TimeUtils.result_datetime_sort_key(date)
+		if key > last_key:
+			last_key = key
+			last_iso = date
+	return {"track_clears": track_clears, "last_played": last_iso}
+
+
+static func _compute_coverage(unique_paths: Array[String]) -> Dictionary:
+	var total := unique_paths.size()
+	var cleared := 0
+	if TrackStatsManager != null:
+		for path in unique_paths:
+			if TrackStatsManager.get_completion_count(path) > 0:
+				cleared += 1
+	return {"cleared": cleared, "total": total}
+
+
+static func _compute_chart_readiness(unique_paths: Array[String], view_filter: Dictionary) -> Dictionary:
+	var vf := _PlaylistCatalog.normalize_view_filter(view_filter)
+	var instrument := str(vf.get("instrument", "drums"))
+	var lanes := int(vf.get("lanes", 4))
+	var stems: Array[String] = _GoalDiff.stems_for_ready_axes(
+		vf.get("goals", _GoalDiff.GOALS),
+		vf.get("difficulties", _GoalDiff.DIFFICULTIES),
+	)
+	var total := unique_paths.size()
+	var ready := 0
+	for path in unique_paths:
+		for stem in stems:
+			if _NotesUtils.notes_exist(path, instrument, str(stem), lanes):
+				ready += 1
+				break
+	return {"ready": ready, "total": total}

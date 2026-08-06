@@ -1,4 +1,4 @@
-# logic/utils/option_button_popup_utils.gd
+# logic/ui/option_button_popup_utils.gd
 extends RefCounted
 class_name OptionButtonPopupUtils
 

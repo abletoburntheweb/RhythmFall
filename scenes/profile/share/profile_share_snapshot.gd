@@ -10,17 +10,25 @@ const GradeDisplay = preload("res://logic/ui/grade_display.gd")
 const ChartDifficultyAnalyzer = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
 const TimeUtils = preload("res://logic/platform/time_utils.gd")
 const _PlayModes = preload("res://logic/domain/profile/profile_play_modes_stats.gd")
+const _ProfileEventLog = preload("res://logic/domain/profile/profile_event_log.gd")
+const _TimeCapsule = preload("res://logic/domain/profile/time_capsule.gd")
+const _Taglines = preload("res://scenes/profile/share/profile_share_taglines.gd")
 const PlayModeIds = preload("res://logic/domain/session/play_mode_ids.gd")
 
 const CARD_IDS: Array[String] = ["overview", "statistics", "music", "records", "play_modes"]
 
+# Keep in sync with ProfileShareHtmlPayload.MILESTONE_SPECS (easy → hard).
 const SHARE_MILESTONE_KEYS: Array[String] = [
+	"first_track_played",
 	"first_ss",
 	"first_fc",
+	"first_mod_clear",
+	"endless_unlocked",
+	"marathon_unlocked",
 	"unique_100_tracks",
-	"first_s",
-	"first_hidden_clear",
-	"first_medal",
+	"clears_250",
+	"total_rr_10000",
+	"genre_group_level_10",
 ]
 
 const CARD_ACCENT_COLORS := {
@@ -239,6 +247,7 @@ static func _top_genre_rows(limit: int = 6) -> Array:
 
 static func _top_genre_rows_with_mastery(limit: int = 5) -> Array:
 	var counts := TrackStatsManager.genre_play_counts
+	var discovery := _discovery_firsts()
 	var rows := _top_genre_rows(limit)
 	for row in rows:
 		var group_id := str(row.get("group_id", ""))
@@ -249,7 +258,158 @@ static func _top_genre_rows_with_mastery(limit: int = 5) -> Array:
 		row["mastery_ratio"] = float(prog.get("ratio", 0.0))
 		row["discovered"] = _GenreMastery.discovered_count_in_group(group_id, counts)
 		row["catalog"] = _GenreMastery.catalog_size_for_group(group_id)
+		row["trend"] = _genre_trend(group_id, int(row["mastery_level"]), plays, discovery)
 	return rows
+
+
+static func _discovery_firsts() -> Dictionary:
+	if ProfileMilestonesManager == null or not ProfileMilestonesManager.has_method("get_data"):
+		return {}
+	var data := ProfileMilestonesManager.get_data()
+	var raw: Variant = data.get("discovery_firsts", {})
+	return raw if raw is Dictionary else {}
+
+
+static func _genre_trend(group_id: String, level: int, plays: int, discovery: Dictionary) -> String:
+	if group_id == "" or group_id == "_other":
+		return ""
+	var first_date := str(discovery.get("ggroup_%s" % group_id, "")).strip_edges()
+	if first_date != "" and _days_since(first_date) <= 45:
+		return "new"
+	if level <= 1 and plays > 0 and plays < 8:
+		return "new"
+	if level >= 3 or plays >= 25:
+		return "growing"
+	return ""
+
+
+static func _days_since(date_str: String) -> int:
+	var day := TimeUtils.iso_date_only(TimeUtils.normalize_to_local_iso(date_str))
+	if day == "":
+		return 9999
+	var parts := day.split("-")
+	if parts.size() < 3:
+		return 9999
+	var then_unix := Time.get_unix_time_from_datetime_dict({
+		"year": int(parts[0]),
+		"month": int(parts[1]),
+		"day": int(parts[2]),
+		"hour": 0,
+		"minute": 0,
+		"second": 0,
+	})
+	var now := Time.get_datetime_dict_from_system()
+	var now_unix := Time.get_unix_time_from_datetime_dict({
+		"year": int(now.get("year", 0)),
+		"month": int(now.get("month", 0)),
+		"day": int(now.get("day", 0)),
+		"hour": 0,
+		"minute": 0,
+		"second": 0,
+	})
+	return int(floor(float(now_unix - then_unix) / 86400.0))
+
+
+static func _story_lines(limit: int = 3) -> Array:
+	if PlayerDataManager == null:
+		return []
+	var events := _ProfileEventLog.list_events(PlayerDataManager.data, _ProfileEventLog.FILTER_ALL)
+	var lines: Array = []
+	for ev in events:
+		if lines.size() >= limit:
+			break
+		if not ev is Dictionary:
+			continue
+		var head := _ProfileEventLog.format_headline(ev)
+		var sub := _ProfileEventLog.format_subtitle(ev)
+		var line := head.strip_edges()
+		if sub.strip_edges() != "":
+			line = "%s · %s" % [line, sub.strip_edges()] if line != "" else sub.strip_edges()
+		if line == "":
+			continue
+		lines.append(line)
+	var level := PlayerDataManager.get_current_level()
+	if level >= 2 and lines.size() < limit:
+		lines.append(TranslationServer.translate("PROFILE_SHARE_STORY_LEVEL") % level)
+	return lines
+
+
+static func _capsule_deltas() -> Dictionary:
+	if PlayerDataManager == null:
+		return {}
+	var store := PlayerDataManager.get_time_capsules()
+	var prev_key := _TimeCapsule.previous_month_key()
+	var capsule := _TimeCapsule.get_capsule(store, prev_key)
+	if capsule.is_empty():
+		return {}
+	var now_level := PlayerDataManager.get_current_level()
+	var now_tracks := PlayerDataManager.get_unique_levels_completed()
+	var now_rr := _rr_earned()
+	var then_level := int(capsule.get("level", 0))
+	var then_tracks := int(capsule.get("levels_completed", 0))
+	var then_rr := int(capsule.get("total_rr", 0))
+	return {
+		"level_delta": now_level - then_level,
+		"tracks_delta": now_tracks - then_tracks,
+		"rr_delta": now_rr - then_rr,
+		"has_capsule": true,
+	}
+
+
+static func _accuracy_delta_from_trend(points: Array) -> float:
+	if points.size() < 6:
+		return 0.0
+	var mid := int(points.size() / 2)
+	var older := 0.0
+	var newer := 0.0
+	var oc := 0
+	var nc := 0
+	for i in range(points.size()):
+		var v := float(points[i])
+		if i < mid:
+			older += v
+			oc += 1
+		else:
+			newer += v
+			nc += 1
+	if oc <= 0 or nc <= 0:
+		return 0.0
+	return (newer / float(nc)) - (older / float(oc))
+
+
+static func _most_replayed_track() -> Dictionary:
+	if TrackStatsManager == null:
+		return {}
+	var path := str(TrackStatsManager.get_favorite_track()).replace("\\", "/").trim_suffix("/")
+	var plays := int(TrackStatsManager.get_favorite_track_count())
+	if path == "" or plays < 2:
+		return {}
+	var title := path.get_file().get_basename()
+	var artist := ""
+	if SongLibrary:
+		var md := SongLibrary.get_metadata_for_song(path)
+		if md is Dictionary:
+			title = str(md.get("title", title))
+			artist = str(md.get("artist", ""))
+	return {
+		"song_path": path,
+		"title": title,
+		"artist": artist,
+		"plays": plays,
+		"track": _track_line({"title": title, "artist": artist}),
+	}
+
+
+static func _format_delta(value: float, suffix: String = "", decimals: int = 0) -> String:
+	if absf(value) < 0.05 and decimals > 0:
+		return ""
+	if absf(value) < 0.5 and decimals == 0:
+		return ""
+	var arrow := "↑" if value > 0.0 else "↓"
+	var sign := "+" if value > 0.0 else ""
+	if decimals > 0:
+		return "%s %s%.1f%s" % [arrow, sign, absf(value), suffix]
+	return "%s %s%d%s" % [arrow, sign, int(round(absf(value))), suffix]
 
 
 static func _best_mastery_group_id() -> String:
@@ -341,7 +501,7 @@ static func _build_overview() -> Dictionary:
 		favorite_group_percent = float(top_genres[0].get("percent", 0.0))
 	var track_path := str(fav.get("track_path", ""))
 	var best_grade := GradeDisplay.best_grade_for_track(track_path)
-	return {
+	var data := {
 		"card_id": "overview",
 		"level": PlayerDataManager.get_current_level(),
 		"xp_text": PlayerDataManager.get_xp_progress_text(),
@@ -370,14 +530,21 @@ static func _build_overview() -> Dictionary:
 		"favorite_group_percent": favorite_group_percent,
 		"top_genres_pair": _top_genre_rows(2),
 		"days_in_game": _days_in_game(),
+		"story_lines": _story_lines(3),
+		"login_streak": int(PlayerDataManager.data.get("login_streak", 0)),
+		"best_login_streak": int(PlayerDataManager.data.get("best_login_streak", 0)),
 		"footer_date": footer_date_text(),
 	}
+	data["tagline"] = _Taglines.pick("overview", data)
+	return data
 
 
 static func _build_statistics() -> Dictionary:
 	var grades: Dictionary = PlayerDataManager.data.get("grades", {})
 	var points := _accuracy_trend_points(20)
-	return {
+	var deltas := _capsule_deltas()
+	var acc_delta := _accuracy_delta_from_trend(points)
+	var data := {
 		"card_id": "statistics",
 		"unique_tracks": PlayerDataManager.get_unique_levels_completed(),
 		"total_score": int(PlayerDataManager.data.get("total_score_ever", 0)),
@@ -396,8 +563,13 @@ static func _build_statistics() -> Dictionary:
 		"avg_difficulty": _avg_chart_difficulty(),
 		"accuracy_points": points,
 		"session_count": points.size(),
+		"accuracy_delta_text": _format_delta(acc_delta, "%", 1),
+		"tracks_delta_text": _format_delta(float(deltas.get("tracks_delta", 0)), "", 0),
+		"rr_delta_text": _format_delta(float(deltas.get("rr_delta", 0)), "", 0),
 		"footer_date": footer_date_text(),
 	}
+	data["tagline"] = _Taglines.pick("statistics", data)
+	return data
 
 
 static func _build_music() -> Dictionary:
@@ -405,7 +577,11 @@ static func _build_music() -> Dictionary:
 	var top_genres := _top_genre_rows_with_mastery(5)
 	var groups_unlocked := _GenreMastery.groups_at_least_level(counts, 1)
 	var best_mastery_level := _GenreMastery.best_level_in_groups(counts)
-	return {
+	var new_discoveries: Array = []
+	for row in top_genres:
+		if str(row.get("trend", "")) == "new" and new_discoveries.size() < 4:
+			new_discoveries.append(str(row.get("group_id", "")))
+	var data := {
 		"card_id": "music",
 		"top_genres": top_genres,
 		"mastery_leaders": _mastery_leaders(4),
@@ -413,11 +589,15 @@ static func _build_music() -> Dictionary:
 		"groups_total": _GenrePortrait.all_group_ids().size(),
 		"best_mastery_level": best_mastery_level,
 		"best_mastery_group_id": _best_mastery_group_id(),
+		"favorite_group_id": _best_mastery_group_id(),
 		"genres_discovered": _GenreMastery.total_discovered(counts),
 		"catalog_total": _GenreMastery.total_catalog_size(),
 		"full_groups_count": _GenreMastery.groups_with_full_discovery(counts),
+		"new_discovery_ids": new_discoveries,
 		"footer_date": footer_date_text(),
 	}
+	data["tagline"] = _Taglines.pick("music", data)
+	return data
 
 
 static func _build_records() -> Dictionary:
@@ -432,10 +612,10 @@ static func _build_records() -> Dictionary:
 		best_rr_peak = int(first.get("best_rr", 0))
 		best_rr_track = _track_line(first)
 	if ProfileMilestonesManager:
-		var data := ProfileMilestonesManager.get_data()
-		milestones = data.get("milestones", {}) if data.get("milestones") is Dictionary else {}
-		extremes = data.get("extremes", {}) if data.get("extremes") is Dictionary else {}
-		mod_records = data.get("mod_records", {}) if data.get("mod_records") is Dictionary else {}
+		var ms_data := ProfileMilestonesManager.get_data()
+		milestones = ms_data.get("milestones", {}) if ms_data.get("milestones") is Dictionary else {}
+		extremes = ms_data.get("extremes", {}) if ms_data.get("extremes") is Dictionary else {}
+		mod_records = ms_data.get("mod_records", {}) if ms_data.get("mod_records") is Dictionary else {}
 	var extreme_accuracy_line := ""
 	if extremes.has("highest_accuracy") and extremes["highest_accuracy"] is Dictionary:
 		var acc_entry: Dictionary = extremes["highest_accuracy"]
@@ -450,7 +630,9 @@ static func _build_records() -> Dictionary:
 			mod_record_count += 1
 		if mod_records.get("hardest_mod_combo") is Dictionary:
 			mod_record_count += 1
-	return {
+	var most_replayed := _most_replayed_track()
+	var hall := _hall_of_fame_rows(extremes, mod_records, most_replayed)
+	var data := {
 		"card_id": "records",
 		"milestones": milestones,
 		"extremes": extremes,
@@ -465,8 +647,50 @@ static func _build_records() -> Dictionary:
 		"rr_spread": _rr_spread(rr_top),
 		"shared_extreme_track": _shared_extreme_track(extremes),
 		"mod_hard_bonus": _mod_hard_bonus(mod_records),
+		"hall_rows": hall,
+		"most_replayed": most_replayed,
 		"footer_date": footer_date_text(),
 	}
+	data["tagline"] = _Taglines.pick("records", data)
+	return data
+
+
+static func _hall_of_fame_rows(
+	extremes: Dictionary,
+	mod_records: Dictionary,
+	most_replayed: Dictionary
+) -> Array:
+	var rows: Array = []
+	# Highest RR stays in the hero panel; hall lists the other legendary runs.
+	if extremes.has("hardest_chart_cleared") and extremes["hardest_chart_cleared"] is Dictionary:
+		var hard: Dictionary = extremes["hardest_chart_cleared"]
+		var rating := float(hard.get("value", 0.0))
+		if rating > 0.0:
+			rows.append({
+				"id": "hardest_chart",
+				"caption_key": "PROFILE_SHARE_HALL_HARDEST",
+				"value": "%.1f" % rating,
+				"track": _track_line(hard),
+			})
+	if extremes.has("longest_fc") and extremes["longest_fc"] is Dictionary:
+		var fc: Dictionary = extremes["longest_fc"]
+		var combo := int(fc.get("value", 0))
+		if combo > 0:
+			rows.append({
+				"id": "longest_fc",
+				"caption_key": "PROFILE_SHARE_HALL_LONGEST_FC",
+				"value": str(combo),
+				"track": _track_line(fc),
+			})
+	if not most_replayed.is_empty():
+		rows.append({
+			"id": "most_replayed",
+			"caption_key": "PROFILE_SHARE_HALL_MOST_REPLAYED",
+			"value": TranslationServer.translate("PROFILE_SHARE_HALL_PLAYS_FMT") % int(most_replayed.get("plays", 0)),
+			"track": str(most_replayed.get("track", "")),
+		})
+	# Hardest mod stack lives under «Рекорды модов» — keep Hall free of that duplicate.
+	return rows
 
 
 static func _build_play_modes() -> Dictionary:
@@ -492,7 +716,7 @@ static func _build_play_modes() -> Dictionary:
 
 	var mod_clears: Array = []
 	for entry in mod_entries:
-		if mod_clears.size() >= 6:
+		if mod_clears.size() >= 5:
 			break
 		mod_clears.append({
 			"mod_id": str(entry.get("mod_id", "")),
@@ -504,8 +728,22 @@ static func _build_play_modes() -> Dictionary:
 	var clears_any := int(mod.get("clears_any", 0))
 	var hero_value := routes_completed if routes_completed > 0 else clears_any
 	var hero_kind := "marathon" if routes_completed > 0 else "mods"
+	var endless := _endless_share_slice()
+	var endless_story := ""
+	var best_streak := int(endless.get("best_streak", 0))
+	if best_streak > 0:
+		endless_story = TranslationServer.translate("PROFILE_SHARE_STORY_ENDLESS") % best_streak
+	var marathon_story := ""
+	if not top_marathon.is_empty():
+		var best_m: Dictionary = top_marathon[0]
+		var badge := str(best_m.get("badge_label", "")).strip_edges()
+		var title := str(best_m.get("title", "")).strip_edges()
+		if title != "" and badge != "":
+			marathon_story = TranslationServer.translate("PROFILE_SHARE_STORY_MARATHON") % [title, badge]
+		elif title != "":
+			marathon_story = title
 
-	return {
+	var data := {
 		"card_id": "play_modes",
 		"marathon": marathon,
 		"mod": mod,
@@ -513,13 +751,17 @@ static func _build_play_modes() -> Dictionary:
 		"mod_mastered": mod_mastered,
 		"top_marathon": top_marathon,
 		"mod_clears": mod_clears,
-		"endless": _endless_share_slice(),
+		"endless": endless,
 		"hero_value": hero_value,
 		"hero_kind": hero_kind,
 		"routes_completed": routes_completed,
 		"routes_attempted": routes_attempted,
+		"endless_story": endless_story,
+		"marathon_story": marathon_story,
 		"footer_date": footer_date_text(),
 	}
+	data["tagline"] = _Taglines.pick("play_modes", data)
+	return data
 
 
 static func _endless_share_slice() -> Dictionary:

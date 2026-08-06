@@ -132,13 +132,13 @@ func _build_gh_ui() -> void:
 	_gh_enable_check = CheckBox.new()
 	_gh_enable_check.add_theme_font_size_override("font_size", 18)
 	_gh_enable_check.toggled.connect(_on_gh_enable_toggled)
-	_SettingsSectionUi.apply_settings_checkbox(_gh_enable_check, 18)
+	_SettingsSectionUi.apply_settings_checkbox(_gh_enable_check, 18, false, Color(0.86, 0.52, 0.72, 1.0))
 	rows.add_child(_gh_enable_check)
 
 	_gh_auto_detect_check = CheckBox.new()
 	_gh_auto_detect_check.add_theme_font_size_override("font_size", 18)
 	_gh_auto_detect_check.toggled.connect(_on_gh_auto_detect_toggled)
-	_SettingsSectionUi.apply_settings_checkbox(_gh_auto_detect_check, 18)
+	_SettingsSectionUi.apply_settings_checkbox(_gh_auto_detect_check, 18, false, Color(0.86, 0.52, 0.72, 1.0))
 	rows.add_child(_gh_auto_detect_check)
 
 	var device_row := HBoxContainer.new()

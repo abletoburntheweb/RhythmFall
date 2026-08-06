@@ -1,4 +1,4 @@
-# logic/utils/string_char_utils.gd
+# logic/platform/string_char_utils.gd
 extends RefCounted
 class_name StringCharUtils
 

@@ -1,4 +1,4 @@
-# logic/utils/ui_screen_hotkeys.gd
+# logic/ui/ui_screen_hotkeys.gd
 extends RefCounted
 class_name UiScreenHotkeys
 

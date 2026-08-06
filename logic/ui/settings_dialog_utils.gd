@@ -1,4 +1,4 @@
-# logic/utils/settings_dialog_utils.gd
+# logic/ui/settings_dialog_utils.gd
 extends RefCounted
 class_name SettingsDialogUtils
 

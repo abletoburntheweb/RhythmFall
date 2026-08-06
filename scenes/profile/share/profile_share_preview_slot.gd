@@ -14,12 +14,15 @@ var hotkey_index: int = 0
 @onready var _preview: TextureRect = %PreviewTexture
 @onready var _click_button: Button = %ClickButton
 @onready var _loading_label: Label = %LoadingLabel
+@onready var _selection_ring: Panel = %SelectionRing
 
 
 func _ready() -> void:
 	if _click_button and not _click_button.pressed.is_connected(_on_click_pressed):
 		_click_button.pressed.connect(_on_click_pressed)
 	_update_hotkey()
+	_apply_base_style()
+	set_selected(false)
 
 
 func setup(index: int, id: String) -> void:
@@ -35,6 +38,21 @@ func set_texture(tex: Texture2D) -> void:
 		_loading_label.visible = tex == null
 
 
+func get_preview_image() -> Image:
+	if _preview == null or _preview.texture == null:
+		return null
+	var tex := _preview.texture
+	if tex is ImageTexture:
+		var img := (tex as ImageTexture).get_image()
+		if img != null:
+			return img.duplicate()
+	if tex.has_method("get_image"):
+		var from_tex: Variant = tex.get_image()
+		if from_tex is Image:
+			return (from_tex as Image).duplicate()
+	return null
+
+
 func set_loading(loading: bool, message: String = "") -> void:
 	if _loading_label:
 		_loading_label.visible = loading or message != ""
@@ -47,24 +65,36 @@ func set_loading(loading: bool, message: String = "") -> void:
 
 
 func set_selected(selected: bool) -> void:
-	var box := get_theme_stylebox("panel") as StyleBoxFlat
-	if box == null:
-		box = StyleBoxFlat.new()
-	box.border_color = _SEL_BORDER if selected else _DEFAULT_BORDER
-	box.set_border_width_all(3 if selected else 1)
-	box.bg_color = Color(0.06, 0.07, 0.1, 0.92)
-	box.corner_radius_top_left = 10
-	box.corner_radius_top_right = 10
-	box.corner_radius_bottom_left = 10
-	box.corner_radius_bottom_right = 10
-	add_theme_stylebox_override("panel", box)
+	if _selection_ring:
+		_selection_ring.visible = selected
+		if selected:
+			var ring := StyleBoxFlat.new()
+			ring.bg_color = Color(0, 0, 0, 0)
+			ring.border_color = _SEL_BORDER
+			ring.set_border_width_all(3)
+			ring.set_corner_radius_all(10)
+			ring.draw_center = false
+			_selection_ring.add_theme_stylebox_override("panel", ring)
 
 
 func set_preview_size(card_size: Vector2) -> void:
 	custom_minimum_size = card_size
 	size = card_size
 	if _preview:
-		_preview.custom_minimum_size = card_size
+		_preview.custom_minimum_size = Vector2.ZERO
+
+
+func _apply_base_style() -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.06, 0.07, 0.1, 0.92)
+	box.border_color = _DEFAULT_BORDER
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(10)
+	box.content_margin_left = 3
+	box.content_margin_right = 3
+	box.content_margin_top = 3
+	box.content_margin_bottom = 3
+	add_theme_stylebox_override("panel", box)
 
 
 func _update_hotkey() -> void:

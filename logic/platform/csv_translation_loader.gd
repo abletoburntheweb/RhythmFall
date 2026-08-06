@@ -1,4 +1,4 @@
-# logic/utils/csv_translation_loader.gd
+# logic/platform/csv_translation_loader.gd
 extends RefCounted
 class_name CsvTranslationLoader
 

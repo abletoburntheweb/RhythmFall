@@ -1,4 +1,4 @@
-# logic/utils/shop_reward_notifications.gd
+# logic/domain/shop/shop_reward_notifications.gd
 class_name ShopRewardNotifications
 extends RefCounted
 

@@ -1,4 +1,4 @@
-# logic/utils/song_preview_segment.gd
+# logic/domain/library/song_preview_segment.gd
 extends RefCounted
 class_name SongPreviewSegment
 

@@ -1,4 +1,4 @@
-# logic/utils/status_toast.gd
+# logic/ui/status_toast.gd
 extends RefCounted
 class_name StatusToast
 

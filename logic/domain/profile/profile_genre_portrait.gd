@@ -1,4 +1,4 @@
-# logic/utils/profile_genre_portrait.gd
+# logic/domain/profile/profile_genre_portrait.gd
 class_name ProfileGenrePortrait
 extends RefCounted
 

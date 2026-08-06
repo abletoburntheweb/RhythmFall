@@ -1,4 +1,4 @@
-# logic/note_manager.gd
+# logic/core/note_manager.gd
 extends RefCounted
 
 const RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
@@ -757,6 +757,10 @@ func update_notes():
 		game_screen
 		and game_screen.has_method("is_resume_rewind_active")
 		and game_screen.is_resume_rewind_active()
+	) or (
+		game_screen
+		and game_screen.has_method("is_replay_watch_mode")
+		and game_screen.is_replay_watch_mode()
 	)
 	var i := notes.size() - 1
 	while i >= 0:

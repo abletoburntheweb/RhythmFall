@@ -14,6 +14,7 @@ const _SONGS := "%s/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows" % _
 const _SCAN := "%s/ScanPanel/ScanPanelMargin/ScanRows" % _CV
 const _NOTES := "%s/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows" % _CV
 const _OPTS := "%s/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows" % _CV
+const _DIARY := "%s/DiaryLinksPanel/DiaryLinksPanelMargin/DiaryLinksRows" % _CV
 
 @onready var songs_header: Label = get_node("%s/SongsFolderHeader" % _SONGS)
 @onready var songs_folder_hint: Label = get_node("%s/SongsFolderHint" % _SONGS)
@@ -27,7 +28,14 @@ const _OPTS := "%s/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsR
 @onready var library_options_hint: Label = get_node("%s/LibraryOptionsHint" % _OPTS)
 @onready var songs_folder_line_edit: LineEdit = get_node("%s/SongsFolderHBox/SongsFolderLineEdit" % _SONGS)
 @onready var notes_folder_line_edit: LineEdit = get_node("%s/NotesFolderHBox/NotesFolderLineEdit" % _NOTES)
+@onready var open_songs_folder_button: Button = %OpenSongsFolderButton
+@onready var open_notes_folder_button: Button = %OpenNotesFolderButton
 @onready var show_chart_id_checkbox: CheckBox = get_node("%s/ShowChartIdCheckBox" % _OPTS)
+@onready var diary_links_header: Label = get_node_or_null("%s/DiaryLinksHeader" % _DIARY)
+@onready var diary_links_hint: Label = get_node_or_null("%s/DiaryLinksHint" % _DIARY)
+@onready var diary_history_open_day_checkbox: CheckBox = get_node_or_null("%s/DiaryHistoryOpenDayCheckBox" % _DIARY)
+@onready var diary_history_open_track_checkbox: CheckBox = get_node_or_null("%s/DiaryHistoryOpenTrackCheckBox" % _DIARY)
+@onready var diary_open_track_museum_checkbox: CheckBox = get_node_or_null("%s/DiaryOpenTrackMuseumCheckBox" % _DIARY)
 @onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
 @onready var notes_folder_dialog: FileDialog = $NotesFolderDialog
 @onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
@@ -59,7 +67,11 @@ func _apply_dialog_styles() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(show_chart_id_checkbox)
+	const AMBER := Color(0.92, 0.78, 0.45, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(show_chart_id_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_history_open_day_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_history_open_track_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_open_track_museum_checkbox, 22, false, AMBER)
 
 
 func apply_locale() -> void:
@@ -89,6 +101,8 @@ func apply_locale() -> void:
 	var choose_folder_btn: Button = get_node_or_null("%s/SongsFolderHBox/ChooseSongsFolderButton" % _SONGS)
 	if choose_folder_btn:
 		choose_folder_btn.text = tr("MISC_CHOOSE_FOLDER")
+	if open_songs_folder_button:
+		open_songs_folder_button.text = tr("LIBRARY_OPEN_FOLDER")
 	var scan_btn: Button = get_node_or_null("%s/ScanButtonRow/ScanSongsButton" % _SCAN)
 	if scan_btn:
 		scan_btn.text = tr("MISC_SCAN_SONGS")
@@ -98,8 +112,23 @@ func apply_locale() -> void:
 	var choose_notes_btn: Button = get_node_or_null("%s/NotesFolderHBox/ChooseNotesFolderButton" % _NOTES)
 	if choose_notes_btn:
 		choose_notes_btn.text = tr("MISC_CHOOSE_FOLDER")
+	if open_notes_folder_button:
+		open_notes_folder_button.text = tr("LIBRARY_OPEN_FOLDER")
 	if show_chart_id_checkbox:
 		show_chart_id_checkbox.text = tr("MISC_SHOW_CHART_ID")
+	if diary_links_header:
+		diary_links_header.text = tr("SETTINGS_DIARY_LINKS_SECTION")
+	if diary_links_hint:
+		diary_links_hint.text = tr("SETTINGS_DIARY_LINKS_HINT")
+	if diary_history_open_day_checkbox:
+		diary_history_open_day_checkbox.text = tr("SETTINGS_DIARY_HISTORY_OPEN_DAY")
+		diary_history_open_day_checkbox.tooltip_text = tr("SETTINGS_DIARY_HISTORY_OPEN_DAY_TIP")
+	if diary_history_open_track_checkbox:
+		diary_history_open_track_checkbox.text = tr("SETTINGS_DIARY_HISTORY_OPEN_TRACK")
+		diary_history_open_track_checkbox.tooltip_text = tr("SETTINGS_DIARY_HISTORY_OPEN_TRACK_TIP")
+	if diary_open_track_museum_checkbox:
+		diary_open_track_museum_checkbox.text = tr("SETTINGS_DIARY_OPEN_TRACK_MUSEUM")
+		diary_open_track_museum_checkbox.tooltip_text = tr("SETTINGS_DIARY_OPEN_TRACK_MUSEUM_TIP")
 	_apply_dialogs()
 	_apply_tooltips()
 	_apply_dialog_styles()
@@ -114,9 +143,13 @@ func _apply_tooltips() -> void:
 	var choose_folder_btn: Button = get_node_or_null("%s/SongsFolderHBox/ChooseSongsFolderButton" % _SONGS)
 	if choose_folder_btn:
 		choose_folder_btn.tooltip_text = tr("MISC_CHOOSE_FOLDER_TOOLTIP")
+	if open_songs_folder_button:
+		open_songs_folder_button.tooltip_text = tr("LIBRARY_OPEN_FOLDER_TOOLTIP")
 	var scan_btn: Button = get_node_or_null("%s/ScanButtonRow/ScanSongsButton" % _SCAN)
 	if scan_btn:
 		scan_btn.tooltip_text = tr("MISC_SCAN_SONGS_TOOLTIP")
+	if open_notes_folder_button:
+		open_notes_folder_button.tooltip_text = tr("LIBRARY_OPEN_FOLDER_TOOLTIP")
 	if notes_folder_line_edit:
 		notes_folder_line_edit.tooltip_text = tr("MISC_NOTES_FOLDER_TOOLTIP")
 	if show_chart_id_checkbox:
@@ -178,6 +211,28 @@ func _sanitize_path(path: String) -> String:
 	return String(path).strip_edges().replace("\uFFFD", "")
 
 
+func _on_open_songs_folder_pressed() -> void:
+	var path := _normalize_songs_folder_path(String(SettingsManager.get_setting("user_songs_path", "")))
+	_open_folder_path(path)
+
+
+func _on_open_notes_folder_pressed() -> void:
+	var stored := String(SettingsManager.get_setting("user_notes_path", ""))
+	var path := stored if stored != "" else NotesUtils.DEFAULT_NOTES_ROOT
+	_open_folder_path(path)
+
+
+func _open_folder_path(path: String) -> void:
+	var abs_path := path.strip_edges()
+	if abs_path == "":
+		return
+	if abs_path.begins_with("user://") or abs_path.begins_with("res://"):
+		abs_path = ProjectSettings.globalize_path(abs_path)
+	abs_path = abs_path.replace("\\", "/")
+	DirAccess.make_dir_recursive_absolute(abs_path)
+	OS.shell_open(abs_path)
+
+
 func _apply_initial_settings() -> void:
 	var p = String(SettingsManager.get_setting("user_songs_path", ""))
 	if p == "":
@@ -188,6 +243,18 @@ func _apply_initial_settings() -> void:
 		notes_p = NotesUtils.DEFAULT_NOTES_ROOT
 	notes_folder_line_edit.text = notes_p
 	show_chart_id_checkbox.set_pressed_no_signal(bool(SettingsManager.get_setting("show_chart_id", false)))
+	if diary_history_open_day_checkbox:
+		diary_history_open_day_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_history_open_day", false))
+		)
+	if diary_history_open_track_checkbox:
+		diary_history_open_track_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_history_open_track", false))
+		)
+	if diary_open_track_museum_checkbox:
+		diary_open_track_museum_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_open_track_museum", false))
+		)
 	_update_last_scan_label()
 
 
@@ -279,6 +346,21 @@ func _on_show_chart_id_toggled(enabled: bool) -> void:
 	SettingsManager.set_setting("show_chart_id", enabled)
 	emit_signal("settings_changed")
 	_call_refresh_chart_id_recursive(get_tree().root)
+
+
+func _on_diary_history_open_day_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_history_open_day", enabled)
+	emit_signal("settings_changed")
+
+
+func _on_diary_history_open_track_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_history_open_track", enabled)
+	emit_signal("settings_changed")
+
+
+func _on_diary_open_track_museum_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_open_track_museum", enabled)
+	emit_signal("settings_changed")
 
 
 func _call_refresh_chart_id_recursive(node: Node) -> void:

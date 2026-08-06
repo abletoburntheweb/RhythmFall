@@ -174,7 +174,8 @@ const LANE_REMAP_INTERVAL_MIN := 4.0
 const LANE_REMAP_INTERVAL_MAX := 30.0
 const HALF_HP_START_PCT_DEFAULT := 50.0
 const HALF_HP_START_PCT_MIN := 25.0
-const HALF_HP_START_PCT_MAX := 100.0
+# Cap at half: 100% would neutralize the mod while keeping the reward.
+const HALF_HP_START_PCT_MAX := 50.0
 const MEMORY_SPATIAL_BLIND_PCT_DEFAULT := 78.0
 const MEMORY_SPATIAL_BLIND_PCT_MIN := 0.0
 const MEMORY_SPATIAL_BLIND_PCT_MAX := 100.0
@@ -237,7 +238,8 @@ const HEAT_PEAK_CHART_PCT_DEFAULT := 30.0
 const HEAT_PEAK_CHART_PCT_MIN := 10.0
 const HEAT_PEAK_CHART_PCT_MAX := 80.0
 const HEAT_MAX_SPEED_PCT_DEFAULT := 130.0
-const HEAT_MAX_SPEED_PCT_MIN := 100.0
+# Must still speed up at peak — 100% would neutralize Heat while keeping +10%.
+const HEAT_MAX_SPEED_PCT_MIN := 110.0
 const HEAT_MAX_SPEED_PCT_MAX := 300.0
 
 const SILENCE_SCHEDULE_SECONDS := "seconds"
@@ -329,10 +331,16 @@ const WINDOW_GOOD_EASY := 0.225
 const FIXED_SCROLL_SPEED := 20.0
 const VISIBILITY_BAND_PX := 220.0
 const VISIBILITY_BAND_MIN := 120.0
-const VISIBILITY_BAND_MAX := 320.0
+# Softest allowed = default; wider band was easing Hidden/Sudden toward "no mod".
+const VISIBILITY_BAND_MAX := 220.0
 const TIMING_WINDOW_PCT_DEFAULT := 100.0
 const TIMING_WINDOW_PCT_MIN := 50.0
 const TIMING_WINDOW_PCT_MAX := 150.0
+# Strict may only tighten (≤100%); Easy may only loosen (≥100%).
+const STRICT_TIMING_WINDOW_PCT_MIN := 50.0
+const STRICT_TIMING_WINDOW_PCT_MAX := 100.0
+const EASY_TIMING_WINDOW_PCT_MIN := 100.0
+const EASY_TIMING_WINDOW_PCT_MAX := 150.0
 const MEMORY_REVEAL_MS_DEFAULT := 500.0
 const MEMORY_REVEAL_MS_MIN := 200.0
 const MEMORY_REVEAL_MS_MAX := 1000.0
@@ -528,20 +536,24 @@ static func sanitize_params(raw: Variant) -> Dictionary:
 			)
 			out["timing_window_pct"] = legacy_timing
 			if not raw.has("easy_timing_window_pct"):
-				out["easy_timing_window_pct"] = legacy_timing
+				out["easy_timing_window_pct"] = clampf(
+					legacy_timing, EASY_TIMING_WINDOW_PCT_MIN, EASY_TIMING_WINDOW_PCT_MAX
+				)
 			if not raw.has("strict_timing_window_pct"):
-				out["strict_timing_window_pct"] = legacy_timing
+				out["strict_timing_window_pct"] = clampf(
+					legacy_timing, STRICT_TIMING_WINDOW_PCT_MIN, STRICT_TIMING_WINDOW_PCT_MAX
+				)
 		if raw.has("easy_timing_window_pct"):
 			out["easy_timing_window_pct"] = clampf(
 				float(raw["easy_timing_window_pct"]),
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX
+				EASY_TIMING_WINDOW_PCT_MIN,
+				EASY_TIMING_WINDOW_PCT_MAX
 			)
 		if raw.has("strict_timing_window_pct"):
 			out["strict_timing_window_pct"] = clampf(
 				float(raw["strict_timing_window_pct"]),
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX
+				STRICT_TIMING_WINDOW_PCT_MIN,
+				STRICT_TIMING_WINDOW_PCT_MAX
 			)
 		if raw.has("visibility_band_px"):
 			out["visibility_band_px"] = clampf(
@@ -2975,16 +2987,16 @@ static func _param_reward_scale(modifier_id: String, params: Dictionary) -> floa
 			return _reward_scale_from_float(
 				float(p.get("strict_timing_window_pct", TIMING_WINDOW_PCT_DEFAULT)),
 				TIMING_WINDOW_PCT_DEFAULT,
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX,
+				STRICT_TIMING_WINDOW_PCT_MIN,
+				STRICT_TIMING_WINDOW_PCT_MAX,
 				true
 			)
 		ID_EASY_WINDOWS:
 			return _reward_scale_from_float(
 				float(p.get("easy_timing_window_pct", TIMING_WINDOW_PCT_DEFAULT)),
 				TIMING_WINDOW_PCT_DEFAULT,
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX,
+				EASY_TIMING_WINDOW_PCT_MIN,
+				EASY_TIMING_WINDOW_PCT_MAX,
 				false
 			)
 		ID_HIDDEN, ID_SUDDEN:
@@ -3268,9 +3280,18 @@ static func format_summary(modifiers: Array) -> String:
 
 static func format_tooltip(modifier_id: String) -> String:
 	return "%s — %s" % [
-		TranslationServer.translate(title_i18n_key(modifier_id)),
-		TranslationServer.translate(desc_i18n_key(modifier_id)),
+		_strip_markdown_markup(TranslationServer.translate(title_i18n_key(modifier_id))),
+		_strip_markdown_markup(TranslationServer.translate(desc_i18n_key(modifier_id))),
 	]
+
+
+static func _strip_markdown_markup(text: String) -> String:
+	## Descriptions may use **bold** for help/rich UI; tooltips are plain text.
+	var out := text
+	out = out.replace("**", "")
+	out = out.replace("__", "")
+	out = out.replace("`", "")
+	return out
 
 
 static func title_i18n_key(modifier_id: String) -> String:

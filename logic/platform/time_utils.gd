@@ -1,4 +1,4 @@
-# logic/utils/time_utils.gd
+# logic/platform/time_utils.gd
 extends RefCounted
 class_name TimeUtils
 
@@ -15,11 +15,37 @@ static func format_date_parts_ru(day: int, month: int, year: int) -> String:
 		m = str(month)
 	return "%d %s %d" % [day, m, year]
 
+
+## YYYY-MM-DD from ISO / datetime strings (handles trailing time / "T").
+static func iso_date_only(date_str: String) -> String:
+	var s := date_str.strip_edges()
+	if s.length() >= 10 and s[4] == "-" and s[7] == "-":
+		return s.substr(0, 10)
+	return s
+
+
+static func iso_time_hm(date_str: String) -> String:
+	var s := date_str.strip_edges()
+	if s.length() >= 16 and (s[10] == "T" or s[10] == " "):
+		return s.substr(11, 5)
+	return ""
+
+
+## Compact unambiguous date: 30.07.2026 (avoids label clip of "июл. 2026").
+static func format_iso_date_dmy(date_str: String) -> String:
+	var d := iso_date_only(date_str)
+	var parts := d.split("-")
+	if parts.size() != 3:
+		return d
+	return "%02d.%02d.%04d" % [int(parts[2]), int(parts[1]), int(parts[0])]
+
+
 static func format_iso_date_ru(date_str: String) -> String:
 	if date_str == "":
 		var d = Time.get_date_dict_from_system()
 		return format_date_parts_ru(int(d.get("day", 1)), int(d.get("month", 1)), int(d.get("year", 2000)))
-	var parts = date_str.split("-")
+	var only := iso_date_only(date_str)
+	var parts = only.split("-")
 	if parts.size() == 3:
 		var year = int(parts[0])
 		var month = int(parts[1])
@@ -47,7 +73,8 @@ static func format_iso_date_en(date_str: String) -> String:
 	if date_str == "":
 		var d = Time.get_date_dict_from_system()
 		return format_date_parts_en(int(d.get("day", 1)), int(d.get("month", 1)), int(d.get("year", 2000)))
-	var parts = date_str.split("-")
+	var only := iso_date_only(date_str)
+	var parts = only.split("-")
 	if parts.size() == 3:
 		return format_date_parts_en(int(parts[2]), int(parts[1]), int(parts[0]))
 	return date_str
@@ -140,6 +167,9 @@ static func unix_from_local_iso_datetime(date_str: String) -> int:
 	if s == "" or s == "N/A":
 		return 0
 	s = s.replace("T", " ")
+	# Date-only YYYY-MM-DD → noon local (stable chronological sort).
+	if s.length() == 10 and s[4] == "-" and s[7] == "-":
+		s = s + " 12:00:00"
 	if s.length() < 16 or s[4] != "-" or s[7] != "-":
 		return 0
 	var dt := {
@@ -152,6 +182,51 @@ static func unix_from_local_iso_datetime(date_str: String) -> int:
 	}
 	var as_utc := int(Time.get_unix_time_from_datetime_dict(dt))
 	return as_utc - _local_wall_clock_unix_offset()
+
+
+## ISO datetime, date-only ISO, or achievement unlock ("3 авг. 2026, 15:55").
+static func unix_from_any_datetime(date_str: String) -> int:
+	var iso := unix_from_local_iso_datetime(date_str)
+	if iso > 0:
+		return iso
+	# DD.MM.YYYY or DD.MM.YYYY HH:MM
+	var s := String(date_str).strip_edges()
+	if s.length() >= 10 and s[2] == "." and s[5] == ".":
+		var day := s.substr(0, 2).to_int()
+		var month := s.substr(3, 2).to_int()
+		var year := s.substr(6, 4).to_int()
+		var hour := 12
+		var minute := 0
+		if s.length() >= 16 and (s[10] == " " or s[10] == ","):
+			var rest := s.substr(11).strip_edges()
+			var tp := rest.split(":")
+			if tp.size() >= 2:
+				hour = tp[0].to_int()
+				minute = tp[1].to_int()
+		if year > 0 and month > 0 and day > 0:
+			var as_utc := int(Time.get_unix_time_from_datetime_dict({
+				"year": year, "month": month, "day": day,
+				"hour": hour, "minute": minute, "second": 0,
+			}))
+			return as_utc - _local_wall_clock_unix_offset()
+	return unix_from_unlock_date(date_str)
+
+
+## Normalize mixed legacy timestamps to local ISO "YYYY-MM-DD HH:MM:SS".
+static func normalize_to_local_iso(date_str: String) -> String:
+	var unix := unix_from_any_datetime(date_str)
+	if unix <= 0:
+		return String(date_str).strip_edges()
+	var wall := unix + _local_wall_clock_unix_offset()
+	var dt := Time.get_datetime_dict_from_unix_time(wall)
+	return "%04d-%02d-%02d %02d:%02d:%02d" % [
+		int(dt.get("year", 1970)),
+		int(dt.get("month", 1)),
+		int(dt.get("day", 1)),
+		int(dt.get("hour", 0)),
+		int(dt.get("minute", 0)),
+		int(dt.get("second", 0)),
+	]
 
 
 static func _local_wall_clock_unix_offset() -> int:

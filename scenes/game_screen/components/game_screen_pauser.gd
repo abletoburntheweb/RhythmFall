@@ -111,14 +111,14 @@ func handle_resume_request():
 	if pause_menu_instance and is_instance_valid(pause_menu_instance):
 		pause_menu_instance.queue_free()
 		pause_menu_instance = null
+	# Clear pause before async rewind so a failed start cannot softlock the run.
+	is_paused = false
 	if SettingsManager and not SettingsManager.get_pause_resume_rewind_enabled():
-		is_paused = false
 		_resume_immediate(from_time, restore_volume)
 		return
 	if game_screen and game_screen.has_method("begin_resume_rewind"):
 		game_screen.begin_resume_rewind(from_time, restore_volume, "pause")
 		return
-	is_paused = false
 	_resume_immediate(from_time, restore_volume)
 
 func _resume_immediate(from_time: float, restore_volume: float) -> void:

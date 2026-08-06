@@ -1,4 +1,4 @@
-# logic/utils/rhythm_dna_cover_loader.gd
+# scenes/song_select/rhythm_dna/lib/rhythm_dna_cover_loader.gd
 extends RefCounted
 class_name RhythmDnaCoverLoader
 

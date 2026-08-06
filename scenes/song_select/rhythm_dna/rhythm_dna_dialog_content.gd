@@ -1,4 +1,4 @@
-# scenes/song_select/rhythm_dna_dialog_content.gd
+# scenes/song_select/rhythm_dna/rhythm_dna_dialog_content.gd
 extends RefCounted
 class_name RhythmDnaDialogContent
 
@@ -346,7 +346,7 @@ static func _icon_text_row(icon_file: String, tint: Color, text: String, color: 
 
 
 static func _structure_section_card(dna: Dictionary) -> Control:
-	var timeline: Array = dna.get("structure_timeline", []) if dna.get("structure_timeline", []) is Array else []
+	var timeline: Array = RhythmDnaView.resolve_structure_timeline_for_ui(dna)
 	if timeline.is_empty():
 		return _structure_placeholder_card()
 	var track: Dictionary = dna.get("track", {}) if dna.get("track", {}) is Dictionary else {}
@@ -393,7 +393,7 @@ static func build_timeline_bar(timeline: Array, total_duration: float) -> Contro
 		var end_s := float(seg.get("end_s", start_s))
 		var span: float = maxf(0.05, end_s - start_s)
 		var block := ColorRect.new()
-		block.color = _segment_color(String(seg.get("kind", "steady")))
+		block.color = _segment_display_color(seg as Dictionary)
 		block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		block.size_flags_stretch_ratio = span / total_duration
 		block.custom_minimum_size = Vector2(4, 14)
@@ -417,18 +417,26 @@ static func build_timeline_row(seg: Dictionary) -> Control:
 	row_panel.add_child(row)
 	var dot := ColorRect.new()
 	dot.custom_minimum_size = Vector2(8, 8)
-	dot.color = _segment_color(kind)
+	dot.color = _segment_display_color(seg)
 	row.add_child(dot)
 	var start_s := float(seg.get("start_s", 0.0))
 	var end_s := float(seg.get("end_s", start_s))
 	var label_key := String(seg.get("label_key", "DNA_SEG_STEADY"))
 	var notes := int(seg.get("notes", 0))
 	var time_text := "%s – %s" % [_format_time(start_s), _format_time(end_s)]
-	var detail := _tr(label_key)
-	var role := String(seg.get("role", ""))
+	var headline := RhythmDnaView.format_section_headline(seg)
+	var detail_parts: PackedStringArray = []
+	var kind_label := _tr(label_key)
+	if kind_label != headline:
+		detail_parts.append(kind_label)
+	var role := String(seg.get("role", "")).strip_edges().to_lower()
 	if role != "":
-		var role_key := "DNA_ROLE_%s" % role.to_upper()
-		detail += " · " + _tr(role_key)
+		var role_label := _tr("DNA_ROLE_%s" % role.to_upper())
+		if role_label != headline and role_label not in detail_parts:
+			detail_parts.append(role_label)
+	var detail := headline
+	if detail_parts.size() > 0:
+		detail += " · " + " · ".join(detail_parts)
 	if notes > 0:
 		detail += " · " + (_tr("DNA_UI_TIMELINE_NOTES_FMT") % notes)
 	var label := _body_label("%s  %s" % [time_text, detail], COLOR_BODY, 13)
@@ -467,6 +475,28 @@ static func _segment_color(kind: String) -> Color:
 			return Color(0.82, 0.62, 0.28, 0.95)
 		_:
 			return Color(0.38, 0.58, 0.82, 0.95)
+
+
+static func _segment_display_color(seg: Dictionary) -> Color:
+	var letter := RhythmDnaView.section_letter(seg)
+	if letter != "":
+		return _section_letter_color(letter)
+	return _segment_color(String(seg.get("kind", "steady")))
+
+
+static func _section_letter_color(letter: String) -> Color:
+	var palette := [
+		Color(0.38, 0.58, 0.82, 0.95),
+		Color(0.42, 0.78, 0.62, 0.95),
+		Color(0.62, 0.42, 0.88, 0.95),
+		Color(0.95, 0.58, 0.42, 0.95),
+		Color(0.55, 0.72, 0.88, 0.95),
+		Color(0.82, 0.62, 0.28, 0.95),
+	]
+	var code := 0
+	for i in letter.length():
+		code = (code * 31 + letter.unicode_at(i)) & 0x7FFFFFFF
+	return palette[code % palette.size()]
 
 
 static func _format_time(seconds: float) -> String:

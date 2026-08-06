@@ -515,7 +515,7 @@ func _apply_chart_metric_buttons(selected: String) -> void:
 			button.set_block_signals(true)
 			button.button_pressed = active
 			button.set_block_signals(false)
-			_UiCategoryButton.apply_selection(button, active, 16, true)
+			_style_chart_metric_button(button, metric_key, active)
 	if screen and screen.get_tree():
 		screen.get_tree().create_timer(0.05).timeout.connect(
 			func() -> void: _apply_chart_metric_buttons_immediate(selected),
@@ -527,7 +527,16 @@ func _apply_chart_metric_buttons_immediate(selected: String) -> void:
 	for metric_key in CHART_METRIC_KEYS:
 		var button := get_chart_metric_button(metric_key)
 		if button:
-			_UiCategoryButton.apply_selection(button, selected == metric_key, 16, true)
+			_style_chart_metric_button(button, metric_key, selected == metric_key)
+
+
+func _style_chart_metric_button(button: Button, metric_key: String, active: bool) -> void:
+	# Idle: per-metric text color, dim icon. Active: accent on icon + text + outline.
+	_UiCategoryButton.apply_selection(button, active, 16, true, false)
+	var accent: Color = CHART_METRIC_BUTTON_ACCENTS.get(metric_key, PROFILE_ACCENT)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, accent)
+	button.modulate = Color.WHITE
 
 
 func _on_chart_metric_pressed() -> void:
@@ -861,7 +870,8 @@ func _clamp_chart_point_y(y: float, decor: Control) -> float:
 	if plot.size.y <= 0.0:
 		return y
 	var top_pad := 10.0
-	var bottom_pad := 4.0
+	# Keep dots above grade captions so labels aren't clipped by plot frame.
+	var bottom_pad := 16.0
 	return clampf(y, plot.position.y + top_pad, plot.position.y + plot.size.y - bottom_pad)
 
 

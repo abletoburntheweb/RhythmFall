@@ -1,4 +1,4 @@
-# scenes/shop/item_card.gd
+# scenes/shop/components/item_card.gd
 extends PanelContainer
 
 signal buy_pressed(item_id: String)
@@ -672,6 +672,47 @@ func _apply_status_label_style() -> void:
 		label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.96))
 		label.add_theme_color_override("font_outline_color", Color(0.14, 0.2, 0.32))
 		label.add_theme_constant_override("outline_size", 4)
+
+
+func set_keyboard_selected(on: bool) -> void:
+	modulate = Color(1.08, 1.1, 1.14, 1.0) if on else Color.WHITE
+
+
+func activate_preview() -> bool:
+	var preview_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/PreviewButton"
+	) as Button
+	if preview_button == null or not preview_button.visible or preview_button.disabled:
+		return false
+	_on_preview_pressed()
+	return true
+
+
+func activate_primary_action() -> bool:
+	## Prefer Use when available, else Buy / medal buy / open reward.
+	var use_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton"
+	) as Button
+	if use_button and use_button.visible and not use_button.disabled:
+		_on_use_pressed()
+		return true
+	var buy_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton"
+	) as Button
+	if buy_button and buy_button.visible and not buy_button.disabled:
+		_on_buy_pressed()
+		return true
+	var medal_buy := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/MedalBuyButton"
+	) as Button
+	if medal_buy and medal_buy.visible and not medal_buy.disabled:
+		_on_medal_buy_pressed()
+		return true
+	var open_btn := _get_open_reward_button()
+	if open_btn and open_btn.visible and not open_btn.disabled:
+		_on_open_reward_pressed()
+		return true
+	return false
 
 
 func _on_buy_pressed():

@@ -37,6 +37,60 @@ static func scope_count(config: Dictionary, instrument: String = "") -> int:
 	return resolve_scope(config, instrument).size()
 
 
+## Lightweight count (no entry dicts) for preview UI. Prefer over resolve_scope().size().
+static func scope_count_fast(config: Dictionary, instrument: String = "") -> int:
+	return int(scope_pool_stats(config, instrument).get("charts", 0))
+
+
+## charts = matching chart entries; songs = unique song paths in that pool.
+static func scope_pool_stats(config: Dictionary, instrument: String = "") -> Dictionary:
+	var cfg := _EndlessSessionConfig.sanitize(config)
+	var instruments: Array = _EndlessSessionConfig.instruments_from_config(cfg, instrument)
+	var source := str(cfg.get("track_source", _EndlessSessionConfig.TRACK_SOURCE_RANDOM))
+	var charts := 0
+	var song_set: Dictionary = {}
+	if source == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST:
+		for inst in instruments:
+			for entry in _resolve_playlist_scope(cfg, str(inst)):
+				charts += 1
+				var path := str(entry.get("song_path", "")).strip_edges()
+				if path != "":
+					song_set[path] = true
+		return {"charts": charts, "songs": song_set.size()}
+	for song_path in _collect_song_paths(cfg):
+		var song_charts := 0
+		for inst in instruments:
+			song_charts += _count_entries_for_song(song_path, cfg, str(inst))
+		if song_charts > 0:
+			charts += song_charts
+			song_set[song_path] = true
+	return {"charts": charts, "songs": song_set.size()}
+
+
+## Paths + instruments for chunked async scope counting on the setup screen.
+static func scope_scan_plan(config: Dictionary, instrument: String = "") -> Dictionary:
+	var cfg := _EndlessSessionConfig.sanitize(config)
+	var instruments: Array = _EndlessSessionConfig.instruments_from_config(cfg, instrument)
+	var source := str(cfg.get("track_source", _EndlessSessionConfig.TRACK_SOURCE_RANDOM))
+	if source == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST:
+		return {
+			"cfg": cfg,
+			"instruments": instruments,
+			"paths": [],
+			"playlist_mode": true,
+		}
+	return {
+		"cfg": cfg,
+		"instruments": instruments,
+		"paths": _collect_song_paths(cfg),
+		"playlist_mode": false,
+	}
+
+
+static func count_entries_for_song(song_path: String, cfg: Dictionary, instrument: String) -> int:
+	return _count_entries_for_song(song_path, cfg, instrument)
+
+
 ## Best chart for one song after applying session difficulty / duration / generation filters.
 ## Used by track picker to show rating and to decide if a song is in scope.
 static func best_scope_chart_for_song(
@@ -334,7 +388,10 @@ static func _build_selected_deck(
 	if source == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST:
 		var playlist_id := str(config.get("playlist_id", "")).strip_edges()
 		if _PlaylistCatalog.preserve_order_for(playlist_id):
-			return _build_ordered_playlist_deck(playlist_id, scope)
+			var ordered := _build_ordered_playlist_deck(playlist_id, scope)
+			# Never leave a non-empty scope with an empty deck (pinned-stem / filter mismatch).
+			if not ordered.is_empty() or scope.is_empty():
+				return ordered
 	return _build_shuffled_selected_deck(scope, rng)
 
 
@@ -380,11 +437,16 @@ static func _pick_entry_for_deck_key(
 		for entry in scope:
 			if str(entry.get("song_path", "")).strip_edges() != song_path:
 				continue
-			var intent := str(entry.get("intent", "")).strip_edges()
-			var entry_stem := _GoalDiff.stem_from_intent_legacy(intent)
+			var entry_stem := str(entry.get("chart_stem", "")).strip_edges().to_lower()
+			if entry_stem == "":
+				# Legacy fallback — intent→stem collapses arcade dense/standard.
+				entry_stem = _GoalDiff.stem_from_intent_legacy(str(entry.get("intent", "")))
 			if entry_stem == stem:
 				return entry
-		return {}
+		# Pinned stem missing from scope filters — still allow any chart for the song.
+		if rng != null:
+			return _pick_random_entry_for_song(scope, song_path, rng)
+		return _best_entry_for_song(scope, song_path)
 	var song_path := key
 	if rng != null:
 		return _pick_random_entry_for_song(scope, song_path, rng)
@@ -415,9 +477,12 @@ static func _resolve_playlist_scope(cfg: Dictionary, instrument: String) -> Arra
 			out.append(pinned)
 			continue
 		for entry in _entries_for_song(song_path, cfg, instrument):
+			var entry_stem := str(entry.get("chart_stem", "")).strip_edges().to_lower()
+			if entry_stem == "":
+				entry_stem = _GoalDiff.stem_from_intent_legacy(str(entry.get("intent", "")))
 			var ekey := "%s|%s" % [
 				str(entry.get("song_path", "")).strip_edges(),
-				_GoalDiff.stem_from_intent_legacy(str(entry.get("intent", ""))),
+				entry_stem,
 			]
 			if seen_keys.has(ekey):
 				continue
@@ -567,6 +632,30 @@ static func _entries_for_song(song_path: String, cfg: Dictionary, instrument: St
 			"duration_sec": duration_sec,
 		})
 	return out
+
+
+static func _count_entries_for_song(song_path: String, cfg: Dictionary, instrument: String) -> int:
+	var total := 0
+	var duration_sec := _song_duration_sec(song_path)
+	var seen_charts: Dictionary = {}
+	for chart_stem in _allowed_chart_stems(cfg):
+		var lanes := _ChartDifficultyAnalyzer.canonical_lanes_for_notes(song_path, instrument, chart_stem)
+		var chart_key := "%s|%d" % [chart_stem, lanes]
+		if seen_charts.has(chart_key):
+			continue
+		if not _NotesUtils.notes_exist(song_path, instrument, chart_stem, lanes):
+			continue
+		var stats := SongLibrary.get_chart_difficulty_variant(song_path, instrument, chart_stem, lanes)
+		if stats.is_empty():
+			continue
+		var decimal_rating := _ChartDifficultyAnalyzer.decimal_rating_from_stats(stats)
+		if not _matches_difficulty(decimal_rating, cfg):
+			continue
+		if not _matches_duration(duration_sec, cfg):
+			continue
+		seen_charts[chart_key] = true
+		total += 1
+	return total
 
 
 static func _matches_genre_scope(song_path: String, cfg: Dictionary) -> bool:
