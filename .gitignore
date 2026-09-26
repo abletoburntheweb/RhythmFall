@@ -14,19 +14,17 @@ RhythmFallServer.exe
 RFALL/RhythmFall/
 RFALL/dist/
 
-# Local RhythmFallServer copy (server lives in its own repo — do not commit here)
-RhythmFallServer/*
-!RhythmFallServer/README.txt
-!RhythmFallServer/.gitkeep
-
-# Server runtime / dev-only (if a full checkout sits beside the client)
+# Server runtime / dev-only (if a full checkout sits beside the client) — source is now tracked, only runtime ignored
 RhythmFallServer/.venv/
+RhythmFallServer/.venv-songformer/
 RhythmFallServer/temp_uploads/
 RhythmFallServer/songs/
 RhythmFallServer/reports/
 RhythmFallServer/baseline/
 RhythmFallServer/reference_tracks/
 RhythmFallServer/scripts/
+RhythmFallServer/__pycache__/
+RhythmFallServer/*.pyc
 
 RhythmFallServer-main/.venv/
 RhythmFallServer-main/temp_uploads/
@@ -60,6 +58,43 @@ Rhythmfallold/
 Thumbs.db
 desktop.ini
 
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.sqlite3
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+rhythmfall_server/
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.cache/
+.mypy_cache/
+.pytest_cache/
+.dmypy.json
+
+# OS files (duplicate, kept for server history compatibility)
+.DS_Store
+Thumbs.db
+desktop.ini
+
 __pycache__/
 *.pyc
 *.pyo
@@ -81,3 +116,38 @@ data/*
 !data/genre_groups.json
 !data/help_content.json
 !data/shop_data.json
+
+# Project-specific directories (server — keep for history, but now under RhythmFallServer/)
+baseline/
+reference_tracks/
+reports/
+scripts/
+temp_uploads/
+data/
+songs/
+
+# Environment and secrets
+.env
+.env.*
+*.secret
+private.key
+.rfenv/
+
+# Model files
+mdx_model_data.json
+vr_model_data.json
+download_checks.json
+
+# Models directory (except .gitkeep) — server models are LFS/external, not committed as weights
+models/**
+!models/
+!models/.gitkeep
+RhythmFallServer/models/**
+!RhythmFallServer/models/
+!RhythmFallServer/models/.gitkeep
+
+# Additional
+*.tmp
+*.bak
+*.swp
+*.swo

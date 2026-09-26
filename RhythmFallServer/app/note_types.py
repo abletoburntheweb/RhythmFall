@@ -1,0 +1,29 @@
+# app/note_types.py
+
+class NoteType:
+    """Базовый класс для типов нот"""
+    DRUM = "DrumNote"
+    DEFAULT = "DefaultNote"
+    HOLD = "HoldNote"
+    BASS_TAP = "BassTapNote"
+    BASS_HOLD = "BassHoldNote"
+    BASS_SLIDE = "BassSlideNote"
+    # Legacy aliases (parser only)
+    BASS_SUSTAIN = "BassHoldNote"
+    BASS_OCTAVE = "BassTapNote"
+
+
+def create_note(note_type, lane, time, length=None, hold_time=None):
+    """Создание словаря ноты для JSON"""
+    note = {
+        "type": note_type,
+        "lane": lane,
+        "time": time
+    }
+
+    if length is not None:
+        note["length"] = length
+    if hold_time is not None:
+        note["hold_time"] = hold_time
+
+    return note
