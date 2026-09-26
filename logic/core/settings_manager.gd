@@ -1,9 +1,10 @@
-# logic/settings_manager.gd
+# logic/core/settings_manager.gd
 extends Node
 
 const _LocaleDetect = preload("res://logic/platform/locale_detect.gd")
 const _GuitarHeroBindings = preload("res://logic/domain/controls/guitar_hero_bindings.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const _ChartEditorBindings = preload("res://logic/domain/controls/chart_editor_bindings.gd")
 
 const SETTINGS_PATH = "user://settings.json"
 const MAX_LANES = 5
@@ -17,6 +18,7 @@ var default_settings = {
 	"metronome_volume": 30.0, 
 	"preview_volume": 30.0,
 	"song_preview_mode": "snippet",
+	"practice_preview_mode": "short",
 	"timing_offset_ms": 0,
 	"fps_mode": 0,
 	"window_mode": 1,
@@ -25,6 +27,22 @@ var default_settings = {
 	"enable_debug_menu": true,
 	"enable_genre_detection": true,
 	"user_songs_path": "",
+	"replay_save_folder": "",
+	"replay_auto_save": true,
+	"replay_show_section_markers": true,
+	"replay_show_watch_badge": true,
+	"replay_auto_hide_player": true,
+	"replay_hide_combo": false,
+	"replay_hide_hit_effects": false,
+	"replay_hide_score_accuracy": false,
+	"replay_hide_error_meter": false,
+	"replay_hide_hp": false,
+	"replay_hide_lane_highlights": false,
+	"replay_hide_judgement": false,
+	"replay_hide_progress": false,
+	"replay_music_volume": -1.0,
+	"replay_hit_sounds_volume": -1.0,
+	"show_progress_bar": true,
 	"lane_highlight_brightness": 100.0,
 	"note_brightness": 100.0,
 	"note_approach_hint": 3,
@@ -47,6 +65,12 @@ var default_settings = {
 	"controls_mediator_down_key": KEY_DOWN,
 	"controls_mediator_up_key_alt": KEY_Q,
 	"controls_mediator_down_key_alt": KEY_E,
+	"controls_quick_gen_preset_1_key": KEY_F9,
+	"controls_quick_gen_preset_2_key": KEY_F10,
+	"controls_quick_gen_preset_3_key": KEY_F11,
+	"controls_quick_gen_open_key": KEY_NONE,
+	"quick_generation_presets": {},
+	"quick_generation_active": 0,
 	"controls_layout_mode": "primary",
 	"controls_gh_enabled": false,
 	"controls_gh_auto_detect": true,
@@ -60,7 +84,7 @@ var default_settings = {
 	"last_generation_mode": "basic",
 	"last_generation_intent": "original",
 	"generation_goal": "original",
-	"generation_difficulty": "standard",
+	"generation_difficulty": "medium",
 	"last_generation_lanes": 4,
 	"use_stems_in_generation": true,
 	"scroll_speed": 10.0,
@@ -88,8 +112,9 @@ var default_settings = {
 	"generation_custom_raw_adtof": false,
 	"generation_notes_ready_scope": 0,
 	"generation_ready_goals": ["original"],
-	"generation_ready_diffs": ["standard"],
+	"generation_ready_diffs": ["medium"],
 	"generation_ready_instruments": ["drums"],
+	"generation_ready_preset_slots": [],
 	"generation_confirm_before_rerun": true,
 	"generation_bulk_force_regen": true,
 	"generation_stem_retention_mode": "after_job",
@@ -103,9 +128,12 @@ var default_settings = {
 	"generation_server_port": 5000,
 	"generation_auto_worker": true,
 	"generation_worker_path": "",
+	"generation_gpu_stack": "auto",
+	"generation_gpu_scan": {},
 	"seen_server_setup_notice": false,
 	"tutorial_song_select_done": false,
 	"tutorial_shop_done": false,
+	"tutorial_practice_done": false,
 	"tutorial_gameplay_done": false,
 	"tutorial_victory_done": false,
 	"tutorial_profile_done": false,
@@ -114,6 +142,11 @@ var default_settings = {
 	"tutorial_rhythm_dna_setting_done": false,
 	"tutorial_rhythm_dna_usage_done": false,
 	"tutorial_modifiers_done": false,
+	"first_steps_step": 0,
+	"first_steps_completed": false,
+	"first_steps_skipped": false,
+	"first_steps_details_mask": 0,
+	"first_steps_intro_done": false,
 	"help_nudge_first_chart_done": false,
 	"endless_setup_hint_seen": false,
 	"check_updates_on_startup": true,
@@ -154,7 +187,12 @@ var default_settings = {
 	"shop_kick_waveform_preview": false,
 	"series_inter_track_countdown_enabled": false,
 	"user_notes_path": "",
+	"stem_storage_path": "",
+	"midi_samples_path": "user://midi",
 	"show_chart_id": false,
+	"diary_history_open_day": false,
+	"diary_history_open_track": false,
+	"diary_open_track_museum": false,
 	"library_last_scan_unix": 0,
 	"playfield_width_3_lanes": 100.0,
 	"playfield_width_4_lanes": 100.0,
@@ -169,6 +207,16 @@ var default_settings = {
 	"timing_debug_overlay": false,
 	"timing_debug_autoplay_windows": false,
 	"show_drum_class_colors": false,
+	"chart_editor_enabled": false,
+	"chart_editor_test_play_enabled": false,
+	"genqa_reports_enabled": true,
+	"songformer_enabled": false,
+	"songformer_backend": "auto",
+	"chart_editor_keymap": {},
+	"chart_editor_hit_effects_enabled": true,
+	"chart_editor_hide_notes_after_hit": false,
+	"chart_editor_note_color_mode": 0,
+	"chart_editor_inspector_width": 320,
 }
 
 var settings: Dictionary = default_settings.duplicate(true)
@@ -179,6 +227,7 @@ func _init():
 
 func _load_settings():
 	var json_result: Dictionary = JsonUtils.read_json_dict(SETTINGS_PATH)
+	print("[REPLAY AUDIO DEBUG] settings_load music_volume=%s hit_volume=%s source=load" % [str(json_result.get("music_volume", "n/a")), str(json_result.get("hit_sounds_volume", "n/a"))])
 	if not json_result.is_empty():
 		var loaded_settings = _merge_defaults_with_loaded(default_settings, json_result)
 		var controls_loaded = loaded_settings.get("controls_keymap", {})
@@ -235,7 +284,7 @@ func _load_settings():
 			)
 			if had_expand:
 				var cur_goal := _GoalDiff.sanitize_goal(str(loaded_settings.get("generation_goal", "original")))
-				var cur_diff := _GoalDiff.sanitize_difficulty(str(loaded_settings.get("generation_difficulty", "standard")))
+				var cur_diff := _GoalDiff.sanitize_difficulty(str(loaded_settings.get("generation_difficulty", "medium")))
 				var cur_inst := _GoalDiff.sanitize_ready_instrument(
 					str(loaded_settings.get("last_generation_instrument", "drums"))
 				)
@@ -264,12 +313,24 @@ func _load_settings():
 			loaded_settings.erase("generation_ready_expand_instruments")
 			loaded_settings["generation_ready_icons_v1"] = true
 		settings = loaded_settings
+		# Map legacy difficulty ids (relaxed/standard/dense) → easy/medium/hard.
+		settings["generation_difficulty"] = _GoalDiff.sanitize_difficulty(
+			str(settings.get("generation_difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+		)
+		settings["generation_ready_diffs"] = _GoalDiff.sanitize_ready_string_list(
+			settings.get("generation_ready_diffs", []),
+			_GoalDiff.DIFFICULTIES,
+			str(settings.get("generation_difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+		)
 		settings["controls_keymap_alt"] = ControlsBindings.sanitize_lane_keymap(
 			settings.get("controls_keymap_alt", {}),
 			default_settings["controls_keymap_alt"]
 		)
 		settings["controls_layout_mode"] = ControlsBindings.sanitize_layout_mode(
 			settings.get("controls_layout_mode", default_settings["controls_layout_mode"])
+		)
+		settings["chart_editor_keymap"] = _ChartEditorBindings.sanitize_keymap(
+			settings.get("chart_editor_keymap", {})
 		)
 		_migrate_gh_controls_settings()
 		if not settings.has("generation_status_mode"):
@@ -290,6 +351,7 @@ func _load_settings():
 
 
 func _save_settings():
+	print("[REPLAY AUDIO DEBUG] settings_save music_volume=%s hit_volume=%s source=save" % [str(settings.get("music_volume", "n/a")), str(settings.get("hit_sounds_volume", "n/a"))])
 	JsonUtils.write_json(SETTINGS_PATH, settings, true, true)
 
 
@@ -437,6 +499,132 @@ func _merge_defaults_with_loaded(defaults: Dictionary, loaded: Dictionary) -> Di
 	return merged
 
 
+const DEFAULT_REPLAYS_DIR := "user://replays/"
+
+
+func get_replay_save_folder() -> String:
+	var stored := String(settings.get("replay_save_folder", "")).strip_edges()
+	if stored == "":
+		return DEFAULT_REPLAYS_DIR
+	if not stored.ends_with("/"):
+		stored += "/"
+	return stored
+
+
+func set_replay_save_folder(path: String) -> void:
+	var normalized := String(path).strip_edges().replace("\\", "/")
+	if normalized == "" or normalized == DEFAULT_REPLAYS_DIR:
+		settings["replay_save_folder"] = ""
+		return
+	if not normalized.ends_with("/"):
+		normalized += "/"
+	settings["replay_save_folder"] = normalized
+
+
+func get_midi_samples_path() -> String:
+	var p := String(settings.get("midi_samples_path", default_settings.get("midi_samples_path", "user://midi"))).strip_edges().replace("\\", "/")
+	if p == "":
+		return "user://midi"
+	return p
+
+
+func set_midi_samples_path(path: String) -> void:
+	var n := String(path).strip_edges().replace("\\", "/")
+	if n == "":
+		n = "user://midi"
+	settings["midi_samples_path"] = n
+	_save_settings()
+
+
+func get_stem_storage_path() -> String:
+	var p := String(settings.get("stem_storage_path", "")).strip_edges().replace("\\", "/")
+	while p.ends_with("/"):
+		p = p.substr(0, p.length() - 1)
+	if p == "" or p == "user://stems":
+		return "user://stems"
+	return p
+
+
+func set_stem_storage_path(path: String) -> void:
+	var n := String(path).strip_edges().replace("\\", "/")
+	while n.ends_with("/"):
+		n = n.substr(0, n.length() - 1)
+	if n == "" or n == "user://stems":
+		n = ""
+	settings["stem_storage_path"] = n
+	_save_settings()
+
+
+func get_replay_auto_save() -> bool:
+	return bool(settings.get("replay_auto_save", default_settings.get("replay_auto_save", true)))
+
+
+func set_replay_auto_save(enabled: bool) -> void:
+	settings["replay_auto_save"] = enabled
+
+
+func get_replay_show_section_markers() -> bool:
+	return bool(settings.get("replay_show_section_markers", default_settings.get("replay_show_section_markers", true)))
+
+
+func set_replay_show_section_markers(enabled: bool) -> void:
+	settings["replay_show_section_markers"] = enabled
+
+
+func get_replay_show_watch_badge() -> bool:
+	return bool(settings.get("replay_show_watch_badge", default_settings.get("replay_show_watch_badge", true)))
+
+
+func set_replay_show_watch_badge(enabled: bool) -> void:
+	settings["replay_show_watch_badge"] = enabled
+
+
+func get_replay_auto_hide_player() -> bool:
+	return bool(settings.get("replay_auto_hide_player", default_settings.get("replay_auto_hide_player", true)))
+
+
+func set_replay_auto_hide_player(enabled: bool) -> void:
+	settings["replay_auto_hide_player"] = enabled
+
+
+func get_replay_hide_option(key: String) -> bool:
+	return bool(settings.get("replay_hide_" + key, default_settings.get("replay_hide_" + key, false)))
+
+
+func set_replay_hide_option(key: String, enabled: bool) -> void:
+	settings["replay_hide_" + key] = enabled
+
+
+func get_replay_music_volume() -> float:
+	var v: Variant = settings.get("replay_music_volume", default_settings.get("replay_music_volume", -1.0))
+	if v is float or v is int:
+		var f := float(v)
+		if f >= 0.0 and f <= 100.0:
+			return f
+	return -1.0
+
+
+func set_replay_music_volume(volume: float) -> void:
+	settings["replay_music_volume"] = clampf(volume, 0.0, 100.0)
+	print("[REPLAY AUDIO DEBUG] set_replay_music_volume %s source=save" % str(volume))
+	_save_settings()
+
+
+func get_replay_hit_sounds_volume() -> float:
+	var v: Variant = settings.get("replay_hit_sounds_volume", default_settings.get("replay_hit_sounds_volume", -1.0))
+	if v is float or v is int:
+		var f := float(v)
+		if f >= 0.0 and f <= 100.0:
+			return f
+	return -1.0
+
+
+func set_replay_hit_sounds_volume(volume: float) -> void:
+	settings["replay_hit_sounds_volume"] = clampf(volume, 0.0, 100.0)
+	print("[REPLAY AUDIO DEBUG] set_replay_hit_volume %s source=save" % str(volume))
+	_save_settings()
+
+
 func get_setting(setting_name: String, default_value=null):
 	return settings.get(setting_name, default_value)
 
@@ -505,6 +693,63 @@ func set_song_preview_mode(mode: String) -> void:
 	if normalized not in ["snippet", "full"]:
 		normalized = "snippet"
 	settings["song_preview_mode"] = normalized
+
+
+func get_practice_preview_mode() -> String:
+	var mode := str(settings.get("practice_preview_mode", default_settings["practice_preview_mode"])).strip_edges()
+	return mode if mode in ["short", "range_end"] else "short"
+
+
+func set_practice_preview_mode(mode: String) -> void:
+	var normalized := str(mode).strip_edges()
+	if normalized not in ["short", "range_end"]:
+		normalized = "short"
+	settings["practice_preview_mode"] = normalized
+
+
+func get_first_steps_step() -> int:
+	return clampi(int(settings.get("first_steps_step", default_settings["first_steps_step"])), 0, 5)
+
+
+func set_first_steps_step(step: int) -> void:
+	settings["first_steps_step"] = clampi(step, 0, 5)
+	_save_settings()
+
+
+func get_first_steps_completed() -> bool:
+	return bool(settings.get("first_steps_completed", default_settings["first_steps_completed"]))
+
+
+func set_first_steps_completed(done: bool) -> void:
+	settings["first_steps_completed"] = done
+	_save_settings()
+
+
+func get_first_steps_skipped() -> bool:
+	return bool(settings.get("first_steps_skipped", default_settings["first_steps_skipped"]))
+
+
+func set_first_steps_skipped(skipped: bool) -> void:
+	settings["first_steps_skipped"] = skipped
+	_save_settings()
+
+
+func get_first_steps_details_mask() -> int:
+	return clampi(int(settings.get("first_steps_details_mask", default_settings["first_steps_details_mask"])), 0, 7)
+
+
+func set_first_steps_details_mask(mask: int) -> void:
+	settings["first_steps_details_mask"] = clampi(mask, 0, 7)
+	_save_settings()
+
+
+func get_first_steps_intro_done() -> bool:
+	return bool(settings.get("first_steps_intro_done", default_settings["first_steps_intro_done"]))
+
+
+func set_first_steps_intro_done(done: bool) -> void:
+	settings["first_steps_intro_done"] = done
+	_save_settings()
 
 
 func get_scroll_speed() -> float:
@@ -621,6 +866,13 @@ func set_tutorial_shop_done(done: bool) -> void:
 	settings["tutorial_shop_done"] = done
 	_save_settings()
 
+func get_tutorial_practice_done() -> bool:
+	return bool(settings.get("tutorial_practice_done", default_settings["tutorial_practice_done"]))
+
+func set_tutorial_practice_done(done: bool) -> void:
+	settings["tutorial_practice_done"] = done
+	_save_settings()
+
 func get_tutorial_gameplay_done() -> bool:
 	return bool(settings.get("tutorial_gameplay_done", default_settings["tutorial_gameplay_done"]))
 
@@ -731,12 +983,154 @@ func get_chart_compare_mode() -> String:
 func set_chart_compare_mode(mode: String) -> void:
 	var m := String(mode).strip_edges().to_lower()
 	settings["chart_compare_mode"] = "split" if m == "split" else "hotkey"
-
 func get_show_drum_class_colors() -> bool:
 	return bool(settings.get("show_drum_class_colors", false))
 
+
 func set_show_drum_class_colors(enabled: bool) -> void:
 	settings["show_drum_class_colors"] = enabled
+
+
+func get_chart_editor_enabled() -> bool:
+	return bool(settings.get("chart_editor_enabled", false))
+
+
+func set_chart_editor_enabled(enabled: bool) -> void:
+	settings["chart_editor_enabled"] = enabled
+
+
+func get_chart_editor_test_play_enabled() -> bool:
+	return bool(settings.get("chart_editor_test_play_enabled", false))
+
+
+func set_chart_editor_test_play_enabled(enabled: bool) -> void:
+	settings["chart_editor_test_play_enabled"] = enabled
+
+
+func get_chart_editor_keymap() -> Dictionary:
+	return _ChartEditorBindings.sanitize_keymap(settings.get("chart_editor_keymap", {}))
+
+
+func set_chart_editor_keymap(keymap: Dictionary) -> void:
+	settings["chart_editor_keymap"] = _ChartEditorBindings.sanitize_keymap(keymap)
+	_save_settings()
+
+
+func reset_chart_editor_keymap_to_default() -> void:
+	settings["chart_editor_keymap"] = _ChartEditorBindings.get_default_keymap()
+	_save_settings()
+
+
+func get_chart_editor_keymap_for_action(action: String) -> Array:
+	var km := get_chart_editor_keymap()
+	return _ChartEditorBindings.get_bindings_for_action(km, action)
+
+
+func set_chart_editor_binding(action: String, index: int, binding: Dictionary) -> void:
+	var km := get_chart_editor_keymap()
+	# Check duplicate and swap if needed
+	var sanitized := _ChartEditorBindings.sanitize_binding(binding)
+	if sanitized.is_empty() and not binding.is_empty():
+		return
+	var dup := _ChartEditorBindings.find_duplicate(km, sanitized, action, index)
+	if not dup.is_empty():
+		var dup_action := String(dup.get("action", ""))
+		var dup_index := int(dup.get("index", -1))
+		km = _ChartEditorBindings.swap_bindings(km, action, index, dup_action, dup_index)
+	else:
+		km = _ChartEditorBindings.set_binding_for_action(km, action, index, sanitized)
+	set_chart_editor_keymap(km)
+
+
+func add_chart_editor_binding(action: String, binding: Dictionary) -> void:
+	var km := get_chart_editor_keymap()
+	var sanitized := _ChartEditorBindings.sanitize_binding(binding)
+	if sanitized.is_empty():
+		return
+	var dup := _ChartEditorBindings.find_duplicate(km, sanitized)
+	if not dup.is_empty():
+		var dup_action := String(dup.get("action", ""))
+		var dup_index := int(dup.get("index", -1))
+		# Swap: put new binding at end of action, and move duplicate's old to new's old place? For add, we just swap the duplicate with new at end.
+		# Simpler: just add and swap duplicate's slot with last.
+		km = _ChartEditorBindings.add_binding_for_action(km, action, sanitized)
+		var new_index := (km.get(action, []) as Array).size() - 1
+		km = _ChartEditorBindings.swap_bindings(km, action, new_index, dup_action, dup_index)
+	else:
+		km = _ChartEditorBindings.add_binding_for_action(km, action, sanitized)
+	set_chart_editor_keymap(km)
+
+
+func remove_chart_editor_binding(action: String, index: int) -> void:
+	var km := get_chart_editor_keymap()
+	km = _ChartEditorBindings.remove_binding_for_action(km, action, index)
+	set_chart_editor_keymap(km)
+
+
+func get_chart_editor_hit_effects_enabled() -> bool:
+	return bool(settings.get("chart_editor_hit_effects_enabled", true))
+
+
+func set_chart_editor_hit_effects_enabled(enabled: bool) -> void:
+	settings["chart_editor_hit_effects_enabled"] = enabled
+	_save_settings()
+
+
+func get_chart_editor_hide_notes_after_hit() -> bool:
+	return bool(settings.get("chart_editor_hide_notes_after_hit", false))
+
+
+func set_chart_editor_hide_notes_after_hit(enabled: bool) -> void:
+	settings["chart_editor_hide_notes_after_hit"] = enabled
+	_save_settings()
+
+
+func get_chart_editor_note_color_mode() -> int:
+	return clampi(int(settings.get("chart_editor_note_color_mode", 0)), 0, 1)
+
+
+func set_chart_editor_note_color_mode(mode: int) -> void:
+	settings["chart_editor_note_color_mode"] = clampi(mode, 0, 1)
+	_save_settings()
+
+
+func get_chart_editor_inspector_width() -> int:
+	return clampi(int(settings.get("chart_editor_inspector_width", 320)), 320, 800)
+
+
+func set_chart_editor_inspector_width(width: int) -> void:
+	settings["chart_editor_inspector_width"] = clampi(width, 320, 800)
+	_save_settings()
+
+
+func get_genqa_reports_enabled() -> bool:
+	return bool(settings.get("genqa_reports_enabled", true))
+
+
+func set_genqa_reports_enabled(enabled: bool) -> void:
+	settings["genqa_reports_enabled"] = enabled
+
+
+func get_songformer_enabled() -> bool:
+	return bool(settings.get("songformer_enabled", false))
+
+
+func set_songformer_enabled(enabled: bool) -> void:
+	settings["songformer_enabled"] = enabled
+
+
+func get_songformer_backend() -> String:
+	var v := String(settings.get("songformer_backend", "auto")).strip_edges().to_lower()
+	if v in ["auto", "cpu", "gpu"]:
+		return v
+	return "auto"
+
+
+func set_songformer_backend(backend: String) -> void:
+	var v := String(backend).strip_edges().to_lower()
+	if v not in ["auto", "cpu", "gpu"]:
+		v = "auto"
+	settings["songformer_backend"] = v
 
 func get_fps_mode() -> int:
 	return settings.get("fps_mode", default_settings["fps_mode"])
@@ -836,6 +1230,14 @@ func get_show_health_bar() -> bool:
 
 func set_show_health_bar(enabled: bool) -> void:
 	settings["show_health_bar"] = enabled
+
+
+func get_show_progress_bar() -> bool:
+	return bool(settings.get("show_progress_bar", default_settings.get("show_progress_bar", true)))
+
+
+func set_show_progress_bar(enabled: bool) -> void:
+	settings["show_progress_bar"] = enabled
 
 
 func get_series_inter_track_countdown_enabled() -> bool:
@@ -1104,6 +1506,38 @@ func set_strum_up_scancode(scancode: int) -> void:
 
 func set_strum_down_scancode(scancode: int) -> void:
 	set_mediator_down_scancode(scancode, false)
+
+
+func get_quick_gen_preset_scancode(index: int) -> int:
+	var safe := clampi(int(index), 1, 3)
+	return int(settings.get(
+		"controls_quick_gen_preset_%d_key" % safe,
+		default_settings.get("controls_quick_gen_preset_%d_key" % safe, KEY_F9)
+	))
+
+
+func set_quick_gen_preset_scancode(index: int, scancode: int) -> void:
+	var safe := clampi(int(index), 1, 3)
+	settings["controls_quick_gen_preset_%d_key" % safe] = scancode
+
+
+func get_quick_gen_preset_key_text(index: int) -> String:
+	return KeyInputUtils.get_key_string_from_scancode(get_quick_gen_preset_scancode(index))
+
+
+func get_quick_gen_open_scancode() -> int:
+	return int(settings.get(
+		"controls_quick_gen_open_key",
+		default_settings.get("controls_quick_gen_open_key", KEY_NONE)
+	))
+
+
+func set_quick_gen_open_scancode(scancode: int) -> void:
+	settings["controls_quick_gen_open_key"] = scancode
+
+
+func get_quick_gen_open_key_text() -> String:
+	return KeyInputUtils.get_key_string_from_scancode(get_quick_gen_open_scancode())
 
 func _string_to_scancode(key_string: String) -> int:
 	return KeyInputUtils.string_to_scancode(key_string)

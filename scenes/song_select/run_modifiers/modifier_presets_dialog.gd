@@ -149,13 +149,14 @@ func _ensure_generation_help_link() -> void:
 			if parent is BoxContainer and (parent as BoxContainer).vertical:
 				var row := HBoxContainer.new()
 				row.add_theme_constant_override("separation", 8)
-				row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+				row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				row.alignment = BoxContainer.ALIGNMENT_CENTER
 				var title_idx := _title_label.get_index()
 				parent.add_child(row)
 				parent.move_child(row, title_idx)
 				parent.remove_child(_title_label)
 				row.add_child(_title_label)
-				_title_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+				_title_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 				_title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 				row.add_child(_help_link)
 			else:
@@ -642,7 +643,7 @@ func _refresh_current_detail() -> void:
 	if _detail_special_stat:
 		_detail_special_stat.text = tr("MOD_SUMMARY_SPECIAL_STAT") % counts.w
 	if _detail_mods_vbox:
-		_IconStrip.fill_mod_rows(_detail_mods_vbox, mods, tr("MOD_SUMMARY_EMPTY_TITLE"))
+		_IconStrip.fill_mod_rows(_detail_mods_vbox, mods, tr("MOD_SUMMARY_EMPTY_TITLE"), params)
 	if _detail_meta:
 		if _highlight_slot > 0 and _slot_is_filled(_highlight_slot):
 			var entry := _preview_slot_entry()
@@ -812,23 +813,7 @@ func _on_clear_active_pressed() -> void:
 		_prompt_active = false
 		if choice != "confirm":
 			return
-	elif not _is_generation():
-		var overlay := _ensure_choice_overlay()
-		if overlay == null:
-			return
-		_prompt_active = true
-		_raise_choice_overlay()
-		var choice := await _Overlay.choose(
-			overlay,
-			tr("MOD_PRESET_CLEAR_CONFIRM"),
-			"warning",
-			"",
-			tr("MOD_PRESETS_CLEAR_ACTIVE"),
-			tr("BTN_CANCEL"),
-		)
-		_prompt_active = false
-		if choice != "confirm":
-			return
+	# No extra confirm when clean — clear and close presets dialog immediately.
 	await _commit_clear_active_preset()
 
 

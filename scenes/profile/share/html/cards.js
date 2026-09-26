@@ -8,8 +8,15 @@
 		return;
 	}
 
-	const accent = CARD.accent || "#9f85eb";
-	const accent2 = CARD.accent2 || accent;
+	function cssHex(v, fallback) {
+		const s = String(v || "").trim();
+		if (!s) {
+			return fallback;
+		}
+		return s.startsWith("#") ? s : "#" + s;
+	}
+	const accent = cssHex(CARD.accent, "#9f85eb");
+	const accent2 = cssHex(CARD.accent2, accent);
 	document.documentElement.style.setProperty("--accent", accent);
 	document.documentElement.style.setProperty("--accent2", accent2);
 	document.documentElement.style.setProperty("--accent-soft", accent + "66");
@@ -52,8 +59,44 @@
 		</div>`;
 	}
 
-	function footer(site, date) {
-		return `<div class="card-footer"><span>${esc(site)}</span><span>${esc(date)}</span></div>`;
+	function footer(site, date, tagline) {
+		const tag = tagline && String(tagline).trim()
+			? `<div class="card-tagline">${esc(tagline)}</div>`
+			: "";
+		return `${tag}<div class="card-footer"><span>${esc(site)}</span><span>${esc(date)}</span></div>`;
+	}
+
+	function storyPanel(lines, L) {
+		if (!lines || !lines.length) {
+			return "";
+		}
+		const items = lines.map((line) => `<li>${esc(line)}</li>`).join("");
+		return `${sectionTitle(L.sec_story || "—")}
+			<div class="glass glass-accent story-panel">
+				<ul class="story-list">${items}</ul>
+			</div>`;
+	}
+
+	function trendBadge(trend, L) {
+		const t = String(trend || "").toLowerCase();
+		if (t === "new") {
+			return `<span class="trend-badge trend-badge--new">${esc(L.trend_new || "NEW")}</span>`;
+		}
+		if (t === "growing") {
+			return `<span class="trend-badge trend-badge--growing" aria-label="${esc(L.trend_growing || "")}">↑</span>`;
+		}
+		if (t === "falling") {
+			return `<span class="trend-badge trend-badge--falling">↓</span>`;
+		}
+		return "";
+	}
+
+	function deltaNote(text) {
+		if (!text || !String(text).trim()) {
+			return "";
+		}
+		const up = String(text).includes("↑");
+		return `<div class="delta-note${up ? " delta-note--up" : " delta-note--down"}">${esc(text)}</div>`;
 	}
 
 	function sectionTitle(text) {
@@ -65,8 +108,29 @@
 		return `<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>${label ? `<div class="progress-label">${esc(label)}</div>` : ""}</div>`;
 	}
 
-	function statChip(value, caption, accentChip) {
-		return `<div class="glass stat-chip${accentChip ? " accent" : ""}"><div class="value">${esc(value)}</div><div class="caption">${esc(caption)}</div></div>`;
+	function statChip(value, caption, accentChip, opts) {
+		const o = opts || {};
+		const tint = o.tint ? String(o.tint) : "";
+		const valueColor = o.valueColor ? String(o.valueColor) : "";
+		const zap = o.zap && o.zap.b64 ? o.zap : null;
+		// style: a = top stripe (default), b/c kept for experiments, d = flat
+		const style = String(o.style || "a").toLowerCase();
+		const classes = ["glass", "stat-chip", "chip-style-" + style];
+		if (accentChip) classes.push("accent");
+		if (tint) classes.push("tinted");
+		if (o.tone) classes.push("tone-" + o.tone);
+		const styleParts = [];
+		if (tint) styleParts.push("--chip-tint:" + tint);
+		const styleAttr = styleParts.length ? ` style="${esc(styleParts.join(";"))}"` : "";
+		const valueStyle = valueColor ? ` style="color:${esc(valueColor)}"` : "";
+		const valueInner = zap
+			? `${modIconChip(zap, 26)}<span>${esc(value)}</span>`
+			: esc(value);
+		const badge = o.styleBadge
+			? `<div class="chip-style-badge">${esc(o.styleBadge)}</div>`
+			: "";
+		const deltaHtml = o.deltaText ? deltaNote(o.deltaText) : "";
+		return `<div class="${classes.join(" ")}"${styleAttr}>${badge}<div class="value${zap ? " value--diff" : ""}"${valueStyle}>${valueInner}</div><div class="caption">${esc(caption)}</div>${deltaHtml}</div>`;
 	}
 
 	function modIconChip(icon, size) {
@@ -155,15 +219,21 @@
 					<div class="level-value">${esc(c.level_label)}</div>
 					${progressBar(c.xp_ratio, c.xp_text)}
 				</div>
+				${storyPanel(c.story_lines || [], L)}
 				<div class="stats-grid stats-grid-4">
-					${statChip((Number(c.accuracy).toFixed(1) + "%"), L.accuracy || "—", true)}
-					${statChip(c.play_time, L.play_time || "—")}
-					${statChip(fmtInt(c.levels_completed || 0), L.tracks || "—")}
-					${statChip(fmtInt(c.medals_total || 0), L.medals || "—")}
-					${statChip(fmtInt(c.max_combo || 0), L.combo || "—")}
-					${statChip(fmtInt(c.total_score || 0), L.score || "—")}
-					${statChip(fmtInt(c.daily_quests || 0), L.daily || "—")}
-					${statChip(c.avg_difficulty_text || "—", L.avg_diff || "—")}
+					${statChip((Number(c.accuracy).toFixed(1) + "%"), L.accuracy || "—", true, { tone: "accuracy", style: "a" })}
+					${statChip(c.play_time, L.play_time || "—", false, { tone: "time", style: "a" })}
+					${statChip(fmtInt(c.levels_completed || 0), L.tracks || "—", false, { tone: "tracks", style: "a" })}
+					${statChip(fmtInt(c.medals_total || 0), L.medals || "—", false, { tone: "medals", style: "a" })}
+					${statChip(fmtInt(c.max_combo || 0), L.combo || "—", false, { tone: "combo", style: "a" })}
+					${statChip(fmtInt(c.total_score || 0), L.score || "—", false, { tone: "score", style: "a" })}
+					${statChip(fmtInt(c.daily_quests || 0), L.daily || "—", false, { tone: "daily", style: "a" })}
+					${statChip(c.avg_difficulty_text || "—", L.avg_diff || "—", false, {
+						zap: c.avg_difficulty_zap,
+						valueColor: c.avg_difficulty_color,
+						tone: "diff",
+						style: "a",
+					})}
 				</div>
 				${sectionTitle(L.sec_grades || "—")}
 				<div class="grades-row grades-row-4">${gradeBadges(c, gradeKeys)}</div>
@@ -186,28 +256,38 @@
 				</div>
 				${factPanel(c.card_fact, L)}
 			</div>
-			${footer(c.footer_site, c.footer_date)}
+			${footer(c.footer_site, c.footer_date, c.tagline)}
 		`;
 	}
 
 	function renderStatistics(c) {
 		const L = c.labels || {};
 		const combat = [
-			[c.notes_miss, L.miss || "—"],
-			[c.max_combo, L.combo || "—"],
-			[c.total_score, L.score || "—", true],
+			[c.notes_miss, L.miss || "—", false, "", { tone: "miss", style: "a" }],
+			[c.max_combo, L.combo || "—", false, "", { tone: "combo", style: "a" }],
+			[c.total_score, L.score || "—", true, "", { tone: "score", style: "a" }],
 		];
 		const progress = [
-			[c.unique_tracks, L.tracks || "—"],
-			[c.medals_total, L.medals || "—"],
-			[c.rr_earned, L.rr || "—", true],
-			[c.daily_quests, L.daily || "—"],
-			[c.avg_difficulty_text || "—", L.avg_diff || "—"],
+			[c.unique_tracks, L.tracks || "—", false, c.tracks_delta_text, { tone: "tracks", style: "a" }],
+			[c.medals_total, L.medals || "—", false, "", { tone: "medals", style: "a" }],
+			[c.rr_earned, L.rr || "—", true, c.rr_delta_text, { tone: "score", style: "a" }],
+			[c.daily_quests, L.daily || "—", false, "", { tone: "daily", style: "a" }],
+			[c.avg_difficulty_text || "—", L.avg_diff || "—", false, "", {
+				zap: c.avg_difficulty_zap,
+				valueColor: c.avg_difficulty_color,
+				tone: "diff",
+				style: "a",
+			}],
 		];
 		const chipHtml = (rows) => rows.map((row) => {
 			let val = row[0];
 			val = typeof val === "number" ? fmtInt(val) : String(val);
-			return statChip(val, row[1], row[2]);
+			const opts = Object.assign({}, row[4] || {});
+			const delta = row[3];
+			if (delta && String(delta).trim()) {
+				opts.deltaText = delta;
+			}
+			return `<div class="stat-chip-wrap">${statChip(val, row[1], row[2], opts)}</div>`;
 		}).join("");
 
 		const gradeKeys = [["SS", "ss", "grade-ss"], ["S", "s", "grade-s"], ["A", "a", "grade-a"], ["B", "b", "grade-b"]];
@@ -218,9 +298,10 @@
 			${heroBlock(c.hero_title, c.hero_subtitle)}
 			<div class="card-body">
 				<div class="glass glass-accent hero-panel">
-					<div class="hero-value">${Number(c.hit_rate || 0).toFixed(1)}%</div>
-					<div class="hero-caption">${esc(L.hit_rate || "—")}</div>
-					${c.hero_sub_text ? `<div class="hero-subcaption">${esc(c.hero_sub_text)}</div>` : ""}
+					<div class="hero-value">${Number(c.accuracy_percent || 0).toFixed(1)}%</div>
+					<div class="hero-caption">${esc(L.accuracy || "—")}</div>
+					${deltaNote(c.accuracy_delta_text)}
+					<div class="hero-subcaption">${esc((Number(c.hit_rate || 0).toFixed(1) + "% " + (L.hit_rate || "")).trim())}${c.hero_sub_text ? " · " + esc(c.hero_sub_text) : ""}</div>
 				</div>
 				${sectionTitle(L.sec_combat || "—")}
 				<div class="stats-grid stats-grid-3">${chipHtml(combat)}</div>
@@ -235,7 +316,7 @@
 				</div>
 				${factPanel(c.card_fact, L)}
 			</div>
-			${footer(c.footer_site, c.footer_date)}
+			${footer(c.footer_site, c.footer_date, c.tagline)}
 		`;
 	}
 
@@ -285,6 +366,7 @@
 					<div class="genre-mastery-title">
 						${genreIconChip(g.icon, 22)}
 						<div class="genre-name">${esc(g.name)}</div>
+						${trendBadge(g.trend, L)}
 					</div>
 					<div class="genre-mastery-badge">${esc(lv)}</div>
 				</div>
@@ -292,6 +374,16 @@
 					<div class="genre-bar"><div class="genre-bar-fill" style="width:${Math.min(100, g.percent)}%;background:linear-gradient(90deg,${color},${color}88)"></div></div>
 					<div class="genre-pct" style="color:${color}">${Math.round(g.percent)}%</div>
 				</div>
+			</div>`;
+		}).join("");
+		const discoveries = (c.new_discoveries || []).map((d) => {
+			if (typeof d === "string") {
+				return `<span class="discovery-chip discovery-chip--text">${esc(d)}</span>`;
+			}
+			const name = d && d.name ? d.name : "";
+			return `<div class="discovery-chip">
+				${genreIconFrame(d && d.icon, 40)}
+				<span class="discovery-chip-name">${esc(name)}</span>
 			</div>`;
 		}).join("");
 
@@ -310,6 +402,7 @@
 				</div>` : ""}
 				${sectionTitle(L.sec_genres || "—")}
 				<div class="list-gap">${genres || `<div class="genre-name">${esc(L.empty_genre || "—")}</div>`}</div>
+				${discoveries ? `${sectionTitle(L.sec_discoveries || "—")}<div class="discovery-row">${discoveries}</div>` : ""}
 				${sectionTitle(L.sec_collection || "—")}
 				<div class="glass glass-accent collection-panel">
 					${collectionRing(c.collection_percent || 0, c.groups_unlocked, c.groups_total)}
@@ -323,7 +416,7 @@
 				<div class="mastery-hint glass">${esc(L.sec_mastery_hint || "")}</div>
 				${factPanel(c.card_fact, L)}
 			</div>
-			${footer(c.footer_site, c.footer_date)}
+			${footer(c.footer_site, c.footer_date, c.tagline)}
 		`;
 	}
 
@@ -343,6 +436,18 @@
 				<div class="rr-value">${fmtInt(row.rr)}</div>
 			</div>
 		`).join("");
+
+		const hall = (c.hall_rows || []).map((r) => {
+			const zap = r.zap_icon && r.zap_icon.b64 ? modIconChip(r.zap_icon, 24) : "";
+			const colorStyle = r.value_color ? ` style="color:${esc(r.value_color)}"` : "";
+			return `<div class="glass hall-row">
+				<div class="record-main">
+					<div class="caption">${esc(r.caption)}</div>
+					${r.track ? `<div class="record-track">${esc(r.track)}</div>` : ""}
+				</div>
+				<div class="value value--diff"${colorStyle}>${zap}<span>${esc(r.value)}</span></div>
+			</div>`;
+		}).join("");
 
 		const records = (c.records || []).map((r) => `
 			<div class="glass record-row">
@@ -373,15 +478,14 @@
 					<div class="hero-caption">${esc(L.rr_peak || "—")}</div>
 					${c.best_rr_track ? `<div class="hero-subcaption">${esc(c.best_rr_track)}</div>` : ""}
 				</div>
+				${hall ? sectionTitle(L.sec_hall || "—") + `<div class="list-gap hall-list">${hall}</div>` : ""}
 				${rrTop ? sectionTitle(L.sec_rr_top || "—") + `<div class="list-gap">${rrTop}</div>` : ""}
-				${sectionTitle(L.sec_milestones || "—")}
-				<div class="milestones-row milestones-row-6">${milestones}</div>
-				${sectionTitle(L.sec_records || "—")}
-				<div class="list-gap">${records}</div>
+				${milestones ? sectionTitle(L.sec_milestones || "—") + `<div class="milestones-row milestones-row-4">${milestones}</div>` : ""}
+				${records ? sectionTitle(L.sec_records || "—") + `<div class="list-gap">${records}</div>` : ""}
 				${mods ? sectionTitle(L.sec_mods || "—") + `<div class="list-gap">${mods}</div>` : ""}
 				${factPanel(c.card_fact, L)}
 			</div>
-			${footer(c.footer_site, c.footer_date)}
+			${footer(c.footer_site, c.footer_date, c.tagline)}
 		`;
 	}
 
@@ -412,23 +516,26 @@
 		const endlessHasData = Boolean(c.endless_has_data);
 		const endlessSection = `${sectionTitle(L.endless || "—")}
 			${endlessHasData
-				? `<div class="stat-grid stat-grid-2">
-					${statChip(fmtInt(c.endless_best_streak || 0), L.endless_streak || "—", true)}
+				? `${c.endless_story ? `<div class="glass glass-accent story-line story-line--endless">${esc(c.endless_story)}</div>` : ""}
+				<div class="stat-grid stat-grid-2">
+					${statChip(fmtInt(c.endless_best_streak || 0), L.endless_streak || "—", true, { style: "a" })}
 					${statChip(
 						c.endless_best_accuracy > 0 ? (Number(c.endless_best_accuracy).toFixed(1) + "%") : "—",
 						L.endless_accuracy || "—",
-						false
+						false,
+						{ style: "a" }
 					)}
 				</div>`
 				: `<div class="glass play-modes-empty">${esc(L.endless_empty || "—")}</div>`
 			}`;
 
 		const marathonHasData = Boolean(c.marathon_has_data);
+		// Summary = routes only (1/1); tier lives on route rows, not repeated in summary.
 		const marathonSection = `${sectionTitle(L.marathon || "—")}
 			${marathonHasData
-				? `<div class="glass glass-accent play-modes-summary">
+				? `${c.marathon_story ? `<div class="glass glass-accent story-line">${esc(c.marathon_story)}</div>` : ""}
+				<div class="glass play-modes-summary">
 					<div class="play-modes-summary-line">${esc(c.marathon_routes_text || "")}</div>
-					${c.marathon_badge ? `<div class="play-modes-summary-sub">${esc(c.marathon_badge)}</div>` : ""}
 				</div>
 				${marathonRows ? `<div class="list-gap">${marathonRows}</div>` : ""}`
 				: `<div class="glass play-modes-empty">${esc(L.marathon_empty || "—")}</div>`
@@ -457,7 +564,7 @@
 				${endlessSection}
 				${factPanel(c.card_fact, L)}
 			</div>
-			${footer(c.footer_site, c.footer_date)}
+			${footer(c.footer_site, c.footer_date, c.tagline)}
 		`;
 	}
 

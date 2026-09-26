@@ -1,4 +1,4 @@
-# logic/utils/track_placeholder_cover.gd
+# logic/domain/library/track_placeholder_cover.gd
 extends RefCounted
 class_name TrackPlaceholderCover
 

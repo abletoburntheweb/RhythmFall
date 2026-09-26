@@ -18,7 +18,8 @@ func apply_entry(
 	value_color: Color = COLOR_RR,
 	modifiers: Array = [],
 	caption_icon_file: String = "",
-	caption_icon_tint: Color = COLOR_CAPTION
+	caption_icon_tint: Color = COLOR_CAPTION,
+	value_as_zap_rating: bool = false
 ) -> void:
 	_apply_caption_icon(caption_icon_file, caption_icon_tint)
 	var cap := get_node_or_null("TopRow/CaptionLabel") as Label
@@ -27,10 +28,28 @@ func apply_entry(
 	var secondary_label := get_node_or_null("SecondaryLabel") as Label
 	var mods_row := get_node_or_null("ModsRow") as HBoxContainer
 	var separator := get_node_or_null("Separator") as ColorRect
+	var top := get_node_or_null("TopRow") as HBoxContainer
+	var old_zap := get_node_or_null("TopRow/ValueZapRow")
+	if old_zap:
+		old_zap.queue_free()
 	if cap:
 		cap.text = caption
 	if val:
-		if value_text != "":
+		if value_as_zap_rating and value_text != "" and top:
+			val.visible = false
+			var zap_row := HBoxContainer.new()
+			zap_row.name = "ValueZapRow"
+			zap_row.alignment = BoxContainer.ALIGNMENT_END
+			zap_row.add_theme_constant_override("separation", 4)
+			zap_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			top.add_child(zap_row)
+			zap_row.add_child(_UiIconHelper.make_icon_frame("zap.svg", 22, 13, value_color))
+			var num := Label.new()
+			num.text = value_text
+			num.add_theme_font_size_override("font_size", 17)
+			num.add_theme_color_override("font_color", value_color)
+			zap_row.add_child(num)
+		elif value_text != "":
 			val.text = value_text
 			val.add_theme_color_override("font_color", value_color)
 			val.visible = true
@@ -43,10 +62,12 @@ func apply_entry(
 		secondary_label.text = secondary
 		secondary_label.visible = secondary != ""
 	if mods_row:
-		_ModifierIconStrip.fill_slot_chips(mods_row, modifiers, {}, 8)
+		# Keep chips readable: avoid sub-14px NEAREST downscale mush.
+		_ModifierIconStrip.fill_slot_chips(mods_row, modifiers, {}, maxi(modifiers.size(), 1), true, 14, 8, 3, false)
 		mods_row.visible = modifiers.size() > 0
 	if separator:
-		separator.visible = true
+		# Compact grid cells sit in PanelContainer — no trailing rule needed.
+		separator.visible = not (get_parent() is PanelContainer)
 
 
 func set_marathon_badge_chips(route_id: String, badges: Array, template: Dictionary) -> void:

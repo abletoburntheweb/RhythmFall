@@ -3,7 +3,8 @@ extends Control
 const PLOT_LEFT := 44.0
 const PLOT_RIGHT := 12.0
 const PLOT_TOP := 22.0
-const PLOT_BOTTOM := 8.0
+## Room under the curve for per-point grade labels (SS/S/…).
+const PLOT_BOTTOM := 22.0
 
 var metric: String = "accuracy"
 var y_min: float = 0.0

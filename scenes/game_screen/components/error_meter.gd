@@ -1,4 +1,4 @@
-# scenes/game_screen/error_meter.gd
+# scenes/game_screen/components/error_meter.gd
 extends Control
 class_name ErrorMeter
 

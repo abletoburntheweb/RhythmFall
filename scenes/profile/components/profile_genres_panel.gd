@@ -56,6 +56,7 @@ func apply_locale() -> void:
 func refresh_async(genre_play_counts: Dictionary = {}, animate_bars: bool = false) -> void:
 	if _grid == null:
 		return
+	var _perf_prepare := PerfTrace.begin("perf.detail.profile.genres.prepare")
 	_refresh_token += 1
 	var token := _refresh_token
 	if genre_play_counts.is_empty() and TrackStatsManager:
@@ -68,8 +69,11 @@ func refresh_async(genre_play_counts: Dictionary = {}, animate_bars: bool = fals
 		child.queue_free()
 	await get_tree().process_frame
 	if token != _refresh_token:
+		PerfTrace.end("perf.detail.profile.genres.prepare", _perf_prepare)
 		return
+	PerfTrace.end("perf.detail.profile.genres.prepare", _perf_prepare)
 
+	var _perf_cards := PerfTrace.begin("perf.detail.profile.genres.cards")
 	var card_index := 0
 	for group_id in _ProfileGenrePortrait.all_group_ids():
 		var plays := _ProfileGenrePortrait.group_play_count(genre_play_counts, group_id)
@@ -85,9 +89,11 @@ func refresh_async(genre_play_counts: Dictionary = {}, animate_bars: bool = fals
 		if card_index % 2 == 0:
 			await get_tree().process_frame
 		if token != _refresh_token:
+			PerfTrace.end("perf.detail.profile.genres.cards", _perf_cards)
 			return
 
 	_built = true
+	PerfTrace.end("perf.detail.profile.genres.cards", _perf_cards)
 
 
 func _on_card_expanded_changed(group_id: String, expanded: bool) -> void:

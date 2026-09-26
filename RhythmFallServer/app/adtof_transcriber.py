@@ -1,7 +1,12 @@
 # app/adtof_transcriber.py — ADTOF Frame-RNN with fast peak-pick (dense rolls).
 from __future__ import annotations
 
+import copy
+import hashlib
 import os
+import threading
+import time
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
@@ -42,6 +47,49 @@ PITCH_TO_DRUM: Dict[int, str] = {
 
 _MODEL = None
 _WEIGHTS_PATH: Optional[str] = None
+
+# In-memory memo for ADTOF classified_hits — single process, TTL 900 like stem_memory_cache.
+_ADTOF_CACHE: dict[str, tuple[Dict, float]] = {}
+_ADTOF_LOCK = threading.Lock()
+_ADTOF_TTL_SEC = 900
+
+
+def _adtof_ttl() -> int:
+    raw = os.environ.get("RFALL_ADTOF_CACHE_TTL", "900").strip() if os.environ.get("RFALL_ADTOF_CACHE_TTL") else "900"
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return 900
+
+
+def _adtof_purge_expired(now: Optional[float] = None) -> None:
+    if _adtof_ttl() == 0:
+        return
+    now = now or time.time()
+    expired = [k for k, (_, exp) in _ADTOF_CACHE.items() if exp <= now]
+    for k in expired:
+        _ADTOF_CACHE.pop(k, None)
+
+
+def _adtof_cache_key(y: np.ndarray, sr: int, genre_params: Optional[Dict]) -> Optional[str]:
+    # Key must reflect only drum stem content + ADTOF-relevant thresholds.
+    # difficulty/mode/preset/lanes/chart_tag must NOT affect key (see audit).
+    if y is None or getattr(y, "size", 0) == 0 or not sr:
+        return None
+    try:
+        # Stem identity — hash of raw samples (float32 bytes). Deterministic for same wav.
+        # File hash would require extra read; y already in memory.
+        h = hashlib.sha256()
+        # Ensure contiguous float32 for stable bytes.
+        arr = np.ascontiguousarray(y, dtype=np.float32)
+        h.update(arr.tobytes())
+        h.update(str(int(sr)).encode("utf-8"))
+        thresholds = _thresholds_for_genre(genre_params)
+        # thresholds already incorporates FAST_THRESHOLDS, genre multipliers and RFALL_ADTOF_SNARE_THRESHOLD env.
+        h.update(",".join(f"{t:.6f}" for t in thresholds).encode("utf-8"))
+        return h.hexdigest()
+    except Exception:
+        return None
 
 
 def drum_backend_name() -> str:
@@ -252,6 +300,21 @@ def transcribe_drum_stem(
     tail = _last_audible_time(y, sr) + 0.25
     max_time = min(duration, tail) if tail > 0 else duration
 
+    # In-memory memo — same drum stem + same genre thresholds → same classified_hits.
+    # difficulty/mode/preset/lanes/chart_tag must NOT affect key (see audit).
+    _cache_key: Optional[str] = _adtof_cache_key(y, sr, genre_params)
+    if _cache_key is not None and _adtof_ttl() > 0:
+        now = time.time()
+        with _ADTOF_LOCK:
+            _adtof_purge_expired(now)
+            _cached_entry = _ADTOF_CACHE.get(_cache_key)
+            if _cached_entry is not None:
+                _cached_data, _cached_exp = _cached_entry
+                if _cached_exp > now:
+                    # Deep copy — caller may mutate lists/dicts downstream.
+                    return copy.deepcopy(_cached_data)
+                _ADTOF_CACHE.pop(_cache_key, None)
+
     device = resolve_adtof_torch_device()
     device_label = resolve_adtof_torch_device_label()
 
@@ -305,4 +368,12 @@ def transcribe_drum_stem(
         f"kick={len(data['kick_times'])} snare={len(data['snare_times'])} hat={len(data['hat_times'])} "
         f"thr_k={thresholds[0]:.2f} thr_s={thresholds[1]:.2f} max_t={max_time:.1f}s"
     )
+    # Memoize successful result — in-memory only, TTL 900, deep copy for isolation.
+    if _cache_key is not None and _adtof_ttl() > 0:
+        try:
+            with _ADTOF_LOCK:
+                _adtof_purge_expired()
+                _ADTOF_CACHE[_cache_key] = (copy.deepcopy(data), time.time() + _adtof_ttl())
+        except Exception:
+            pass
     return data

@@ -1,4 +1,4 @@
-# logic/utils/shop_reward_notifications.gd
+# logic/domain/shop/shop_reward_notifications.gd
 class_name ShopRewardNotifications
 extends RefCounted
 
@@ -14,6 +14,7 @@ static func load_shop_items() -> Array:
 			continue
 		var parsed: Dictionary = JsonUtils.read_json_dict(path)
 		if parsed.has("items") and parsed["items"] is Array:
+			CatalogDataSync._cache_set(path, parsed)
 			return parsed["items"]
 	return []
 

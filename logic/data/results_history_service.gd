@@ -80,7 +80,10 @@ func save_result_for_song(
 	chart_rating: int = 0,
 	title: String = "",
 	artist: String = "",
-	lanes: int = 4
+	lanes: int = 4,
+	run_rr: int = 0,
+	duration_sec: int = 0,
+	replay_path: String = ""
 ) -> Array:
 	if song_path.is_empty():
 		return []
@@ -113,6 +116,12 @@ func save_result_for_song(
 		new_result["artist"] = artist
 	if lanes > 0:
 		new_result["lanes"] = lanes
+	if run_rr > 0:
+		new_result["run_rr"] = run_rr
+	if duration_sec > 0:
+		new_result["duration_sec"] = duration_sec
+	if replay_path != "":
+		new_result["replay_path"] = replay_path
 	results.append(new_result)
 	results.sort_custom(TimeUtils.sort_results_newest_first)
 	if results.size() > 20:
@@ -128,6 +137,10 @@ func save_result_for_song(
 	file_data[RESULTS_KEY] = results
 	file_data[MEDALS_KEY] = unlocked
 	_save_song_file(song_path, file_data)
+	if TrackStatsManager:
+		TrackStatsManager.ensure_first_played_at(song_path, str(new_result.get("date", "")))
+		if duration_sec > 0:
+			TrackStatsManager.add_play_seconds(song_path, duration_sec)
 	return earned_run
 
 func clear_results_for_song(song_path: String) -> bool:
@@ -146,6 +159,81 @@ func get_top_result_for_song(song_path: String) -> Dictionary:
 		return {}
 	results.sort_custom(TimeUtils.sort_results_by_score)
 	return results[0]
+
+
+static func oldest_result_datetime(results: Array) -> String:
+	var oldest := ""
+	var oldest_key := 0x7fffffffffffffff
+	for item in results:
+		if not item is Dictionary:
+			continue
+		var date_str := str(item.get("date", "")).strip_edges()
+		if date_str == "":
+			continue
+		var key := TimeUtils.result_datetime_sort_key(date_str)
+		if key < oldest_key:
+			oldest_key = key
+			oldest = date_str
+	return oldest
+
+
+## Lazily migrate first_played_at from the oldest surviving result row.
+## Also stores under the concrete song_path even if batch migrate missed the stem match.
+func ensure_first_played_migrated(song_path: String) -> String:
+	if song_path.is_empty() or TrackStatsManager == null:
+		return ""
+	var existing: String = TrackStatsManager.get_first_played_at(song_path)
+	if existing != "":
+		return existing
+	var oldest := oldest_result_datetime(load_results_for_song(song_path))
+	if oldest == "":
+		return ""
+	return TrackStatsManager.ensure_first_played_at(song_path, oldest)
+
+
+## Scan user://results and fill missing first_played_at from oldest row per file.
+## Safe to call multiple times; only writes when a track has no stored first play yet.
+func migrate_all_first_played_from_results() -> int:
+	if TrackStatsManager == null:
+		return 0
+	var dir := DirAccess.open("user://results")
+	if dir == null:
+		return 0
+	var written := 0
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with("_results.json"):
+			var path := "user://results/%s" % file_name
+			var data: Variant = JsonUtils.read_json_dict(path)
+			if data is Dictionary:
+				var results: Array = data.get(RESULTS_KEY, [])
+				var oldest := oldest_result_datetime(results)
+				if oldest != "":
+					# Map filename stem back is lossy (path unknown). Prefer path keys
+					# already present in track_completion_counts / best_grades.
+					var stem := file_name.trim_suffix("_results.json")
+					var matched := false
+					for track_path in TrackStatsManager.track_completion_counts.keys():
+						if str(track_path).get_file().get_basename() == stem:
+							var before: String = TrackStatsManager.get_first_played_at(str(track_path))
+							var after: String = TrackStatsManager.ensure_first_played_at(str(track_path), oldest)
+							if before == "" and after != "":
+								written += 1
+							matched = true
+							break
+					if not matched:
+						for track_path in TrackStatsManager.best_grades_per_track.keys():
+							if str(track_path).get_file().get_basename() == stem:
+								var before2: String = TrackStatsManager.get_first_played_at(str(track_path))
+								var after2: String = TrackStatsManager.ensure_first_played_at(str(track_path), oldest)
+								if before2 == "" and after2 != "":
+									written += 1
+								break
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	return written
+
 
 func add_session_result(accuracy: float, date_str: String, grade: String, grade_color: Color, instrument: String, score: int, artist: String = "N/A", title: String = "N/A", ss_repeat: bool = false, run_rr: int = -1, song_path: String = ""):
 	var new_result = {

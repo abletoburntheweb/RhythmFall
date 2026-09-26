@@ -45,6 +45,7 @@ const _GAMEPLAY := "ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPane
 @onready var duo_partner_note_style_option: OptionButton = get_node("%s/DuoPartnerNoteStyle/DuoPartnerNoteStyleOptionButton" % _GAMEPLAY)
 @onready var show_error_meter_checkbox: CheckBox = get_node("%s/ShowErrorMeterCheckBox" % _GAMEPLAY)
 @onready var show_health_bar_checkbox: CheckBox = get_node("%s/ShowHealthBarCheckBox" % _GAMEPLAY)
+@onready var show_progress_bar_checkbox: CheckBox = get_node("%s/ShowProgressBarCheckBox" % _GAMEPLAY)
 @onready var pause_resume_rewind_checkbox: CheckBox = get_node("%s/PauseResumeRewindCheckBox" % _GAMEPLAY)
 @onready var reduce_bg_effects_checkbox: CheckBox = get_node("%s/ReduceBgEffectsCheckBox" % _GAMEPLAY)
 @onready var ambient_particles_checkbox: CheckBox = get_node("%s/AmbientParticlesCheckBox" % _GAMEPLAY)
@@ -312,6 +313,10 @@ func _setup_ui():
 		show_error_meter_checkbox.set_pressed_no_signal(SettingsManager.get_show_error_meter())
 	if show_health_bar_checkbox:
 		show_health_bar_checkbox.set_pressed_no_signal(SettingsManager.get_show_health_bar())
+	if show_progress_bar_checkbox and SettingsManager.has_method("get_show_progress_bar"):
+		show_progress_bar_checkbox.set_pressed_no_signal(SettingsManager.get_show_progress_bar())
+	elif show_progress_bar_checkbox:
+		show_progress_bar_checkbox.set_pressed_no_signal(true)
 	if pause_resume_rewind_checkbox:
 		pause_resume_rewind_checkbox.set_pressed_no_signal(SettingsManager.get_pause_resume_rewind_enabled())
 	if reduce_bg_effects_checkbox:
@@ -551,6 +556,14 @@ func _on_show_health_bar_toggled(enabled: bool) -> void:
 	emit_signal("settings_changed")
 
 
+func _on_show_progress_bar_toggled(enabled: bool) -> void:
+	if SettingsManager.has_method("set_show_progress_bar"):
+		SettingsManager.set_show_progress_bar(enabled)
+	else:
+		SettingsManager.set_setting("show_progress_bar", enabled)
+	emit_signal("settings_changed")
+
+
 func _on_pause_resume_rewind_toggled(enabled: bool) -> void:
 	SettingsManager.set_pause_resume_rewind_enabled(enabled)
 	emit_signal("settings_changed")
@@ -671,6 +684,9 @@ func apply_locale() -> void:
 	if show_health_bar_checkbox:
 		show_health_bar_checkbox.text = tr("GFX_SHOW_HEALTH_BAR")
 		_set_tooltip(show_health_bar_checkbox, "GFX_SHOW_HEALTH_BAR_TOOLTIP")
+	if show_progress_bar_checkbox:
+		show_progress_bar_checkbox.text = tr("GFX_SHOW_PROGRESS_BAR")
+		_set_tooltip(show_progress_bar_checkbox, "GFX_SHOW_PROGRESS_BAR_TOOLTIP")
 	if pause_resume_rewind_checkbox:
 		pause_resume_rewind_checkbox.text = tr("GFX_PAUSE_RESUME_REWIND")
 		_set_tooltip(pause_resume_rewind_checkbox, "GFX_PAUSE_RESUME_REWIND_TOOLTIP")
@@ -735,9 +751,11 @@ func _apply_segmented_tooltips() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
+	const ACCENT := Color(0.42, 0.57, 0.82, 1.0)
 	for checkbox in [
 		show_error_meter_checkbox,
 		show_health_bar_checkbox,
+		show_progress_bar_checkbox,
 		pause_resume_rewind_checkbox,
 		reduce_bg_effects_checkbox,
 		ambient_particles_checkbox,
@@ -745,4 +763,4 @@ func _apply_settings_checkbox_styles() -> void:
 		shop_kick_waveform_checkbox,
 		series_inter_track_countdown_checkbox,
 	]:
-		_SettingsSectionUi.apply_settings_checkbox(checkbox)
+		_SettingsSectionUi.apply_settings_checkbox(checkbox, 22, false, ACCENT)

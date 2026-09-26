@@ -1,4 +1,4 @@
-﻿# logic/track_stats_manager.gd
+# logic/data/track_stats_manager.gd
 extends Node
 
 const TRACK_STATS_PATH = "user://track_stats.json"
@@ -7,11 +7,16 @@ var track_completion_counts: Dictionary = {}
 var genre_play_counts: Dictionary = {}  
 var best_grades_per_track: Dictionary = {}
 var ss_clear_count_per_track: Dictionary = {}
+## path -> local ISO datetime string (first recorded run; lifetime, not trimmed with results window)
+var first_played_at_per_track: Dictionary = {}
+## path -> sum of run durations in seconds (lifetime)
+var total_play_seconds_per_track: Dictionary = {}
 var favorite_track: String = ""
 var favorite_track_play_count: int = 0
 var favorite_genre: String = "unknown"  
 
 func _init():
+	PerfTrace.set_level(PerfTrace.Level.LOAD)
 	_load()
 
 func _load():
@@ -21,10 +26,12 @@ func _load():
 		genre_play_counts = json_result.get("genre_play_counts", {}) 
 		best_grades_per_track = json_result.get("best_grades_per_track", {})
 		ss_clear_count_per_track = json_result.get("ss_clear_count_per_track", {})
+		first_played_at_per_track = json_result.get("first_played_at_per_track", {})
+		total_play_seconds_per_track = json_result.get("total_play_seconds_per_track", {})
 		_migrate_ss_counts_from_best_grades()
 		_update_favorite_track()
 		_update_favorite_genre()  
-		print("TrackStatsManager: ╨Ч╨░╨│╤А╤Г╨╢╨╡╨╜╤Л ╤Б╤В╨░╤В╤Л ╤В╤А╨╡╨║╨╛╨▓ ╨╕ ╨╢╨░╨╜╤А╨╛╨▓")
+		print("TrackStatsManager: Загружены статы треков и жанров")
 	else:
 		_reset_data()
 
@@ -33,6 +40,8 @@ func _reset_data():
 	genre_play_counts = {}
 	best_grades_per_track = {}
 	ss_clear_count_per_track = {}
+	first_played_at_per_track = {}
+	total_play_seconds_per_track = {}
 	_update_favorite_track()
 	_update_favorite_genre()
 
@@ -42,9 +51,11 @@ func _save():
 		"genre_play_counts": genre_play_counts,
 		"best_grades_per_track": best_grades_per_track,
 		"ss_clear_count_per_track": ss_clear_count_per_track,
+		"first_played_at_per_track": first_played_at_per_track,
+		"total_play_seconds_per_track": total_play_seconds_per_track,
 	}
 	JsonUtils.write_json(TRACK_STATS_PATH, data_to_save, true, true)
-	print("TrackStatsManager: ╨б╤В╨░╤В╤Л ╤В╤А╨╡╨║╨╛╨▓ ╨╕ ╨╢╨░╨╜╤А╨╛╨▓ ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╤Л")
+	print("TrackStatsManager: Статы треков и жанров сохранены")
 
 var _just_completed_level: bool = false  
 
@@ -110,6 +121,52 @@ func get_completion_count(track_path: String) -> int:
 	var normalized = track_path.replace("\\", "/").trim_suffix("/")
 	return int(track_completion_counts.get(normalized, 0))
 
+
+func get_first_played_at(track_path: String) -> String:
+	if track_path.is_empty():
+		return ""
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	return str(first_played_at_per_track.get(normalized, "")).strip_edges()
+
+
+## Writes once if empty. Prefer earliest known datetime (migration from oldest result).
+func ensure_first_played_at(track_path: String, datetime_iso: String) -> String:
+	if track_path.is_empty():
+		return ""
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	var incoming := datetime_iso.strip_edges()
+	var existing := str(first_played_at_per_track.get(normalized, "")).strip_edges()
+	if existing != "":
+		if incoming == "":
+			return existing
+		# Keep the earlier of the two (repair bad migrations / clock quirks).
+		if TimeUtils.result_datetime_sort_key(incoming) < TimeUtils.result_datetime_sort_key(existing):
+			first_played_at_per_track[normalized] = incoming
+			_save()
+			return incoming
+		return existing
+	if incoming == "":
+		return ""
+	first_played_at_per_track[normalized] = incoming
+	_save()
+	return incoming
+
+
+func get_total_play_seconds(track_path: String) -> int:
+	if track_path.is_empty():
+		return 0
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	return maxi(0, int(total_play_seconds_per_track.get(normalized, 0)))
+
+
+func add_play_seconds(track_path: String, seconds: int) -> void:
+	if track_path.is_empty() or seconds <= 0:
+		return
+	var normalized := track_path.replace("\\", "/").trim_suffix("/")
+	total_play_seconds_per_track[normalized] = get_total_play_seconds(normalized) + seconds
+	_save()
+
+
 func set_best_grade_for_track(track_path: String, grade: String):
 	if track_path.is_empty():
 		return
@@ -149,4 +206,4 @@ func reset_stats():
 	PlayerDataManager.data["favorite_genre"] = "unknown"
 	PlayerDataManager.flush_save()
 	
-	print("TrackStatsManager: ╨б╤В╨░╤В╤Л ╤В╤А╨╡╨║╨╛╨▓ ╨╕ ╨╢╨░╨╜╤А╨╛╨▓ ╤Б╨▒╤А╨╛╤И╨╡╨╜╤Л.")
+	print("TrackStatsManager: Статы треков и жанров сброшены.")

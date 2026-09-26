@@ -1,0 +1,933 @@
+[gd_scene load_steps=9 format=3 uid="uid://charteditor001"]
+
+[ext_resource type="Script" path="res://scenes/chart_editor/chart_editor_screen.gd" id="1_screen"]
+[ext_resource type="Script" path="res://scenes/chart_editor/chart_editor_inspector.gd" id="3_inspector"]
+[ext_resource type="Script" path="res://scenes/chart_editor/chart_editor_ruler.gd" id="4_ruler"]
+[ext_resource type="PackedScene" uid="uid://common_playfield_001" path="res://scenes/common/playfield/playfield.tscn" id="5_gameplayfield"]
+[ext_resource type="Script" path="res://scenes/chart_editor/chart_editor_overlay.gd" id="6_overlay"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.07, 0.08, 0.11, 1.0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.11, 0.12, 0.16, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_save"]
+bg_color = Color(0.16, 0.62, 0.38, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_save_hover"]
+bg_color = Color(0.2, 0.7, 0.44, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slider_dark"]
+bg_color = Color(0.18, 0.19, 0.25, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grabber_dark"]
+bg_color = Color(0.55, 0.78, 0.98, 1.0)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="ChartEditorScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_screen")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07, 0.08, 0.11, 1.0)
+
+[node name="TopBar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 52.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MenuBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 52.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="FileMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(60, 28)
+layout_mode = 2
+text = "Файл"
+theme_override_font_sizes/font_size = 13
+
+[node name="EditMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(60, 28)
+layout_mode = 2
+text = "Правка"
+theme_override_font_sizes/font_size = 13
+
+[node name="ViewMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(60, 28)
+layout_mode = 2
+text = "Вид"
+theme_override_font_sizes/font_size = 13
+
+[node name="ChartMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(60, 28)
+layout_mode = 2
+text = "Чарт"
+theme_override_font_sizes/font_size = 13
+
+[node name="PlaybackMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(80, 28)
+layout_mode = 2
+text = "Воспроизведение"
+theme_override_font_sizes/font_size = 13
+
+[node name="ToolsMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(80, 28)
+layout_mode = 2
+text = "Инструменты"
+theme_override_font_sizes/font_size = 13
+
+[node name="HelpMenu" type="MenuButton" parent="MenuBar"]
+custom_minimum_size = Vector2(60, 28)
+layout_mode = 2
+text = "Помощь"
+theme_override_font_sizes/font_size = 13
+
+[node name="TopBarHBox" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 0
+
+[node name="BackButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+text = "Назад"
+theme_override_font_sizes/font_size = 13
+
+[node name="TitleLabel" type="Label" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+text = "drums_arcade_medium.rf — stems"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.88, 0.9, 0.95, 1.0)
+vertical_alignment = 1
+
+[node name="CanonicalLabel" type="Label" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(78, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Эталон"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.35, 0.95, 0.65, 1.0)
+theme_override_colors/font_outline_color = Color(0.16, 0.62, 0.38, 0.35)
+vertical_alignment = 1
+
+[node name="Spacer1" type="Control" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UndoButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = ""
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Undo (Ctrl+Z)"
+
+[node name="RedoButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = ""
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Redo (Ctrl+Y)"
+
+[node name="PlayButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(56, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = ""
+theme_override_font_sizes/font_size = 13
+tooltip_text = "Play / Pause (Space)"
+
+[node name="GroupSep" type="VSeparator" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(8, 24)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SaveButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(108, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Сохранить"
+theme_override_font_sizes/font_size = 13
+theme_type_variation = &"FlatModalPrimaryButton"
+tooltip_text = "Сохранить (Ctrl+S)"
+
+[node name="SaveAsButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(148, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Сохранить как v+1"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Сохранить как новую версию (создать vN+1)"
+
+[node name="RevertButton" type="Button" parent="TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+visible = false
+text = "Revert"
+
+[node name="ContentRow" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 260
+collapsed = false
+
+[node name="DrumPalettePane" type="PanelContainer" parent="ContentRow"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="DrumPaletteVBox" type="VBoxContainer" parent="ContentRow/DrumPalettePane"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="ToolsHeader" type="Label" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+layout_mode = 2
+text = "ИНСТРУМЕНТЫ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.9)
+horizontal_alignment = 1
+
+[node name="PaletteModeRow" type="HBoxContainer" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NotesModeButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/PaletteModeRow"]
+custom_minimum_size = Vector2(42, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "НОТЫ"
+theme_override_font_sizes/font_size = 11
+toggle_mode = true
+button_pressed = true
+tooltip_text = "Режим нот"
+
+[node name="MidiPatternsModeButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/PaletteModeRow"]
+custom_minimum_size = Vector2(42, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MIDI"
+theme_override_font_sizes/font_size = 11
+toggle_mode = true
+tooltip_text = "MIDI Patterns"
+
+[node name="ToolsSep" type="HSeparator" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+layout_mode = 2
+
+[node name="SelectButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Выделение"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Выделение (E) — выбор и перемещение"
+toggle_mode = true
+button_pressed = true
+
+[node name="PencilButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Карандаш"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Карандаш (P) — рисование/удаление нот"
+toggle_mode = true
+
+[node name="ToolsSep2" type="HSeparator" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+layout_mode = 2
+
+[node name="KickButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Kick"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Kick"
+
+[node name="SnareButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Snare"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Snare"
+
+[node name="HatButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Hat"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Hat"
+
+[node name="TomButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Tom"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Tom"
+
+[node name="CymbalButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Cymbal"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Cymbal"
+
+[node name="PercButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(88, 44)
+layout_mode = 2
+text = "Perc"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Perc"
+
+[node name="MidiPatternContainer" type="VBoxContainer" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="MidiBrowserHeaderRow" type="HBoxContainer" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/MidiPatternContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="MidiPatternHeader" type="Label" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/MidiPatternContainer/MidiBrowserHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+text = "MIDI Паттерны"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.9)
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="MidiBrowserRefreshButton" type="Button" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/MidiPatternContainer/MidiBrowserHeaderRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+text = "↻"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Обновить дерево"
+
+[node name="MidiBrowserTree" type="Tree" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/MidiPatternContainer"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 13
+select_mode = 0
+hide_root = true
+allow_rmb_select = false
+allow_reselect = true
+allow_search = true
+hide_folding = false
+clip_contents = true
+focus_mode = 2
+scroll_follows_focus = true
+size_flags_stretch_ratio = 3.0
+hide_folding = false
+
+[node name="MidiPatternInfoLabel" type="Label" parent="ContentRow/DrumPalettePane/DrumPaletteVBox/MidiPatternContainer"]
+layout_mode = 2
+text = "0 файлов"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PaletteSpacer" type="Control" parent="ContentRow/DrumPalettePane/DrumPaletteVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="MainSplit" type="HBoxContainer" parent="ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PlayfieldPane" type="PanelContainer" parent="ContentRow/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="PlayfieldVBox" type="VBoxContainer" parent="ContentRow/MainSplit/PlayfieldPane"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Ruler" type="Control" parent="ContentRow/MainSplit/PlayfieldPane/PlayfieldVBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 0
+script = ExtResource("4_ruler")
+
+[node name="Playfield" parent="ContentRow/MainSplit/PlayfieldPane/PlayfieldVBox" instance=ExtResource("5_gameplayfield")]
+custom_minimum_size = Vector2(480, 800)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+
+[node name="EditorOverlay" type="Control" parent="ContentRow/MainSplit/PlayfieldPane/PlayfieldVBox/Playfield"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("6_overlay")
+
+[node name="InspectorPane" type="PanelContainer" parent="ContentRow/MainSplit"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+clip_contents = true
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="InspectorRoot" type="VBoxContainer" parent="ContentRow/MainSplit/InspectorPane"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="InspectorTitle" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ИНСПЕКТОР"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.88, 0.9, 0.95, 1.0)
+horizontal_alignment = 1
+
+[node name="InspectorTitleBg" type="ColorRect" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+color = Color(0.11, 0.12, 0.16, 1.0)
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InspectorTitleSep" type="HSeparator" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InspectorScroll" type="ScrollContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+clip_contents = true
+
+[node name="Inspector" type="VBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+clip_contents = false
+script = ExtResource("3_inspector")
+
+[node name="SettingsSeparator" type="HSeparator" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SettingsContainer" type="VBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 6
+
+[node name="SettingsHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "НАСТРОЙКИ"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HitEffectsCheck" type="CheckBox" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Эффекты попадания"
+tooltip_text = "Визуальные эффекты при хите (частицы/подсветка)"
+theme_override_font_sizes/font_size = 14
+
+[node name="HideAfterHitCheck" type="CheckBox" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Скрывать ноты после попадания"
+tooltip_text = "Визуально скрывать ноту после хита (только playback)"
+theme_override_font_sizes/font_size = 14
+
+[node name="LaneHighlightCheck" type="CheckBox" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Подсветка линий"
+tooltip_text = "Подсветка линий при нажатии/выборе (общая для Replay и редактора)"
+theme_override_font_sizes/font_size = 14
+
+[node name="ColorModeRow" type="HBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ColorModeLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer/ColorModeRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Цвет нот"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.85)
+vertical_alignment = 1
+
+[node name="ColorModeOption" type="OptionButton" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/SettingsContainer/ColorModeRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+item_count = 2
+popup/item_0/text = "По типу"
+popup/item_0/id = 0
+popup/item_1/text = "По линии"
+popup/item_1/id = 1
+selected = 0
+theme_override_font_sizes/font_size = 14
+
+[node name="InfoHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ИНФОРМАЦИЯ О ЧАРТЕ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="InfoLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+text = "Нот: 0
+Дорожек: 5
+BPM: 120
+Длительность: 0:00"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.88, 0.9, 0.95, 0.95)
+
+[node name="StatusHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "СТАТУС"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="StatusLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Сохранено"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.35, 0.95, 0.65, 1.0)
+
+[node name="ChangesLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Изменений: 0"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.9)
+
+[node name="SelHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ВЫДЕЛЕНИЕ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="SelLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+text = "Ничего не выбрано"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.95)
+
+[node name="ClearSelectionButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Отменить выделение"
+tooltip_text = "Снять выделение (Esc)"
+theme_override_font_sizes/font_size = 13
+
+[node name="TimelineHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ТАЙМЛАЙН"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="TimelineLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "00:00.000"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.88, 0.9, 0.95, 0.95)
+
+[node name="ChartActionsHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ДЕЙСТВИЯ ЧАРТА"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="ChartActionsRow" type="HBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="RevertButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/ChartActionsRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Отменить изменения"
+tooltip_text = "Вернуть к сохранённому состоянию"
+theme_override_font_sizes/font_size = 13
+
+[node name="SelectAllButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/ChartActionsRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Выделить всё"
+tooltip_text = "Выделить все ноты (Ctrl+A)"
+theme_override_font_sizes/font_size = 13
+
+[node name="DrumHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ИНСТРУМЕНТЫ НОТ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="DrumRow" type="HBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DrumLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/DrumRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "Барабан"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.85)
+vertical_alignment = 1
+
+[node name="DrumOption" type="OptionButton" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/DrumRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+
+[node name="QuantHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "КВАНТИЗАЦИЯ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="QuantLabel" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "Шаг сетки:"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.85)
+
+[node name="QuantRow" type="HBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+tooltip_text = "Quantize — применить квантование к выделенным нотам"
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Q4" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/QuantRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1/4"
+metadata/division = 4
+theme_override_font_sizes/font_size = 13
+toggle_mode = true
+
+[node name="Q8" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/QuantRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1/8"
+metadata/division = 8
+theme_override_font_sizes/font_size = 13
+toggle_mode = true
+
+[node name="Q16" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/QuantRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1/16"
+metadata/division = 16
+theme_override_font_sizes/font_size = 13
+toggle_mode = true
+button_pressed = true
+
+[node name="Q32" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/QuantRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1/32"
+metadata/division = 32
+theme_override_font_sizes/font_size = 13
+toggle_mode = true
+
+[node name="QuantizeButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Квантизировать"
+tooltip_text = "Применить квантование к выделенным нотам"
+theme_override_font_sizes/font_size = 13
+
+[node name="ActionsHeader" type="Label" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+text = "ДЕЙСТВИЯ"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+
+[node name="ActionsRow" type="HBoxContainer" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DeleteButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/ActionsRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Удалить"
+theme_override_font_sizes/font_size = 13
+tooltip_text = "Удалить выделенные (Del)"
+
+[node name="CopyButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/ActionsRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Копировать"
+theme_override_font_sizes/font_size = 13
+
+[node name="PasteButton" type="Button" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector/ActionsRow"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Вставить"
+theme_override_font_sizes/font_size = 13
+
+[node name="InspectorSpacer" type="Control" parent="ContentRow/MainSplit/InspectorPane/InspectorRoot/InspectorScroll/Inspector"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 8)
+
+[node name="BottomBar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="BottomHBox" type="HBoxContainer" parent="BottomBar"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 0
+
+[node name="SnapCheck" type="CheckBox" parent="BottomBar/BottomHBox"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Привязка"
+tooltip_text = "Привязка — шаг сетки для новых/перемещаемых нот"
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+
+[node name="AudioSourceLabel" type="Label" parent="BottomBar/BottomHBox"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Источник"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+vertical_alignment = 1
+
+[node name="AudioSourceOption" type="OptionButton" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_vertical = 4
+item_count = 2
+popup/item_0/text = "Оригинал"
+popup/item_0/id = 0
+popup/item_1/text = "Drums Stem"
+popup/item_1/id = 1
+selected = 0
+theme_override_font_sizes/font_size = 13
+
+[node name="SnapOption" type="OptionButton" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+size_flags_vertical = 4
+item_count = 7
+popup/item_0/text = "Off"
+popup/item_0/id = 0
+popup/item_1/text = "1"
+popup/item_1/id = 1
+popup/item_2/text = "1/2"
+popup/item_2/id = 2
+popup/item_3/text = "1/4"
+popup/item_3/id = 4
+popup/item_4/text = "1/8"
+popup/item_4/id = 8
+popup/item_5/text = "1/16"
+popup/item_5/id = 16
+popup/item_6/text = "1/32"
+popup/item_6/id = 32
+selected = 5
+theme_override_font_sizes/font_size = 14
+
+[node name="VSepSnap" type="VSeparator" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(2, 24)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="HintsLabel" type="Label" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "ПКМ Добавить • ЛКМ Выбрать • Shift Область • Alt Переместить"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 0.85)
+autowrap_mode = 0
+
+[node name="BottomSpacer" type="Control" parent="BottomBar/BottomHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TimeLabel" type="Label" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(148, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "1:24.000 / 3:42.130"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1.0)
+
+[node name="BPMLabel" type="Label" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "120.00 BPM"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.85)
+horizontal_alignment = 1
+
+[node name="VLineZoom" type="VSeparator" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(2, 24)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="ZoomMinus" type="Button" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+size_flags_vertical = 4
+text = "−"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Уменьшить"
+
+[node name="ZoomValue" type="Label" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "100%"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.88, 0.9, 0.95, 1.0)
+horizontal_alignment = 1
+
+[node name="ZoomPlus" type="Button" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+theme_override_font_sizes/font_size = 14
+tooltip_text = "Увеличить"
+
+[node name="ZoomSlider" type="HSlider" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+max_value = 720.0
+min_value = 180.0
+step = 10.0
+value = 360.0
+allow_greater = false
+allow_lesser = false
+tooltip_text = "Масштаб — пикселей в секунду"
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_dark")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_dark")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_slider_dark")
+theme_override_styles/grabber = SubResource("StyleBoxFlat_grabber_dark")
+theme_override_styles/grabber_highlight = SubResource("StyleBoxFlat_grabber_dark")
+
+[node name="StatusLabel" type="Label" parent="BottomBar/BottomHBox"]
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+visible = false
+text = ""
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.72, 0.82, 0.95, 1.0)
+autowrap_mode = 3
+
+
+

@@ -12,12 +12,22 @@ const _MainMenuTipOfDay = preload("res://scenes/main_menu/lib/main_menu_tip_of_d
 const _RhythmDnaCoverLoader = preload("res://scenes/song_select/rhythm_dna/lib/rhythm_dna_cover_loader.gd")
 const _ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
 const _MainMenuNearestAchievement = preload("res://scenes/main_menu/lib/main_menu_nearest_achievement.gd")
-const _LAST_TRACK_COVER_PX := 100
 const _MainMenuActivityFeed = preload("res://scenes/main_menu/lib/main_menu_activity_feed.gd")
 const _SongSelectStrings = preload("res://logic/domain/library/song_select_strings.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
+const _GradeDisplay = preload("res://logic/ui/grade_display.gd")
+const _UiFramedCover = preload("res://logic/ui/ui_framed_cover.gd")
 const _AchievementCardScene = preload("res://scenes/achievements/achievement_card.tscn")
-const _LAST_TRACK_COVER_ACCENT := Color(0.62, 0.86, 0.72, 1.0)
+const _SpotlightTutorialScene = preload("res://ui/spotlight_tutorial.tscn")
+const _NotesUtils = preload("res://logic/domain/rhythm/notes_utils.gd")
+const _RhythmRating = preload("res://logic/domain/rhythm/rhythm_rating.gd")
+const _DebugEmptyState = preload("res://logic/debug/debug_empty_state.gd")
+## Base size; grows to LastTrackBody height so the square fills the row.
+const _LAST_TRACK_COVER_PX := 128
+const _LAST_TRACK_COVER_RADIUS := 10
+const _LAST_TRACK_COVER_BORDER := 2
+const _LAST_TRACK_COVER_ACCENT := Color(0.62, 0.86, 0.72, 0.85)
+const _RIGHT_HUB_SEPARATION_ONBOARDING := 6
 
 var github_url = "https://github.com/abletoburntheweb/RhythmFall.git"
 @onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
@@ -36,6 +46,10 @@ const _MENU_ICON_SIZE := 20
 @onready var _subtitle_label: Label = get_node("%s/SubtitleLabel" % _SIDEBAR)
 @onready var _daily_quests_title: Label = get_node("%s/DailyQuestsPanel/ContentVBox/DailyHeaderRow/HeaderLabel" % _HUB)
 @onready var _daily_reset_label: Label = %DailyResetLabel
+@onready var _skip_label: Label = get_node_or_null("%s/DailyQuestsPanel/ContentVBox/DailyHeaderRow/SkipLabel" % _HUB)
+@onready var _right_hub: VBoxContainer = get_node("%s" % _HUB)
+var _spotlight_tutorial: CanvasLayer = null
+var _first_steps_guide: FirstStepsGuide = null
 @onready var _song_select_button: Button = %SongSelectButton
 @onready var _achievements_button: Button = %AchievementsButton
 @onready var _profile_button: Button = %ProfileButton
@@ -54,6 +68,8 @@ const _MENU_ICON_SIZE := 20
 @onready var _last_track_difficulty: Label = %LastTrackDifficulty
 @onready var _last_track_accuracy: Label = %LastTrackAccuracy
 @onready var _last_track_grade: Label = %LastTrackGrade
+var _last_track_diff_row: HBoxContainer = null
+var _last_track_diff_zap: Control = null
 @onready var _tip_title_label: Label = %TipTitleLabel
 @onready var _tip_body_label: Label = %TipBodyLabel
 @onready var _tip_icon: TextureRect = %TipIcon
@@ -64,6 +80,12 @@ const _MENU_ICON_SIZE := 20
 @onready var _stat_accuracy_caption: Label = get_node("%s/MiddleRow/StatsPanel/StatsMargin/StatsVBox/StatAccuracyRow/StatAccuracyCaption" % _HUB)
 @onready var _last_track_header_label: Label = get_node("%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackHeaderLabel" % _HUB)
 @onready var _last_track_panel: PanelContainer = get_node("%s/MiddleRow/LastTrackPanel" % _HUB)
+@onready var _last_track_body: HBoxContainer = get_node_or_null(
+	"%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody" % _HUB
+) as HBoxContainer
+@onready var _last_track_cover_frame: PanelContainer = get_node_or_null(
+	"%s/MiddleRow/LastTrackPanel/LastTrackMargin/LastTrackVBox/LastTrackBody/LastTrackCoverFrame" % _HUB
+) as PanelContainer
 @onready var _nearest_ach_header_label: Label = get_node("%s/NearestAchievementPanel/NearestAchHeaderLabel" % _HUB)
 @onready var _nearest_ach_card_slot: VBoxContainer = %NearestAchCardSlot
 @onready var _nearest_ach_empty_label: Label = %NearestAchEmptyLabel
@@ -74,6 +96,7 @@ const _MENU_ICON_SIZE := 20
 var _nearest_ach_card: PanelContainer = null
 var _refresh_on_show_pending := false
 var _last_track_cover_path := ""
+var _last_track_cover_side := 0.0
 var _nearest_ach_id := ""
 const _QUEST_ICON_FILE := "list-checks.svg"
 const _QUEST_ICON_COLORS: Array[Color] = [
@@ -95,9 +118,9 @@ func _ready():
 	add_to_group("locale_refresh")
 	_results_history_service = _ResultsHistoryService.new()
 	MusicManager.play_menu_music()
+	PlayerDataManager.ensure_daily_quests_for_today()
 	if PlayerDataManager.has_signal("daily_quests_updated"):
 		PlayerDataManager.connect("daily_quests_updated", Callable(self, "_render_daily_quests"))
-	PlayerDataManager.ensure_daily_quests_for_today()
 	if PlayerDataManager.has_signal("calendar_day_changed"):
 		PlayerDataManager.calendar_day_changed.connect(_on_calendar_day_changed)
 	if PlayerDataManager.has_signal("shop_new_rewards_changed"):
@@ -105,6 +128,12 @@ func _ready():
 	if PlayerDataManager.has_signal("level_changed"):
 		PlayerDataManager.level_changed.connect(func(_l, _x, _n): _update_shop_badge())
 	_update_shop_badge()
+	_connect_first_steps_interactions()
+	_setup_first_steps_guide()
+	if FirstStepsManager and not FirstStepsManager.state_changed.is_connected(_on_first_steps_state_changed):
+		FirstStepsManager.state_changed.connect(_on_first_steps_state_changed)
+	if FirstStepsManager:
+		FirstStepsManager.register_screen(FirstStepsManager.SCREEN_MAIN_MENU)
 	call_deferred("_finish_menu_ui_setup")
 	call_deferred("_maybe_show_server_setup_notice")
 	call_deferred("_maybe_check_updates_on_startup")
@@ -116,46 +145,118 @@ func _ready():
 		LocaleManager.locale_changed.connect(_on_locale_changed)
 	visibility_changed.connect(_on_visibility_changed)
 	_setup_last_track_cover_frame()
+	_ensure_last_track_diff_row()
+
+
+func _ensure_last_track_diff_row() -> void:
+	if _last_track_diff_row != null or _last_track_difficulty == null:
+		return
+	var parent := _last_track_difficulty.get_parent() as Control
+	if parent == null:
+		return
+	var idx := _last_track_difficulty.get_index()
+	_last_track_diff_row = HBoxContainer.new()
+	_last_track_diff_row.name = "LastTrackDiffRow"
+	_last_track_diff_row.add_theme_constant_override("separation", 6)
+	_last_track_diff_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_last_track_diff_row.visible = false
+	parent.add_child(_last_track_diff_row)
+	parent.move_child(_last_track_diff_row, idx)
+	parent.remove_child(_last_track_difficulty)
+	_last_track_diff_row.add_child(_last_track_difficulty)
+
+
+func _set_last_track_difficulty_row(text: String, tint: Color) -> void:
+	_ensure_last_track_diff_row()
+	if _last_track_difficulty == null:
+		return
+	var show := text.strip_edges() != ""
+	if _last_track_diff_row:
+		_last_track_diff_row.visible = show
+	_last_track_difficulty.visible = show
+	_last_track_difficulty.text = text
+	if not show:
+		if _last_track_diff_zap and is_instance_valid(_last_track_diff_zap):
+			_last_track_diff_zap.queue_free()
+			_last_track_diff_zap = null
+		return
+	_last_track_difficulty.add_theme_color_override("font_color", tint)
+	if _last_track_diff_zap and is_instance_valid(_last_track_diff_zap):
+		_last_track_diff_zap.queue_free()
+		_last_track_diff_zap = null
+	if _last_track_diff_row == null:
+		return
+	_last_track_diff_zap = _UiIconHelper.make_icon_frame("zap.svg", 22, 13, tint)
+	_last_track_diff_row.add_child(_last_track_diff_zap)
+	_last_track_diff_row.move_child(_last_track_diff_zap, 0)
 
 
 func _setup_last_track_cover_frame() -> void:
-	## Match nearest-achievement icon frame, with a slightly tighter pad.
+	## Framed square cover via UiFramedCover (clip + border overlay).
 	if _last_track_cover == null:
 		return
-	var frame := _last_track_cover.get_parent() as PanelContainer
+	var frame := _last_track_cover_frame
+	if frame == null:
+		frame = _find_last_track_cover_frame(_last_track_cover)
 	if frame == null:
 		return
-	var stale := _last_track_cover.get_node_or_null("UiRoundedBorderOverlay")
-	if stale:
-		_last_track_cover.remove_child(stale)
-		stale.queue_free()
-	frame.clip_contents = false
-	frame.clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
-	frame.custom_minimum_size = Vector2(108, 108)
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.05, 0.06, 0.09)
-	box.border_color = Color(
-		_LAST_TRACK_COVER_ACCENT.r,
-		_LAST_TRACK_COVER_ACCENT.g,
-		_LAST_TRACK_COVER_ACCENT.b,
-		0.5
+	_last_track_cover_frame = frame
+	_apply_last_track_cover_frame_style(frame, float(_LAST_TRACK_COVER_PX))
+	if _last_track_body and not _last_track_body.resized.is_connected(_on_last_track_body_resized):
+		_last_track_body.resized.connect(_on_last_track_body_resized)
+	call_deferred("_sync_last_track_cover_to_body")
+
+
+func _find_last_track_cover_frame(from: Node) -> PanelContainer:
+	var n: Node = from
+	while n != null:
+		if n is PanelContainer and str(n.name).begins_with("LastTrackCover"):
+			return n as PanelContainer
+		n = n.get_parent()
+	return null
+
+
+func _on_last_track_body_resized() -> void:
+	_sync_last_track_cover_to_body()
+
+
+func _sync_last_track_cover_to_body() -> void:
+	if _last_track_cover_frame == null or _last_track_body == null:
+		return
+	var body_h := int(round(_last_track_body.size.y))
+	if body_h <= 0:
+		return
+	var side := float(clampi(body_h, _LAST_TRACK_COVER_PX, 168))
+	if is_equal_approx(side, _last_track_cover_side):
+		return
+	_apply_last_track_cover_frame_style(_last_track_cover_frame, side)
+
+
+func _apply_last_track_cover_frame_style(frame: PanelContainer, side: float) -> void:
+	if frame == null or _last_track_cover == null:
+		return
+	_last_track_cover_side = side
+	frame.visible = true
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_UiFramedCover.apply(
+		frame,
+		_last_track_cover,
+		_LAST_TRACK_COVER_RADIUS,
+		_LAST_TRACK_COVER_BORDER,
+		_LAST_TRACK_COVER_ACCENT,
+		Color(0.05, 0.06, 0.09, 1.0),
+		side
 	)
-	box.border_width_top = 3
-	box.border_width_left = 1
-	box.border_width_right = 1
-	box.border_width_bottom = 1
-	box.set_corner_radius_all(10)
-	box.corner_detail = 12
-	box.content_margin_left = 4.0
-	box.content_margin_top = 4.0
-	box.content_margin_right = 4.0
-	box.content_margin_bottom = 4.0
-	frame.add_theme_stylebox_override("panel", box)
-	_last_track_cover.custom_minimum_size = Vector2(100, 100)
-	_last_track_cover.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	_last_track_cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_last_track_cover.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	# Drop heavy rounded-clip helper; achievement shader is already on the TextureRect.
+	_last_track_cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
+
+func _refresh_last_track_cover_mask() -> void:
+	pass
+
+
+func _sync_last_track_cover_mask_size() -> void:
+	pass
 
 
 func _on_visibility_changed() -> void:
@@ -176,6 +277,8 @@ func _run_refresh_on_show() -> void:
 	_refresh_on_show_pending = false
 	if not is_visible_in_tree():
 		return
+	if FirstStepsManager:
+		FirstStepsManager.register_screen(FirstStepsManager.SCREEN_MAIN_MENU)
 	refresh_shop_badge()
 	refresh_daily_quests()
 	_render_hub_panels()
@@ -208,6 +311,8 @@ func apply_locale() -> void:
 		_exit_button.text = tr("MAIN_EXIT")
 	if _daily_quests_title:
 		_daily_quests_title.text = tr("MAIN_DAILY_QUESTS")
+	if _skip_label:
+		_skip_label.text = tr("FIRST_STEPS_SKIP_LINK")
 	if _stats_header_label:
 		_stats_header_label.text = tr("MAIN_STATISTICS")
 	if _stat_tracks_caption:
@@ -446,7 +551,13 @@ func _on_play_again_pressed() -> void:
 		return
 	var instrument := _instrument_key_from_session(session)
 	var results_mgr := _get_results_history_service()
-	transitions.open_game_with_song(song_data, instrument, results_mgr, "basic", 4, [])
+	var generation_mode := _RhythmRating.normalize_mode(str(session.get("mode", session.get("generation_mode", "original"))))
+	var lane_count := int(session.get("lanes", 4))
+	if lane_count <= 0:
+		lane_count = 4
+	var run_modifiers: Array = session.get("modifiers", [])
+	var chart_tag := _NotesUtils.resolve_play_chart_tag(song_path, instrument, generation_mode, lane_count)
+	transitions.open_game_with_song(song_data, instrument, results_mgr, generation_mode, lane_count, run_modifiers, chart_tag)
 
 func _on_achievements_pressed():
 	MusicManager.play_select_sound()
@@ -536,6 +647,7 @@ func _on_calendar_day_changed(_new_date: String) -> void:
 	_render_tip_of_day()
 	_update_daily_reset_label()
 
+
 func _on_daily_reset_timer_timeout() -> void:
 	_update_daily_reset_label()
 
@@ -557,6 +669,17 @@ func _pulse_shop_badge() -> void:
 		_UiMotionEffects.pulse_menu_badge(_shop_badge)
 
 func _render_daily_quests():
+	if FirstStepsManager:
+		FirstStepsManager.refresh_state()
+	if FirstStepsManager and FirstStepsManager.is_active():
+		_render_first_steps_cards()
+		return
+	if _daily_quests_title:
+		_daily_quests_title.text = tr("MAIN_DAILY_QUESTS")
+	if _skip_label:
+		_skip_label.visible = false
+	if _right_hub:
+		_right_hub.remove_theme_constant_override("separation")
 	var quests = PlayerDataManager.get_daily_quests()
 	for i in range(3):
 		var item_name = "QuestItem%d" % (i + 1)
@@ -564,7 +687,8 @@ func _render_daily_quests():
 		if not item:
 			continue
 		if item is Control:
-			item.clip_contents = true
+			# clip_contents chops icons against rounded quest-card corners.
+			item.clip_contents = false
 
 		var title_label = item.find_child("QuestTitleLabel", true, false)
 		var desc_label = item.find_child("QuestDescriptionLabel", true, false)
@@ -583,6 +707,10 @@ func _render_daily_quests():
 				var tint := _QUEST_ICON_COLORS[i] if i < _QUEST_ICON_COLORS.size() else _QUEST_ICON_COLORS[0]
 				quest_icon.texture = _UiIconHelper.load_tinted_icon(_QUEST_ICON_FILE, tint)
 				quest_icon.visible = true
+
+			var reward_icon := item.find_child("RewardIcon", true, false) as TextureRect
+			if reward_icon:
+				reward_icon.visible = true
 
 			if item is PanelContainer:
 				_apply_quest_item_style(item, completed)
@@ -627,6 +755,203 @@ func _render_daily_quests():
 			item.hide()
 	_update_daily_reset_label()
 
+
+func _render_first_steps_cards() -> void:
+	var cards := FirstStepsManager.get_step_cards(3)
+	if _daily_quests_title:
+		_daily_quests_title.text = tr("FIRST_STEPS_TITLE")
+	if _right_hub:
+		_right_hub.add_theme_constant_override("separation", _RIGHT_HUB_SEPARATION_ONBOARDING)
+	_update_daily_reset_label()
+	if _skip_label:
+		_skip_label.visible = true
+	for i in range(3):
+		var item = find_child("QuestItem%d" % (i + 1), true, false)
+		if not item:
+			continue
+		if i < cards.size():
+			var card: Dictionary = cards[i]
+			var step := int(card.get("step", 0))
+			var done := bool(card.get("done", false))
+			var is_current := bool(card.get("current", false))
+			if item is Control:
+				item.clip_contents = false
+			var title_label = item.find_child("QuestTitleLabel", true, false)
+			var desc_label = item.find_child("QuestDescriptionLabel", true, false)
+			var pb = item.find_child("QuestProgressBar", true, false)
+			var quest_icon := item.find_child("QuestIcon", true, false) as TextureRect
+			if quest_icon:
+				quest_icon.texture = _UiIconHelper.load_tinted_icon(
+					FirstStepsManager.get_step_icon(step),
+					FirstStepsManager.get_step_tint(step)
+				)
+				quest_icon.visible = true
+
+			var reward_icon := item.find_child("RewardIcon", true, false) as TextureRect
+			if reward_icon:
+				reward_icon.visible = false
+			if item is PanelContainer:
+				_apply_quest_item_style(item, done)
+				_UiMotionEffects.stop_panel_border_pulse(item)
+				if is_current:
+					_UiMotionEffects.pulse_panel_border(item, Color(0.95, 0.78, 0.35), 0.42, 0.88, 0.85)
+			if title_label:
+				title_label.text = FirstStepsManager.get_step_title(step)
+				title_label.add_theme_color_override(
+					"font_color",
+					Color(0.95, 0.70, 0.30, 1.0) if done else Color(0.82, 0.88, 0.96)
+				)
+			if desc_label:
+				desc_label.text = FirstStepsManager.get_step_desc(step)
+				desc_label.add_theme_color_override(
+					"font_color",
+					Color(0.92, 0.94, 0.98) if done else Color(0.72, 0.78, 0.88)
+				)
+			if pb:
+				pb.max_value = 1
+				pb.value = 1 if done else 0
+				_apply_quest_progress_style(pb, done)
+			item.show()
+		else:
+			if item is PanelContainer:
+				_UiMotionEffects.stop_panel_border_pulse(item)
+			item.hide()
+	_update_daily_reset_label()
+	_maybe_show_first_steps_intro()
+
+
+func _maybe_show_first_steps_intro(force: bool = false) -> void:
+	if not FirstStepsManager.is_active():
+		return
+	if not force and not FirstStepsManager.should_show_intro():
+		return
+	var tut := _ensure_first_steps_spotlight()
+	if tut == null:
+		return
+	tut.start([
+		{
+			"title_key": "FIRST_STEPS_WELCOME_TITLE",
+			"body_key": "FIRST_STEPS_WELCOME_BODY",
+			"next_key": "FIRST_STEPS_WELCOME_START",
+			"skip_key": "FIRST_STEPS_WELCOME_SKIP",
+			"hide_step_label": true,
+			"hide_nav_hint": true,
+		},
+	])
+
+
+func _ensure_first_steps_spotlight() -> CanvasLayer:
+	if _spotlight_tutorial != null:
+		return _spotlight_tutorial
+	_spotlight_tutorial = _SpotlightTutorialScene.instantiate() as CanvasLayer
+	if _spotlight_tutorial == null:
+		return null
+	add_child(_spotlight_tutorial)
+	if not _spotlight_tutorial.finished.is_connected(_on_first_steps_intro_closed):
+		_spotlight_tutorial.finished.connect(_on_first_steps_intro_closed)
+	if not _spotlight_tutorial.skipped.is_connected(_on_first_steps_intro_skipped):
+		_spotlight_tutorial.skipped.connect(_on_first_steps_intro_skipped)
+	return _spotlight_tutorial
+
+
+func _on_first_steps_intro_closed() -> void:
+	FirstStepsManager.mark_intro_done()
+	# Не ведём игрока силой: preview остаётся на шаге 0, а реальный режим
+	# показывает спотлайт на кнопке Settings — игрок сам решает, куда идти.
+
+
+func _on_first_steps_intro_skipped() -> void:
+	_confirm_skip_first_steps()
+
+
+func _connect_first_steps_interactions() -> void:
+	for i in range(3):
+		var item = find_child("QuestItem%d" % (i + 1), true, false)
+		if item is Control:
+			UiClick.connect_clicked(item as Control, _continue_first_steps, _first_steps_active_guard)
+	if _daily_reset_label:
+		UiClick.connect_clicked(_daily_reset_label, _continue_first_steps, _first_steps_active_guard)
+	if _skip_label:
+		UiClick.connect_clicked(_skip_label, _confirm_skip_first_steps, _first_steps_skip_guard)
+
+
+func _on_first_steps_state_changed() -> void:
+	if is_visible_in_tree():
+		refresh_daily_quests()
+
+
+func _first_steps_active_guard() -> bool:
+	return FirstStepsManager.is_active()
+
+
+func _first_steps_skip_guard() -> bool:
+	return FirstStepsManager.is_active() and not FirstStepsManager.is_preview_active()
+
+
+func _continue_first_steps() -> void:
+	if transitions == null:
+		return
+	MusicManager.play_select_sound()
+	_first_steps_navigate()
+
+
+func _first_steps_navigate() -> void:
+	var step := FirstStepsManager.get_current_step()
+	if step < 0 or transitions == null:
+		return
+	match FirstStepsManager.target_kind_for_step(step):
+		"library":
+			transitions.open_settings_with_page("library")
+		_:
+			transitions.open_song_select()
+
+
+func _setup_first_steps_guide() -> void:
+	if not FirstStepsManager:
+		return
+	_first_steps_guide = FirstStepsGuide.new()
+	_first_steps_guide.screen_id = FirstStepsManager.SCREEN_MAIN_MENU
+	_first_steps_guide.allow_welcome = false
+	# Welcome показывает сам хост; после него (и на любом шаге при возврате на
+	# меню) guide показывает intro шага с primary-кнопкой навигации к месту
+	# действия (ОТКРЫТЬ БИБЛИОТЕКУ / К ВЫБОРУ ПЕСНИ / …) — игрок не угадывает путь.
+	_first_steps_guide.allow_step_intro = true
+	_first_steps_guide.navigate_to_expected_screen = Callable(self, "_first_steps_navigate")
+	_first_steps_guide.spotlight_targets_provider = Callable(self, "_first_steps_spotlight_targets")
+	add_child(_first_steps_guide)
+
+
+func _first_steps_spotlight_targets() -> Array:
+	if not FirstStepsManager or FirstStepsManager.get_current_step() != 0:
+		return []
+	if FirstStepsManager.is_step_done(0):
+		return []
+	if _settings_button is Control and _settings_button.is_visible_in_tree():
+		return [_settings_button]
+	return []
+
+
+func _confirm_skip_first_steps() -> void:
+	if _confirm_overlay == null:
+		return
+	MusicManager.play_cancel_sound()
+	var confirmed := await _Overlay.ask(
+		_confirm_overlay,
+		tr("FIRST_STEPS_SKIP_CONFIRM_BODY"),
+		"warning",
+		tr("FIRST_STEPS_SKIP_CONFIRM_TITLE"),
+		tr("FIRST_STEPS_SKIP_CONFIRM"),
+		tr("FIRST_STEPS_STAY"),
+	)
+	if not confirmed:
+		# Keep the welcome alive: Esc/Cancel must not silently skip onboarding.
+		_maybe_show_first_steps_intro(true)
+		return
+	FirstStepsManager.skip()
+	StatusToast.show_from_node(self, "first_steps_skipped", tr("FIRST_STEPS_SKIP_TOAST"), "info", 4.0)
+	refresh_daily_quests()
+
+
 func _apply_quest_item_style(item: PanelContainer, completed: bool) -> void:
 	var shell := StyleBoxFlat.new()
 	if completed:
@@ -640,6 +965,11 @@ func _apply_quest_item_style(item: PanelContainer, completed: bool) -> void:
 	shell.border_width_right = 1
 	shell.border_width_bottom = 1
 	shell.set_corner_radius_all(10)
+	# Keep icons clear of the rounded stroke (clip_contents off alone is not enough).
+	shell.content_margin_left = 2.0
+	shell.content_margin_top = 2.0
+	shell.content_margin_right = 2.0
+	shell.content_margin_bottom = 2.0
 	item.add_theme_stylebox_override("panel", shell)
 
 func _apply_quest_progress_style(pb: ProgressBar, completed: bool) -> void:
@@ -689,11 +1019,16 @@ func _render_last_track_panel() -> void:
 	var session := _get_latest_session()
 	var song_path := _resolve_song_path_for_session(session)
 	var has_session := not session.is_empty()
+	if _DebugEmptyState.is_enabled():
+		has_session = false
+		session = {}
+		song_path = ""
 	var title_text := tr("MAIN_LAST_TRACK_EMPTY")
 	var artist_text := ""
 	var accuracy_text := ""
 	var grade_text := ""
 	var difficulty_text := ""
+	var difficulty_tint := Color(0.72, 0.58, 0.95, 1)
 
 	if has_session:
 		var labels := _resolve_last_track_labels(session, song_path)
@@ -705,38 +1040,41 @@ func _render_last_track_panel() -> void:
 		var accuracy := float(session.get("accuracy", 0.0))
 		accuracy_text = "%.2f%%" % accuracy
 		grade_text = str(session.get("grade", ""))
-		difficulty_text = _resolve_last_track_difficulty_label(song_path, session)
-		var grade_color_data = session.get("grade_color", {})
-		if grade_text != "" and _last_track_grade and grade_color_data is Dictionary:
+		var diff_info := _resolve_last_track_difficulty_info(song_path, session)
+		difficulty_text = str(diff_info.get("text", ""))
+		difficulty_tint = diff_info.get("color", difficulty_tint) as Color
+		if grade_text != "" and _last_track_grade:
 			_last_track_grade.add_theme_color_override(
 				"font_color",
-				Color(
-					float(grade_color_data.get("r", 0.95)),
-					float(grade_color_data.get("g", 0.82)),
-					float(grade_color_data.get("b", 0.35)),
-					float(grade_color_data.get("a", 1.0)),
-				)
+				_GradeDisplay.color_from_saved_result(session)
 			)
 
 	var title_label := _last_track_title_label()
 	var artist_label := _last_track_artist_label()
 	if title_label:
-		title_label.text = title_text
-		title_label.visible = has_session
-		title_label.modulate = Color.WHITE
+		if has_session:
+			title_label.text = title_text
+			title_label.visible = true
+			title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			title_label.add_theme_color_override("font_color", Color(0.9, 0.94, 0.98, 1))
+			title_label.modulate = Color.WHITE
+		else:
+			title_label.text = tr("MAIN_LAST_TRACK_EMPTY")
+			title_label.visible = true
+			title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			title_label.add_theme_color_override("font_color", Color(0.58, 0.64, 0.74, 1))
+			title_label.modulate = Color(0.92, 0.94, 0.98, 0.9)
 	if artist_label:
 		artist_label.text = artist_text
 		artist_label.visible = has_session
 		artist_label.modulate = Color.WHITE
-	if _last_track_difficulty:
-		_last_track_difficulty.text = difficulty_text
-		_last_track_difficulty.visible = difficulty_text != ""
+	_set_last_track_difficulty_row(difficulty_text if has_session else "", difficulty_tint)
 	if _last_track_accuracy:
 		_last_track_accuracy.text = accuracy_text
-		_last_track_accuracy.visible = accuracy_text != ""
+		_last_track_accuracy.visible = has_session and accuracy_text != ""
 	if _last_track_grade:
 		_last_track_grade.text = grade_text
-		_last_track_grade.visible = grade_text != ""
+		_last_track_grade.visible = has_session and grade_text != ""
 	if _play_again_button:
 		_play_again_button.visible = has_session
 	if _last_track_cover:
@@ -753,6 +1091,9 @@ func _render_last_track_panel() -> void:
 		else:
 			_last_track_cover_path = ""
 			_last_track_cover.texture = null
+			# Keep framed cover container visible but empty — intentional empty state keeps panel height
+			if _last_track_cover_frame:
+				_last_track_cover_frame.visible = true
 	if _last_track_panel:
 		_UiMotionEffects.stop_panel_border_pulse(_last_track_panel)
 		if has_session:
@@ -763,6 +1104,8 @@ func _render_last_track_panel() -> void:
 				0.78,
 				0.95
 			)
+	call_deferred("_sync_last_track_cover_to_body")
+
 
 func _resolve_last_track_cover(song_path: String) -> Texture2D:
 	return _RhythmDnaCoverLoader.load_cover_for_display(song_path, _LAST_TRACK_COVER_PX)
@@ -774,6 +1117,8 @@ func _apply_last_track_cover(song_path: String) -> void:
 	if song_path != _last_track_cover_path:
 		return
 	_last_track_cover.texture = _resolve_last_track_cover(song_path)
+	_refresh_last_track_cover_mask()
+	call_deferred("_refresh_last_track_cover_mask")
 
 
 func _render_activity_feed() -> void:
@@ -782,6 +1127,10 @@ func _render_activity_feed() -> void:
 	for child in _activity_list_vbox.get_children():
 		_activity_list_vbox.remove_child(child)
 		child.free()
+	if _DebugEmptyState.is_enabled():
+		if _activity_empty_label:
+			_activity_empty_label.visible = true
+		return
 	var achievements: Array = []
 	var mgr := _get_achievement_manager()
 	if mgr:
@@ -831,7 +1180,7 @@ func _format_activity_entry_text(entry: Dictionary) -> String:
 			return tr("MAIN_ACTIVITY_ACHIEVEMENT") % _MainMenuNearestAchievement.title_for(ach)
 		"generation":
 			return _MainMenuActivityFeed.format_entry_text(entry)
-		"record":
+		"progress":
 			return _MainMenuActivityFeed.format_entry_text(entry)
 	return ""
 
@@ -901,6 +1250,15 @@ func _render_tip_of_day() -> void:
 func _update_daily_reset_label() -> void:
 	if _daily_reset_label == null:
 		return
+	if FirstStepsManager and FirstStepsManager.is_active():
+		var done := FirstStepsManager.get_done_count()
+		_daily_reset_label.text = "%s  ·  %s" % [
+			tr("FIRST_STEPS_CONTINUE"),
+			tr("FIRST_STEPS_PROGRESS_FMT") % [done, FirstStepsManager.get_step_count()],
+		]
+		_daily_reset_label.add_theme_color_override("font_color", Color(0.95, 0.78, 0.35, 1.0))
+		return
+	_daily_reset_label.remove_theme_color_override("font_color")
 	_daily_reset_label.text = tr("MAIN_DAILY_RESET") % _format_time_until_midnight()
 
 func _get_latest_session() -> Dictionary:
@@ -1125,6 +1483,16 @@ func _reset_embedded_achievement_card_layout(card: Control) -> void:
 
 func _render_nearest_achievement_panel() -> void:
 	_ensure_nearest_ach_card()
+	if _DebugEmptyState.is_enabled():
+		if _nearest_ach_header_label:
+			_nearest_ach_header_label.visible = true
+		if _nearest_ach_empty_label:
+			_nearest_ach_empty_label.visible = true
+		if _nearest_ach_card_slot:
+			_nearest_ach_card_slot.visible = false
+		if _nearest_ach_card:
+			_nearest_ach_card.visible = false
+		return
 	var mgr := _get_achievement_manager()
 	var picked: Dictionary = {}
 	if mgr:
@@ -1194,12 +1562,18 @@ func _clean_track_label(value: String) -> String:
 	return text
 
 func _resolve_last_track_difficulty_label(song_path: String, session: Dictionary) -> String:
+	return str(_resolve_last_track_difficulty_info(song_path, session).get("text", ""))
+
+
+func _resolve_last_track_difficulty_info(song_path: String, session: Dictionary) -> Dictionary:
+	var empty := {"text": "", "decimal": 0.0, "color": Color(0.72, 0.58, 0.95, 1)}
 	if song_path == "" or SongLibrary == null:
-		return ""
+		return empty
 	var instrument := str(session.get("instrument", ""))
-	var inst_key := "drums"
-	if instrument.find("еркусс") != -1 or instrument.to_lower().find("drum") != -1:
-		inst_key = "drums"
+	var inst_key := _instrument_key_from_session(session)
+	var lanes := int(session.get("lanes", ChartDifficultyAnalyzer.CANONICAL_STATS_LANES))
+	if lanes <= 0:
+		lanes = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES
 	var modes_to_try: Array[String] = []
 	var session_mode := str(session.get("generation_mode", session.get("mode", ""))).strip_edges().to_lower()
 	if session_mode != "":
@@ -1208,14 +1582,18 @@ func _resolve_last_track_difficulty_label(song_path: String, session: Dictionary
 		if mode not in modes_to_try:
 			modes_to_try.append(mode)
 	for mode in modes_to_try:
-		var variant := SongLibrary.get_chart_difficulty_variant(song_path, inst_key, mode)
+		var variant := SongLibrary.get_chart_difficulty_variant(song_path, inst_key, mode, lanes)
 		if variant.is_empty():
 			continue
 		var decimal := ChartDifficultyAnalyzer.decimal_rating_from_stats(variant)
 		if decimal <= 0.0:
 			continue
-		return ChartDifficultyAnalyzer.format_decimal_rating(decimal, true)
-	return ""
+		return {
+			"text": ChartDifficultyAnalyzer.format_decimal_rating(decimal, true),
+			"decimal": decimal,
+			"color": ChartDifficultyAnalyzer.rating_color_for_decimal(decimal),
+		}
+	return empty
 
 func _compute_overall_accuracy() -> float:
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()

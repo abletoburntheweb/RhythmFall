@@ -11,9 +11,11 @@ const _HelpFlow = preload("res://scenes/help/help_flow.gd")
 const _HelpShowcase = preload("res://scenes/help/help_showcase.gd")
 const _HelpLocale = preload("res://logic/i18n/help_locale.gd")
 const _HelpContentParser = preload("res://scenes/help/lib/help_content_parser.gd")
+const _HelpConflictTable = preload("res://scenes/help/help_conflict_table.gd")
 const _HelpModList = preload("res://scenes/help/lib/help_mod_list.gd")
 const _HelpTypography = preload("res://scenes/help/lib/help_typography.gd")
 const _UiListSlideTransition = preload("res://logic/ui/ui_list_slide_transition.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 const BODY_BULLET_INDENT := 16.0
 
@@ -22,13 +24,21 @@ const ACCENT_MINT := Color(0.62, 0.86, 0.72, 1.0)
 
 const SECTION_META := {
 	"start": {"icon": "circle-play.svg", "color": Color(0.98, 0.64, 0.31, 1.0)},
-	"server": {"icon": "server.svg", "color": ACCENT_TEAL},
-	"generation": {"icon": "sparkles.svg", "color": ACCENT_MINT},
-	"instruments": {"icon": "drum.svg", "color": Color(0.38, 0.78, 0.74, 1.0)},
-	"gameplay": {"icon": "gamepad-2.svg", "color": Color(0.42, 0.57, 0.82, 1.0)},
-	"library": {"icon": "music.svg", "color": Color(0.66, 0.58, 0.86, 1.0)},
+	"creation": {"icon": "sparkles.svg", "color": ACCENT_MINT},
+	"play": {"icon": "gamepad-2.svg", "color": Color(0.42, 0.57, 0.82, 1.0)},
+	"modifiers": {"icon": "flame.svg", "color": Color(0.95, 0.45, 0.42, 1.0)},
+	"training": {"icon": "target.svg", "color": Color(0.38, 0.78, 0.74, 1.0)},
 	"progress": {"icon": "trophy.svg", "color": Color(0.92, 0.78, 0.45, 1.0)},
 	"play_modes": {"icon": "layout-dashboard.svg", "color": Color(0.66, 0.58, 0.86, 1.0)},
+	"files": {"icon": "folder.svg", "color": Color(0.66, 0.58, 0.86, 1.0)},
+	"controls": {"icon": "keyboard.svg", "color": Color(0.58, 0.78, 0.98, 1.0)},
+	"metrics": {"icon": "chart-column.svg", "color": Color(0.62, 0.86, 0.72, 1.0)},
+	"systems": {"icon": "cpu.svg", "color": ACCENT_TEAL},
+}
+
+const GROUP_TITLES := {
+	"guide": "Проводник",
+	"reference": "Справка",
 }
 
 @onready var nav_list: VBoxContainer = $MainVBox/BodyHBox/SidebarPanel/SidebarVBox/NavScroll/NavList
@@ -69,6 +79,7 @@ var _current_section: HelpSection = null
 var _current_section_title := ""
 var _current_items: Array = []
 var _current_item_index := -1
+var _current_item_id := ""
 var _pending_item_id := ""
 var _nav_scroll_generation := 0
 var _article_layout_generation := 0
@@ -81,6 +92,7 @@ var _suppress_search_handler := false
 
 
 func _ready() -> void:
+	var _t_ready := PerfTrace.begin("perf.load.help.ready")
 	add_to_group("locale_refresh")
 	_bbcode_strip_re = RegEx.new()
 	_bbcode_strip_re.compile("\\[[^\\]]*\\]")
@@ -101,6 +113,7 @@ func _ready() -> void:
 		article_scroll.focus_mode = Control.FOCUS_NONE
 	if nav_scroll:
 		nav_scroll.focus_mode = Control.FOCUS_NONE
+	PerfTrace.end("perf.load.help.ready", _t_ready)
 
 
 func _input(event: InputEvent) -> void:
@@ -111,24 +124,30 @@ func _input(event: InputEvent) -> void:
 func _try_handle_nav_input(event: InputEvent) -> bool:
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return false
+	var key_event := event as InputEventKey
+	if key_event.keycode == KEY_SLASH and search_bar:
+		if not search_bar.has_focus():
+			search_bar.grab_focus()
+		return true
 	if search_bar and search_bar.has_focus():
 		return false
 	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
 		return false
-	if event.keycode >= KEY_1 and event.keycode <= KEY_6:
-		var index := int(event.keycode - KEY_1)
-		return _select_section_by_index(index)
+	if key_event.keycode >= KEY_1 and key_event.keycode <= KEY_7:
+		var index := int(key_event.keycode - KEY_1)
+		return _select_guide_section_by_index(index)
 	if _section_nodes.is_empty():
 		return false
-	match event.keycode:
-		KEY_UP, KEY_LEFT:
+	match key_event.keycode:
+		KEY_UP, KEY_LEFT, KEY_BRACKETLEFT, KEY_COMMA:
 			return _navigate_question(-1)
-		KEY_DOWN, KEY_RIGHT:
+		KEY_DOWN, KEY_RIGHT, KEY_BRACKETRIGHT, KEY_PERIOD:
 			return _navigate_question(1)
 	return false
 
 
 func apply_locale() -> void:
+	var _t_locale := PerfTrace.begin("perf.detail.help.locale")
 	if back_button:
 		back_button.text = tr("BTN_BACK")
 	if title_label:
@@ -157,6 +176,7 @@ func apply_locale() -> void:
 	_rebuild_help_items()
 	if was_first:
 		_help_skip_transition = false
+	PerfTrace.end("perf.detail.help.locale", _t_locale)
 
 
 func _setup_ui_icons() -> void:
@@ -173,10 +193,10 @@ func _apply_layout_balance() -> void:
 
 
 func apply_contextual_overlay_layout() -> void:
-	# Full-screen help over the current host (keep host alive). Soft dim only.
+	# Full-screen help over the current host (keep host alive). Dense dim so Back stays readable.
 	var bg := get_node_or_null("Background") as ColorRect
 	if bg:
-		bg.color = Color(0.02, 0.03, 0.05, 0.72)
+		bg.color = Color(0.02, 0.03, 0.05, 0.94)
 		bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	var main := get_node_or_null("MainVBox") as Control
 	if main:
@@ -186,6 +206,8 @@ func apply_contextual_overlay_layout() -> void:
 		main.offset_top = 10.0
 		main.offset_right = -24.0
 		main.offset_bottom = -10.0
+	if back_button:
+		UiIconHelper.apply_standard_back_button(back_button)
 	_apply_layout_balance()
 	set_meta("help_contextual_overlay", true)
 
@@ -288,17 +310,48 @@ func _store_selection_for_restore() -> void:
 		_pending_item_id = str(_current_items[_current_item_index].get("id", ""))
 
 
+func _add_group_header(group_id: String) -> void:
+	if nav_list == null:
+		return
+	var title: String = str(GROUP_TITLES.get(group_id, group_id.capitalize()))
+	# Try translated group title if available (HELP_GROUP_*_TITLE)
+	var translated := TranslationServer.translate("HELP_GROUP_%s_TITLE" % group_id.to_upper())
+	if translated != "HELP_GROUP_%s_TITLE" % group_id.to_upper():
+		title = translated
+	var label := Label.new()
+	label.text = title
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.add_theme_color_override("font_color", Color(0.58, 0.66, 0.78, 0.72))
+	label.add_theme_font_size_override("font_size", 12)
+	var font := _HelpTypography.font()
+	if font:
+		label.add_theme_font_override("font", font)
+	label.add_theme_constant_override("outline_size", 0)
+	# Small top margin for reference group
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_top", 10 if group_id == "reference" else 2)
+	margin.add_theme_constant_override("margin_bottom", 2)
+	margin.add_theme_constant_override("margin_left", 4)
+	margin.add_child(label)
+	nav_list.add_child(margin)
+
+
 func _setup_help_items() -> void:
+	var _t_build := PerfTrace.begin("perf.detail.help.build")
 	var data: Dictionary = _load_help_content()
 	_help_colors = data.get("colors", {})
 	_sections_cache = data.get("sections", [])
 	if not (_sections_cache is Array):
 		_sections_cache = []
+		PerfTrace.end("perf.detail.help.build", _t_build)
+		return
 
 	var visible_sections := 0
 	var query_active := _search_query.strip_edges() != ""
 	var first_section: HelpSection = null
 	var first_item: Dictionary = {}
+	var current_group := ""
+	var group_had_visible := {}
 
 	for section in _sections_cache:
 		if not (section is Dictionary):
@@ -309,6 +362,13 @@ func _setup_help_items() -> void:
 		var filtered_items := _filter_items_for_section(section)
 		if query_active and filtered_items.is_empty():
 			continue
+		var group_id := str(section.get("group", "guide"))
+		if group_id != current_group:
+			# Only insert header if this group's first visible section
+			if not group_had_visible.has(group_id):
+				_add_group_header(group_id)
+				group_had_visible[group_id] = true
+			current_group = group_id
 		var section_node := _add_help_category(section, filtered_items, query_active)
 		if section_node == null:
 			continue
@@ -321,6 +381,7 @@ func _setup_help_items() -> void:
 	if sidebar_empty_label:
 		sidebar_empty_label.visible = query_active and visible_sections == 0
 
+	PerfTrace.end("perf.detail.help.build", _t_build)
 	_restore_or_select_default(first_section, first_item)
 
 
@@ -384,12 +445,16 @@ func _plain_help_text(text: String) -> String:
 
 
 func _load_help_content() -> Dictionary:
+	var _t_data := PerfTrace.begin("perf.detail.help.data_load")
 	_ensure_user_help_content()
 	var path := HELP_CONTENT_USER_PATH if FileAccess.file_exists(HELP_CONTENT_USER_PATH) else _default_help_path()
 	if path == "":
 		push_warning("HelpScreen: не найден файл справки")
+		PerfTrace.end("perf.detail.help.data_load", _t_data)
 		return {}
-	return _read_help_json(path)
+	var result := _read_help_json(path)
+	PerfTrace.end("perf.detail.help.data_load", _t_data)
+	return result
 
 
 func _read_help_json(path: String) -> Dictionary:
@@ -485,15 +550,20 @@ func _section_meta(section: Dictionary) -> Dictionary:
 func _add_help_category(section: Dictionary, items: Array, auto_expand: bool) -> HelpSection:
 	if items.is_empty():
 		return null
-
+	var _t_cat := PerfTrace.begin("perf.detail.help.category." + str(section.get("id", "unknown")))
 	var meta := _section_meta(section)
+	var _t_inst := PerfTrace.begin("perf.detail.help.item.instantiate")
 	var section_node := HELP_SECTION_SCENE.instantiate() as HelpSection
+	PerfTrace.end("perf.detail.help.item.instantiate", _t_inst)
 	section_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var _t_add := PerfTrace.begin("perf.detail.help.item.add_child")
 	nav_list.add_child(section_node)
+	PerfTrace.end("perf.detail.help.item.add_child", _t_add)
 	section_node.configure(section, items, auto_expand, meta.color, meta.icon)
 	if not section_node.question_selected.is_connected(_on_section_question_selected):
 		section_node.question_selected.connect(_on_section_question_selected.bind(section_node))
 	_section_nodes.append(section_node)
+	PerfTrace.end("perf.detail.help.category." + str(section.get("id", "unknown")), _t_cat)
 	return section_node
 
 
@@ -502,7 +572,9 @@ func _on_section_question_selected(item: Dictionary, section_node: HelpSection) 
 
 
 func _select_item_in_section(section_node: HelpSection, item: Dictionary, scroll_sidebar: bool = true) -> void:
+	var _t_switch := PerfTrace.begin("perf.detail.help.switch_page")
 	if not (item is Dictionary) or section_node == null:
+		PerfTrace.end("perf.detail.help.switch_page", _t_switch)
 		return
 	for node in _section_nodes:
 		if node != section_node:
@@ -515,6 +587,7 @@ func _select_item_in_section(section_node: HelpSection, item: Dictionary, scroll
 	_display_current_item()
 	if scroll_sidebar:
 		call_deferred("_scroll_selected_question_into_view")
+	PerfTrace.end("perf.detail.help.switch_page", _t_switch)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -537,6 +610,26 @@ func _select_section_by_index(index: int) -> bool:
 		return false
 	for i in range(_section_nodes.size()):
 		_section_nodes[i].set_expanded(i == index, false)
+	var item: Dictionary = items[0]
+	_select_item_in_section(section_node, item, false)
+	UiScreenHotkeys.play_section_switch_sound()
+	call_deferred("_scroll_selected_question_into_view")
+	return true
+
+
+func _select_guide_section_by_index(index: int) -> bool:
+	var guide_nodes: Array[HelpSection] = [] as Array[HelpSection]
+	for node in _section_nodes:
+		if str(node.get_section().get("group", "guide")) == "guide":
+			guide_nodes.append(node)
+	if index < 0 or index >= guide_nodes.size():
+		return false
+	var section_node := guide_nodes[index]
+	var items := section_node.get_items()
+	if items.is_empty():
+		return false
+	for i in range(_section_nodes.size()):
+		_section_nodes[i].set_expanded(_section_nodes[i] == section_node, false)
 	var item: Dictionary = items[0]
 	_select_item_in_section(section_node, item, false)
 	UiScreenHotkeys.play_section_switch_sound()
@@ -645,9 +738,12 @@ func _display_current_item() -> void:
 
 
 func _show_article(item: Dictionary) -> void:
+	var _t_open := PerfTrace.begin("perf.detail.help.open_section")
 	if not (item is Dictionary):
 		_show_article_placeholder()
+		PerfTrace.end("perf.detail.help.open_section", _t_open)
 		return
+	_current_item_id = str(item.get("id", ""))
 	var item_title := _HelpLocale.localized_item_title(item)
 	var content := _resolve_colors(_HelpLocale.localized_item_content(item), _help_colors)
 	var summary := _resolve_colors(_HelpLocale.localized_item_summary(item), _help_colors)
@@ -670,6 +766,7 @@ func _show_article(item: Dictionary) -> void:
 	_build_article_body(content)
 	_build_article_footer(item, summary)
 	call_deferred("_sync_article_body_height")
+	PerfTrace.end("perf.detail.help.open_section", _t_open)
 
 
 func _clear_vbox(container: VBoxContainer) -> void:
@@ -688,24 +785,35 @@ func _prepare_article_block(node: Control) -> void:
 
 
 func _build_article_body(content: String) -> void:
+	var _t_article := PerfTrace.begin("perf.detail.help.article_build")
 	_article_layout_generation += 1
 	_article_sync_width = -1.0
 	_clear_vbox(article_body_vbox)
 	if article_body_vbox:
 		article_body_vbox.custom_minimum_size = Vector2.ZERO
 	if article_body_vbox == null:
+		PerfTrace.end("perf.detail.help.article_build", _t_article)
 		return
 	for segment in _HelpContentParser.parse(content):
 		if not (segment is Dictionary):
 			continue
 		if segment.get("type") == "callout":
+			var _t_callout_inst := PerfTrace.begin("perf.detail.help.article.callout.instantiate")
 			var callout := HELP_CALLOUT_SCENE.instantiate() as HelpCallout
+			PerfTrace.end("perf.detail.help.article.callout.instantiate", _t_callout_inst)
 			_prepare_article_block(callout)
+			var _t_callout_add := PerfTrace.begin("perf.detail.help.article.callout.add_child")
 			article_body_vbox.add_child(callout)
+			PerfTrace.end("perf.detail.help.article.callout.add_child", _t_callout_add)
 			var body := _resolve_colors(str(segment.get("text", "")), _help_colors)
+			var _t_callout_setup := PerfTrace.begin("perf.detail.help.article.callout.setup")
 			callout.setup(str(segment.get("callout_type", "info")), body)
+			PerfTrace.end("perf.detail.help.article.callout.setup", _t_callout_setup)
 		elif segment.get("type") == "flow":
+			var _t_flow_inst := PerfTrace.begin("perf.detail.help.article.flow.instantiate")
 			var flow = HELP_FLOW_SCENE.instantiate()
+			PerfTrace.end("perf.detail.help.article.flow.instantiate", _t_flow_inst)
+			var _t_flow_setup := PerfTrace.begin("perf.detail.help.article.flow.setup")
 			match str(segment.get("flow_type", "")):
 				"split":
 					flow.setup_split(segment.get("left", {}), segment.get("right", {}), _help_colors)
@@ -713,18 +821,28 @@ func _build_article_body(content: String) -> void:
 					flow.setup_branch(segment.get("hub", {}), segment.get("arms", []), _help_colors)
 				_:
 					flow.setup_linear(segment.get("steps", []), _help_colors)
+			PerfTrace.end("perf.detail.help.article.flow.setup", _t_flow_setup)
 			_prepare_article_block(flow)
+			var _t_flow_add := PerfTrace.begin("perf.detail.help.article.flow.add_child")
 			article_body_vbox.add_child(flow)
+			PerfTrace.end("perf.detail.help.article.flow.add_child", _t_flow_add)
 		elif segment.get("type") == "showcase":
+			var _t_show_inst := PerfTrace.begin("perf.detail.help.article.showcase.instantiate")
 			var showcase = HELP_SHOWCASE_SCENE.instantiate()
+			PerfTrace.end("perf.detail.help.article.showcase.instantiate", _t_show_inst)
 			var params: Dictionary = segment.get("params", {})
 			if not (params is Dictionary):
 				params = {}
+			var _t_show_setup := PerfTrace.begin("perf.detail.help.article.showcase.setup")
 			if showcase.has_method("setup"):
 				showcase.setup(str(segment.get("showcase_kind", "")), params)
+			PerfTrace.end("perf.detail.help.article.showcase.setup", _t_show_setup)
 			_prepare_article_block(showcase)
+			var _t_show_add := PerfTrace.begin("perf.detail.help.article.showcase.add_child")
 			article_body_vbox.add_child(showcase)
+			PerfTrace.end("perf.detail.help.article.showcase.add_child", _t_show_add)
 		elif segment.get("type") == "mod_list":
+			var _t_mod := PerfTrace.begin("perf.detail.help.article.mod_list")
 			var mod_params: Dictionary = segment.get("params", {})
 			if not (mod_params is Dictionary):
 				mod_params = {}
@@ -734,12 +852,72 @@ func _build_article_body(content: String) -> void:
 			)
 			if mod_list_text.strip_edges() != "":
 				_add_article_text_block(mod_list_text, true)
+			PerfTrace.end("perf.detail.help.article.mod_list", _t_mod)
+		elif segment.get("type") == "markdown":
+			var _t_md_inst := PerfTrace.begin("perf.detail.help.article.markdown.instantiate")
+			var md := MarkdownLabel.new()
+			PerfTrace.end("perf.detail.help.article.markdown.instantiate", _t_md_inst)
+			md.bbcode_enabled = true
+			md.fit_content = true
+			_prepare_article_block(md)
+			var _t_md_text := PerfTrace.begin("perf.detail.help.article.markdown.text")
+			md.markdown_text = str(segment.get("text", ""))
+			PerfTrace.end("perf.detail.help.article.markdown.text", _t_md_text)
+			var _t_md_add := PerfTrace.begin("perf.detail.help.article.markdown.add_child")
+			article_body_vbox.add_child(md)
+			PerfTrace.end("perf.detail.help.article.markdown.add_child", _t_md_add)
+		elif segment.get("type") == "conflicts":
+			var _t_conf_inst := PerfTrace.begin("perf.detail.help.article.conflicts.instantiate")
+			var table := _HelpConflictTable.new()
+			PerfTrace.end("perf.detail.help.article.conflicts.instantiate", _t_conf_inst)
+			_prepare_article_block(table)
+			var _t_conf_add := PerfTrace.begin("perf.detail.help.article.conflicts.add_child")
+			article_body_vbox.add_child(table)
+			PerfTrace.end("perf.detail.help.article.conflicts.add_child", _t_conf_add)
 		elif segment.get("type") == "text":
 			var chunk := str(segment.get("text", "")).strip_edges()
 			if chunk == "":
 				continue
+			var _t_text := PerfTrace.begin("perf.detail.help.article.text")
 			_add_article_text_block(_resolve_colors(chunk, _help_colors), _text_has_bullet_lines(chunk))
+			PerfTrace.end("perf.detail.help.article.text", _t_text)
+	if _current_item_id == "first_run":
+		_add_restart_onboarding_button()
 	_layout_article_blocks_immediate()
+	PerfTrace.end("perf.detail.help.article_build", _t_article)
+
+
+func _add_restart_onboarding_button() -> void:
+	if article_body_vbox == null:
+		return
+	var btn := Button.new()
+	btn.text = tr("HELP_RESTART_ONBOARDING")
+	btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = Vector2(0, 46)
+	btn.focus_mode = Control.FOCUS_NONE
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.11, 0.14, 0.18, 0.9)
+	box.border_color = Color(0.62, 0.86, 0.72, 0.6)
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(10)
+	box.content_margin_top = 10.0
+	box.content_margin_bottom = 10.0
+	for state in ["normal", "hover", "pressed", "focus"]:
+		btn.add_theme_stylebox_override(state, box)
+	_HelpTypography.apply_font_control(btn, _HelpTypography.SIZE_BODY, Color(0.82, 0.92, 0.86, 1.0))
+	btn.pressed.connect(_on_restart_onboarding_pressed)
+	_prepare_article_block(btn)
+	article_body_vbox.add_child(btn)
+
+
+func _on_restart_onboarding_pressed() -> void:
+	if FirstStepsManager and FirstStepsManager.has_method("restart_from_help"):
+		FirstStepsManager.restart_from_help()
+	if MusicManager and MusicManager.has_method("play_select_sound"):
+		MusicManager.play_select_sound()
+	if transitions:
+		transitions.open_main_menu()
 
 
 func _add_article_text_block(text: String, bullet_indent: bool) -> void:

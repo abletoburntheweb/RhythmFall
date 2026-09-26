@@ -63,13 +63,13 @@ $VenvPip = Join-Path $Venv "Scripts\pip.exe"
 Write-Host "[RhythmFall Windows] Upgrading pip..."
 & $VenvPy -m pip install -U pip wheel setuptools
 
-$ReqWin = Join-Path $Server "requirements-windows.txt"
-if (-not (Test-Path $ReqWin)) {
-    Write-Error "Missing requirements-windows.txt in $Server"
+$Req = Join-Path $Server "requirements.txt"
+if (-not (Test-Path $Req)) {
+    Write-Error "Missing requirements.txt in $Server"
 }
 
 Write-Host "[RhythmFall Windows] Core stack (numpy below 2 for tempocnn/tensorflow)..."
-& $VenvPip install -r $ReqWin
+& $VenvPip install -r $Req
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "[RhythmFall Windows] PyTorch (CPU) for demucs..."
@@ -78,57 +78,75 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 function Install-GpuStack {
     param([string]$Mode)
-    if ($Mode -eq "cpu") {
-        Write-Host "[RhythmFall Windows] GPU stack: CPU (default)"
-        return
-    }
     if ($Mode -eq "auto") {
         $names = @()
         try {
             $names = Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }
         } catch {
             Write-Warning "Could not detect GPU; keeping CPU torch."
-            return
+            $Mode = "cpu"
         }
-        $nvidia = $names | Where-Object { $_ -match "nvidia" -and $_ -notmatch "virtual" }
-        $amd = $names | Where-Object { $_ -match "amd|radeon" }
-        if ($nvidia) {
-            Write-Host "[RhythmFall Windows] GPU auto-detect: NVIDIA -> CUDA"
-            $Mode = "nvidia"
-        } elseif ($amd) {
-            Write-Host "[RhythmFall Windows] GPU auto-detect: AMD -> DirectML"
-            $Mode = "amd"
-        } else {
-            Write-Host "[RhythmFall Windows] GPU auto-detect: no supported GPU, CPU"
-            return
+        if ($Mode -eq "auto") {
+            $nvidia = $names | Where-Object { $_ -match "nvidia" -and $_ -notmatch "virtual" }
+            $amd = $names | Where-Object { $_ -match "amd|radeon" }
+            if ($nvidia) {
+                Write-Host "[RhythmFall Windows] GPU auto-detect: NVIDIA -> CUDA"
+                $Mode = "nvidia"
+            } elseif ($amd) {
+                Write-Host "[RhythmFall Windows] GPU auto-detect: AMD -> DirectML"
+                $Mode = "amd"
+            } else {
+                Write-Host "[RhythmFall Windows] GPU auto-detect: no supported GPU, CPU"
+                $Mode = "cpu"
+            }
         }
+    }
+    if ($Mode -eq "cpu") {
+        Write-Host "[RhythmFall Windows] GPU stack: CPU (reinstall CPU torch, drop CUDA/DirectML extras)..."
+        & $VenvPip uninstall -y torch-directml onnxruntime-gpu onnxruntime-directml 2>$null
+        & $VenvPip uninstall -y torch torchaudio onnxruntime 2>$null
+        & $VenvPip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $VenvPip install onnxruntime
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "onnxruntime (CPU) install failed; stems may still work via demucs."
+        }
+        return "cpu"
     }
     if ($Mode -eq "nvidia") {
         Write-Host "[RhythmFall Windows] Installing CUDA PyTorch + onnxruntime-gpu..."
-        & $VenvPip uninstall -y torch torchaudio onnxruntime 2>$null
+        & $VenvPip uninstall -y torch-directml onnxruntime-directml 2>$null
+        & $VenvPip uninstall -y torch torchaudio onnxruntime onnxruntime-gpu 2>$null
         & $VenvPip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & $VenvPip install onnxruntime-gpu
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "onnxruntime-gpu failed; CUDA torch may still accelerate stems."
         }
-        return
+        return "nvidia"
     }
     if ($Mode -eq "amd") {
         Write-Host "[RhythmFall Windows] Installing DirectML (AMD/Intel GPU)..."
+        & $VenvPip uninstall -y onnxruntime-gpu 2>$null
         & $VenvPip install torch-directml onnxruntime-directml
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "DirectML install failed; stems stay on CPU."
+            return "cpu"
         }
+        return "amd"
     }
+    return "cpu"
 }
 
-Install-GpuStack -Mode $Gpu
+$ResolvedGpu = Install-GpuStack -Mode $Gpu
+$GpuMarker = Join-Path $Server ".gpu_stack"
+[System.IO.File]::WriteAllText($GpuMarker, "$ResolvedGpu", (New-Object System.Text.UTF8Encoding $false))
+Write-Host "[RhythmFall Windows] Wrote GPU stack marker: $ResolvedGpu"
 
 Write-Host "[RhythmFall Windows] audio-separator (no-deps, keep numpy 1.x)..."
 & $VenvPip install audio-separator==0.41.1 --no-deps
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $VenvPip install "beartype>=0.18,<0.19" "diffq-fixed>=0.2" "einops" "julius" "ml_collections" "omegaconf" "onnx>=1.16,<1.19" "onnx2torch>=1.5" "pandas" "pydub" "pyyaml" "requests" "resampy>=0.4" "rotary-embedding-torch>=0.6.1,<0.7" "samplerate==0.1.0" "six" "torch" "tqdm" "librosa" "numpy>=1.23.5,<2.0"
+& $VenvPip install "beartype>=0.18,<0.19" "diffq-fixed>=0.2" "einops" "julius" "ml_collections" "omegaconf" "onnx>=1.16,<1.19" "onnx2torch>=1.5" "pandas" "pydub" "pyyaml" "requests" "resampy>=0.4" "rotary-embedding-torch>=0.6.1,<0.7" "samplerate==0.1.0" "six" "tqdm" "librosa" "numpy>=1.23.5,<2.0"
 if ($LASTEXITCODE -ne 0) {
     Write-Warning "Some audio-separator deps failed - stems may still work via demucs"
 }
@@ -155,9 +173,45 @@ if (-not $ffmpeg) {
     Write-Host "[RhythmFall Windows] ffmpeg: $($ffmpeg.Source)"
 }
 
+# Profile Recap PNG export (Playwright + Edge/Chrome). Same venv the game resolves via windows_python.path.
+$GameRoot = Split-Path $Here -Parent
+$RecapReq = Join-Path $GameRoot "scenes\profile\share\html\requirements.txt"
+if (Test-Path $RecapReq) {
+    Write-Host "[RhythmFall Windows] Profile Recap export (Playwright)..."
+    & $VenvPip install -r $RecapReq
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Playwright pip install failed — Profile → Export may show E002."
+    } else {
+        Write-Host "[RhythmFall Windows] Installing Chromium/Edge for Playwright (msedge preferred)..."
+        & $VenvPy -m playwright install msedge
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "playwright install msedge failed — trying chromium..."
+            & $VenvPy -m playwright install chromium
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Browser install failed — Recap export needs Edge or Chrome on the machine."
+            }
+        }
+    }
+} else {
+    Write-Warning "Recap requirements missing ($RecapReq) — skipped Playwright install."
+}
+
+# Prefer relative path so worker/ copies cleanly into any install dir.
+# Launcher order: RFALL_PYTHON env → <server>\.venv\Scripts\python.exe → this file.
 $pyPathFile = Join-Path $Here "windows_python.path"
-[System.IO.File]::WriteAllText($pyPathFile, $VenvPy, (New-Object System.Text.UTF8Encoding $false))
-Write-Host "[RhythmFall Windows] Wrote RFALL_PYTHON hint: $pyPathFile"
+$relHint = "RhythmFallServer\.venv\Scripts\python.exe"
+$gameRootGuess = Split-Path $Here -Parent
+if ($VenvPy -and (Test-Path $VenvPy)) {
+    if (Test-Path (Join-Path $gameRootGuess $relHint)) {
+        [System.IO.File]::WriteAllText($pyPathFile, $relHint, (New-Object System.Text.UTF8Encoding $false))
+        Write-Host "[RhythmFall Windows] Wrote relative python hint: $relHint"
+    } else {
+        [System.IO.File]::WriteAllText($pyPathFile, $VenvPy, (New-Object System.Text.UTF8Encoding $false))
+        Write-Host "[RhythmFall Windows] Wrote absolute RFALL_PYTHON hint: $pyPathFile"
+    }
+} else {
+    Write-Warning "venv python missing; skipped windows_python.path"
+}
 
 Write-Host ""
 Write-Host "[RhythmFall Windows] Verification..."

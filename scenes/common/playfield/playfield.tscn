@@ -1,0 +1,219 @@
+[gd_scene load_steps=5 format=3 uid="uid://common_playfield_001"]
+
+[ext_resource type="Script" path="res://scenes/common/playfield/playfield.gd" id="1_play"]
+[ext_resource type="PackedScene" uid="uid://j7wuh5psw8ga" path="res://scenes/game_screen/components/error_meter.tscn" id="2_err"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playfield"]
+bg_color = Color(0.035, 0.045, 0.09, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.55, 0.82, 0.5)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 12
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stats_panel"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.09, 0.12, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="GamePlayfield" type="Panel"]
+custom_minimum_size = Vector2(600, 1080)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_playfield")
+script = ExtResource("1_play")
+
+[node name="LanesContainer" type="Control" parent="."]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Lane0Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 1080.0
+color = Color(0.997262, 0.777468, 0.899526, 1)
+
+[node name="Lane1Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+layout_mode = 0
+offset_left = 120.0
+offset_right = 240.0
+offset_bottom = 1080.0
+color = Color(0.997262, 0.777468, 0.899526, 1)
+
+[node name="Lane2Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+layout_mode = 0
+offset_left = 240.0
+offset_right = 360.0
+offset_bottom = 1080.0
+color = Color(0.997262, 0.777468, 0.899526, 1)
+
+[node name="Lane3Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+layout_mode = 0
+offset_left = 360.0
+offset_right = 480.0
+offset_bottom = 1080.0
+color = Color(0.997262, 0.777468, 0.899526, 1)
+
+[node name="Lane4Highlight" type="ColorRect" parent="LanesContainer"]
+visible = false
+layout_mode = 0
+offset_left = 480.0
+offset_right = 600.0
+offset_bottom = 1080.0
+color = Color(0.997262, 0.777468, 0.899526, 1)
+
+[node name="Lane0" type="ColorRect" parent="LanesContainer"]
+layout_mode = 0
+offset_top = 950.0
+offset_right = 120.0
+offset_bottom = 980.0
+
+[node name="Lane1" type="ColorRect" parent="LanesContainer"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 950.0
+offset_right = 240.0
+offset_bottom = 980.0
+
+[node name="Lane2" type="ColorRect" parent="LanesContainer"]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 950.0
+offset_right = 360.0
+offset_bottom = 980.0
+
+[node name="Lane3" type="ColorRect" parent="LanesContainer"]
+layout_mode = 0
+offset_left = 360.0
+offset_top = 950.0
+offset_right = 480.0
+offset_bottom = 980.0
+
+[node name="Lane4" type="ColorRect" parent="LanesContainer"]
+layout_mode = 0
+offset_left = 480.0
+offset_top = 950.0
+offset_right = 600.0
+offset_bottom = 980.0
+
+[node name="LaneDivider0" type="ColorRect" parent="LanesContainer"]
+z_index = 2
+layout_mode = 0
+offset_left = 119.0
+offset_right = 121.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.07)
+
+[node name="LaneDivider1" type="ColorRect" parent="LanesContainer"]
+z_index = 2
+layout_mode = 0
+offset_left = 239.0
+offset_right = 241.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.07)
+
+[node name="LaneDivider2" type="ColorRect" parent="LanesContainer"]
+z_index = 2
+layout_mode = 0
+offset_left = 359.0
+offset_right = 361.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.07)
+
+[node name="LaneDivider3" type="ColorRect" parent="LanesContainer"]
+z_index = 2
+layout_mode = 0
+offset_left = 479.0
+offset_right = 481.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.07)
+
+[node name="NotesContainer" type="Node2D" parent="."]
+
+[node name="HitZone" type="ColorRect" parent="."]
+z_index = 8
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.88
+anchor_right = 1.0
+anchor_bottom = 0.907
+mouse_filter = 2
+color = Color(1, 1, 1, 1.0)
+
+[node name="BottomHud" type="HBoxContainer" parent="."]
+z_index = 6
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -104.0
+offset_right = -14.0
+offset_bottom = -18.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="StatsPanel" type="PanelContainer" parent="BottomHud"]
+z_as_relative = false
+custom_minimum_size = Vector2(196, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_stats_panel")
+
+[node name="StatsContainer" type="VBoxContainer" parent="BottomHud/StatsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AccuracyLabel" type="Label" parent="BottomHud/StatsPanel/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+text = "100.00%"
+
+[node name="ScoreLabel" type="Label" parent="BottomHud/StatsPanel/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.96, 0.99, 1)
+theme_override_font_sizes/font_size = 30
+text = "Счёт: 0"
+
+[node name="ErrorMeter" parent="BottomHud" instance=ExtResource("2_err")]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4

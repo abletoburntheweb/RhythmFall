@@ -4,6 +4,7 @@ extends VBoxContainer
 const PARAM_ROW_SCENE := preload("res://scenes/song_select/run_modifiers/run_modifier_param_row.tscn")
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _OptionButtonPopupUtils = preload("res://logic/ui/option_button_popup_utils.gd")
+const _SubUi = preload("res://scenes/song_select/run_modifiers/run_modifier_subsection_ui.gd")
 
 const SONG_SPEED_MIN := 25.0
 const SONG_SPEED_MAX := 250.0
@@ -59,6 +60,7 @@ var _ce_order_syncing := false
 func _ready() -> void:
 	if _fixed_scroll_check:
 		_fixed_scroll_check.toggled.connect(_on_fixed_scroll_toggled)
+		_SubUi.apply_modifier_checkbox(_fixed_scroll_check, 15, true)
 	if _ce_pick_mode_option:
 		_ce_pick_mode_option.item_selected.connect(_on_ce_pick_mode_selected)
 	if _ce_move_up_btn:
@@ -231,14 +233,11 @@ func _make_ce_order_row(modifier_id: String, index: int) -> PanelContainer:
 	title.add_theme_color_override("font_color", Color(0.86, 0.92, 0.98, 0.98))
 	hbox.add_child(title)
 
-	row.gui_input.connect(func(event: InputEvent): _on_ce_order_row_input(index, event))
-	return row
-
-
-func _on_ce_order_row_input(index: int, event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	UiClick.connect_clicked(row, func() -> void:
 		_ce_selected_index = index
 		_rebuild_ce_order_ui()
+	)
+	return row
 
 
 func _emit_ce_order_changed() -> void:
@@ -504,6 +503,7 @@ func _build_ce_pool_checks() -> void:
 		var cb := CheckButton.new()
 		cb.text = tr(_RunModifiers.title_i18n_key(mod_id))
 		cb.add_theme_font_size_override("font_size", 16)
+		_SubUi.apply_modifier_checkbox(cb, 16, true)
 		cb.button_pressed = true
 		cb.toggled.connect(func(_on: bool): _emit_ce_pool_changed())
 		_ce_pool_host.add_child(cb)

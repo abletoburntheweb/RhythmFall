@@ -12,6 +12,7 @@ const _ProfilePlayModesStats = preload("res://logic/domain/profile/profile_play_
 const _MarathonRouteBadges = preload("res://logic/domain/session/marathon_route_badges.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 const _ModifierIconStrip = preload("res://logic/ui/modifier_icon_strip.gd")
+const _DebugEmptyState = preload("res://logic/debug/debug_empty_state.gd")
 
 const _FAVORITE := "FavoriteTrackCard/MarginContainer/HBoxContainer"
 const _HIGHLIGHTS := "HighlightsRow"
@@ -50,6 +51,13 @@ var _mod_details: Button
 var _play_modes_marathon_cache: Dictionary = {}
 var _play_modes_mod_cache: Dictionary = {}
 var _cached_marathon_tier: String = ""
+var _cached_favorite_path: String = ""
+var _cached_favorite_cover: Texture2D = null
+var _cached_favorite_cover_path: String = ""
+var _cached_favorite_title: String = ""
+var _cached_favorite_artist: String = ""
+var _cached_favorite_genre_text: String = ""
+var _cached_favorite_count: int = -1
 
 @onready var favorite_track_card_title: Label = get_node_or_null("%s/InfoVBox/CardTitle" % _FAVORITE) as Label
 @onready var level_card_title: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/CardTitle" % _HIGHLIGHTS) as Label
@@ -59,6 +67,7 @@ var _cached_marathon_tier: String = ""
 @onready var difficulty_caption_label: Label = get_node_or_null("%s/DifficultyHighlight/VBox/CaptionLabel" % _HIGHLIGHTS) as Label
 @onready var recent_achievements_title: Label = get_node_or_null("%s/ContentVBox/CardTitle" % _ACHIEVEMENTS) as Label
 @onready var profile_medals_card: PanelContainer = get_node_or_null("TrackMedalsCard") as PanelContainer
+@onready var activity_calendar_card: PanelContainer = get_node_or_null("ActivityCalendarCard") as PanelContainer
 @onready var level_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/LevelLabel" % _HIGHLIGHTS) as Label
 @onready var xp_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPLabel" % _HIGHLIGHTS) as Label
 @onready var xp_progress_label: Label = get_node_or_null("%s/LevelXPCard/ContentVBox/XPProgressLabel" % _HIGHLIGHTS) as Label
@@ -97,6 +106,8 @@ func apply_locale() -> void:
 		favorite_track_card_title.text = tr("PROFILE_FAVORITE_TRACK")
 	if profile_medals_card and profile_medals_card.has_method("apply_locale"):
 		profile_medals_card.apply_locale()
+	if activity_calendar_card and activity_calendar_card.has_method("apply_locale"):
+		activity_calendar_card.apply_locale()
 	if level_card_title:
 		level_card_title.text = tr("PROFILE_LEVEL_TITLE")
 	if play_time_caption_label:
@@ -112,7 +123,11 @@ func apply_locale() -> void:
 	if achievements_empty_label:
 		achievements_empty_label.text = tr("PROFILE_NO_RECENT_ACHIEVEMENTS")
 	if _login_streak_highlight_caption:
-		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % PlayerDataManager.get_best_login_streak()
+		var _best_play := PlayerDataManager.get_best_play_streak() if PlayerDataManager.has_method("get_best_play_streak") else PlayerDataManager.get_best_login_streak()
+		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % _best_play
+	var streak_tile := highlights_row.get_node_or_null("LoginStreakHighlight") as Control if highlights_row else null
+	if streak_tile:
+		streak_tile.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
 	if _rr_highlight_caption:
 		_rr_highlight_caption.text = tr("PROFILE_STAT_TOTAL_RR")
 	if _genre_portrait_title:
@@ -155,6 +170,8 @@ func refresh_fast() -> void:
 		xp_progress_bar.value = PlayerDataManager.get_xp_progress()
 	_update_highlight_tiles(overall_accuracy)
 	_update_login_streak_display()
+	if activity_calendar_card and activity_calendar_card.has_method("refresh"):
+		activity_calendar_card.refresh()
 
 
 func schedule_heavy_refresh() -> void:
@@ -164,6 +181,7 @@ func schedule_heavy_refresh() -> void:
 
 
 func refresh_content_async() -> void:
+	var _perf_t := PerfTrace.begin("perf.load.profile.overview")
 	_refresh_favorite_track()
 	await get_tree().process_frame
 	_update_profile_medals(_get_global_medal_stats())
@@ -173,6 +191,7 @@ func refresh_content_async() -> void:
 	_update_recent_achievements()
 	await get_tree().process_frame
 	_sync_overview_portrait_row_layout()
+	PerfTrace.end("perf.load.profile.overview", _perf_t)
 
 
 func on_play_time_changed() -> void:
@@ -181,6 +200,8 @@ func on_play_time_changed() -> void:
 
 func on_calendar_day_changed() -> void:
 	_update_login_streak_display()
+	if activity_calendar_card and activity_calendar_card.has_method("refresh"):
+		activity_calendar_card.refresh()
 
 
 func _refresh_heavy(token: int) -> void:
@@ -271,6 +292,49 @@ func _refresh_favorite_track() -> void:
 	if favorite_track_card == null:
 		return
 
+	if _DebugEmptyState.is_enabled():
+		favorite_track_path = ""
+		favorite_track_count = 0
+
+	# Fast path: same track and count as last refresh — reuse cached cover/title without file I/O.
+	if favorite_track_path == _cached_favorite_path and int(favorite_track_count) == _cached_favorite_count and _cached_favorite_cover != null and favorite_title_label != null:
+		if favorite_cover_texture_rect and _cached_favorite_cover:
+			favorite_cover_texture_rect.texture = _cached_favorite_cover
+		favorite_title_label.text = _cached_favorite_title
+		if favorite_artist_label:
+			favorite_artist_label.text = _cached_favorite_artist
+		if favorite_genre_label:
+			favorite_genre_label.text = _cached_favorite_genre_text
+		if favorite_play_count_label:
+			favorite_play_count_label.text = tr("PROFILE_FAVORITE_PLAY_COUNT") % int(favorite_track_count) if favorite_track_path != "" else tr("PROFILE_FAVORITE_PLAY_COUNT") % 0
+		return
+
+	var is_empty_favorite := favorite_track_path == ""
+	if is_empty_favorite:
+		var empty_title := tr("PROFILE_FAVORITE_EMPTY_TITLE")
+		var empty_hint := tr("PROFILE_FAVORITE_EMPTY_HINT")
+		if favorite_title_label:
+			favorite_title_label.text = empty_title
+			favorite_title_label.add_theme_color_override("font_color", Color(0.58, 0.64, 0.74, 1))
+		if favorite_artist_label:
+			favorite_artist_label.text = empty_hint
+			favorite_artist_label.add_theme_color_override("font_color", Color(0.55, 0.63, 0.76, 0.9))
+		if favorite_genre_label:
+			favorite_genre_label.text = ""
+		if favorite_play_count_label:
+			favorite_play_count_label.visible = false
+		if favorite_cover_texture_rect:
+			var fallback_texture = _get_fallback_cover_texture()
+			if fallback_texture:
+				_apply_favorite_cover_texture(fallback_texture)
+				favorite_cover_texture_rect.modulate = Color(1, 1, 1, 0.55)
+		_cached_favorite_path = ""
+		_cached_favorite_count = 0
+		_cached_favorite_title = empty_title
+		_cached_favorite_artist = empty_hint
+		_cached_favorite_genre_text = ""
+		return
+
 	var title_text = tr("VALUE_NA")
 	var artist_text = tr("VALUE_NA")
 	var cover_texture = null
@@ -288,28 +352,45 @@ func _refresh_favorite_track() -> void:
 	var stem: String = favorite_track_path.get_file().get_basename() if favorite_track_path != "" else ""
 	title_text = _SongSelectStrings.display_track_title(title_text, stem)
 	artist_text = _SongSelectStrings.display_track_artist(artist_text)
+	var genre_text := tr("SONG_FIELD_GENRE") % _format_favorite_track_genre(favorite_track_path, user_md)
+	var applied_cover: Texture2D = null
 	if favorite_cover_texture_rect:
+		favorite_cover_texture_rect.modulate = Color(1, 1, 1, 1)
 		if cover_texture and cover_texture is ImageTexture:
 			_apply_favorite_cover_texture(cover_texture)
+			applied_cover = favorite_cover_texture_rect.texture as Texture2D
 		else:
-			var file_cover = _get_cover_from_file(favorite_track_path)
-			if file_cover:
-				_apply_favorite_cover_texture(file_cover)
-			else:
-				var fallback_texture = _get_fallback_cover_texture()
-				if fallback_texture:
-					_apply_favorite_cover_texture(fallback_texture)
+			# Reuse already-read metadata result — do not re-read same audio file.
+			# If _read_basic_metadata found no cover, fallback is correct.
+			var fallback_texture = _get_fallback_cover_texture()
+			if fallback_texture:
+				_apply_favorite_cover_texture(fallback_texture)
+				applied_cover = fallback_texture
 	if favorite_title_label:
 		favorite_title_label.text = title_text
+		favorite_title_label.remove_theme_color_override("font_color")
 	if favorite_artist_label:
 		favorite_artist_label.text = artist_text
+		favorite_artist_label.remove_theme_color_override("font_color")
 	if favorite_genre_label:
-		favorite_genre_label.text = tr("SONG_FIELD_GENRE") % _format_favorite_track_genre(favorite_track_path, user_md)
+		favorite_genre_label.text = genre_text
 	if favorite_play_count_label:
+		favorite_play_count_label.visible = true
 		if favorite_track_path != "":
 			favorite_play_count_label.text = tr("PROFILE_FAVORITE_PLAY_COUNT") % favorite_track_count
 		else:
 			favorite_play_count_label.text = tr("PROFILE_FAVORITE_PLAY_COUNT") % 0
+	# Cache for next fast refresh.
+	_cached_favorite_path = favorite_track_path
+	_cached_favorite_count = int(favorite_track_count)
+	_cached_favorite_title = title_text
+	_cached_favorite_artist = artist_text
+	_cached_favorite_genre_text = genre_text
+	if applied_cover:
+		_cached_favorite_cover = applied_cover
+		_cached_favorite_cover_path = favorite_track_path
+	elif favorite_cover_texture_rect and favorite_cover_texture_rect.texture:
+		_cached_favorite_cover = favorite_cover_texture_rect.texture as Texture2D
 
 
 func _update_highlight_tiles(overall_accuracy: float = -1.0) -> void:
@@ -339,13 +420,15 @@ func _update_highlight_tiles(overall_accuracy: float = -1.0) -> void:
 				Color(0.784314, 0.823529, 0.901961, 1)
 			)
 	if _login_streak_highlight_value:
-		_login_streak_highlight_value.text = str(PlayerDataManager.get_login_streak())
+		var _cur_play := PlayerDataManager.get_play_streak() if PlayerDataManager.has_method("get_play_streak") else PlayerDataManager.get_login_streak()
+		_login_streak_highlight_value.text = str(_cur_play)
 		_login_streak_highlight_value.add_theme_color_override(
 			"font_color",
 			Color(0.9490196, 0.7019608, 0.3529412)
 		)
 	if _login_streak_highlight_caption:
-		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % PlayerDataManager.get_best_login_streak()
+		var _best_play2 := PlayerDataManager.get_best_play_streak() if PlayerDataManager.has_method("get_best_play_streak") else PlayerDataManager.get_best_login_streak()
+		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % _best_play2
 
 
 func _format_favorite_track_genre(song_path: String, user_md: Dictionary) -> String:
@@ -453,6 +536,11 @@ func _update_recent_achievements() -> void:
 	for child in achievements_list_vbox.get_children():
 		achievements_list_vbox.remove_child(child)
 		child.queue_free()
+
+	if _DebugEmptyState.is_enabled():
+		if achievements_empty_label:
+			achievements_empty_label.visible = true
+		return
 
 	var achievements_source: Array = []
 	if screen and screen.achievement_manager and screen.achievement_manager.achievements.size() > 0:
@@ -800,6 +888,8 @@ func _setup_overview_extras() -> void:
 	_remove_legacy_login_streak_card()
 	if _login_streak_highlight_value == null:
 		_setup_login_streak_highlight()
+	_wire_login_streak_highlight_click()
+	_wire_activity_calendar_click()
 	if _rr_highlight_value == null:
 		_setup_rr_highlight()
 	_bind_genre_portrait_card()
@@ -811,6 +901,32 @@ func _setup_overview_extras() -> void:
 		_genre_portrait_title.text = tr("PROFILE_GENRE_PORTRAIT_TITLE")
 	if _genre_portrait_empty_label:
 		_genre_portrait_empty_label.text = tr("PROFILE_GENRE_PORTRAIT_EMPTY")
+
+
+func _wire_login_streak_highlight_click() -> void:
+	if highlights_row == null:
+		return
+	var tile := highlights_row.get_node_or_null("LoginStreakHighlight") as Control
+	if tile == null:
+		return
+	tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	tile.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
+	UiClick.connect_clicked(tile, _open_activity_calendar)
+
+
+func _open_activity_calendar() -> void:
+	if screen and screen.has_method("open_activity_calendar"):
+		screen.open_activity_calendar()
+
+
+func _wire_activity_calendar_click() -> void:
+	if activity_calendar_card == null:
+		return
+	activity_calendar_card.mouse_filter = Control.MOUSE_FILTER_STOP
+	activity_calendar_card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	activity_calendar_card.tooltip_text = tr("PROFILE_ACTIVITY_OPEN_TIP")
+	UiClick.connect_clicked(activity_calendar_card, _open_activity_calendar)
 
 
 func _bind_genre_portrait_card() -> void:
@@ -1074,9 +1190,11 @@ func _setup_rr_highlight() -> void:
 
 func _update_login_streak_display() -> void:
 	if _login_streak_highlight_value:
-		_login_streak_highlight_value.text = str(PlayerDataManager.get_login_streak())
+		var _cur := PlayerDataManager.get_play_streak() if PlayerDataManager.has_method("get_play_streak") else PlayerDataManager.get_login_streak()
+		_login_streak_highlight_value.text = str(_cur)
 	if _login_streak_highlight_caption:
-		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % PlayerDataManager.get_best_login_streak()
+		var _best := PlayerDataManager.get_best_play_streak() if PlayerDataManager.has_method("get_best_play_streak") else PlayerDataManager.get_best_login_streak()
+		_login_streak_highlight_caption.text = tr("PROFILE_LOGIN_STREAK_CAPTION") % _best
 	if _rr_highlight_caption:
 		_rr_highlight_caption.text = tr("PROFILE_STAT_TOTAL_RR")
 	if _rr_highlight_value:
@@ -1100,6 +1218,11 @@ func _update_genre_portrait() -> void:
 		return
 	for child in _genre_portrait_rows.get_children():
 		child.queue_free()
+
+	if _DebugEmptyState.is_enabled():
+		if _genre_portrait_empty_label:
+			_genre_portrait_empty_label.visible = true
+		return
 
 	var top_groups: Array = _ProfileGenrePortrait.top_groups(
 		TrackStatsManager.genre_play_counts, _OVERVIEW_GENRE_PORTRAIT_LIMIT

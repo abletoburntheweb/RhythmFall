@@ -6,9 +6,11 @@ const _MarathonRouteCharacter = preload("res://logic/domain/session/marathon_rou
 const _MarathonRouteLength = preload("res://logic/domain/session/marathon_route_length.gd")
 const _MarathonRunRules = preload("res://logic/domain/session/marathon_run_rules.gd")
 const _SongSelectUiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
+const _ChartDifficultyAnalyzer = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
+const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 
 var _accent := Color(0.79, 0.57, 0.35, 1.0)
-var _stars_label: Label = null
+var _stars_row: HBoxContainer = null
 var _tracks_label: Label = null
 var _bpm_label: Label = null
 var _idea_label: Label = null
@@ -17,13 +19,13 @@ var _tagline_label: Label = null
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
-	if _stars_label == null:
+	if _stars_row == null:
 		_build_ui()
 
 
 func setup(accent: Color) -> void:
 	_accent = accent
-	if _stars_label == null:
+	if _stars_row == null:
 		_build_ui()
 
 
@@ -32,15 +34,19 @@ func apply_locale() -> void:
 
 
 func refresh(template: Dictionary, preview: Dictionary, route_meta: Dictionary = {}) -> void:
-	if _stars_label == null:
+	if _stars_row == null:
 		_build_ui()
 	var route_id := str(template.get("route_id", "")).strip_edges()
 	visible = route_id != ""
 	if not visible:
 		return
-	var stars := _MarathonRouteCharacter.difficulty_stars_text(template)
-	_stars_label.text = stars
-	_stars_label.add_theme_color_override("font_color", _accent.lightened(0.08))
+	var count := _MarathonRouteCharacter.difficulty_star_count(template)
+	var tint := _ChartDifficultyAnalyzer.rating_color(count)
+	for child in _stars_row.get_children():
+		child.queue_free()
+	# ZAP pattern — count and tint from ChartDifficultyAnalyzer (1-2 green, 3-4 light, 5-6 purple, 7-8 yellow, 9-10 red) — bigger for summary
+	for i in range(count):
+		_stars_row.add_child(_UiIconHelper.make_icon_frame("zap.svg", 24, 14, tint))
 	var built := int(preview.get("track_count", template.get("track_count", 0)))
 	if bool(preview.get("ok", false)) and built > 0:
 		_tracks_label.text = tr("MARATHON_PREVIEW_TRACKS_FMT") % built
@@ -81,10 +87,10 @@ func _build_ui() -> void:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 6)
 	margin.add_child(root)
-	_stars_label = Label.new()
-	_stars_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_stars_label.add_theme_font_size_override("font_size", 18)
-	root.add_child(_stars_label)
+	_stars_row = HBoxContainer.new()
+	_stars_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_stars_row.add_theme_constant_override("separation", 3)
+	root.add_child(_stars_row)
 	_tagline_label = Label.new()
 	_tagline_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tagline_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

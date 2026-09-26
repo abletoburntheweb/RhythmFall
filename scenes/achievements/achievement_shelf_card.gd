@@ -3,6 +3,7 @@ extends PanelContainer
 
 const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
 const _AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.gd")
+const _UiFramedCover = preload("res://logic/ui/ui_framed_cover.gd")
 
 var _achievement_data: Dictionary = {}
 var _accent: Color = Color(0.42, 0.57, 0.82)
@@ -39,6 +40,8 @@ func _ensure_nodes() -> void:
 		progress_bar = get_node_or_null("MarginContainer/HBox/ContentVBox/ProgressRow/ProgressBar") as ProgressBar
 	if icon_texture_rect == null:
 		icon_texture_rect = get_node_or_null("MarginContainer/HBox/IconFrame/IconTexture") as TextureRect
+		if icon_texture_rect == null:
+			icon_texture_rect = find_child("IconTexture", true, false) as TextureRect
 
 
 func _update_display() -> void:
@@ -105,18 +108,20 @@ func _apply_shell_style(accent: Color, unlocked: bool) -> void:
 	shell.content_margin_bottom = 8.0
 	add_theme_stylebox_override("panel", shell)
 
-	var frame := StyleBoxFlat.new()
-	frame.bg_color = Color(0.05, 0.06, 0.09)
-	frame.border_color = Color(accent.r, accent.g, accent.b, 0.45)
-	frame.set_border_width_all(1)
-	frame.set_corner_radius_all(8)
-	frame.content_margin_left = 4.0
-	frame.content_margin_top = 4.0
-	frame.content_margin_right = 4.0
-	frame.content_margin_bottom = 4.0
 	var icon_frame := get_node_or_null("MarginContainer/HBox/IconFrame") as PanelContainer
-	if icon_frame:
-		icon_frame.add_theme_stylebox_override("panel", frame)
+	if icon_frame and icon_texture_rect:
+		icon_texture_rect.custom_minimum_size = Vector2(72, 72)
+		var icon_accent := Color(accent.r, accent.g, accent.b, 0.72 if unlocked else 0.48)
+		_UiFramedCover.apply(
+			icon_frame,
+			icon_texture_rect,
+			8,
+			2,
+			icon_accent,
+			Color(0.05, 0.06, 0.09, 1.0),
+			0.0
+		)
+		icon_texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
 	if progress_bar == null:
 		return

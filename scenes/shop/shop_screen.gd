@@ -12,6 +12,8 @@ const _SpotlightTutorialScene := preload("res://ui/spotlight_tutorial.tscn")
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
 const _UiListSlideTransition = preload("res://logic/ui/ui_list_slide_transition.gd")
 const _UiCategoryButton = preload("res://logic/ui/ui_category_button.gd")
+const _HelpSectionUi = preload("res://logic/ui/settings_section_ui.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const _SHOP_ITEM_CELL_HEIGHT := 350
 
 var currency: int = 0
@@ -20,6 +22,8 @@ var item_cards: Array[Node] = []
 var achievements_data: Dictionary = {} 
 var current_category: String = "Все"
 var current_collection_filter: String = ""
+var _focus_card_index := -1
+var _keyboard_nav_active := false
 
 var _scroll_step := 60
 var _page_step := 480
@@ -67,6 +71,8 @@ var _shop_initializing := false
 var _badge_update_queued := false
 var _spotlight_tutorial: CanvasLayer = null
 var _collection_cards: Array = []
+var _perf_shop_total_t: int = 0
+var _precomputed_total_medals: int = -1
 
 @onready var _items_scroll: ScrollContainer = $MainContent/MainVBox/ContentMargin/ContentHBox/ItemListVBox/ItemsScroll
 @onready var _category_bar: PanelContainer = $MainContent/MainVBox/VBoxContainer/CategoryBarPanel
@@ -97,6 +103,71 @@ func apply_locale() -> void:
 		if card and card.has_method("apply_locale"):
 			card.apply_locale()
 	_refresh_collection_cards_locale()
+	_ensure_help_button()
+
+
+func _ensure_help_button() -> void:
+	if _title_label == null or not is_instance_valid(_title_label):
+		return
+	if _title_label.has_meta("help_icon_btn"):
+		var existing_meta: Variant = _title_label.get_meta("help_icon_btn")
+		if existing_meta is Button and is_instance_valid(existing_meta):
+			(existing_meta as Button).tooltip_text = tr("HELP_LINK_SHOP_ITEMS")
+			return
+	var parent := _title_label.get_parent()
+	if parent == null:
+		return
+	var existing_btn := parent.get_node_or_null("HelpButton") as Button
+	if existing_btn != null:
+		return
+	var row_existing := parent.get_node_or_null("TitleHelpRow")
+	if row_existing != null:
+		var btn_in_row := row_existing.get_node_or_null("HelpButton") as Button
+		if btn_in_row != null:
+			return
+	var btn := _HelpSectionUi.make_help_icon_button(tr("HELP_LINK_SHOP_ITEMS"))
+	btn.name = "HelpButton"
+	btn.tooltip_text = tr("HELP_LINK_SHOP_ITEMS")
+	if not btn.pressed.is_connected(_on_help_pressed):
+		btn.pressed.connect(_on_help_pressed)
+	if parent is HBoxContainer:
+		parent.add_child(btn)
+		parent.move_child(btn, _title_label.get_index() + 1)
+		_title_label.set_meta("help_icon_btn", btn)
+	else:
+		var idx := _title_label.get_index()
+		var row := HBoxContainer.new()
+		row.name = "TitleHelpRow"
+		row.add_theme_constant_override("separation", 8)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		parent.add_child(row)
+		parent.move_child(row, idx)
+		parent.remove_child(_title_label)
+		row.add_child(_title_label)
+		_title_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(btn)
+		_title_label.set_meta("help_icon_btn", btn)
+
+
+func _on_help_pressed() -> void:
+	var n: Node = self
+	while n:
+		if n.has_method("open_help_item"):
+			n.open_help_item("shop_items")
+			return
+		if n.has_method("get_transitions"):
+			var t = n.get_transitions()
+			if t and t.has_method("open_help_item"):
+				t.open_help_item("shop_items")
+				return
+		n = n.get_parent()
+	var trans := get_tree().root.get_node_or_null("GameEngine") as Node
+	if trans and trans.has_method("get_transitions"):
+		var t2 = trans.get_transitions()
+		if t2 and t2.has_method("open_help_item"):
+			t2.open_help_item("shop_items")
 
 
 func _get_categories_hbox() -> HBoxContainer:
@@ -114,7 +185,11 @@ func _load_shop_data() -> Dictionary:
 	else:
 		var bundled := JsonUtils.read_json_dict(SHOP_DATA_RES_PATH)
 		if not bundled.is_empty():
+			var before := JSON.stringify(data)
 			data = CatalogDataSync.merge_shop_items(data, bundled)
+			# Persist purge of removed covers so stale user:// rows don't linger.
+			if before != JSON.stringify(data):
+				JsonUtils.write_json(SHOP_DATA_USER_PATH, data, false, true)
 	if data.is_empty():
 		return {}
 	_ensure_collections_in_shop_data(data)
@@ -143,6 +218,8 @@ func _apply_category_button_labels() -> void:
 	_sync_all_category_button_layouts()
 
 func _ready():
+	_perf_shop_total_t = PerfTrace.begin("perf.load.shop.total")
+	var _perf_data_t := PerfTrace.begin("perf.load.shop.data")
 	var overlay := _get_loading_overlay()
 	if overlay:
 		overlay.show_loading(tr("UI_LOADING_SHOP"), true)
@@ -156,6 +233,8 @@ func _ready():
 
 	var user_shop = "user://shop_data.json"
 	shop_data = _load_shop_data()
+	PerfTrace.end("perf.load.shop.data", _perf_data_t)
+	var _perf_ui_t := PerfTrace.begin("perf.load.shop.ui")
 	if shop_data.is_empty():
 		printerr("ShopScreen.gd: Файл shop_data.json не найден: ", user_shop)
 
@@ -202,8 +281,10 @@ func _ready():
 	if PlayerDataManager.has_signal("shop_new_rewards_changed"):
 		PlayerDataManager.shop_new_rewards_changed.connect(_on_shop_new_rewards_changed)
 	_restore_shop_category_from_settings()
+	_ensure_help_button()
 	_shop_initializing = true
 	call_deferred("_preload_shop_category_textures")
+	PerfTrace.end("perf.load.shop.ui", _perf_ui_t)
 	_start_shop_card_build()
 	call_deferred("_maybe_show_shop_tutorial")
 	print("[Perf] ShopScreen shell ready: %d ms, category=%s" % [Time.get_ticks_msec() - started_ms, current_category])
@@ -525,6 +606,9 @@ func _start_shop_card_build() -> void:
 	print("[Perf] ShopScreen cards ready: %d ms, cards=%d, category=%s" % [
 		Time.get_ticks_msec() - started_ms, item_cards.size(), current_category
 	])
+	if _perf_shop_total_t != 0:
+		PerfTrace.end("perf.load.shop.total", _perf_shop_total_t)
+		_perf_shop_total_t = 0
 
 
 func _get_shop_items_container() -> Control:
@@ -803,6 +887,24 @@ func _shop_item_is_standard(item: Dictionary) -> bool:
 	return PlayerDataManager.DEFAULT_UNLOCKED_ITEMS.has(item_id)
 
 
+## Internal unlock-source order (not a user-facing filter):
+## currency → achievements → level → daily → medals.
+func _shop_item_unlock_rank(item: Dictionary) -> int:
+	if _shop_item_is_standard(item):
+		return -1
+	if int(item.get("price", 0)) > 0:
+		return 0
+	if bool(item.get("is_achievement_reward", false)):
+		return 1
+	if bool(item.get("is_level_reward", false)):
+		return 2
+	if bool(item.get("is_daily_reward", false)):
+		return 3
+	if int(item.get("medal_price", 0)) > 0:
+		return 4
+	return 5
+
+
 func _sort_shop_items_for_display(items: Array) -> Array:
 	var ranked: Array = []
 	for orig_idx in items.size():
@@ -812,7 +914,10 @@ func _sort_shop_items_for_display(items: Array) -> Array:
 		var category := String(item.get("category", ""))
 		ranked.append({
 			"standard_block": 0 if _shop_item_is_standard(item) else 1,
+			# Keep category sections in «Все» (Kick → Notes → Lane → Particles),
+			# then order by unlock source inside each section.
 			"rank": _shop_item_category_rank(category),
+			"unlock_rank": _shop_item_unlock_rank(item),
 			"orig": orig_idx,
 			"item": item,
 		})
@@ -825,6 +930,10 @@ func _sort_shop_items_for_display(items: Array) -> Array:
 		var rank_b: int = int(b.get("rank", 999))
 		if rank_a != rank_b:
 			return rank_a < rank_b
+		var unlock_a: int = int(a.get("unlock_rank", 5))
+		var unlock_b: int = int(b.get("unlock_rank", 5))
+		if unlock_a != unlock_b:
+			return unlock_a < unlock_b
 		return int(a.get("orig", 0)) < int(b.get("orig", 0))
 	)
 	var sorted: Array = []
@@ -834,34 +943,67 @@ func _sort_shop_items_for_display(items: Array) -> Array:
 
 
 func _create_item_cards() -> void:
+	var _perf_cards_t := PerfTrace.begin("perf.load.shop.cards")
 	var started_ms := Time.get_ticks_msec()
 	_bg_spawn_generation += 1
 	for card in item_cards:
 		card.queue_free()
 	item_cards.clear()
 	_cards_by_item_id.clear()
+	var _perf_sort := PerfTrace.begin("perf.detail.shop.cards.sort")
 	_sorted_shop_items = _sort_shop_items_for_display(shop_data.get("items", []))
+	PerfTrace.end("perf.detail.shop.cards.sort", _perf_sort)
+	var _perf_unseen := PerfTrace.begin("perf.detail.shop.cards.unseen")
 	if _unseen_reward_stats.is_empty():
 		_unseen_reward_stats = _compute_unseen_reward_stats(_sorted_shop_items)
 	else:
 		_apply_category_badge_counts()
+	PerfTrace.end("perf.detail.shop.cards.unseen", _perf_unseen)
+	var _perf_grid := PerfTrace.begin("perf.detail.shop.cards.grid")
 	var grid_container := _get_items_grid()
 	if grid_container == null:
 		printerr("ShopScreen.gd: ОШИБКА: ItemsGrid не найден в _create_item_cards")
+		PerfTrace.end("perf.detail.shop.cards.grid", _perf_grid)
+		PerfTrace.end("perf.load.shop.cards", _perf_cards_t)
 		return
-
 	var pending := _items_for_category(current_category)
 	_update_grid_min_height(grid_container, pending.size())
+	PerfTrace.end("perf.detail.shop.cards.grid", _perf_grid)
+	# Precompute total medals once per shop open if any pending is medal (global per shop)
+	_precomputed_total_medals = -1
+	var _has_medal := false
+	for _it in pending:
+		if int(_it.get("medal_price", 0)) > 0:
+			_has_medal = true
+			break
+	if _has_medal:
+		_precomputed_total_medals = PlayerDataManager.get_total_medals_earned()
+	# Reset diagnostic counters for medal precompute
+	var _ItemCardDiag := preload("res://scenes/shop/components/item_card.gd")
+	_ItemCardDiag._diag_total_medal_calls = 0
+	_ItemCardDiag._diag_precomputed_hits = 0
+	_ItemCardDiag._diag_fallback_calls = 0
+	_ItemCardDiag._diag_medal_cards_created = 0
 	var unseen_set: Dictionary = _unseen_reward_stats.get("unseen_set", {})
+	var _perf_prewarm := PerfTrace.begin("perf.detail.shop.cards.prewarm")
 	if current_category == "Кик" or current_category == "Все":
-		await _prewarm_kick_waveforms_async(_kick_items_from_pending(pending))
+		var _perf_prewarm_filter := PerfTrace.begin("perf.detail.shop.cards.prewarm.filter")
+		var _kicks := _kick_items_from_pending(pending)
+		PerfTrace.end("perf.detail.shop.cards.prewarm.filter", _perf_prewarm_filter)
+		await _prewarm_kick_waveforms_async(_kicks)
+	PerfTrace.end("perf.detail.shop.cards.prewarm", _perf_prewarm)
+	var _perf_spawn := PerfTrace.begin("perf.detail.shop.cards.spawn")
 	await _spawn_cards_progressive(pending, unseen_set, grid_container, _bg_spawn_generation)
+	PerfTrace.end("perf.detail.shop.cards.spawn", _perf_spawn)
+	var _ItemCardDiag2 := preload("res://scenes/shop/components/item_card.gd")
+	print("[DIAG] shop medals: total_calls=%d precomputed_hits=%d fallback=%d medal_cards=%d precomputed=%d has_medal=%s pending=%d" % [_ItemCardDiag2._diag_total_medal_calls, _ItemCardDiag2._diag_precomputed_hits, _ItemCardDiag2._diag_fallback_calls, _ItemCardDiag2._diag_medal_cards_created, _precomputed_total_medals, _has_medal, pending.size()])
 
 	call_deferred("_shop_grid_clear_min_height")
 	call_deferred("_apply_shop_ui_interactions")
 	print("[Perf] ShopScreen create cards: %d ms, items=%d, category=%s" % [
 		Time.get_ticks_msec() - started_ms, item_cards.size(), current_category
 	])
+	PerfTrace.end("perf.load.shop.cards", _perf_cards_t)
 
 
 func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_container: GridContainer, generation: int) -> void:
@@ -883,7 +1025,9 @@ func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_conta
 		if not (item_data is Dictionary) or not item_data.has("item_id"):
 			continue
 		var before_count := item_cards.size()
+		var _perf_per_card := PerfTrace.begin("perf.detail.shop.cards.spawn.per_card")
 		_spawn_shop_card(item_data, unseen_set, grid_container)
+		PerfTrace.end("perf.detail.shop.cards.spawn.per_card", _perf_per_card)
 		spawned += 1
 		if spawned <= _INITIAL_CARD_BATCH:
 			first_batch_cards.append(item_cards[before_count])
@@ -894,21 +1038,50 @@ func _spawn_cards_progressive(pending: Array, unseen_set: Dictionary, grid_conta
 		var frame_budget: int = _CARD_SPAWN_PER_FRAME if spawned <= _INITIAL_CARD_BATCH else _CARD_SPAWN_PER_FRAME_BG
 		if spawned % frame_budget == 0:
 			var scroll_pos := _capture_shop_scroll()
+			var _perf_yield := PerfTrace.begin("perf.detail.shop.cards.spawn.yield")
 			await get_tree().process_frame
+			PerfTrace.end("perf.detail.shop.cards.spawn.yield", _perf_yield)
 			if spawned > _INITIAL_CARD_BATCH and scroll_pos.y > 0:
 				_restore_shop_scroll(scroll_pos)
 	if hide_until_batch and spawned <= _INITIAL_CARD_BATCH:
 		_set_shop_grid_busy(false)
 		for card in first_batch_cards:
 			_queue_preview_warm(card)
+	var _perf_reorder := PerfTrace.begin("perf.detail.shop.cards.spawn.reorder")
+	_reorder_shop_grid_to_sorted(grid_container)
+	PerfTrace.end("perf.detail.shop.cards.spawn.reorder", _perf_reorder)
+	var _perf_preview_queue := PerfTrace.begin("perf.detail.shop.cards.spawn.preview_queue")
 	for item_data in pending:
 		if generation != _bg_spawn_generation:
+			PerfTrace.end("perf.detail.shop.cards.spawn.preview_queue", _perf_preview_queue)
 			return
 		var item_id_str := String(item_data.get("item_id", ""))
 		var card: Node = _cards_by_item_id.get(item_id_str)
 		if card and not first_batch_cards.has(card):
 			_queue_preview_warm(card)
+	PerfTrace.end("perf.detail.shop.cards.spawn.preview_queue", _perf_preview_queue)
+	var _perf_finish := PerfTrace.begin("perf.detail.shop.cards.spawn.finish")
 	await _finish_kick_preview_warm(pending, generation)
+	PerfTrace.end("perf.detail.shop.cards.spawn.finish", _perf_finish)
+
+
+func _reorder_shop_grid_to_sorted(grid_container: GridContainer) -> void:
+	if grid_container == null or _sorted_shop_items.is_empty():
+		return
+	var desired: Array = []
+	for item_data in _sorted_shop_items:
+		if not (item_data is Dictionary):
+			continue
+		var item_id := String(item_data.get("item_id", ""))
+		if item_id == "":
+			continue
+		var card: Node = _cards_by_item_id.get(item_id)
+		if card != null and is_instance_valid(card) and card.get_parent() == grid_container:
+			desired.append(card)
+	for i in desired.size():
+		var card: Node = desired[i]
+		if grid_container.get_child(i) != card:
+			grid_container.move_child(card, i)
 
 
 func _spawn_card_insert_index(grid_container: GridContainer, item_id_str: String) -> int:
@@ -923,8 +1096,11 @@ func _spawn_card_insert_index(grid_container: GridContainer, item_id_str: String
 
 
 func _spawn_shop_card(item_data: Dictionary, unseen_set: Dictionary, grid_container: Node) -> void:
+	var _perf_inst := PerfTrace.begin("perf.detail.shop.cards.spawn.card.instantiate")
 	var new_card = ITEM_CARD_SCENE.instantiate()
+	PerfTrace.end("perf.detail.shop.cards.spawn.card.instantiate", _perf_inst)
 	new_card.item_data = item_data
+	new_card._precomputed_total_medals = _precomputed_total_medals
 	var item_id_str := String(item_data.get("item_id", ""))
 	var is_purchased = PlayerDataManager.is_item_unlocked(item_id_str)
 	var is_active = false
@@ -947,15 +1123,16 @@ func _spawn_shop_card(item_data: Dictionary, unseen_set: Dictionary, grid_contai
 	elif item_data.get("is_daily_reward", false):
 		var required_daily = int(item_data.get("required_daily_completed", 0))
 		daily_unlocked = PlayerDataManager.get_daily_quests_completed_total() >= required_daily
+	var _perf_update := PerfTrace.begin("perf.detail.shop.cards.spawn.card.update_state")
 	new_card.update_state(is_purchased, is_active, true, achievement_unlocked, achievement_name, level_unlocked, daily_unlocked)
+	PerfTrace.end("perf.detail.shop.cards.spawn.card.update_state", _perf_update)
 	var item_category := String(item_data.get("category", ""))
 	var category_match: bool = current_category == "Все" or item_category == current_category
 	var collection_match: bool = _item_in_collection_filter(item_data)
 	new_card.visible = category_match and collection_match
-	var insert_idx := _spawn_card_insert_index(grid_container, item_id_str)
+	var _perf_add := PerfTrace.begin("perf.detail.shop.cards.spawn.card.add_child")
 	grid_container.add_child(new_card)
-	if insert_idx < grid_container.get_child_count() - 1:
-		grid_container.move_child(new_card, insert_idx)
+	PerfTrace.end("perf.detail.shop.cards.spawn.card.add_child", _perf_add)
 	if new_card.has_method("set_new_reward_highlight"):
 		new_card.set_new_reward_highlight(unseen_set.has(item_id_str))
 	new_card.buy_pressed.connect(_on_item_buy_pressed)
@@ -979,9 +1156,25 @@ func _ensure_cards_for_category(category: String) -> void:
 	var unseen_set: Dictionary = _unseen_reward_stats.get("unseen_set", {})
 	var generation := _bg_spawn_generation
 	_update_grid_min_height(grid_container, _visible_item_count_for_category(category))
+	# Precompute total medals for this category if needed (for diagnostic, also ensure correct value)
+	_precomputed_total_medals = -1
+	var _has_medal2 := false
+	for _it2 in pending:
+		if int(_it2.get("medal_price", 0)) > 0:
+			_has_medal2 = true
+			break
+	if _has_medal2:
+		_precomputed_total_medals = PlayerDataManager.get_total_medals_earned()
+	# Reset diagnostics for this category spawn
+	var _ItemCardDiag2 := preload("res://scenes/shop/components/item_card.gd")
+	_ItemCardDiag2._diag_total_medal_calls = 0
+	_ItemCardDiag2._diag_precomputed_hits = 0
+	_ItemCardDiag2._diag_fallback_calls = 0
+	_ItemCardDiag2._diag_medal_cards_created = 0
 	if category == "Кик":
 		await _prewarm_kick_waveforms_async(_items_for_category(category))
 	await _spawn_cards_progressive(pending, unseen_set, grid_container, generation)
+	print("[DIAG] shop medals (category %s): total_calls=%d precomputed_hits=%d fallback=%d medal_cards=%d precomputed=%d has_medal=%s pending=%d" % [category, _ItemCardDiag2._diag_total_medal_calls, _ItemCardDiag2._diag_precomputed_hits, _ItemCardDiag2._diag_fallback_calls, _ItemCardDiag2._diag_medal_cards_created, _precomputed_total_medals, _has_medal2, pending.size()])
 
 
 func _build_achievement_title_cache() -> void:
@@ -1066,10 +1259,14 @@ func _prewarm_kick_waveforms_async(items: Array) -> void:
 			continue
 		var audio_path := str(item.get("audio", ""))
 		if audio_path != "" and FileAccess.file_exists(audio_path):
+			var _perf_analyze := PerfTrace.begin("perf.detail.shop.cards.prewarm.analyze")
 			_kick_waveform_prewarm.analyze_hit_envelope(audio_path, _KICK_WAVEFORM_BAR_COUNT)
+			PerfTrace.end("perf.detail.shop.cards.prewarm.analyze", _perf_analyze)
 			warmed += 1
 			if warmed % _PREVIEW_WARM_BATCH == 0:
+				var _perf_yield := PerfTrace.begin("perf.detail.shop.cards.prewarm.yield")
 				await get_tree().process_frame
+				PerfTrace.end("perf.detail.shop.cards.prewarm.yield", _perf_yield)
 
 
 func _kick_items_from_pending(pending: Array) -> Array:
@@ -1136,6 +1333,11 @@ func _on_category_selected(category: String):
 		current_category = category
 		_update_category_buttons(category)
 		_apply_category_visibility(category)
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		for card in item_cards:
+			if card and card.has_method("set_keyboard_selected"):
+				card.set_keyboard_selected(false)
 		var grid_container := _get_items_grid()
 		if grid_container:
 			_update_grid_min_height(grid_container, _visible_item_count_for_category(category))
@@ -1340,6 +1542,11 @@ func _scroll_to(pos: int):
 				max_val = int(vbar.max_value)
 		sc.scroll_vertical = clamp(pos, 0, max_val if max_val > 0 else pos)
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		_clear_keyboard_item_focus()
+
+
 func _unhandled_input(event):
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
@@ -1348,46 +1555,151 @@ func _unhandled_input(event):
 		accept_event()
 		_on_back_pressed()
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var key_event := event as InputEventKey
+	var is_nav_key := key_event.keycode in [
+		KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_PAGEUP, KEY_PAGEDOWN, KEY_HOME, KEY_END
+	]
+	if key_event.echo and not is_nav_key:
+		return
+	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+		return
+	if not key_event.echo and key_event.keycode >= KEY_1 and key_event.keycode <= KEY_5:
+		var index := int(key_event.keycode - KEY_1)
+		if index < _CATEGORY_BUTTON_SPECS.size():
+			_on_category_selected(String(_CATEGORY_BUTTON_SPECS[index][0]))
+			accept_event()
 			return
-		if event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			var index := int(event.keycode - KEY_1)
-			if index < _CATEGORY_BUTTON_SPECS.size():
-				_on_category_selected(String(_CATEGORY_BUTTON_SPECS[index][0]))
-				accept_event()
-				return
-		var owner = get_viewport().gui_get_focus_owner()
-		if owner and (owner is LineEdit or owner is OptionButton):
+	var owner = get_viewport().gui_get_focus_owner()
+	if owner and (owner is LineEdit or owner is OptionButton):
+		return
+	match key_event.keycode:
+		KEY_LEFT:
+			_move_item_focus(-1)
+			accept_event()
 			return
-		var sc = _get_items_scroll()
-		if not sc:
+		KEY_RIGHT:
+			_move_item_focus(1)
+			accept_event()
 			return
-		match event.keycode:
-			KEY_UP:
-				_scroll_to(sc.scroll_vertical - _scroll_step)
+		KEY_SPACE:
+			if not key_event.echo:
+				_preview_focused_item()
 				accept_event()
-			KEY_DOWN:
-				_scroll_to(sc.scroll_vertical + _scroll_step)
+			return
+		KEY_ENTER, KEY_KP_ENTER:
+			if not key_event.echo:
+				_activate_focused_item()
 				accept_event()
-			KEY_PAGEUP:
-				_scroll_to(sc.scroll_vertical - _page_step)
-				accept_event()
-			KEY_PAGEDOWN:
-				_scroll_to(sc.scroll_vertical + _page_step)
-				accept_event()
-			KEY_HOME:
-				_scroll_to(0)
-				accept_event()
-			KEY_END:
-				if sc.has_method("get_v_scroll_bar"):
-					var vbar = sc.get_v_scroll_bar()
-					if vbar:
-						_scroll_to(int(vbar.max_value))
-						accept_event()
-				else:
-					_scroll_to(sc.scroll_vertical + 999999)
+			return
+	var sc = _get_items_scroll()
+	if not sc:
+		return
+	match key_event.keycode:
+		KEY_UP:
+			_scroll_to(sc.scroll_vertical - _scroll_step)
+			accept_event()
+		KEY_DOWN:
+			_scroll_to(sc.scroll_vertical + _scroll_step)
+			accept_event()
+		KEY_PAGEUP:
+			_scroll_to(sc.scroll_vertical - _page_step)
+			accept_event()
+		KEY_PAGEDOWN:
+			_scroll_to(sc.scroll_vertical + _page_step)
+			accept_event()
+		KEY_HOME:
+			_scroll_to(0)
+			accept_event()
+		KEY_END:
+			if sc.has_method("get_v_scroll_bar"):
+				var vbar = sc.get_v_scroll_bar()
+				if vbar:
+					_scroll_to(int(vbar.max_value))
 					accept_event()
+			else:
+				_scroll_to(sc.scroll_vertical + 999999)
+				accept_event()
+
+
+func _visible_item_cards() -> Array[Node]:
+	var out: Array[Node] = []
+	for card in item_cards:
+		if card and is_instance_valid(card) and card.visible:
+			out.append(card)
+	return out
+
+
+func _clear_keyboard_item_focus() -> void:
+	if not _keyboard_nav_active and _focus_card_index < 0:
+		return
+	_keyboard_nav_active = false
+	_focus_card_index = -1
+	for card in _visible_item_cards():
+		if card and card.has_method("set_keyboard_selected"):
+			card.set_keyboard_selected(false)
+
+
+func _move_item_focus(delta: int) -> void:
+	var visible_cards := _visible_item_cards()
+	if visible_cards.is_empty():
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		return
+	_keyboard_nav_active = true
+	var next := _focus_card_index
+	if next < 0 or next >= visible_cards.size():
+		next = 0 if delta > 0 else visible_cards.size() - 1
+	else:
+		next = clampi(next + delta, 0, visible_cards.size() - 1)
+	_set_item_focus_index(next, visible_cards, true)
+
+
+func _set_item_focus_index(index: int, visible_cards: Array[Node] = [], play_sound: bool = false) -> void:
+	if visible_cards.is_empty():
+		visible_cards = _visible_item_cards()
+	if visible_cards.is_empty():
+		_focus_card_index = -1
+		_keyboard_nav_active = false
+		return
+	index = clampi(index, 0, visible_cards.size() - 1)
+	if play_sound and index != _focus_card_index:
+		UiScreenHotkeys.play_section_switch_sound()
+	_focus_card_index = index
+	_keyboard_nav_active = true
+	for i in range(visible_cards.size()):
+		var card = visible_cards[i]
+		if card and card.has_method("set_keyboard_selected"):
+			card.set_keyboard_selected(_keyboard_nav_active and i == _focus_card_index)
+	var focused = visible_cards[_focus_card_index]
+	var sc = _get_items_scroll()
+	if focused is Control and sc:
+		sc.ensure_control_visible(focused as Control)
+
+
+func _preview_focused_item() -> void:
+	var visible_cards := _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		_move_item_focus(1)
+		visible_cards = _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		return
+	var card = visible_cards[_focus_card_index]
+	if card and card.has_method("activate_preview"):
+		card.activate_preview()
+
+
+func _activate_focused_item() -> void:
+	var visible_cards := _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		_move_item_focus(1)
+		visible_cards = _visible_item_cards()
+	if _focus_card_index < 0 or _focus_card_index >= visible_cards.size():
+		return
+	var card = visible_cards[_focus_card_index]
+	if card and card.has_method("activate_primary_action"):
+		card.activate_primary_action()
 
 func _find_item_by_id(item_id: String) -> Dictionary:
 	for item in shop_data.get("items", []):

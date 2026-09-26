@@ -1,4 +1,4 @@
-# logic/utils/generation_preset_recommender.gd
+# logic/domain/library/generation_preset_recommender.gd
 extends RefCounted
 class_name GenerationPresetRecommender
 

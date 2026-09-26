@@ -1018,8 +1018,6 @@ def generate_bass():
             chart_stem=str(chart_stem),
             lanes=generate_lanes,
             chart_id=chart_id,
-            songformer_enabled=bool(songformer_enabled),
-            songformer_backend=str(songformer_backend or "auto"),
         )
         from app.bass_generator import _shape_counts as bass_shape_counts
 

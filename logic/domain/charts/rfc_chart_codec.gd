@@ -1,8 +1,8 @@
-# logic/utils/rfc_chart_codec.gd
+# logic/domain/charts/rfc_chart_codec.gd
 extends RefCounted
 class_name RfcChartCodec
 
-const FORMAT_VERSION := 1
+const FORMAT_VERSION := 2
 const BASS_SHAPES := ["tap", "hold", "slide"]
 const BASS_SHAPE_ALIASES := {"sustain": "hold", "octave": "tap"}
 const BASS_CURVES := ["linear", "bend", "gliss"]
@@ -37,6 +37,17 @@ static func notes_to_spawn_array(raw: Array) -> Array:
 		var drum := String(item.get("drum", "")).strip_edges().to_lower()
 		if drum != "":
 			entry["drum"] = drum
+		# Preserve MIDI provenance and vel/dur only if present (no artificial defaults for legacy)
+		if item.has("vel"):
+			entry["vel"] = int(item.get("vel"))
+		if item.has("duration"):
+			entry["duration"] = float(item.get("duration"))
+		elif item.has("dur"):
+			entry["duration"] = float(item.get("dur"))
+		if item.has("pattern_id"):
+			entry["pattern_id"] = String(item.get("pattern_id"))
+		if item.has("pattern_pitch"):
+			entry["pattern_pitch"] = int(item.get("pattern_pitch"))
 		out.append(entry)
 	out.sort_custom(func(a, b) -> bool:
 		return float(a.get("time", 0.0)) < float(b.get("time", 0.0))
@@ -320,11 +331,16 @@ static func serialize(
 		"---",
 	])
 	var has_drum := false
+	var has_provenance := false
 	for note in spawn:
 		if note.has("drum") and String(note.get("drum", "")) != "":
 			has_drum = true
+		if note.has("pattern_id") or note.has("vel") or note.has("duration"):
+			has_provenance = true
 			break
-	if has_drum:
+	if has_drum and has_provenance:
+		lines.append("# time(s)   lane   drum   vel   dur   pattern_id   pattern_pitch")
+	elif has_drum:
 		lines.append("# time(s)   lane   drum")
 	else:
 		lines.append("# time(s)   lane")
@@ -333,10 +349,37 @@ static func serialize(
 		var lane := int(note.get("lane", 0))
 		if has_drum:
 			var drum := String(note.get("drum", "")).strip_edges().to_lower()
+			var base := ""
 			if drum != "":
-				lines.append("%9.4f  %d  %s" % [note_time, lane, drum])
+				base = "%9.4f  %d  %s" % [note_time, lane, drum]
 			else:
-				lines.append("%9.4f  %d" % [note_time, lane])
+				base = "%9.4f  %d" % [note_time, lane]
+			if has_provenance:
+				var vel_str := ""
+				var dur_str := ""
+				var pat_str := ""
+				var pitch_str := ""
+				if note.has("vel"):
+					vel_str = str(int(note.get("vel")))
+				else:
+					vel_str = "-"
+				if note.has("duration"):
+					dur_str = "%.4f" % float(note.get("duration"))
+				elif note.has("dur"):
+					dur_str = "%.4f" % float(note.get("dur"))
+				else:
+					dur_str = "-"
+				if note.has("pattern_id"):
+					pat_str = String(note.get("pattern_id"))
+				else:
+					pat_str = "-"
+				if note.has("pattern_pitch"):
+					pitch_str = str(int(note.get("pattern_pitch")))
+				else:
+					pitch_str = "-"
+				if vel_str != "-" or dur_str != "-" or pat_str != "-" or pitch_str != "-":
+					base += "  %s  %s  %s  %s" % [vel_str, dur_str, pat_str, pitch_str]
+			lines.append(base)
 		else:
 			lines.append("%9.4f  %d" % [note_time, lane])
 	return "\n".join(lines) + "\n"
@@ -373,6 +416,22 @@ static func _parse_drums_body(text: String) -> Array:
 			var drum := String(parts[2]).strip_edges().to_lower()
 			if drum != "":
 				entry["drum"] = drum
+		if parts.size() >= 4:
+			var vel_str := String(parts[3]).strip_edges()
+			if vel_str != "-" and vel_str != "" and vel_str.is_valid_int():
+				entry["vel"] = int(vel_str)
+		if parts.size() >= 5:
+			var dur_str := String(parts[4]).strip_edges()
+			if dur_str != "-" and dur_str != "" and dur_str.is_valid_float():
+				entry["duration"] = float(dur_str)
+		if parts.size() >= 6:
+			var pat_str := String(parts[5]).strip_edges()
+			if pat_str != "-" and pat_str != "":
+				entry["pattern_id"] = pat_str
+		if parts.size() >= 7:
+			var pitch_str := String(parts[6]).strip_edges()
+			if pitch_str != "-" and pitch_str != "" and pitch_str.is_valid_int():
+				entry["pattern_pitch"] = int(pitch_str)
 		out.append(entry)
 	out.sort_custom(func(a, b) -> bool:
 		return float(a.get("time", 0.0)) < float(b.get("time", 0.0))

@@ -35,6 +35,7 @@ static func build_for_route(
 	require_playable: bool = true,
 	run_config: Dictionary = {}
 ) -> Dictionary:
+	var _diag_t := Time.get_ticks_usec()
 	const _MarathonSessionConfig = preload("res://logic/domain/session/marathon_session_config.gd")
 	const _MarathonRouteRolls = preload("res://logic/domain/session/marathon_route_rolls.gd")
 	var template := _MarathonRouteCatalog.template_for_route(route_id)
@@ -42,16 +43,58 @@ static func build_for_route(
 	if group_id == "":
 		group_id = _MarathonRouteCatalog.genre_group_for_route(route_id)
 	if group_id == "":
+		var _dt0 := Time.get_ticks_usec() - _diag_t
 		return _fail(ERROR_EMPTY_SCOPE, template)
 	var effective_config := run_config.duplicate(true) if not run_config.is_empty() else _MarathonRouteRolls.rolled_config(template)
 	effective_config = _MarathonSessionConfig.resolve_effective_run_config(effective_config, template)
+	var built := _build_route_with_config(template, group_id, effective_config, require_playable)
+	if bool(built.get("ok", false)):
+		return built
+	# Narrow chart style (e.g. Arcade-only roll) often blocks routes that work with both styles.
+	# When the player can edit style, widen once and retry.
+	var err := str(built.get("error", ""))
+	var style_locked := _MarathonSessionConfig.is_setup_field_locked(template, "chart_style")
+	if (
+		not style_locked
+		and (err == ERROR_NOT_ENOUGH_SONGS or err == ERROR_EMPTY_SCOPE or err == ERROR_DURATION_SHORT)
+		and _is_narrow_chart_style(effective_config)
+	):
+		var widened := effective_config.duplicate(true)
+		widened["generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_ALL
+		widened["generation_modes_allowed"] = []
+		var retry := _build_route_with_config(template, group_id, widened, require_playable)
+		if bool(retry.get("ok", false)):
+			retry["chart_style_auto_widened"] = true
+			return retry
+	return built
+
+
+static func _is_narrow_chart_style(config: Dictionary) -> bool:
+	var policy := str(config.get("generation_mode_policy", _EndlessSessionConfig.GEN_MODE_POLICY_ALL))
+	if policy == _EndlessSessionConfig.GEN_MODE_POLICY_ALL:
+		return false
+	var allowed: Array = config.get("generation_modes_allowed", [])
+	if allowed.is_empty():
+		return false
+	return allowed.size() < _EndlessSessionConfig.UI_CHART_STYLE_GOALS.size()
+
+
+static func _build_route_with_config(
+	template: Dictionary,
+	group_id: String,
+	effective_config: Dictionary,
+	require_playable: bool
+) -> Dictionary:
+	var _diag_t := Time.get_ticks_usec()
 	var scope_config := _scope_config_for_template(template, effective_config)
 	var policy := _MarathonRouteLength.policy_from_template(template)
 	var min_required := int(policy.get("min_songs_required", 3))
 	var preferred := ""
 	if bool(effective_config.get("instrument_locked", false)):
 		preferred = str(effective_config.get("instrument", "")).strip_edges()
+	var _pick_t := Time.get_ticks_usec()
 	var instrument_pick := _pick_viable_instrument(scope_config, min_required, preferred)
+	var _pick_ms := (Time.get_ticks_usec() - _pick_t) / 1000.0
 	var instrument := str(instrument_pick.get("instrument", _EndlessSessionConfig.DEFAULT_INSTRUMENT))
 	effective_config["instrument"] = instrument
 	effective_config["instruments"] = [instrument]
@@ -124,6 +167,7 @@ static func build_for_route(
 		"length_policy": policy,
 		"estimated_duration_sec": estimated_sec,
 		"has_finale": bool(policy.get("has_finale", false)),
+		"chart_style_auto_widened": false,
 	}
 
 
@@ -356,11 +400,72 @@ static func _pick_viable_instrument(
 		"scope": [],
 		"song_count": 0,
 	}
+	var use_index: bool = SongLibrary != null and SongLibrary.has_method("count_matching_songs_via_index")
+	var best_instrument: String = _EndlessSessionConfig.DEFAULT_INSTRUMENT
+	var best_count: int = 0
+	# Fast path: use LibraryIndex for counting (in-memory, ~1ms vs 150-300ms FS scan)
+	if use_index:
+		for inst in order:
+			var cfg := scope_config.duplicate(true)
+			cfg["instrument"] = inst
+			cfg["instruments"] = [inst]
+			var _c_t := Time.get_ticks_usec()
+			# Count up to large number to get true count for best tracking
+			var cnt: int = SongLibrary.count_matching_songs_via_index(cfg, 999)
+			var _c_ms := (Time.get_ticks_usec() - _c_t) / 1000.0
+			if cnt > best_count:
+				best_count = cnt
+				best_instrument = inst
+			if cnt >= min_required:
+				# Winner found — try index entries first (no FS), fallback to resolve_scope
+				var scope: Array[Dictionary] = []
+				var via_index := false
+				if SongLibrary.has_method("get_matching_entries_via_index"):
+					var _e_t := Time.get_ticks_usec()
+					scope = SongLibrary.get_matching_entries_via_index(cfg)
+					var _e_ms := (Time.get_ticks_usec() - _e_t) / 1000.0
+					if not scope.is_empty():
+						via_index = true
+				if not via_index:
+					var _rs_t := Time.get_ticks_usec()
+					scope = _SessionScopeResolver.resolve_scope(cfg)
+					var _rs_ms := (Time.get_ticks_usec() - _rs_t) / 1000.0
+				return {
+					"instrument": inst,
+					"scope": scope,
+					"song_count": _group_scope_by_song(scope).size(),
+				}
+		# No winner — resolve best instrument once (prefer index)
+		if best_count > 0:
+			var cfg_best := scope_config.duplicate(true)
+			cfg_best["instrument"] = best_instrument
+			cfg_best["instruments"] = [best_instrument]
+			var scope_best: Array[Dictionary] = []
+			var via_best := false
+			if SongLibrary.has_method("get_matching_entries_via_index"):
+				var _eb_t := Time.get_ticks_usec()
+				scope_best = SongLibrary.get_matching_entries_via_index(cfg_best)
+				var _eb_ms := (Time.get_ticks_usec() - _eb_t) / 1000.0
+				if not scope_best.is_empty():
+					via_best = true
+			if not via_best:
+				var _rs2_t := Time.get_ticks_usec()
+				scope_best = _SessionScopeResolver.resolve_scope(cfg_best)
+				var _rs2_ms := (Time.get_ticks_usec() - _rs2_t) / 1000.0
+			return {
+				"instrument": best_instrument,
+				"scope": scope_best,
+				"song_count": _group_scope_by_song(scope_best).size(),
+			}
+		return best
+	# Fallback: original FS scan per instrument
 	for inst in order:
 		var cfg := scope_config.duplicate(true)
 		cfg["instrument"] = inst
 		cfg["instruments"] = [inst]
+		var _rs_t := Time.get_ticks_usec()
 		var scope: Array = _SessionScopeResolver.resolve_scope(cfg)
+		var _rs_ms := (Time.get_ticks_usec() - _rs_t) / 1000.0
 		var song_count := _group_scope_by_song(scope).size()
 		if song_count > int(best.get("song_count", 0)):
 			best = {
@@ -375,6 +480,11 @@ static func _pick_viable_instrument(
 				"song_count": song_count,
 			}
 	return best
+
+
+static func _candidate_songs_count(scope_config: Dictionary) -> int:
+	var stats: Dictionary = _SessionScopeResolver.candidate_pool_stats(scope_config)
+	return int(stats.get("songs", 0))
 
 
 static func _fail_partial(
@@ -409,6 +519,79 @@ static func _fail_partial(
 		"estimated_duration_sec": _entries_duration_sec(ordered),
 		"has_finale": bool(policy.get("has_finale", false)),
 	}
+
+
+static func _candidate_from_policy(template: Dictionary, run_config: Dictionary) -> int:
+	var scope_cfg := _scope_config_for_template(template, run_config)
+	return _candidate_songs_count(scope_cfg)
+
+
+## Returns Array[Dictionary] with keys: song_path, instrument, chart_stem, lanes, goal, difficulty, chart_tag
+static func missing_chart_requirements(route_id: String, run_config: Dictionary = {}) -> Array[Dictionary]:
+	const _MarathonSessionConfig = preload("res://logic/domain/session/marathon_session_config.gd")
+	const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return []
+	var template := _MarathonRouteCatalog.template_for_route(rid)
+	if template.is_empty():
+		return []
+	var effective: Dictionary = _MarathonSessionConfig.resolve_effective_run_config(run_config, template)
+	var preview: Dictionary = preview_for_route(rid, run_config)
+	if bool(preview.get("ok", false)):
+		return []
+	var candidate_stats: Dictionary = _SessionScopeResolver.candidate_pool_stats(_scope_config_for_template(template, effective))
+	var candidate_paths: Array = candidate_stats.get("paths", [])
+	if candidate_paths.is_empty():
+		return []
+	var instruments: Array = _EndlessSessionConfig.sanitize_instruments(effective.get("instruments", [effective.get("instrument", _EndlessSessionConfig.DEFAULT_INSTRUMENT)]))
+	var instrument: String = str(instruments[0]) if not instruments.is_empty() else _EndlessSessionConfig.DEFAULT_INSTRUMENT
+	var scope_cfg: Dictionary = _scope_config_for_template(template, effective)
+	var allowed_stems: Array[String] = _SessionScopeResolver.allowed_chart_stems(scope_cfg)
+	if allowed_stems.is_empty():
+		allowed_stems = _GoalDiff.all_stems()
+	var lanes: int = int(effective.get("lanes", 4))
+	var out: Array[Dictionary] = []
+	var dmin: float = float(template.get("difficulty_min", 2.0))
+	var dmax: float = float(template.get("difficulty_max", 7.0))
+	var mid: float = (dmin + dmax) * 0.5
+	for path in candidate_paths:
+		var song_path: String = str(path).strip_edges()
+		if song_path == "":
+			continue
+		var ready: int = _SessionScopeResolver.count_entries_for_song(song_path, scope_cfg, instrument)
+		if ready > 0:
+			continue
+		# Pick best stem closest to mid difficulty
+		var best_stem: String = allowed_stems[0]
+		var best_dist: float = INF
+		for stem in allowed_stems:
+			var pair: Dictionary = _GoalDiff.pair_from_stem(stem)
+			var stem_rating_est: float = 5.0 # fallback
+			# Estimate rating from difficulty tier
+			var diff_str: String = str(pair.get("difficulty", "")).to_lower()
+			match diff_str:
+				"easy": stem_rating_est = 2.5
+				"medium": stem_rating_est = 5.0
+				"hard": stem_rating_est = 8.0
+				_: stem_rating_est = 5.0
+			var dist: float = absf(stem_rating_est - mid)
+			if dist < best_dist:
+				best_dist = dist
+				best_stem = stem
+		var pair_best: Dictionary = _GoalDiff.pair_from_stem(best_stem)
+		out.append({
+			"song_path": song_path,
+			"instrument": instrument,
+			"chart_stem": best_stem,
+			"lanes": lanes,
+			"goal": str(pair_best.get("goal", _GoalDiff.DEFAULT_GOAL)),
+			"difficulty": str(pair_best.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)),
+			"chart_tag": "",
+		})
+		if out.size() >= 50:
+			break
+	return out
 
 
 static func _fail(

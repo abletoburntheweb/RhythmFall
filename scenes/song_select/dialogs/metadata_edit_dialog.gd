@@ -1,4 +1,4 @@
-# scenes/song_select/metadata_edit_dialog.gd
+# scenes/song_select/dialogs/metadata_edit_dialog.gd
 extends Control
 class_name MetadataEditDialog
 
@@ -7,8 +7,11 @@ signal cancelled()
 
 const GENRE_PICKER_SCENE := "res://scenes/song_select/dialogs/genre_picker_dialog.tscn"
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
-const HELP_CALLOUT_SCENE := preload("res://scenes/help/help_callout.tscn")
+const HELP_CALLOUT_SCENE := "res://scenes/help/help_callout.tscn"
 const _SS = preload("res://logic/domain/library/song_select_strings.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+const _ChoiceOverlayScene = preload("res://ui/overlays/app_choice_overlay.tscn")
+const _Overlay = preload("res://logic/ui/app_overlay_helpers.gd")
 
 const _BODY := "Container/BodyCenter/CardPanel/CardMargin/BodyHBox"
 const _LEFT := _BODY + "/LeftVBox"
@@ -47,21 +50,42 @@ var _initial_year_present: bool = false
 var _initial_bpm_value: int = 0
 var _initial_bpm_from_server: bool = false
 var _initial_genre_from_server: bool = false
+var _choice_overlay: AppChoiceOverlay = null
+var _back_prompt_active := false
 
 
 func _ready():
+	var _perf_ready := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.total")
 	UiIconHelper.configure_modal_overlay(self, 100)
+	_choice_overlay = _ChoiceOverlayScene.instantiate() as AppChoiceOverlay
+	if _choice_overlay:
+		add_child(_choice_overlay)
+	var _perf_bind := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.bind_nodes")
 	_bind_nodes()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.bind_nodes", _perf_bind)
 	SpinBoxUtils.apply_value_font_size(_year_spin, 22)
 	SpinBoxUtils.apply_value_font_size(_bpm_spin, 22)
+	var _perf_song := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.song_data")
 	_apply_song_data()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.song_data", _perf_song)
+	var _perf_sidebar := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.sidebar")
 	_apply_sidebar_info()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.sidebar", _perf_sidebar)
+	var _perf_cover := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.cover")
 	_load_cover_texture()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.cover", _perf_cover)
+	var _perf_hints := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.hints")
 	_setup_hint_callouts()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.hints", _perf_hints)
+	var _perf_focus := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.focus")
 	_focus_initial_field()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.focus", _perf_focus)
+	var _perf_icons := PerfTrace.begin("perf.detail.song_select.metadata_edit.ready.icons")
 	_setup_ui_icons()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.icons", _perf_icons)
 	call_deferred("apply_locale")
 	UiInteractionApplier.apply_from_engine(self)
+	PerfTrace.end("perf.detail.song_select.metadata_edit.ready.total", _perf_ready)
 
 
 func _bind_nodes() -> void:
@@ -83,6 +107,7 @@ func _bind_nodes() -> void:
 
 
 func apply_locale() -> void:
+	var _perf_deferred_locale := PerfTrace.begin("perf.detail.song_select.metadata_edit.deferred.locale")
 	var back_btn := get_node_or_null("Container/BackButton") as Button
 	if back_btn:
 		back_btn.text = tr("BTN_BACK")
@@ -129,6 +154,7 @@ func apply_locale() -> void:
 	_update_bpm_from_server_badge()
 	_update_genre_from_server_badge()
 	_refresh_info_callout()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.locale", _perf_deferred_locale)
 
 
 func _setup_hint_callouts() -> void:
@@ -136,7 +162,7 @@ func _setup_hint_callouts() -> void:
 	if genre_slot:
 		for child in genre_slot.get_children():
 			child.queue_free()
-		var genre_tip := HELP_CALLOUT_SCENE.instantiate()
+		var genre_tip := (load(HELP_CALLOUT_SCENE) as PackedScene).instantiate()
 		genre_slot.add_child(genre_tip)
 		if genre_tip.has_method("setup"):
 			genre_tip.setup("tip", tr("GENRE_PICK_HINT"), true)
@@ -145,7 +171,7 @@ func _setup_hint_callouts() -> void:
 		return
 	for child in slot.get_children():
 		child.queue_free()
-	var callout := HELP_CALLOUT_SCENE.instantiate()
+	var callout := (load(HELP_CALLOUT_SCENE) as PackedScene).instantiate()
 	slot.add_child(callout)
 	callout.set_meta("meta_info_callout", true)
 	if callout.has_method("setup"):
@@ -358,11 +384,15 @@ func _load_cover_texture() -> void:
 	var path := str(_song_data.get("path", ""))
 	var cover = _song_data.get("cover", null)
 	if cover is ImageTexture:
+		var _perf_existing := PerfTrace.begin("perf.detail.song_select.metadata_edit.cover.existing_texture")
 		_cover_texture_rect.texture = cover
+		PerfTrace.end("perf.detail.song_select.metadata_edit.cover.existing_texture", _perf_existing)
 		return
 	if path == "":
 		return
+	var _perf_sidecar := PerfTrace.begin("perf.detail.song_select.metadata_edit.cover.sidecar")
 	var sidecar := _try_sidecar_cover(path)
+	PerfTrace.end("perf.detail.song_select.metadata_edit.cover.sidecar", _perf_sidecar)
 	if sidecar:
 		_cover_texture_rect.texture = sidecar
 		return
@@ -381,19 +411,24 @@ func _try_sidecar_cover(path: String) -> Texture2D:
 
 
 func _load_embedded_cover(path: String) -> void:
+	var _perf_embedded := PerfTrace.begin("perf.detail.song_select.metadata_edit.deferred.embedded_cover")
 	if _cover_texture_rect == null or path == "":
+		PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.embedded_cover", _perf_embedded)
 		return
 	var ext := path.get_extension().to_lower()
 	if ext != "mp3" and ext != "wav" and ext != "ogg" and ext != "flac":
 		_apply_fallback_cover()
+		PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.embedded_cover", _perf_embedded)
 		return
 	var global_path := ProjectSettings.globalize_path(path)
 	if not FileAccess.file_exists(global_path):
 		_apply_fallback_cover()
+		PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.embedded_cover", _perf_embedded)
 		return
 	var file_access := FileAccess.open(global_path, FileAccess.READ)
 	if not file_access:
 		_apply_fallback_cover()
+		PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.embedded_cover", _perf_embedded)
 		return
 	var file_data := file_access.get_buffer(file_access.get_length())
 	file_access.close()
@@ -403,6 +438,7 @@ func _load_embedded_cover(path: String) -> void:
 		_cover_texture_rect.texture = md.cover
 	else:
 		_apply_fallback_cover()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.deferred.embedded_cover", _perf_embedded)
 
 
 func _apply_fallback_cover() -> void:
@@ -529,6 +565,10 @@ func _on_save_button_pressed() -> void:
 	emit_signal("metadata_saved", fields)
 
 
+func _has_unsaved_changes() -> bool:
+	return not _collect_changed_fields().is_empty()
+
+
 func _notify_metadata_saved_achievement() -> void:
 	var ge := get_tree().root.get_node_or_null("GameEngine")
 	if ge == null:
@@ -540,8 +580,39 @@ func _notify_metadata_saved_achievement() -> void:
 
 
 func _on_back_button_pressed() -> void:
-	queue_free()
-	emit_signal("cancelled")
+	if _back_prompt_active:
+		return
+	if _genre_picker and is_instance_valid(_genre_picker):
+		return
+	if _has_unsaved_changes():
+		_back_prompt_active = true
+		var choice := await _Overlay.choose(
+			_choice_overlay,
+			tr("DLG_SETTINGS_UNSAVED_TEXT"),
+			"warning",
+			"",
+			tr("BTN_SAVE"),
+			tr("BTN_CANCEL"),
+			tr("BTN_DISCARD_CHANGES"),
+		)
+		_back_prompt_active = false
+		match choice:
+			"confirm":
+				var fields := _collect_changed_fields()
+				if fields.size() > 0:
+					_notify_metadata_saved_achievement()
+				_UiModifierSounds.play_deselect()
+				queue_free()
+				emit_signal("metadata_saved", fields)
+			"extra":
+				_UiModifierSounds.play_deselect()
+				queue_free()
+				emit_signal("cancelled")
+			_:
+				return
+	else:
+		queue_free()
+		emit_signal("cancelled")
 
 
 func _input(event: InputEvent) -> void:

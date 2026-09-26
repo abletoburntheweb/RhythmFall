@@ -11,6 +11,7 @@ const _EnergyBalanceSchedule = preload("res://logic/domain/rhythm/energy_balance
 const _DensityFocusSchedule = preload("res://logic/domain/rhythm/density_focus_schedule.gd")
 const _LaneRemap = preload("res://logic/domain/rhythm/lane_remap.gd")
 const _GrooveAddictionSchedule = preload("res://logic/domain/rhythm/groove_addiction_schedule.gd")
+const _AudioResolver = preload("res://logic/domain/audio/audio_source_resolver.gd")
 
 const LANE_CHANGE_ANIM_SEC := 0.75
 const GAME_UPDATE_DELTA := 1.0 / 60.0
@@ -68,6 +69,12 @@ var _escalation_used_ids: Array[String] = []
 var _spotlight_overlay: ModifierSpotlightOverlay = null
 var _spotlight_overlay_key: String = ""
 var _silence_was_muted: bool = false
+var _silence_was_stems: bool = false
+var _metronome_only_stems_active: bool = false
+
+var _cached_has_stem: bool = false
+var _cached_stem_rel: String = ""
+var _cached_song_path: String = ""
 
 var _last_notice_heat_pct: int = 100
 var _last_rush_burst_notice_active: bool = false
@@ -117,7 +124,61 @@ func _reset_speed_notice_state() -> void:
 	_last_notice_speed_pct.clear()
 
 
+func _get_song_path() -> String:
+	if game_screen == null:
+		return ""
+	return str(game_screen.selected_song_data.get("path", "")).strip_edges()
+
+func _needs_stem() -> bool:
+	if game_screen == null:
+		return false
+	if _RunModifiers.is_silence(game_screen.run_modifiers_player):
+		return true
+	if _RunModifiers.is_metronome_only(game_screen.run_modifiers_player) and _RunModifiers.metronome_only_use_stems(game_screen.run_modifier_params):
+		return true
+	return false
+
+func _update_stem_cache() -> void:
+	if not _needs_stem():
+		_cached_has_stem = false
+		_cached_stem_rel = ""
+		_cached_song_path = ""
+		return
+	var sp := _get_song_path()
+	if sp == _cached_song_path:
+		return
+	_cached_song_path = sp
+	_cached_stem_rel = _AudioResolver.get_drums_stem_rel(sp) if sp != "" else ""
+	_cached_has_stem = _cached_stem_rel != "" and _AudioResolver.has_drums_stem(sp)
+
+func _switch_to_stem_at_current_time() -> void:
+	if _cached_stem_rel == "" or not _cached_has_stem:
+		return
+	var t := 0.0
+	if game_screen and game_screen.has_method("get_song_time"):
+		t = float(game_screen.get_song_time())
+	t = maxf(0.0, t)
+	if MusicManager and MusicManager.has_method("play_game_music_at_position"):
+		MusicManager.play_game_music_at_position(_cached_stem_rel, t)
+		if MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(false)
+		MusicManager.set_external_metronome_control(false)
+		_silence_was_stems = true
+		_metronome_only_stems_active = true
+
+func _switch_to_original_at_current_time() -> void:
+	var orig := _get_song_path()
+	if orig == "":
+		return
+	var t := 0.0
+	if game_screen and game_screen.has_method("get_song_time"):
+		t = float(game_screen.get_song_time())
+	t = maxf(0.0, t)
+	if MusicManager and MusicManager.has_method("play_game_music_at_position"):
+		MusicManager.play_game_music_at_position(orig, t)
+
 func apply_audio_modifiers() -> void:
+	_update_stem_cache()
 	var metro_only := _RunModifiers.is_metronome_only(game_screen.run_modifiers_player)
 	var silence := _RunModifiers.is_silence(game_screen.run_modifiers_player)
 	if silence:
@@ -125,12 +186,27 @@ func apply_audio_modifiers() -> void:
 		if MusicManager.has_method("set_game_music_muted"):
 			MusicManager.set_game_music_muted(false)
 		_silence_was_muted = false
+		_silence_was_stems = false
+		_metronome_only_stems_active = false
 		update_silence_audio()
 		return
+	# Metronome Only with optional stems playback
+	if metro_only and _RunModifiers.metronome_only_use_stems(game_screen.run_modifier_params):
+		if _cached_has_stem:
+			_switch_to_stem_at_current_time()
+			# Stems active: not muted, no metronome (drums stem replaces metronome)
+			MusicManager.set_external_metronome_control(false)
+			if MusicManager.has_method("set_game_music_muted"):
+				MusicManager.set_game_music_muted(false)
+			_silence_was_muted = false
+			return
+		# Fallback to metronome if no stem
 	MusicManager.set_external_metronome_control(metro_only)
 	if MusicManager.has_method("set_game_music_muted"):
 		MusicManager.set_game_music_muted(metro_only)
 	_silence_was_muted = false
+	_silence_was_stems = false
+	_metronome_only_stems_active = false
 
 
 func update_silence_audio() -> void:
@@ -140,7 +216,10 @@ func update_silence_audio() -> void:
 		if _silence_was_muted and MusicManager.has_method("set_game_music_muted"):
 			MusicManager.set_game_music_muted(false)
 			MusicManager.set_external_metronome_control(false)
+		if _silence_was_stems:
+			_switch_to_original_at_current_time()
 		_silence_was_muted = false
+		_silence_was_stems = false
 		return
 	if game_screen.countdown_active or not game_screen.gameplay_started:
 		return
@@ -151,14 +230,68 @@ func update_silence_audio() -> void:
 	var muted := _RunModifiers.silence_is_muted(
 		song_time, game_screen.run_modifier_params, song_duration
 	)
-	var keep_metro := _RunModifiers.silence_metronome_enabled(game_screen.run_modifier_params)
-	if MusicManager.has_method("set_game_music_muted"):
-		MusicManager.set_game_music_muted(muted)
-	MusicManager.set_external_metronome_control(muted and keep_metro)
-	if muted and keep_metro:
-		MusicManager.update_metronome(
-			GAME_UPDATE_DELTA, song_time, game_screen.bpm
-		)
+	var gap_source := _RunModifiers.silence_gap_source(game_screen.run_modifier_params)
+	# Resolve legacy bool if gap_source not set (sanitize handles migration, but keep fallback)
+	if gap_source == "" and _RunModifiers.silence_metronome_enabled(game_screen.run_modifier_params):
+		gap_source = _RunModifiers.SILENCE_GAP_SOURCE_METRONOME
+	elif gap_source == "":
+		gap_source = _RunModifiers.SILENCE_GAP_SOURCE_SILENCE
+
+	# Outside gap: restore original if we were playing stems
+	if not muted:
+		if _silence_was_stems:
+			_switch_to_original_at_current_time()
+		if _silence_was_muted and MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(false)
+			MusicManager.set_external_metronome_control(false)
+		_silence_was_muted = false
+		_silence_was_stems = false
+		return
+
+	# Inside silence gap
+	if gap_source == _RunModifiers.SILENCE_GAP_SOURCE_SILENCE:
+		if _silence_was_stems:
+			_switch_to_original_at_current_time()
+		if MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(true)
+		MusicManager.set_external_metronome_control(false)
+		_silence_was_stems = false
+	elif gap_source == _RunModifiers.SILENCE_GAP_SOURCE_METRONOME:
+		if _silence_was_stems:
+			_switch_to_original_at_current_time()
+		if MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(true)
+		MusicManager.set_external_metronome_control(true)
+		MusicManager.update_metronome(GAME_UPDATE_DELTA, song_time, game_screen.bpm)
+		_silence_was_stems = false
+	elif gap_source == _RunModifiers.SILENCE_GAP_SOURCE_STEMS:
+		_update_stem_cache()
+		if _cached_has_stem:
+			# Play drums stem during gap, synced to current song_time
+			if not _silence_was_stems or String(MusicManager.current_game_music_file) != _cached_stem_rel:
+				_switch_to_stem_at_current_time()
+			else:
+				if MusicManager.has_method("set_game_music_muted"):
+					MusicManager.set_game_music_muted(false)
+				MusicManager.set_external_metronome_control(false)
+			_silence_was_stems = true
+		else:
+			# Fallback to metronome
+			if _silence_was_stems:
+				_switch_to_original_at_current_time()
+			if MusicManager.has_method("set_game_music_muted"):
+				MusicManager.set_game_music_muted(true)
+			MusicManager.set_external_metronome_control(true)
+			MusicManager.update_metronome(GAME_UPDATE_DELTA, song_time, game_screen.bpm)
+			_silence_was_stems = false
+	else:
+		# Unknown -> silence
+		if _silence_was_stems:
+			_switch_to_original_at_current_time()
+		if MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(true)
+		MusicManager.set_external_metronome_control(false)
+		_silence_was_stems = false
 	_silence_was_muted = muted
 
 
@@ -169,6 +302,9 @@ func update_metronome_tick(delta: float) -> void:
 	if not _RunModifiers.is_metronome_only(game_screen.run_modifiers_player):
 		return
 	if game_screen.countdown_active or not game_screen.gameplay_started:
+		return
+	# If metronome_only is using stems, do not tick metronome
+	if _RunModifiers.metronome_only_use_stems(game_screen.run_modifier_params) and _cached_has_stem:
 		return
 	MusicManager.update_metronome(
 		delta, game_screen.get_song_time(), game_screen.bpm
@@ -487,6 +623,11 @@ func _remove_spotlight_overlay() -> void:
 func cleanup_modifier_overlays() -> void:
 	_remove_spotlight_overlay()
 	_silence_was_muted = false
+	_silence_was_stems = false
+	_metronome_only_stems_active = false
+	_cached_has_stem = false
+	_cached_stem_rel = ""
+	_cached_song_path = ""
 
 
 func chart_playback_rate_at(chart_time: float) -> float:

@@ -235,10 +235,15 @@ static func build_template(archetype_id: String, season_start_iso: String = "") 
 	merged["tagline_key"] = str(archetype.get("tagline_key", ""))
 	merged["idea_key"] = str(archetype.get("idea_key", ""))
 	merged["length_class"] = str(archetype.get("length_class", "standard"))
-	return _MarathonRouteRolls.apply_to_template(
-		_MarathonRouteCatalog.sanitize_template(merged),
-		"%s_%s_rolls" % [start_iso, aid]
-	)
+	var sanitized := _MarathonRouteCatalog.sanitize_template(merged)
+	var rolled := _MarathonRouteRolls.apply_to_template(sanitized, "%s_%s_rolls" % [start_iso, aid])
+	# Fix: ensure actually selected genre (including fallback) is preserved for UI/title/summary
+	# Concrete genres inside the selected group mix normally, but the group itself must be the picked one
+	rolled["genre_group_id"] = str(genre_pick.get("genre_id", ""))
+	rolled["source_id"] = str(rolled.get("genre_group_id", ""))
+	rolled["genre_fallback"] = bool(genre_pick.get("used_fallback", false))
+	rolled["genre_preferred"] = str(genre_pick.get("preferred_id", ""))
+	return rolled
 
 
 static func current_fill_line(template: Dictionary) -> String:

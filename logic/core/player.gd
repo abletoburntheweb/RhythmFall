@@ -1,4 +1,4 @@
-# logic/player.gd
+# logic/core/player.gd
 extends Node
 
 signal note_hit(lane: int)

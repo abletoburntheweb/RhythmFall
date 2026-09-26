@@ -1,4 +1,4 @@
-# logic/utils/profile_genre_portrait.gd
+# logic/domain/profile/profile_genre_portrait.gd
 class_name ProfileGenrePortrait
 extends RefCounted
 
@@ -8,6 +8,8 @@ const GenreSearch = preload("res://logic/domain/library/genre_search.gd")
 
 static var _group_map: Dictionary = {}
 static var _group_map_loaded := false
+static var _cached_groups_json: Dictionary = {}
+static var _cached_groups_json_loaded: bool = false
 
 
 static func _ensure_group_map() -> void:
@@ -15,11 +17,8 @@ static func _ensure_group_map() -> void:
 		return
 	_group_map_loaded = true
 	_group_map.clear()
-	var path := _USER_GENRE_GROUPS_PATH if FileAccess.file_exists(_USER_GENRE_GROUPS_PATH) else _GENRE_GROUPS_PATH
-	if not FileAccess.file_exists(path):
-		return
-	var parsed: Variant = JsonUtils.read_json(path)
-	if not parsed is Dictionary:
+	var parsed: Dictionary = _ensure_cached_groups_json()
+	if parsed.is_empty():
 		return
 	for group_name in parsed:
 		var genres: Variant = parsed[group_name]
@@ -40,6 +39,18 @@ static func _enrich_group_map_aliases() -> void:
 			var alias_key := GenreSearch.normalize_canonical(str(alias))
 			if alias_key != "" and not _group_map.has(alias_key):
 				_group_map[alias_key] = group_id
+
+
+static func _ensure_cached_groups_json() -> Dictionary:
+	if _cached_groups_json_loaded:
+		return _cached_groups_json
+	_cached_groups_json_loaded = true
+	var path := _USER_GENRE_GROUPS_PATH if FileAccess.file_exists(_USER_GENRE_GROUPS_PATH) else _GENRE_GROUPS_PATH
+	if FileAccess.file_exists(path):
+		var parsed: Variant = JsonUtils.read_json(path)
+		if parsed is Dictionary:
+			_cached_groups_json = parsed as Dictionary
+	return _cached_groups_json
 
 
 static func map_genre_to_group(canonical_genre: String) -> String:
@@ -152,13 +163,10 @@ const GROUP_DISPLAY_ORDER: Array[String] = [
 
 static func all_group_ids() -> Array[String]:
 	_ensure_group_map()
-	var path := _USER_GENRE_GROUPS_PATH if FileAccess.file_exists(_USER_GENRE_GROUPS_PATH) else _GENRE_GROUPS_PATH
+	var parsed: Dictionary = _ensure_cached_groups_json()
 	var known: Dictionary = {}
-	if FileAccess.file_exists(path):
-		var parsed: Variant = JsonUtils.read_json(path)
-		if parsed is Dictionary:
-			for key in parsed:
-				known[str(key)] = true
+	for key in parsed:
+		known[str(key)] = true
 	var out: Array[String] = []
 	for group_id in GROUP_DISPLAY_ORDER:
 		if known.has(group_id):
@@ -178,11 +186,8 @@ static func group_play_count(genre_play_counts: Dictionary, group_id: String) ->
 
 static func genres_for_group(group_id: String) -> Array[String]:
 	_ensure_group_map()
-	var path := _USER_GENRE_GROUPS_PATH if FileAccess.file_exists(_USER_GENRE_GROUPS_PATH) else _GENRE_GROUPS_PATH
-	if not FileAccess.file_exists(path):
-		return []
-	var parsed: Variant = JsonUtils.read_json(path)
-	if not parsed is Dictionary:
+	var parsed: Dictionary = _ensure_cached_groups_json()
+	if parsed.is_empty():
 		return []
 	var raw: Variant = parsed.get(group_id, [])
 	if not raw is Array:

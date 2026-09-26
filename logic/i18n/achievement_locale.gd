@@ -1,4 +1,4 @@
-# logic/utils/achievement_locale.gd
+# logic/i18n/achievement_locale.gd
 extends RefCounted
 class_name AchievementLocale
 

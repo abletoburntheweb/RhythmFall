@@ -8,10 +8,13 @@ const _AchievementLocale = preload("res://logic/i18n/achievement_locale.gd")
 const _UiListSlideTransition = preload("res://logic/ui/ui_list_slide_transition.gd")
 const _UiCategoryButton = preload("res://logic/ui/ui_category_button.gd")
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
+const _HelpSectionUi = preload("res://logic/ui/settings_section_ui.gd")
 var AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.gd").new()
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 enum ViewMode { OVERVIEW, LIST }
 enum ListKind { CATEGORY, FULL, SEARCH }
+enum SortMode { TITLE, NEWEST }
 
 const _STATUS_SPECS: Array = [
 	["all", "ACH_FILTER_ALL", "layers-2.svg", Color(0.92, 0.76, 0.42, 1.0)],
@@ -39,23 +42,6 @@ const _CATEGORY_SPECS: Array = [
 	["modifiers", "ACH_CAT_MODIFIERS"],
 	["play_modes", "ACH_CAT_PLAY_MODES"],
 ]
-
-const _ACCENT_BY_CATEGORY := {
-	"mastery": Color(0.66, 0.58, 0.86),
-	"drums": Color(0.38, 0.78, 0.74),
-	"bass": Color(0.45, 0.62, 0.92),
-	"genres": Color(0.86, 0.52, 0.72),
-	"system": Color(0.8, 0.86, 0.94),
-	"shop": Color(0.52, 0.76, 0.92),
-	"economy": Color(0.95, 0.78, 0.35),
-	"daily": Color(0.62, 0.86, 0.72),
-	"playtime": Color(0.42, 0.57, 0.82),
-	"events": Color(0.95, 0.55, 0.45),
-	"level": Color(0.55, 0.92, 0.65),
-	"modifiers": Color(0.52, 0.76, 0.94),
-	"play_modes": Color(0.62, 0.48, 0.95),
-	"default": Color(0.42, 0.57, 0.82),
-}
 
 const _CHIP_MIN_HEIGHT := 42
 const _CHIP_FONT_SIZE := 16
@@ -93,6 +79,7 @@ const _UI_FALLBACK_RU := {
 var achievements: Array[Dictionary] = []
 var filtered_achievements: Array[Dictionary] = []
 var current_status_filter: String = "all"
+var current_sort_mode: SortMode = SortMode.TITLE
 var achievement_manager: AchievementManager = null
 var _view_mode: ViewMode = ViewMode.OVERVIEW
 var _list_kind: ListKind = ListKind.FULL
@@ -108,9 +95,18 @@ var _achievements_skip_transition := true
 var _render_in_progress := false
 var _filter_task_token := 0
 
+var _fps_trace_active: bool = false
+var _fps_trace_start_ms: int = 0
+var _fps_trace_next_ms: int = 0
+var _fps_trace_samples: int = 0
+const FPS_TRACE_DURATION_MS := 5000
+const FPS_TRACE_INTERVAL_MS := 100
+
 var _status_chips: Dictionary = {}
 var _view_chips: Dictionary = {}
+var _sort_chips: Dictionary = {}
 var _filter_chips_built := false
+var _sort_buttons_built := false
 
 
 func _tr_ui(key: String) -> String:
@@ -137,7 +133,72 @@ func apply_locale() -> void:
 	_update_list_nav_title()
 	_update_counter()
 	_refresh_visible_cards_locale()
+	_ensure_help_button()
 	_refresh_display("", "none")
+
+
+func _ensure_help_button() -> void:
+	if title_label == null or not is_instance_valid(title_label):
+		return
+	if title_label.has_meta("help_icon_btn"):
+		var existing_meta: Variant = title_label.get_meta("help_icon_btn")
+		if existing_meta is Button and is_instance_valid(existing_meta):
+			(existing_meta as Button).tooltip_text = tr("HELP_LINK_ACHIEVEMENTS")
+			return
+	var parent := title_label.get_parent()
+	if parent == null:
+		return
+	var existing_btn := parent.get_node_or_null("HelpButton") as Button
+	if existing_btn != null:
+		return
+	var row_existing := parent.get_node_or_null("TitleHelpRow")
+	if row_existing != null:
+		var btn_in_row := row_existing.get_node_or_null("HelpButton") as Button
+		if btn_in_row != null:
+			return
+	var btn := _HelpSectionUi.make_help_icon_button(tr("HELP_LINK_ACHIEVEMENTS"))
+	btn.name = "HelpButton"
+	btn.tooltip_text = tr("HELP_LINK_ACHIEVEMENTS")
+	if not btn.pressed.is_connected(_on_help_pressed):
+		btn.pressed.connect(_on_help_pressed)
+	if parent is HBoxContainer:
+		parent.add_child(btn)
+		parent.move_child(btn, title_label.get_index() + 1)
+		title_label.set_meta("help_icon_btn", btn)
+	else:
+		var idx := title_label.get_index()
+		var row := HBoxContainer.new()
+		row.name = "TitleHelpRow"
+		row.add_theme_constant_override("separation", 8)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		parent.add_child(row)
+		parent.move_child(row, idx)
+		parent.remove_child(title_label)
+		row.add_child(title_label)
+		title_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(btn)
+		title_label.set_meta("help_icon_btn", btn)
+
+
+func _on_help_pressed() -> void:
+	var n: Node = self
+	while n:
+		if n.has_method("open_help_item"):
+			n.open_help_item("achievements")
+			return
+		if n.has_method("get_transitions"):
+			var t = n.get_transitions()
+			if t and t.has_method("open_help_item"):
+				t.open_help_item("achievements")
+				return
+		n = n.get_parent()
+	var trans := get_tree().root.get_node_or_null("GameEngine") as Node
+	if trans and trans.has_method("get_transitions"):
+		var t2 = trans.get_transitions()
+		if t2 and t2.has_method("open_help_item"):
+			t2.open_help_item("achievements")
 
 
 func _refresh_visible_cards_locale() -> void:
@@ -168,10 +229,18 @@ func _refresh_filter_chips_locale() -> void:
 		var chip: Button = _view_chips.get(view_id)
 		if chip:
 			chip.text = _tr_ui(String(spec[1]))
+	var sort_hbox := get_node_or_null("MainVBox/FilterBarPanel/FilterVBox/SortHBox") as HBoxContainer
+	if sort_hbox:
+		var sort_label := sort_hbox.get_node_or_null("SortLabel") as Label
+		if sort_label:
+			sort_label.text = tr("ACH_SORT_LABEL")
 	_apply_filter_chip_selection()
+	_apply_sort_chip_selection()
+	_update_sort_visibility()
 
 
 func _ready():
+	var _t_ready := PerfTrace.begin("perf.load.achievements_screen.ready")
 	var overlay := _get_loading_overlay()
 	if overlay:
 		overlay.show_loading(tr("UI_LOADING_ACHIEVEMENTS"), true)
@@ -194,10 +263,12 @@ func _ready():
 
 	_load_achievements_data()
 	_build_filter_chips()
+	_ensure_help_button()
 	if list_root:
 		list_root.visible = false
 	call_deferred("_deferred_initial_display")
 	_setup_ui_icons()
+	PerfTrace.end("perf.load.achievements_screen.ready", _t_ready)
 
 
 func _setup_ui_icons() -> void:
@@ -210,6 +281,7 @@ func _build_filter_chips() -> void:
 		return
 	_clear_chip_row(status_chips_hbox, _status_chips)
 	_clear_chip_row(view_mode_hbox, _view_chips)
+	_build_sort_chips()
 
 	for spec in _STATUS_SPECS:
 		var filter_id := String(spec[0])
@@ -227,6 +299,7 @@ func _build_filter_chips() -> void:
 
 	_apply_filter_chip_selection()
 	_filter_chips_built = true
+	_apply_sort_chip_selection()
 
 
 func _clear_chip_row(row: BoxContainer, registry: Dictionary) -> void:
@@ -287,6 +360,114 @@ func _apply_filter_chip_selection_impl() -> void:
 		var chip: Button = _view_chips[view_id]
 		if chip:
 			_UiCategoryButton.apply_selection(chip, String(view_id) == active_view, 14, true)
+	_apply_sort_chip_selection()
+
+
+func _build_sort_chips() -> void:
+	var sort_hbox := get_node_or_null("MainVBox/FilterBarPanel/FilterVBox/SortHBox") as HBoxContainer
+	if sort_hbox == null:
+		return
+	var sort_label := sort_hbox.get_node_or_null("SortLabel") as Label
+	if sort_label:
+		sort_label.text = tr("ACH_SORT_LABEL")
+	var opt := sort_hbox.get_node_or_null("SortOptionButton") as OptionButton
+	if opt == null:
+		opt = OptionButton.new()
+		opt.name = "SortOptionButton"
+		opt.custom_minimum_size = Vector2(160, 0)
+		opt.theme_type_variation = "Dropdown"
+		sort_hbox.add_child(opt)
+	# Rebuild items to ensure translations
+	opt.clear()
+	opt.add_item(tr("ACH_SORT_TITLE"))
+	opt.set_item_metadata(0, SortMode.TITLE)
+	opt.add_item(tr("ACH_SORT_NEWEST"))
+	opt.set_item_metadata(1, SortMode.NEWEST)
+	if not opt.item_selected.is_connected(_on_sort_option_selected):
+		opt.item_selected.connect(_on_sort_option_selected)
+	_apply_sort_chip_selection()
+	_update_sort_visibility()
+
+
+func _apply_sort_chip_selection() -> void:
+	var opt := get_node_or_null("MainVBox/FilterBarPanel/FilterVBox/SortHBox/SortOptionButton") as OptionButton
+	if opt == null:
+		return
+	# Ensure items have correct translations
+	if opt.item_count != 2:
+		opt.clear()
+		opt.add_item(tr("ACH_SORT_TITLE"))
+		opt.set_item_metadata(0, SortMode.TITLE)
+		opt.add_item(tr("ACH_SORT_NEWEST"))
+		opt.set_item_metadata(1, SortMode.NEWEST)
+	else:
+		opt.set_item_text(0, tr("ACH_SORT_TITLE"))
+		opt.set_item_text(1, tr("ACH_SORT_NEWEST"))
+	var idx := 0 if current_sort_mode == SortMode.TITLE else 1
+	if opt.selected != idx:
+		opt.selected = idx
+	# Single selection is exclusive by design — OptionButton shows one value
+
+
+func _on_sort_option_selected(index: int) -> void:
+	var opt := get_node_or_null("MainVBox/FilterBarPanel/FilterVBox/SortHBox/SortOptionButton") as OptionButton
+	if opt == null:
+		return
+	var mode_variant = opt.get_item_metadata(index)
+	var new_mode: SortMode = mode_variant as SortMode if mode_variant != null else (SortMode.TITLE if index == 0 else SortMode.NEWEST)
+	if current_sort_mode == new_mode:
+		return
+	current_sort_mode = new_mode
+	_apply_sort_chip_selection()
+	_refresh_display("", "none")
+
+
+func _update_sort_visibility() -> void:
+	var sort_hbox := get_node_or_null("MainVBox/FilterBarPanel/FilterVBox/SortHBox") as HBoxContainer
+	if sort_hbox == null:
+		return
+	# Visible only in FULL LIST, not Overview/Category/Search
+	var show := _view_mode == ViewMode.LIST and _list_kind == ListKind.FULL
+	sort_hbox.visible = show
+
+func _fps_print(msg: String) -> void:
+	var c: Node = null
+	if get_tree() and get_tree().root:
+		c = get_tree().root.get_node_or_null("Console")
+	if c and c.has_method("print_line"):
+		c.call("print_line", msg)
+	else:
+		print(msg)
+
+func _start_fps_trace() -> void:
+	_fps_trace_active = true
+	_fps_trace_start_ms = Time.get_ticks_msec()
+	_fps_trace_next_ms = _fps_trace_start_ms
+	_fps_trace_samples = 0
+	set_process(true)
+
+func _update_fps_trace() -> void:
+	if not _fps_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	if now < _fps_trace_next_ms:
+		return
+	var elapsed := float(now - _fps_trace_start_ms) / 1000.0
+	var fps := float(Engine.get_frames_per_second())
+	if fps < 1.0:
+		fps = 1.0 / maxf(get_process_delta_time(), 0.001)
+	var frame_ms := 1000.0 / maxf(fps, 1.0)
+	_fps_trace_samples += 1
+	_fps_print("[PERF][FPS] achievements t=%.2fs fps=%d frame=%.1fms" % [elapsed, int(round(fps)), frame_ms])
+	_fps_trace_next_ms = now + FPS_TRACE_INTERVAL_MS
+	if now - _fps_trace_start_ms >= FPS_TRACE_DURATION_MS:
+		_fps_print("[PERF][FPS] achievements summary samples=%d" % [_fps_trace_samples])
+		_fps_trace_active = false
+		if not _render_in_progress:
+			set_process(false)
+
+func _process(_delta: float) -> void:
+	_update_fps_trace()
 
 
 func _deferred_initial_display() -> void:
@@ -319,6 +500,29 @@ func _sort_by_title(a: Dictionary, b: Dictionary) -> bool:
 	if title_a == title_b:
 		return int(a.get("id", 0)) < int(b.get("id", 0))
 	return title_a < title_b
+
+
+func _sort_by_newest(a: Dictionary, b: Dictionary) -> bool:
+	var a_unlocked := bool(a.get("unlocked", false))
+	var b_unlocked := bool(b.get("unlocked", false))
+	if a_unlocked != b_unlocked:
+		return a_unlocked
+	var a_date := str(a.get("unlock_date", ""))
+	var b_date := str(b.get("unlock_date", ""))
+	var a_has_date := a_date.strip_edges() != "" and a_date.to_lower() != "<null>"
+	var b_has_date := b_date.strip_edges() != "" and b_date.to_lower() != "<null>"
+	if a_has_date != b_has_date:
+		return a_has_date
+	if a_has_date and b_has_date:
+		var a_key: PackedInt32Array = TimeUtils.unlock_date_key(a_date)
+		var b_key: PackedInt32Array = TimeUtils.unlock_date_key(b_date)
+		if a_key != b_key:
+			# PackedInt32Array lexicographic compare via string or manual
+			for i in min(a_key.size(), b_key.size()):
+				if a_key[i] != b_key[i]:
+					return a_key[i] > b_key[i]
+			return a_key.size() > b_key.size()
+	return _sort_by_title(a, b)
 
 
 func _achievement_progress_ratio(ach: Dictionary) -> float:
@@ -365,23 +569,41 @@ func _pick_overview_preview(items: Array) -> Array:
 	return result
 
 
+func _is_catalog_visible(ach: Dictionary) -> bool:
+	# Deprecated achievements are fully retired from the catalog.
+	return not bool(ach.get("deprecated", false))
+
+
+func _is_active_achievement(ach: Dictionary) -> bool:
+	return not bool(ach.get("deprecated", false))
+
+
 func _update_counter() -> void:
 	var scope := _counter_scope_achievements()
 	var unlocked_count := 0
+	var total_active := 0
 	for a in scope:
-		if a.get("unlocked", false):
-			unlocked_count += 1
+		if not (a is Dictionary):
+			continue
+		if _is_active_achievement(a):
+			total_active += 1
+			if a.get("unlocked", false):
+				unlocked_count += 1
 	if counter_label:
-		counter_label.text = tr("ACH_UNLOCKED") % [unlocked_count, scope.size()]
+		counter_label.text = tr("ACH_UNLOCKED") % [unlocked_count, total_active]
 	if unlock_progress_bar:
-		unlock_progress_bar.max_value = maxf(float(scope.size()), 1.0)
+		unlock_progress_bar.max_value = maxf(float(total_active), 1.0)
 		unlock_progress_bar.value = float(unlocked_count)
 
 
 func _counter_scope_achievements() -> Array:
 	if _view_mode == ViewMode.LIST and _list_kind == ListKind.CATEGORY and _active_category_id != "":
 		return _achievements_for_category(_active_category_id, false)
-	return achievements
+	var all_visible: Array = []
+	for ach in achievements:
+		if ach is Dictionary and _is_catalog_visible(ach):
+			all_visible.append(ach)
+	return all_visible
 
 
 func _category_unlock_counts(category_id: String) -> Dictionary:
@@ -392,6 +614,8 @@ func _category_unlock_counts(category_id: String) -> Dictionary:
 		if not (ach is Dictionary):
 			continue
 		if str(ach.get("category", "")).to_lower() != target:
+			continue
+		if not _is_active_achievement(ach):
 			continue
 		total += 1
 		if ach.get("unlocked", false):
@@ -407,23 +631,34 @@ func _achievements_for_category(category_id: String, apply_status: bool) -> Arra
 			continue
 		if str(ach.get("category", "")).to_lower() != target:
 			continue
+		if not _is_catalog_visible(ach):
+			continue
 		scoped.append(ach)
 	if apply_status:
 		scoped = _apply_status_filter(scoped, current_status_filter)
-	scoped.sort_custom(Callable(self, "_sort_by_title"))
+	if current_sort_mode == SortMode.NEWEST:
+		scoped.sort_custom(Callable(self, "_sort_by_newest"))
+	else:
+		scoped.sort_custom(Callable(self, "_sort_by_title"))
 	return scoped
 
 
 func _apply_status_filter(achievements_to_filter: Array, filter_type: String) -> Array:
 	if filter_type == "all":
-		return achievements_to_filter.duplicate()
+		return achievements_to_filter.filter(func(ach):
+			return ach is Dictionary and _is_catalog_visible(ach)
+		)
 	if filter_type == "unlocked":
 		return achievements_to_filter.filter(func(ach):
-			return ach is Dictionary and ach.get("unlocked", false)
+			return ach is Dictionary and ach.get("unlocked", false) and _is_catalog_visible(ach)
 		)
 	if filter_type == "locked":
 		return achievements_to_filter.filter(func(ach):
-			return ach is Dictionary and not ach.get("unlocked", false)
+			return (
+				ach is Dictionary
+				and not ach.get("unlocked", false)
+				and _is_active_achievement(ach)
+			)
 		)
 	return achievements_to_filter.duplicate()
 
@@ -506,6 +741,7 @@ func _update_nav_visibility() -> void:
 		list_nav_bar.visible = in_list
 	if view_mode_hbox:
 		view_mode_hbox.visible = not in_list or _list_kind == ListKind.SEARCH
+	_update_sort_visibility()
 
 
 func _update_list_nav_title() -> void:
@@ -530,7 +766,7 @@ func _category_title(category_id: String) -> String:
 
 
 func _category_accent(category_id: String) -> Color:
-	return _ACCENT_BY_CATEGORY.get(category_id, _ACCENT_BY_CATEGORY["default"])
+	return AchievementsUtils.accent_color_for_category(category_id)
 
 
 func _refresh_display(query: String, transition: String = "none") -> void:
@@ -575,7 +811,10 @@ func _refresh_display_task(query: String, transition: String = "none") -> void:
 			var desc_text := _AchievementLocale.localized_description_strict(ach)
 			if title_text.to_lower().contains(query_lower) or desc_text.to_lower().contains(query_lower):
 				search_results.append(ach)
-		search_results.sort_custom(Callable(self, "_sort_by_title"))
+		if current_sort_mode == SortMode.NEWEST:
+			search_results.sort_custom(Callable(self, "_sort_by_newest"))
+		else:
+			search_results.sort_custom(Callable(self, "_sort_by_title"))
 		_show_list_view(search_results, transition)
 	else:
 		if _list_kind == ListKind.SEARCH:
@@ -607,7 +846,10 @@ func _build_list_items() -> Array[Dictionary]:
 			return _achievements_for_category(_active_category_id, true)
 		ListKind.FULL:
 			var all_items: Array[Dictionary] = _apply_status_filter(achievements, current_status_filter)
-			all_items.sort_custom(Callable(self, "_sort_by_title"))
+			if current_sort_mode == SortMode.NEWEST:
+				all_items.sort_custom(Callable(self, "_sort_by_newest"))
+			else:
+				all_items.sort_custom(Callable(self, "_sort_by_title"))
 			return all_items
 		_:
 			return []
@@ -623,9 +865,11 @@ func _rebuild_overview(transition: String) -> void:
 	_scroll_to_top()
 
 	var rebuild := func() -> void:
+		var _t_overview := PerfTrace.begin("perf.load.achievements_screen.overview")
 		_clear_container(overview_root)
 		for spec in _CATEGORY_SPECS:
 			if generation != _overview_generation:
+				PerfTrace.end("perf.load.achievements_screen.overview", _t_overview)
 				return
 			var category_id := String(spec[0])
 			var locale_key := String(spec[1])
@@ -634,6 +878,7 @@ func _rebuild_overview(transition: String) -> void:
 				continue
 			var section := _make_overview_section(category_id, locale_key, items)
 			overview_root.add_child(section)
+		PerfTrace.end("perf.load.achievements_screen.overview", _t_overview)
 
 	var skip := _achievements_skip_transition or transition == "none"
 	if transition == "crossfade" and achievements_scroll:
@@ -690,6 +935,7 @@ func _make_overview_section(category_id: String, locale_key: String, items: Arra
 
 	var show_all_btn := _create_show_all_button(category_id, accent)
 	header.add_child(show_all_btn)
+	_UiCategoryButton.apply_selection(show_all_btn, true, 14, true)
 
 	var cards_row := HBoxContainer.new()
 	cards_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -711,11 +957,11 @@ func _make_overview_section(category_id: String, locale_key: String, items: Arra
 func _create_show_all_button(category_id: String, accent: Color) -> Button:
 	var btn := _create_filter_chip(_tr_ui("ACH_SHOW_ALL"), "chevron-right.svg", accent)
 	btn.pressed.connect(_open_category_list.bind(category_id))
-	_UiCategoryButton.apply_selection(btn, true, 14, true)
 	return btn
 
 
 func _show_list_view(items: Array[Dictionary], transition: String) -> void:
+	_start_fps_trace()
 	if overview_root:
 		overview_root.visible = false
 	if list_root:
@@ -776,16 +1022,49 @@ func _on_back_pressed() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_SLASH and search_bar:
-			search_bar.grab_focus()
-			get_viewport().set_input_as_handled()
-			return
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
 		return
-	if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed and not event.echo) \
-			or event.is_action_pressed("ui_cancel"):
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed and not event.echo) \
+				or event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()
+			_on_back_pressed()
+		return
+	var key_event := event as InputEventKey
+	if key_event.keycode == KEY_SLASH and search_bar:
+		if not search_bar.has_focus():
+			search_bar.grab_focus()
+		get_viewport().set_input_as_handled()
+		return
+	if UiScreenHotkeys.should_block_hotkeys(get_viewport()):
+		if key_event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()
+			_on_back_pressed()
+		return
+	# Q / W / E — status filters (all / unlocked / locked).
+	if key_event.keycode == KEY_Q:
+		_on_status_chip_pressed("all")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_W:
+		_on_status_chip_pressed("unlocked")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_E:
+		_on_status_chip_pressed("locked")
+		get_viewport().set_input_as_handled()
+		return
+	# 1 / 2 — overview / full list.
+	if key_event.keycode == KEY_1:
+		_on_view_chip_pressed("overview")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_2:
+		_on_view_chip_pressed("full")
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_back_pressed()
 
@@ -829,7 +1108,9 @@ func _render_cards_chunked(achievements_to_display: Array[Dictionary], generatio
 	var batch_size := _CARD_BATCH_FIRST
 	var i := 0
 	while i < achievements_to_display.size():
+		var _t_list := PerfTrace.begin("perf.load.achievements_screen.list")
 		if generation != _render_generation:
+			PerfTrace.end("perf.load.achievements_screen.list", _t_list)
 			_render_in_progress = false
 			return
 		var end := mini(i + batch_size, achievements_to_display.size())
@@ -839,11 +1120,19 @@ func _render_cards_chunked(achievements_to_display: Array[Dictionary], generatio
 				continue
 			if not ach.has("title") or ach.title == null:
 				continue
+			var _t_inst := PerfTrace.begin("perf.detail.achievements.card.instantiate")
 			var card = ACHIEVEMENT_CARD_SCENE.instantiate()
+			PerfTrace.end("perf.detail.achievements.card.instantiate", _t_inst)
+			if card is Control:
+				(card as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				(card as Control).size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			var _t_add := PerfTrace.begin("perf.detail.achievements.card.add_child")
 			achievements_list.add_child(card)
+			PerfTrace.end("perf.detail.achievements.card.add_child", _t_add)
 			card.apply_achievement(ach, achievement_manager)
 		if achievements_list and not achievements_list.visible:
 			achievements_list.visible = true
+		PerfTrace.end("perf.load.achievements_screen.list", _t_list)
 		if end >= achievements_to_display.size():
 			break
 		await get_tree().process_frame

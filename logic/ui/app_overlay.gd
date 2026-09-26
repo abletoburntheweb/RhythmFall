@@ -1,4 +1,4 @@
-# logic/utils/app_overlay.gd
+# logic/ui/app_overlay.gd
 class_name AppOverlay
 extends RefCounted
 

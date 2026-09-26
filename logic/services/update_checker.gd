@@ -1,4 +1,4 @@
-# logic/update_checker.gd
+# logic/services/update_checker.gd
 extends Node
 
 signal check_completed(result: Dictionary)

@@ -1,4 +1,4 @@
-# logic/utils/ui_modifier_sounds.gd
+# logic/ui/ui_modifier_sounds.gd
 extends RefCounted
 class_name UiModifierSounds
 

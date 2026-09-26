@@ -1,12 +1,79 @@
 extends RefCounted
 class_name AudioWaveformSampler
 
+const WAVEFORM_DATA_VERSION: int = 1
+
 var _cache: Dictionary = {}
 static var _shared_cache: Dictionary = {}
 
 
 func read_pcm_from_wav(path: String) -> Dictionary:
 	return _read_pcm_from_wav(path)
+
+
+func _waveform_path_for_wav(path: String) -> String:
+	if path.ends_with(".wav"):
+		return path.substr(0, path.length() - 4) + ".waveform"
+	if path.ends_with(".WAV"):
+		return path.substr(0, path.length() - 4) + ".waveform"
+	return path + ".waveform"
+
+
+func _try_load_waveform(path: String, bucket_count: int) -> Dictionary:
+	var empty := {"envelope": PackedFloat32Array(), "duration": 0.0, "peaks": PackedFloat32Array()}
+	var wpath := _waveform_path_for_wav(path)
+	if wpath == "" or not FileAccess.file_exists(wpath):
+		return empty
+	var file := FileAccess.open(wpath, FileAccess.READ)
+	if file == null:
+		return empty
+	# Need at least 4*3 + 4 + 4 bytes for header
+	if file.get_length() < 20:
+		file.close()
+		return empty
+	var version := file.get_32()
+	if version != WAVEFORM_DATA_VERSION:
+		file.close()
+		return empty
+	var stored_bucket_count := file.get_32()
+	if stored_bucket_count != bucket_count:
+		file.close()
+		return empty
+	var envelope_len := file.get_32()
+	if envelope_len != bucket_count:
+		file.close()
+		return empty
+	if envelope_len < 8 or envelope_len > 4096:
+		file.close()
+		return empty
+	if file.get_length() < 12 + envelope_len * 4 + 4 + 4:
+		file.close()
+		return empty
+	var envelope := PackedFloat32Array()
+	envelope.resize(envelope_len)
+	for i in envelope_len:
+		envelope[i] = file.get_float()
+	var duration := file.get_float()
+	if duration <= 0.0 or duration > 100.0:
+		file.close()
+		return empty
+	if file.get_position() + 4 > file.get_length():
+		file.close()
+		return empty
+	var peaks_len := file.get_32()
+	if peaks_len < 0 or peaks_len > 1024:
+		file.close()
+		return empty
+	if file.get_length() < file.get_position() + peaks_len * 4:
+		file.close()
+		return empty
+	var peaks := PackedFloat32Array()
+	peaks.resize(peaks_len)
+	for i in peaks_len:
+		peaks[i] = file.get_float()
+	file.close()
+	var result := {"envelope": envelope, "duration": duration, "peaks": peaks}
+	return result
 
 
 func analyze_hit_envelope(path: String, bucket_count: int = 40) -> Dictionary:
@@ -18,6 +85,12 @@ func analyze_hit_envelope(path: String, bucket_count: int = 40) -> Dictionary:
 	var empty := {"envelope": PackedFloat32Array(), "duration": 0.0, "peaks": PackedFloat32Array()}
 	if path == "" or not FileAccess.file_exists(path):
 		return empty
+	# Try shipped pre-generated waveform first
+	var pregen := _try_load_waveform(path, bucket_count)
+	if not (pregen.get("envelope", PackedFloat32Array()) as PackedFloat32Array).is_empty():
+		_cache[key] = pregen
+		_shared_cache[key] = pregen
+		return (pregen as Dictionary).duplicate(true)
 
 	var pcm := _read_pcm_from_wav(path)
 	var samples: PackedFloat32Array = pcm.get("samples", PackedFloat32Array())

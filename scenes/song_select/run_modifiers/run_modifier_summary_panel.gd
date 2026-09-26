@@ -3,6 +3,7 @@ extends VBoxContainer
 class_name RunModifierSummaryPanel
 
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
+const _IconStrip = preload("res://logic/ui/modifier_icon_strip.gd")
 
 signal confirm_pressed
 signal reset_pressed
@@ -22,8 +23,6 @@ signal reset_pressed
 @onready var _empty_panel: PanelContainer = $ActiveArea/ActiveStack/EmptyPanel
 @onready var _empty_title: Label = $ActiveArea/ActiveStack/EmptyPanel/EmptyVBox/EmptyTitleLabel
 @onready var _empty_hint: Label = $ActiveArea/ActiveStack/EmptyPanel/EmptyVBox/EmptyHintLabel
-@onready var _confirm_button: Button = $ConfirmButton
-@onready var _reset_button: Button = $ResetButton
 
 @onready var _compact_hidden: Array[CanvasItem] = [
 	$SummaryTitleLabel,
@@ -32,17 +31,12 @@ signal reset_pressed
 ]
 
 var _hide_active_list := false
+var _active_params: Dictionary = {}
 
 
 func _ready() -> void:
-	if _confirm_button:
-		_confirm_button.pressed.connect(func(): confirm_pressed.emit())
-	if _reset_button:
-		_reset_button.pressed.connect(func(): reset_pressed.emit())
 	if _active_scroll:
-		_active_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
-	UiIconHelper.setup_confirm_button(_confirm_button)
-	UiIconHelper.setup_reset_button(_reset_button)
+		_active_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	UiIconHelper.add_icon_before_label(_multiplier_caption, "diamond.svg", true, Color(0.95, 0.82, 0.45, 1.0))
 	call_deferred("apply_locale")
 
@@ -58,10 +52,6 @@ func apply_locale() -> void:
 		_empty_title.text = tr("MOD_SUMMARY_EMPTY_TITLE")
 	if _empty_hint:
 		_empty_hint.text = tr("MOD_SUMMARY_EMPTY_HINT")
-	if _confirm_button:
-		_confirm_button.text = tr("MOD_CONFIRM")
-	if _reset_button:
-		_reset_button.text = tr("MOD_RESET_ALL")
 	var mod_ids: Array = get_meta("_last_active_mod_ids", [])
 	if not mod_ids.is_empty():
 		set_active_modifiers(mod_ids)
@@ -73,12 +63,13 @@ func set_summary(
 	ease_count: int,
 	hard_count: int,
 	special_count: int,
-	dna_count: int = 0
+	dna_count: int = 0,
+	params: Dictionary = {}
 ) -> void:
 	set_meta("_last_active_mod_ids", active_modifiers.duplicate())
 	set_multiplier(mult)
 	set_category_stats(ease_count, hard_count, special_count, dna_count)
-	set_active_modifiers(active_modifiers)
+	set_active_modifiers(active_modifiers, params)
 
 
 func set_multiplier(mult: float) -> void:
@@ -108,10 +99,6 @@ func set_compact_mode(compact: bool, hide_active: bool = false) -> void:
 	for node in _compact_hidden:
 		if node:
 			node.visible = not compact
-	if _confirm_button:
-		_confirm_button.visible = true
-	if _reset_button:
-		_reset_button.visible = true
 	size_flags_vertical = Control.SIZE_SHRINK_END if compact else Control.SIZE_EXPAND_FILL
 	_reapply_active_list_visibility()
 
@@ -130,19 +117,21 @@ func _reapply_active_list_visibility() -> void:
 		_active_scroll.visible = show_list and has_any
 
 
-func show_full_active_list(active_modifiers: Array) -> void:
+func show_full_active_list(active_modifiers: Array, params: Dictionary = {}) -> void:
 	_hide_active_list = false
 	for node in _compact_hidden:
 		if node:
 			node.visible = true
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	set_meta("_last_active_mod_ids", active_modifiers.duplicate())
-	set_active_modifiers(active_modifiers)
+	set_active_modifiers(active_modifiers, params)
 
 
-func set_active_modifiers(modifier_ids: Array) -> void:
+func set_active_modifiers(modifier_ids: Array, params: Dictionary = {}) -> void:
 	if _active_vbox == null:
 		return
+	if not params.is_empty():
+		_active_params = params.duplicate()
 	for child in _active_vbox.get_children():
 		child.queue_free()
 	var has_any := not modifier_ids.is_empty()
@@ -151,42 +140,5 @@ func set_active_modifiers(modifier_ids: Array) -> void:
 		return
 	for raw_id in modifier_ids:
 		var mod_id := str(raw_id)
-		_active_vbox.add_child(_make_active_row(mod_id))
+		_active_vbox.add_child(_IconStrip._make_mod_row(mod_id, _active_params))
 	_reapply_active_list_visibility()
-
-
-func _make_active_row(modifier_id: String) -> PanelContainer:
-	var row := PanelContainer.new()
-	row.custom_minimum_size = Vector2(0, 36)
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.1, 0.12, 0.17, 0.95)
-	box.border_color = Color(1, 1, 1, 0.08)
-	box.set_border_width_all(1)
-	box.set_corner_radius_all(8)
-	box.content_margin_left = 8
-	box.content_margin_top = 6
-	box.content_margin_right = 8
-	box.content_margin_bottom = 6
-	row.add_theme_stylebox_override("panel", box)
-
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 10)
-	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(hbox)
-
-	var icon_file := _RunModifiers.icon_file(modifier_id)
-	var tint := _RunModifiers.category_tint(modifier_id, true)
-	if icon_file.strip_edges() != "":
-		var frame := UiIconHelper.make_icon_frame(icon_file, 30, 16, tint)
-		hbox.add_child(frame)
-
-	var title := Label.new()
-	title.text = tr(_RunModifiers.title_i18n_key(modifier_id))
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.clip_text = true
-	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	title.add_theme_font_size_override("font_size", 14)
-	title.add_theme_color_override("font_color", Color(0.86, 0.92, 0.98, 0.98))
-	hbox.add_child(title)
-
-	return row

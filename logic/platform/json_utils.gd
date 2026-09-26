@@ -1,4 +1,4 @@
-# logic/utils/json_utils.gd
+# logic/platform/json_utils.gd
 extends RefCounted
 class_name JsonUtils
 

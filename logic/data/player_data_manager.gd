@@ -1,8 +1,11 @@
-# logic/player_data_manager.gd
+# logic/data/player_data_manager.gd
 extends Node
 
 const RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const PlayModeIds = preload("res://logic/domain/session/play_mode_ids.gd")
+const _ActivityCalendar = preload("res://logic/domain/profile/activity_calendar.gd")
+const _TimeCapsule = preload("res://logic/domain/profile/time_capsule.gd")
+const _ProfileEventLog = preload("res://logic/domain/profile/profile_event_log.gd")
 
 const DEFAULT_MODIFIER_STATS := {
 	"clears_any": 0,
@@ -24,7 +27,50 @@ const DEFAULT_MODIFIER_STATS := {
 	"clears_reverse_scroll": 0,
 	"clears_time_warp": 0,
 	"clears_pick_mode": 0,
+	## Category clears (achievement catalog trim — per-mod achievements deprecated).
+	"clears_cat_speed": 0,
+	"clears_cat_visibility": 0,
+	"clears_cat_timing": 0,
+	"clears_cat_lanes": 0,
+	"clears_cat_special": 0,
+	"clears_cat_dna": 0,
+	"cat_clears_bootstrapped": false,
 }
+
+const MOD_CAT_SPEED_IDS: Array[String] = [
+	RunModifiers.ID_SLOW_75,
+	RunModifiers.ID_FAST_150,
+	RunModifiers.ID_HEAT,
+	RunModifiers.ID_RUSH,
+]
+const MOD_CAT_VISIBILITY_IDS: Array[String] = [
+	RunModifiers.ID_HIDDEN,
+	RunModifiers.ID_SUDDEN,
+	RunModifiers.ID_MEMORY_MODE,
+	RunModifiers.ID_SPOTLIGHT,
+]
+const MOD_CAT_TIMING_IDS: Array[String] = [
+	RunModifiers.ID_STRICT_TIMING,
+	RunModifiers.ID_NO_MISS_FORGIVENESS,
+	RunModifiers.ID_SUDDEN_DEATH,
+	RunModifiers.ID_HALF_HP,
+]
+const MOD_CAT_LANES_IDS: Array[String] = [
+	RunModifiers.ID_MIRROR_MODE,
+	RunModifiers.ID_SHUFFLE_MODE,
+	RunModifiers.ID_RANDOM_MODE,
+	RunModifiers.ID_SINGLE_LANE,
+]
+const MOD_CAT_SPECIAL_IDS: Array[String] = [
+	RunModifiers.ID_TIME_WARP,
+	RunModifiers.ID_REVERSE_SCROLL,
+	RunModifiers.ID_FIXED_SPEED_20,
+	RunModifiers.ID_COMBO_ESCALATION,
+	RunModifiers.ID_LAST_CHANCE,
+	RunModifiers.ID_METRONOME_ONLY,
+	RunModifiers.ID_PICK_MODE,
+	RunModifiers.ID_SILENCE,
+]
 
 const DEFAULT_GENERATION_STATS := {
 	"notes_generated": 0,
@@ -93,14 +139,33 @@ var data: Dictionary = {
 	"last_login_date": "",
 	"login_streak": 0,
 	"best_login_streak": 0,
+	"play_streak": 0,
+	"best_play_streak": 0,
+	# Day snapshots keyed by YYYY-MM-DD; streak advances only via record_activity_run.
+	"activity_calendar": {"days": {}, "window_days": 120},
+	## Monthly profile capsules (then/now foundation). See time_capsule.gd.
+	"time_capsules": {"version": 1, "months": {}},
+	## Chronological History feed (project_new §9).
+	"profile_event_log": {"version": 1, "events": [], "backfilled": false},
+	## Claimed library size milestones (toast once per threshold).
+	"library_milestones_claimed": [],
 	"levels_completed": 0,
-	"drum_levels_completed": 0,      
-	"total_drum_perfect_hits": 0,   
+	"drum_levels_completed": 0,
+	"bass_levels_completed": 0,
+	"total_drum_perfect_hits": 0,
+	"total_bass_perfect_hits": 0,
+	"drum_dense_clears": 0,
+	"max_drum_score_single_run": 0,
+	"bass_ghost_hits_total": 0,
+	"bass_multilane_hits_total": 0,
+	"bass_perfect_holds_total": 0,
+	"bass_clean_hold_clears": 0,
 	"total_perfect_hits": 0,
 	"total_notes_hit": 0,
 	"total_notes_missed": 0,
 	"max_combo_ever": 0,             
-	"max_drum_combo_ever": 0,       
+	"max_drum_combo_ever": 0,
+	"max_bass_combo_ever": 0,
 	"total_drum_hits": 0,           
 	"total_drum_misses": 0,
 	"total_play_time": "00:00", 
@@ -139,6 +204,9 @@ var data: Dictionary = {
 	"unlocked_play_modes": PackedStringArray([PlayModeIds.LIBRARY]),
 	"endless_best_streak": 0,
 	"endless_session_last": {},
+	"marathon_session_last": {},
+	"user_playlists": [],
+	"playlist_activity": {},
 	"endless_stats": {
 		"total_runs": 0,
 		"total_tracks_cleared": 0,
@@ -155,9 +223,11 @@ signal total_play_time_changed(new_time_formatted: String)
 signal level_changed(new_level: int, new_xp: int, xp_for_next_level: int)  
 signal daily_quests_updated()
 signal calendar_day_changed(new_date: String)
+signal activity_calendar_changed()
 signal profile_statistics_reset()
 signal shop_new_rewards_changed()
 signal favorite_songs_changed()
+signal library_milestone_reached(count: int)
 
 var _total_play_time_seconds: int = 0
 
@@ -165,6 +235,7 @@ var achievement_manager = null
 var game_engine_reference = null
 var delayed_achievements: Array[Dictionary] = []
 var daily_quests_mgr = null
+var achievement_bridge: PlayerDataAchievementBridge = null
 var _save_pending: bool = false
 var _save_timer = null
 const SAVE_DEBOUNCE_SECONDS: float = 1.0
@@ -196,6 +267,7 @@ func _ready():
 		emit_signal("daily_quests_updated")
 		emit_signal("shop_new_rewards_changed")
 	)
+	achievement_bridge = PlayerDataAchievementBridge.new(self)
 
 	var default_items = DEFAULT_UNLOCKED_ITEMS
 	var items_changed = false
@@ -208,6 +280,8 @@ func _ready():
 	ensure_shop_reward_notifications_migrated()
 	_ensure_play_modes_data()
 	_setup_calendar_day_watcher()
+	call_deferred("maybe_capture_time_capsules")
+	call_deferred("ensure_demo_time_capsule")
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
@@ -252,27 +326,60 @@ func sync_calendar_day_if_needed() -> void:
 		return
 	if quests_date != today:
 		ensure_daily_quests_for_today()
+	# Even without date change, ensure login counted for today (e.g., fresh install).
+	_advance_login_streak_for_date(today)
 
 func apply_calendar_day_rollover(new_date: String = "") -> void:
 	if new_date == "":
 		new_date = Time.get_date_string_from_system()
 	_tracked_calendar_date = new_date
 	ensure_daily_quests_for_today()
-	apply_daily_login_for_today()
+	_advance_login_streak_for_date(new_date)
+	_sync_activity_streak_for_calendar(false)
 	emit_signal("calendar_day_changed", new_date)
 
-func apply_daily_login_for_today() -> void:
-	var today_str := Time.get_date_string_from_system()
-	var last_login_str := str(data.get("last_login_date", ""))
-	if last_login_str == today_str:
-		return
-	var login_streak := int(data.get("login_streak", 0))
+func _advance_login_streak_for_date(today: String) -> bool:
+	## Pure login entity — consecutive days of app open, independent of tracks.
+	var t := str(today).strip_edges()
+	if t == "":
+		t = Time.get_date_string_from_system()
+	var last := str(data.get("last_login_date", "")).strip_edges()
+	if last == t:
+		return false
+	var cur := int(data.get("login_streak", 0))
 	var new_streak := 1
-	if last_login_str != "":
-		var last_login_dict := _parse_date_string(last_login_str)
-		if not last_login_dict.is_empty() and _is_yesterday_date(last_login_dict, today_str):
-			new_streak = login_streak + 1
-	set_login_streak(new_streak)
+	if last != "" and _ActivityCalendar.is_yesterday(last, t):
+		new_streak = cur + 1
+	elif last == "":
+		new_streak = 1
+	else:
+		var gap := _ActivityCalendar.days_between(last, t)
+		if gap == 1:
+			new_streak = cur + 1
+		elif last == "":
+			new_streak = 1
+		else:
+			# Break — start new streak at 1. Best preserved.
+			new_streak = 1
+	data["login_streak"] = new_streak
+	data["last_login_date"] = t
+	_touch_best_login_streak()
+	_trigger_login_achievement_check()
+	if _ActivityCalendar.is_streak_milestone(new_streak):
+		append_profile_event(_ProfileEventLog.KIND_STREAK, {
+			"id": "streak_login_%d_%s" % [new_streak, t],
+			"ts": t,
+			"title_key": "PROFILE_EVENT_STREAK_LOGIN",
+			"title_arg": str(new_streak),
+			"icon": "flame.svg",
+		}, false)
+	_save()
+	return true
+
+func apply_daily_login_for_today() -> void:
+	## Actual login advance — kept for external callers.
+	_advance_login_streak_for_date(Time.get_date_string_from_system())
+	_sync_activity_streak_for_calendar(false)
 
 func _parse_date_string(date_str: String) -> Dictionary:
 	var parts := date_str.split("-")
@@ -285,15 +392,14 @@ func _parse_date_string(date_str: String) -> Dictionary:
 	}
 
 func _is_yesterday_date(date_dict: Dictionary, today_str: String) -> bool:
-	var today_parts := today_str.split("-")
-	if today_parts.size() != 3:
+	if date_dict.is_empty():
 		return false
-	var today_year := today_parts[0].to_int()
-	var today_month := today_parts[1].to_int()
-	var today_day := today_parts[2].to_int()
-	return date_dict.get("year", -1) == today_year \
-		and date_dict.get("month", -1) == today_month \
-		and date_dict.get("day", -1) == (today_day - 1)
+	var last := "%04d-%02d-%02d" % [
+		int(date_dict.get("year", 0)),
+		int(date_dict.get("month", 0)),
+		int(date_dict.get("day", 0)),
+	]
+	return _ActivityCalendar.is_yesterday(last, today_str)
 
 func ensure_shop_reward_notifications_migrated(shop_items: Array = []) -> void:
 	if data.get("shop_reward_notifications_initialized", false):
@@ -430,7 +536,10 @@ func mark_shop_reward_seen(item_id: String) -> void:
 	emit_signal("shop_new_rewards_changed")
 
 func _load():
+	var _perf_player_total_start := PerfTrace.begin("perf.load.player_data.total")
+	var _perf_json_read_start := PerfTrace.begin("perf.load.player_data.json_read")
 	var json_result: Dictionary = JsonUtils.read_json_dict(PLAYER_DATA_PATH)
+	PerfTrace.end("perf.load.player_data.json_read", _perf_json_read_start)
 	if json_result is Dictionary and not json_result.is_empty():
 		var loaded_currency = int(json_result.get("currency", 0))
 		var loaded_unlocked_item_ids = _to_packed_string_array(json_result.get("unlocked_item_ids", PackedStringArray()))
@@ -438,17 +547,35 @@ func _load():
 		var loaded_last_login = json_result.get("last_login_date", "")
 		var loaded_login_streak = int(json_result.get("login_streak", 0))
 		var loaded_best_login_streak = int(json_result.get("best_login_streak", loaded_login_streak))
+		var loaded_play_streak = int(json_result.get("play_streak", 0))
+		var loaded_best_play_streak: int
+		if json_result.has("best_play_streak"):
+			loaded_best_play_streak = int(json_result.get("best_play_streak", 0))
+		elif json_result.has("best_login_streak"):
+			# One-time seed for old saves: best_play from best_login, login stays independent.
+			loaded_best_play_streak = int(json_result.get("best_login_streak", 0))
+		else:
+			loaded_best_play_streak = 0
 		var loaded_unlocked_achievement_ids = _to_packed_int_array(json_result.get("unlocked_achievement_ids", PackedInt32Array()))
 		var loaded_spent_currency = int(json_result.get("spent_currency", 0))
 		var loaded_total_earned_currency = int(json_result.get("total_earned_currency", 0))
 		var loaded_levels_completed = int(json_result.get("levels_completed", 0))
 		var loaded_drum_levels_completed = int(json_result.get("drum_levels_completed", 0))
+		var loaded_bass_levels_completed = int(json_result.get("bass_levels_completed", 0))
 		var loaded_total_drum_perfect_hits = int(json_result.get("total_drum_perfect_hits", 0))
+		var loaded_total_bass_perfect_hits = int(json_result.get("total_bass_perfect_hits", 0))
+		var loaded_drum_dense_clears = int(json_result.get("drum_dense_clears", 0))
+		var loaded_max_drum_score_single_run = int(json_result.get("max_drum_score_single_run", 0))
+		var loaded_bass_ghost_hits_total = int(json_result.get("bass_ghost_hits_total", 0))
+		var loaded_bass_multilane_hits_total = int(json_result.get("bass_multilane_hits_total", 0))
+		var loaded_bass_perfect_holds_total = int(json_result.get("bass_perfect_holds_total", 0))
+		var loaded_bass_clean_hold_clears = int(json_result.get("bass_clean_hold_clears", 0))
 		var loaded_total_perfect_hits = int(json_result.get("total_perfect_hits", 0))
 		var loaded_total_notes_hit = int(json_result.get("total_notes_hit", 0)) 
 		var loaded_total_notes_missed = int(json_result.get("total_notes_missed", 0))
 		var loaded_max_combo_ever = int(json_result.get("max_combo_ever", 0))
 		var loaded_max_drum_combo_ever = int(json_result.get("max_drum_combo_ever", 0))
+		var loaded_max_bass_combo_ever = int(json_result.get("max_bass_combo_ever", 0))
 		var loaded_total_drum_hits = int(json_result.get("total_drum_hits", 0))
 		var loaded_total_drum_misses = int(json_result.get("total_drum_misses", 0))
 		var loaded_total_play_time = json_result.get("total_play_time", "00:00") 
@@ -486,12 +613,21 @@ func _load():
 		data["total_earned_currency"] = max(0, loaded_total_earned_currency)
 		data["levels_completed"] = loaded_levels_completed
 		data["drum_levels_completed"] = loaded_drum_levels_completed
+		data["bass_levels_completed"] = loaded_bass_levels_completed
 		data["total_drum_perfect_hits"] = loaded_total_drum_perfect_hits
+		data["total_bass_perfect_hits"] = loaded_total_bass_perfect_hits
+		data["drum_dense_clears"] = loaded_drum_dense_clears
+		data["max_drum_score_single_run"] = loaded_max_drum_score_single_run
+		data["bass_ghost_hits_total"] = loaded_bass_ghost_hits_total
+		data["bass_multilane_hits_total"] = loaded_bass_multilane_hits_total
+		data["bass_perfect_holds_total"] = loaded_bass_perfect_holds_total
+		data["bass_clean_hold_clears"] = loaded_bass_clean_hold_clears
 		data["total_perfect_hits"] = loaded_total_perfect_hits
 		data["total_notes_hit"] = loaded_total_notes_hit
 		data["total_notes_missed"] = loaded_total_notes_missed
 		data["max_combo_ever"] = loaded_max_combo_ever
 		data["max_drum_combo_ever"] = loaded_max_drum_combo_ever
+		data["max_bass_combo_ever"] = loaded_max_bass_combo_ever
 		data["total_drum_hits"] = loaded_total_drum_hits
 		data["total_drum_misses"] = loaded_total_drum_misses
 		data["total_play_time"] = loaded_total_play_time 
@@ -536,14 +672,48 @@ func _load():
 		data["endless_best_streak"] = maxi(0, int(json_result.get("endless_best_streak", data.get("endless_best_streak", 0))))
 		if json_result.get("endless_session_last") is Dictionary:
 			data["endless_session_last"] = json_result["endless_session_last"].duplicate(true)
+		if json_result.get("marathon_session_last") is Dictionary:
+			data["marathon_session_last"] = json_result["marathon_session_last"].duplicate(true)
 		if json_result.get("endless_stats") is Dictionary:
 			data["endless_stats"] = json_result["endless_stats"].duplicate(true)
 		if json_result.get("marathon_completions") is Dictionary:
 			data["marathon_completions"] = json_result["marathon_completions"].duplicate(true)
+		if json_result.get("user_playlists") is Array:
+			data["user_playlists"] = (json_result["user_playlists"] as Array).duplicate(true)
+		if json_result.get("playlist_activity") is Dictionary:
+			data["playlist_activity"] = (json_result["playlist_activity"] as Dictionary).duplicate(true)
 		
 		data["last_login_date"] = loaded_last_login
 		data["login_streak"] = loaded_login_streak
 		data["best_login_streak"] = maxi(loaded_best_login_streak, loaded_login_streak)
+		data["play_streak"] = loaded_play_streak
+		data["best_play_streak"] = maxi(loaded_best_play_streak, loaded_play_streak)
+		var _perf_sanitize_start := PerfTrace.begin("perf.load.player_data.sanitize")
+		data["activity_calendar"] = _ActivityCalendar.sanitize_calendar(
+			json_result.get("activity_calendar", data.get("activity_calendar", {}))
+		)
+		# Ensure play streak reflects calendar truth without touching login.
+		# Do not overwrite best_login here — it stays independent.
+		var _cal_for_play: Dictionary = data["activity_calendar"] as Dictionary
+		var _play_cur: Dictionary = _ActivityCalendar.current_play_streak(_cal_for_play.get("days", {}), _ActivityCalendar.today_str())
+		var _play_len := int(_play_cur.get("length", 0))
+		if _play_len != int(data.get("play_streak", 0)):
+			data["play_streak"] = _play_len
+		var _longest: Dictionary = _ActivityCalendar.longest_play_streak(_cal_for_play.get("days", {}))
+		data["best_play_streak"] = maxi(int(data.get("best_play_streak", 0)), int(_longest.get("length", 0)))
+		data["time_capsules"] = _TimeCapsule.sanitize_store(
+			json_result.get("time_capsules", data.get("time_capsules", {}))
+		)
+		data["profile_event_log"] = _ProfileEventLog.sanitize_store(
+			json_result.get("profile_event_log", data.get("profile_event_log", {}))
+		)
+		PerfTrace.end("perf.load.player_data.sanitize", _perf_sanitize_start)
+		var claimed_raw = json_result.get("library_milestones_claimed", [])
+		var claimed: Array = []
+		if claimed_raw is Array:
+			for v in claimed_raw:
+				claimed.append(int(v))
+		data["library_milestones_claimed"] = claimed
 		
 		var loaded_profile_created_date = str(json_result.get("profile_created_date", ""))
 		if loaded_profile_created_date == "":
@@ -580,6 +750,7 @@ func _load():
 
 	if TrackStatsManager and TrackStatsManager.has_method("get_best_grades_map"):
 		data["best_grades_per_track"] = TrackStatsManager.get_best_grades_map()
+	PerfTrace.end("perf.load.player_data.total", _perf_player_total_start)
 
 func _save():
 	_schedule_save()
@@ -643,6 +814,8 @@ func get_currency() -> int:
 
 func set_game_engine_reference(engine):
 	game_engine_reference = engine
+	if achievement_bridge:
+		achievement_bridge.connect_to_engine(engine)
 func add_delayed_achievement(achievement_data: Dictionary):
 	delayed_achievements.append(achievement_data)
 
@@ -670,7 +843,8 @@ func add_currency(amount: int):
 	_save()
 
 func _trigger_currency_achievement_check():
-	pass
+	if achievement_bridge:
+		achievement_bridge.on_currency_changed()
 
 func add_perfect_hits(count: int):
 	if count <= 0:
@@ -683,7 +857,8 @@ func add_perfect_hits(count: int):
 	increment_daily_progress("perfect_hits", count, {})
 
 func _trigger_perfect_hit_achievement_check():
-	pass
+	if achievement_bridge:
+		achievement_bridge.on_perfect_hit_made()
 
 func xp_for_level(level: int) -> int:
 	if level <= 1:
@@ -725,6 +900,9 @@ func check_level_up() -> bool:
 		data["total_xp"] = int(remainder * 0.2)
 		_calculate_xp_for_next_level()
 		leveled = true
+		
+		if achievement_bridge:
+			achievement_bridge.on_player_level_changed(new_level)
 		
 		emit_signal("level_changed", new_level, data["total_xp"], data["xp_for_next_level"])
 		emit_signal("shop_new_rewards_changed")
@@ -781,7 +959,8 @@ func unlock_item(item_name: String):
 		_save()
 
 func _trigger_purchase_achievement_check():
-	pass
+	if achievement_bridge:
+		achievement_bridge.on_purchase_made()
 
 func _to_packed_string_array(value):
 	if value is PackedStringArray:
@@ -827,9 +1006,15 @@ func _ensure_play_modes_data() -> void:
 		data["endless_best_streak"] = 0
 	if not data.has("endless_session_last") or not data["endless_session_last"] is Dictionary:
 		data["endless_session_last"] = {}
+	if not data.has("marathon_session_last") or not data["marathon_session_last"] is Dictionary:
+		data["marathon_session_last"] = {}
 	_ensure_endless_stats()
 	if not data.has("marathon_completions") or not data["marathon_completions"] is Dictionary:
 		data["marathon_completions"] = {}
+	if not data.has("user_playlists") or not data["user_playlists"] is Array:
+		data["user_playlists"] = []
+	if not data.has("playlist_activity") or not data["playlist_activity"] is Dictionary:
+		data["playlist_activity"] = {}
 
 
 func _ensure_endless_stats() -> void:
@@ -893,6 +1078,10 @@ func record_endless_run(summary: Dictionary) -> Dictionary:
 	}
 	stats["last_run"] = last_run
 
+	if streak > 0 and ProfileMilestonesManager != null \
+			and ProfileMilestonesManager.has_method("claim_endless_first_clear"):
+		ProfileMilestonesManager.claim_endless_first_clear(now_iso)
+
 	var history: Array = stats.get("history", [])
 	if not history is Array:
 		history = []
@@ -925,7 +1114,11 @@ func unlock_play_mode(mode_id: String) -> void:
 	if mode_id == PlayModeIds.ENDLESS and achievement_manager != null:
 		if achievement_manager.has_method("check_endless_mode_unlocked"):
 			achievement_manager.check_endless_mode_unlocked()
-
+	elif mode_id == PlayModeIds.MARATHON and achievement_manager != null:
+		if achievement_manager.has_method("check_marathon_mode_unlocked"):
+			achievement_manager.check_marathon_mode_unlocked()
+	if ProfileMilestonesManager and ProfileMilestonesManager.has_method("record_play_mode_unlock"):
+		ProfileMilestonesManager.record_play_mode_unlock(mode_id)
 
 func meets_play_mode_unlock_requirements(mode_id: String) -> bool:
 	if is_play_mode_unlocked(mode_id):
@@ -971,6 +1164,12 @@ func update_endless_best_streak(streak: int) -> bool:
 	if normalized <= best:
 		return false
 	data["endless_best_streak"] = normalized
+	append_profile_event(_ProfileEventLog.KIND_ENDLESS_PB, {
+		"id": "endless_pb_%d" % normalized,
+		"title_key": "PROFILE_EVENT_ENDLESS_PB",
+		"title_arg": str(normalized),
+		"icon": "repeat.svg",
+	}, false)
 	_save()
 	return true
 
@@ -996,9 +1195,117 @@ func save_endless_session_last(config: Dictionary) -> void:
 	_save()
 
 
+func get_user_playlists() -> Array:
+	_ensure_play_modes_data()
+	var raw: Variant = data.get("user_playlists", [])
+	if not raw is Array:
+		return []
+	return (raw as Array).duplicate(true)
+
+
+func playlist_by_id(playlist_id: String) -> Dictionary:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "":
+		return {}
+	for raw in get_user_playlists():
+		if raw is not Dictionary:
+			continue
+		var entry := raw as Dictionary
+		if str(entry.get("id", "")).strip_edges() == pid:
+			return entry.duplicate(true)
+	return {}
+
+
+func save_playlist(entry: Dictionary) -> void:
+	_ensure_play_modes_data()
+	const PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
+	var pid := str(entry.get("id", "")).strip_edges()
+	if pid == "":
+		return
+	var normalized := PlaylistCatalog.normalize_playlist_entry(entry)
+	normalized["id"] = pid
+	var playlists: Array = []
+	var replaced := false
+	for raw in get_user_playlists():
+		if raw is not Dictionary:
+			continue
+		var existing := raw as Dictionary
+		if str(existing.get("id", "")).strip_edges() == pid:
+			playlists.append(normalized)
+			replaced = true
+		else:
+			playlists.append(PlaylistCatalog.normalize_playlist_entry(existing))
+	if not replaced:
+		playlists.append(normalized)
+	data["user_playlists"] = playlists
+	_save()
+
+
+func delete_playlist(playlist_id: String) -> bool:
+	_ensure_play_modes_data()
+	var pid := str(playlist_id).strip_edges()
+	if pid == "":
+		return false
+	var playlists: Array = []
+	var removed := false
+	for raw in get_user_playlists():
+		if raw is not Dictionary:
+			continue
+		var existing := raw as Dictionary
+		if str(existing.get("id", "")).strip_edges() == pid:
+			removed = true
+			continue
+		playlists.append(existing.duplicate(true))
+	if not removed:
+		return false
+	data["user_playlists"] = playlists
+	_save()
+	return true
+
+
+func get_marathon_session_last(route_id: String) -> Dictionary:
+	_ensure_play_modes_data()
+	const MarathonRouteCatalog = preload("res://logic/domain/session/marathon_route_catalog.gd")
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return {}
+	var all: Variant = data.get("marathon_session_last", {})
+	if not all is Dictionary:
+		return {}
+	var raw: Variant = all.get(rid, {})
+	if raw is Dictionary and not (raw as Dictionary).is_empty():
+		return (raw as Dictionary).duplicate(true)
+	# Legacy key: genre group id from old saves.
+	var group_id := MarathonRouteCatalog.genre_group_for_route(rid)
+	if group_id != "":
+		raw = all.get(group_id, {})
+		if raw is Dictionary:
+			return (raw as Dictionary).duplicate(true)
+	return {}
+
+
+func save_marathon_session_last(route_id: String, config: Dictionary) -> void:
+	_ensure_play_modes_data()
+	const MarathonSessionConfig = preload("res://logic/domain/session/marathon_session_config.gd")
+	const MarathonRouteCatalog = preload("res://logic/domain/session/marathon_route_catalog.gd")
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return
+	if not data["marathon_session_last"] is Dictionary:
+		data["marathon_session_last"] = {}
+	var cfg := MarathonSessionConfig.sanitize(config)
+	cfg["route_id"] = rid
+	cfg["genre_group_id"] = MarathonRouteCatalog.genre_group_for_route(rid)
+	data["marathon_session_last"][rid] = cfg
+	_save()
+
+
 func get_marathon_courses_total_count() -> int:
-	# Placeholder until marathon_routes.json catalog is wired in.
-	return 0
+	const MarathonRouteCatalog = preload("res://logic/domain/session/marathon_route_catalog.gd")
+	const MarathonSeason = preload("res://logic/domain/session/marathon_season.gd")
+	if MarathonSeason.is_enabled():
+		return MarathonSeason.all_archetypes().size() + 1
+	return MarathonRouteCatalog.all_route_ids().size()
 
 
 func get_marathon_courses_completed_count() -> int:
@@ -1012,6 +1319,84 @@ func get_marathon_courses_completed_count() -> int:
 		if entry is Dictionary and float(entry.get("best_ratio", 0.0)) >= 0.999:
 			count += 1
 	return count
+
+
+func grant_marathon_run_rewards(xp: int, currency: int) -> void:
+	grant_endless_run_rewards(xp, currency)
+
+
+func record_marathon_run(summary: Dictionary) -> Dictionary:
+	const MarathonRouteBadges = preload("res://logic/domain/session/marathon_route_badges.gd")
+	_ensure_play_modes_data()
+	var route_id := str(summary.get("route_id", "")).strip_edges()
+	if route_id == "":
+		return {}
+	if not data.has("marathon_completions") or not data["marathon_completions"] is Dictionary:
+		data["marathon_completions"] = {}
+	var completions: Dictionary = data["marathon_completions"]
+	var ratio := clampf(float(summary.get("completion_ratio", 0.0)), 0.0, 1.0)
+	var avg_acc := maxf(0.0, float(summary.get("average_accuracy", 0.0)))
+	var prev: Dictionary = {}
+	var prev_raw: Variant = completions.get(route_id, {})
+	if prev_raw is Dictionary:
+		prev = prev_raw
+	var prev_ratio := float(prev.get("best_ratio", 0.0))
+	var best_ratio := maxf(prev_ratio, ratio)
+	var best_acc := maxf(float(prev.get("best_acc", 0.0)), avg_acc)
+	var best_updated := best_ratio > prev_ratio + 0.0001
+	var badge_result := MarathonRouteBadges.evaluate(route_id, summary)
+	var earned_now: Array = badge_result.get("earned", [])
+	var prev_badges: Array = []
+	if prev.get("badges") is Array:
+		prev_badges = prev.get("badges")
+	var merged_badges: Array[String] = []
+	for tier in MarathonRouteBadges.TIER_ORDER:
+		if prev_badges.has(tier) or earned_now.has(tier):
+			merged_badges.append(tier)
+	var prev_highest := str(prev.get("best_badge_tier", ""))
+	var new_highest := MarathonRouteBadges.highest_tier(merged_badges)
+	var badge_improved := (
+		MarathonRouteBadges.TIER_ORDER.find(new_highest)
+		> MarathonRouteBadges.TIER_ORDER.find(prev_highest)
+	)
+	var newly_earned: Array[String] = []
+	for tier in earned_now:
+		if not prev_badges.has(tier):
+			newly_earned.append(str(tier))
+	completions[route_id] = {
+		"best_ratio": best_ratio,
+		"best_acc": best_acc,
+		"last_reason": str(summary.get("reason", "")),
+		"tracks_cleared": int(summary.get("tracks_cleared", 0)),
+		"total_tracks": int(summary.get("total_tracks", 0)),
+		"badges": merged_badges,
+		"best_badge_tier": new_highest,
+	}
+	data["marathon_completions"] = completions
+	if newly_earned.size() > 0:
+		append_profile_event(_ProfileEventLog.KIND_MARATHON_MEDAL, {
+			"id": "marathon_%s_%s" % [route_id, str(newly_earned[0])],
+			"title_key": "PROFILE_EVENT_MARATHON_MEDAL",
+			"title_arg": route_id,
+			"route_id": route_id,
+			"badges": newly_earned,
+			"detail": "",
+			"icon": "trophy.svg",
+		}, false)
+	if best_ratio >= 0.999 and ProfileMilestonesManager != null \
+			and ProfileMilestonesManager.has_method("claim_marathon_first_clear"):
+		var finish_ts := str(summary.get("date", "")).strip_edges()
+		if finish_ts == "":
+			finish_ts = Time.get_datetime_string_from_system(true)
+		ProfileMilestonesManager.claim_marathon_first_clear(finish_ts, route_id)
+	_save()
+	return {
+		"best_updated": best_updated,
+		"badge_improved": badge_improved,
+		"earned_this_run": earned_now,
+		"newly_earned": newly_earned,
+		"best_badge_tier": new_highest,
+	}
 
 
 func get_spent_medals() -> int:
@@ -1090,8 +1475,24 @@ func load_save_data(save_dict: Dictionary):
 		data["total_earned_currency"] = int(save_dict["total_earned_currency"])
 	if save_dict.has("drum_levels_completed"):
 		data["drum_levels_completed"] = int(save_dict["drum_levels_completed"])
+	if save_dict.has("bass_levels_completed"):
+		data["bass_levels_completed"] = int(save_dict["bass_levels_completed"])
 	if save_dict.has("total_drum_perfect_hits"):
 		data["total_drum_perfect_hits"] = int(save_dict["total_drum_perfect_hits"])
+	if save_dict.has("total_bass_perfect_hits"):
+		data["total_bass_perfect_hits"] = int(save_dict["total_bass_perfect_hits"])
+	if save_dict.has("drum_dense_clears"):
+		data["drum_dense_clears"] = int(save_dict["drum_dense_clears"])
+	if save_dict.has("max_drum_score_single_run"):
+		data["max_drum_score_single_run"] = int(save_dict["max_drum_score_single_run"])
+	if save_dict.has("bass_ghost_hits_total"):
+		data["bass_ghost_hits_total"] = int(save_dict["bass_ghost_hits_total"])
+	if save_dict.has("bass_multilane_hits_total"):
+		data["bass_multilane_hits_total"] = int(save_dict["bass_multilane_hits_total"])
+	if save_dict.has("bass_perfect_holds_total"):
+		data["bass_perfect_holds_total"] = int(save_dict["bass_perfect_holds_total"])
+	if save_dict.has("bass_clean_hold_clears"):
+		data["bass_clean_hold_clears"] = int(save_dict["bass_clean_hold_clears"])
 	if save_dict.has("total_notes_hit"):
 		data["total_notes_hit"] = int(save_dict["total_notes_hit"])
 	if save_dict.has("total_notes_missed"):
@@ -1100,6 +1501,8 @@ func load_save_data(save_dict: Dictionary):
 		data["max_combo_ever"] = int(save_dict["max_combo_ever"])
 	if save_dict.has("max_drum_combo_ever"):
 		data["max_drum_combo_ever"] = int(save_dict["max_drum_combo_ever"])
+	if save_dict.has("max_bass_combo_ever"):
+		data["max_bass_combo_ever"] = int(save_dict["max_bass_combo_ever"])
 	if save_dict.has("total_drum_hits"):
 		data["total_drum_hits"] = int(save_dict["total_drum_hits"])
 	if save_dict.has("total_drum_misses"):
@@ -1108,8 +1511,19 @@ func load_save_data(save_dict: Dictionary):
 		data["last_login_date"] = save_dict["last_login_date"]
 	if save_dict.has("login_streak"):
 		data["login_streak"] = int(save_dict["login_streak"])
+	if save_dict.has("play_streak"):
+		data["play_streak"] = int(save_dict["play_streak"])
 	if save_dict.has("best_login_streak"):
 		data["best_login_streak"] = int(save_dict["best_login_streak"])
+	if save_dict.has("best_play_streak"):
+		data["best_play_streak"] = int(save_dict["best_play_streak"])
+	# Backward compatibility: if old save has only best_login_streak, initialize best_play_streak from it
+	if not save_dict.has("best_play_streak") and save_dict.has("best_login_streak"):
+		data["best_play_streak"] = int(save_dict["best_login_streak"])
+	if not save_dict.has("play_streak") and save_dict.has("login_streak"):
+		# Do NOT copy login to play; keep play_streak separate (0 if not present)
+		if not data.has("play_streak"):
+			data["play_streak"] = 0
 	if save_dict.has("levels_completed"):
 		data["levels_completed"] = int(save_dict["levels_completed"])
 	if save_dict.has("total_play_time"): 
@@ -1144,6 +1558,8 @@ func load_save_data(save_dict: Dictionary):
 		data["endless_best_streak"] = maxi(0, int(save_dict["endless_best_streak"]))
 	if save_dict.has("endless_session_last") and save_dict["endless_session_last"] is Dictionary:
 		data["endless_session_last"] = save_dict["endless_session_last"].duplicate(true)
+	if save_dict.has("marathon_session_last") and save_dict["marathon_session_last"] is Dictionary:
+		data["marathon_session_last"] = save_dict["marathon_session_last"].duplicate(true)
 	if save_dict.has("endless_stats") and save_dict["endless_stats"] is Dictionary:
 		data["endless_stats"] = save_dict["endless_stats"].duplicate(true)
 	if save_dict.has("marathon_completions") and save_dict["marathon_completions"] is Dictionary:
@@ -1160,11 +1576,20 @@ func reset_progress():
 	data["spent_currency"] = 0
 	data["total_earned_currency"] = 0
 	data["drum_levels_completed"] = 0
+	data["bass_levels_completed"] = 0
 	data["total_drum_perfect_hits"] = 0
+	data["total_bass_perfect_hits"] = 0
+	data["drum_dense_clears"] = 0
+	data["max_drum_score_single_run"] = 0
+	data["bass_ghost_hits_total"] = 0
+	data["bass_multilane_hits_total"] = 0
+	data["bass_perfect_holds_total"] = 0
+	data["bass_clean_hold_clears"] = 0
 	data["total_notes_hit"] = 0
 	data["total_notes_missed"] = 0
 	data["max_combo_ever"] = 0
 	data["max_drum_combo_ever"] = 0
+	data["max_bass_combo_ever"] = 0
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
 	data["total_score_ever"] = 0
@@ -1192,6 +1617,8 @@ func reset_progress():
 	data["last_login_date"] = ""
 	data["login_streak"] = 0
 	data["best_login_streak"] = 0
+	data["play_streak"] = 0
+	data["best_play_streak"] = 0
 	data["levels_completed"] = 0
 	data["daily_quests_completed_total"] = 0
 	data["modifier_stats"] = DEFAULT_MODIFIER_STATS.duplicate(true)
@@ -1211,12 +1638,21 @@ func reset_profile_statistics():
 
 	data["levels_completed"] = 0
 	data["drum_levels_completed"] = 0
+	data["bass_levels_completed"] = 0
 	data["total_drum_perfect_hits"] = 0
+	data["total_bass_perfect_hits"] = 0
+	data["drum_dense_clears"] = 0
+	data["max_drum_score_single_run"] = 0
+	data["bass_ghost_hits_total"] = 0
+	data["bass_multilane_hits_total"] = 0
+	data["bass_perfect_holds_total"] = 0
+	data["bass_clean_hold_clears"] = 0
 	data["total_perfect_hits"] = 0
 	data["total_notes_hit"] = 0
 	data["total_notes_missed"] = 0
 	data["max_combo_ever"] = 0
 	data["max_drum_combo_ever"] = 0
+	data["max_bass_combo_ever"] = 0
 	data["total_drum_hits"] = 0
 	data["total_drum_misses"] = 0
 	data["total_score_ever"] = 0
@@ -1244,6 +1680,11 @@ func reset_profile_statistics():
 	data["generation_stats"] = DEFAULT_GENERATION_STATS.duplicate(true)
 	data["chart_difficulty_stats"] = DEFAULT_CHART_DIFFICULTY_STATS.duplicate(true)
 	data["profile_created_date"] = Time.get_date_string_from_system()
+	data["activity_calendar"] = _ActivityCalendar.empty_calendar()
+	data["play_streak"] = 0
+	data["best_play_streak"] = 0
+	data["time_capsules"] = _TimeCapsule.empty_store()
+	data["profile_event_log"] = _ProfileEventLog.empty_store()
 	
 	data["total_xp"] = 0
 	data["current_level"] = 1
@@ -1275,17 +1716,399 @@ func reset_profile_statistics():
 		game_engine_reference.on_currency_changed()
 	emit_signal("level_changed", data["current_level"], data["total_xp"], data["xp_for_next_level"])
 	emit_signal("total_play_time_changed", data.get("total_play_time", "00:00"))
+	emit_signal("activity_calendar_changed")
 	emit_signal("profile_statistics_reset")
 
 func get_login_streak() -> int:
+	## Login streak is independent from play streak — do not sync play here.
 	return int(data.get("login_streak", 0))
 
 func get_best_login_streak() -> int:
-	return maxi(int(data.get("best_login_streak", 0)), get_login_streak())
+	## Independent best login — never aliased to play.
+	return maxi(int(data.get("best_login_streak", 0)), int(data.get("login_streak", 0)))
+
+func get_play_streak() -> int:
+	_sync_activity_streak_for_calendar(true)
+	return int(data.get("play_streak", 0))
+
+func get_current_play_streak() -> int:
+	return get_play_streak()
+
+func get_best_play_streak() -> int:
+	var best_play := int(data.get("best_play_streak", 0))
+	# Best is longest ever, not current
+	var cal: Variant = data.get("activity_calendar", {})
+	if cal is Dictionary and (cal as Dictionary).has("days"):
+		var longest: Dictionary = _ActivityCalendar.longest_play_streak((cal as Dictionary).get("days", {}))
+		best_play = maxi(best_play, int(longest.get("length", 0)))
+	return best_play
+
+func activity_played_today() -> bool:
+	var today := _ActivityCalendar.today_str()
+	var day := get_activity_day(today)
+	return _ActivityCalendar.day_was_played(day)
+
+func get_activity_calendar() -> Dictionary:
+	return _ensure_activity_calendar()
+
+
+func get_time_capsules() -> Dictionary:
+	return _TimeCapsule.sanitize_store(data.get("time_capsules", {}))
+
+
+func get_time_capsule(month_key: String) -> Dictionary:
+	return _TimeCapsule.get_capsule(get_time_capsules(), month_key)
+
+
+func get_profile_event_log() -> Dictionary:
+	return _ProfileEventLog.get_store_from_player_data(data)
+
+
+func append_profile_event(kind: String, opts: Dictionary = {}, save_now: bool = false) -> void:
+	_ProfileEventLog.append_event(data, kind, opts)
+	if save_now:
+		_save()
+
+
+func ensure_profile_event_log_backfill() -> void:
+	var milestones_data := {}
+	if ProfileMilestonesManager and ProfileMilestonesManager.has_method("get_data"):
+		milestones_data = ProfileMilestonesManager.get_data()
+	var changed := false
+	if _ProfileEventLog.ensure_backfill(data, milestones_data):
+		changed = true
+	if _ProfileEventLog.repair_hour_truncated_timestamps(data, milestones_data):
+		changed = true
+	if changed:
+		_save()
+
+
+func maybe_capture_time_capsules(save_now: bool = true) -> void:
+	var before_s := JSON.stringify(data.get("time_capsules", {}))
+	var after := _TimeCapsule.maybe_capture(data, data.get("time_capsules", {}))
+	after = _TimeCapsule.ensure_demo_capsule(data, after)
+	data["time_capsules"] = after
+	if save_now and JSON.stringify(after) != before_s:
+		_save()
+
+
+## Temporary demo previous-month capsule for evolution testing. Disable via TimeCapsule.DEMO_CAPSULE_ENABLED.
+## Console: `PlayerDataManager.ensure_demo_time_capsule()`
+func ensure_demo_time_capsule(save_now: bool = true) -> void:
+	var before_s := JSON.stringify(data.get("time_capsules", {}))
+	var after := _TimeCapsule.ensure_demo_capsule(data, data.get("time_capsules", {}))
+	data["time_capsules"] = after
+	if save_now and JSON.stringify(after) != before_s:
+		_save()
+
+
+const LIBRARY_SIZE_MILESTONES := [50, 100, 200, 500, 1000]
+const LIBRARY_SIZE_EXTEND_STEP := 1000
+
+
+## Claim newly crossed library size thresholds; emit highest new one for toast.
+## After 1000: +1000 per step (2000, 3000, …).
+func check_library_size_milestones(song_count: int) -> void:
+	var count := maxi(0, song_count)
+	var claimed_v = data.get("library_milestones_claimed", [])
+	var claimed: Array = []
+	if claimed_v is Array:
+		for v in claimed_v:
+			var n := int(v)
+			if n > 0 and not claimed.has(n):
+				claimed.append(n)
+	var targets: Array = []
+	for m in LIBRARY_SIZE_MILESTONES:
+		targets.append(int(m))
+	var last_fixed := int(LIBRARY_SIZE_MILESTONES[LIBRARY_SIZE_MILESTONES.size() - 1])
+	if count > last_fixed:
+		var t := last_fixed + LIBRARY_SIZE_EXTEND_STEP
+		while t <= count:
+			targets.append(t)
+			t += LIBRARY_SIZE_EXTEND_STEP
+	var newly: Array = []
+	for m in targets:
+		var threshold := int(m)
+		if count >= threshold and not claimed.has(threshold):
+			newly.append(threshold)
+	if newly.is_empty():
+		return
+	for m in newly:
+		claimed.append(int(m))
+	claimed.sort()
+	data["library_milestones_claimed"] = claimed
+	var ts := Time.get_datetime_string_from_system(true)
+	for m in newly:
+		var threshold := int(m)
+		append_profile_event(_ProfileEventLog.KIND_LIBRARY_SIZE, {
+			"id": "lib_size_%d" % threshold,
+			"ts": ts,
+			"title_key": "PROFILE_EVENT_LIBRARY_SIZE",
+			"title_arg": str(threshold),
+			"detail": "",
+			"song_path": "",
+			"icon": "hash.svg",
+		}, false)
+	_save()
+	var best := 0
+	for m in newly:
+		best = maxi(best, int(m))
+	if best > 0:
+		emit_signal("library_milestone_reached", best)
+
+
+const MAX_TRACK_ANNIVERSARIES_PER_DAY := 3
+
+
+## Emit feed events for tracks whose first-played month/day is today (once per year).
+func check_track_anniversaries() -> int:
+	if TrackStatsManager == null:
+		return 0
+	var firsts: Dictionary = TrackStatsManager.first_played_at_per_track
+	if firsts.is_empty():
+		return 0
+	var now := Time.get_datetime_dict_from_system(false)
+	var now_y := int(now.get("year", 1970))
+	var now_m := int(now.get("month", 1))
+	var now_d := int(now.get("day", 1))
+	if now_y < 1971:
+		return 0
+	var discovery: Dictionary = {}
+	if ProfileMilestonesManager != null and ProfileMilestonesManager.has_method("get_data"):
+		var ms: Dictionary = ProfileMilestonesManager.get_data()
+		if ms.get("discovery_firsts") is Dictionary:
+			discovery = ms["discovery_firsts"]
+	var candidates: Array = []
+	for path_v in firsts.keys():
+		var path := str(path_v).replace("\\", "/").trim_suffix("/")
+		var iso := str(firsts[path_v]).strip_edges()
+		if path == "" or iso.length() < 10:
+			continue
+		var parts := iso.substr(0, 10).split("-")
+		if parts.size() < 3:
+			continue
+		var y := int(parts[0])
+		var m := int(parts[1])
+		var d := int(parts[2])
+		if y < 1970 or m != now_m or d != now_d:
+			continue
+		var years := now_y - y
+		if years < 1:
+			continue
+		var id := "anniv_%d_%d" % [path.hash(), now_y]
+		if discovery.has(id):
+			continue
+		candidates.append({
+			"path": path,
+			"years": years,
+			"key": id,
+		})
+	if candidates.is_empty():
+		return 0
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a.get("path", "")) < str(b.get("path", ""))
+	)
+	var emitted := 0
+	var ts := Time.get_datetime_string_from_system(true)
+	for i in mini(candidates.size(), MAX_TRACK_ANNIVERSARIES_PER_DAY):
+		var c: Dictionary = candidates[i]
+		var song_path := str(c.get("path", ""))
+		var years := int(c.get("years", 1))
+		var claim_key := str(c.get("key", ""))
+		if ProfileMilestonesManager == null \
+				or not ProfileMilestonesManager.has_method("claim_discovery_key"):
+			break
+		if not ProfileMilestonesManager.claim_discovery_key(claim_key, ts):
+			continue
+		var detail := _track_detail_line(song_path)
+		append_profile_event(_ProfileEventLog.KIND_TRACK_ANNIVERSARY, {
+			"id": claim_key,
+			"ts": ts,
+			"title_key": "PROFILE_EVENT_TRACK_ANNIVERSARY",
+			"title_arg": str(years),
+			"detail": detail,
+			"song_path": song_path,
+			"icon": "calendar.svg",
+		}, false)
+		emitted += 1
+	if emitted > 0:
+		_save()
+	return emitted
+
+
+func _track_detail_line(song_path: String) -> String:
+	var path := song_path.replace("\\", "/").trim_suffix("/")
+	if path == "" or SongLibrary == null:
+		return ""
+	var meta: Dictionary = SongLibrary.get_metadata_for_song(path)
+	if meta.is_empty():
+		return ""
+	var title := str(meta.get("title", "")).strip_edges()
+	var artist := str(meta.get("artist", "")).strip_edges()
+	if artist != "" and title != "":
+		return "%s — %s" % [artist, title]
+	if title != "":
+		return title
+	return artist
+
+func get_activity_day(date_str: String) -> Dictionary:
+	var cal := _ensure_activity_calendar()
+	var days: Dictionary = cal.get("days", {})
+	var entry: Variant = days.get(str(date_str), {})
+	if entry is Dictionary:
+		return _ActivityCalendar.sanitize_day(entry)
+	return _ActivityCalendar.sanitize_day({})
+
+func record_activity_run(summary: Dictionary = {}) -> void:
+	print("[TIME TRACE] stage=record_activity_run_entry unix=%d local=%s utc=%s today_str=%s offset=%d summary_grade=%s summary_instrument=%s file=player_data.json offset_calculated=%d" % [Time.get_unix_time_from_system(), Time.get_datetime_string_from_system(false), Time.get_datetime_string_from_system(true), _ActivityCalendar.today_str(), TimeUtils._local_wall_clock_unix_offset(), str(summary.get("grade","")), str(summary.get("instrument","")), TimeUtils._local_wall_clock_unix_offset()])
+	print("[RUN PIPELINE] record_activity_run entered today=%s grade=%s instrument=%s play_sec=%s" % [str(_ActivityCalendar.today_str()), str(summary.get("grade","")), str(summary.get("instrument","")), str(summary.get("play_seconds",""))])
+	## Call after clear or fail. First run of the day advances the streak.
+	var today := _ActivityCalendar.today_str()
+	var cal := _ensure_activity_calendar()
+	var days: Dictionary = cal.get("days", {})
+	var prev: Dictionary = _ActivityCalendar.sanitize_day(days.get(today, {}) if days.get(today, {}) is Dictionary else {})
+	var first_run_today := not _ActivityCalendar.day_was_played(prev)
+	var inst := _ActivityCalendar.normalize_instrument(str(summary.get("instrument", "drums")))
+	var prev_inst_tracks := int(_ActivityCalendar.instrument_bucket(prev, inst).get("tracks", 0))
+	var had_ss_before := _ActivityCalendar.calendar_had_grade_before(days, today, "SS") \
+		or str(prev.get("best_grade", "")).strip_edges().to_upper() == "SS"
+	var had_inst_before := _ActivityCalendar.calendar_had_instrument_before(days, today, inst)
+	var best_score_before := _ActivityCalendar.calendar_best_score_before(days, today)
+	best_score_before = maxi(best_score_before, int(prev.get("best_score", 0)))
+
+	var day := prev.duplicate(true)
+	day["tracks"] = int(day.get("tracks", 0)) + 1
+	day["in"] = true
+	var cleared := bool(summary.get("cleared", true))
+	if cleared:
+		day["clears"] = int(day.get("clears", 0)) + 1
+	else:
+		day["fails"] = int(day.get("fails", 0)) + 1
+	day["play_seconds"] = int(day.get("play_seconds", 0)) + maxi(0, int(summary.get("play_seconds", 0)))
+	day["currency_earned"] = int(day.get("currency_earned", 0)) + maxi(0, int(summary.get("currency_earned", 0)))
+	var grade := str(summary.get("grade", "")).strip_edges().to_upper()
+	if grade != "":
+		day["best_grade"] = _ActivityCalendar.better_grade(str(day.get("best_grade", "")), grade)
+	var run_score := maxi(0, int(summary.get("score", 0)))
+	if run_score > int(day.get("best_score", 0)):
+		day["best_score"] = run_score
+	var run_combo := maxi(0, int(summary.get("max_combo", 0)))
+	if run_combo > int(day.get("max_combo", 0)):
+		day["max_combo"] = run_combo
+	var by_i: Dictionary = day.get("by_instrument", {}) if day.get("by_instrument", {}) is Dictionary else {}
+	by_i = _ActivityCalendar.sanitize_by_instrument(by_i)
+	by_i[inst] = _ActivityCalendar.apply_run_to_bucket(by_i.get(inst, {}), summary)
+	day["by_instrument"] = by_i
+	day.erase("modes")
+
+	# Login streak is managed separately via _advance_login_streak_if_needed — do not touch here.
+	# Play streak is derived from calendar days; milestone handled after day insertion.
+
+	if grade == "SS" and not had_ss_before:
+		day = _ActivityCalendar.apply_highlight(day, {"kind": "first_ss", "value": "SS", "instrument": inst})
+	if run_score > 0 and run_score > best_score_before:
+		day = _ActivityCalendar.apply_highlight(day, {
+			"kind": "score_record",
+			"value": str(run_score),
+			"instrument": inst,
+		})
+	if prev_inst_tracks <= 0 and not had_inst_before:
+		day = _ActivityCalendar.apply_highlight(day, {
+			"kind": "first_instrument",
+			"instrument": inst,
+			"value": inst,
+		})
+
+	days[today] = day
+	# Recompute play streak after inserting today (track-based). Login untouched here.
+	var _play_after := _ActivityCalendar.current_play_streak(days, today)
+	var _play_len := int(_play_after.get("length", 0))
+	if _play_len != int(data.get("play_streak", 0)):
+		data["play_streak"] = _play_len
+		_touch_best_play_streak()
+	if first_run_today and _ActivityCalendar.is_streak_milestone(_play_len):
+		var _m_day: Dictionary = days[today] as Dictionary
+		if _play_len > int(_m_day.get("streak_milestone", 0)):
+			_m_day["streak_milestone"] = _play_len
+			_m_day = _ActivityCalendar.apply_highlight(_m_day, {
+				"kind": "streak_milestone",
+				"milestone": _play_len,
+				"value": str(_play_len),
+			})
+			days[today] = _m_day
+			# Play milestone event (not login). Keep distinct from login streak.
+			append_profile_event(_ProfileEventLog.KIND_STREAK, {
+				"id": "streak_play_%d_%s" % [_play_len, today],
+				"ts": today,
+				"title_key": "PROFILE_EVENT_STREAK_CLEAR",
+				"title_arg": str(_play_len),
+				"icon": "flame.svg",
+			}, false)
+	cal["days"] = _ActivityCalendar.truncate_days(
+		days, today, int(cal.get("window_days", _ActivityCalendar.DEFAULT_WINDOW_DAYS))
+	)
+	data["activity_calendar"] = cal
+	maybe_capture_time_capsules(false)
+
+	_save()
+	emit_signal("activity_calendar_changed")
+
+
+func _ensure_activity_calendar() -> Dictionary:
+	var cal := _ActivityCalendar.sanitize_calendar(data.get("activity_calendar", {}))
+	var days: Dictionary = cal.get("days", {})
+	var recomputed := _ActivityCalendar.recompute_streak_milestones(days, get_best_play_streak())
+	var changed := _activity_milestones_differ(days, recomputed)
+	cal["days"] = recomputed
+	data["activity_calendar"] = cal
+	if changed:
+		_save()
+	return cal
+
+
+func _activity_milestones_differ(before: Dictionary, after: Dictionary) -> bool:
+	for key in after.keys():
+		var prev_raw: Variant = before.get(key, {})
+		var prev_m := 0
+		if prev_raw is Dictionary:
+			prev_m = int(prev_raw.get("streak_milestone", 0))
+		var next_m := int(after[key].get("streak_milestone", 0)) if after[key] is Dictionary else 0
+		if prev_m != next_m:
+			return true
+	return false
+
+
+func _sync_activity_streak_for_calendar(persist: bool) -> void:
+	## Sync play_streak from activity_calendar (tracks>0), keep login_streak separate
+	var today := _ActivityCalendar.today_str()
+	var cal := _ActivityCalendar.sanitize_calendar(data.get("activity_calendar", {}))
+	var from_cal: Dictionary = _ActivityCalendar.current_play_streak(cal.get("days", {}), today)
+	var cal_len := int(from_cal.get("length", 0))
+	var cur_play := int(data.get("play_streak", 0))
+	var changed := false
+	if cal_len != cur_play:
+		data["play_streak"] = cal_len
+		changed = true
+		_touch_best_play_streak()
+	# Do NOT touch last_login_date here — it is pure login entity.
+	if changed and persist:
+		_save()
+	if changed:
+		emit_signal("activity_calendar_changed")
+
 
 func _touch_best_login_streak() -> void:
-	var cur := get_login_streak()
-	data["best_login_streak"] = maxi(int(data.get("best_login_streak", 0)), cur)
+	var cur_login := int(data.get("login_streak", 0))
+	data["best_login_streak"] = maxi(int(data.get("best_login_streak", 0)), cur_login)
+
+func _touch_best_play_streak() -> void:
+	# Best is longest ever
+	var cal: Variant = data.get("activity_calendar", {})
+	var longest_len := 0
+	if cal is Dictionary and (cal as Dictionary).has("days"):
+		var longest: Dictionary = _ActivityCalendar.longest_play_streak((cal as Dictionary).get("days", {}))
+		longest_len = int(longest.get("length", 0))
+	data["best_play_streak"] = maxi(int(data.get("best_play_streak", 0)), longest_len)
 
 func set_login_streak(streak: int) -> void:
 	data["login_streak"] = int(streak)
@@ -1293,6 +2116,7 @@ func set_login_streak(streak: int) -> void:
 	_touch_best_login_streak()
 	_save()
 	_trigger_login_achievement_check()
+	emit_signal("activity_calendar_changed")
 
 func increment_login_streak() -> void:
 	data["login_streak"] = int(data.get("login_streak", 0)) + 1
@@ -1300,19 +2124,37 @@ func increment_login_streak() -> void:
 	_touch_best_login_streak()
 	_save()
 	_trigger_login_achievement_check()
+	emit_signal("activity_calendar_changed")
 
 func reset_login_streak() -> void:
 	data["login_streak"] = 0
 	data["best_login_streak"] = 0
 	data["last_login_date"] = ""
+	# Keep play streak / calendar intact — they are separate entities.
 	_save()
+	emit_signal("activity_calendar_changed")
 
 func _trigger_login_achievement_check():
-	pass
+	if achievement_bridge:
+		achievement_bridge.on_daily_login()
 
 func unlock_achievement(achievement_id: int) -> void:
 	if not data["unlocked_achievement_ids"].has(achievement_id):  
-		data["unlocked_achievement_ids"].append(achievement_id) 
+		data["unlocked_achievement_ids"].append(achievement_id)
+		var title := ""
+		var category := ""
+		if achievement_manager:
+			var a = achievement_manager.get_achievement_by_id(achievement_id)
+			if a is Dictionary:
+				title = str(a.get("title", a.get("name", "")))
+				category = str(a.get("category", ""))
+		const _ProfileEventLog = preload("res://logic/domain/profile/profile_event_log.gd")
+		append_profile_event(_ProfileEventLog.KIND_ACHIEVEMENT, {
+			"id": "ach_%d_%s" % [achievement_id, Time.get_datetime_string_from_system(true)],
+			"title_key": "PROFILE_EVENT_ACHIEVEMENT",
+			"title_arg": title if title != "" else str(achievement_id),
+			"icon": _ProfileEventLog.icon_for_achievement_category(category),
+		}, false)
 		_save()
 		emit_signal("shop_new_rewards_changed")
 
@@ -1341,7 +2183,8 @@ func add_completed_level():
 	
 
 func _trigger_level_achievement_check():
-	pass
+	if achievement_bridge:
+		achievement_bridge.on_level_completed(100.0)
 
 func get_levels_completed() -> int:
 	return int(data.get("levels_completed", 0))
@@ -1358,6 +2201,15 @@ func add_drum_level_completed():
 
 func get_drum_levels_completed() -> int:
 	return int(data.get("drum_levels_completed", 0))
+
+func add_bass_level_completed():
+	var current_count = int(data.get("bass_levels_completed", 0))
+	var new_count = current_count + 1
+	data["bass_levels_completed"] = new_count
+	_save()
+
+func get_bass_levels_completed() -> int:
+	return int(data.get("bass_levels_completed", 0))
 
 func get_chart_difficulty_stats() -> Dictionary:
 	_ensure_chart_difficulty_stats()
@@ -1460,6 +2312,55 @@ func add_total_drum_perfect_hits(count: int):
 	_save()
 	increment_daily_progress("drum_perfect_hits", count, {})
 
+func add_total_bass_perfect_hits(count: int):
+	if count <= 0:
+		return
+	var current_total = int(data.get("total_bass_perfect_hits", 0))
+	data["total_bass_perfect_hits"] = current_total + count
+	_save()
+	increment_daily_progress("bass_perfect_hits", count, {})
+
+
+func add_drum_dense_clear() -> void:
+	data["drum_dense_clears"] = int(data.get("drum_dense_clears", 0)) + 1
+	_save()
+
+
+func note_max_drum_score_single_run(score: int) -> void:
+	if score <= 0:
+		return
+	var cur := int(data.get("max_drum_score_single_run", 0))
+	if score > cur:
+		data["max_drum_score_single_run"] = score
+		_save()
+
+
+func add_bass_ghost_hits(count: int) -> void:
+	if count <= 0:
+		return
+	data["bass_ghost_hits_total"] = int(data.get("bass_ghost_hits_total", 0)) + count
+	_save()
+
+
+func add_bass_multilane_hits(count: int) -> void:
+	if count <= 0:
+		return
+	data["bass_multilane_hits_total"] = int(data.get("bass_multilane_hits_total", 0)) + count
+	_save()
+
+
+func add_bass_perfect_holds(count: int) -> void:
+	if count <= 0:
+		return
+	data["bass_perfect_holds_total"] = int(data.get("bass_perfect_holds_total", 0)) + count
+	_save()
+
+
+func add_bass_clean_hold_clear() -> void:
+	data["bass_clean_hold_clears"] = int(data.get("bass_clean_hold_clears", 0)) + 1
+	_save()
+
+
 func add_hit_notes(count: int):
 	if count <= 0:
 		return
@@ -1526,6 +2427,7 @@ func add_play_time_seconds(seconds_to_add: int):
 	var new_time_string = _play_time_seconds_to_string(_total_play_time_seconds)
 	data["total_play_time"] = new_time_string
 	emit_signal("total_play_time_changed", new_time_string)
+	_bump_activity_app_seconds(seconds_to_add)
 	_playtime_minutes_buffer_seconds += seconds_to_add
 	if _playtime_minutes_buffer_seconds >= 60:
 		var add_minutes = int(_playtime_minutes_buffer_seconds / 60)
@@ -1533,6 +2435,23 @@ func add_play_time_seconds(seconds_to_add: int):
 		if add_minutes > 0:
 			increment_daily_progress("playtime_minutes", add_minutes, {})
 			_save()
+
+
+func _bump_activity_app_seconds(seconds_to_add: int) -> void:
+	## Wall-clock time in the client (menus + runs). Stored only — UI shows play_seconds.
+	## Does not mark the day as played — streak still requires a run.
+	if seconds_to_add <= 0:
+		return
+	var today := _ActivityCalendar.today_str()
+	var cal := _ensure_activity_calendar()
+	var days: Dictionary = cal.get("days", {})
+	var prev_raw: Variant = days.get(today, {})
+	var day := _ActivityCalendar.sanitize_day(prev_raw if prev_raw is Dictionary else {})
+	day["app_seconds"] = int(day.get("app_seconds", 0)) + seconds_to_add
+	# Presence stays tracks-based; sanitize already mirrors in from tracks.
+	days[today] = day
+	cal["days"] = days
+	data["activity_calendar"] = cal
 
 func get_total_play_time_formatted() -> String:
 	return data.get("total_play_time", "00:00")
@@ -1543,17 +2462,6 @@ func get_total_play_time_seconds() -> int:
 func ensure_daily_quests_for_today():
 	if daily_quests_mgr:
 		daily_quests_mgr.ensure_daily_quests_for_today()
-		# Forensic fix 2026-09-12: recover from corrupted state where date==today but quests==[] (see C:\Users\kolbi\AppData\Roaming\RhythmFall_1.2.0_restore\player_data.json).
-		# Original 1.2.0 only checked date != today, so empty quests with matching date persisted forever and UI stayed hidden.
-		var dq = data.get("daily_quests", {})
-		var qs = dq.get("quests", [])
-		if dq.get("date", "") != Time.get_date_string_from_system() or not qs is Array or qs.size() != 3:
-			# Already handled date!=today via mgr, but handle empty/corrupted quests with matching date.
-			if qs is Array and qs.size() == 3:
-				return
-			daily_quests_mgr._generate_daily_quests_for_date(Time.get_date_string_from_system())
-			_save()
-			emit_signal("daily_quests_updated")
 
 func _generate_daily_quests_for_date(date_str: String):
 	if daily_quests_mgr:
@@ -1568,10 +2476,54 @@ func get_daily_quests() -> Array:
 func _ensure_modifier_stats() -> void:
 	if not data.get("modifier_stats") is Dictionary:
 		data["modifier_stats"] = DEFAULT_MODIFIER_STATS.duplicate(true)
+		_bootstrap_modifier_category_clears(data["modifier_stats"])
 		return
 	for key in DEFAULT_MODIFIER_STATS:
 		if not data["modifier_stats"].has(key):
 			data["modifier_stats"][key] = DEFAULT_MODIFIER_STATS[key]
+	_bootstrap_modifier_category_clears(data["modifier_stats"])
+
+
+func _mods_hit_any(mods: Array, ids: Array[String]) -> bool:
+	for mod_id in ids:
+		if RunModifiers.has_modifier(mods, mod_id):
+			return true
+	return false
+
+
+## One-shot: seed category counters from legacy per-mod clears (best-effort).
+func _bootstrap_modifier_category_clears(stats: Dictionary) -> void:
+	if bool(stats.get("cat_clears_bootstrapped", false)):
+		return
+	var vis := maxi(
+		int(stats.get("clears_hidden", 0)),
+		maxi(int(stats.get("clears_sudden", 0)), int(stats.get("clears_memory_mode", 0)))
+	)
+	var timing := maxi(
+		int(stats.get("clears_strict_timing", 0)),
+		maxi(int(stats.get("clears_no_miss_forgiveness", 0)), int(stats.get("clears_sudden_death", 0)))
+	)
+	var special := 0
+	for key in [
+		"clears_combo_escalation",
+		"clears_metronome_only",
+		"clears_reverse_scroll",
+		"clears_time_warp",
+		"clears_pick_mode",
+	]:
+		special = maxi(special, int(stats.get(key, 0)))
+	stats["clears_cat_visibility"] = maxi(int(stats.get("clears_cat_visibility", 0)), vis)
+	stats["clears_cat_timing"] = maxi(int(stats.get("clears_cat_timing", 0)), timing)
+	stats["clears_cat_lanes"] = maxi(
+		int(stats.get("clears_cat_lanes", 0)),
+		int(stats.get("clears_lane_remap", 0))
+	)
+	stats["clears_cat_special"] = maxi(int(stats.get("clears_cat_special", 0)), special)
+	stats["clears_cat_dna"] = maxi(
+		int(stats.get("clears_cat_dna", 0)),
+		int(stats.get("clears_dynamic_lanes", 0))
+	)
+	stats["cat_clears_bootstrapped"] = true
 
 
 func get_modifier_stats() -> Dictionary:
@@ -1637,6 +2589,18 @@ func record_modifier_victory(run_modifiers: Array) -> void:
 		and RunModifiers.has_modifier(mods, RunModifiers.ID_SUDDEN_DEATH)
 	):
 		stats["clears_hardcore_triple"] = int(stats.get("clears_hardcore_triple", 0)) + 1
+	if _mods_hit_any(mods, MOD_CAT_SPEED_IDS):
+		stats["clears_cat_speed"] = int(stats.get("clears_cat_speed", 0)) + 1
+	if _mods_hit_any(mods, MOD_CAT_VISIBILITY_IDS):
+		stats["clears_cat_visibility"] = int(stats.get("clears_cat_visibility", 0)) + 1
+	if _mods_hit_any(mods, MOD_CAT_TIMING_IDS):
+		stats["clears_cat_timing"] = int(stats.get("clears_cat_timing", 0)) + 1
+	if _mods_hit_any(mods, MOD_CAT_LANES_IDS):
+		stats["clears_cat_lanes"] = int(stats.get("clears_cat_lanes", 0)) + 1
+	if _mods_hit_any(mods, MOD_CAT_SPECIAL_IDS):
+		stats["clears_cat_special"] = int(stats.get("clears_cat_special", 0)) + 1
+	if _mods_hit_any(mods, RunModifiers.DNA_IDS):
+		stats["clears_cat_dna"] = int(stats.get("clears_cat_dna", 0)) + 1
 	data["modifier_stats"] = stats
 
 	var dq_context := {
@@ -1789,224 +2753,5 @@ func update_best_grade_for_track(song_path: String, new_grade: String):
 
 		if TrackStatsManager and TrackStatsManager.has_method("set_best_grade_for_track"):
 			TrackStatsManager.set_best_grade_for_track(song_path, new_grade)
-		_save()
-
-func add_bass_clean_hold_clear() -> void:
-	data["bass_clean_hold_clears"] = int(data.get("bass_clean_hold_clears", 0)) + 1
-	_save()
-
-
-
-func add_bass_ghost_hits(count: int) -> void:
-	if count <= 0:
-		return
-	data["bass_ghost_hits_total"] = int(data.get("bass_ghost_hits_total", 0)) + count
-	_save()
-
-
-
-func add_bass_level_completed():
-	var current_count = int(data.get("bass_levels_completed", 0))
-	var new_count = current_count + 1
-	data["bass_levels_completed"] = new_count
-	_save()
-
-
-func add_bass_multilane_hits(count: int) -> void:
-	if count <= 0:
-		return
-	data["bass_multilane_hits_total"] = int(data.get("bass_multilane_hits_total", 0)) + count
-	_save()
-
-
-
-func add_bass_perfect_holds(count: int) -> void:
-	if count <= 0:
-		return
-	data["bass_perfect_holds_total"] = int(data.get("bass_perfect_holds_total", 0)) + count
-	_save()
-
-
-
-func add_drum_dense_clear() -> void:
-	data["drum_dense_clears"] = int(data.get("drum_dense_clears", 0)) + 1
-	_save()
-
-
-
-func delete_playlist(playlist_id: String) -> bool:
-	_ensure_play_modes_data()
-	var pid := str(playlist_id).strip_edges()
-	if pid == "":
-		return false
-	var playlists: Array = []
-	var removed := false
-	for raw in get_user_playlists():
-		if raw is not Dictionary:
-			continue
-		var existing := raw as Dictionary
-		if str(existing.get("id", "")).strip_edges() == pid:
-			removed = true
-			continue
-		playlists.append(existing.duplicate(true))
-	if not removed:
-		return false
-	data["user_playlists"] = playlists
-	_save()
-	return true
-
-
-
-func get_bass_levels_completed() -> int:
-	return int(data.get("bass_levels_completed", 0))
-
-
-func get_marathon_session_last(route_id: String) -> Dictionary:
-	_ensure_play_modes_data()
-	const MarathonRouteCatalog = preload("res://logic/domain/session/marathon_route_catalog.gd")
-	var rid := str(route_id).strip_edges()
-	if rid == "":
-		return {}
-	var all: Variant = data.get("marathon_session_last", {})
-	if not all is Dictionary:
-		return {}
-	var raw: Variant = all.get(rid, {})
-	if raw is Dictionary and not (raw as Dictionary).is_empty():
-		return (raw as Dictionary).duplicate(true)
-	# Legacy key: genre group id from old saves.
-	var group_id := MarathonRouteCatalog.genre_group_for_route(rid)
-	if group_id != "":
-		raw = all.get(group_id, {})
-		if raw is Dictionary:
-			return (raw as Dictionary).duplicate(true)
-	return {}
-
-
-
-func get_user_playlists() -> Array:
-	_ensure_play_modes_data()
-	var raw: Variant = data.get("user_playlists", [])
-	if not raw is Array:
-		return []
-	return (raw as Array).duplicate(true)
-
-
-
-func grant_marathon_run_rewards(xp: int, currency: int) -> void:
-	grant_endless_run_rewards(xp, currency)
-
-
-
-func playlist_by_id(playlist_id: String) -> Dictionary:
-	var pid := str(playlist_id).strip_edges()
-	if pid == "":
-		return {}
-	for raw in get_user_playlists():
-		if raw is not Dictionary:
-			continue
-		var entry := raw as Dictionary
-		if str(entry.get("id", "")).strip_edges() == pid:
-			return entry.duplicate(true)
-	return {}
-
-
-
-func record_marathon_run(summary: Dictionary) -> Dictionary:
-	const MarathonRouteBadges = preload("res://logic/domain/session/marathon_route_badges.gd")
-	_ensure_play_modes_data()
-	var route_id := str(summary.get("route_id", "")).strip_edges()
-	if route_id == "":
-		return {}
-	if not data.has("marathon_completions") or not data["marathon_completions"] is Dictionary:
-		data["marathon_completions"] = {}
-	var completions: Dictionary = data["marathon_completions"]
-	var ratio := clampf(float(summary.get("completion_ratio", 0.0)), 0.0, 1.0)
-	var avg_acc := maxf(0.0, float(summary.get("average_accuracy", 0.0)))
-	var prev: Dictionary = {}
-	var prev_raw: Variant = completions.get(route_id, {})
-	if prev_raw is Dictionary:
-		prev = prev_raw
-	var prev_ratio := float(prev.get("best_ratio", 0.0))
-	var best_ratio := maxf(prev_ratio, ratio)
-	var best_acc := maxf(float(prev.get("best_acc", 0.0)), avg_acc)
-	var best_updated := best_ratio > prev_ratio + 0.0001
-	var badge_result := MarathonRouteBadges.evaluate(route_id, summary)
-	var earned_now: Array = badge_result.get("earned", [])
-	var prev_badges: Array = []
-	if prev.get("badges") is Array:
-		prev_badges = prev.get("badges")
-	var merged_badges: Array[String] = []
-	for tier in MarathonRouteBadges.TIER_ORDER:
-		if prev_badges.has(tier) or earned_now.has(tier):
-			merged_badges.append(tier)
-	var prev_highest := str(prev.get("best_badge_tier", ""))
-	var new_highest := MarathonRouteBadges.highest_tier(merged_badges)
-	var badge_improved := (
-		MarathonRouteBadges.TIER_ORDER.find(new_highest)
-		> MarathonRouteBadges.TIER_ORDER.find(prev_highest)
-	)
-	var newly_earned: Array[String] = []
-	for tier in earned_now:
-		if not prev_badges.has(tier):
-			newly_earned.append(str(tier))
-	completions[route_id] = {
-		"best_ratio": best_ratio,
-		"best_acc": best_acc,
-		"last_reason": str(summary.get("reason", "")),
-		"tracks_cleared": int(summary.get("tracks_cleared", 0)),
-		"total_tracks": int(summary.get("total_tracks", 0)),
-		"badges": merged_badges,
-		"best_badge_tier": new_highest,
-	}
-	data["marathon_completions"] = completions
-	_save()
-	return {
-		"best_updated": best_updated,
-		"badge_improved": badge_improved,
-		"earned_this_run": earned_now,
-		"newly_earned": newly_earned,
-		"best_badge_tier": new_highest,
-	}
-
-
-
-func save_marathon_session_last(route_id: String, config: Dictionary) -> void:
-	_ensure_play_modes_data()
-	const MarathonSessionConfig = preload("res://logic/domain/session/marathon_session_config.gd")
-	const MarathonRouteCatalog = preload("res://logic/domain/session/marathon_route_catalog.gd")
-	var rid := str(route_id).strip_edges()
-	if rid == "":
-		return
-	if not data["marathon_session_last"] is Dictionary:
-		data["marathon_session_last"] = {}
-	var cfg := MarathonSessionConfig.sanitize(config)
-	cfg["route_id"] = rid
-	cfg["genre_group_id"] = MarathonRouteCatalog.genre_group_for_route(rid)
-	data["marathon_session_last"][rid] = cfg
-	_save()
-
-
-
-func save_playlist(entry: Dictionary) -> void:
-	_ensure_play_modes_data()
-	const PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
-	var pid := str(entry.get("id", "")).strip_edges()
-	if pid == "":
-		return
-	var normalized := PlaylistCatalog.normalize_playlist_entry(entry)
-	normalized["id"] = pid
-	var playlists: Array = []
-	var replaced := false
-	for raw in get_user_playlists():
-		if raw is not Dictionary:
-			continue
-		var existing := raw as Dictionary
-		if str(existing.get("id", "")).strip_edges() == pid:
-			playlists.append(normalized)
-			replaced = true
-		else:
-			playlists.append(PlaylistCatalog.normalize_playlist_entry(existing))
-	if not replaced:
-		playlists.append(normalized)
-	data["user_playlists"] = playlists
-	_save()
+		_save()  
+		

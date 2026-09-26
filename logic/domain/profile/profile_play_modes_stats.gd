@@ -148,42 +148,31 @@ static func route_display_title(route_id: String) -> String:
 
 
 static func route_display_title_light(route_id: String) -> String:
-	var rid := str(route_id).strip_edges()
-	if rid == "":
-		return ""
-	const MarathonDailyRoute = preload("res://logic/domain/session/marathon_daily_route.gd")
-	if MarathonDailyRoute.is_daily_route(rid):
-		return TranslationServer.translate("MARATHON_DAILY_TITLE")
-	const MarathonSeason = preload("res://logic/domain/session/marathon_season.gd")
-	if MarathonSeason.is_season_route(rid):
-		var route := _MarathonRouteCatalog.route_by_id(rid)
-		var title_key := str(route.get("title_key", "")).strip_edges()
-		if title_key != "":
-			return TranslationServer.translate(title_key)
-		return rid
-	var route := _MarathonRouteCatalog.route_by_id(rid)
-	if route.is_empty():
-		return rid
-	var title_key := str(route.get("title_key", "")).strip_edges()
-	if title_key != "":
-		var emoji := str(route.get("icon_emoji", "")).strip_edges()
-		var title := TranslationServer.translate(title_key)
-		if emoji != "":
-			return "%s %s" % [emoji, title]
-		return title
-	return rid
+	return route_display_title_full(route_id)
 
 
 static func route_display_title_full(route_id: String) -> String:
 	var rid := str(route_id).strip_edges()
 	if rid == "":
 		return ""
-	var route := _MarathonRouteCatalog.route_by_id(rid)
-	if route.is_empty():
+	const MarathonDailyRoute = preload("res://logic/domain/session/marathon_daily_route.gd")
+	if MarathonDailyRoute.is_daily_route(rid):
+		var daily_tpl := MarathonDailyRoute.template_for_route_id(rid)
+		return _MarathonRouteCharacter.display_title(daily_tpl, {})
+	const MarathonSeason = preload("res://logic/domain/session/marathon_season.gd")
+	if MarathonSeason.is_season_route(rid):
+		var season_tpl := MarathonSeason.template_for_route_id(rid)
+		var season_route := MarathonSeason.route_by_id(rid)
+		var season_title := _MarathonRouteCharacter.display_title(season_tpl, season_route)
+		if season_title.strip_edges() != "":
+			return season_title
 		return rid
+	var route := _MarathonRouteCatalog.route_by_id(rid)
 	var template := _MarathonRouteCatalog.template_for_route(rid)
 	if not template.is_empty():
 		return _MarathonRouteCharacter.display_title(template, route)
+	if route.is_empty():
+		return rid
 	var title_key := str(route.get("title_key", "")).strip_edges()
 	if title_key != "":
 		return TranslationServer.translate(title_key)

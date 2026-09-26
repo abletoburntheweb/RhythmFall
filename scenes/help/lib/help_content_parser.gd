@@ -1,4 +1,4 @@
-# logic/utils/help_content_parser.gd
+# scenes/help/lib/help_content_parser.gd
 extends RefCounted
 class_name HelpContentParser
 
@@ -6,6 +6,8 @@ static var _callout_re: RegEx
 static var _flow_re: RegEx
 static var _showcase_re: RegEx
 static var _mod_list_re: RegEx
+static var _md_re: RegEx
+static var _conflicts_re: RegEx
 static var _bold_re: RegEx
 static var _code_re: RegEx
 
@@ -47,6 +49,19 @@ static func parse(raw: String) -> Array:
 			"kind": "mod_list",
 			"params": _parse_showcase_params(match.get_string(1)),
 		})
+	for match in _md_re.search_all(text):
+		markers.append({
+			"start": match.get_start(),
+			"end": match.get_end(),
+			"kind": "md",
+			"body": match.get_string(1).strip_edges(),
+		})
+	for match in _conflicts_re.search_all(text):
+		markers.append({
+			"start": match.get_start(),
+			"end": match.get_end(),
+			"kind": "conflicts",
+		})
 	markers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return int(a.get("start", 0)) < int(b.get("start", 0))
 	)
@@ -76,6 +91,15 @@ static func parse(raw: String) -> Array:
 			segments.append({
 				"type": "mod_list",
 				"params": marker.get("params", {}),
+			})
+		elif marker.get("kind") == "md":
+			segments.append({
+				"type": "markdown",
+				"text": str(marker.get("body", "")),
+			})
+		elif marker.get("kind") == "conflicts":
+			segments.append({
+				"type": "conflicts",
 			})
 		else:
 			segments.append(_linear_flow_segment(str(marker.get("body", ""))))
@@ -197,6 +221,10 @@ static func _ensure_regex() -> void:
 	_showcase_re.compile("\\[showcase\\s+(\\w+)([^\\]]*)\\]")
 	_mod_list_re = RegEx.new()
 	_mod_list_re.compile("\\[mod_list([^\\]]*)\\]")
+	_md_re = RegEx.new()
+	_md_re.compile("\\[md\\]([\\s\\S]*?)\\[/md\\]")
+	_conflicts_re = RegEx.new()
+	_conflicts_re.compile("\\[conflicts\\]")
 
 
 static func _ensure_inline_markup_regex() -> void:

@@ -11,6 +11,30 @@ def create_app():
     from app.routes import bp
     app.register_blueprint(bp)
 
+    # Task 3: suppress werkzeug access log spam for successful GET /task_status?task_id=... 200
+    # Keep POST /generate_drums, GET /stem_file, GET /health, and 4xx/5xx.
+    try:
+        import logging
+
+        class _TaskStatusSuccessFilter(logging.Filter):
+            def filter(self, record: logging.LogRecord) -> bool:  # type: ignore[override]
+                try:
+                    msg = record.getMessage()
+                    # Werkzeug format: '127.0.0.1 - - [..] "GET /task_status?task_id=... HTTP/1.1" 200 -'
+                    if "GET /task_status" in msg and " 200 " in msg:
+                        return False
+                    return True
+                except Exception:
+                    return True
+
+        # Werkzeug uses 'werkzeug' logger for access log (serving.py).
+        lg = logging.getLogger("werkzeug")
+        # Avoid duplicating filter on reload.
+        if not any(isinstance(f, _TaskStatusSuccessFilter) for f in getattr(lg, "filters", [])):
+            lg.addFilter(_TaskStatusSuccessFilter())
+    except Exception:
+        pass
+
     try:
         os.makedirs("models", exist_ok=True)
     except Exception:

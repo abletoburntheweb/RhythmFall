@@ -1,4 +1,4 @@
-# logic/game_engine.gd
+# logic/core/game_engine.gd
 extends Control
 
 const CatalogDataSyncLib = preload("res://logic/domain/library/catalog_data_sync.gd")
@@ -27,6 +27,7 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 1.0
 
 @onready var fps_label: Label = $FPSLayer/FPSLabel
 @onready var fps_background: ColorRect = $FPSLayer/FPSBackground
+@onready var fps_layer: CanvasLayer = $FPSLayer
 @onready var version_label: Label = $FPSLayer/VersionLabel
 
 @onready var level_label: Label = $XPContainer/LevelRow/LevelLabel
@@ -36,6 +37,8 @@ const PLAY_TIME_UPDATE_INTERVAL: float = 1.0
 @onready var xp_anim_player: AnimationPlayer = $XPContainer/XpAnimationPlayer
 @onready var currency_anim_player: AnimationPlayer = $XPContainer/CurrencyAnimationPlayer
 @onready var level_layer: Control = $XPContainer
+## Locked until intro → main menu so boot doesn't flash FPS/XP over empty ambient.
+var _hud_chrome_unlocked: bool = false
 
 var _currency_anim_progress_internal: float = 0.0
 var currency_anim_start: float = 0.0
@@ -81,25 +84,158 @@ var _pending_level_up: bool = false
 		return _xp_anim_progress_internal
 
 var background_service: GenerationService = null
+# --- STARTUP TRACE (temporary diagnostic, no logic change) ---
+var _startup_t0_usec: int = 0
+var _startup_trace: Dictionary = {}
+var _startup_first_frame_done: bool = false
+var _startup_main_menu_enter_ms: float = -1.0
+var _startup_main_menu_total_ms: float = -1.0
 @onready var status_dock: StatusDock = $NotificationsLayer/StatusDock
 @onready var loading_overlay: LoadingOverlay = $LoadingLayer/LoadingOverlay
 @onready var ambient_background: AmbientBackground = $AmbientBackground
 
 func _ready():
+	_startup_t0_usec = Time.get_ticks_usec()
+	_startup_trace.clear()
+	_startup_first_frame_done = false
+	_startup_trace["GameEngine._ready_enter_ms"] = 0.0
+	PerfTrace.set_level(PerfTrace.Level.LOAD)
 	var started_ms := Time.get_ticks_msec()
+	_hide_hud_chrome_for_boot()
 	WindowIconApplier.apply_deferred(get_tree())
-	initialize_logic()
-	initialize_screens()
-	call_deferred("show_intro")
-	_session_start_time_ticks = Time.get_ticks_msec() 
-	_start_play_time_timer()
-	
-	_initialize_display_settings()
-	_connect_level_signals()
-	_initialize_theme()
-	_apply_console_state()
-	_update_currency_ui()
+	await _boot()
+	_startup_trace["GameEngine._ready_total_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
+	print("[Perf] GameEngine ready: %d ms" % [Time.get_ticks_msec() - started_ms])
+	call_deferred("set_ambient_motion_active", true)
+	call_deferred("_apply_ambient_particles_setting")
+	call_deferred("_emit_startup_perf_report")
+
+
+func _emit_startup_perf_report() -> void:
+	print("[STARTUP PERF]")
+	print(PerfTrace.format_stats_text())
+
+
+func _emit_startup_trace() -> void:
+	var t0 := _startup_t0_usec
+	if t0 == 0:
+		print("[STARTUP TRACE] unavailable (t0 not set)")
+		return
+	var fmt := func(key: String, label: String) -> String:
+		var v: Variant = _startup_trace.get(key, null)
+		if v == null:
+			return "  %-28s unavailable" % label
+		return "  %-28s %.2f ms" % [label, float(v)]
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[STARTUP TRACE]")
+	lines.append(fmt.call("GameEngine._ready_enter_ms", "GameEngine._ready enter:"))
+	lines.append(fmt.call("initialize_logic_ms", "initialize_logic:"))
+	lines.append(fmt.call("initialize_screens_ms", "initialize_screens:"))
+	lines.append("  --- boot await #1 (between initialize_screens and 1st frame) ---")
+	lines.append(fmt.call("show_intro_ms", "show_intro:"))
+	lines.append(fmt.call("boot_await_#1_ms", "boot await #1 total:"))
+	lines.append("    deferred during await #1:")
+	lines.append(fmt.call("deferred_resync_achievements_ms", "deferred_resync:"))
+	lines.append(fmt.call("handle_player_login_ms", "handle_player_login:"))
+	lines.append(fmt.call("deferred_catalog_sync_ms", "deferred_catalog_sync:"))
+	lines.append(fmt.call("MainMenu_prepare_ms", "MainMenu prepare:"))
+	lines.append(fmt.call("transitions_warmup_queue_ms", "warmup queue:"))
+	lines.append(fmt.call("transitions_prewarm_step0_ms", "warmup step0:"))
+	lines.append(fmt.call("intro_start_music_ms", "intro_start_music:"))
+	lines.append("  --- second segment (between 1st and 2nd await) ---")
+	lines.append(fmt.call("session_start_ms", "session_start:"))
+	lines.append(fmt.call("initialize_display_settings_ms", "init_display_settings:"))
+	lines.append(fmt.call("connect_level_signals_ms", "connect_signals:"))
+	lines.append(fmt.call("boot_await_#2_ms", "boot await #2 total:"))
+	lines.append("  --- after 2nd await ---")
+	lines.append(fmt.call("initialize_theme_ms", "initialize_theme:"))
+	lines.append(fmt.call("apply_console_state_ms", "apply_console:"))
+	lines.append(fmt.call("update_currency_ui_ms", "update_currency:"))
+	lines.append(fmt.call("apply_version_label_ms", "apply_version:"))
+	lines.append(fmt.call("post_boot_setup_ms", "post_boot_setup:"))
+	lines.append(fmt.call("_boot_total_ms", "_boot total:"))
+	lines.append(fmt.call("MainMenu_prepare_at_ms", "MainMenu prepare at:"))
+	lines.append(fmt.call("MainMenu._ready_enter_ms", "MainMenu._ready enter:"))
+	lines.append(fmt.call("MainMenu._ready_total_ms", "MainMenu._ready:"))
+	# gap between GameEngine ready and MainMenu ready
+	if _startup_trace.has("MainMenu._ready_enter_ms") and _startup_trace.has("GameEngine._ready_total_ms"):
+		var gap := float(_startup_trace["MainMenu._ready_enter_ms"]) - float(_startup_trace["GameEngine._ready_total_ms"])
+		lines.append("  %-28s %.2f ms" % ["GameEngine->MainMenu gap:", gap])
+	else:
+		lines.append("  %-28s unavailable" % "GameEngine->MainMenu gap:")
+	lines.append(fmt.call("first_process_frame_ms", "first process_frame:"))
+	lines.append(fmt.call("GameEngine._ready_total_ms", "GameEngine._ready total:"))
+	if _startup_trace.has("first_process_frame_ms"):
+		lines.append("  %-28s %.2f ms" % ["first-frame total:", float(_startup_trace["first_process_frame_ms"])])
+	else:
+		lines.append("  %-28s unavailable" % "first-frame total:")
+	print("\n".join(lines))
+
+
+func _hide_hud_chrome_for_boot() -> void:
+	_hud_chrome_unlocked = false
+	if fps_layer:
+		fps_layer.visible = false
+	if level_layer:
+		level_layer.visible = false
+
+
+func unlock_hud_chrome() -> void:
+	if _hud_chrome_unlocked:
+		return
+	_hud_chrome_unlocked = true
+	if fps_layer:
+		fps_layer.visible = true
+	_update_fps_visibility()
 	_apply_version_label()
+
+
+func _boot() -> void:
+	var _st_boot_t0 := Time.get_ticks_usec()
+	_hide_hud_chrome_for_boot()
+
+	var _st_logic_t0 := Time.get_ticks_usec()
+	initialize_logic()
+	_startup_trace["initialize_logic_ms"] = (Time.get_ticks_usec() - _st_logic_t0) / 1000.0
+	var _st_screens_t0 := Time.get_ticks_usec()
+	initialize_screens()
+	_startup_trace["initialize_screens_ms"] = (Time.get_ticks_usec() - _st_screens_t0) / 1000.0
+	# Show intro before theme/display work — those awaits caused the empty HUD flash.
+	var _st_show_intro_t0 := Time.get_ticks_usec()
+	show_intro()
+	_startup_trace["show_intro_ms"] = (Time.get_ticks_usec() - _st_show_intro_t0) / 1000.0
+	var _st_await1_t0 := Time.get_ticks_usec()
+	await get_tree().process_frame
+	_startup_trace["boot_await_#1_ms"] = (Time.get_ticks_usec() - _st_await1_t0) / 1000.0
+
+	var _st_session_t0 := Time.get_ticks_usec()
+	_session_start_time_ticks = Time.get_ticks_msec()
+	_start_play_time_timer()
+	_startup_trace["session_start_ms"] = (Time.get_ticks_usec() - _st_session_t0) / 1000.0
+
+	var _st_display_t0 := Time.get_ticks_usec()
+	_initialize_display_settings()
+	_startup_trace["initialize_display_settings_ms"] = (Time.get_ticks_usec() - _st_display_t0) / 1000.0
+	var _st_connect_t0 := Time.get_ticks_usec()
+	_connect_level_signals()
+	_startup_trace["connect_level_signals_ms"] = (Time.get_ticks_usec() - _st_connect_t0) / 1000.0
+	var _st_await2_t0 := Time.get_ticks_usec()
+	await get_tree().process_frame
+	_startup_trace["boot_await_#2_ms"] = (Time.get_ticks_usec() - _st_await2_t0) / 1000.0
+	var _st_theme_t0 := Time.get_ticks_usec()
+	_initialize_theme()
+	_startup_trace["initialize_theme_ms"] = (Time.get_ticks_usec() - _st_theme_t0) / 1000.0
+
+	var _st_console_t0 := Time.get_ticks_usec()
+	_apply_console_state()
+	_startup_trace["apply_console_state_ms"] = (Time.get_ticks_usec() - _st_console_t0) / 1000.0
+	var _st_currency_t0 := Time.get_ticks_usec()
+	_update_currency_ui()
+	_startup_trace["update_currency_ui_ms"] = (Time.get_ticks_usec() - _st_currency_t0) / 1000.0
+	var _st_version_t0 := Time.get_ticks_usec()
+	_apply_version_label()
+	_startup_trace["apply_version_label_ms"] = (Time.get_ticks_usec() - _st_version_t0) / 1000.0
+	var _st_group_t0 := Time.get_ticks_usec()
 	add_to_group("locale_refresh")
 	if LocaleManager and not LocaleManager.locale_changed.is_connected(_on_locale_changed_hud):
 		LocaleManager.locale_changed.connect(_on_locale_changed_hud)
@@ -107,9 +243,11 @@ func _ready():
 		level_layer.visibility_changed.connect(_on_level_layer_visibility_changed)
 	if xp_anim_player:
 		xp_anim_player.animation_finished.connect(_on_xp_anim_finished)
-	print("[Perf] GameEngine ready: %d ms" % [Time.get_ticks_msec() - started_ms])
-	call_deferred("set_ambient_motion_active", true)
-	call_deferred("_apply_ambient_particles_setting")
+	var _ReplayLauncher = preload("res://logic/domain/replay/replay_launcher.gd")
+	_ReplayLauncher.consume_cmdline_args(OS.get_cmdline_args())
+	_startup_trace["post_boot_setup_ms"] = (Time.get_ticks_usec() - _st_group_t0) / 1000.0
+	_startup_trace["_boot_total_ms"] = (Time.get_ticks_usec() - _st_boot_t0) / 1000.0
+	_startup_trace["_boot_end_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
 
 
 func _apply_ambient_particles_setting() -> void:
@@ -212,7 +350,15 @@ func apply_locale() -> void:
 func _connect_level_signals():
 	if PlayerDataManager.has_signal("level_changed"):
 		PlayerDataManager.level_changed.connect(_on_level_changed)
+	if PlayerDataManager.has_signal("library_milestone_reached"):
+		if not PlayerDataManager.library_milestone_reached.is_connected(_on_library_milestone_reached):
+			PlayerDataManager.library_milestone_reached.connect(_on_library_milestone_reached)
 	_update_level_ui()
+
+
+func _on_library_milestone_reached(count: int) -> void:
+	var _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	_DiaryCelebration.celebrate_library(self, count)
 
 func _on_level_changed(new_level: int, new_xp: int, xp_for_next_level: int):
 	level_label.text = "%s %d" % [tr("HUD_LEVEL"), new_level]
@@ -430,6 +576,12 @@ func _apply_version_label() -> void:
 
 
 func _update_fps_visibility():
+	if not _hud_chrome_unlocked:
+		if fps_label:
+			fps_label.visible = false
+		if fps_background:
+			fps_background.visible = false
+		return
 	match SettingsManager.get_fps_mode():
 		0:
 			fps_label.visible = false
@@ -444,6 +596,12 @@ func _update_fps_visibility():
 			fps_label.add_theme_color_override("font_color", Color.GREEN)
 
 func _process(delta):
+	if not _startup_first_frame_done and _startup_t0_usec != 0 and _startup_trace.has("GameEngine._ready_total_ms"):
+		_startup_first_frame_done = true
+		_startup_trace["first_process_frame_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
+		_emit_startup_trace()
+		# Post-first-frame catalog sync (help/daily/marathon) — не нужен MainMenu, выполняется после первого кадра
+		call_deferred("_deferred_post_first_frame_catalog_sync")
 	var fps_mode = SettingsManager.get_fps_mode()
 	if fps_mode > 0:
 		if Engine.get_process_frames() % 30 == 0: 
@@ -524,8 +682,11 @@ func initialize_logic():
 
 
 func _deferred_resync_achievements() -> void:
+	var _st_t0 := Time.get_ticks_usec()
 	if achievement_system:
 		achievement_system.resync_all()
+	_startup_trace["deferred_resync_achievements_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+	_startup_trace["deferred_resync_achievements_at_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
 	
 
 func _ensure_user_notes_seed():
@@ -559,21 +720,33 @@ func _ensure_user_data_seed():
 
 
 func _deferred_catalog_sync() -> void:
+	var _st_t0 := Time.get_ticks_usec()
 	CatalogDataSyncLib.sync_catalogs_from_bundled()
+	_startup_trace["deferred_catalog_sync_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+	_startup_trace["deferred_catalog_sync_at_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
+
+
+func _deferred_post_first_frame_catalog_sync() -> void:
+	var _st_t0 := Time.get_ticks_usec()
+	CatalogDataSyncLib.sync_deferred_catalogs_from_bundled()
+	_startup_trace["deferred_catalog_sync_post_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+	_startup_trace["deferred_catalog_sync_post_at_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
 
 
 func _seed_json_if_missing(file_name: String):
 	var user_path = "user://" + file_name
 	var need_copy := true
+	var parsed = null
 	if FileAccess.file_exists(user_path):
 		var text := FileAccess.open(user_path, FileAccess.READ).get_as_text().strip_edges()
-		var parsed = null
 		if not text.is_empty():
 			var json := JSON.new()
 			if json.parse(text) == OK:
 				parsed = json.get_data()
 		need_copy = _is_json_effectively_empty(file_name, parsed)
 	if not need_copy:
+		if file_name in ["shop_data.json", "achievements_data.json", "genre_groups.json"] and parsed is Dictionary:
+			CatalogDataSync._cache_set(user_path, parsed)
 		return
 	var candidates := []
 	candidates.append("res://data/" + file_name)
@@ -639,7 +812,10 @@ func _copy_dir_recursive(src: String, dst: String):
 	da.list_dir_end()
 
 func _handle_player_login():
+	var _st_t0 := Time.get_ticks_usec()
 	PlayerDataManager.apply_daily_login_for_today()
+	_startup_trace["handle_player_login_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+	_startup_trace["handle_player_login_at_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
 
 func initialize_screens():
 	intro_instance = preload("res://scenes/intro/intro_screen.tscn").instantiate()
@@ -650,9 +826,12 @@ func initialize_screens():
 
 
 func _deferred_prepare_main_menu() -> void:
+	var _st_mm_t0 := Time.get_ticks_usec()
 	if main_menu_instance != null and is_instance_valid(main_menu_instance):
 		return
 	main_menu_instance = preload("res://scenes/main_menu/main_menu.tscn").instantiate()
+	_startup_trace["MainMenu_prepare_ms"] = (Time.get_ticks_usec() - _st_mm_t0) / 1000.0
+	_startup_trace["MainMenu_prepare_at_ms"] = (Time.get_ticks_usec() - _startup_t0_usec) / 1000.0
 	if main_menu_instance == null:
 		return
 	if main_menu_instance.has_method("set_transitions"):
@@ -670,10 +849,18 @@ func show_intro():
 		show_main_menu() 
 
 func show_main_menu():
+	unlock_hud_chrome()
 	if transitions:
 		transitions.open_main_menu()
 	else:
 		print("GameEngine.gd: ОШИБКА! transitions не установлен!")
+	# Calendar-event achievements (birthday / winter jam) are evaluated here —
+	# at the unique Intro → Main Menu transition — instead of early startup,
+	# so the check runs when the menu is actually being shown to the user.
+	# One-shot by construction: show_main_menu() is only called from intro
+	# completion, never on returns to the menu, so no once-flag is needed.
+	if achievement_system:
+		achievement_system.check_event_achievements()
 
 
 func _switch_to_screen(new_screen_instance):

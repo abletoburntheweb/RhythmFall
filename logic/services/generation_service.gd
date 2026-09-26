@@ -5,6 +5,7 @@ class_name GenerationService
 const _RhythmDnaServerFetch = preload("res://server/rhythm_dna_server_fetch.gd")
 const _GenerationIntents = preload("res://logic/domain/generation/generation_intents.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 signal bpm_started(song_path: String, display_name: String)
 signal bpm_completed(song_path: String, bpm_value: int, display_name: String)
@@ -44,6 +45,29 @@ var _offline_pause_message := ""
 var _offline_banner_dismissed := false
 var _duration_samples: Array[float] = []
 var _active_task_started_unix: int = 0
+var _current_notes_stage_key: String = ""
+var _current_notes_stage_started_msec: int = 0
+var _current_bpm_stage_key: String = ""
+var _current_bpm_stage_started_msec: int = 0
+var _current_notes_stage_status: String = ""
+var _current_bpm_stage_status: String = ""
+var _notes_stage_eta_timer: Timer = null
+var _bpm_stage_eta_timer: Timer = null
+var _stem_download_threads: Array[Thread] = []
+var _last_notes_stem_model: String = ""
+var _perf_generation_total: int = 0
+
+func _reset_notes_stage_tracking() -> void:
+	_current_notes_stage_key = ""
+	_current_notes_stage_started_msec = 0
+	_current_notes_stage_status = ""
+	_stop_notes_stage_eta_timer()
+
+func _reset_bpm_stage_tracking() -> void:
+	_current_bpm_stage_key = ""
+	_current_bpm_stage_started_msec = 0
+	_current_bpm_stage_status = ""
+	_stop_bpm_stage_eta_timer()
 
 var _BPM_STAGES := [
 	"GEN_API_CONNECTING",
@@ -178,7 +202,8 @@ func _push_gen_operation(
 	stage_index: int,
 	stage_total: int,
 	cancel_method: String,
-	icon_kind: String = "music"
+	icon_kind: String = "music",
+	indeterminate: bool = false
 ) -> void:
 	var dock := _status_dock()
 	if dock == null:
@@ -190,7 +215,7 @@ func _push_gen_operation(
 	var progress := 0.0
 	if stage_total > 0 and stage_index > 0:
 		progress = float(stage_index) / float(stage_total)
-	dock.show_operation({
+	var payload := {
 		"id": op_id,
 		"title": title,
 		"subtitle": subtitle,
@@ -198,7 +223,10 @@ func _push_gen_operation(
 		"compact": _GenStatusMode.is_compact(),
 		"cancel": _service_callable(cancel_method),
 		"icon_kind": icon_kind,
-	})
+	}
+	if indeterminate:
+		payload["indeterminate"] = true
+	dock.show_operation(payload)
 
 
 func _push_gen_message(
@@ -244,7 +272,8 @@ func _notify_task_success(task_kind: String, toast_text: String, batch_continues
 	if batch_continues:
 		_show_batch_completion_toast(task_kind, toast_text, toast_sec)
 	else:
-		_push_gen_message(task_kind, toast_text, "success", toast_sec, "", "", "analysis_success")
+		# Direct sound already played — avoid double playback via dock
+		_push_gen_message(task_kind, toast_text, "success", toast_sec, "", "", "")
 
 
 func _show_batch_completion_toast(op_id: String, text: String, duration_sec: float) -> void:
@@ -276,6 +305,173 @@ func _init(game_engine_ref: Node = null):
 	_api.notes_status.connect(_on_notes_status)
 	_api.genres_status.connect(_on_genres_status)
 	_api.genres_completed.connect(_on_genres_completed)
+
+
+func _ready() -> void:
+	# Phase 3K.1: WAV is transport buffer, deleted immediately after MP3 promotion — no 7-day TTL
+	_cleanup_stem_orphans()
+	# _cleanup_download_cache_ttl() removed — see forensic audit in task description
+
+
+func _cleanup_stem_orphans() -> void:
+	var total_removed := 0
+	var dirs := ["user://stems", "user://cache/stem_downloads"]
+	for dir_path in dirs:
+		var abs_dir := DirectoryUtils.to_absolute(dir_path)
+		if abs_dir == "" or not DirAccess.dir_exists_absolute(abs_dir):
+			continue
+		var d := DirAccess.open(abs_dir)
+		if d == null:
+			continue
+		d.list_dir_begin()
+		var fname := d.get_next()
+		while fname != "":
+			if not d.current_is_dir():
+				var lower := fname.to_lower()
+				if lower.ends_with(".tmp") or lower.ends_with(".bak"):
+					var rel := "%s/%s" % [dir_path, fname]
+					var abs_path := DirectoryUtils.to_absolute(rel)
+					if abs_path != "" and FileAccess.file_exists(abs_path):
+						var err := DirAccess.remove_absolute(abs_path)
+						if err == OK:
+							total_removed += 1
+							print("[StemCleanup] removed orphan %s" % rel)
+						else:
+							push_warning("[StemCleanup] failed to remove orphan %s err=%d" % [rel, err])
+			fname = d.get_next()
+		d.list_dir_end()
+	if total_removed > 0:
+		print("[StemCleanup] orphan cleanup removed %d files" % total_removed)
+
+
+func _cleanup_download_cache_ttl() -> void:
+	# Phase 3K.1: No 7-day TTL for .wav/.mp3 — WAV is transport buffer, deleted immediately after MP3 promotion.
+	# Persistent MP3 remains; legacy files not touched. Fallback cleanup not needed as success path guarantees deletion.
+	return
+
+
+func _enforce_persistent_retention(new_persistent_path: String) -> void:
+	# Phase 3K.4 final: Client persistent MP3 retention — uses generation_stem_retention_mode (4 modes), separate from server temp.
+	# Server temp is always deleted after job (stem_retention.py), client persistent follows UI setting.
+	if SettingsManager == null:
+		return
+	var keep_all := bool(SettingsManager.get_setting("generation_stem_keep_all", true))
+	if keep_all:
+		return # Never delete (debug)
+	var mode := String(SettingsManager.get_setting("generation_stem_retention_mode", "after_job")).strip_edges().to_lower()
+	if mode not in ["after_job", "ttl", "keep_recent", "keep_all"]:
+		mode = "after_job"
+	if mode == "keep_all":
+		return
+	var base_dir := ""
+	if SettingsManager and SettingsManager.has_method("get_stem_storage_path"):
+		base_dir = String(SettingsManager.get_stem_storage_path())
+	else:
+		base_dir = String(SettingsManager.get_setting("stem_storage_path", "")) if SettingsManager else ""
+	if base_dir.strip_edges() == "":
+		base_dir = "user://stems"
+	while base_dir.ends_with("/"):
+		base_dir = base_dir.substr(0, base_dir.length() - 1)
+	var abs_base := DirectoryUtils.to_absolute(base_dir)
+	if abs_base == "" or not DirAccess.dir_exists_absolute(abs_base):
+		return
+	# after_job: persistent MP3 should not remain — delete the just-created file
+	if mode == "after_job":
+		var abs_new := DirectoryUtils.to_absolute(new_persistent_path)
+		if abs_new != "" and FileAccess.file_exists(abs_new):
+			var err := DirAccess.remove_absolute(abs_new)
+			if err == OK:
+				print("[StemRetention] after_job removed persistent %s" % new_persistent_path)
+			else:
+				push_warning("[StemRetention] failed to remove after_job persistent %s err=%d" % [new_persistent_path, err])
+		return
+	# Collect all persistent MP3s under <base>/<chart_id>/*.mp3 (new contract)
+	var all_mp3: Array[Dictionary] = [] # {path:String, rel:String, mtime:int}
+	var d_base := DirAccess.open(abs_base)
+	if d_base == null:
+		return
+	d_base.list_dir_begin()
+	var chart_dir_name := d_base.get_next()
+	while chart_dir_name != "":
+		if d_base.current_is_dir():
+			var chart_dir_rel := "%s/%s" % [base_dir, chart_dir_name]
+			var abs_chart_dir := DirectoryUtils.to_absolute(chart_dir_rel)
+			if abs_chart_dir != "" and DirAccess.dir_exists_absolute(abs_chart_dir):
+				var d_chart := DirAccess.open(abs_chart_dir)
+				if d_chart:
+					d_chart.list_dir_begin()
+					var fname := d_chart.get_next()
+					while fname != "":
+						if not d_chart.current_is_dir() and fname.to_lower().ends_with(".mp3"):
+							var rel := "%s/%s" % [chart_dir_rel, fname]
+							var abs_path := DirectoryUtils.to_absolute(rel)
+							if abs_path != "" and FileAccess.file_exists(abs_path):
+								var mt := FileAccess.get_modified_time(abs_path)
+								if mt <= 0:
+									mt = int(Time.get_unix_time_from_system())
+								all_mp3.append({"path": abs_path, "rel": rel, "mtime": int(mt)})
+						fname = d_chart.get_next()
+					d_chart.list_dir_end()
+		chart_dir_name = d_base.get_next()
+	d_base.list_dir_end()
+	if mode == "ttl":
+		# Keep 15 min (900s) from mtime, delete older — keep new file regardless of age
+		const TTL_SEC := 900
+		var now := int(Time.get_unix_time_from_system())
+		var new_abs2 := DirectoryUtils.to_absolute(new_persistent_path)
+		for entry in all_mp3:
+			var pth := String(entry["path"])
+			if pth == new_abs2:
+				continue # never delete the just-created file in ttl mode
+			var age := now - int(entry["mtime"])
+			if age > TTL_SEC:
+				var err2 := DirAccess.remove_absolute(pth)
+				if err2 == OK:
+					print("[StemRetention] ttl 900s removed old %s age %d" % [String(entry["rel"]), age])
+				else:
+					push_warning("[StemRetention] failed to remove ttl persistent %s err=%d" % [String(entry["rel"]), err2])
+		return
+	if mode == "keep_recent":
+		var keep_count := 10
+		if SettingsManager.has_method("get_setting"):
+			var v = SettingsManager.get_setting("generation_stem_keep_count", null)
+			if v != null:
+				keep_count = clampi(int(v), 1, 100)
+		if keep_count <= 0:
+			return
+		if all_mp3.size() <= keep_count:
+			return
+		all_mp3.sort_custom(func(a, b): return int(a["mtime"]) > int(b["mtime"]) if int(a["mtime"]) != int(b["mtime"]) else String(a["path"]) > String(b["path"]))
+		var to_keep := {}
+		for i in range(mini(keep_count, all_mp3.size())):
+			to_keep[String(all_mp3[i]["path"])] = true
+		var new_abs3 := DirectoryUtils.to_absolute(new_persistent_path)
+		if new_abs3 != "" and not to_keep.has(new_abs3):
+			var oldest_kept_path := ""
+			var oldest_mtime := 0
+			var first := true
+			for p in to_keep.keys():
+				var ent_mtime := 0
+				for e in all_mp3:
+					if String(e["path"]) == String(p):
+						ent_mtime = int(e["mtime"])
+						break
+				if first or ent_mtime < oldest_mtime:
+					oldest_mtime = ent_mtime
+					oldest_kept_path = String(p)
+					first = false
+			if oldest_kept_path != "":
+				to_keep.erase(oldest_kept_path)
+				to_keep[new_abs3] = true
+		for entry in all_mp3:
+			var pth2 := String(entry["path"])
+			if not to_keep.has(pth2):
+				var err3 := DirAccess.remove_absolute(pth2)
+				if err3 == OK:
+					print("[StemRetention] keep_recent 10 removed old %s" % String(entry["rel"]))
+				else:
+					push_warning("[StemRetention] failed to remove keep_recent %s err=%d" % [String(entry["rel"]), err3])
+		return
 
 
 func _get_display_name(song_path: String) -> String:
@@ -368,13 +564,14 @@ func _show_offline_banner(task_type: String) -> void:
 	if not _gen_status_enabled() or _offline_pause_message.strip_edges() == "":
 		return
 	var text := tr("GEN_QUEUE_OFFLINE_BANNER") % _offline_pause_message
+	var cancel_method := "cancel_bpm" if task_type == "bpm" else "cancel_notes"
 	_push_gen_message(
 		task_type,
 		text,
 		"error",
 		0.0,
 		"retry_offline_pipeline",
-		"dismiss_offline_banner"
+		cancel_method
 	)
 
 
@@ -383,6 +580,15 @@ func dismiss_offline_banner() -> void:
 	var dock := _status_dock()
 	if dock:
 		dock.clear_operation(_offline_status_op_id())
+	# "Отменить" on the offline banner must actually cancel the paused task,
+	# not just hide the banner — otherwise the job stays queued and retries.
+	if _offline_paused:
+		if _active_bpm_task.has("path") and not _bpm_request_sent:
+			cancel_bpm()
+			return
+		if _active_notes_task.has("path") and not _notes_request_sent:
+			cancel_notes()
+			return
 
 
 func _enter_offline_pause(task_type: String, backend: Dictionary) -> void:
@@ -456,6 +662,69 @@ func _estimate_remaining_sec() -> int:
 	return int(round(active_remaining + avg * float(pending)))
 
 
+func _ensure_notes_stage_eta_timer() -> void:
+	if _notes_stage_eta_timer != null and is_instance_valid(_notes_stage_eta_timer):
+		return
+	_notes_stage_eta_timer = Timer.new()
+	_notes_stage_eta_timer.one_shot = true
+	_notes_stage_eta_timer.timeout.connect(_on_notes_stage_eta_timeout)
+	add_child(_notes_stage_eta_timer)
+
+func _ensure_bpm_stage_eta_timer() -> void:
+	if _bpm_stage_eta_timer != null and is_instance_valid(_bpm_stage_eta_timer):
+		return
+	_bpm_stage_eta_timer = Timer.new()
+	_bpm_stage_eta_timer.one_shot = true
+	_bpm_stage_eta_timer.timeout.connect(_on_bpm_stage_eta_timeout)
+	add_child(_bpm_stage_eta_timer)
+
+func _stop_notes_stage_eta_timer() -> void:
+	if _notes_stage_eta_timer != null and is_instance_valid(_notes_stage_eta_timer):
+		_notes_stage_eta_timer.stop()
+
+func _stop_bpm_stage_eta_timer() -> void:
+	if _bpm_stage_eta_timer != null and is_instance_valid(_bpm_stage_eta_timer):
+		_bpm_stage_eta_timer.stop()
+
+func _schedule_notes_long_stage_check(k: int, status: String, stage_key: String, title: String, subtitle: String, icon_kind: String) -> void:
+	_ensure_notes_stage_eta_timer()
+	var elapsed := Time.get_ticks_msec() - _current_notes_stage_started_msec
+	var remaining := 10000 - elapsed
+	if remaining <= 0:
+		return
+	if remaining < 100:
+		remaining = 100
+	_notes_stage_eta_timer.wait_time = float(remaining) / 1000.0
+	_notes_stage_eta_timer.start()
+
+func _schedule_bpm_long_stage_check(k: int, status: String, stage_key: String, title: String, subtitle: String, icon_kind: String) -> void:
+	_ensure_bpm_stage_eta_timer()
+	var elapsed := Time.get_ticks_msec() - _current_bpm_stage_started_msec
+	var remaining := 10000 - elapsed
+	if remaining <= 0:
+		return
+	if remaining < 100:
+		remaining = 100
+	_bpm_stage_eta_timer.wait_time = float(remaining) / 1000.0
+	_bpm_stage_eta_timer.start()
+
+func _on_notes_stage_eta_timeout() -> void:
+	if _active_notes_task.is_empty() or _current_notes_stage_key == "":
+		return
+	var elapsed := Time.get_ticks_msec() - _current_notes_stage_started_msec
+	if elapsed < 10000:
+		return
+	# Re-push same stage with indeterminate + ETA
+	_on_notes_status(_current_notes_stage_status)
+
+func _on_bpm_stage_eta_timeout() -> void:
+	if _active_bpm_task.is_empty() or _current_bpm_stage_key == "":
+		return
+	var elapsed := Time.get_ticks_msec() - _current_bpm_stage_started_msec
+	if elapsed < 10000:
+		return
+	_on_bpm_status(_current_bpm_stage_status)
+
 func clear_all_queue_work(cancel_active: bool = true) -> void:
 	_bpm_queue.clear()
 	_notes_queue.clear()
@@ -503,6 +772,7 @@ func _try_start_active_notes() -> void:
 		_clear_offline_pause()
 		_notes_request_sent = true
 		_mark_active_task_started()
+		_perf_generation_total = PerfTrace.begin("perf.runtime.generation.total")
 		print(
 			"[GenQueue] start goal=%s difficulty=%s stem=%s path=%s"
 			% [
@@ -532,11 +802,19 @@ func _on_backend_retry_timeout() -> void:
 		_try_start_active_notes()
 
 func is_notes_pipeline_busy() -> bool:
-	return _active_notes_task.has("path") or not _notes_queue.is_empty()
+	if _active_notes_task.has("path") or not _notes_queue.is_empty():
+		return true
+	if _api and _api.has_method("is_notes_busy") and _api.is_notes_busy():
+		return true
+	return false
 
 
 func is_bpm_pipeline_busy() -> bool:
-	return _active_bpm_task.has("path") or not _bpm_queue.is_empty()
+	if _active_bpm_task.has("path") or not _bpm_queue.is_empty():
+		return true
+	if _api and _api.has_method("is_bpm_busy") and _api.is_bpm_busy():
+		return true
+	return false
 
 
 func is_generation_backend_busy() -> bool:
@@ -572,7 +850,8 @@ func start_notes_generation(
 	chart_tag: String = "",
 	chart_intent: String = "",
 	goal: String = "",
-	difficulty: String = ""
+	difficulty: String = "",
+	preset_slot: int = 0
 ) -> int:
 	var intent := str(chart_intent).strip_edges()
 	if intent == "":
@@ -612,6 +891,7 @@ func start_notes_generation(
 		"chart_tag": chart_tag,
 		"goal": goal_v,
 		"difficulty": difficulty_v,
+		"preset_slot": preset_slot,
 	}
 	if is_bpm_pipeline_busy():
 		_notes_queue.append(queued)
@@ -637,6 +917,7 @@ func start_notes_generation(
 		"chart_tag": chart_tag,
 		"goal": goal_v,
 		"difficulty": difficulty_v,
+		"preset_slot": preset_slot,
 	}
 	_last_notes_task = _active_notes_task.duplicate(true)
 	_notes_request_sent = false
@@ -652,6 +933,7 @@ func get_genres_for_manual_entry(artist: String, title: String):
 	_api.detect_genres(artist, title)
 
 func cancel_bpm():
+	print("DEBUG_CANCEL: cancel_bpm called _gen_status_enabled=%s active_has_path=%s" % [str(_gen_status_enabled()), str(_active_bpm_task.has("path"))])
 	if _api:
 		_api.request_cancel_bpm()
 	var cancelled_path := ""
@@ -670,19 +952,33 @@ func cancel_bpm():
 			if ach and ach.has_method("on_analysis_canceled"):
 				ach.on_analysis_canceled()
 	if _gen_status_enabled():
-		_push_gen_message("bpm", tr("GEN_NOTIF_BPM_CANCELLED"), "success", 3.0, "", "cancel_bpm")
+		var dock := _status_dock()
+		var txt := tr("GEN_NOTIF_BPM_CANCELLED")
+		print("DEBUG_CANCEL: cancel_bpm pushing to dock=%s txt=%s queue_size=%d" % [str(dock), txt, _bpm_queue.size()])
+		if dock != null:
+			# Primary: clear progress operation, then show transient where ordinary toasts live (same as show_transient stack)
+			dock.clear_operation("bpm")
+			dock.show_transient("bpm_cancelled_%d" % Time.get_ticks_msec(), txt, "warning", 3.0, true)
+			# Keep primary message for backward compat (visible in primary panel for 3s)
+			_push_gen_message("bpm", txt, "warning", 3.0, "", "cancel_bpm")
+		else:
+			_push_gen_message("bpm", txt, "warning", 3.0, "", "cancel_bpm")
 	if cancelled_path != "":
 		_push_queue_history("bpm", cancelled_disp, tr("GEN_QUEUE_ROW_BPM"), "cancelled")
 		_active_bpm_task.clear()
+		_reset_bpm_stage_tracking()
 		_bpm_request_sent = false
 		_record_active_task_duration()
 		bpm_error.emit(cancelled_path, tr("GEN_NOTIF_BPM_CANCELLED"), cancelled_disp)
+		if _api and _api.has_method("get_bpm_task_id"):
+			_api._bpm_task_id = ""
 	_clear_offline_pause()
 	_clear_backend_retry_if_idle()
 	_active_bpm_progress.clear()
 	_emit_queue_changed()
 
 func cancel_notes():
+	print("DEBUG_CANCEL: cancel_notes called _gen_status_enabled=%s active_has_path=%s" % [str(_gen_status_enabled()), str(_active_notes_task.has("path"))])
 	if _api:
 		_api.request_cancel_notes()
 	var cancelled_path := ""
@@ -701,11 +997,20 @@ func cancel_notes():
 			if ach and ach.has_method("on_analysis_canceled"):
 				ach.on_analysis_canceled()
 	if _gen_status_enabled():
-		_push_gen_message("notes", tr("GEN_NOTIF_NOTES_CANCELLED"), "success", 3.0, "", "cancel_notes")
+		var dock := _status_dock()
+		var txt := tr("GEN_NOTIF_NOTES_CANCELLED")
+		print("DEBUG_CANCEL: cancel_notes pushing to dock=%s txt=%s queue_size=%d" % [str(dock), txt, _notes_queue.size()])
+		if dock != null:
+			dock.clear_operation("notes")
+			dock.show_transient("notes_cancelled_%d" % Time.get_ticks_msec(), txt, "warning", 3.0, true)
+			_push_gen_message("notes", txt, "warning", 3.0, "", "cancel_notes")
+		else:
+			_push_gen_message("notes", txt, "warning", 3.0, "", "cancel_notes")
 	if cancelled_path != "":
 		var history_job := _active_notes_task.duplicate(true)
 		_push_queue_history("notes", cancelled_disp, _notes_settings_line(history_job), "cancelled")
 		_active_notes_task.clear()
+		_reset_notes_stage_tracking()
 		_notes_request_sent = false
 		_record_active_task_duration()
 		notes_error.emit(cancelled_path, tr("GEN_NOTIF_NOTES_CANCELLED"), cancelled_disp)
@@ -743,6 +1048,7 @@ func retry_notes():
 		)
 
 func _on_bpm_started():
+	_reset_bpm_stage_tracking()
 	if _active_bpm_task.has("path"):
 		var path = _active_bpm_task.path
 		var disp = _active_bpm_task.display
@@ -754,6 +1060,11 @@ func _on_bpm_started():
 
 func _on_bpm_completed(bpm_value: int):
 	if not _active_bpm_task.has("path"):
+		print("DEBUG_BPM: _on_bpm_completed ignored, no active task, bpm=%d" % bpm_value)
+		return
+	# If this BPM came from a cancelled task, ignore it (check if _cancel_bpm was set)
+	if _api and _api.has_method("is_bpm_cancelled") and _api.is_bpm_cancelled():
+		print("DEBUG_BPM: _on_bpm_completed ignored, was cancelled, bpm=%d" % bpm_value)
 		return
 	var path = _active_bpm_task.path
 	var disp = _active_bpm_task.display
@@ -761,6 +1072,7 @@ func _on_bpm_completed(bpm_value: int):
 	SongLibrary.update_metadata(path, {"bpm": str(bpm_value), "bpm_from_server": true})
 	_record_active_task_duration()
 	_active_bpm_task.clear()
+	_reset_bpm_stage_tracking()
 	_bpm_request_sent = false
 	bpm_completed.emit(path, bpm_value, disp)
 	if _game_engine and _game_engine.has_method("get_achievement_system"):
@@ -791,11 +1103,19 @@ func _on_bpm_error(message: String):
 		_push_queue_history("bpm", disp, tr("GEN_QUEUE_ROW_BPM"), "error")
 	_record_active_task_duration()
 	_active_bpm_task.clear()
+	_reset_bpm_stage_tracking()
 	_bpm_request_sent = false
 	bpm_error.emit(path, message, disp)
 	if not cancelled and _gen_status_enabled():
-		var show_msg = tr("GEN_NOTIF_BPM_ERROR") % message
+		var bpm_err_text := message.strip_edges()
+		if bpm_err_text == "":
+			bpm_err_text = "Неизвестная ошибка"
+		var show_msg = tr("GEN_NOTIF_BPM_ERROR") % bpm_err_text
 		_push_gen_message("bpm", show_msg, "error", 0.0, "retry_bpm", "cancel_bpm")
+		if _bpm_queue.size() > 0 or (_notes_queue.size() > 0 and not _active_notes_task.has("path")):
+			var dock := _status_dock()
+			if dock != null:
+				dock.show_transient("bpm_error_%d" % Time.get_ticks_msec(), show_msg, "error", 3.0, false)
 	if _bpm_queue.size() > 0:
 		_start_next_bpm_from_queue()
 	elif _notes_queue.size() > 0 and not _active_notes_task.has("path"):
@@ -816,11 +1136,43 @@ func _on_bpm_status(status: String) -> void:
 			if _GenStatusMode.is_full():
 				subtitle = "%s%s" % [_stage_count_label(k, _BPM_STAGES.size()), status]
 			var icon_kind := _operation_icon_kind("bpm", status, stage_key)
-			_push_gen_operation("bpm", title, subtitle, k, _BPM_STAGES.size(), "cancel_bpm", icon_kind)
+			var stage_changed := stage_key != _current_bpm_stage_key
+			if stage_changed:
+				_current_bpm_stage_key = stage_key
+				_current_bpm_stage_started_msec = Time.get_ticks_msec()
+				_current_bpm_stage_status = status
+				_stop_bpm_stage_eta_timer()
+			elif status != _current_bpm_stage_status:
+				_current_bpm_stage_status = status
+			var elapsed_stage_ms := Time.get_ticks_msec() - _current_bpm_stage_started_msec
+			var is_long := elapsed_stage_ms >= 10000
+			var eta_subtitle := subtitle
+			if is_long:
+				var eta_sec := _estimate_remaining_sec()
+				if eta_sec >= 10:
+					var eta_fmt := tr("GEN_ETA_REMAINING_SEC_FMT")
+					if eta_fmt == "GEN_ETA_REMAINING_SEC_FMT":
+						eta_fmt = "Осталось ~%d с"
+					eta_subtitle = "%s · %s" % [subtitle, eta_fmt % eta_sec]
+				else:
+					eta_subtitle = subtitle
+			else:
+				_schedule_bpm_long_stage_check(k, status, stage_key, title, subtitle, icon_kind)
+			var final_subtitle := eta_subtitle if is_long else subtitle
+			# If long, add ETA and use indeterminate (same visual as notification.show_scan)
+			if is_long:
+				var eta_sec2 := _estimate_remaining_sec()
+				if eta_sec2 >= 10:
+					var eta_fmt2 := tr("GEN_ETA_REMAINING_SEC_FMT")
+					if eta_fmt2 == "GEN_ETA_REMAINING_SEC_FMT":
+						eta_fmt2 = "Осталось ~%d с"
+					final_subtitle = "%s · %s" % [subtitle, eta_fmt2 % eta_sec2]
+			_push_gen_operation("bpm", title, final_subtitle, k, _BPM_STAGES.size(), "cancel_bpm", icon_kind, is_long)
 		bpm_progress.emit(_active_bpm_task.path, k, _BPM_STAGES.size(), status)
 		_store_bpm_progress(k, status, stage_key)
 
 func _on_notes_started():
+	_reset_notes_stage_tracking()
 	if _active_notes_task.has("path"):
 		var disp = _active_notes_task.display
 		notes_started.emit(_active_notes_task.path, disp)
@@ -889,6 +1241,9 @@ func _on_notes_completed(
 	notes_variants: Dictionary,
 	rhythm_dna: Dictionary = {}
 ):
+	PerfTrace.end("perf.runtime.generation.total", _perf_generation_total)
+	_perf_generation_total = 0
+	# Server perf block (if present) is logged here via _check_notes → pass through rhythm_dna/perf extraction
 	var t = _active_notes_task
 	if t.is_empty():
 		t = _last_notes_task
@@ -913,6 +1268,16 @@ func _on_notes_completed(
 	var task_id := ""
 	if _api and _api.has_method("get_last_notes_task_id"):
 		task_id = str(_api.get_last_notes_task_id())
+	# Phase 3D.2: actually used stem model (e.g. kuielab_a_drums.onnx), empty if old server
+	var stem_model := ""
+	if _api and _api.has_method("get_last_notes_stem_model"):
+		stem_model = str(_api.get_last_notes_stem_model())
+	_last_notes_stem_model = stem_model
+	if stem_model != "":
+		print("[StemModel] task_id=%s model=%s" % [task_id, stem_model])
+		push_warning("StemModel: %s model=%s" % [save_stem, stem_model])
+	else:
+		print("[StemModel] task_id=%s model=unknown (old server)" % task_id)
 	if rhythm_dna.is_empty() or NotesUtils.is_minimal_rhythm_dna(rhythm_dna):
 		push_warning("RhythmDNA: generation response empty — fetching from server (task_id=%s)" % task_id)
 		var fetched: Dictionary = _RhythmDnaServerFetch.fetch_for_song(
@@ -924,6 +1289,7 @@ func _on_notes_completed(
 		var pl: Dictionary = rhythm_dna.get("pipeline", {}) if rhythm_dna.get("pipeline", {}) is Dictionary else {}
 		push_warning("RhythmDNA: received in generation response (source=%s)" % str(pl.get("source", 0)))
 	var chart_lanes := NotesUtils.CANONICAL_MAX_LANES
+	var _perf_save := PerfTrace.begin("perf.detail.generation.client.save")
 	if notes_data is Array and not notes_data.is_empty():
 		var save_notes: Array = notes_data
 		if NotesUtils.save_mode_chart_array(path, save_instrument, save_stem, chart_lanes, save_notes, variant_tag):
@@ -971,6 +1337,27 @@ func _on_notes_completed(
 			str(pipeline.get("source", 0)),
 			str(pipeline.get("final_notes", 0)),
 		])
+	PerfTrace.end("perf.detail.generation.client.save", _perf_save)
+	_perf_save = 0
+	# --- Canonical sections.rfd restore (song-level) ---
+	if saved_any_variant and rhythm_dna is Dictionary and not rhythm_dna.is_empty():
+		var canon_sections: Array = []
+		if rhythm_dna.has("structure_sections") and rhythm_dna["structure_sections"] is Array:
+			canon_sections = rhythm_dna["structure_sections"] as Array
+		elif rhythm_dna.has("structure_timeline") and rhythm_dna["structure_timeline"] is Array:
+			canon_sections = rhythm_dna["structure_timeline"] as Array
+		if not canon_sections.is_empty():
+			var ok_can := NotesUtils.save_canonical_sections(path, canon_sections)
+			if ok_can:
+				print("DEBUG_SECTIONS: canonical saved %s (%d)" % [NotesUtils.canonical_sections_path(path), canon_sections.size()])
+				push_warning("Canonical sections saved: %s (%d sections)" % [NotesUtils.canonical_sections_path(path), canon_sections.size()])
+			else:
+				push_warning("Canonical sections save failed for %s" % path)
+		else:
+			# Fallback migrate from embedded rfd
+			NotesUtils.ensure_canonical_sections(path)
+	elif saved_any_variant:
+		NotesUtils.ensure_canonical_sections(path)
 	if saved_any_variant:
 		var note_count := notes_data.size() if notes_data is Array else 0
 		var pipeline: Dictionary = rhythm_dna.get("pipeline", {}) if rhythm_dna is Dictionary else {}
@@ -1000,6 +1387,11 @@ func _on_notes_completed(
 		)
 	if saved_any_variant and PlayerDataManager:
 		PlayerDataManager.record_last_chart_generation(path, save_instrument, save_stem, lanes_val)
+	# Phase 3C: automatic stem download to user://cache/stem_downloads/<hash>_<kind>.wav (non-persistent, WAV, non-fatal).
+	# Trigger only on successful chart save; failed/cancelled handled in _on_notes_error (no download).
+	# Kind derived from saved instrument (drums→drums, bass→bass) — reliable source vs chart_stem.
+	if saved_any_variant:
+		_trigger_stem_download_async(path, save_instrument)
 	notes_completed.emit(path, save_instrument, disp)
 	if _game_engine and _game_engine.has_method("get_achievement_system"):
 		var ach = _game_engine.get_achievement_system()
@@ -1025,6 +1417,7 @@ func _on_notes_completed(
 	_push_queue_history("notes", disp, _notes_settings_line(t), "done")
 	_record_active_task_duration()
 	_active_notes_task.clear()
+	_reset_notes_stage_tracking()
 	_notes_request_sent = false
 	if _notes_queue.size() > 0:
 		_start_next_notes_from_queue()
@@ -1034,7 +1427,408 @@ func _on_notes_completed(
 	_active_notes_progress.clear()
 	_emit_queue_changed()
 
+
+func _trigger_stem_download_async(song_path: String, kind: String) -> void:
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		return
+	if String(song_path).strip_edges() == "":
+		return
+	# Avoid re-download if valid temp file already exists (1KB check like _http_get_binary_to_file)
+	var content_hash := ""
+	if FileAccess.file_exists(song_path):
+		if NotesUtils:
+			content_hash = String(NotesUtils.audio_content_hash(song_path)).strip_edges().to_lower()
+	var chart_id := ""
+	if NotesUtils:
+		chart_id = String(NotesUtils.chart_id_from_song_path(song_path)).strip_edges().to_lower()
+	var identifier := content_hash if content_hash != "" else chart_id
+	if identifier == "":
+		return
+	var temp_path := ""
+	if _api and _api.has_method("_stem_download_temp_path"):
+		temp_path = String(_api._stem_download_temp_path(identifier, k))
+	else:
+		temp_path = "user://cache/stem_downloads/%s_%s.wav" % [identifier, k]
+	var abs_temp := DirectoryUtils.to_absolute(temp_path)
+	if abs_temp != "" and FileAccess.file_exists(abs_temp):
+		var f := FileAccess.open(abs_temp, FileAccess.READ)
+		if f:
+			var sz := int(f.get_length())
+			f.close()
+			if sz >= 1024:
+				print("[StemDownload] skip already valid %s (%d bytes)" % [temp_path, sz])
+				# Even if temp exists, still ensure persistent promotion if not yet done (Phase 3D.3)
+				var _stem_model_cached := String(_last_notes_stem_model).strip_edges()
+				if _stem_model_cached != "" and chart_id != "":
+					var _th2 := Thread.new()
+					_stem_download_threads.append(_th2)
+					var _err2 := _th2.start(func(): _promote_worker(temp_path, chart_id, content_hash, k, _stem_model_cached))
+					if _err2 != OK:
+						_stem_download_threads.erase(_th2)
+					else:
+						print("[StemPromotion] async started (from existing temp) for %s kind=%s" % [song_path.get_file(), k])
+				return
+	var stem_model := String(_last_notes_stem_model).strip_edges()
+	var th := Thread.new()
+	_stem_download_threads.append(th)
+	var err := th.start(func(): _stem_download_worker(song_path, k, content_hash, stem_model, chart_id))
+	if err != OK:
+		_stem_download_threads.erase(th)
+		push_warning("[StemDownload] failed to start thread for %s kind=%s err=%d" % [song_path.get_file(), k, err])
+	else:
+		print("[StemDownload] async started for %s kind=%s model=%s" % [song_path.get_file(), k, stem_model if stem_model != "" else "unknown"])
+
+
+func _normalize_model_for_filename(model: String) -> String:
+	var m := String(model).strip_edges()
+	if m == "":
+		return ""
+	# Take basename, strip extension, sanitize
+	m = m.replace("\\", "/")
+	m = m.get_file()
+	if m.to_lower().ends_with(".onnx"):
+		m = m.substr(0, m.length() - 5)
+	m = FileUtils.sanitize_name_for_fs(m)
+	m = m.replace("/", "_").replace("\\", "_")
+	if m == "" or m == "untitled":
+		return ""
+	return m
+
+
+func _persistent_stem_path(chart_id: String, kind: String, model: String, format: String = "mp3") -> String:
+	var cid := String(chart_id).strip_edges().to_lower()
+	if cid == "" or cid.length() != 16:
+		return ""
+	var valid := true
+	for c in cid:
+		if String(c) not in ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]:
+			valid = false
+			break
+	if not valid:
+		return ""
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		return ""
+	var m := _normalize_model_for_filename(model)
+	if m == "":
+		return ""
+	var fmt := String(format).strip_edges().to_lower()
+	if fmt not in ["wav", "mp3"]:
+		fmt = "mp3"
+	# Final persistent storage — only mp3, chart_id as directory
+	if fmt != "mp3":
+		fmt = "mp3"
+	var base_dir := ""
+	if SettingsManager and SettingsManager.has_method("get_stem_storage_path"):
+		base_dir = String(SettingsManager.get_stem_storage_path())
+	else:
+		base_dir = String(SettingsManager.get_setting("stem_storage_path", "")) if SettingsManager else ""
+	if base_dir.strip_edges() == "":
+		base_dir = "user://stems"
+	while base_dir.ends_with("/"):
+		base_dir = base_dir.substr(0, base_dir.length() - 1)
+	return "%s/%s/%s_%s.%s" % [base_dir, cid, k, m, fmt]
+
+
+func _is_valid_file_for_promotion(path: String) -> bool:
+	var abs_path := DirectoryUtils.to_absolute(path)
+	if abs_path == "" or not FileAccess.file_exists(abs_path):
+		return false
+	var f := FileAccess.open(abs_path, FileAccess.READ)
+	if f == null:
+		return false
+	var sz := int(f.get_length())
+	f.close()
+	return sz >= 1024
+
+
+func _atomic_copy_file(src_path: String, dst_path: String) -> bool:
+	if not DirectoryUtils.ensure_dir_for_file(dst_path):
+		return false
+	var tmp_path := "%s.tmp" % dst_path
+	var tmp_abs := DirectoryUtils.to_absolute(tmp_path)
+	if tmp_abs != "" and FileAccess.file_exists(tmp_abs):
+		DirAccess.remove_absolute(tmp_abs)
+	var src_file := FileAccess.open(src_path, FileAccess.READ)
+	if src_file == null:
+		return false
+	var tmp_file := FileAccess.open(tmp_path, FileAccess.WRITE)
+	if tmp_file == null:
+		src_file.close()
+		return false
+	const CHUNK := 1024 * 1024
+	while not src_file.eof_reached():
+		var chunk := src_file.get_buffer(CHUNK)
+		if chunk.is_empty():
+			break
+		tmp_file.store_buffer(chunk)
+		if chunk.size() < CHUNK:
+			break
+	src_file.close()
+	tmp_file.close()
+	var tmp_abs_check := DirectoryUtils.to_absolute(tmp_path)
+	var sz := 0
+	if tmp_abs_check != "" and FileAccess.file_exists(tmp_abs_check):
+		var f2 := FileAccess.open(tmp_abs_check, FileAccess.READ)
+		if f2:
+			sz = int(f2.get_length())
+			f2.close()
+	if sz < 1024:
+		if FileAccess.file_exists(tmp_abs_check):
+			DirAccess.remove_absolute(tmp_abs_check)
+		return false
+	var dst_abs := DirectoryUtils.to_absolute(dst_path)
+	if FileAccess.file_exists(dst_abs):
+		var bak_path := "%s.bak" % dst_path
+		var bak_abs := DirectoryUtils.to_absolute(bak_path)
+		if FileAccess.file_exists(bak_abs):
+			DirAccess.remove_absolute(bak_abs)
+		if DirAccess.rename_absolute(dst_path, bak_path) != OK:
+			DirAccess.remove_absolute(tmp_abs_check)
+			return false
+		var err := DirAccess.rename_absolute(tmp_path, dst_path)
+		if err != OK:
+			DirAccess.rename_absolute(bak_path, dst_path)
+			DirAccess.remove_absolute(tmp_abs_check)
+			return false
+		if FileAccess.file_exists(bak_abs):
+			DirAccess.remove_absolute(bak_abs)
+		return true
+	else:
+		var err2 := DirAccess.rename_absolute(tmp_path, dst_path)
+		if err2 != OK:
+			DirAccess.remove_absolute(tmp_abs_check)
+			return false
+		return true
+
+
+func _promote_temp_to_persistent(temp_path: String, chart_id: String, kind: String, model: String, format: String = "mp3") -> Dictionary:
+	# Returns {ok:bool, skipped:bool, persistent_path:String, error:String}
+	# Persistent storage is now chart_id-based: <stem_storage>/<chart_id>/<kind>_<model>.mp3 (only mp3)
+	if String(model).strip_edges() == "":
+		return {"ok": false, "skipped": false, "persistent_path": "", "error": "model unknown"}
+	var cid := String(chart_id).strip_edges().to_lower()
+	if cid == "" or cid.length() != 16:
+		return {"ok": false, "skipped": false, "persistent_path": "", "error": "chart_id empty/invalid"}
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		return {"ok": false, "skipped": false, "persistent_path": "", "error": "invalid kind"}
+	var fmt := String(format).strip_edges().to_lower()
+	if fmt not in ["wav", "mp3"]:
+		fmt = "mp3"
+	# Force mp3 as final persistent format
+	fmt = "mp3"
+	if not _is_valid_file_for_promotion(temp_path):
+		return {"ok": false, "skipped": false, "persistent_path": "", "error": "source missing/invalid"}
+	var persistent_path := _persistent_stem_path(cid, k, model, fmt)
+	if persistent_path == "":
+		return {"ok": false, "skipped": false, "persistent_path": "", "error": "invalid persistent path"}
+	if _is_valid_file_for_promotion(persistent_path):
+		return {"ok": true, "skipped": true, "persistent_path": persistent_path, "error": ""}
+	var base_dir := persistent_path.get_base_dir()
+	if base_dir != "" and not DirectoryUtils.ensure_dir(persistent_path.get_base_dir()):
+		# ensure_dir_for_file already does, but check
+		if not DirectoryUtils.ensure_dir_for_file(persistent_path):
+			return {"ok": false, "skipped": false, "persistent_path": persistent_path, "error": "mkdir failed"}
+	print("[StemPromotion] started %s -> %s kind=%s model=%s" % [temp_path, persistent_path, k, model])
+	var ok := _atomic_copy_file(temp_path, persistent_path)
+	if ok and _is_valid_file_for_promotion(persistent_path):
+		return {"ok": true, "skipped": false, "persistent_path": persistent_path, "error": ""}
+	else:
+		return {"ok": false, "skipped": false, "persistent_path": persistent_path, "error": "atomic copy failed"}
+
+
+func _promote_worker(temp_path: String, chart_id: String, content_hash: String, kind: String, model: String) -> void:
+	# New persistent contract: <stem_storage>/<chart_id>/<kind>_<model>.mp3 (only mp3, wav is temp cache)
+	var mp3_persistent := _persistent_stem_path(chart_id, kind, model, "mp3")
+	if mp3_persistent != "" and _is_valid_file_for_promotion(mp3_persistent):
+		print("[StemPromotion] skip MP3 already valid %s" % mp3_persistent)
+		# WAV transport buffer no longer needed — delete immediately after successful persistent MP3
+		var abs_wav := DirectoryUtils.to_absolute(temp_path)
+		if abs_wav != "" and FileAccess.file_exists(abs_wav):
+			var err_wav := DirAccess.remove_absolute(abs_wav)
+			if err_wav == OK:
+				print("[StemCleanup] removed transport WAV after mp3 valid %s" % temp_path)
+		call_deferred("_on_stem_promotion_finished", temp_path, chart_id, kind, model, {"ok": true, "skipped": true, "persistent_path": mp3_persistent, "error": ""})
+		return
+	# Download MP3 from server (server-side ffmpeg 192k) via content_hash
+	var mp3_res: Dictionary = {}
+	if _api and _api.has_method("download_stem_file"):
+		var ch_mp3 := String(content_hash).strip_edges().to_lower()
+		# content_hash still used for server transport lookup
+		mp3_res = _api.download_stem_file(ch_mp3, kind, chart_id, "mp3")
+	else:
+		mp3_res = {"ok": false, "error": "no api mp3"}
+	if bool(mp3_res.get("ok", false)):
+		var mp3_temp := str(mp3_res.get("path", ""))
+		if mp3_temp == "" and _api and _api.has_method("_stem_download_temp_path"):
+			var id_mp3 := String(content_hash).strip_edges().to_lower()
+			if id_mp3 == "":
+				id_mp3 = String(chart_id).strip_edges().to_lower()
+			mp3_temp = String(_api._stem_download_temp_path(id_mp3, kind, "mp3"))
+		if mp3_temp != "" and _is_valid_file_for_promotion(mp3_temp):
+			var mp3_promo := _promote_temp_to_persistent(mp3_temp, chart_id, kind, model, "mp3")
+			call_deferred("_on_stem_promotion_finished", temp_path, chart_id, kind, model, mp3_promo)
+			if mp3_promo.get("skipped", false):
+				print("[StemPromotion] MP3 skipped already valid %s" % str(mp3_promo.get("persistent_path","")))
+				# WAV transport buffer no longer needed after MP3 persistent is valid
+				var abs_wav2 := DirectoryUtils.to_absolute(temp_path)
+				if abs_wav2 != "" and FileAccess.file_exists(abs_wav2):
+					if DirAccess.remove_absolute(abs_wav2) == OK:
+						print("[StemCleanup] removed transport WAV %s" % temp_path)
+			elif mp3_promo.get("ok", false):
+				print("[StemPromotion] MP3 success %s -> %s" % [mp3_temp, str(mp3_promo.get("persistent_path",""))])
+				push_warning("[StemPromotion] MP3 success %s kind=%s model=%s" % [temp_path.get_file(), kind, model])
+				_enforce_persistent_retention(String(mp3_promo.get("persistent_path","")))
+				var abs_wav3 := DirectoryUtils.to_absolute(temp_path)
+				if abs_wav3 != "" and FileAccess.file_exists(abs_wav3):
+					if DirAccess.remove_absolute(abs_wav3) == OK:
+						print("[StemCleanup] removed transport WAV %s" % temp_path)
+				# MP3 temp in cache can also be removed after successful promotion (keep cache clean)
+				var abs_mp3 := DirectoryUtils.to_absolute(mp3_temp)
+				if abs_mp3 != "" and FileAccess.file_exists(abs_mp3):
+					# Keep MP3 temp only if it's the same as persistent? No, persistent is in stems, temp is in cache — safe to remove
+					DirAccess.remove_absolute(abs_mp3)
+			else:
+				print("[StemPromotion] MP3 promotion failed %s kind=%s error=%s (WAV kept)" % [temp_path.get_file(), kind, str(mp3_promo.get("error",""))])
+		else:
+			print("[StemPromotion] MP3 temp invalid %s" % mp3_temp)
+			call_deferred("_on_stem_promotion_finished", temp_path, chart_id, kind, model, {"ok": false, "persistent_path": "", "error": "mp3 temp invalid"})
+	else:
+		var mp3_err := str(mp3_res.get("error","unknown"))
+		print("[StemPromotion] MP3 download failed %s kind=%s error=%s (WAV kept)" % [temp_path.get_file(), kind, mp3_err])
+		call_deferred("_on_stem_promotion_finished", temp_path, chart_id, kind, model, {"ok": false, "persistent_path": "", "error": mp3_err})
+
+
+func _on_stem_promotion_finished(temp_path: String, content_hash: String, kind: String, model: String, res: Dictionary) -> void:
+	for i in range(_stem_download_threads.size() - 1, -1, -1):
+		var th: Thread = _stem_download_threads[i]
+		if th != null and not th.is_alive():
+			th.wait_to_finish()
+			_stem_download_threads.remove_at(i)
+	if bool(res.get("skipped", false)):
+		print("[StemPromotion] skipped persistent already valid %s" % str(res.get("persistent_path", "")))
+	elif bool(res.get("ok", false)):
+		print("[StemPromotion] success %s -> %s" % [temp_path, str(res.get("persistent_path", ""))])
+		push_warning("[StemPromotion] success %s kind=%s model=%s" % [temp_path.get_file(), kind, model])
+	else:
+		var err := str(res.get("error", "unknown"))
+		print("[StemPromotion] failed %s kind=%s model=%s error=%s" % [temp_path.get_file(), kind, model, err])
+		if err == "model unknown":
+			push_warning("[StemPromotion] skipped model unknown for %s kind=%s (temp kept)" % [temp_path.get_file(), kind])
+		else:
+			push_warning("[StemPromotion] failed %s kind=%s model=%s error=%s (temp kept)" % [temp_path.get_file(), kind, model, err])
+
+
+func _stem_download_worker(song_path: String, kind: String, content_hash: String = "", stem_model: String = "", chart_id: String = "") -> void:
+	var res: Dictionary = {}
+	if _api and _api.has_method("download_stem_for_song"):
+		res = _api.download_stem_for_song(song_path, kind, "wav")
+	else:
+		res = {"ok": false, "error": "no api"}
+	# Persistent promotion is now MP3-only at <stem_storage>/<chart_id>/<kind>_<model>.mp3
+	# WAV remains as temp cache (user://cache/stem_downloads) with 7-day TTL, not promoted.
+	if bool(res.get("ok", false)):
+		var ch := String(content_hash).strip_edges().to_lower()
+		if ch == "" and FileAccess.file_exists(song_path) and NotesUtils:
+			ch = String(NotesUtils.audio_content_hash(song_path)).strip_edges().to_lower()
+		var cid := String(chart_id).strip_edges().to_lower()
+		if cid == "" and NotesUtils:
+			cid = String(NotesUtils.chart_id_from_song_path(song_path)).strip_edges().to_lower()
+		var model := String(stem_model).strip_edges()
+		if model == "":
+			model = String(_last_notes_stem_model).strip_edges()
+		if model == "":
+			print("[StemPromotion] skipped model unknown for %s kind=%s" % [song_path.get_file(), kind])
+			push_warning("[StemPromotion] skipped model unknown for %s kind=%s (temp kept)" % [song_path.get_file(), kind])
+		elif cid == "":
+			print("[StemPromotion] skipped chart_id empty for %s kind=%s" % [song_path.get_file(), kind])
+			push_warning("[StemPromotion] skipped chart_id empty for %s kind=%s (temp kept)" % [song_path.get_file(), kind])
+		else:
+			var mp3_persistent := _persistent_stem_path(cid, kind, model, "mp3")
+			var wav_temp_to_clean := String(res.get("path", "")).strip_edges()
+			if mp3_persistent != "" and _is_valid_file_for_promotion(mp3_persistent):
+				print("[StemPromotion] skip MP3 already valid %s" % mp3_persistent)
+				# WAV transport buffer no longer needed — delete after MP3 persistent valid
+				if wav_temp_to_clean != "":
+					var abs_wav4 := DirectoryUtils.to_absolute(wav_temp_to_clean)
+					if abs_wav4 != "" and FileAccess.file_exists(abs_wav4):
+						if DirAccess.remove_absolute(abs_wav4) == OK:
+							print("[StemCleanup] removed transport WAV %s" % wav_temp_to_clean)
+			else:
+				print("[StemPromotion] requesting MP3 %s kind=%s model=%s chart_id=%s" % [song_path.get_file(), kind, model, cid])
+				var mp3_res: Dictionary = {}
+				if _api and _api.has_method("download_stem_for_song"):
+					mp3_res = _api.download_stem_for_song(song_path, kind, "mp3")
+				elif _api and _api.has_method("download_stem_file"):
+					mp3_res = _api.download_stem_file(ch, kind, cid, "mp3")
+				else:
+					mp3_res = {"ok": false, "error": "no api mp3"}
+				if bool(mp3_res.get("ok", false)):
+					var mp3_temp := str(mp3_res.get("path", ""))
+					if mp3_temp == "":
+						var id3 := ch if ch != "" else cid
+						if id3 != "" and _api and _api.has_method("_stem_download_temp_path"):
+							mp3_temp = String(_api._stem_download_temp_path(id3, kind, "mp3"))
+					if mp3_temp != "" and _is_valid_file_for_promotion(mp3_temp):
+						var mp3_promo := _promote_temp_to_persistent(mp3_temp, cid, kind, model, "mp3")
+						if mp3_promo.get("skipped", false):
+							print("[StemPromotion] MP3 skipped already valid %s" % str(mp3_promo.get("persistent_path", "")))
+							if wav_temp_to_clean != "":
+								var abs_wav5 := DirectoryUtils.to_absolute(wav_temp_to_clean)
+								if abs_wav5 != "" and FileAccess.file_exists(abs_wav5):
+									if DirAccess.remove_absolute(abs_wav5) == OK:
+										print("[StemCleanup] removed transport WAV %s" % wav_temp_to_clean)
+							# MP3 cache temp can be removed after successful persistent
+							var abs_mp3_2 := DirectoryUtils.to_absolute(mp3_temp)
+							if abs_mp3_2 != "" and FileAccess.file_exists(abs_mp3_2):
+								DirAccess.remove_absolute(abs_mp3_2)
+						elif mp3_promo.get("ok", false):
+							print("[StemPromotion] MP3 success %s -> %s" % [mp3_temp, str(mp3_promo.get("persistent_path", ""))])
+							push_warning("[StemPromotion] MP3 success %s kind=%s model=%s" % [song_path.get_file(), kind, model])
+							_enforce_persistent_retention(String(mp3_promo.get("persistent_path","")))
+							if wav_temp_to_clean != "":
+								var abs_wav6 := DirectoryUtils.to_absolute(wav_temp_to_clean)
+								if abs_wav6 != "" and FileAccess.file_exists(abs_wav6):
+									if DirAccess.remove_absolute(abs_wav6) == OK:
+										print("[StemCleanup] removed transport WAV %s" % wav_temp_to_clean)
+							var abs_mp3_3 := DirectoryUtils.to_absolute(mp3_temp)
+							if abs_mp3_3 != "" and FileAccess.file_exists(abs_mp3_3):
+								DirAccess.remove_absolute(abs_mp3_3)
+						else:
+							print("[StemPromotion] MP3 promotion failed %s kind=%s error=%s (WAV kept)" % [song_path.get_file(), kind, str(mp3_promo.get("error",""))])
+							push_warning("[StemPromotion] MP3 promotion failed %s kind=%s error=%s (WAV kept)" % [song_path.get_file(), kind, str(mp3_promo.get("error",""))])
+					else:
+						print("[StemPromotion] MP3 temp invalid %s" % mp3_temp)
+				else:
+					var mp3_err := str(mp3_res.get("error","unknown"))
+					var mp3_code := int(mp3_res.get("code",0))
+					print("[StemPromotion] MP3 download failed %s kind=%s code=%d error=%s (WAV kept)" % [song_path.get_file(), kind, mp3_code, mp3_err])
+					push_warning("[StemPromotion] MP3 download failed %s kind=%s code=%d error=%s (WAV kept)" % [song_path.get_file(), kind, mp3_code, mp3_err])
+	call_deferred("_on_stem_download_finished", song_path, kind, res)
+
+
+func _on_stem_download_finished(song_path: String, kind: String, res: Dictionary) -> void:
+	for i in range(_stem_download_threads.size() - 1, -1, -1):
+		var th: Thread = _stem_download_threads[i]
+		if th != null and not th.is_alive():
+			th.wait_to_finish()
+			_stem_download_threads.remove_at(i)
+	if bool(res.get("ok", false)):
+		print("[StemDownload] success %s kind=%s -> %s" % [song_path.get_file(), kind, str(res.get("path", ""))])
+		push_warning("[StemDownload] success %s kind=%s" % [song_path.get_file(), kind])
+	else:
+		var err := str(res.get("error", "unknown"))
+		var code := int(res.get("code", 0))
+		push_warning("[StemDownload] failed %s kind=%s code=%d error=%s (chart kept)" % [song_path.get_file(), kind, code, err])
+		print("[StemDownload] failed %s kind=%s code=%d error=%s" % [song_path.get_file(), kind, code, err])
+
+
 func _on_notes_error(message: String):
+	PerfTrace.end("perf.runtime.generation.total", _perf_generation_total)
+	_perf_generation_total = 0
+	_last_notes_stem_model = ""
 	if not _active_notes_task.has("path"):
 		if _notes_queue.size() > 0:
 			_start_next_notes_from_queue()
@@ -1048,6 +1842,7 @@ func _on_notes_error(message: String):
 		_push_queue_history("notes", disp, history_settings, "cancelled")
 		_record_active_task_duration()
 		_active_notes_task.clear()
+		_reset_notes_stage_tracking()
 		_notes_request_sent = false
 		if _notes_queue.size() > 0:
 			_start_next_notes_from_queue()
@@ -1070,9 +1865,17 @@ func _on_notes_error(message: String):
 			str(_active_notes_task.get("goal", "")),
 			str(_active_notes_task.get("difficulty", "")),
 		)
-		var show_msg = tr("GEN_NOTIF_NOTES_ERROR") % [disp, message, suffix]
+		var notes_err_text := message.strip_edges()
+		if notes_err_text == "":
+			notes_err_text = "Неизвестная ошибка"
+		var show_msg = tr("GEN_NOTIF_NOTES_ERROR") % [disp, notes_err_text, suffix]
 		_push_gen_message("notes", show_msg, "error", 0.0, "retry_notes", "cancel_notes")
+		if _notes_queue.size() > 0 or (_bpm_queue.size() > 0 and not _active_bpm_task.has("path")):
+			var dock := _status_dock()
+			if dock != null:
+				dock.show_transient("notes_error_%d" % Time.get_ticks_msec(), show_msg, "error", 3.0, false)
 	_active_notes_task.clear()
+	_reset_notes_stage_tracking()
 	_notes_request_sent = false
 	if _notes_queue.size() > 0:
 		_start_next_notes_from_queue()
@@ -1106,7 +1909,41 @@ func _on_notes_status(status: String) -> void:
 			elif suffix.strip_edges() != "":
 				subtitle = "%s %s" % [status, suffix.strip_edges()]
 			var icon_kind := _operation_icon_kind("notes", status, stage_key)
-			_push_gen_operation("notes", title, subtitle, k, _NOTES_STAGES.size(), "cancel_notes", icon_kind)
+			# Per-step ETA + indeterminate: first 10s determinate (k/size bar), after 10s same stage → indeterminate (like notification.show_scan) + ETA.
+			var stage_changed := stage_key != _current_notes_stage_key
+			if stage_changed:
+				_current_notes_stage_key = stage_key
+				_current_notes_stage_started_msec = Time.get_ticks_msec()
+				_current_notes_stage_status = status
+				_stop_notes_stage_eta_timer()
+			elif status != _current_notes_stage_status:
+				_current_notes_stage_status = status
+			var elapsed_stage_ms := Time.get_ticks_msec() - _current_notes_stage_started_msec
+			var is_long := elapsed_stage_ms >= 10000
+			var eta_subtitle := subtitle
+			if is_long:
+				var eta_sec := _estimate_remaining_sec()
+				if eta_sec >= 10:
+					var eta_fmt := tr("GEN_ETA_REMAINING_SEC_FMT")
+					var eta_fmt_valid := eta_fmt != "GEN_ETA_REMAINING_SEC_FMT" and "%" in eta_fmt
+					if not eta_fmt_valid:
+						eta_fmt = "Осталось ~%d с"
+					var eta_text := eta_fmt % eta_sec if "%" in eta_fmt else "Осталось ~%d с" % eta_sec
+					eta_subtitle = "%s · %s" % [subtitle, eta_text]
+			else:
+				_schedule_notes_long_stage_check(k, status, stage_key, title, subtitle, icon_kind)
+			var final_subtitle := eta_subtitle if is_long else subtitle
+			if is_long and eta_subtitle == subtitle:
+				# Even if eta <10, we still want to show indeterminate but keep subtitle; ETA will appear when >=10
+				var eta_sec2 := _estimate_remaining_sec()
+				if eta_sec2 >= 10:
+					var eta_fmt2 := tr("GEN_ETA_REMAINING_SEC_FMT")
+					var eta_fmt2_valid := eta_fmt2 != "GEN_ETA_REMAINING_SEC_FMT" and "%" in eta_fmt2
+					if not eta_fmt2_valid:
+						eta_fmt2 = "Осталось ~%d с"
+					var eta_text2 := eta_fmt2 % eta_sec2 if "%" in eta_fmt2 else "Осталось ~%d с" % eta_sec2
+					final_subtitle = "%s · %s" % [subtitle, eta_text2]
+			_push_gen_operation("notes", title, final_subtitle, k, _NOTES_STAGES.size(), "cancel_notes", icon_kind, is_long)
 		notes_progress.emit(_active_notes_task.path, k, _NOTES_STAGES.size(), status)
 		_store_notes_progress(k, status, stage_key)
 
@@ -1136,6 +1973,11 @@ func get_active_notes_task() -> Dictionary:
 
 func get_last_notes_task() -> Dictionary:
 	return _last_notes_task.duplicate(true)
+
+
+func get_last_stem_model() -> String:
+	return String(_last_notes_stem_model)
+
 
 func get_bpm_queue_position(song_path: String) -> int:
 	var key := _song_path_key(song_path)

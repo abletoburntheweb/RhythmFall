@@ -15,6 +15,9 @@ const COLOR_COMBO := Color(0.647059, 0.556863, 0.858824, 1.0)
 const COLOR_GRADE := Color(0.94902, 0.701961, 0.352941, 1.0)
 const COLOR_FULL_COMBO := Color(0.556863, 0.831373, 0.615686, 1.0)
 
+const HERO_ICON_FILE := "gauge.svg"
+
+@onready var hero_icon: TextureRect = $CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeroIcon
 @onready var title_label: Label = $CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/TitleLabel
 @onready var subtitle_label: Label = $CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/SubtitleLabel
 @onready var hero_total_label: Label = $CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText/FinalRewardRow/HeroTotalLabel
@@ -36,8 +39,21 @@ var _detail_data: Dictionary = {}
 func _ready() -> void:
 	add_to_group("locale_refresh")
 	visible = false
+	_apply_hero_icon()
 	close_button.pressed.connect(_on_back_pressed)
+	UiClick.connect_clicked(self, _on_back_pressed)
+	UiIconHelper.configure_button_icon(close_button, "arrow-left.svg", Color(0.85, 0.9, 0.97, 1.0), 16)
+	_stabilize_close_button(close_button)
 	call_deferred("apply_locale")
+
+
+func _apply_hero_icon() -> void:
+	if hero_icon == null:
+		return
+	var tex := UiIconHelper.load_tinted_icon(HERO_ICON_FILE, ACCENT, UiIconHelper.raster_size_for_display(72))
+	if tex:
+		hero_icon.texture = tex
+		hero_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 
 func apply_locale() -> void:
@@ -179,6 +195,8 @@ func _configure_row(
 
 
 func _on_back_pressed() -> void:
+	if not visible:
+		return
 	MusicManager.play_modifier_deselect_sound()
 	visible = false
 	_detail_data.clear()
@@ -188,3 +206,20 @@ func _on_back_pressed() -> void:
 func _input(event: InputEvent) -> void:
 	if visible and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_on_back_pressed()
+
+
+func _stabilize_close_button(btn: Button) -> void:
+	if btn == null:
+		return
+	btn.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.expand_icon = false
+	btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if btn.has_meta("_ui_hover_enabled"):
+		btn.remove_meta("_ui_hover_enabled")
+	var base_style := btn.get_theme_stylebox("normal")
+	if base_style is StyleBoxFlat:
+		var dup := (base_style as StyleBoxFlat).duplicate() as StyleBoxFlat
+		for state in ["hover", "pressed", "focus", "disabled"]:
+			btn.add_theme_stylebox_override(state, dup)
+	btn.pivot_offset = Vector2.ZERO
+	btn.scale = Vector2.ONE

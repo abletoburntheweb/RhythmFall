@@ -9,6 +9,10 @@ signal card_dna_enable_blocked(modifier_id: String)
 
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+static var _cover_cache: Dictionary = {}
+static var _sel_ring_cache: Dictionary = {}
+static var _conflict_ring_cache: StyleBoxFlat = null
 const _DEFAULT_SIZE := Vector2(124, 124)
 const _LARGE_SIZE := Vector2(140, 140)
 
@@ -211,16 +215,29 @@ func _on_mouse_exited() -> void:
 
 
 func _refresh_visuals() -> void:
+	var _perf_refresh := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.refresh_visuals")
 	if modifier_id == "":
+		PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.refresh_visuals", _perf_refresh)
 		return
+	var _perf_cover := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.cover")
 	_load_cover_texture()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.cover", _perf_cover)
+	var _perf_symbol := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.symbol_icon")
 	_load_symbol_icon()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.symbol_icon", _perf_symbol)
+	var _perf_reward := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.reward")
 	_refresh_reward_label()
 	_refresh_gear_icon()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.reward", _perf_reward)
+	var _perf_locale := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.locale")
 	_refresh_card_tooltip()
 	apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.locale", _perf_locale)
+	var _perf_visual := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.card.visual_state")
 	_apply_abbr_scale(custom_minimum_size)
 	_apply_visual_state()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.visual_state", _perf_visual)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.card.refresh_visuals", _perf_refresh)
 
 
 func _sync_pivot() -> void:
@@ -241,33 +258,63 @@ func _setup_sel_ring() -> void:
 func _update_conflict_ring_style() -> void:
 	if _conflict_ring == null:
 		return
+	var border_col := _RunModifiers.card_active_conflict_border_color()
+	var cache_key := border_col.to_html()
+	if _conflict_ring_cache != null and _conflict_ring_cache is StyleBoxFlat:
+		var cached_col: Color = (_conflict_ring_cache as StyleBoxFlat).border_color
+		if cached_col == border_col:
+			if _conflict_ring.has_theme_stylebox_override("panel"):
+				var cur := _conflict_ring.get_theme_stylebox("panel")
+				if cur == _conflict_ring_cache:
+					return
+			_conflict_ring.add_theme_stylebox_override("panel", _conflict_ring_cache)
+			return
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(0, 0, 0, 0)
-	box.border_color = _RunModifiers.card_active_conflict_border_color()
+	box.border_color = border_col
 	box.set_border_width_all(2)
 	box.set_corner_radius_all(10)
+	_conflict_ring_cache = box
 	_conflict_ring.add_theme_stylebox_override("panel", box)
 
 
 func _update_sel_ring_style() -> void:
 	if _sel_ring == null or modifier_id == "":
 		return
+	var border_col := _RunModifiers.card_selection_border_color(modifier_id)
+	var cache_key := "%s|%s" % [modifier_id, border_col.to_html()]
+	if _sel_ring_cache.has(cache_key):
+		var cached: StyleBoxFlat = _sel_ring_cache[cache_key] as StyleBoxFlat
+		if _sel_ring.has_theme_stylebox_override("panel"):
+			var cur := _sel_ring.get_theme_stylebox("panel")
+			if cur == cached:
+				return
+		_sel_ring.add_theme_stylebox_override("panel", cached)
+		return
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(0, 0, 0, 0)
-	box.border_color = _RunModifiers.card_selection_border_color(modifier_id)
+	box.border_color = border_col
 	box.set_border_width_all(2)
 	box.set_corner_radius_all(10)
+	_sel_ring_cache[cache_key] = box
 	_sel_ring.add_theme_stylebox_override("panel", box)
 
 
 func _load_cover_texture() -> void:
 	if _icon_bg == null or modifier_id == "":
 		return
-	var path := _RunModifiers.cover_path(modifier_id)
-	if not ResourceLoader.exists(path):
-		path = "res://assets/modifiers/default.png"
-	if ResourceLoader.exists(path):
-		_icon_bg.texture = load(path)
+	var orig_path := _RunModifiers.cover_path(modifier_id)
+	var tex: Texture2D = null
+	if _cover_cache.has(orig_path):
+		tex = _cover_cache[orig_path]
+	else:
+		var path := orig_path
+		if not ResourceLoader.exists(path):
+			path = "res://assets/modifiers/default.png"
+		if ResourceLoader.exists(path):
+			tex = load(path) as Texture2D
+		_cover_cache[orig_path] = tex
+	_icon_bg.texture = tex
 	_icon_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
@@ -346,6 +393,10 @@ func _get_empty_button_style() -> StyleBoxEmpty:
 func _apply_visual_state() -> void:
 	var empty := _get_empty_button_style()
 	for state in ["normal", "hover", "focus", "pressed", "disabled"]:
+		if has_theme_stylebox_override(state):
+			var cur := get_theme_stylebox(state)
+			if cur == empty:
+				continue
 		add_theme_stylebox_override(state, empty)
 	if _focus_ring:
 		_focus_ring.visible = _info_locked and not _conflict_active
@@ -379,10 +430,15 @@ func _apply_visual_state() -> void:
 					sym_tint.lightened(0.08 if button_pressed else 0.0)
 				)
 	if _abbr_label:
-		_abbr_label.add_theme_color_override(
-			"font_color",
-			Color(1.0, 1.0, 1.0, 1.0) if button_pressed else Color(0.82, 0.86, 0.94, 1.0)
-		)
+		var target_color := Color(1.0, 1.0, 1.0, 1.0) if button_pressed else Color(0.82, 0.86, 0.94, 1.0)
+		if _abbr_label.has_theme_color_override("font_color"):
+			var cur_col := _abbr_label.get_theme_color("font_color")
+			if cur_col == target_color:
+				pass
+			else:
+				_abbr_label.add_theme_color_override("font_color", target_color)
+		else:
+			_abbr_label.add_theme_color_override("font_color", target_color)
 
 
 func _apply_hover_visuals() -> void:

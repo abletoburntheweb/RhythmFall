@@ -1,4 +1,4 @@
-# logic/utils/dynamic_lanes_schedule.gd
+# logic/domain/rhythm/dynamic_lanes_schedule.gd
 extends RefCounted
 class_name DynamicLanesSchedule
 

@@ -1,0 +1,77 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/profile/components/activity_calendar_card.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ActivityCalendarCard" type="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="ContentVBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.55, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 16
+text = "Activity"
+
+[node name="StreakLabel" type="Label" parent="ContentVBox/HeaderRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "Streak 0 · best 0"
+horizontal_alignment = 2
+
+[node name="NavRow" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="PrevMonthButton" type="Button" parent="ContentVBox/NavRow"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"FlatButton"
+text = "<"
+
+[node name="MonthLabel" type="Label" parent="ContentVBox/NavRow"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "Month"
+horizontal_alignment = 1
+
+[node name="NextMonthButton" type="Button" parent="ContentVBox/NavRow"]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"FlatButton"
+text = ">"
+
+[node name="WeekdayRow" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DaysGrid" type="GridContainer" parent="ContentVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 7
+
+[node name="DetailLabel" type="Label" parent="ContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.76, 0.86, 0.95)
+theme_override_font_sizes/font_size = 13
+text = "Select a day"
+autowrap_mode = 3

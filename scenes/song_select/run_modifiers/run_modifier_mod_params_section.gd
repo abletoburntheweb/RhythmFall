@@ -8,6 +8,7 @@ const _OptionButtonPopupUtils = preload("res://logic/ui/option_button_popup_util
 const DETAIL_SLIDER_SCENE := preload("res://scenes/song_select/run_modifiers/run_modifier_detail_slider.tscn")
 const CE_SETUP_DIALOG_SCENE := preload("res://scenes/song_select/run_modifiers/run_modifier_ce_setup_dialog.tscn")
 const CONFIGURE_LINK_SCENE := preload("res://scenes/song_select/run_modifiers/run_modifier_configure_link.tscn")
+const _SubUi = preload("res://scenes/song_select/run_modifiers/run_modifier_subsection_ui.gd")
 
 var _modifier_id: String = ""
 var _sliders: Dictionary = {}
@@ -29,6 +30,12 @@ var _silence_track_row: VBoxContainer = null
 var _silence_schedule_modes: Array[String] = [
 	_RunModifiers.SILENCE_SCHEDULE_SECONDS,
 	_RunModifiers.SILENCE_SCHEDULE_TRACK_PCT,
+]
+var _silence_gap_option: OptionButton = null
+var _silence_gap_modes: Array[String] = [
+	_RunModifiers.SILENCE_GAP_SOURCE_SILENCE,
+	_RunModifiers.SILENCE_GAP_SOURCE_METRONOME,
+	_RunModifiers.SILENCE_GAP_SOURCE_STEMS,
 ]
 var _heat_step_option: OptionButton = null
 var _heat_combo_row: VBoxContainer = null
@@ -52,6 +59,7 @@ func rebuild(modifier_id: String, params: Dictionary) -> void:
 	_silence_schedule_option = null
 	_silence_seconds_row = null
 	_silence_track_row = null
+	_silence_gap_option = null
 	_heat_step_option = null
 	_heat_combo_row = null
 	_heat_chart_row = null
@@ -100,8 +108,8 @@ func rebuild(modifier_id: String, params: Dictionary) -> void:
 			_add_slider(
 				"easy_timing_window_pct",
 				tr("MOD_PARAM_EASY_TIMING_WINDOW"),
-				_RunModifiers.TIMING_WINDOW_PCT_MIN,
-				_RunModifiers.TIMING_WINDOW_PCT_MAX,
+				_RunModifiers.EASY_TIMING_WINDOW_PCT_MIN,
+				_RunModifiers.EASY_TIMING_WINDOW_PCT_MAX,
 				5.0,
 				_RunModifiers.TIMING_WINDOW_PCT_DEFAULT,
 				"%",
@@ -112,8 +120,8 @@ func rebuild(modifier_id: String, params: Dictionary) -> void:
 			_add_slider(
 				"strict_timing_window_pct",
 				tr("MOD_PARAM_STRICT_TIMING_WINDOW"),
-				_RunModifiers.TIMING_WINDOW_PCT_MIN,
-				_RunModifiers.TIMING_WINDOW_PCT_MAX,
+				_RunModifiers.STRICT_TIMING_WINDOW_PCT_MIN,
+				_RunModifiers.STRICT_TIMING_WINDOW_PCT_MAX,
 				5.0,
 				_RunModifiers.TIMING_WINDOW_PCT_DEFAULT,
 				"%",
@@ -324,6 +332,8 @@ func rebuild(modifier_id: String, params: Dictionary) -> void:
 			_build_ce_block()
 		_RunModifiers.ID_HEAT:
 			_build_heat_block(params)
+		_RunModifiers.ID_METRONOME_ONLY:
+			_build_bool_check("metronome_only_use_stems", tr("MOD_PARAM_METRONOME_ONLY_USE_STEMS") if tr("MOD_PARAM_METRONOME_ONLY_USE_STEMS") != "MOD_PARAM_METRONOME_ONLY_USE_STEMS" else "Play stems if found", params)
 		_RunModifiers.ID_SILENCE:
 			_build_silence_block(params)
 		_RunModifiers.ID_SPOTLIGHT:
@@ -420,12 +430,24 @@ func apply_params(params: Dictionary) -> void:
 		var idx := _silence_schedule_modes.find(mode)
 		_silence_schedule_option.select(maxi(idx, 0))
 		_update_silence_schedule_visibility()
+	if _silence_gap_option:
+		var gap := str(p.get("silence_gap_source", _RunModifiers.SILENCE_GAP_SOURCE_DEFAULT))
+		var gap_idx := _silence_gap_modes.find(gap)
+		if gap_idx < 0:
+			# Migration fallback for old saves with silence_metronome
+			var old_metro := bool(p.get("silence_metronome", false))
+			gap_idx = _silence_gap_modes.find(_RunModifiers.SILENCE_GAP_SOURCE_METRONOME if old_metro else _RunModifiers.SILENCE_GAP_SOURCE_SILENCE)
+		_silence_gap_option.select(maxi(gap_idx, 0))
 	if _heat_step_option:
 		var heat_mode := str(p.get("heat_step_mode", _RunModifiers.HEAT_STEP_MODE_DEFAULT))
 		var heat_idx := _heat_step_modes.find(heat_mode)
 		_heat_step_option.select(maxi(heat_idx, 0))
 		_update_heat_step_visibility()
 	_update_rush_mode_visibility()
+	if _bool_checks.has("heat_affect_song_speed"):
+		_sync_pitch_check_enabled("heat_affect_song_speed")
+	elif _bool_checks.has("rush_affect_song_speed"):
+		_sync_pitch_check_enabled("rush_affect_song_speed")
 	if _ce_pick_mode_option:
 		var mode := str(p.get("combo_escalation_pick_mode", _RunModifiers.CE_PICK_MODE_DEFAULT))
 		var idx := _ce_pick_modes.find(mode)
@@ -562,6 +584,7 @@ func _build_heat_block(_params: Dictionary) -> void:
 	)
 	_build_bool_check("heat_affect_song_speed", tr("MOD_PARAM_HEAT_AFFECT_SONG"), _params)
 	_build_pitch_check("heat_preserve_pitch", _params)
+	_sync_pitch_check_enabled("heat_affect_song_speed")
 	_update_heat_step_visibility()
 
 
@@ -657,7 +680,22 @@ func _build_silence_block(params: Dictionary) -> void:
 		_RunModifiers.SILENCE_DURATION_MAX_SEC_DEFAULT,
 		" с"
 	)
-	_build_bool_check("silence_metronome", "MOD_PARAM_SILENCE_METRONOME", params)
+	# Source during silence gap: silence / metronome / stems (stems falls back to metronome)
+	var gap_lbl := Label.new()
+	gap_lbl.text = tr("MOD_PARAM_SILENCE_GAP_SOURCE") if tr("MOD_PARAM_SILENCE_GAP_SOURCE") != "MOD_PARAM_SILENCE_GAP_SOURCE" else "Source during silence"
+	gap_lbl.add_theme_font_size_override("font_size", 14)
+	add_child(gap_lbl)
+	_silence_gap_option = OptionButton.new()
+	_silence_gap_option.add_theme_font_size_override("font_size", 16)
+	_silence_gap_option.add_item(tr("MOD_PARAM_SILENCE_GAP_SILENCE") if tr("MOD_PARAM_SILENCE_GAP_SILENCE") != "MOD_PARAM_SILENCE_GAP_SILENCE" else "Silence")
+	_silence_gap_option.set_item_metadata(0, _RunModifiers.SILENCE_GAP_SOURCE_SILENCE)
+	_silence_gap_option.add_item(tr("MOD_PARAM_SILENCE_GAP_METRONOME") if tr("MOD_PARAM_SILENCE_GAP_METRONOME") != "MOD_PARAM_SILENCE_GAP_METRONOME" else "Metronome")
+	_silence_gap_option.set_item_metadata(1, _RunModifiers.SILENCE_GAP_SOURCE_METRONOME)
+	_silence_gap_option.add_item(tr("MOD_PARAM_SILENCE_GAP_STEMS") if tr("MOD_PARAM_SILENCE_GAP_STEMS") != "MOD_PARAM_SILENCE_GAP_STEMS" else "Stems")
+	_silence_gap_option.set_item_metadata(2, _RunModifiers.SILENCE_GAP_SOURCE_STEMS)
+	_silence_gap_option.item_selected.connect(_on_silence_gap_selected)
+	add_child(_silence_gap_option)
+	call_deferred("_setup_silence_gap_option")
 	_update_silence_schedule_visibility()
 
 
@@ -678,6 +716,21 @@ func _current_silence_schedule_mode() -> String:
 func _on_silence_schedule_selected(_idx: int) -> void:
 	_update_silence_schedule_visibility()
 	param_changed.emit("silence_schedule_mode", _current_silence_schedule_mode())
+
+func _setup_silence_gap_option() -> void:
+	if _silence_gap_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(_silence_gap_option, 16)
+
+func _current_silence_gap_source() -> String:
+	if _silence_gap_option == null or _silence_gap_option.item_count == 0:
+		return _RunModifiers.SILENCE_GAP_SOURCE_DEFAULT
+	var idx := _silence_gap_option.selected
+	if idx < 0:
+		idx = 0
+	return str(_silence_gap_option.get_item_metadata(idx))
+
+func _on_silence_gap_selected(_idx: int) -> void:
+	param_changed.emit("silence_gap_source", _current_silence_gap_source())
 
 
 func _update_silence_schedule_visibility() -> void:
@@ -798,6 +851,7 @@ func _build_rush_block(params: Dictionary) -> void:
 	)
 	_build_bool_check("rush_affect_song_speed", tr("MOD_PARAM_RUSH_AFFECT_SONG"), params)
 	_build_pitch_check("rush_preserve_pitch", params)
+	_sync_pitch_check_enabled("rush_affect_song_speed")
 	_update_rush_mode_visibility()
 
 
@@ -819,11 +873,30 @@ func _build_bool_check(param_id: String, label_key: String, params: Dictionary, 
 	var cb := CheckButton.new()
 	cb.text = tr(label_key)
 	cb.add_theme_font_size_override("font_size", 15)
+	_SubUi.apply_modifier_checkbox(cb, 15, true)
 	cb.set_meta("param_id", param_id)
 	cb.set_pressed_no_signal(bool(_RunModifiers.sanitize_params(params).get(param_id, default_on)))
-	cb.toggled.connect(func(on: bool): param_changed.emit(param_id, on))
+	cb.toggled.connect(func(on: bool):
+		param_changed.emit(param_id, on)
+		if param_id in ["heat_affect_song_speed", "rush_affect_song_speed"]:
+			_sync_pitch_check_enabled(param_id)
+	)
 	add_child(cb)
 	_bool_checks[param_id] = cb
+
+
+func _sync_pitch_check_enabled(affect_song_param_id: String) -> void:
+	if _pitch_check == null:
+		return
+	var affect_on := false
+	if _bool_checks.has(affect_song_param_id):
+		affect_on = bool(_bool_checks[affect_song_param_id].button_pressed)
+	_pitch_check.disabled = not affect_on
+	_pitch_check.modulate = Color(1, 1, 1, 1.0 if affect_on else 0.45)
+	if affect_on:
+		_pitch_check.tooltip_text = tr("MOD_DETAIL_PRESERVE_PITCH_TIP")
+	else:
+		_pitch_check.tooltip_text = tr("MOD_DETAIL_PRESERVE_PITCH_NEEDS_SONG_SPEED")
 
 
 func _build_pitch_check(param_id: String, params: Dictionary) -> void:
@@ -831,6 +904,7 @@ func _build_pitch_check(param_id: String, params: Dictionary) -> void:
 	cb.text = tr("MOD_DETAIL_PRESERVE_PITCH")
 	cb.tooltip_text = tr("MOD_DETAIL_PRESERVE_PITCH_TIP")
 	cb.add_theme_font_size_override("font_size", 15)
+	_SubUi.apply_modifier_checkbox(cb, 15, true)
 	cb.set_meta("param_id", param_id)
 	var default_on := param_id in ["heat_preserve_pitch", "rush_preserve_pitch"]
 	cb.set_pressed_no_signal(

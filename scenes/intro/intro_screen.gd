@@ -8,6 +8,7 @@ extends Control
 @export var play_menu_music_on_exit: bool = true
 
 var game_engine: Node = null
+var _leaving_intro: bool = false
 
 
 func _ready():
@@ -18,7 +19,12 @@ func _ready():
 
 
 func _start_intro_music() -> void:
+	var _st_t0 := Time.get_ticks_usec()
+	var _ge: Node = get_tree().root.get_node_or_null("GameEngine")
 	if not play_intro_music or MusicManager == null:
+		if _ge and "_startup_trace" in _ge and _ge._startup_t0_usec != 0:
+			_ge._startup_trace["intro_start_music_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+			_ge._startup_trace["intro_start_music_at_ms"] = (Time.get_ticks_usec() - _ge._startup_t0_usec) / 1000.0
 		return
 	if MusicManager.has_method("load_audio_stream_async"):
 		MusicManager.load_audio_stream_async(
@@ -26,12 +32,19 @@ func _start_intro_music() -> void:
 			MusicManager.BGM_DIR,
 			_on_intro_music_ready
 		)
+		if _ge and "_startup_trace" in _ge and _ge._startup_t0_usec != 0:
+			_ge._startup_trace["intro_start_music_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+			_ge._startup_trace["intro_start_music_at_ms"] = (Time.get_ticks_usec() - _ge._startup_t0_usec) / 1000.0
 		return
 	MusicManager.play_menu_music(MusicManager.DEFAULT_INTRO_MUSIC)
+	if _ge and "_startup_trace" in _ge and _ge._startup_t0_usec != 0:
+		_ge._startup_trace["intro_start_music_ms"] = (Time.get_ticks_usec() - _st_t0) / 1000.0
+		_ge._startup_trace["intro_start_music_at_ms"] = (Time.get_ticks_usec() - _ge._startup_t0_usec) / 1000.0
 
 
 func _on_intro_music_ready(stream: Variant) -> void:
-	if not is_inside_tree() or not play_intro_music:
+	# Skip/timeout may land before async load finishes — never restart intro BGM in the menu.
+	if _leaving_intro or not is_inside_tree() or not play_intro_music:
 		return
 	if stream == null:
 		return
@@ -39,20 +52,31 @@ func _on_intro_music_ready(stream: Variant) -> void:
 
 
 func _setup_overlay_visibility():
-	var game_engine = get_parent()
-	if game_engine and game_engine.has_method("get_level_layer"):
-		var level_layer = game_engine.get_level_layer()
+	var ge = get_parent()
+	if ge and ge.has_method("get_level_layer"):
+		var level_layer = ge.get_level_layer()
 		if level_layer:
 			level_layer.visible = false
+
 
 func set_game_engine_reference(ge: Node):
 	game_engine = ge
 
+
 func _on_timer_timeout():
 	go_to_main_menu()
 
+
 func go_to_main_menu():
-	if play_menu_music_on_exit:
+	if _leaving_intro:
+		return
+	_leaving_intro = true
+	# Invalidate late async intro-music callback before switching BGM / scene.
+	play_intro_music = false
+	if intro_timer and not intro_timer.is_stopped():
+		intro_timer.stop()
+
+	if play_menu_music_on_exit and MusicManager:
 		MusicManager.stop_music()
 		MusicManager.play_menu_music(MusicManager.DEFAULT_MENU_MUSIC)
 
@@ -61,14 +85,9 @@ func go_to_main_menu():
 	else:
 		push_error("GameEngine не имеет метода show_main_menu")
 
+
 func _input(event):
-	if event.is_action_pressed("ui_accept"): 
-		if intro_timer.is_stopped():
+	if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
+		if _leaving_intro or intro_timer == null or intro_timer.is_stopped():
 			return
-		intro_timer.stop()
-		go_to_main_menu()
-	elif event.is_action_pressed("ui_cancel"): 
-		if intro_timer.is_stopped():
-			return
-		intro_timer.stop()
 		go_to_main_menu()

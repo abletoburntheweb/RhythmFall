@@ -1,4 +1,4 @@
-# logic/locale_manager.gd
+# logic/core/locale_manager.gd
 extends Node
 
 signal locale_changed(new_locale: String)

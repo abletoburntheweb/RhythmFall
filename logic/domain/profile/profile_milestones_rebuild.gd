@@ -1,4 +1,4 @@
-# logic/utils/profile_milestones_rebuild.gd
+# logic/domain/profile/profile_milestones_rebuild.gd
 class_name ProfileMilestonesRebuild
 extends RefCounted
 
@@ -11,6 +11,14 @@ const RESULTS_SUFFIX := "_results.json"
 
 static func rebuild_into(manager: Node) -> void:
 	if manager == null or not manager.has_method("on_run_completed"):
+		return
+	for_each_run(func(run: Dictionary) -> void:
+		manager.on_run_completed(run, true)
+	)
+
+
+static func for_each_run(callback: Callable) -> void:
+	if not callback.is_valid():
 		return
 	if not DirAccess.dir_exists_absolute(RESULTS_DIR):
 		return
@@ -50,7 +58,7 @@ static func rebuild_into(manager: Node) -> void:
 	)
 
 	for run in runs:
-		manager.on_run_completed(run, true)
+		callback.call(run)
 
 
 static func _build_song_path_map() -> Dictionary:

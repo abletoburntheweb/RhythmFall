@@ -17,6 +17,20 @@ const _GuitarHeroBindings = preload("res://logic/domain/controls/guitar_hero_bin
 const ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
 const _UiRoundedClip = preload("res://logic/ui/ui_rounded_clip.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const _ReplayRecorder = preload("res://logic/domain/replay/replay_recorder.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+const _ReplayRunHelper = preload("res://logic/domain/replay/replay_run_helper.gd")
+const _ReplayPlayback = preload("res://logic/domain/replay/replay_playback.gd")
+const _ReplayUi = preload("res://logic/domain/replay/replay_ui.gd")
+const _ReplayStore = preload("res://logic/domain/replay/replay_store.gd")
+const _ReplayPlayerBar = preload("res://scenes/game_screen/components/replay_player_bar.gd")
+const _ReplaySettingsPanel = preload("res://scenes/game_screen/components/replay_settings_panel.gd")
+const _StatusToast = preload("res://logic/ui/status_toast.gd")
+const PracticeSession = preload("res://logic/domain/practice/practice_session.gd")
+const PracticeBestsStore = preload("res://logic/data/practice_bests_store.gd")
+const PracticeHud = preload("res://scenes/game_screen/components/practice_hud.gd")
+const _RfcChartCodec = preload("res://logic/domain/charts/rfc_chart_codec.gd")
+const RhythmDnaView = preload("res://logic/data/rhythm_dna_view.gd")
 const GAME_UPDATE_DELTA = 1.0 / 60.0
 const ENDLESS_TRACK_CUE_SEC := 0.85
 const ENDLESS_PROGRESS_RESET_SEC := 0.55
@@ -29,13 +43,15 @@ const SERIES_TRACK_REVEAL_COMPACT_FADE_SEC := 0.55
 const ENDLESS_MOD_REVEAL_ICON_SIZE := 36
 const ENDLESS_MOD_REVEAL_FRAME_SIZE := 52
 const RESUME_REWIND_SECONDS := 3.0
-const RESUME_REWIND_ANIM_SECONDS := 1.5
 const RESUME_REWIND_SNAPSHOT_INTERVAL := 0.08
 const RESUME_REWIND_SNAPSHOT_KEEP := 4.5
 
 var original_vsync_mode: int = DisplayServer.VSYNC_ADAPTIVE
 var original_max_fps: int = 0
 var pauser: GameScreenPauser = null
+var _first_steps_guide: FirstStepsGuide = null
+var is_test_preview: bool = false
+var overridden_chart_path: String = ""
 
 var game_time: float = 0.0
 var countdown_remaining: int = 5
@@ -60,6 +76,47 @@ var _score_reward_multiplier: float = 1.0
 var selected_song_data: Dictionary = {}
 
 var _play_mode: String = ""
+var _launched_from_library: bool = false
+var _practice_active: bool = false
+var practice_session = null
+var _practice_bests_store = null
+var _practice_hud: Control = null
+var _practice_current_section_index: int = -1
+var _replay_recorder = null
+var _replay_watch_payload: Dictionary = {}
+var _replay_watch_source: String = ""
+var _replay_playback = null
+var _replay_playback_applying := false
+var _replay_watch_badge: Label = null
+const REPLAY_LANE_FLASH_SEC := 0.14
+var _replay_lane_flash_gen: Dictionary = {}
+
+## --- Replay Player (watch mode transport) ---
+## Доступные скорости воспроизведения (циклическое переключение кнопкой).
+const REPLAY_PLAYER_SPEEDS := [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+const REPLAY_PLAYER_AUTO_HIDE_SEC := 3.0
+var _replay_player_auto_hide_timer := 0.0
+var _replay_player_original_hit_volume := -1.0
+var _replay_hud_hidden_origins: Dictionary = {}
+var _replay_player_bar: Control = null
+var _replay_player_paused := false
+var _replay_player_pause_time := 0.0
+var _replay_player_speed := 1.0
+var _replay_player_speed_index := 2
+var _replay_visual_speed := 1.0
+var _replay_speed_tween: Tween = null
+var _replay_player_volume := 1.0
+var _replay_player_original_volume := 1.0
+var _replay_player_muted := false
+var _replay_player_mute_volume := 1.0
+var _replay_player_hit_volume := 0.5
+var _replay_sections: Array = []
+var _replay_player_section_idx := -1
+var _replay_player_ui_hidden := false
+var _replay_player_ui_tween: Tween = null
+var _replay_player_base_y := 0.0
+var _replay_settings_panel: Control = null
+var _replay_duration_s := 0.0
 var _endless_run_ref = null
 var _endless_countdown_stack: VBoxContainer = null
 var _endless_track_number_label: Label = null
@@ -112,6 +169,12 @@ const PLAYFIELD_ANCHOR_RIGHT_DEFAULT: float = 0.656
 const PLAYFIELD_WIDTH_FRACTION_DEFAULT: float = PLAYFIELD_ANCHOR_RIGHT_DEFAULT - PLAYFIELD_ANCHOR_LEFT_DEFAULT
 var _spotlight_tutorial: CanvasLayer = null
 var _score_tween: Tween = null
+
+# Временная подсказка управления для первого забега в First Steps.
+var _controls_hint_panel: Control = null
+var _controls_hint_shown: bool = false
+var _controls_hint_hide_timer: Timer = null
+var _controls_hint_hiding: bool = false
 var _score_display_value_internal: float = 0.0
 var score_display_value: float:
 	set(value):
@@ -166,6 +229,10 @@ var _rewind_active: bool = false
 var _rewind_pause_at: float = 0.0
 var _rewind_state_ring: Array = []
 var _rewind_snapshot_accum: float = 0.0
+var _rewind_lerp_from: float = 0.0
+var _rewind_lerp_to: float = 0.0
+var _rewind_lerp_elapsed: float = 0.0
+var _rewind_lerp_duration: float = 0.0
 
 var lane_highlight_nodes: Array[ColorRect] = []
 var lane_nodes: Array[ColorRect] = []
@@ -202,6 +269,12 @@ var _pending_bass_multilane_hits: int = 0
 var _pending_bass_perfect_holds: int = 0
 var _run_bass_hold_early_releases: int = 0
 var _accuracy_samples: Array = []
+# Секции RhythmDNA текущего чарта и посекционная статистика прогона для окна
+# «ТОЧНОСТЬ • БЕТА» на экране победы. Заполняются лениво из того же источника,
+# что и Practice (_load_practice_sections), и сбрасываются вместе с accuracy-сэмплами.
+var _run_sections: Array = []
+var _section_stats: Array = []
+var _section_stats_ready: bool = false
 # Поланная статистика прогона: сколько нот по каждой отображаемой линии попали
 # (perfect/good) и сколько промазали. Индекс массива = отображаемая линия.
 var _lane_hit_counts: PackedInt32Array = PackedInt32Array()
@@ -220,6 +293,43 @@ var results_manager = null
 
 var restart_timer: Timer = null
 var is_restart_held: bool = false
+var _restart_hold_overlay: Control = null
+var _restart_hold_progress: ColorRect = null
+var _restart_hold_tween: Tween = null
+var _restart_hold_label: Label = null
+var _restart_hold_cancel_label: Label = null
+var _restart_hold_generation: int = 0
+
+# --- GAME DIAG (aggregated per second, usec precision) ---
+var _diag_action: String = "START"
+var _diag_prepare_runs: int = 0
+var _diag_prepare_usec_total: int = 0
+var _diag_prepare_usec_max: int = 0
+var _diag_load_runs: int = 0
+var _diag_load_usec_total: int = 0
+var _diag_load_usec_max: int = 0
+var _diag_update_total_calls: int = 0
+var _diag_update_gameplay_calls: int = 0
+var _diag_update_early_calls: int = 0
+var _diag_update_usec_total: int = 0
+var _diag_update_usec_max: int = 0
+var _diag_update_gameplay_usec_total: int = 0
+var _diag_update_gameplay_usec_max: int = 0
+var _diag_spawn_calls: int = 0
+var _diag_spawn_usec_total: int = 0
+var _diag_spawn_usec_max: int = 0
+var _diag_updNotes_calls: int = 0
+var _diag_updNotes_usec_total: int = 0
+var _diag_updNotes_usec_max: int = 0
+var _diag_process_calls: int = 0
+var _diag_process_usec_total: int = 0
+var _diag_process_usec_max: int = 0
+var _diag_validate_calls: int = 0
+var _diag_validate_usec_total: int = 0
+var _diag_validate_usec_max: int = 0
+var _diag_max_active: int = 0
+var _diag_max_queue: int = 0
+var _diag_flush_timer: Timer = null
 
 
 const VICTORY_DELAY_AFTER_NOTES: float = 5.0
@@ -258,7 +368,288 @@ var _lane_change_tween: Tween = null
 @export var combo_color_100: Color = Color(1.0, 0.9, 0.1, 1.0)
 
 
+var _fps_game_trace_active: bool = false
+var _fps_game_trace_start_ms: int = 0
+var _fps_game_trace_next_ms: int = 0
+var _fps_game_trace_samples: int = 0
+const FPS_GAME_TRACE_DURATION_MS := 5000
+const FPS_GAME_TRACE_INTERVAL_MS := 100
+
+var _pipeline_prev_canvas: int = -1
+var _pipeline_prev_mesh: int = -1
+var _pipeline_prev_surface: int = -1
+var _pipeline_prev_draw: int = -1
+var _pipeline_prev_specialization: int = -1
+var _pipeline_frame: int = 0
+
+func _fps_game_print(msg: String) -> void:
+	var c: Node = null
+	if get_tree() and get_tree().root:
+		c = get_tree().root.get_node_or_null("Console")
+	if c and c.has_method("print_line"):
+		c.call("print_line", msg)
+
+func _start_fps_game_trace() -> void:
+	if not PerfTrace.is_enabled(PerfTrace.Level.DETAIL):
+		return
+	_fps_game_trace_active = true
+	_fps_game_trace_start_ms = Time.get_ticks_msec()
+	_fps_game_trace_next_ms = _fps_game_trace_start_ms
+	_fps_game_trace_samples = 0
+	set_process(true)
+
+func _update_fps_game_trace() -> void:
+	if not _fps_game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	if now < _fps_game_trace_next_ms:
+		return
+	var elapsed := float(now - _fps_game_trace_start_ms) / 1000.0
+	var fps := float(Engine.get_frames_per_second())
+	if fps < 1.0:
+		fps = 1.0 / maxf(get_process_delta_time(), 0.001)
+	var frame_ms := 1000.0 / maxf(fps, 1.0)
+	# Log only on significant drop or every interval, but sample every 100ms
+	_fps_game_trace_samples += 1
+	_fps_game_print("[PERF][FPS] game t=%.2fs fps=%d frame=%.1fms" % [elapsed, int(round(fps)), frame_ms])
+	_fps_game_trace_next_ms = now + FPS_GAME_TRACE_INTERVAL_MS
+	if now - _fps_game_trace_start_ms >= FPS_GAME_TRACE_DURATION_MS:
+		_fps_game_trace_samples += 0
+		_fps_game_print("[PERF][FPS] game summary samples=%d" % [_fps_game_trace_samples])
+		_fps_game_trace_active = false
+
+
+func _poll_pipeline_monitors() -> void:
+	if not PerfTrace.is_enabled(PerfTrace.Level.DETAIL):
+		return
+	_pipeline_frame += 1
+	var cur_canvas := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_CANVAS))
+	var cur_mesh := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_MESH))
+	var cur_surface := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE))
+	var cur_draw := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW))
+	var cur_spec := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION))
+	var elapsed_s := float(Time.get_ticks_msec()) / 1000.0
+	var fps := float(Engine.get_frames_per_second())
+	var frame_ms := 1000.0 / maxf(fps, 1.0)
+	var frame := Engine.get_process_frames()
+	if _pipeline_prev_canvas == -1:
+		_pipeline_prev_canvas = cur_canvas
+		_pipeline_prev_mesh = cur_mesh
+		_pipeline_prev_surface = cur_surface
+		_pipeline_prev_draw = cur_draw
+		_pipeline_prev_specialization = cur_spec
+		return
+	var changed := false
+	if cur_canvas != _pipeline_prev_canvas:
+		var delta := cur_canvas - _pipeline_prev_canvas
+		PerfTrace.record("perf.pipeline.compilations.canvas", delta)
+		PerfTrace.record("perf.render.pipeline.canvas", delta)
+		if _pipeline_prev_canvas == 0 and cur_canvas > 0:
+			PerfTrace.record("perf.pipeline.first_change.canvas", 1)
+		_fps_game_print("[PERF][PIPELINE] canvas delta=%d total=%d frame=%d t=%.2fs fps=%d frame_ms=%.1f" % [delta, cur_canvas, frame, elapsed_s, int(fps), frame_ms])
+		changed = true
+	if cur_mesh != _pipeline_prev_mesh:
+		var delta_m := cur_mesh - _pipeline_prev_mesh
+		PerfTrace.record("perf.pipeline.compilations.mesh", delta_m)
+		if _pipeline_prev_mesh == 0 and cur_mesh > 0:
+			PerfTrace.record("perf.pipeline.first_change.mesh", 1)
+		_fps_game_print("[PERF][PIPELINE] mesh delta=%d total=%d frame=%d t=%.2fs" % [delta_m, cur_mesh, frame, elapsed_s])
+		changed = true
+	if cur_surface != _pipeline_prev_surface:
+		var delta_s := cur_surface - _pipeline_prev_surface
+		PerfTrace.record("perf.pipeline.compilations.surface", delta_s)
+		if _pipeline_prev_surface == 0 and cur_surface > 0:
+			PerfTrace.record("perf.pipeline.first_change.surface", 1)
+		_fps_game_print("[PERF][PIPELINE] surface delta=%d total=%d frame=%d t=%.2fs" % [delta_s, cur_surface, frame, elapsed_s])
+		changed = true
+	if cur_draw != _pipeline_prev_draw:
+		var delta_d := cur_draw - _pipeline_prev_draw
+		PerfTrace.record("perf.pipeline.compilations.draw", delta_d)
+		PerfTrace.record("perf.render.pipeline.draw", delta_d)
+		if _pipeline_prev_draw == 0 and cur_draw > 0:
+			PerfTrace.record("perf.pipeline.first_change.draw", 1)
+		_fps_game_print("[PERF][PIPELINE] draw delta=%d total=%d frame=%d t=%.2fs fps=%d frame_ms=%.1f" % [delta_d, cur_draw, frame, elapsed_s, int(fps), frame_ms])
+		changed = true
+	if cur_spec != _pipeline_prev_specialization:
+		var delta_sp := cur_spec - _pipeline_prev_specialization
+		PerfTrace.record("perf.pipeline.compilations.specialization", delta_sp)
+		if _pipeline_prev_specialization == 0 and cur_spec > 0:
+			PerfTrace.record("perf.pipeline.first_change.specialization", 1)
+		_fps_game_print("[PERF][PIPELINE] specialization delta=%d total=%d frame=%d t=%.2fs" % [delta_sp, cur_spec, frame, elapsed_s])
+		changed = true
+	if changed:
+		PerfTrace.record("perf.pipeline.frame", frame)
+		PerfTrace.record("perf.pipeline.time_process", int(frame_ms * 1000))
+	_pipeline_prev_canvas = cur_canvas
+	_pipeline_prev_mesh = cur_mesh
+	_pipeline_prev_surface = cur_surface
+	_pipeline_prev_draw = cur_draw
+	_pipeline_prev_specialization = cur_spec
+
+var _game_trace_active: bool = false
+var _game_trace_start_ms: int = 0
+var _game_trace_start_frame: int = 0
+var _game_trace_events: Dictionary = {}
+var _game_trace_spaces: int = 0
+var _game_trace_first_gameplay_logged: bool = false
+var _game_trace_music_started_logged: bool = false
+var _game_trace_prev_music_playing: bool = false
+const GAME_TRACE_DURATION_MS := 5000
+
+func _game_trace_print(msg: String) -> void:
+	var c := get_tree().root.get_node_or_null("Console") if get_tree() and get_tree().root else null
+	if c and c.has_method("print_line"):
+		c.call("print_line", msg)
+
+func _game_trace(event: String) -> void:
+	if not _game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	var elapsed := now - _game_trace_start_ms
+	var frame := Engine.get_process_frames()
+	if not _game_trace_events.has(event):
+		_game_trace_events[event] = {"frame": frame, "t": elapsed}
+	_game_trace_print("[GAME TRACE] f=%d t=%dms %s" % [frame, elapsed, event])
+	if event == "SPACE":
+		_game_trace_spaces += 1
+
+func _game_trace_time_set(reason: String, old_t: float, new_t: float) -> void:
+	if not _game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	var elapsed := now - _game_trace_start_ms
+	var frame := Engine.get_process_frames()
+	_game_trace_print("[GAME TRACE] f=%d t=%dms GAME_TIME_SET reason=%s old=%.3f new=%.3f" % [frame, elapsed, reason, old_t, new_t])
+	if not _game_trace_events.has("GAME_TIME_SET"):
+		_game_trace_events["GAME_TIME_SET"] = {"frame": frame, "t": elapsed}
+
+func _game_trace_music_state() -> void:
+	if not _game_trace_active:
+		return
+	var is_playing := false
+	if MusicManager and MusicManager.has_method("is_music_playing"):
+		is_playing = MusicManager.is_music_playing()
+	elif MusicManager and MusicManager.has_method("get_music_player"):
+		var mp = MusicManager.get_music_player()
+		is_playing = mp != null and mp.playing
+	if is_playing != _game_trace_prev_music_playing:
+		var now := Time.get_ticks_msec()
+		var elapsed := now - _game_trace_start_ms
+		var frame := Engine.get_process_frames()
+		_game_trace_print("[GAME TRACE] f=%d t=%dms MUSIC_STATE old=%s new=%s game_time=%.3f" % [frame, elapsed, str(_game_trace_prev_music_playing), str(is_playing), game_time])
+		_game_trace_prev_music_playing = is_playing
+		if is_playing and not _game_trace_events.has("MUSIC_STATE"):
+			_game_trace_events["MUSIC_STATE"] = {"frame": frame, "t": elapsed}
+
+func _game_trace_music_request(reason: String) -> void:
+	if not _game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	var elapsed := now - _game_trace_start_ms
+	var frame := Engine.get_process_frames()
+	var pending := pending_game_music_path
+	var playing := false
+	if MusicManager and MusicManager.has_method("is_music_playing"):
+		playing = MusicManager.is_music_playing()
+	var pos := 0.0
+	if MusicManager and MusicManager.has_method("get_game_music_position_precise"):
+		pos = MusicManager.get_game_music_position_precise()
+	elif MusicManager and MusicManager.has_method("get_music_player"):
+		var mp2 = MusicManager.get_music_player()
+		if mp2 and mp2.has_method("get_playback_position"):
+			pos = mp2.get_playback_position()
+	_game_trace_print("[GAME TRACE] f=%d t=%dms MUSIC_REQUEST reason=%s game_time=%.3f pending_empty=%s playing=%s music_pos=%.3f" % [frame, elapsed, reason, game_time, str(pending == ""), str(playing), pos])
+
+func _game_trace_music_play_call(path: String) -> void:
+	if not _game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	var elapsed := now - _game_trace_start_ms
+	var frame := Engine.get_process_frames()
+	_game_trace_print("[GAME TRACE] f=%d t=%dms MUSIC_PLAY_CALL path=%s game_time=%.3f" % [frame, elapsed, path.get_file(), game_time])
+
+func _game_trace_music_fallback_detail(reason: String) -> void:
+	if not _game_trace_active:
+		return
+	var now := Time.get_ticks_msec()
+	var elapsed := now - _game_trace_start_ms
+	var frame := Engine.get_process_frames()
+	var playing := false
+	if MusicManager and MusicManager.has_method("is_music_playing"):
+		playing = MusicManager.is_music_playing()
+	var stream_name := "(null)"
+	var playback_pos := 0.0
+	var cur_file := ""
+	var stream_type := "(null)"
+	var stream_loop := "n/a"
+	var stream_len := 0.0
+	if MusicManager:
+		if MusicManager.has_method("get_music_player"):
+			var mp = MusicManager.get_music_player()
+			if mp:
+				playing = mp.playing
+				if mp.stream:
+					stream_name = str(mp.stream.resource_path) if String(mp.stream.resource_path) != "" else str(mp.stream)
+					stream_type = mp.stream.get_class()
+					if mp.stream is AudioStreamMP3:
+						stream_loop = str((mp.stream as AudioStreamMP3).loop)
+					elif mp.stream is AudioStreamOggVorbis:
+						stream_loop = str((mp.stream as AudioStreamOggVorbis).loop)
+					if mp.stream.has_method("get_length"):
+						stream_len = float(mp.stream.get_length())
+				if mp.has_method("get_playback_position"):
+					playback_pos = mp.get_playback_position()
+		if "current_game_music_file" in MusicManager:
+			cur_file = String(MusicManager.current_game_music_file)
+	# Also precise pos via MusicManager helpers if available
+	var precise_pos := playback_pos
+	if MusicManager and MusicManager.has_method("get_game_music_position_precise"):
+		precise_pos = MusicManager.get_game_music_position_precise()
+	_game_trace_print("[GAME TRACE] f=%d t=%dms MUSIC_FALLBACK_DETAIL reason=%s playing=%s game_time=%.3f playback=%.3f precise=%.3f stream=%s cur_file=%s pending_empty=%s type=%s loop=%s len=%.3f" % [frame, elapsed, reason, str(playing), game_time, playback_pos, precise_pos, stream_name.get_file() if stream_name != "(null)" else "(null)", cur_file.get_file() if cur_file != "" else "(empty)", str(pending_game_music_path == ""), stream_type, stream_loop, stream_len])
+
+func _start_game_trace() -> void:
+	if not PerfTrace.is_enabled(PerfTrace.Level.DETAIL):
+		return
+	_game_trace_active = true
+	_game_trace_start_ms = Time.get_ticks_msec()
+	_game_trace_start_frame = Engine.get_process_frames()
+	_game_trace_events.clear()
+	_game_trace_spaces = 0
+	_game_trace_first_gameplay_logged = false
+	_game_trace_music_started_logged = false
+	_game_trace_prev_music_playing = MusicManager.is_music_playing() if MusicManager and MusicManager.has_method("is_music_playing") else false
+	set_process(true)
+	_game_trace("GAME_SCREEN_READY")
+	# Summary after duration
+	var summary_timer := get_tree().create_timer(float(GAME_TRACE_DURATION_MS) / 1000.0)
+	summary_timer.timeout.connect(func() -> void:
+		if not _game_trace_active:
+			return
+		_game_trace_active = false
+		var lines := PackedStringArray()
+		lines.append("[GAME TRACE] summary")
+		for k in ["GAME_SCREEN_READY", "COUNTDOWN_START", "SPACE", "SKIP_COUNTDOWN", "GAMEPLAY_START", "MUSIC_REQUEST", "MUSIC_STARTED", "FIRST_GAMEPLAY_FRAME", "RESTART", "RESET", "COUNTDOWN_RESTART"]:
+			if _game_trace_events.has(k):
+				var e: Dictionary = _game_trace_events[k]
+				lines.append("%s: f=%d t=%dms" % [k.to_lower(), int(e.get("frame", 0)), int(e.get("t", 0))])
+			else:
+				lines.append("%s: none" % k.to_lower())
+		lines.append("spaces: %d" % _game_trace_spaces)
+		# Also include restart/reset if not in list
+		_game_trace_print("\n".join(lines))
+	, CONNECT_ONE_SHOT)
+
 func _ready():
+	var _t_ready := PerfTrace.begin("perf.detail.game_screen.ready")
+	# Check for Test Play override set by SongSelect (synchronous, fixes deferred race)
+	var _test_root = Engine.get_main_loop().root if Engine.get_main_loop() else null
+	if _test_root and _test_root.has_meta("rhythmfall_test_preview") and bool(_test_root.get_meta("rhythmfall_test_preview")):
+		is_test_preview = true
+		_launched_from_library = false
+		if _test_root.has_meta("rhythmfall_test_chart_path"):
+			overridden_chart_path = str(_test_root.get_meta("rhythmfall_test_chart_path"))
+		_test_root.remove_meta("rhythmfall_test_preview")
+		_test_root.remove_meta("rhythmfall_test_chart_path")
 	add_to_group("locale_refresh")
 	game_engine = get_parent()
 	var game_theme = preload("res://ui/theme/game_theme.gd").build_theme()
@@ -349,6 +740,9 @@ func _ready():
 	pauser.song_select_requested.connect(_exit_to_song_select)
 	pauser.settings_requested.connect(_open_settings_from_pause)
 	pauser.exit_to_menu_requested.connect(_exit_to_main_menu)
+	pauser.pause_menu_shown.connect(_first_steps_refresh_guide)
+	pauser.pause_menu_hidden.connect(_first_steps_refresh_guide)
+	_setup_first_steps_guide()
 	
 	set_process_input(true)
 	
@@ -361,6 +755,59 @@ func _ready():
 
 	call_deferred("_refresh_run_hud_layout")
 	call_deferred("apply_locale")
+	_diag_flush_timer = Timer.new()
+	_diag_flush_timer.wait_time = 1.0
+	_diag_flush_timer.timeout.connect(_diag_flush)
+	add_child(_diag_flush_timer)
+	_diag_flush_timer.start()
+	print("[GAME DIAG] ACTION=START")
+	_diag_action = "START"
+	_start_game_trace()
+	PerfTrace.end("perf.detail.game_screen.ready", _t_ready)
+	_start_fps_game_trace()
+
+
+func _diag_flush() -> void:
+	if not gameplay_started and not countdown_active:
+		return
+	# Pull validate from ChartStemManager static
+	var v_snap: Dictionary = ChartStemManager._diag_snapshot()
+	var v_calls: int = int(v_snap.get("calls", 0))
+	var v_total: int = int(v_snap.get("total", 0))
+	var v_max: int = int(v_snap.get("max", 0))
+	ChartStemManager._diag_reset()
+	# Snapshot game_screen counters before reset for calc
+	var upd_total_calls: int = _diag_update_total_calls
+	var upd_gameplay_calls: int = _diag_update_gameplay_calls
+	var upd_early_calls: int = _diag_update_early_calls
+	var proc_calls: int = _diag_process_calls
+	var spawn_calls: int = _diag_spawn_calls
+	var updNotes_calls: int = _diag_updNotes_calls
+	# Use usec for avg
+	var upd_total_ms: float = float(_diag_update_usec_total) / 1000.0
+	var upd_gameplay_ms: float = float(_diag_update_gameplay_usec_total) / 1000.0
+	var proc_ms: float = float(_diag_process_usec_total) / 1000.0
+	var spawn_ms: float = float(_diag_spawn_usec_total) / 1000.0
+	var updNotes_ms: float = float(_diag_updNotes_usec_total) / 1000.0
+	var prep_ms: float = float(_diag_prepare_usec_total) / 1000.0
+	var load_ms: float = float(_diag_load_usec_total) / 1000.0
+	var v_ms: float = float(v_total) / 1000.0
+	# diag_validate in game_screen also may have direct counts (if any), merge
+	var v_calls_total: int = v_calls + _diag_validate_calls
+	var v_ms_total: float = v_ms + float(_diag_validate_usec_total)/1000.0
+	var v_max_ms: float = maxf(float(v_max)/1000.0, float(_diag_validate_usec_max)/1000.0)
+	print("[GAME DIAG] ACTION=%s update_total=%d(early%d gameplay%d) upd_ms=%.2f(max%.2f) gameplay_ms=%.2f(max%.2f) process=%d(%.2fms max%.2f) spawn=%d(%.2fms max%.2f) updNotes=%d(%.2fms max%.2f) active_max=%d queue_max=%d" %
+		[_diag_action, upd_total_calls, upd_early_calls, upd_gameplay_calls, upd_total_ms, float(_diag_update_usec_max)/1000.0, upd_gameplay_ms, float(_diag_update_gameplay_usec_max)/1000.0, proc_calls, proc_ms, float(_diag_process_usec_max)/1000.0, spawn_calls, spawn_ms, float(_diag_spawn_usec_max)/1000.0, updNotes_calls, updNotes_ms, float(_diag_updNotes_usec_max)/1000.0, _diag_max_active, _diag_max_queue])
+	print("[GAME DIAG] timings prepare=%d(%.2fms max%.2f) load=%d(%.2fms max%.2f) validate=%d(%.2fms max%.2f)" %
+		[_diag_prepare_runs, prep_ms, float(_diag_prepare_usec_max)/1000.0, _diag_load_runs, load_ms, float(_diag_load_usec_max)/1000.0, v_calls_total, v_ms_total, v_max_ms])
+	# reset per-sec (keep prepare/load cumulative? reset per-sec for sec rate, but keep total? For sec rate reset all)
+	_diag_update_total_calls = 0; _diag_update_gameplay_calls = 0; _diag_update_early_calls = 0
+	_diag_update_usec_total = 0; _diag_update_usec_max = 0; _diag_update_gameplay_usec_total = 0; _diag_update_gameplay_usec_max = 0
+	_diag_process_calls = 0; _diag_process_usec_total = 0; _diag_process_usec_max = 0
+	_diag_spawn_calls = 0; _diag_spawn_usec_total = 0; _diag_spawn_usec_max = 0
+	_diag_updNotes_calls = 0; _diag_updNotes_usec_total = 0; _diag_updNotes_usec_max = 0
+	_diag_validate_calls = 0; _diag_validate_usec_total = 0; _diag_validate_usec_max = 0
+	_diag_max_active = 0; _diag_max_queue = 0
 
 
 func apply_locale() -> void:
@@ -424,6 +871,8 @@ func _on_strong_beat(_i):
 	_pulse_hit_zone(true)
 
 func _spawn_hit_particles(lane: int, base_color: Color, perfect: bool) -> void:
+	if _replay_watch_active() and _replay_hide_option_enabled("hit_effects"):
+		return
 	if not notes_container or not is_instance_valid(notes_container):
 		return
 	var lane_w := get_lane_width_at(lane)
@@ -742,7 +1191,9 @@ func _sync_game_time_with_game_music():
 		target = MusicManager.get_game_music_position()
 	var drift = target - game_time
 	if abs(drift) > AUDIO_SYNC_DRIFT_THRESHOLD_SEC:
+		var _old_gt_sync := game_time
 		game_time = target
+		_game_trace_time_set("SYNC", _old_gt_sync, game_time)
 
 func _autoplay_chart_now() -> float:
 	return get_song_time()
@@ -824,6 +1275,8 @@ func _hud_shell_visible() -> bool:
 
 func _error_meter_should_show() -> bool:
 	if not SettingsManager.get_show_error_meter():
+		return false
+	if _replay_watch_active() and _replay_hide_option_enabled("error_meter"):
 		return false
 	return _hud_shell_visible()
 
@@ -984,6 +1437,8 @@ func _set_lane_highlight_colors(color: Color):
 			lane_node.color = Color(color.r, color.g, color.b, a)
 
 func _on_player_hit(lane: int):
+	if _replay_watch_blocks_input():
+		return
 	if _defeat_blocks_gameplay_input() or game_finished or not input_enabled:
 		return
 	if pauser.is_paused:
@@ -1049,6 +1504,9 @@ func _gh_handle_system_button(event: InputEventJoypadButton) -> bool:
 		return false
 	var button_index := event.button_index
 	if button_index == _gh_skip_button:
+		if _replay_watch_handle_skip():
+			accept_event()
+			return true
 		if countdown_active:
 			skip_countdown()
 			accept_event()
@@ -1136,31 +1594,7 @@ func set_results_manager(results_mgr):
 func _on_lane_pressed_changed():
 	if not player:
 		return
-	var layout_lanes := _layout_lane_count()
-	var single_lane := _RunModifiers.is_single_lane(run_modifiers)
-	var single_lane_collapsed := single_lane and _RunModifiers.single_lane_is_collapsed(
-		run_modifiers, run_modifier_params
-	)
-	var any_pressed := false
-	if single_lane_collapsed:
-		for i in range(player.lanes_state.size()):
-			if player.lanes_state[i]:
-				any_pressed = true
-				break
-	for i in range(mini(layout_lanes, lane_highlight_nodes.size())):
-		var hl = lane_highlight_nodes[i]
-		if not hl:
-			continue
-		if single_lane_collapsed:
-			hl.visible = any_pressed and i == 0
-		elif i >= player.lanes_state.size():
-			hl.visible = false
-		else:
-			hl.visible = player.lanes_state[i]
-	for i in range(layout_lanes, lane_highlight_nodes.size()):
-		var extra_hl = lane_highlight_nodes[i]
-		if extra_hl:
-			extra_hl.visible = false
+	_refresh_replay_lane_highlights()
 	_process_hold_sustain()
 
 
@@ -1214,6 +1648,17 @@ func _tally_new_bass_perfect_holds() -> void:
 			_pending_bass_perfect_holds += 1
 
 func start_countdown():
+	if _game_trace_events.has("COUNTDOWN_START"):
+		_game_trace("COUNTDOWN_RESTART")
+	else:
+		_game_trace("COUNTDOWN_START")
+	# FAST-SPACE RACE FIX: if gameplay already started via skip before deferred countdown,
+	# do not re-enter countdown and clobber game_time/pending/timer. This window is
+	# the first deferred frame after _ready where _begin_level_start runs.
+	if gameplay_started:
+		if game_timer and game_timer.is_stopped():
+			game_timer.start()
+		return
 	if not _run_assets_prepared:
 		_prepare_run_assets()
 	_cancel_countdown_tick()
@@ -1277,7 +1722,7 @@ func _update_countdown():
 		countdown_active = false
 		if countdown_label: 
 			countdown_label.visible = false
-		input_enabled = true
+		input_enabled = not _replay_watch_active()
 		_refresh_run_hud_layout()
 		if _is_series_mode():
 			_fade_series_playfield_in()
@@ -1290,9 +1735,26 @@ func _update_countdown():
 
 func _begin_level_start() -> void:
 	_maybe_show_gameplay_tutorial()
+	_maybe_show_first_run_controls_hint()
+
+
+func _setup_first_steps_guide() -> void:
+	if not FirstStepsManager:
+		return
+	_first_steps_guide = FirstStepsGuide.new()
+	_first_steps_guide.screen_id = FirstStepsManager.SCREEN_GAME
+	add_child(_first_steps_guide)
+
+
+func _first_steps_refresh_guide() -> void:
+	if _first_steps_guide and is_instance_valid(_first_steps_guide):
+		_first_steps_guide.refresh()
 
 
 func _maybe_show_gameplay_tutorial(force: bool = false) -> void:
+	if FirstStepsManager and FirstStepsManager.is_active():
+		start_countdown()
+		return
 	if not SettingsManager or not SettingsManager.has_method("get_tutorial_gameplay_done"):
 		start_countdown()
 		return
@@ -1346,6 +1808,151 @@ func _on_gameplay_tutorial_closed() -> void:
 
 func debug_show_tutorial() -> void:
 	_maybe_show_gameplay_tutorial(true)
+
+
+## Короткая временная подсказка A/S/D/F для первого забега в First Steps.
+## Показывается слева от игрового поля, исчезает по таймеру или после первого
+## нажатия дорожки. Не перекрывает игровое поле и не является постоянным HUD.
+func _maybe_show_first_run_controls_hint() -> void:
+	if _controls_hint_shown:
+		return
+	if not FirstStepsManager or not FirstStepsManager.is_active():
+		return
+	if FirstStepsManager.get_current_step() != 3:
+		return
+	if FirstStepsManager.is_step_done(3):
+		return
+	_controls_hint_shown = true
+	_build_controls_hint_panel()
+	if _controls_hint_panel == null:
+		return
+	_controls_hint_panel.visible = true
+	_start_controls_hint_hide_timer()
+
+
+func _build_controls_hint_panel() -> void:
+	if _controls_hint_panel != null:
+		return
+	var container := MarginContainer.new()
+	container.name = "FirstRunControlsHint"
+	container.visible = false
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.anchor_left = 0.0
+	container.anchor_right = 0.34
+	container.anchor_top = 0.0
+	container.anchor_bottom = 1.0
+	container.offset_left = 24.0
+	container.offset_right = -12.0
+	add_child(container)
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(center)
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.06, 0.10, 0.85)
+	style.set_border_width_all(1)
+	style.border_color = Color(0.42, 0.68, 0.92, 0.45)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 20
+	style.content_margin_right = 20
+	style.content_margin_top = 14
+	style.content_margin_bottom = 14
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	panel.add_child(vbox)
+	var title := Label.new()
+	title.text = tr("GAME_CONTROLS_HINT_TITLE")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(0.95, 0.96, 0.99, 1))
+	vbox.add_child(title)
+	var keys_row := HBoxContainer.new()
+	keys_row.add_theme_constant_override("separation", 8)
+	keys_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(keys_row)
+	var lane_keys := _lane_key_labels()
+	for i in lane_keys.size():
+		keys_row.add_child(_make_controls_key_chip(lane_keys[i]))
+		if i < lane_keys.size() - 1:
+			var arrow := Label.new()
+			arrow.text = "→"
+			arrow.add_theme_font_size_override("font_size", 18)
+			arrow.add_theme_color_override("font_color", Color(0.55, 0.72, 0.9, 0.9))
+			keys_row.add_child(arrow)
+	_controls_hint_panel = container
+
+
+func _make_controls_key_chip(label_text: String) -> Control:
+	var chip := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.16, 0.24, 0.95)
+	style.set_border_width_all(1)
+	style.border_color = Color(0.55, 0.72, 0.9, 0.55)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	chip.add_theme_stylebox_override("panel", style)
+	var key_label := Label.new()
+	key_label.text = label_text
+	key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key_label.add_theme_font_size_override("font_size", 20)
+	key_label.add_theme_color_override("font_color", Color(0.85, 0.92, 1, 1))
+	chip.add_child(key_label)
+	return chip
+
+
+func _lane_key_labels() -> Array[String]:
+	var out: Array[String] = []
+	var defaults := [KEY_A, KEY_S, KEY_D, KEY_F]
+	var keymap: Dictionary = {}
+	if SettingsManager:
+		var raw = SettingsManager.get_setting("controls_keymap", {})
+		if raw is Dictionary:
+			keymap = raw
+	for i in 4:
+		var key := int(keymap.get("lane_%d_key" % i, defaults[i]))
+		out.append(KeyInputUtils.get_key_string_from_scancode(key))
+	return out
+
+
+func _start_controls_hint_hide_timer() -> void:
+	if _controls_hint_hide_timer != null and is_instance_valid(_controls_hint_hide_timer):
+		_controls_hint_hide_timer.stop()
+	_controls_hint_hide_timer = Timer.new()
+	_controls_hint_hide_timer.one_shot = true
+	# Первый забег: держим подсказку подольше (15 с), чтобы новичок успел
+	# прочитать раскладку до того, как игра начнёт давить нотами.
+	_controls_hint_hide_timer.wait_time = 15.0
+	_controls_hint_hide_timer.timeout.connect(_hide_first_run_controls_hint)
+	add_child(_controls_hint_hide_timer)
+	_controls_hint_hide_timer.start()
+
+
+const _CONTROLS_HINT_FADE_SEC := 0.5
+
+## Плавно гасит подсказку (fade) вместо мгновенного исчезновения — не выдёргивает
+## взгляд с игрового поля посреди первого забега. Повторные вызовы игнорируем.
+func _hide_first_run_controls_hint() -> void:
+	if _controls_hint_hide_timer != null and is_instance_valid(_controls_hint_hide_timer):
+		_controls_hint_hide_timer.stop()
+	if _controls_hint_panel == null or not is_instance_valid(_controls_hint_panel):
+		return
+	if not _controls_hint_panel.visible or _controls_hint_hiding:
+		return
+	_controls_hint_hiding = true
+	_controls_hint_panel.modulate.a = 1.0
+	var tween := create_tween()
+	tween.tween_property(_controls_hint_panel, "modulate:a", 0.0, _CONTROLS_HINT_FADE_SEC)
+	tween.tween_callback(func() -> void:
+		_controls_hint_panel.visible = false
+		_controls_hint_panel.modulate.a = 1.0
+		_controls_hint_hiding = false
+	)
 
 
 func _set_selected_song(song_data):
@@ -1411,6 +2018,11 @@ func _playfield_width_scale() -> float:
 		base_pct = SettingsManager.get_playfield_width_percent(ref_lanes)
 	# При Single Lane / Dynamic Lanes расширяем поле, чтобы ширина одной линии
 	# оставалась близкой к обычному чарту (3–5 линий).
+	# Collapsed Single Lane (1 lane) — держим нормальную ширину чарта (как для 3–5),
+	# а ноту рисуем центрированной полосой 1/3 (single_lane_strip), иначе playfield
+	# сжимается до ~18% и тянет за собой верхнюю панель/прогресс и HealthBar (см. баг-скрин).
+	if _RunModifiers.is_single_lane(run_modifiers) and _RunModifiers.single_lane_is_collapsed(run_modifiers, run_modifier_params):
+		return base_pct / 100.0
 	return (base_pct / 100.0) * (float(layout_lanes) / float(ref_lanes))
 
 
@@ -1761,9 +2373,10 @@ func get_note_despawn_y() -> float:
 	return get_note_despawn_y_for_target(NoteManager.PLAYFIELD_MAIN)
 
 
-func _set_generation_mode(mode: String): 
-	current_generation_mode = mode
-	print("GameScreen.gd: Режим генерации установлен: ", mode)
+func _set_generation_mode(mode: String):
+	# Canonical stem only — legacy "basic"/"enhanced" must not persist into victory/RR/replay.
+	current_generation_mode = NotesUtils.resolve_mode_stem_key(mode)
+	print("GameScreen.gd: Режим генерации установлен: ", current_generation_mode)
 
 
 func _set_run_modifiers(modifiers: Array) -> void:
@@ -1804,6 +2417,10 @@ func _sync_run_modifier_icon_row() -> void:
 func _apply_game_pitch_scale() -> void:
 	if modifier_runtime:
 		modifier_runtime.apply_game_pitch_scale()
+	# Replay Player: скорость воспроизведения умножается поверх скорректированной
+	# модификаторами высоты тона (HT/DT и т.п.) — аудио и таймлайн синхронны.
+	if _replay_watch_active() and not is_equal_approx(_replay_player_speed, 1.0):
+		MusicManager.set_game_pitch_scale(MusicManager.get_game_pitch_scale() * _replay_player_speed)
 
 
 func debug_apply_run_modifiers(modifiers: Array) -> void:
@@ -1817,7 +2434,12 @@ func _apply_score_reward_multiplier() -> void:
 
 
 func _effective_scroll_speed() -> float:
-	return modifier_runtime.effective_scroll_speed() if modifier_runtime else SettingsManager.get_scroll_speed()
+	var base := modifier_runtime.effective_scroll_speed() if modifier_runtime else SettingsManager.get_scroll_speed()
+	# Replay Player: visual speed is interpolated to avoid teleport on speed change.
+	# Audio pitch uses instant _replay_player_speed, visual uses _replay_visual_speed.
+	if _replay_watch_active():
+		base *= _replay_visual_speed
+	return base
 
 
 func _hit_window_perfect() -> float:
@@ -1833,6 +2455,10 @@ func _modifier_no_miss_forgiveness() -> bool:
 
 
 func _modifier_no_fail() -> bool:
+	# Practice reuses the existing No Fail logic: it must never end because of
+	# player misses, regardless of the selected modifiers.
+	if _practice_active:
+		return true
 	return _RunModifiers.has_modifier(run_modifiers, _RunModifiers.ID_NO_FAIL)
 
 
@@ -1854,6 +2480,22 @@ func _sync_health_bar_visibility() -> void:
 		var bar := _ensure_health_bar()
 		if bar:
 			bar.visible = show_setting and visible_in_run
+	_sync_progress_bar_visibility()
+
+
+func _sync_progress_bar_visibility() -> void:
+	var show_global := true
+	if SettingsManager and SettingsManager.has_method("get_show_progress_bar"):
+		show_global = SettingsManager.get_show_progress_bar()
+	var hide_replay := false
+	if _replay_watch_active():
+		hide_replay = _replay_hide_option_enabled("progress")
+	var visible_in_run := _hud_shell_visible()
+	var container := get_node_or_null("UIContainer/SongProgressContainer")
+	if container:
+		container.visible = show_global and not hide_replay and visible_in_run
+	elif progress_bar:
+		progress_bar.visible = show_global and not hide_replay and visible_in_run
 
 
 func _ensure_health_bar() -> Node:
@@ -1886,6 +2528,7 @@ func _prepare_health_intro() -> void:
 
 
 func _reset_run_health(animate: bool = true) -> void:
+	_game_trace("RESET")
 	run_health_ratio = _RunModifiers.start_health_ratio(run_modifiers, run_modifier_params)
 	var intro_duration: float = 0.55 if animate else 0.14
 	_apply_health_bar(not animate, intro_duration if animate else 0.14)
@@ -1946,12 +2589,19 @@ func _error_meter_miss_offset_ms() -> float:
 
 
 func register_miss(show_judgement: bool = true, at_song_time: float = -1.0, partner_miss: bool = false, miss_chart_lane: int = -1, miss_chart_time: float = -1.0) -> void:
+	var _perf_miss_t := PerfTrace.begin("perf.runtime.miss.total")
+	if _replay_watch_active() and not _replay_playback_applying:
+		PerfTrace.end("perf.runtime.miss.total", _perf_miss_t)
+		return
 	if partner_miss:
+		PerfTrace.end("perf.runtime.miss.total", _perf_miss_t)
 		return
 	if pauser.is_paused or _rewind_active or game_finished or countdown_active or not notes_loaded:
+		PerfTrace.end("perf.runtime.miss.total", _perf_miss_t)
 		return
 	if score_manager:
 		score_manager.add_miss_hit()
+	_practice_record_miss()
 	# Авто-промах (нота ушла за линию) относим к её отображаемой линии для Lane Stats.
 	if miss_chart_lane >= 0:
 		var ctx_time := miss_chart_time if miss_chart_time >= 0.0 else get_song_time()
@@ -1962,6 +2612,8 @@ func register_miss(show_judgement: bool = true, at_song_time: float = -1.0, part
 		_lane_stats_record(disp_lane, false)
 	var sample_time := at_song_time if at_song_time >= 0.0 else get_song_time()
 	_record_accuracy_sample(sample_time)
+	var section_time := miss_chart_time if miss_chart_time >= 0.0 else sample_time
+	_record_section_outcome(section_time, false)
 	_push_error_meter(HIT_KIND_MISS, _error_meter_miss_offset_ms())
 	if show_judgement:
 		_show_judgement(_judgement_text(HIT_KIND_MISS), judgement_color_miss)
@@ -1970,6 +2622,8 @@ func register_miss(show_judgement: bool = true, at_song_time: float = -1.0, part
 	if modifier_runtime:
 		modifier_runtime.notify_groove_addiction_miss()
 	_on_run_health_miss()
+	_record_replay_miss(sample_time, miss_chart_lane if miss_chart_lane >= 0 else -1)
+	PerfTrace.end("perf.runtime.miss.total", _perf_miss_t)
 
 
 func _try_sudden_death_end() -> void:
@@ -1982,8 +2636,353 @@ func _try_sudden_death_end() -> void:
 	call_deferred("restart_level")
 
 
+func _practice_record_hit() -> void:
+	if _practice_active and practice_session and practice_session.active:
+		practice_session.record_hit()
+		_refresh_practice_hud()
+
+
+func _practice_record_miss() -> void:
+	if _practice_active and practice_session and practice_session.active:
+		practice_session.record_miss()
+		_refresh_practice_hud()
+
+
+func _practice_available() -> bool:
+	if _replay_watch_active():
+		return false
+	if not _launched_from_library or _is_series_mode():
+		return false
+	return not _load_practice_sections().is_empty()
+
+
+func _load_practice_sections() -> Array:
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path == "":
+		return []
+	# Practice must use CURRENT chart's canonical sections.rfd (same as Replay via resolve_structure_for_song)
+	var canon_secs := NotesUtils.load_canonical_sections(song_path)
+	if canon_secs.is_empty():
+		return []
+	var sections := RhythmDnaView.annotate_sections_with_names(canon_secs)
+	if sections.is_empty():
+		# Fallback: try raw timeline if annotate produced nothing (should not happen)
+		var raw_sections := RhythmDnaView.resolve_structure_timeline_for_ui({"structure_timeline": canon_secs})
+		sections = RhythmDnaView.annotate_sections_with_names(raw_sections)
+	return sections
+
+
+func _practice_identity_key() -> String:
+	if practice_session == null:
+		return ""
+	return PracticeBestsStore.practice_key(
+		str(selected_song_data.get("path", "")),
+		current_instrument,
+		current_generation_mode,
+		lanes,
+		run_modifiers_player,
+		practice_session.section_start,
+		practice_session.section_end,
+	)
+
+
+func _practice_bests() -> PracticeBestsStore:
+	if _practice_bests_store == null:
+		_practice_bests_store = PracticeBestsStore.new()
+	return _practice_bests_store
+
+
+## Entry point called from the Pause menu after the player confirms a range.
+## Ends the current normal run WITHOUT saving any normal result, then starts the
+## Practice session loop at section_start.
+func start_practice(start_idx: int, end_idx: int) -> void:
+	if _is_series_mode():
+		return
+	var sections := _load_practice_sections()
+	if sections.is_empty():
+		return
+	practice_session = PracticeSession.new()
+	practice_session.configure(sections, start_idx, end_idx)
+	if not practice_session.active:
+		practice_session = null
+		return
+	_practice_active = true
+	_enter_practice_run()
+
+
+## Restart the active Practice run from the pause's ПЕРЕЗАПУСТИТЬ button: keeps
+## the selected range, discards the unfinished attempt (no Attempts increment, no
+## best save, session stats intact) and replays it from the pre-roll.
+func restart_practice_run() -> void:
+	if not _practice_active or practice_session == null or not practice_session.active:
+		return
+	_enter_practice_run()
+
+
+func _enter_practice_run() -> void:
+	_close_defeat_overlay()
+	if pauser and pauser.is_paused:
+		pauser.cleanup_on_game_end()
+
+	if not check_song_end_timer.is_stopped():
+		check_song_end_timer.stop()
+	if victory_delay_timer and not victory_delay_timer.is_stopped():
+		victory_delay_timer.stop()
+	pending_game_music_path = ""
+
+	_reset_modifier_audio()
+	MusicManager.stop_game_music()
+
+	_lane_layout_relayout_key = ""
+	_timing_debug_clear_ring()
+	_configure_error_meter_for_run()
+	_last_strum_at_sec = -999.0
+	_reset_autoplay_state()
+	player.reset()
+	score_manager.reset()
+	run_modifiers = run_modifiers_player.duplicate()
+	if modifier_runtime:
+		modifier_runtime.reset_dynamic_lanes_state()
+		modifier_runtime.reset_combo_escalation_state()
+	_apply_run_modifier_runtime()
+	note_manager.clear_notes()
+	perfect_hits_this_level = 0
+	_clear_resume_rewind_snapshots()
+	_clear_accuracy_samples()
+	_last_combo_value = 0
+
+	game_finished = false
+	notes_ended = false
+	skip_used = false
+	input_enabled = false
+	countdown_active = false
+	gameplay_started = false
+	notes_loaded = false
+	_run_assets_prepared = false
+
+	if not _prepare_run_assets():
+		_practice_active = false
+		practice_session = null
+		return
+
+	gameplay_started = true
+	input_enabled = true
+	if note_manager:
+		# Bound the spawn queue to the selected range [start_s, end_s): notes of
+		# the NEXT section (time >= end_s) are not part of the loop and must not
+		# be spawned/displayed (they would never reach the hit line before the
+		# cycle restarts at end_s).
+		note_manager.rewind_chart_to_time(practice_session.start_s, practice_session.end_s)
+	var practice_start := _practice_pre_roll_start(practice_session.start_s)
+	var _old_gt_prac1 := game_time
+	game_time = practice_start
+	_game_trace_time_set("PRACTICE_START", _old_gt_prac1, game_time)
+	_reset_run_health()
+	practice_session.start_attempt()
+	_practice_current_section_index = -1
+	_ensure_practice_hud()
+
+	# Start the music for the pre-roll: at a positive pre-roll position the
+	# music plays immediately at game_time so the lead-in is audible during the
+	# approach; for a Section-1 range where the pre-roll lands below 0 the music
+	# physically cannot play before 0s, so it is deferred through the standard
+	# pending path and starts the moment game_time reaches 0 (during the negative
+	# window get_song_time() falls back to game_time so notes keep their full
+	# time_to_reach approach instead of jumping near the hit line).
+	_start_practice_music()
+
+	if game_timer and game_timer.is_stopped():
+		game_timer.start()
+	check_song_end_timer.start()
+
+	if countdown_label:
+		countdown_label.visible = false
+	update_ui()
+	_update_hint()
+	_refresh_practice_hud()
+
+
+func _ensure_practice_hud() -> void:
+	if _practice_hud != null and is_instance_valid(_practice_hud):
+		return
+	var ui_container := get_node_or_null("UIContainer") as Control
+	if ui_container == null:
+		return
+	_practice_hud = PracticeHud.new()
+	ui_container.add_child(_practice_hud)
+	_practice_hud.position = Vector2(18.0, 150.0)
+	_practice_hud.z_index = 20
+	_practice_hud.setup(practice_session)
+	_refresh_practice_hud()
+
+
+func _refresh_practice_hud() -> void:
+	if _practice_hud == null or not is_instance_valid(_practice_hud):
+		return
+	_practice_hud.update_range(practice_session)
+	_practice_hud.update_stats(practice_session)
+	_practice_hud.update_best(_practice_bests().get_best_accuracy(_practice_identity_key()))
+
+
+func _remove_practice_hud() -> void:
+	if _practice_hud and is_instance_valid(_practice_hud):
+		_practice_hud.queue_free()
+	_practice_hud = null
+
+
+## Called every update frame. Loops the selected range: once game_time passes the
+## range end, the completed attempt is tallied (and a new Best Practice saved if
+## beaten), then the chart is rewound to range start and the current attempt
+## runtime state is reset so the next cycle starts clean.
+func _practice_update_loop() -> void:
+	if not _practice_active or practice_session == null or not practice_session.active:
+		return
+	_update_practice_section_announcement()
+	if game_time < practice_session.end_s:
+		return
+	var result: Dictionary = practice_session.complete_attempt()
+	if not result.is_empty() and int(result.get("played", 0)) > 0:
+		_practice_bests().submit_best(
+			_practice_identity_key(),
+			float(result.get("accuracy", 0.0)),
+			int(result.get("max_combo", 0)),
+			{
+				"song_path": str(selected_song_data.get("path", "")),
+				"instrument": current_instrument,
+				"mode": current_generation_mode,
+				"lanes": lanes,
+				"modifiers": run_modifiers_player.duplicate(),
+				"section_start": practice_session.section_start,
+				"section_end": practice_session.section_end,
+			},
+		)
+	if note_manager:
+		note_manager.reset_chart_for_loop(practice_session.start_s, practice_session.end_s)
+	if chart_compare and chart_compare.split_active_runtime and chart_compare.note_manager:
+		chart_compare.note_manager.rewind_chart_to_time(practice_session.start_s, practice_session.end_s)
+	var _old_gt_prac2 := game_time
+	game_time = _practice_pre_roll_start(practice_session.start_s)
+	_game_trace_time_set("PRACTICE_LOOP", _old_gt_prac2, game_time)
+	if MusicManager:
+		MusicManager.stop_game_music()
+	# Restart the music at the new pre-roll position (or defer through the
+	# pending path for a below-0 Section-1 pre-roll) so the next loop is not
+	# silent either and notes keep their full approach.
+	_start_practice_music()
+	_reset_attempt_runtime_state()
+	_practice_current_section_index = -1
+	_refresh_practice_hud()
+
+
+## Applies the same pre-roll math start_gameplay uses for a normal run, but
+## relative to the practice range: returns the game_time the run should start at
+## so the first note of the selected section gets a full time_to_reach approach
+## and spawns off-screen instead of appearing already in the middle of the
+## playfield. The result is earliest - time_to_reach (always), which equals the
+## previous formula for mid-song ranges whose first note sits near the section
+## start (offset < time_to_reach) and, for Section-1 ranges (offset >=
+## time_to_reach), starts the run exactly at the first note's spawn time instead
+## of at start_s with an empty playfield.
+func _practice_pre_roll_start(start_s: float) -> float:
+	if note_manager == null:
+		return start_s
+	var earliest: float = note_manager.get_earliest_note_time()
+	if earliest < 0.0:
+		return start_s
+	var pixels_per_sec := speed * (1.0 / GAME_UPDATE_DELTA)
+	var playfield_h := get_playfield_height_for_target(NoteManager.PLAYFIELD_MAIN)
+	var distance := note_spawn_travel_distance(playfield_h, float(hit_zone_y))
+	var time_to_reach := distance / pixels_per_sec
+	return earliest - time_to_reach
+
+
+func _start_practice_music() -> void:
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path == "":
+		return
+	# Negative pre-roll (a Section-1 range whose first note sits within one
+	# time_to_reach of 0): music physically cannot play before 0s, so defer it
+	# through the standard pending path — _update_game() starts it the moment
+	# game_time >= 0. Until then get_song_time() returns game_time (music not
+	# playing) so notes spawn/approach correctly during the negative window.
+	if game_time < 0.0:
+		pending_game_music_path = song_path
+		return
+	pending_game_music_path = ""
+	_start_practice_music_at(game_time)
+
+
+func _start_practice_music_at(at: float) -> void:
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path == "":
+		return
+	if MusicManager.has_method("play_game_music_at_position"):
+		MusicManager.play_game_music_at_position(song_path, at)
+	else:
+		MusicManager.play_game_music(song_path)
+	_apply_game_pitch_scale()
+	if modifier_runtime:
+		modifier_runtime.apply_audio_modifiers()
+
+
+## Each completed Practice loop is a fresh attempt: reuse the same reset
+## primitives used when a run starts so score/combo/accuracy/misses/error meter
+## (and other current-run indicators) do not leak into the next cycle.
+func _reset_attempt_runtime_state() -> void:
+	_configure_error_meter_for_run()
+	player.reset()
+	score_manager.reset()
+	perfect_hits_this_level = 0
+	_clear_resume_rewind_snapshots()
+	_clear_accuracy_samples()
+	_last_combo_value = 0
+	score_display_value = 0.0
+	accuracy_display_value = 100.0
+	if note_manager:
+		score_manager.set_total_notes(note_manager.get_spawn_queue_size())
+	_reset_run_health(false)
+
+
+## Shows the current section name in the shared center notice slot when a new
+## section is entered during Practice. Reuses show_center_game_notice so it can
+## never stack on top of other notices (lanes shuffled, modifiers, etc.).
+func _update_practice_section_announcement() -> void:
+	if practice_session == null or not practice_session.active:
+		return
+	var idx: int = practice_session.section_at_time(game_time)
+	if idx < practice_session.section_start or idx > practice_session.section_end:
+		idx = -1
+	if idx == _practice_current_section_index:
+		return
+	_practice_current_section_index = idx
+	if idx < 0:
+		return
+	var _sec_label: String = practice_session.section_label(idx)
+	if ProjectSettings.get_setting("debug/verbose_rhythm_dna", false):
+		push_warning("RNA FINAL_LABEL: index=%s section_label=%s" % [idx, _sec_label])
+	show_center_game_notice(
+		_sec_label,
+		Color(0.98, 0.64, 0.30, 1.0),
+		1.6
+	)
+
+
+func _practice_stop() -> void:
+	_practice_active = false
+	practice_session = null
+	_practice_current_section_index = -1
+	_remove_practice_hud()
+
+
 func _prepare_run_assets() -> bool:
+	var _t_prep := PerfTrace.begin("perf.detail.game_screen.prepare")
+	var _diag_t := Time.get_ticks_usec()
+	_diag_prepare_runs += 1
 	if _run_assets_prepared and notes_loaded:
+		var _dt := Time.get_ticks_usec() - _diag_t
+		_diag_prepare_usec_total += _dt
+		_diag_prepare_usec_max = maxi(_diag_prepare_usec_max, _dt)
+		PerfTrace.end("perf.detail.game_screen.prepare", _t_prep)
 		return true
 
 	_apply_score_reward_multiplier()
@@ -2017,7 +3016,20 @@ func _prepare_run_assets() -> bool:
 		modifier_runtime.prepare_energy_pulse_for_run(song_to_load)
 	if modifier_runtime and _RunModifiers.is_energy_balance(run_modifiers):
 		modifier_runtime.prepare_energy_balance_for_run(song_to_load)
-	note_manager.load_notes_from_file(song_to_load, current_generation_mode, _chart_lanes, current_chart_tag)
+	if is_test_preview and overridden_chart_path != "" and FileAccess.file_exists(DirectoryUtils.to_absolute(overridden_chart_path)):
+		# Test preview: load the exact user-selected .rf via existing loader path (with .rfc correction)
+		var test_notes: Array = _RfcChartCodec.read_file(overridden_chart_path)
+		if test_notes.size() > 0:
+			# Use existing NoteManager path for chart notes: _chart_notes_master + note_spawn_queue
+			note_manager._chart_notes_master = test_notes.duplicate(true)
+			note_manager.note_spawn_queue = test_notes.duplicate(true)
+			note_manager.note_spawn_queue.sort_custom(func(a, b) -> bool: return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
+		else:
+			note_manager.load_notes_from_file(song_to_load, current_generation_mode, _chart_lanes, current_chart_tag)
+	else:
+		note_manager.load_notes_from_file(song_to_load, current_generation_mode, _chart_lanes, current_chart_tag)
+	# Keep mode in sync with the stem actually resolved from disk (avoids RR/replay drift).
+	current_generation_mode = NotesUtils.resolve_mode_stem_key(current_generation_mode)
 	note_manager.prune_non_play_lanes(run_modifiers, lanes, _chart_lanes)
 	if modifier_runtime and _RunModifiers.is_rush(run_modifiers):
 		modifier_runtime.prepare_rush_for_run(song_to_load)
@@ -2041,14 +3053,23 @@ func _prepare_run_assets() -> bool:
 		notes_loaded = true
 		_run_assets_prepared = true
 		score_manager.set_total_notes(note_manager.get_spawn_queue_size())
+		var _dt2 := Time.get_ticks_usec() - _diag_t
+		_diag_prepare_usec_total += _dt2
+		_diag_prepare_usec_max = maxi(_diag_prepare_usec_max, _dt2)
+		PerfTrace.end("perf.detail.game_screen.prepare", _t_prep)
 		return true
 
 	notes_loaded = false
 	_run_assets_prepared = false
+	var _dt3 := Time.get_ticks_usec() - _diag_t
+	_diag_prepare_usec_total += _dt3
+	_diag_prepare_usec_max = maxi(_diag_prepare_usec_max, _dt3)
+	PerfTrace.end("perf.detail.game_screen.prepare", _t_prep)
 	return false
 
 
 func start_gameplay():
+	_game_trace("GAMEPLAY_START")
 	if gameplay_started:
 		return
 
@@ -2066,6 +3087,9 @@ func start_gameplay():
 	_lane_layout_relayout_key = ""
 	_timing_debug_clear_ring()
 	_reset_autoplay_state()
+	_begin_replay_recording()
+	if _replay_watch_active():
+		_StatusToast.show_from_node(self, "replay", TranslationServer.translate("REPLAY_WATCH_STARTED"), "info")
 
 	var song_to_load = selected_song_data
 	if not song_to_load or not song_to_load.get("path"):
@@ -2089,12 +3113,19 @@ func start_gameplay():
 
 	pending_game_music_path = ""
 	if should_delay_music and pre_delay > 1e-4:
+		var _old_gt1 := game_time
 		game_time = -pre_delay
+		_game_trace_time_set("START_GAMEPLAY", _old_gt1, game_time)
 		pending_game_music_path = selected_song_data.get("path", "")
+		_game_trace_music_request("START_GAMEPLAY")
 	elif should_delay_music:
+		var _old_gt2 := game_time
 		game_time = 0.0
+		_game_trace_time_set("START_GAMEPLAY", _old_gt2, game_time)
 	else:
+		var _old_gt3 := game_time
 		game_time = 0.0
+		_game_trace_time_set("START_GAMEPLAY", _old_gt3, game_time)
 
 	MusicManager.play_level_start_sound()
 
@@ -2102,14 +3133,22 @@ func start_gameplay():
 	if pending_game_music_path != "":
 		pass
 	elif song_path != "":
+		_game_trace_music_request("START_GAMEPLAY")
+		_game_trace_music_play_call(song_path)
 		MusicManager.play_game_music(song_path)
 		_apply_game_pitch_scale()
 		if modifier_runtime:
 			modifier_runtime.apply_audio_modifiers()
 
+	# Ensure game_timer is running even if start_gameplay was triggered before
+	# start_countdown had a chance to start it (fast Space in first frame).
+	if game_timer and game_timer.is_stopped():
+		game_timer.start()
 	check_song_end_timer.start()
 	_update_hint()
 	_timing_debug_log_session_start(String(song_to_load.get("path", "")))
+	if _replay_watch_active():
+		_replay_player_begin()
 
 func _chart_time_advance_delta() -> float:
 	var advance := GAME_UPDATE_DELTA
@@ -2121,6 +3160,15 @@ func _chart_time_advance_delta() -> float:
 
 
 func _rewind_visual_tick() -> void:
+	if _rewind_lerp_duration > 0.0:
+		_rewind_lerp_elapsed += GAME_UPDATE_DELTA
+		var u := clampf(_rewind_lerp_elapsed / _rewind_lerp_duration, 0.0, 1.0)
+		# Smoothstep — chart visibly rewinds instead of teleporting to -3s.
+		var s := u * u * (3.0 - 2.0 * u)
+		var _old_gt_rew2 := game_time
+		game_time = lerpf(_rewind_lerp_from, _rewind_lerp_to, s)
+		_game_trace_time_set("REWIND_LERP", _old_gt_rew2, game_time)
+		_rewind_pause_at = game_time
 	update_ui()
 	if note_manager:
 		note_manager.update_notes()
@@ -2189,13 +3237,29 @@ func _restore_resume_rewind_snapshot(target_time: float) -> void:
 
 
 func _update_game():
+	var _diag_upd_t := Time.get_ticks_usec()
+	_diag_update_total_calls += 1
 	if game_finished or countdown_active:
+		_diag_update_early_calls += 1
+		var _dt_e := Time.get_ticks_usec() - _diag_upd_t
+		_diag_update_usec_total += _dt_e
+		_diag_update_usec_max = maxi(_diag_update_usec_max, _dt_e)
 		return
 	if pauser.is_paused:
+		_diag_update_early_calls += 1
+		var _dt_e2 := Time.get_ticks_usec() - _diag_upd_t
+		_diag_update_usec_total += _dt_e2
+		_diag_update_usec_max = maxi(_diag_update_usec_max, _dt_e2)
 		return
 	if _rewind_active:
 		_rewind_visual_tick()
+		_diag_update_early_calls += 1
+		var _dt_e3 := Time.get_ticks_usec() - _diag_upd_t
+		_diag_update_usec_total += _dt_e3
+		_diag_update_usec_max = maxi(_diag_update_usec_max, _dt_e3)
 		return
+	_diag_update_gameplay_calls += 1
+	var _diag_gameplay_t := Time.get_ticks_usec()
 
 	_capture_resume_rewind_snapshot(GAME_UPDATE_DELTA)
 
@@ -2204,15 +3268,46 @@ func _update_game():
 	if pending_game_music_path != "" and game_time >= 0.0:
 		var p := pending_game_music_path
 		pending_game_music_path = ""
+		_game_trace_music_request("PENDING_MUSIC")
+		_game_trace_music_play_call(p)
 		MusicManager.play_game_music(p)
 		_apply_game_pitch_scale()
 		if modifier_runtime:
 			modifier_runtime.apply_audio_modifiers()
+		if _replay_watch_active():
+			_replay_player_apply_volume()
+
+	# A: invariant — gameplay started but music not playing and no pending → ensure music (skip race)
+	if gameplay_started and not game_finished and pending_game_music_path == "" and not MusicManager.is_music_playing():
+		var song_path_fix := str(selected_song_data.get("path", ""))
+		if song_path_fix != "" and game_time >= 0.0:
+			_game_trace_music_request("MUSIC_FALLBACK_INVARIANT")
+			_game_trace_music_fallback_detail("MUSIC_FALLBACK_INVARIANT")
+			# DIAGNOSTIC ONLY:
+			# Temporarily disabled to observe the original AudioStreamPlayer failure
+			# without automatic recovery/restart from position 0.
+			# _game_trace_music_play_call(song_path_fix)
+			# MusicManager.play_game_music(song_path_fix)
+			# _apply_game_pitch_scale()
+			# if modifier_runtime:
+			# 	modifier_runtime.apply_audio_modifiers()
+			# if _replay_watch_active():
+			# 	_replay_player_apply_volume()
+			pass
 
 	_sync_game_time_with_game_music()
+	_game_trace_music_state()
 	speed = _effective_scroll_speed()
+	if gameplay_started and not _game_trace_first_gameplay_logged:
+		_game_trace_first_gameplay_logged = true
+		_game_trace("FIRST_GAMEPLAY_FRAME")
+	if not _game_trace_music_started_logged and MusicManager.is_music_playing():
+		_game_trace_music_started_logged = true
+		_game_trace("MUSIC_STARTED")
 	if gameplay_started and not game_finished:
 		_apply_game_pitch_scale()
+
+	_practice_update_loop()
 
 	_maybe_flash_new_record()
 
@@ -2233,6 +3328,10 @@ func _update_game():
 		_update_hint()
 	
 	update_ui()
+	if _replay_watch_active():
+		_replay_player_refresh()
+		_replay_player_check_section_marker(game_time)
+		_replay_player_tick_auto_hide(GAME_UPDATE_DELTA)
 	if audio_background:
 		audio_background.update(GAME_UPDATE_DELTA)
 	
@@ -2248,6 +3347,9 @@ func _update_game():
 	if auto_play_enabled:
 		_auto_play_simulate()
 
+	if _replay_watch_active():
+		_poll_replay_playback()
+
 	_process_hold_sustain()
 
 	note_manager.update_notes()
@@ -2259,9 +3361,22 @@ func _update_game():
 	
 	if debug_menu and debug_menu.visible and debug_menu.has_method("update_debug_info"):
 		debug_menu.update_debug_info(self)
+	var _diag_gameplay_dt := Time.get_ticks_usec() - _diag_gameplay_t
+	_diag_update_gameplay_usec_total += _diag_gameplay_dt
+	_diag_update_gameplay_usec_max = maxi(_diag_update_gameplay_usec_max, _diag_gameplay_dt)
+	var _diag_total_dt := Time.get_ticks_usec() - _diag_upd_t
+	_diag_update_usec_total += _diag_total_dt
+	_diag_update_usec_max = maxi(_diag_update_usec_max, _diag_total_dt)
+	if note_manager:
+		_diag_max_active = maxi(_diag_max_active, note_manager.notes.size())
+		_diag_max_queue = maxi(_diag_max_queue, note_manager.note_spawn_queue.size())
 
 func _check_song_end():
 	if pauser.is_paused or game_finished or _rewind_active:
+		return
+	if _practice_active:
+		return
+	if _replay_player_paused:
 		return
 
 	var spawn_queue_empty = note_manager.get_spawn_queue_size() == 0
@@ -2316,15 +3431,37 @@ func _reset_modifier_audio() -> void:
 
 
 func end_game():
+	if is_test_preview:
+		print("[RUN PIPELINE] game_screen.end_game early_return reason=test_preview — no persistent save")
+		game_finished = true
+		# Show victory/defeat without saving records/stats — use normal flow but skip persistent guards (handled in _record_* and _new_record_setup)
+		if _replay_watch_active():
+			_finish_replay_watch()
+			return
+		# For test preview, show victory/defeat directly without going through normal record path
+		var acc: float = float(score_manager.get_accuracy()) if score_manager else 0.0
+		var cleared: bool = acc >= 70.0 or (score_manager and score_manager.get_score() > 0)
+		if cleared:
+			_show_victory_for_test_preview()
+		else:
+			_show_defeat_for_test_preview()
+		return
+	print("[RUN PIPELINE] game_screen.end_game entered game_finished=%s replay_active=%s series=%s paused=%s play_mode=%s song_path=%s source=%s" % [str(game_finished), str(_replay_watch_active()), str(_is_series_mode()), str(pauser.is_paused if pauser else false), str(_play_mode), str(selected_song_data.get("path","")), "normal_or_debug"])
 	if game_finished:
+		print("[RUN PIPELINE] game_screen.end_game early_return reason=game_finished")
+		return
+	if _replay_watch_active():
+		print("[RUN PIPELINE] game_screen.end_game early_return reason=replay_watch_active -> _finish_replay_watch")
+		_finish_replay_watch()
 		return
 	if _is_series_mode():
+		print("[RUN PIPELINE] game_screen.end_game early_return reason=series_mode -> _end_game_series_track_cleared play_mode=%s" % str(_play_mode))
 		_end_game_series_track_cleared()
 		return
-	Engine.max_fps = original_max_fps
-	DisplayServer.window_set_vsync_mode(original_vsync_mode)
+	_restore_run_display_state()
 	
 	if pauser.is_paused:
+		print("[RUN PIPELINE] game_screen.end_game early_return reason=pauser.is_paused cleanup")
 		pauser.cleanup_on_game_end()
 		return
 
@@ -2360,7 +3497,7 @@ func end_game():
 		if not skip_instrument_achs:
 			var mode_stem := str(current_generation_mode)
 			var pair := _GoalDiff.pair_from_stem(mode_stem)
-			if str(pair.get("difficulty", "")) == "dense" or mode_stem.ends_with("_dense"):
+			if str(pair.get("difficulty", "")) == "hard" or mode_stem.ends_with("_hard") or mode_stem.ends_with("_dense"):
 				PlayerDataManager.add_drum_dense_clear()
 	elif current_instrument == "bass":
 		PlayerDataManager.add_bass_level_completed()
@@ -2374,11 +3511,14 @@ func end_game():
 	victory_song_info["instrument"] = current_instrument 
 	victory_song_info["mode"] = current_generation_mode
 	victory_song_info["lanes"] = lanes
+	victory_song_info["play_mode"] = _play_mode
 	victory_song_info["modifiers"] = run_modifiers_player.duplicate()
 	victory_song_info["modifier_params"] = run_modifier_params.duplicate()
 	victory_song_info["accuracy_timeline"] = _accuracy_samples.duplicate(true)
 	victory_song_info["accuracy_timeline_duration"] = _get_song_duration_seconds()
+	victory_song_info["duration_sec"] = int(_get_song_duration_seconds())
 	victory_song_info["lane_stats"] = _build_lane_stats()
+	victory_song_info["section_accuracy"] = _build_section_accuracy_payload()
 	_apply_score_reward_multiplier()
 	var debug_score: int = score_manager.get_score()
 	if debug_score <= 0 and score_manager.get_raw_score() > 0:
@@ -2394,6 +3534,22 @@ func end_game():
 	var debug_perfect_hits = perfect_hits_this_level
 	var debug_missed_notes = score_manager.get_missed_notes_count()
 	var debug_hit_notes = score_manager.get_hit_notes_count()
+	
+	var _game_time_sec = game_time
+	var _duration_sec = victory_song_info["duration_sec"]
+	var _duration_ms = int(_get_song_duration_seconds() * 1000.0)
+	
+	var replay_result := _finalize_replay_recording(
+		debug_score,
+		debug_accuracy,
+		debug_max_combo,
+		int(_get_song_duration_seconds() * 1000.0),
+	)
+	var replay_path := String(replay_result.get("path", "")).strip_edges()
+	if replay_path != "":
+		victory_song_info["replay_path"] = replay_path
+	elif replay_result.get("payload", {}) is Dictionary and not (replay_result.get("payload", {}) as Dictionary).is_empty():
+		victory_song_info["replay_payload"] = (replay_result.get("payload", {}) as Dictionary).duplicate(true)
 	if debug_accuracy >= 80.0:
 		PlayerDataManager.increment_daily_progress("accuracy_80", 1, {"accuracy": debug_accuracy})
 	if debug_accuracy >= 90.0:
@@ -2416,10 +3572,11 @@ func end_game():
 			SettingsManager.get_run_modifier_params(),
 		)
 
+	print("[RUN PIPELINE] game_screen.end_game before open_victory_screen song_path=%s play_mode=%s results_manager_null=%s victory_song_info_path=%s" % [str(selected_song_data.get("path","")), str(_play_mode), str(results_manager==null), str(victory_song_info.get("path",""))])
 	var transitions = null
 	if game_engine and game_engine.has_method("get_transitions"):
 		transitions = game_engine.get_transitions()
-
+	print("[RUN PIPELINE] game_screen.end_game transitions_null=%s will_open_victory=%s" % [str(transitions==null), str(transitions!=null and transitions.has_method("open_victory_screen"))])
 	transitions.open_victory_screen(
 		debug_score,      
 		debug_combo,    
@@ -2465,6 +3622,43 @@ func _flush_pending_run_progress() -> void:
 		PlayerDataManager.add_bass_perfect_holds(bass_holds)
 
 
+func _record_activity_for_current_run(cleared: bool) -> void:
+	if is_test_preview:
+		return
+	## Series modes skip victory/defeat screens — record activity here.
+	var grade := "F"
+	if cleared and score_manager:
+		var acc := float(score_manager.get_accuracy())
+		if acc >= 100.0:
+			grade = "SS"
+		elif acc >= 95.0:
+			grade = "S"
+		elif acc >= 90.0:
+			grade = "A"
+		elif acc >= 80.0:
+			grade = "B"
+		elif acc >= 70.0:
+			grade = "C"
+		else:
+			grade = "D"
+	var play_sec := int(maxi(0.0, get_song_time()))
+	var run_score := 0
+	var run_combo := 0
+	if score_manager:
+		run_score = int(score_manager.get_score())
+		run_combo = int(score_manager.get_max_combo())
+	PlayerDataManager.record_activity_run({
+		"grade": grade,
+		"mode": str(current_generation_mode),
+		"instrument": str(current_instrument),
+		"play_seconds": play_sec,
+		"currency_earned": 0,
+		"cleared": cleared,
+		"score": run_score,
+		"max_combo": run_combo,
+	})
+
+
 func end_game_defeat() -> void:
 	if game_finished:
 		return
@@ -2472,8 +3666,7 @@ func end_game_defeat() -> void:
 		_end_game_series_defeat()
 		return
 
-	Engine.max_fps = original_max_fps
-	DisplayServer.window_set_vsync_mode(original_vsync_mode)
+	_restore_run_display_state()
 
 	if pauser.is_paused:
 		pauser.cleanup_on_game_end()
@@ -2548,6 +3741,35 @@ func _close_defeat_overlay() -> void:
 		defeat_overlay.queue_free()
 	defeat_overlay = null
 
+func _show_victory_for_test_preview() -> void:
+	# Minimal victory for test preview — no persistent saves, just show victory screen via transitions
+	var p_score: int = int(score_manager.get_score()) if score_manager else 0
+	var p_combo: int = int(score_manager.get_max_combo()) if score_manager else 0
+	var p_max_combo: int = int(score_manager.get_max_combo()) if score_manager else 0
+	var p_accuracy: float = float(score_manager.get_accuracy()) if score_manager else 0.0
+	var victory_song_info: Dictionary = selected_song_data.duplicate()
+	victory_song_info["instrument"] = current_instrument
+	victory_song_info["mode"] = current_generation_mode
+	victory_song_info["lanes"] = lanes
+	victory_song_info["play_mode"] = _play_mode
+	victory_song_info["modifiers"] = run_modifiers_player.duplicate() if run_modifiers_player is Array else []
+	victory_song_info["modifier_params"] = run_modifier_params.duplicate() if run_modifier_params is Dictionary else {}
+	var transitions = null
+	if game_engine and game_engine.has_method("get_transitions"):
+		transitions = game_engine.get_transitions()
+	if transitions and transitions.has_method("open_victory_screen"):
+		transitions.open_victory_screen(p_score, p_combo, p_max_combo, p_accuracy, victory_song_info, results_manager, score_manager.get_missed_notes_count() if score_manager else 0, perfect_hits_this_level, score_manager.get_hit_notes_count() if score_manager else 0)
+		var parent_node = get_parent()
+		if parent_node:
+			parent_node.remove_child(self)
+			call_deferred("queue_free")
+
+func _show_defeat_for_test_preview() -> void:
+	var p_score := int(score_manager.get_score()) if score_manager else 0
+	var p_combo := int(score_manager.get_max_combo()) if score_manager else 0
+	var p_max_combo := int(score_manager.get_max_combo()) if score_manager else 0
+	var p_accuracy := float(score_manager.get_accuracy()) if score_manager else 0.0
+	_show_defeat_overlay(p_score, p_combo, p_max_combo, p_accuracy, selected_song_data)
 
 func _on_defeat_replay_requested() -> void:
 	_close_defeat_overlay()
@@ -2626,6 +3848,9 @@ func _parse_duration_string(time_str: String) -> float:
 
 func _clear_accuracy_samples() -> void:
 	_accuracy_samples.clear()
+	_run_sections = []
+	_section_stats = []
+	_section_stats_ready = false
 
 
 func _lane_stats_reset() -> void:
@@ -2714,6 +3939,8 @@ func _synthesize_lane_stats(lane_count: int, total_hits: int, total_misses: int)
 
 
 func _new_record_setup() -> void:
+	if is_test_preview:
+		return
 	_new_record_triggered = false
 	_prev_best_score = -1
 	# На модификаторах, блокирующих сохранение результата, рекорд не отслеживаем.
@@ -2840,6 +4067,57 @@ func _record_accuracy_sample(song_time: float) -> void:
 			_accuracy_samples[n - 1] = {"t": t, "acc": acc}
 			return
 	_accuracy_samples.append({"t": t, "acc": acc})
+
+
+func _ensure_run_sections() -> void:
+	if _section_stats_ready:
+		return
+	_section_stats_ready = true
+	_run_sections = _load_practice_sections()
+	_section_stats = []
+	for i in _run_sections.size():
+		_section_stats.append({"hits": 0, "misses": 0})
+
+
+func _section_index_at_time(note_time: float) -> int:
+	var t := maxf(0.0, float(note_time))
+	for i in _run_sections.size():
+		var seg: Dictionary = _run_sections[i]
+		var start := float(seg.get("start_s", 0.0))
+		var end := float(seg.get("end_s", 0.0))
+		if end <= start:
+			end = INF
+		if t >= start and t < end:
+			return i
+	return -1
+
+
+func _record_section_outcome(note_time: float, is_hit: bool) -> void:
+	if not _section_stats_ready:
+		_ensure_run_sections()
+	if _section_stats.is_empty():
+		return
+	var idx := _section_index_at_time(note_time)
+	if idx < 0 or idx >= _section_stats.size():
+		return
+	var d: Dictionary = _section_stats[idx]
+	if is_hit:
+		d["hits"] = int(d.get("hits", 0)) + 1
+	else:
+		d["misses"] = int(d.get("misses", 0)) + 1
+
+
+func _build_section_accuracy_payload() -> Array:
+	if not _section_stats_ready:
+		_ensure_run_sections()
+	var out: Array = []
+	for i in _run_sections.size():
+		var st: Dictionary = _section_stats[i] if i < _section_stats.size() else {"hits": 0, "misses": 0}
+		var entry: Dictionary = (_run_sections[i] as Dictionary).duplicate(true)
+		entry["hits"] = int(st.get("hits", 0))
+		entry["misses"] = int(st.get("misses", 0))
+		out.append(entry)
+	return out
 
 
 func get_song_duration_seconds() -> float:
@@ -3059,7 +4337,19 @@ func _pause_overlay_blocks_esc() -> bool:
 		return true
 	if _spotlight_tutorial and is_instance_valid(_spotlight_tutorial) and _spotlight_tutorial.visible:
 		return true
+	if _settings_overlay_open():
+		return true
 	return false
+
+
+func _settings_overlay_open() -> bool:
+	var game_engine = get_parent()
+	if game_engine == null or not game_engine.has_method("get_transitions"):
+		return false
+	var transitions = game_engine.get_transitions()
+	if transitions == null or not transitions.has_method("is_settings_overlay_open"):
+		return false
+	return transitions.is_settings_overlay_open()
 
 
 func set_pause_playfield_overlay_hidden(hidden: bool) -> void:
@@ -3069,6 +4359,12 @@ func set_pause_playfield_overlay_hidden(hidden: bool) -> void:
 
 
 func _input(event):
+	if event is InputEventMouseMotion and _replay_watch_active():
+		# YouTube-like: mouse movement reveals auto-hidden controls
+		if _replay_player_ui_hidden and _replay_settings_auto_hide_enabled() and not _replay_player_paused and not game_finished and not countdown_active:
+			if pauser == null or not pauser.is_paused:
+				if _replay_settings_panel == null or not _replay_settings_panel.visible:
+					_replay_player_ensure_ui_visible()
 	if get_tree() and get_tree().root:
 		var c = get_tree().root.get_node_or_null("Console")
 		if c and c.is_visible():
@@ -3078,23 +4374,34 @@ func _input(event):
 	if _defeat_blocks_gameplay_input():
 		return
 	if event is InputEventKey and !event.echo:
-		var ctrl_pressed = Input.is_physical_key_pressed(KEY_CTRL)
-		var r_pressed = Input.is_physical_key_pressed(KEY_R)
+		var ctrl_pressed = Input.is_physical_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_CTRL) or event.ctrl_pressed
+		var r_pressed = Input.is_physical_key_pressed(KEY_R) or Input.is_key_pressed(KEY_R)
 
-		if event.pressed and event.physical_keycode == KEY_R and ctrl_pressed:
-			if not is_restart_held and not restart_timer.is_stopped():
+		# Start hold if both Ctrl and R are down — handles either key order (Ctrl→R or R→Ctrl)
+		if event.pressed and not is_restart_held and ctrl_pressed and r_pressed and (event.physical_keycode == KEY_R or event.physical_keycode == KEY_CTRL or event.keycode == KEY_R or event.keycode == KEY_CTRL):
+			if not restart_timer.is_stopped():
 				restart_timer.stop()
-			if not is_restart_held:
-				is_restart_held = true
-				restart_timer.start()
-				print("GameScreen: Начат отсчёт рестарта (удерживайте Ctrl+R)...")
+			is_restart_held = true
+			restart_timer.start()
+			_show_restart_hold_overlay()
+			print("GameScreen: Начат отсчёт рестарта (удерживайте Ctrl+R)...")
+
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and is_restart_held:
+			if not restart_timer.is_stopped():
+				restart_timer.stop()
+			is_restart_held = false
+			_hide_restart_hold_overlay()
+			print("GameScreen: Рестарт отменён (Esc)")
+			get_viewport().set_input_as_handled()
+			return
 
 		if event is InputEventKey and not event.pressed:
-			if (event.physical_keycode == KEY_CTRL or event.physical_keycode == KEY_R) and is_restart_held:
+			if (event.physical_keycode == KEY_CTRL or event.physical_keycode == KEY_R or event.keycode == KEY_CTRL or event.keycode == KEY_R) and is_restart_held:
 				if not restart_timer.is_stopped():
 					restart_timer.stop()
 					print("GameScreen: Рестарт отменён (клавиша отпущена)")
 				is_restart_held = false
+				_hide_restart_hold_overlay()
 
 		var keycode = event.keycode
 		var shift_pressed = Input.is_key_pressed(KEY_SHIFT)
@@ -3105,13 +4412,18 @@ func _input(event):
 				accept_event()
 				return
 			if event.keycode == KEY_F10:
-				if not countdown_active and not game_finished and not _defeat_blocks_gameplay_input():
+				if SettingsManager and SettingsManager.has_method("get_genqa_reports_enabled") and not SettingsManager.get_genqa_reports_enabled():
+					pass
+				elif not countdown_active and not game_finished and not _defeat_blocks_gameplay_input():
 					if event.shift_pressed:
 						_close_generation_quality_range_end()
 					else:
 						_open_generation_quality_report()
-				accept_event()
-				return
+					accept_event()
+					return
+				else:
+					accept_event()
+					return
 			if event.keycode == KEY_QUOTELEFT and event.shift_pressed:
 				if debug_menu and SettingsManager.get_enable_debug_menu():
 					debug_menu.toggle_visibility()
@@ -3119,8 +4431,14 @@ func _input(event):
 
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_SPACE:
+			_game_trace("SPACE")
+		if _replay_player_handle_hotkey(event):
+			return
+		if event.keycode == KEY_SPACE:
 			if is_visible_in_tree():
 				accept_event()
+			if _replay_watch_handle_skip():
+				return
 			if countdown_active:
 				skip_countdown()
 				return
@@ -3165,6 +4483,8 @@ func _input(event):
 				_register_strum_input()
 				accept_event()
 				return
+			if player and (keycode in player.keymap):
+				_hide_first_run_controls_hint()
 			player.handle_key_press(keycode)
 
 	elif event is InputEventKey and not event.pressed:
@@ -3180,11 +4500,14 @@ func _input(event):
 		
 func skip_countdown():
 	if countdown_active:
+		_game_trace("SKIP_COUNTDOWN")
+		_diag_action = "SKIP"
+		print("[GAME DIAG] ACTION=SKIP")
 		countdown_remaining = 0
 		countdown_active = false
 		if countdown_label: 
 			countdown_label.visible = false
-		input_enabled = true
+		input_enabled = not _replay_watch_active()
 		_cancel_countdown_tick()
 		_refresh_run_hud_layout()
 		if _is_series_mode():
@@ -3201,9 +4524,11 @@ func is_resume_rewind_active() -> bool:
 func auto_pause_on_unfocus() -> void:
 	if pauser == null or pauser.is_paused:
 		return
-	if game_finished or countdown_active or not gameplay_started:
+	if game_finished or _rewind_active:
 		return
-	if _rewind_active:
+	# Countdown now participates in existing auto-pause pipeline (reuse AppWindowManager exclusive-fullscreen gate).
+	# Previously countdown_active blocked pause — genuine bug Part C.
+	if not gameplay_started and not countdown_active:
 		return
 	pauser.handle_pause_request()
 
@@ -3213,7 +4538,9 @@ func _rewind_blocks_gameplay() -> bool:
 
 
 func rewind_song_to_time(target_time: float, seek_music: bool = false) -> void:
+	var _old_gt_rew := game_time
 	game_time = maxf(0.0, target_time)
+	_game_trace_time_set("REWIND", _old_gt_rew, game_time)
 	if note_manager:
 		note_manager.rewind_chart_to_time(game_time)
 	if chart_compare and chart_compare.split_active_runtime and chart_compare.note_manager:
@@ -3228,23 +4555,30 @@ func begin_resume_rewind(
 	reason: String = "pause"
 ) -> void:
 	if _rewind_active or game_finished or countdown_active or not notes_loaded:
+		# Menu may already be closed — never leave audio stopped with pause stuck.
+		if pauser and pauser.is_paused:
+			pauser.is_paused = false
 		return
 	_rewind_active = true
 	input_enabled = false
 	var pause_at := maxf(maxf(0.0, from_song_time), maxf(0.0, game_time))
 	var start_at := maxf(0.0, pause_at - RESUME_REWIND_SECONDS)
 	var score_floor: Dictionary = score_manager.capture_rewind_snapshot() if score_manager else {}
-	_rewind_pause_at = start_at
-	game_time = start_at
+	_rewind_lerp_from = pause_at
+	_rewind_lerp_to = start_at
+	_rewind_lerp_elapsed = 0.0
+	_rewind_lerp_duration = RESUME_REWIND_SECONDS if pause_at > start_at + 0.05 else 0.0
+	_rewind_pause_at = pause_at
+	game_time = pause_at
 	if MusicManager:
 		if MusicManager.has_method("force_stop_game_track"):
 			MusicManager.force_stop_game_track()
 		else:
 			MusicManager.stop_game_music()
-	_restore_resume_rewind_snapshot(start_at)
+	# Keep pause-time score/HP; chart starts at pause then lerps back visually.
 	if score_manager and not score_floor.is_empty():
 		score_manager.apply_rewind_score_floor(score_floor)
-	rewind_song_to_time(start_at, false)
+	rewind_song_to_time(pause_at, false)
 	if note_manager and note_manager.has_method("spawn_notes"):
 		note_manager.spawn_notes()
 		note_manager.update_notes()
@@ -3273,21 +4607,34 @@ func begin_resume_rewind(
 		hint = tr("GAME_NOTICE_LAST_CHANCE")
 	elif reason == "pause":
 		hint = tr("GAME_NOTICE_RESUME_REWIND")
-	overlay.play(overlay_host, RESUME_REWIND_ANIM_SECONDS, hint)
-	await get_tree().create_timer(RESUME_REWIND_ANIM_SECONDS).timeout
+	var anim_sec := RESUME_REWIND_SECONDS if _rewind_lerp_duration > 0.0 else 0.35
+	await overlay.play(overlay_host, anim_sec, hint)
+	if not is_instance_valid(self):
+		return
 	game_time = start_at
+	_rewind_pause_at = start_at
+	_rewind_lerp_duration = 0.0
+	rewind_song_to_time(start_at, false)
+	if note_manager and note_manager.has_method("spawn_notes"):
+		note_manager.spawn_notes()
+		note_manager.update_notes()
 	if song_path != "" and MusicManager:
 		if MusicManager.has_method("play_game_music_at_position"):
 			MusicManager.play_game_music_at_position(song_path, start_at)
 		else:
 			MusicManager.play_game_music(song_path)
 			await get_tree().process_frame
+			if not is_instance_valid(self):
+				return
 			MusicManager.set_music_position(start_at)
 		_apply_game_pitch_scale()
 		if modifier_runtime:
 			modifier_runtime.apply_audio_modifiers()
 	if MusicManager:
-		MusicManager.set_music_volume_multiplier(restore_volume)
+		if _replay_watch_active():
+			_replay_player_apply_volume()
+		else:
+			MusicManager.set_music_volume_multiplier(restore_volume)
 	_apply_run_modifier_runtime()
 	_rewind_active = false
 	_rewind_pause_at = 0.0
@@ -3325,16 +4672,45 @@ func skip_intro() -> bool:
 		return false
 
 	var target_time = max(0.0, first_note_time - skip_rewind_seconds)
+	var _old_gt_skip := game_time
 	game_time = target_time
+	_game_trace_time_set("SKIP_INTRO", _old_gt_skip, game_time)
 
-	MusicManager.set_music_position(target_time)
+	# DIAG before skip: stream.loop/len/playing/playback (no behavior change, read-only).
+	if PerfTrace.is_enabled(PerfTrace.Level.DETAIL) and MusicManager and MusicManager.has_method("get_music_player"):
+		var _mp_pre := MusicManager.get_music_player()
+		if _mp_pre:
+			var _pre_stream := _mp_pre.stream
+			var _pre_type := _pre_stream.get_class() if _pre_stream else "(null)"
+			var _pre_loop := "n/a"
+			if _pre_stream is AudioStreamMP3:
+				_pre_loop = str((_pre_stream as AudioStreamMP3).loop)
+			elif _pre_stream is AudioStreamOggVorbis:
+				_pre_loop = str((_pre_stream as AudioStreamOggVorbis).loop)
+			var _pre_len := float(_pre_stream.get_length()) if _pre_stream and _pre_stream.has_method("get_length") else 0.0
+			var _pre_playing := _mp_pre.playing
+			var _pre_pos := _mp_pre.get_playback_position() if _mp_pre.has_method("get_playback_position") else 0.0
+			_game_trace_print("[GAME TRACE] f=%d t=%dms SKIP_PRE_DETAIL game_time=%.3f target=%.3f playing=%s pos=%.3f type=%s loop=%s len=%.3f pending_empty=%s" % [Engine.get_process_frames(), Time.get_ticks_msec() - _game_trace_start_ms, game_time, target_time, str(_pre_playing), _pre_pos, _pre_type, _pre_loop, _pre_len, str(pending_game_music_path == "")])
+
+	# A/B TEST: controlled regression check — use stop+stream+play instead of seek (see Phase 4D).
+	# Old: play_game_music_at_position; New (regressed): set_music_position/seek. Only this callsite.
+	var _skip_ab_path := str(selected_song_data.get("path", ""))
+	if _skip_ab_path != "":
+		MusicManager.play_game_music_at_position(_skip_ab_path, target_time)
+	else:
+		MusicManager.set_music_position(target_time)
 	note_manager.skip_notes_before_time(target_time) 
 
 	skip_used = true
 	return true
 
-func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
+func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null, replay_signed_ms: float = NAN):
+	var _perf_hit_t := PerfTrace.begin("perf.runtime.hit.total")
+	if _replay_watch_active() and not _replay_playback_applying:
+		PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
+		return
 	if pauser.is_paused or _rewind_active:
+		PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 		return
 	if _RunModifiers.is_single_lane(run_modifiers) and _RunModifiers.single_lane_is_collapsed(
 		run_modifiers, run_modifier_params
@@ -3343,8 +4719,10 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 	if not _RunModifiers.is_display_lane_playable(run_modifiers, lane, _layout_lane_count(), run_modifier_params):
 		if _modifier_no_miss_forgiveness():
 			register_miss(true)
+		PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 		return
 	if not notes_loaded:
+		PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 		return
 
 	var current_time_adjusted = _hit_time_for_judgement()
@@ -3354,6 +4732,7 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 
 	if autoplay_target != null:
 		if autoplay_target.was_hit or autoplay_target.is_missed:
+			PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 			return
 		closest_note = autoplay_target
 	else:
@@ -3385,8 +4764,10 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 
 		if candidates.size() == 0:
 			if force_perfect:
+				PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 				return
 			if _is_before_first_note():
+				PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 				return
 			_timing_debug_emit_row(lane, -1.0, -1.0, current_time_adjusted, 0.0, 0.0, "empty_zone", force_perfect)
 			if _modifier_no_miss_forgiveness():
@@ -3397,6 +4778,7 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 				MusicManager.play_miss_hit_sound()
 				if OS.is_debug_build():
 					print("[GameScreen] Игрок нажал в линии %d, но нот в зоне не было - сброс комбо (без штрафа точности)" % lane)
+			PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 			return
 
 		closest_note = candidates[0]
@@ -3427,6 +4809,7 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 		_timing_debug_push_visual_ms((_autoplay_chart_now() - note_time) * 1000.0)
 
 	if str(closest_note.note_kind) in note_manager.BASS_SUSTAIN_KINDS and closest_note.was_hit:
+		PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 		return
 
 	var hit_kind := HIT_KIND_MISS
@@ -3475,40 +4858,82 @@ func check_hit(lane: int, force_perfect: bool = false, autoplay_target = null):
 		if current_instrument == "bass" and closest_note.is_multilane:
 			_pending_bass_multilane_hits += 1
 		_record_accuracy_sample(note_time)
+		_record_section_outcome(note_time, true)
 		_lane_stats_record(lane, true)
-		_push_error_meter(hit_kind, signed_ms)
+		if replay_signed_ms != replay_signed_ms:
+			_push_error_meter(hit_kind, signed_ms)
+		else:
+			_push_error_meter(hit_kind, replay_signed_ms)
+		_record_replay_hit(lane, hit_kind, note_time, get_song_time())
+		_practice_record_hit()
 
 		if OS.is_debug_build():
 			print("[GameScreen] Игрок нажал в линии %d, попадание: %s (time_diff: %.3fs)" % [lane, hit_kind, time_diff])
 	else:
+		# Replay watch: a recorded hit judged as live-miss must not keep the
+		# lane highlight pulsed before judgement (pulse fires unconditionally
+		# in _apply_replay_event; BK6 forced recorded goods to hit).
+		# Guarded to replay-applying only — live input holds stay untouched.
+		if _replay_watch_active() and _replay_playback_applying and player:
+			player.release_lane(lane)
+			_refresh_replay_lane_highlights()
 		if closest_note.is_ghost:
 			closest_note.active = false
 			note_manager.mark_chart_note_consumed(closest_note, "miss")
 			if closest_note.visual_node:
 				closest_note.visual_node.queue_free()
+			PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 			return
 		closest_note.is_missed = true
 		note_manager.mark_chart_note_consumed(closest_note, "miss")
 		score_manager.add_miss_hit()
 		_record_accuracy_sample(note_time)
+		_record_section_outcome(note_time, false)
 		_lane_stats_record(lane, false)
 		_push_error_meter(HIT_KIND_MISS, signed_ms)
 		MusicManager.play_miss_hit_sound()
 		_combo_shake_and_dim()
 		_show_judgement(_judgement_text(HIT_KIND_MISS), judgement_color_miss)
 		_on_run_health_miss()
+		_practice_record_miss()
 		if OS.is_debug_build():
 			print("[GameScreen] Игрок нажал в линии %d, но попадание не засчитано (time_diff: %.3fs) - сброс комбо" % [lane, time_diff])
+	PerfTrace.end("perf.runtime.hit.total", _perf_hit_t)
 
 
+var _fps_drop_last_log_ms: int = 0
 func _process(delta):
+	var _diag_proc_t := Time.get_ticks_usec()
+	_diag_process_calls += 1
+	# C: FPS drop diagnostic — rare ~180→100, log to Development Console only on drop
+	if PerfTrace.is_enabled(PerfTrace.Level.DETAIL):
+		var fps_now := float(Engine.get_frames_per_second())
+		if fps_now < 120.0 and fps_now > 1.0:
+			var now_ms := Time.get_ticks_msec()
+			if now_ms - _fps_drop_last_log_ms >= 500:
+				_fps_drop_last_log_ms = now_ms
+				var c2: Node = null
+				if get_tree() and get_tree().root:
+					c2 = get_tree().root.get_node_or_null("Console")
+				if c2 and c2.has_method("print_line"):
+					c2.call("print_line", "[PERF][FPS] game drop fps=%d frame=%.1fms t=%.2fs" % [int(round(fps_now)), 1000.0/maxf(fps_now,1.0), float(now_ms - _fps_game_trace_start_ms)/1000.0 if _fps_game_trace_start_ms>0 else 0.0])
+	_update_fps_game_trace()
+	_poll_pipeline_monitors()
 	# HUD и геймплейный тик — в _update_game (60 Гц). Здесь только отсчёт и фон.
 	if countdown_active:
 		update_ui()
 		if audio_background:
 			audio_background.update(delta)
+	var _diag_proc_dt := Time.get_ticks_usec() - _diag_proc_t
+	_diag_process_usec_total += _diag_proc_dt
+	_diag_process_usec_max = maxi(_diag_process_usec_max, _diag_proc_dt)
 		
 func restart_level():
+	var _old_gt_restart := game_time
+	_game_trace("RESTART")
+	_diag_action = "RESTART"
+	print("[GAME DIAG] ACTION=RESTART")
+	_practice_stop()
 	_close_defeat_overlay()
 	speed = _effective_scroll_speed()
 
@@ -3518,6 +4943,9 @@ func restart_level():
 	if pauser and pauser.is_paused:
 		pauser.cleanup_on_game_end()
 
+	# Prevent _update_game (spawn/update) running concurrently with heavy reset/load.
+	if game_timer and not game_timer.is_stopped():
+		game_timer.stop()
 	if not check_song_end_timer.is_stopped():
 		check_song_end_timer.stop()
 	if victory_delay_timer and not victory_delay_timer.is_stopped():
@@ -3557,7 +4985,9 @@ func restart_level():
 	_last_combo_value = 0
 	if audio_background:
 		audio_background.reset_visuals()
+	var _old_gt_rst := game_time
 	game_time = 0.0
+	_game_trace_time_set("RESTART_LEVEL", _old_gt_rst, game_time)
 	game_finished = false
 	notes_ended = false
 	skip_used = false
@@ -3576,17 +5006,120 @@ func restart_level():
 	if game_timer and game_timer.is_stopped():
 		game_timer.start()
 
+	if _replay_watch_active():
+		_replay_playback = _ReplayPlayback.new()
+		_replay_playback.setup(_replay_watch_payload)
+		_replay_player_begin()
+		_replay_player_apply_hud_hidden()
+
 	start_countdown()
 	
 func _on_restart_confirmed():
+	if not is_restart_held:
+		return
 	is_restart_held = false
+	_hide_restart_hold_overlay()
 	print("GameScreen: Рестарт подтверждён!")
 	MusicManager.play_restart_sound()
 	if pauser and pauser.is_paused:
 		pauser.cleanup_on_game_end()
-	restart_level()	
+	restart_level()
+
+
+func _ensure_restart_hold_overlay() -> void:
+	if _restart_hold_overlay != null and is_instance_valid(_restart_hold_overlay):
+		return
+	_restart_hold_overlay = Control.new()
+	_restart_hold_overlay.name = "RestartHoldOverlay"
+	_restart_hold_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_restart_hold_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_restart_hold_overlay.visible = false
+	_restart_hold_overlay.z_index = 110
+	add_child(_restart_hold_overlay)
+	var bottom := Control.new()
+	bottom.name = "BottomBar"
+	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom.offset_top = -28
+	bottom.offset_bottom = -12
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_restart_hold_overlay.add_child(bottom)
+	var bg := ColorRect.new()
+	bg.name = "BgLine"
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0.42, 0.57, 0.82, 0.18)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom.add_child(bg)
+	_restart_hold_progress = ColorRect.new()
+	_restart_hold_progress.name = "ProgressLine"
+	_restart_hold_progress.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_restart_hold_progress.anchor_right = 0.0
+	_restart_hold_progress.offset_right = 0
+	_restart_hold_progress.color = Color(0.42, 0.57, 0.82, 1.0)
+	_restart_hold_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom.add_child(_restart_hold_progress)
+	var label_row := HBoxContainer.new()
+	label_row.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	label_row.offset_top = -20
+	label_row.offset_bottom = 0
+	label_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	label_row.add_theme_constant_override("separation", 16)
+	label_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom.add_child(label_row)
+	_restart_hold_label = Label.new()
+	_restart_hold_label.text = "Удерживайте Ctrl+R — 1.5с"
+	_restart_hold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_restart_hold_label.add_theme_font_size_override("font_size", 12)
+	_restart_hold_label.add_theme_color_override("font_color", Color(0.88, 0.92, 0.98, 0.95))
+	label_row.add_child(_restart_hold_label)
+	_restart_hold_cancel_label = Label.new()
+	_restart_hold_cancel_label.text = "Esc — отмена"
+	_restart_hold_cancel_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_restart_hold_cancel_label.add_theme_font_size_override("font_size", 12)
+	_restart_hold_cancel_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88, 0.85))
+	label_row.add_child(_restart_hold_cancel_label)
+
+
+func _create_restart_hold_bg() -> Texture2D:
+	return null
+
+
+func _create_restart_hold_fg() -> Texture2D:
+	return null
+
+
+func _show_restart_hold_overlay() -> void:
+	_ensure_restart_hold_overlay()
+	_restart_hold_generation += 1
+	var gen := _restart_hold_generation
+	if _restart_hold_overlay == null:
+		return
+	_restart_hold_overlay.visible = true
+	_restart_hold_overlay.modulate.a = 1.0
+	if _restart_hold_progress:
+		_restart_hold_progress.anchor_right = 0.0
+		_restart_hold_progress.color = Color(0.42, 0.57, 0.82, 0.45)
+	if _restart_hold_tween and _restart_hold_tween.is_valid():
+		_restart_hold_tween.kill()
+	_restart_hold_tween = create_tween()
+	_restart_hold_tween.tween_property(_restart_hold_progress, "anchor_right", 1.0, 1.5)
+	_restart_hold_tween.parallel().tween_property(_restart_hold_progress, "color", Color(0.42, 0.57, 0.82, 1.0), 1.5)
+	# Capture generation to avoid race after cancel
+	_restart_hold_tween.tween_callback(func(): if _restart_hold_generation != gen: _hide_restart_hold_overlay())
+
+
+func _hide_restart_hold_overlay() -> void:
+	_restart_hold_generation += 1
+	if _restart_hold_tween and _restart_hold_tween.is_valid():
+		_restart_hold_tween.kill()
+		_restart_hold_tween = null
+	if _restart_hold_overlay and is_instance_valid(_restart_hold_overlay):
+		_restart_hold_overlay.visible = false
+	if _restart_hold_progress:
+		_restart_hold_progress.anchor_right = 0.0
+		_restart_hold_progress.color = Color(0.42, 0.57, 0.82, 0.45)
 	
 func _exit_to_song_select():
+	_practice_stop()
 	_flush_pending_run_progress()
 	pauser.cleanup_on_game_end()
 	var game_engine = get_parent()
@@ -3681,6 +5214,1040 @@ func _set_play_mode(mode: String) -> void:
 	_play_mode = str(mode).strip_edges()
 
 
+func _set_launched_from_library(value: bool) -> void:
+	_launched_from_library = bool(value)
+
+
+func _set_replay_watch(payload: Dictionary, source_path: String = "") -> void:
+	_replay_watch_payload = payload.duplicate(true) if payload is Dictionary else {}
+	_replay_watch_source = source_path.strip_edges()
+	_replay_playback = null
+	if _replay_watch_payload.is_empty():
+		_refresh_replay_watch_badge()
+		return
+	var run: Dictionary = _replay_watch_payload.get("run", {}) if _replay_watch_payload.get("run", {}) is Dictionary else {}
+	var params: Variant = run.get("modifier_params", {})
+	if params is Dictionary:
+		run_modifier_params = _RunModifiers.sanitize_params(params)
+	_replay_playback = _ReplayPlayback.new()
+	_replay_playback.setup(_replay_watch_payload)
+	call_deferred("_refresh_replay_watch_badge")
+	call_deferred("_replay_player_setup")
+
+func _set_test_preview(enabled: bool) -> void:
+	is_test_preview = enabled
+	if enabled:
+		_launched_from_library = false
+
+func _set_overridden_chart_path(path: String) -> void:
+	overridden_chart_path = path.strip_edges().replace("\\", "/")
+	if overridden_chart_path != "":
+		_launched_from_library = false
+
+
+func _replay_watch_blocks_input() -> bool:
+	return _replay_watch_active()
+
+
+func _poll_replay_playback() -> void:
+	if _replay_playback == null or not gameplay_started or game_finished:
+		return
+	var fired: Array = _replay_playback.poll(get_song_time())
+	for raw_evt in fired:
+		if raw_evt is Dictionary:
+			_apply_replay_event(raw_evt as Dictionary)
+
+
+func _apply_replay_event(evt: Dictionary) -> void:
+	_replay_playback_applying = true
+	var lane := int(evt.get("lane", 0))
+	var kind := String(evt.get("kind", "perfect")).strip_edges().to_lower()
+	var at_s := float(evt.get("t_ms", 0)) / 1000.0
+	if lane >= 0 and kind != "miss":
+		_pulse_replay_lane(lane)
+	if kind == "miss":
+		register_miss(false, at_s)
+	else:
+		var force := kind in ["perfect", "perfect_forced"]
+		check_hit(lane, force, null, _replay_hit_error_ms(evt))
+	_replay_playback_applying = false
+
+
+func _replay_hit_error_ms(evt: Dictionary) -> float:
+	var chart_t_ms: Variant = evt.get("chart_t_ms", -1)
+	if not (chart_t_ms is float or chart_t_ms is int):
+		return NAN
+	var off_ms := 0.0
+	if SettingsManager and SettingsManager.has_method("get_timing_offset_ms"):
+		off_ms = float(SettingsManager.get_timing_offset_ms())
+	return float(evt.get("t_ms", 0)) + off_ms - float(chart_t_ms)
+
+
+func _pulse_replay_lane(lane: int) -> void:
+	if player == null:
+		return
+	var layout_lanes := maxi(_layout_lane_count(), 1)
+	var lane_clamped := clampi(lane, 0, layout_lanes - 1)
+	player.press_lane(lane_clamped)
+	_refresh_replay_lane_highlights()
+	var gen := int(_replay_lane_flash_gen.get(lane_clamped, 0)) + 1
+	_replay_lane_flash_gen[lane_clamped] = gen
+	var tree := get_tree()
+	if tree == null:
+		return
+	tree.create_timer(REPLAY_LANE_FLASH_SEC).timeout.connect(
+		func() -> void:
+			_release_replay_lane_flash(lane_clamped, gen),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _release_replay_lane_flash(lane: int, gen: int) -> void:
+	if not is_instance_valid(self) or player == null:
+		return
+	if int(_replay_lane_flash_gen.get(lane, 0)) != gen:
+		return
+	player.release_lane(lane)
+	_refresh_replay_lane_highlights()
+
+
+func _refresh_replay_lane_highlights() -> void:
+	if player == null:
+		return
+	var layout_lanes := _layout_lane_count()
+	var single_lane := _RunModifiers.is_single_lane(run_modifiers)
+	var single_lane_collapsed := single_lane and _RunModifiers.single_lane_is_collapsed(
+		run_modifiers, run_modifier_params
+	)
+	var any_pressed := false
+	if single_lane_collapsed:
+		for i in range(player.lanes_state.size()):
+			if player.lanes_state[i]:
+				any_pressed = true
+				break
+	for i in range(mini(layout_lanes, lane_highlight_nodes.size())):
+		var hl = lane_highlight_nodes[i]
+		if hl == null:
+			continue
+		if single_lane_collapsed:
+			hl.visible = any_pressed and i == 0
+		elif i >= player.lanes_state.size():
+			hl.visible = false
+		else:
+			hl.visible = player.lanes_state[i]
+	for i in range(layout_lanes, lane_highlight_nodes.size()):
+		var extra_hl = lane_highlight_nodes[i]
+		if extra_hl:
+			extra_hl.visible = false
+
+
+func _replay_watch_handle_skip() -> bool:
+	if not _replay_watch_active():
+		return false
+	if countdown_active:
+		skip_countdown()
+		return true
+	if _can_skip_to_next_track():
+		_finish_replay_watch()
+		return true
+	if skip_intro():
+		_update_hint()
+		return true
+	return false
+
+
+func _restore_run_display_state() -> void:
+	var target_fps := original_max_fps
+	if target_fps == AppWindowManager.LOW_POWER_FPS:
+		target_fps = 0
+	Engine.max_fps = target_fps
+	DisplayServer.window_set_vsync_mode(original_vsync_mode)
+	if AppWindowManager:
+		AppWindowManager.refresh_unfocus_mute()
+	if game_engine and game_engine.has_method("update_display_settings"):
+		game_engine.update_display_settings()
+
+
+func _ensure_replay_watch_badge() -> void:
+	if _replay_watch_badge != null:
+		return
+	var host := get_node_or_null("UIContainer") as Control
+	if host == null:
+		host = self
+	_replay_watch_badge = Label.new()
+	_replay_watch_badge.name = "ReplayWatchBadge"
+	_replay_watch_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_replay_watch_badge.add_theme_font_size_override("font_size", 15)
+	_replay_watch_badge.add_theme_color_override("font_color", Color(0.78, 0.86, 0.98, 0.96))
+	_replay_watch_badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	_replay_watch_badge.add_theme_constant_override("outline_size", 6)
+	host.add_child(_replay_watch_badge)
+	_replay_watch_badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_replay_watch_badge.offset_left = 16.0
+	_replay_watch_badge.offset_top = 12.0
+
+
+func _refresh_replay_watch_badge() -> void:
+	if not _replay_watch_active():
+		if _replay_watch_badge:
+			_replay_watch_badge.visible = false
+		return
+	_ensure_replay_watch_badge()
+	_replay_watch_badge.text = _ReplayUi.format_watch_badge(_replay_watch_payload)
+	_replay_watch_badge.visible = _replay_settings_show_watch_badge()
+
+
+## --- Replay Player: transport (watch mode) ---
+
+func _replay_player_setup() -> void:
+	if not _replay_watch_active():
+		return
+	_replay_sections = _replay_player_load_sections()
+	_replay_duration_s = _replay_player_duration()
+	_replay_player_paused = false
+	_replay_player_pause_time = 0.0
+	_replay_player_speed = 1.0
+	_replay_visual_speed = 1.0
+	_replay_player_speed_index = 2
+	_replay_player_volume = _replay_player_initial_volume()
+	_replay_player_original_volume = _replay_player_volume
+	_replay_player_muted = false
+	_replay_player_mute_volume = 1.0
+	_replay_player_hit_volume = clampf(_replay_settings_hit_sounds_volume() / 100.0, 0.0, 1.0)
+	print("[REPLAY AUDIO DEBUG] setup hit_volume=%s source=setup" % str(_replay_player_hit_volume))
+	if _replay_speed_tween and _replay_speed_tween.is_valid():
+		_replay_speed_tween.kill()
+		_replay_speed_tween = null
+	if _replay_player_bar != null and is_instance_valid(_replay_player_bar):
+		_replay_player_bar.queue_free()
+	_replay_player_bar = _ReplayPlayerBar.new()
+	_replay_player_bar.name = "ReplayPlayerBar"
+	# Свой слой поверх gameplay HUD (z <= 8) и spotlight (48), но ниже
+	# pause (100), defeat (200) и модалок/overlay-слоёв.
+	_replay_player_bar.z_index = 60
+	self.add_child(_replay_player_bar)
+	_replay_player_bar.setup(_replay_duration_s, _replay_sections)
+	_replay_player_bar.play_pause_requested.connect(_replay_player_toggle)
+	_replay_player_bar.section_prev_requested.connect(func() -> void: _replay_player_step_section(-1))
+	_replay_player_bar.section_next_requested.connect(func() -> void: _replay_player_step_section(1))
+	_replay_player_bar.seek_requested.connect(_replay_player_seek)
+	_replay_player_bar.speed_select_requested.connect(_replay_player_open_speed_picker)
+	_replay_player_bar.volume_changed.connect(_replay_player_set_volume)
+	_replay_player_bar.mute_requested.connect(_replay_player_toggle_mute)
+	_replay_player_bar.settings_requested.connect(_replay_player_open_settings)
+	_replay_settings_panel = _ReplaySettingsPanel.new()
+	_replay_settings_panel.name = "ReplaySettingsPanel"
+	_replay_settings_panel.visible = false
+	_replay_settings_panel.section_markers_toggled.connect(_replay_settings_set_section_markers)
+	_replay_settings_panel.watch_badge_toggled.connect(_replay_settings_set_watch_badge)
+	_replay_settings_panel.auto_hide_toggled.connect(_replay_settings_set_auto_hide)
+	_replay_settings_panel.speed_select_requested.connect(_replay_player_open_speed_picker)
+	_replay_settings_panel.speed_selected.connect(_replay_player_set_speed)
+	_replay_settings_panel.hide_option_toggled.connect(_replay_settings_set_hide_option)
+	_replay_settings_panel.hit_sounds_volume_changed.connect(_replay_player_set_hit_sounds_volume)
+	_replay_player_bar.add_child(_replay_settings_panel)
+	_replay_settings_panel.setup(
+		_replay_settings_show_section_markers(),
+		_replay_settings_show_watch_badge(),
+		_replay_settings_auto_hide_enabled(),
+		_replay_player_speed,
+		_replay_settings_hit_sounds_volume()
+	)
+	speed = _effective_scroll_speed()
+	_replay_player_bar.visible = false
+
+
+func _replay_player_begin() -> void:
+	if not _replay_watch_active():
+		return
+	_replay_player_paused = false
+	_replay_player_pause_time = 0.0
+	_replay_player_speed = 1.0
+	_replay_visual_speed = 1.0
+	_replay_player_speed_index = 2
+	_replay_player_volume = _replay_player_initial_volume()
+	_replay_player_original_volume = _replay_player_volume
+	_replay_player_muted = false
+	_replay_player_mute_volume = 1.0
+	_replay_player_hit_volume = clampf(_replay_settings_hit_sounds_volume() / 100.0, 0.0, 1.0)
+	if _replay_speed_tween and _replay_speed_tween.is_valid():
+		_replay_speed_tween.kill()
+		_replay_speed_tween = null
+	_replay_player_section_idx = -1
+	if _replay_player_ui_tween and _replay_player_ui_tween.is_valid():
+		_replay_player_ui_tween.kill()
+	_replay_player_ui_tween = null
+	_replay_player_ui_hidden = false
+	speed = _effective_scroll_speed()
+	if _replay_player_bar:
+		_replay_player_bar.setup(_replay_duration_s, _replay_sections)
+		_replay_player_bar.set_playing(true)
+		_replay_player_bar.set_volume(_replay_player_volume)
+		_replay_player_bar.set_speed_text(_replay_player_speed_label())
+		_replay_player_bar.modulate = Color.WHITE
+		_replay_player_bar.visible = true
+		_replay_player_base_y = _replay_player_bar.position.y
+	if _replay_settings_panel and is_instance_valid(_replay_settings_panel):
+		_replay_settings_panel.visible = false
+		_replay_settings_panel.set_speed(_replay_player_speed)
+	_replay_player_apply_volume()
+	_replay_player_apply_hit_volume()
+	_replay_player_original_hit_volume = _replay_settings_hit_sounds_volume()
+	_replay_player_apply_hud_hidden()
+	_replay_player_reset_auto_hide_timer()
+
+
+func _replay_player_refresh() -> void:
+	if _replay_player_bar == null or not _replay_player_bar.visible:
+		return
+	if _replay_player_paused:
+		_replay_player_bar.refresh(_replay_player_pause_time)
+	else:
+		_replay_player_bar.refresh(get_song_time())
+
+
+func _replay_player_toggle() -> void:
+	if not gameplay_started or game_finished or countdown_active:
+		return
+	if pauser and pauser.is_paused:
+		return
+	if _replay_player_paused:
+		_replay_player_resume()
+	else:
+		_replay_player_pause()
+
+
+func _replay_player_pause() -> void:
+	if _replay_player_paused or not gameplay_started or game_finished or countdown_active:
+		return
+	_replay_player_paused = true
+	_replay_player_pause_time = get_song_time()
+	MusicManager.force_stop_game_track()
+	if game_timer and not game_timer.is_stopped():
+		game_timer.stop()
+	if check_song_end_timer and not check_song_end_timer.is_stopped():
+		check_song_end_timer.stop()
+	if victory_delay_timer and not victory_delay_timer.is_stopped():
+		victory_delay_timer.stop()
+	if _replay_player_bar:
+		_replay_player_bar.set_playing(false)
+		_replay_player_bar.refresh(_replay_player_pause_time)
+
+
+func _replay_player_resume() -> void:
+	if not _replay_player_paused:
+		return
+	_replay_player_paused = false
+	var _old_gt_replay := game_time
+	game_time = _replay_player_pause_time
+	_game_trace_time_set("REPLAY_RESUME", _old_gt_replay, game_time)
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path != "":
+		MusicManager.play_game_music_at_position(song_path, _replay_player_pause_time)
+		_apply_game_pitch_scale()
+		if modifier_runtime:
+			modifier_runtime.apply_audio_modifiers()
+	_replay_player_apply_volume()
+	_replay_player_apply_hit_volume()
+	if game_timer and game_timer.is_stopped():
+		game_timer.start()
+	if check_song_end_timer and check_song_end_timer.is_stopped():
+		check_song_end_timer.start()
+	if _replay_player_bar:
+		_replay_player_bar.set_playing(true)
+
+
+func _replay_player_seek(target_s: float) -> void:
+	if not gameplay_started or game_finished or _replay_playback == null:
+		return
+	var target := clampf(target_s, 0.0, maxf(0.0, _replay_duration_s))
+	var was_playing := not _replay_player_paused
+	MusicManager.force_stop_game_track()
+	var _old_gt_seek := game_time
+	game_time = target
+	_game_trace_time_set("REPLAY_SEEK", _old_gt_seek, game_time)
+	if note_manager:
+		note_manager.rewind_chart_to_time(target)
+	if chart_compare and chart_compare.split_active_runtime and chart_compare.note_manager:
+		chart_compare.note_manager.rewind_chart_to_time(target)
+	_replay_playback.seek_to(int(round(target * 1000.0)))
+	_replay_rescore_to(target)
+	_replay_player_pause_time = target
+	if was_playing:
+		_replay_player_resume_after_seek(target)
+	else:
+		if _replay_player_bar:
+			_replay_player_bar.set_playing(false)
+			_replay_player_bar.refresh(target)
+	update_ui()
+
+
+func _replay_player_resume_after_seek(target: float) -> void:
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path != "":
+		MusicManager.play_game_music_at_position(song_path, target)
+		_apply_game_pitch_scale()
+		if modifier_runtime:
+			modifier_runtime.apply_audio_modifiers()
+	_replay_player_apply_volume()
+	_replay_player_apply_hit_volume()
+	if game_timer and game_timer.is_stopped():
+		game_timer.start()
+	if check_song_end_timer and check_song_end_timer.is_stopped():
+		check_song_end_timer.start()
+	if _replay_player_bar:
+		_replay_player_bar.set_playing(true)
+
+
+func _replay_rescore_to(target_s: float) -> void:
+	if score_manager == null:
+		return
+	var events: Array = []
+	if _replay_playback != null:
+		events = _replay_playback.events_before(int(round(target_s * 1000.0)))
+	var total: int = score_manager.total_notes
+	score_manager.reset()
+	score_manager.total_notes = total
+	var hp := _RunModifiers.start_health_ratio(run_modifiers, run_modifier_params)
+	score_manager.silent = true
+	for raw_evt in events:
+		if not (raw_evt is Dictionary):
+			continue
+		var evt := raw_evt as Dictionary
+		var kind := String(evt.get("kind", "")).strip_edges().to_lower()
+		if kind == "miss":
+			score_manager.add_miss_hit()
+			hp = RunHealth.apply_miss(hp)
+		elif kind == "perfect" or kind == "perfect_forced":
+			score_manager.add_perfect_hit()
+			hp = RunHealth.apply_hit(hp, "perfect")
+		else:
+			score_manager.add_good_hit()
+			hp = RunHealth.apply_hit(hp, "good")
+	score_manager.silent = false
+	run_health_ratio = hp
+	_apply_health_bar(true)
+
+
+func _replay_player_set_speed(value: float) -> void:
+	var idx := REPLAY_PLAYER_SPEEDS.find(value)
+	if idx < 0:
+		idx = 2
+	_replay_player_speed_index = idx
+	var new_speed: float = float(REPLAY_PLAYER_SPEEDS[idx])
+	# Audio pitch — instantly, so music and hit timing stay sharp.
+	_replay_player_speed = new_speed
+	_apply_game_pitch_scale()
+	# Visual speed — tween to avoid teleport (note_y = f(speed) would jump otherwise).
+	if _replay_speed_tween and _replay_speed_tween.is_valid():
+		_replay_speed_tween.kill()
+	# If game not ready or speed identical, snap immediately.
+	if not is_inside_tree() or is_equal_approx(_replay_visual_speed, new_speed):
+		_replay_visual_speed = new_speed
+		speed = _effective_scroll_speed()
+	else:
+		var from := _replay_visual_speed
+		_replay_speed_tween = create_tween()
+		_replay_speed_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+		_replay_speed_tween.tween_method(func(v: float) -> void:
+			_replay_visual_speed = v
+			speed = _effective_scroll_speed()
+		, from, new_speed, 0.22)
+		_replay_speed_tween.tween_callback(func() -> void:
+			_replay_visual_speed = new_speed
+			speed = _effective_scroll_speed()
+		)
+		# Ensure speed is updated each frame during tween — use _process? tween_property already drives it.
+		# Also force immediate speed sync for spawn threshold which reads speed each frame.
+	if _replay_player_bar and is_instance_valid(_replay_player_bar):
+		_replay_player_bar.set_speed_text(_replay_player_speed_label())
+	if _replay_settings_panel and is_instance_valid(_replay_settings_panel):
+		_replay_settings_panel.set_speed(_replay_player_speed)
+	_replay_player_reset_auto_hide_timer()
+
+
+func _replay_player_open_speed_picker() -> void:
+	if _replay_settings_panel == null or not is_instance_valid(_replay_settings_panel):
+		return
+	if not _replay_settings_panel.visible:
+		_replay_settings_panel.visible = true
+		_reposition_replay_settings_panel()
+	if _replay_settings_panel.has_method("open_speed_picker"):
+		_replay_settings_panel.open_speed_picker()
+
+
+func _replay_player_speed_label() -> String:
+	return "%.2fx" % _replay_player_speed
+
+
+func _replay_player_set_volume(linear: float) -> void:
+	var old := _replay_player_volume
+	_replay_player_volume = clampf(linear, 0.0, 1.0)
+	print("[REPLAY AUDIO DEBUG] music_volume %s->%s source=slider/bar" % [str(old), str(_replay_player_volume)])
+	if SettingsManager and SettingsManager.has_method("set_replay_music_volume"):
+		SettingsManager.set_replay_music_volume(_replay_player_volume * 100.0)
+	_replay_player_apply_volume()
+	if _replay_player_bar:
+		_replay_player_bar.set_volume(_replay_player_volume)
+
+
+func _replay_player_apply_volume() -> void:
+	print("[REPLAY AUDIO DEBUG] apply_volume muted=%s volume=%s source=apply" % [str(_replay_player_muted), str(_replay_player_volume)])
+	if _replay_player_muted:
+		if MusicManager and MusicManager.has_method("set_game_music_muted"):
+			MusicManager.set_game_music_muted(true)
+	else:
+		MusicManager.set_music_volume_multiplier(_replay_player_volume)
+
+
+func _replay_player_toggle_mute() -> void:
+	if _replay_player_muted:
+		_replay_player_muted = false
+		_replay_player_volume = clampf(_replay_player_mute_volume, 0.0, 1.0)
+	else:
+		_replay_player_muted = true
+		_replay_player_mute_volume = _replay_player_volume
+	_replay_player_apply_volume()
+	if _replay_player_bar:
+		_replay_player_bar.set_muted(_replay_player_muted)
+		_replay_player_bar.set_volume(_replay_player_volume)
+
+
+func _replay_player_step_section(direction: int) -> void:
+	if _replay_sections.is_empty():
+		return
+	var t := get_song_time()
+	var idx := _replay_player_section_index_at(t)
+	if idx < 0:
+		idx = 0
+	var next := idx + direction
+	if next < 0 or next >= _replay_sections.size():
+		return
+	var target := float(_replay_sections[next].get("start_s", 0.0))
+	_replay_player_seek(target)
+
+
+func _replay_player_section_index_at(t: float) -> int:
+	var idx := -1
+	for i in range(_replay_sections.size()):
+		var start_s := float(_replay_sections[i].get("start_s", 0.0))
+		var end_s := float(_replay_sections[i].get("end_s", INF))
+		if t >= start_s and t < end_s:
+			return i
+		if start_s <= t:
+			idx = i
+	return idx
+
+
+func _replay_player_handle_hotkey(event: InputEvent) -> bool:
+	if not _replay_watch_active() or not gameplay_started or countdown_active or game_finished:
+		return false
+	if pauser and pauser.is_paused:
+		return false
+	if not (event is InputEventKey):
+		return false
+	var key: int = event.keycode
+	# F is toggle — do not auto-show before toggle, otherwise hidden→show→hide cancels out.
+	if key == KEY_F:
+		_replay_player_toggle_ui_hidden()
+		accept_event()
+		return true
+	# ESC while speed/hide picker open → Back to Advanced Settings (YouTube nested nav)
+	if key == KEY_ESCAPE and _replay_settings_panel and is_instance_valid(_replay_settings_panel):
+		if _replay_settings_panel.has_method("has_open_picker") and _replay_settings_panel.has_open_picker():
+			_replay_settings_panel.close_pickers()
+			accept_event()
+			return true
+	_replay_player_reset_auto_hide_timer()
+	_replay_player_ensure_ui_visible()
+	if key == KEY_SPACE:
+		_replay_player_toggle()
+		accept_event()
+		return true
+	if key == KEY_M:
+		_replay_player_toggle_mute()
+		accept_event()
+		return true
+	if key == KEY_LEFT:
+		if event.shift_pressed:
+			_replay_player_step_section(-1)
+		else:
+			_replay_player_seek(get_song_time() - 5.0)
+		accept_event()
+		return true
+	if key == KEY_RIGHT:
+		if event.shift_pressed:
+			_replay_player_step_section(1)
+		else:
+			_replay_player_seek(get_song_time() + 5.0)
+		accept_event()
+		return true
+	if key == KEY_UP:
+		_replay_player_set_volume(_replay_player_volume + 0.05)
+		accept_event()
+		return true
+	if key == KEY_DOWN:
+		_replay_player_set_volume(_replay_player_volume - 0.05)
+		accept_event()
+		return true
+	if key == KEY_ESCAPE:
+		if pauser and pauser.is_paused:
+			pauser.handle_resume_request()
+		else:
+			pauser.handle_pause_request()
+		accept_event()
+		return true
+	return false
+
+
+func _replay_player_toggle_ui_hidden() -> void:
+	if _replay_player_bar == null or not is_instance_valid(_replay_player_bar):
+		return
+	_replay_player_animate_ui_hidden(not _replay_player_ui_hidden)
+	_replay_player_reset_auto_hide_timer()
+
+
+func _replay_player_animate_ui_hidden(hidden: bool) -> void:
+	_replay_player_ui_hidden = hidden
+	if _replay_player_ui_tween and _replay_player_ui_tween.is_valid():
+		_replay_player_ui_tween.kill()
+	if _replay_player_bar == null or not is_instance_valid(_replay_player_bar):
+		return
+	# When showing, make visible immediately so tween is visible; set start state.
+	if not hidden:
+		_replay_player_bar.visible = true
+		_replay_player_bar.modulate.a = 0.0
+		_replay_player_bar.position.y = _replay_player_base_y + 64.0
+		_replay_player_refresh_cursor_visibility()
+	_replay_player_ui_tween = create_tween()
+	var target_alpha := 0.0 if hidden else 1.0
+	var target_y := _replay_player_base_y + (64.0 if hidden else 0.0)
+	_replay_player_ui_tween.set_parallel(true)
+	_replay_player_ui_tween.tween_property(_replay_player_bar, "modulate:a", target_alpha, 0.18)\
+		.set_trans(Tween.TRANS_BACK if hidden else Tween.TRANS_QUAD)\
+		.set_ease(Tween.EASE_OUT if hidden else Tween.EASE_IN_OUT)
+	_replay_player_ui_tween.tween_property(_replay_player_bar, "position:y", target_y, 0.18)\
+		.set_trans(Tween.TRANS_BACK if hidden else Tween.TRANS_QUAD)\
+		.set_ease(Tween.EASE_OUT if hidden else Tween.EASE_IN_OUT)
+	_replay_player_ui_tween.set_parallel(false)
+	if hidden:
+		_replay_player_ui_tween.tween_callback(func() -> void:
+			if _replay_player_bar and is_instance_valid(_replay_player_bar):
+				_replay_player_bar.visible = not _replay_player_ui_hidden
+			_replay_player_refresh_cursor_visibility()
+		)
+	else:
+		_replay_player_ui_tween.tween_callback(func() -> void:
+			_replay_player_refresh_cursor_visibility()
+		)
+
+
+func _replay_player_refresh_cursor_visibility() -> void:
+	if not _replay_watch_active():
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		return
+	if pauser and pauser.is_paused:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		return
+	if _replay_player_ui_hidden and (_replay_player_bar == null or not _replay_player_bar.visible):
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func _replay_player_tick_auto_hide(delta: float) -> void:
+	if not _replay_watch_active():
+		return
+	if _replay_player_ui_hidden or _replay_player_paused or countdown_active or game_finished:
+		return
+	if not _replay_settings_auto_hide_enabled():
+		return
+	if _replay_settings_panel and _replay_settings_panel.visible:
+		_replay_player_auto_hide_timer = REPLAY_PLAYER_AUTO_HIDE_SEC
+		return
+	_replay_player_auto_hide_timer -= delta
+	if _replay_player_auto_hide_timer <= 0.0:
+		_replay_player_auto_hide_timer = REPLAY_PLAYER_AUTO_HIDE_SEC
+		if _replay_player_bar and is_instance_valid(_replay_player_bar) and _replay_player_bar.visible:
+			_replay_player_animate_ui_hidden(true)
+
+
+func _replay_player_ensure_ui_visible() -> void:
+	if not _replay_player_ui_hidden:
+		return
+	_replay_player_animate_ui_hidden(false)
+	_replay_player_reset_auto_hide_timer()
+
+
+func _replay_player_reset_auto_hide_timer() -> void:
+	_replay_player_auto_hide_timer = REPLAY_PLAYER_AUTO_HIDE_SEC
+
+
+func _replay_player_check_section_marker(t: float) -> void:
+	if not _replay_settings_show_section_markers():
+		return
+	if _replay_sections.is_empty():
+		return
+	var idx := _replay_player_section_index_at(t)
+	if idx == _replay_player_section_idx:
+		return
+	_replay_player_section_idx = idx
+	if idx < 0:
+		return
+	var seg: Dictionary = _replay_sections[idx] if _replay_sections[idx] is Dictionary else {}
+	var label := RhythmDnaView.format_section_headline(seg)
+	if label.strip_edges() == "":
+		label = RhythmDnaView.section_letter(seg)
+	if label.strip_edges() == "":
+		label = str(idx + 1)
+	show_center_game_notice(
+		label,
+		Color(0.98, 0.64, 0.30, 1.0),
+		1.6
+	)
+
+
+func _replay_settings_show_section_markers() -> bool:
+	if SettingsManager and SettingsManager.has_method("get_replay_show_section_markers"):
+		return SettingsManager.get_replay_show_section_markers()
+	return true
+
+
+func _replay_settings_show_watch_badge() -> bool:
+	if SettingsManager and SettingsManager.has_method("get_replay_show_watch_badge"):
+		return SettingsManager.get_replay_show_watch_badge()
+	return true
+
+
+func _replay_settings_set_section_markers(value: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_replay_show_section_markers"):
+		SettingsManager.set_replay_show_section_markers(value)
+		SettingsManager.save_settings()
+
+
+func _replay_settings_set_watch_badge(value: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_replay_show_watch_badge"):
+		SettingsManager.set_replay_show_watch_badge(value)
+		SettingsManager.save_settings()
+	_refresh_replay_watch_badge()
+
+
+func _replay_player_open_settings() -> void:
+	if _replay_settings_panel == null or not is_instance_valid(_replay_settings_panel):
+		return
+	_replay_settings_panel.visible = not _replay_settings_panel.visible
+	if _replay_settings_panel.visible:
+		_reposition_replay_settings_panel()
+	else:
+		if _replay_settings_panel.has_method("close_pickers"):
+			_replay_settings_panel.close_pickers()
+	_replay_player_reset_auto_hide_timer()
+	_replay_player_refresh_cursor_visibility()
+
+
+func _reposition_replay_settings_panel() -> void:
+	var panel := _replay_settings_panel
+	if panel == null or not is_instance_valid(panel) or not panel.visible:
+		return
+	var bar := _replay_player_bar
+	if bar == null or not is_instance_valid(bar):
+		return
+	await get_tree().process_frame
+	if not is_instance_valid(panel) or not panel.visible:
+		return
+	if not is_instance_valid(bar):
+		return
+	panel.global_position = Vector2(
+		maxf(8.0, bar.global_position.x + bar.size.x - panel.size.x - 14.0),
+		maxf(8.0, bar.global_position.y - panel.size.y - 12.0)
+	)
+
+
+func _replay_settings_auto_hide_enabled() -> bool:
+	if SettingsManager and SettingsManager.has_method("get_replay_auto_hide_player"):
+		return SettingsManager.get_replay_auto_hide_player()
+	return true
+
+
+func _replay_settings_set_auto_hide(value: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_replay_auto_hide_player"):
+		SettingsManager.set_replay_auto_hide_player(value)
+		SettingsManager.save_settings()
+
+
+func _replay_settings_hit_sounds_volume() -> float:
+	if SettingsManager and SettingsManager.has_method("get_replay_hit_sounds_volume"):
+		var rv := float(SettingsManager.get_replay_hit_sounds_volume())
+		if rv >= 0.0:
+			return rv
+	if SettingsManager and SettingsManager.has_method("get_hit_sounds_volume"):
+		return float(SettingsManager.get_hit_sounds_volume())
+	return 30.0
+
+
+func _replay_player_set_hit_sounds_volume(linear: float) -> void:
+	var old := _replay_player_hit_volume
+	_replay_player_hit_volume = clampf(linear, 0.0, 1.0)
+	print("[REPLAY AUDIO DEBUG] hit_volume %s->%s source=slider/panel" % [str(old), str(_replay_player_hit_volume)])
+	if SettingsManager and SettingsManager.has_method("set_replay_hit_sounds_volume"):
+		SettingsManager.set_replay_hit_sounds_volume(_replay_player_hit_volume * 100.0)
+	if MusicManager and MusicManager.has_method("set_hit_sounds_volume"):
+		MusicManager.set_hit_sounds_volume(_replay_player_hit_volume * 100.0)
+
+
+func _replay_player_apply_hit_volume() -> void:
+	if MusicManager and MusicManager.has_method("set_hit_sounds_volume"):
+		MusicManager.set_hit_sounds_volume(_replay_player_hit_volume * 100.0)
+
+
+func _replay_settings_set_hide_option(key: String, value: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_replay_hide_option"):
+		SettingsManager.set_replay_hide_option(key, value)
+		SettingsManager.save_settings()
+	_replay_player_apply_hud_hidden()
+
+
+func _replay_hide_option_enabled(key: String) -> bool:
+	if SettingsManager and SettingsManager.has_method("get_replay_hide_option"):
+		return SettingsManager.get_replay_hide_option(key)
+	return false
+
+
+func _replay_player_apply_hud_hidden() -> void:
+	if not _replay_watch_active():
+		return
+	_replay_player_set_hud_hidden("combo", combo_label, _replay_hide_option_enabled("combo"))
+	_replay_player_set_hud_hidden(
+		"score_accuracy",
+		get_node_or_null("Playfield/BottomHud/StatsPanel"),
+		_replay_hide_option_enabled("score_accuracy")
+	)
+	_replay_player_set_hud_hidden("error_meter", error_meter, _replay_hide_option_enabled("error_meter"))
+	_replay_player_set_hud_hidden("hp", health_bar, _replay_hide_option_enabled("hp"))
+	_replay_player_set_hud_hidden("judgement", judgement_label, _replay_hide_option_enabled("judgement"))
+	for i in range(lane_highlight_nodes.size()):
+		var hl = lane_highlight_nodes[i]
+		_replay_player_set_hud_hidden("lane_highlights_%d" % i, hl, _replay_hide_option_enabled("lane_highlights"))
+	_sync_progress_bar_visibility()
+
+
+func _replay_player_set_hud_hidden(key: String, node: Node, hidden: bool) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if hidden:
+		if not _replay_hud_hidden_origins.has(key):
+			_replay_hud_hidden_origins[key] = node.visible
+		node.visible = false
+	else:
+		if _replay_hud_hidden_origins.has(key):
+			node.visible = bool(_replay_hud_hidden_origins[key])
+			_replay_hud_hidden_origins.erase(key)
+		else:
+			# Lane highlights are only visible while a lane is pressed — don't force them on
+			if key.begins_with("lane_highlights"):
+				return
+			node.visible = true
+
+
+func _replay_player_restore_hud_hidden() -> void:
+	for key in _replay_hud_hidden_origins.keys():
+		var origin: Variant = _replay_hud_hidden_origins.get(key)
+		var node := _replay_player_hud_node_for(key)
+		if node != null and is_instance_valid(node):
+			node.visible = bool(origin)
+	_replay_hud_hidden_origins.clear()
+	_sync_health_bar_visibility()
+	if error_meter:
+		error_meter.visible = _error_meter_should_show()
+
+
+func _replay_player_hud_node_for(key: String) -> Node:
+	match key:
+		"combo":
+			return combo_label
+		"score_accuracy":
+			return get_node_or_null("Playfield/BottomHud/StatsPanel")
+		"error_meter":
+			return error_meter
+		"hp":
+			return health_bar
+		"judgement":
+			return judgement_label
+		"lane_highlights":
+			return lane_highlight_nodes[0] if not lane_highlight_nodes.is_empty() else null
+	if key.begins_with("lane_highlights_"):
+		var idx := int(key.get_slice("_", 2))
+		if idx >= 0 and idx < lane_highlight_nodes.size():
+			return lane_highlight_nodes[idx]
+	return null
+
+
+func _replay_player_duration() -> float:
+	var track: Variant = _replay_watch_payload.get("track", {})
+	if track is Dictionary:
+		var dur := float(track.get("duration_sec", 0.0))
+		if dur > 0.0:
+			return dur
+	return _get_song_duration_seconds()
+
+
+func _replay_player_load_sections() -> Array:
+	var song_path := str(selected_song_data.get("path", "")).strip_edges()
+	if song_path == "":
+		return []
+	var dna := NotesUtils.load_rhythm_dna(
+		song_path, current_instrument, current_generation_mode, lanes, current_chart_tag
+	)
+	if dna.is_empty() or NotesUtils.is_minimal_rhythm_dna(dna):
+		return []
+	return RhythmDnaView.resolve_structure_timeline_for_ui(dna)
+
+
+func _replay_player_initial_volume() -> float:
+	# Prefer persisted replay volume, then MusicManager, then global music_volume
+	if SettingsManager and SettingsManager.has_method("get_replay_music_volume"):
+		var rv := float(SettingsManager.get_replay_music_volume())
+		if rv >= 0.0:
+			print("[REPLAY AUDIO DEBUG] initial_volume read SettingsManager.replay=%s source=replay_setup" % str(rv))
+			return clampf(rv / 100.0, 0.0, 1.0)
+	if MusicManager and MusicManager.has_method("get_volume_multiplier"):
+		var v := float(MusicManager.get_volume_multiplier())
+		print("[REPLAY AUDIO DEBUG] initial_volume read MusicManager=%s source=replay_setup" % str(v))
+		if v > 0.0 and v <= 1.0:
+			return v
+		print("[REPLAY AUDIO DEBUG] initial_volume fallback from MusicManager (was %s) source=replay_setup" % str(v))
+	if SettingsManager and SettingsManager.has_method("get_music_volume"):
+		var gv := float(SettingsManager.get_music_volume())
+		print("[REPLAY AUDIO DEBUG] initial_volume fallback SettingsManager.music=%s source=replay_setup" % str(gv))
+		return clampf(gv / 100.0, 0.0, 1.0)
+	return 1.0
+
+
+func _finish_replay_watch() -> void:
+	game_finished = true
+	if not game_timer.is_stopped():
+		game_timer.stop()
+	if not check_song_end_timer.is_stopped():
+		check_song_end_timer.stop()
+	if not victory_delay_timer.is_stopped():
+		victory_delay_timer.stop()
+	_restore_run_display_state()
+	_reset_modifier_audio()
+	# Возвращаем громкость/мute, заданные Replay Player, к исходным значениям
+	# (пауза-меню и song select продолжают использовать глобальный множитель).
+	# Сначала снимаем mute: unmute сбрасывает множитель на системный, поэтому
+	# исходный множитель восстанавливаем только после него.
+	if _replay_player_muted and MusicManager and MusicManager.has_method("set_game_music_muted"):
+		MusicManager.set_game_music_muted(false)
+	if _replay_player_original_volume > 0.0:
+		MusicManager.set_music_volume_multiplier(_replay_player_original_volume)
+	if _replay_player_ui_tween and _replay_player_ui_tween.is_valid():
+		_replay_player_ui_tween.kill()
+	_replay_player_ui_tween = null
+	if _replay_speed_tween and _replay_speed_tween.is_valid():
+		_replay_speed_tween.kill()
+	_replay_speed_tween = null
+	_replay_player_speed = 1.0
+	_replay_visual_speed = 1.0
+	speed = _effective_scroll_speed()
+	_replay_player_ui_hidden = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if _replay_player_original_hit_volume >= 0.0 and MusicManager and MusicManager.has_method("set_hit_sounds_volume"):
+		MusicManager.set_hit_sounds_volume(_replay_player_original_hit_volume)
+	_replay_player_original_hit_volume = -1.0
+	_replay_player_restore_hud_hidden()
+	if _replay_settings_panel and is_instance_valid(_replay_settings_panel):
+		_replay_settings_panel.visible = false
+	if _replay_player_bar:
+		_replay_player_bar.visible = false
+	MusicManager.stop_game_music()
+	_refresh_replay_watch_badge()
+	_StatusToast.show_from_node(self, "replay", TranslationServer.translate("REPLAY_WATCH_FINISHED"), "info")
+	var transitions = null
+	if game_engine and game_engine.has_method("get_transitions"):
+		transitions = game_engine.get_transitions()
+	if transitions and transitions.has_method("transition_open_song_select"):
+		transitions.transition_open_song_select()
+	var parent_node = get_parent()
+	if parent_node:
+		parent_node.remove_child(self)
+		call_deferred("queue_free")
+
+
+func _replay_watch_active() -> bool:
+	return not _replay_watch_payload.is_empty()
+
+
+func is_replay_watch_mode() -> bool:
+	return _replay_watch_active()
+
+
+func _replay_recording_enabled() -> bool:
+	if _replay_watch_active():
+		return false
+	if _is_series_mode():
+		return false
+	if _RunModifiers.has_modifier(run_modifiers_player, _RunModifiers.ID_AUTOPLAY):
+		return false
+	return true
+
+
+func _begin_replay_recording() -> void:
+	if not _replay_recording_enabled():
+		_replay_recorder = null
+		return
+	_replay_recorder = _ReplayRecorder.new()
+	_ReplayRunHelper.begin_recording(
+		_replay_recorder,
+		selected_song_data if selected_song_data is Dictionary else {},
+		current_instrument,
+		current_generation_mode,
+		lanes,
+		run_modifiers_player,
+		run_modifier_params,
+		_play_mode,
+		current_chart_tag,
+	)
+
+
+func _record_replay_hit(lane: int, hit_kind: String, chart_time_s: float, song_time_s: float) -> void:
+	if _replay_recorder == null or not _replay_recorder.active():
+		return
+	_replay_recorder.record_event(song_time_s, lane, hit_kind, chart_time_s)
+
+
+func _record_replay_miss(song_time_s: float, chart_lane: int) -> void:
+	if _replay_recorder == null or not _replay_recorder.active():
+		return
+	var lane := 0
+	if chart_lane >= 0:
+		lane = _RunModifiers.display_lane_for_chart_lane(
+			chart_lane, lanes, get_chart_lanes(), run_modifiers, lane_remap_context(song_time_s), run_modifier_params
+		)
+	_replay_recorder.record_event(song_time_s, lane, HIT_KIND_MISS)
+
+
+func _finalize_replay_recording(score: int, accuracy: float, max_combo: int, duration_ms: int) -> Dictionary:
+	if _replay_recorder == null or not _replay_recorder.active():
+		return {}
+	var result := {
+		"score": score,
+		"accuracy": accuracy,
+		"max_combo": max_combo,
+	}
+	var payload: Dictionary = _replay_recorder.build_payload(result, duration_ms)
+	_replay_recorder.reset()
+	_replay_recorder = null
+	if payload.is_empty():
+		return {}
+	if SettingsManager and not SettingsManager.get_replay_auto_save():
+		return {"payload": payload}
+	var path := _ReplayStore.save_payload(payload)
+	if path == "":
+		return {"payload": payload}
+	return {"path": path}
+
+
 func _is_endless_mode() -> bool:
 	return _play_mode == _PlayModeIds.ENDLESS
 
@@ -3719,6 +6286,38 @@ func configure_endless_run(run_ref) -> void:
 func configure_pause_menu_for_mode(pause_menu: Control) -> void:
 	if pause_menu == null:
 		return
+	if pause_menu.has_method("configure_run_stats"):
+		var artist := str(selected_song_data.get("artist", "")).strip_edges()
+		var title := str(selected_song_data.get("title", "")).strip_edges()
+		if title == "":
+			title = str(selected_song_data.get("path", "")).get_file().get_basename()
+		var score := 0
+		var accuracy := 100.0
+		var combo := 0
+		var multiplier := 1.0
+		if score_manager:
+			if score_manager.has_method("get_score"):
+				score = int(score_manager.get_score())
+			if score_manager.has_method("get_accuracy"):
+				accuracy = float(score_manager.get_accuracy())
+			if score_manager.has_method("get_combo"):
+				combo = int(score_manager.get_combo())
+			if score_manager.has_method("get_score_reward_multiplier"):
+				multiplier = float(score_manager.get_score_reward_multiplier())
+		pause_menu.configure_run_stats({
+			"score": score,
+			"accuracy": accuracy,
+			"combo": combo,
+			"multiplier": multiplier,
+			"artist": artist,
+			"title": title,
+			"time_sec": maxf(0.0, game_time),
+			"duration_sec": _get_song_duration_seconds(),
+			"song_path": str(selected_song_data.get("path", "")),
+			"bpm": bpm,
+			"instrument": current_instrument,
+			"mode_stem": current_generation_mode,
+		})
 	if pause_menu.has_method("configure_for_endless"):
 		var stats: Dictionary = {}
 		if _is_series_mode():
@@ -3726,6 +6325,16 @@ func configure_pause_menu_for_mode(pause_menu: Control) -> void:
 			if run_ref != null and run_ref.has_method("get_pause_stats"):
 				stats = run_ref.get_pause_stats()
 		pause_menu.configure_for_endless(_is_series_mode(), stats)
+
+	if pause_menu.has_method("configure_practice"):
+		var avail_for_sections := _practice_available()
+		var sections: Array = []
+		if avail_for_sections:
+			sections = _load_practice_sections()
+		pause_menu.configure_practice(_practice_available(), sections, _replay_watch_active())
+
+	if pause_menu.has_method("set_practice_run_active"):
+		pause_menu.set_practice_run_active(_practice_active)
 
 
 func _ensure_endless_hud() -> void:
@@ -3959,6 +6568,7 @@ func _collect_endless_track_stats() -> Dictionary:
 		"missed_notes": missed_notes,
 		"hit_notes": hit_notes,
 		"perfect_hits": perfect_hits_this_level,
+		"good_hits": maxi(0, hit_notes - perfect_hits_this_level),
 		"total_notes": hit_notes + missed_notes,
 		"combo_multiplier": _RunRewards.compute_combo_multiplier(max_combo),
 		"modifiers": run_modifiers_player.duplicate(),
@@ -4011,6 +6621,7 @@ func _end_game_marathon_track_cleared() -> void:
 	MusicManager.stop_game_music()
 	auto_play_enabled = false
 	_flush_pending_run_progress()
+	_record_activity_for_current_run(true)
 
 	var transitions = _get_transitions()
 	if transitions == null or not transitions.has_method("get_marathon_run"):
@@ -4047,6 +6658,7 @@ func _end_game_marathon_defeat() -> void:
 	MusicManager.stop_game_music()
 	auto_play_enabled = false
 	_flush_pending_run_progress()
+	_record_activity_for_current_run(false)
 
 	var transitions = _get_transitions()
 	if transitions == null or not transitions.has_method("get_marathon_run"):
@@ -4078,6 +6690,7 @@ func _end_game_endless_track_cleared() -> void:
 	MusicManager.stop_game_music()
 	auto_play_enabled = false
 	_flush_pending_run_progress()
+	_record_activity_for_current_run(true)
 
 	var transitions = _get_transitions()
 	if transitions == null or not transitions.has_method("get_endless_run"):
@@ -4114,6 +6727,7 @@ func _end_game_endless_defeat() -> void:
 	MusicManager.stop_game_music()
 	auto_play_enabled = false
 	_flush_pending_run_progress()
+	_record_activity_for_current_run(false)
 
 	var transitions = _get_transitions()
 	if transitions == null or not transitions.has_method("get_endless_run"):
@@ -4137,8 +6751,8 @@ func _play_series_inter_track_transition(transitions) -> void:
 	var run = _get_series_run()
 	if _endless_track_cue:
 		if _is_marathon_mode() and run != null:
-			var cleared := int(run.tracks_cleared)
-			var total := int(run.total_tracks()) if run.has_method("total_tracks") else 0
+			var cleared: int = int(run.tracks_cleared)
+			var total: int = int(run.total_tracks()) if run.has_method("total_tracks") else 0
 			_endless_track_cue.text = tr("MARATHON_TRACK_CLEARED_FMT") % [cleared, total]
 		elif run != null:
 			var lap_announce := 0
@@ -4243,7 +6857,9 @@ func load_next_endless_track(launch: Dictionary) -> void:
 	_last_combo_value = carried_combo
 	if audio_background:
 		audio_background.reset_visuals()
+	var _old_gt_end := game_time
 	game_time = 0.0
+	_game_trace_time_set("END_GAME_RESET", _old_gt_end, game_time)
 	game_finished = false
 	notes_ended = false
 	skip_used = false
@@ -4433,6 +7049,7 @@ func _exit_to_main_menu():
 	if _is_series_mode():
 		abandon_series_and_exit_main_menu()
 		return
+	_practice_stop()
 	_flush_pending_run_progress()
 	pauser.cleanup_on_game_end() 
 	var game_engine = get_parent()
@@ -4443,6 +7060,4 @@ func _exit_to_main_menu():
 
 func _exit_tree() -> void:
 	_flush_pending_run_progress()
-	Engine.max_fps = original_max_fps
-	DisplayServer.window_set_vsync_mode(original_vsync_mode)
- 
+	_restore_run_display_state()

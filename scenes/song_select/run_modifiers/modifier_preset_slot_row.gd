@@ -98,9 +98,23 @@ func setup(
 				_icons_row,
 				entry.get("modifiers", []),
 				entry.get("params", {}),
+				10,
+				true,
+				false,
 			)
+			# Show short param summary for the preset's modifiers in the row's tooltip
+			var short_descs: Array[String] = []
+			for mod_id in entry.get("modifiers", []):
+				var desc := _RunModifiers.format_short_param_description(str(mod_id), entry.get("params", {}))
+				if desc.strip_edges() != "":
+					short_descs.append(desc)
+			if not short_descs.is_empty():
+				tooltip_text = ", ".join(short_descs)
+			else:
+				tooltip_text = ""
 		else:
 			_IconStrip.fill_slot_chips(_icons_row, [], {})
+			tooltip_text = ""
 	if _mult_label:
 		if domain == _UserPresets.DOMAIN_GENERATION:
 			if filled and song_path.strip_edges() != "":

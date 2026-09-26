@@ -1,4 +1,4 @@
-# logic/utils/progress_backup_service.gd
+# logic/platform/progress_backup_service.gd
 extends RefCounted
 class_name ProgressBackupService
 
@@ -186,6 +186,8 @@ static func apply_runtime_reload() -> void:
 			PlayerDataManager.emit_signal("shop_new_rewards_changed")
 	if TrackStatsManager:
 		TrackStatsManager._load()
+	if ProfileMilestonesManager:
+		ProfileMilestonesManager.reload()
 	if SongLibrary:
 		SongLibrary._load_metadata()
 		if SongLibrary.has_signal("songs_list_changed"):

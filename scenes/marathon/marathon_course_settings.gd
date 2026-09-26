@@ -18,6 +18,8 @@ const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 
 const _SETUP_BTN_HEIGHT := 46
 const _SETUP_BTN_FONT := 16
+## Reserved height for mod pool / count / hint so toggling Random mods doesn't reflow the card.
+const _MOD_DETAILS_MIN_HEIGHT := 196
 
 var _config: Dictionary = {}
 var _accent := Color(0.79, 0.57, 0.35, 1.0)
@@ -36,11 +38,14 @@ var _mod_pool_count_label: Label = null
 var _mod_count_row: HBoxContainer = null
 var _mod_count_caption: Label = null
 var _mod_reward_hint: Label = null
+var _mod_details_slot: VBoxContainer = null
+var _mod_details_placeholder: Label = null
 var _mod_locked_hint: Label = null
 var _chart_difficulty_caption: Label = null
 var _chart_difficulty_row: HBoxContainer = null
 var _chart_style_locked_hint: Label = null
 var _chart_style_locked_icons_row: HBoxContainer = null
+var _chart_style_hint: Label = null
 var _track_order_locked_hint: Label = null
 var _lanes_locked_hint: Label = null
 var _mod_locked_icons_row: HBoxContainer = null
@@ -48,6 +53,7 @@ var _instrument_caption: Label = null
 var _instrument_icons_row: HBoxContainer = null
 var _resolved_instrument: String = _EndlessSessionConfig.DEFAULT_INSTRUMENT
 var _title_label: Label = null
+var _editable_hint: Label = null
 var _route_template: Dictionary = {}
 var _route_preview: Dictionary = {}
 var _body_hbox: HBoxContainer = null
@@ -111,6 +117,12 @@ func get_config() -> Dictionary:
 func apply_locale() -> void:
 	if _title_label:
 		_title_label.text = tr("MARATHON_CATALOG_SETTINGS_TITLE")
+	if _editable_hint:
+		_editable_hint.text = tr("MARATHON_CATALOG_EDITABLE_HINT")
+	if _chart_style_hint:
+		_chart_style_hint.text = tr("MARATHON_CATALOG_CHART_STYLE_HINT")
+	if _mod_details_placeholder:
+		_mod_details_placeholder.text = tr("MARATHON_CATALOG_MOD_DETAILS_PLACEHOLDER")
 	if _instrument_caption:
 		_instrument_caption.text = tr("MARATHON_CATALOG_INSTRUMENT_CAPTION")
 	if _chart_difficulty_caption:
@@ -181,6 +193,13 @@ func _build_ui() -> void:
 	_title_label.add_theme_color_override("font_color", Color(0.78, 0.86, 0.98, 1.0))
 	add_child(_title_label)
 
+	_editable_hint = Label.new()
+	_editable_hint.text = tr("MARATHON_CATALOG_EDITABLE_HINT")
+	_editable_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_editable_hint.add_theme_font_size_override("font_size", 12)
+	_editable_hint.add_theme_color_override("font_color", Color(0.62, 0.7, 0.82, 0.92))
+	add_child(_editable_hint)
+
 	_instrument_caption = _make_caption(tr("MARATHON_CATALOG_INSTRUMENT_CAPTION"))
 	add_child(_instrument_caption)
 	_instrument_icons_row = HBoxContainer.new()
@@ -190,6 +209,13 @@ func _build_ui() -> void:
 	_chart_style_settings = _ChartStyleSettings.new()
 	_chart_style_settings.settings_changed.connect(_on_chart_style_settings_changed)
 	add_child(_chart_style_settings)
+
+	_chart_style_hint = Label.new()
+	_chart_style_hint.text = tr("MARATHON_CATALOG_CHART_STYLE_HINT")
+	_chart_style_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_chart_style_hint.add_theme_font_size_override("font_size", 12)
+	_chart_style_hint.add_theme_color_override("font_color", Color(0.58, 0.66, 0.78, 0.95))
+	add_child(_chart_style_hint)
 
 	_chart_style_locked_hint = Label.new()
 	_chart_style_locked_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -228,6 +254,22 @@ func _build_ui() -> void:
 		mod_row.add_child(btn)
 		_mod_policy_buttons[policy_id] = btn
 
+	_mod_details_slot = VBoxContainer.new()
+	_mod_details_slot.add_theme_constant_override("separation", 8)
+	_mod_details_slot.custom_minimum_size = Vector2(0, _MOD_DETAILS_MIN_HEIGHT)
+	_mod_details_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(_mod_details_slot)
+	_mods_section_nodes.append(_mod_details_slot)
+
+	_mod_details_placeholder = Label.new()
+	_mod_details_placeholder.text = tr("MARATHON_CATALOG_MOD_DETAILS_PLACEHOLDER")
+	_mod_details_placeholder.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mod_details_placeholder.add_theme_font_size_override("font_size", 13)
+	_mod_details_placeholder.add_theme_color_override("font_color", Color(0.58, 0.66, 0.78, 0.9))
+	_mod_details_placeholder.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_mod_details_placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_mod_details_slot.add_child(_mod_details_placeholder)
+
 	_mod_pool_panel = PanelContainer.new()
 	_mod_pool_panel.add_theme_stylebox_override("panel", _SongSelectUiStyles.card_panel_style())
 	var mod_pool_vbox := VBoxContainer.new()
@@ -250,10 +292,18 @@ func _build_ui() -> void:
 	_mod_pool_count_label.add_theme_color_override("font_color", Color(0.72, 0.8, 0.92, 0.95))
 	mod_pool_header.add_child(_mod_pool_count_label)
 
+	var mod_pool_scroll := ScrollContainer.new()
+	mod_pool_scroll.custom_minimum_size = Vector2(0, 96)
+	mod_pool_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mod_pool_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	mod_pool_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	mod_pool_vbox.add_child(mod_pool_scroll)
+
 	var mod_pool_flow := FlowContainer.new()
 	mod_pool_flow.add_theme_constant_override("h_separation", 8)
 	mod_pool_flow.add_theme_constant_override("v_separation", 8)
-	mod_pool_vbox.add_child(mod_pool_flow)
+	mod_pool_flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mod_pool_scroll.add_child(mod_pool_flow)
 	for mod_id in _MarathonSessionConfig.marathon_mod_pool_candidates():
 		var icon := _ModPoolIconScript.new() as SessionModPoolIcon
 		if icon == null:
@@ -263,18 +313,15 @@ func _build_ui() -> void:
 		mod_pool_flow.add_child(icon)
 		_mod_pool_cards[mod_id] = icon
 
-	add_child(_mod_pool_panel)
-	_mods_section_nodes.append(_mod_pool_panel)
+	_mod_details_slot.add_child(_mod_pool_panel)
 
 	_mod_count_caption = _make_caption(tr("MARATHON_CATALOG_MOD_COUNT_CAPTION"))
-	add_child(_mod_count_caption)
-	_mods_section_nodes.append(_mod_count_caption)
+	_mod_details_slot.add_child(_mod_count_caption)
 	_mod_count_group = ButtonGroup.new()
 	_mod_count_group.allow_unpress = false
 	_mod_count_row = HBoxContainer.new()
 	_mod_count_row.add_theme_constant_override("separation", 10)
-	add_child(_mod_count_row)
-	_mods_section_nodes.append(_mod_count_row)
+	_mod_details_slot.add_child(_mod_count_row)
 	for count in range(
 		_EndlessSessionConfig.MOD_RANDOM_COUNT_MIN,
 		_EndlessSessionConfig.MOD_RANDOM_COUNT_MAX + 1
@@ -291,8 +338,7 @@ func _build_ui() -> void:
 	_mod_reward_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_mod_reward_hint.add_theme_font_size_override("font_size", 13)
 	_mod_reward_hint.add_theme_color_override("font_color", Color(0.68, 0.76, 0.88, 0.92))
-	add_child(_mod_reward_hint)
-	_mods_section_nodes.append(_mod_reward_hint)
+	_mod_details_slot.add_child(_mod_reward_hint)
 
 	_mod_locked_hint = Label.new()
 	_mod_locked_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -426,6 +472,8 @@ func _sync_from_config() -> void:
 	var chart_locked := _MarathonSessionConfig.is_setup_field_locked(_route_template, "chart_style")
 	if _chart_style_settings:
 		_chart_style_settings.visible = not chart_locked
+	if _chart_style_hint:
+		_chart_style_hint.visible = not chart_locked
 	if _chart_style_locked_hint:
 		_chart_style_locked_hint.visible = chart_locked
 		if chart_locked:
@@ -460,6 +508,8 @@ func _sync_from_config() -> void:
 			btn.set_pressed_no_signal(policy_id == mod_policy)
 
 	var pool_visible := mod_policy == _EndlessSessionConfig.MOD_POLICY_RANDOM_POOL
+	if _mod_details_placeholder:
+		_mod_details_placeholder.visible = not pool_visible
 	if _mod_pool_panel:
 		_mod_pool_panel.visible = pool_visible
 	if _mod_count_row:
@@ -735,15 +785,16 @@ func _ensure_body_layout() -> void:
 
 	var to_move: Array[Node] = []
 	for child in get_children():
-		if child == _title_label:
+		if child == _title_label or child == _editable_hint:
 			continue
 		to_move.append(child)
 	for child in to_move:
 		remove_child(child)
 		_settings_col.add_child(child)
 	add_child(_body_hbox)
-	if _title_label:
-		move_child(_body_hbox, _title_label.get_index() + 1)
+	var header_anchor: Node = _editable_hint if _editable_hint else _title_label
+	if header_anchor:
+		move_child(_body_hbox, header_anchor.get_index() + 1)
 	_sync_route_tracks_panel()
 
 

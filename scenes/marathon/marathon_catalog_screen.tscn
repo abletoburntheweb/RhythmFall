@@ -87,35 +87,7 @@ theme_override_colors/font_color = Color(0.79, 0.57, 0.35, 1)
 theme_override_font_sizes/font_size = 14
 text = "Courses"
 
-[node name="TabRow" type="HBoxContainer" parent="MainVBox/BodyHBox/LeftColumn"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 6
 
-[node name="TabAllButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"FlatButton"
-toggle_mode = true
-button_pressed = true
-text = "All"
-
-[node name="TabGenresButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"FlatButton"
-toggle_mode = true
-text = "By genre"
-
-[node name="TabPlaylistsButton" type="Button" parent="MainVBox/BodyHBox/LeftColumn/TabRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"FlatButton"
-toggle_mode = true
-text = "Playlists"
 
 [node name="CoursesScroll" type="ScrollContainer" parent="MainVBox/BodyHBox/LeftColumn"]
 unique_name_in_owner = true

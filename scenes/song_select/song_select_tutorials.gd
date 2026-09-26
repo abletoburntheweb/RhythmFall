@@ -2,7 +2,7 @@
 class_name SongSelectTutorials
 extends Node
 
-const _SpotlightTutorialScene := preload("res://ui/spotlight_tutorial.tscn")
+const _SpotlightTutorialScenePath := "res://ui/spotlight_tutorial.tscn"
 
 var screen: BaseScreen = null
 var spotlight_tutorial: CanvasLayer = null
@@ -96,7 +96,7 @@ func debug_show_rhythm_dna_usage(target: Control) -> void:
 func _ensure_spotlight() -> bool:
 	if spotlight_tutorial != null:
 		return true
-	spotlight_tutorial = _SpotlightTutorialScene.instantiate() as CanvasLayer
+	spotlight_tutorial = (load(_SpotlightTutorialScenePath) as PackedScene).instantiate() as CanvasLayer
 	if spotlight_tutorial == null:
 		return false
 	screen.add_child(spotlight_tutorial)

@@ -185,7 +185,7 @@ theme_override_constants/margin_bottom = 0
 
 [node name="GenreGroupsFlow" type="FlowContainer" parent="MainVBox/ContentHBox/SetupPanel/SetupMargin/SetupScroll/SetupVBox/GenreGroupsPanel/GenreGroupsMargin"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8

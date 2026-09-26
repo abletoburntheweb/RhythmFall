@@ -1,4 +1,4 @@
-# logic/utils/main_menu_activity_feed.gd
+# scenes/main_menu/lib/main_menu_activity_feed.gd
 extends RefCounted
 class_name MainMenuActivityFeed
 
@@ -9,13 +9,34 @@ const _SongSelectStrings = preload("res://logic/domain/library/song_select_strin
 
 const MAX_ITEMS := 5
 
+const _ProfileEventLog = preload("res://logic/domain/profile/profile_event_log.gd")
+const _DebugProgress = preload("res://logic/debug/debug_progress.gd")
+const _DebugScenario = preload("res://logic/debug/debug_scenario.gd")
+
+const PROGRESS_MILESTONES: Array[String] = [
+	"first_track_played",
+	"first_ss",
+	"first_fc",
+	"first_mod_clear",
+	"unique_100_tracks",
+	"clears_250",
+	"genre_group_level_10",
+	"total_rr_10000",
+	"endless_unlocked",
+	"marathon_unlocked",
+]
+
+const PROGRESS_GENRE_MASTERY_LEVELS: Array[int] = [5, 10, 15, 20]
+const PROGRESS_RR_THRESHOLDS: Array[int] = [25000, 50000, 100000, 250000, 500000, 1000000]
+const PROGRESS_LIBRARY_THRESHOLDS: Array[int] = [100, 500, 1000]
+
 # Fixed display order in the main-menu activity panel (not sorted by date).
 const DISPLAY_ORDER: Array[String] = [
 	"session",
 	"daily",
 	"achievement",
 	"generation",
-	"record",
+	"progress",
 ]
 
 
@@ -27,6 +48,9 @@ static func collect_entries(
 	daily_quests_date: String = "",
 	last_daily_completion: Dictionary = {}
 ) -> Array:
+	if _DebugScenario.has_activity_override():
+		return _DebugScenario.get_activity_override()
+
 	var by_kind: Dictionary = {}
 
 	var latest_session := _pick_latest_session(history, resolve_track_labels)
@@ -52,9 +76,9 @@ static func collect_entries(
 	if not generation_entry.is_empty():
 		by_kind["generation"] = generation_entry
 
-	var record_entry := _build_record_entry(_read_last_personal_record())
-	if not record_entry.is_empty():
-		by_kind["record"] = record_entry
+	var progress_entry := _build_progress_entry()
+	if not progress_entry.is_empty():
+		by_kind["progress"] = progress_entry
 
 	var entries: Array = []
 	for kind in DISPLAY_ORDER:
@@ -63,8 +87,98 @@ static func collect_entries(
 	return entries
 
 
-static func _read_last_personal_record() -> Dictionary:
-	return {}
+static func _is_progress_milestone(ev: Dictionary) -> bool:
+	if str(ev.get("kind", "")) != _ProfileEventLog.KIND_MILESTONE:
+		return false
+	var raw_key := _ProfileEventLog.milestone_raw_key(ev)
+	return PROGRESS_MILESTONES.has(raw_key)
+
+static func _is_progress_event(ev: Dictionary) -> bool:
+	var kind := str(ev.get("kind", ""))
+	match kind:
+		_ProfileEventLog.KIND_MILESTONE:
+			return _is_progress_milestone(ev)
+		_ProfileEventLog.KIND_GENRE_MASTERY:
+			return int(ev.get("level", 0)) in PROGRESS_GENRE_MASTERY_LEVELS
+		_ProfileEventLog.KIND_RR_TOTAL:
+			var v := int(str(ev.get("title_arg", "")).replace(" ", ""))
+			return v in PROGRESS_RR_THRESHOLDS
+		_ProfileEventLog.KIND_LIBRARY_SIZE:
+			var v2 := int(str(ev.get("title_arg", "")).replace(" ", ""))
+			return v2 in PROGRESS_LIBRARY_THRESHOLDS
+		_:
+			return false
+
+static func _pick_latest_progress() -> Dictionary:
+	if not PlayerDataManager:
+		return {}
+	var store: Dictionary = _ProfileEventLog.get_store_from_player_data(PlayerDataManager.data)
+	var events: Variant = store.get("events", [])
+	if not events is Array:
+		return {}
+	var best: Dictionary = {}
+	var best_ts := -1
+	for ev in events:
+		if not ev is Dictionary:
+			continue
+		if not _is_progress_event(ev):
+			continue
+		var ts := _ProfileEventLog._event_sort_key(ev)
+		if ts > best_ts:
+			best_ts = ts
+			best = ev
+	# Fallback: if event log empty but milestones dict has whitelisted entries (e.g. before backfill), pick from milestones directly
+	if best.is_empty() and ProfileMilestonesManager:
+		var data: Dictionary = ProfileMilestonesManager.get_data()
+		var milestones: Variant = data.get("milestones", {})
+		if milestones is Dictionary:
+			for key in PROGRESS_MILESTONES:
+				var entry: Variant = milestones.get(key, null)
+				if not entry is Dictionary or (entry as Dictionary).is_empty():
+					continue
+				var date_str := str(entry.get("date", ""))
+				var ts2 := TimeUtils.unix_from_local_iso_datetime(date_str)
+				if ts2 > best_ts:
+					best_ts = ts2
+					# Synthesize minimal event-like dict for fallback
+					best = {
+						"kind": _ProfileEventLog.KIND_MILESTONE,
+						"ts": date_str,
+						"title_key": "PROFILE_EVENT_MILESTONE",
+						"title_arg": _ProfileEventLog._milestone_title_key(key),
+						"detail": str(entry.get("title", "")) if str(entry.get("title", "")) != "" else _ProfileEventLog._track_line(entry),
+						"song_path": str(entry.get("song_path", "")),
+						"icon": _ProfileEventLog._milestone_icon(key),
+					}
+	# Consider debug progress event (runtime only, no persistence) — must pass same whitelist check
+	if _DebugProgress.has_event():
+		var dbg := _DebugProgress.get_event()
+		if _is_progress_event(dbg):
+			var dbg_ts := _ProfileEventLog._event_sort_key(dbg)
+			if dbg_ts > best_ts:
+				best_ts = dbg_ts
+				best = dbg
+
+	return best
+
+static func _build_progress_entry() -> Dictionary:
+	var ev := _pick_latest_progress()
+	if ev.is_empty():
+		return {}
+	var ts := _ProfileEventLog._event_sort_key(ev)
+	var icon_file := str(ev.get("icon", "flag.svg"))
+	var icon_color: Color = _ProfileEventLog.tint_for_event(ev)
+	var title := _ProfileEventLog.format_subtitle(ev)
+	if title.strip_edges() == "":
+		title = _ProfileEventLog.format_headline(ev)
+	return {
+		"kind": "progress",
+		"timestamp": ts,
+		"icon_file": icon_file,
+		"icon_color": icon_color,
+		"progress_title": title,
+		"event": ev,
+	}
 
 
 static func _pick_latest_session(history: Array, resolve_track_labels: Callable = Callable()) -> Dictionary:
@@ -167,30 +281,6 @@ static func _build_generation_entry(record: Dictionary) -> Dictionary:
 	}
 
 
-static func _build_record_entry(record: Dictionary) -> Dictionary:
-	if not record is Dictionary or record.is_empty():
-		return {}
-	var best_rr := int(record.get("best_rr", 0))
-	if best_rr <= 0:
-		return {}
-	var date_str := str(record.get("date", "")).strip_edges()
-	var ts := TimeUtils.unix_from_local_iso_datetime(date_str) if date_str != "" else 0
-	var title := str(record.get("title", "")).strip_edges()
-	var artist := str(record.get("artist", "")).strip_edges()
-	if title == "" or title == "N/A":
-		title = "—"
-	if artist == "" or artist == "N/A":
-		artist = "—"
-	return {
-		"kind": "record",
-		"timestamp": ts,
-		"date_str": date_str,
-		"icon_file": "flame.svg",
-		"icon_color": Color(1.0, 0.58, 0.32, 1.0),
-		"title": title,
-		"artist": artist,
-		"best_rr": best_rr,
-	}
 
 
 static func format_entry_text(entry: Dictionary) -> String:
@@ -216,12 +306,16 @@ static func format_entry_text(entry: Dictionary) -> String:
 				str(entry.get("title", "—")),
 				settings,
 			]
-		"record":
-			return TranslationServer.translate("MAIN_ACTIVITY_RECORD") % [
-				str(entry.get("artist", "—")),
-				str(entry.get("title", "—")),
-				int(entry.get("best_rr", 0)),
-			]
+		"progress":
+			var evp: Dictionary = entry.get("event", {})
+			var txt := str(entry.get("progress_title", ""))
+			if txt.strip_edges() == "" and not evp.is_empty():
+				txt = _ProfileEventLog.format_subtitle(evp)
+			if txt.strip_edges() == "" and not evp.is_empty():
+				txt = _ProfileEventLog.format_headline(evp)
+			if txt.strip_edges() == "":
+				txt = str(entry.get("title", ""))
+			return TranslationServer.translate("MAIN_ACTIVITY_PROGRESS") % txt
 	return ""
 
 
@@ -229,7 +323,12 @@ static func format_entry_time(entry: Dictionary) -> String:
 	var ts := int(entry.get("timestamp", 0))
 	if ts <= 0:
 		match str(entry.get("kind", "")):
-			"session", "record":
+			"session":
+				return TimeUtils.format_relative_ago_from_local_iso(str(entry.get("date_str", "")))
+			"progress":
+				var ev2: Dictionary = entry.get("event", {})
+				if not ev2.is_empty():
+					return TimeUtils.format_relative_ago_from_unix(_ProfileEventLog._event_sort_key(ev2))
 				return TimeUtils.format_relative_ago_from_local_iso(str(entry.get("date_str", "")))
 			"daily", "generation":
 				return TimeUtils.format_relative_ago_from_local_iso(str(entry.get("completed_at", "")))

@@ -1,4 +1,4 @@
-# logic/utils/main_menu_nearest_achievement.gd
+# scenes/main_menu/lib/main_menu_nearest_achievement.gd
 extends RefCounted
 class_name MainMenuNearestAchievement
 
@@ -17,6 +17,8 @@ static func pick_nearest(achievements: Array) -> Dictionary:
 			continue
 		var ach: Dictionary = raw
 		if ach.get("unlocked", false):
+			continue
+		if bool(ach.get("deprecated", false)):
 			continue
 		var total := float(ach.get("total", 1))
 		if total <= 0.0:

@@ -61,6 +61,9 @@ func start(raw_config: Dictionary) -> bool:
 	_current_modifiers = []
 	_pool_lap_announce = 0
 	_last_finish_reason = "complete"
+	if str(config.get("track_source", "")) == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST:
+		const PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
+		PlaylistCatalog.record_playlist_run(str(config.get("playlist_id", "")))
 	return _prepare_current_track()
 
 
@@ -146,6 +149,9 @@ func get_launch_params() -> Dictionary:
 func on_track_cleared(stats: Dictionary) -> bool:
 	streak += 1
 	_accumulate_track_stats(stats, true)
+	if str(config.get("track_source", "")) == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST:
+		const PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
+		PlaylistCatalog.record_playlist_session_clear(str(config.get("playlist_id", "")))
 	if exit_after_track:
 		_last_finish_reason = "exit"
 		return false

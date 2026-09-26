@@ -4,7 +4,7 @@ signal unseen_medals_viewed
 
 const _UiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
 const _TrackMedals = preload("res://logic/domain/library/track_medals.gd")
-const MEDAL_ICON_SLOT_SCENE := preload("res://scenes/ui/medal_icon_slot.tscn")
+const MEDAL_ICON_SLOT_SCENE_PATH := "res://scenes/ui/medal_icon_slot.tscn"
 const MEDAL_SLOT_COUNT := 8
 
 @onready var _title_label: Label = $Margin/VBox/HeaderRow/MedalsTitleLabel
@@ -135,7 +135,7 @@ func _ensure_slot_icon(slot: PanelContainer) -> TextureRect:
 	if existing:
 		existing.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return existing
-	var icon := MEDAL_ICON_SLOT_SCENE.instantiate() as TextureRect
+	var icon := (load(MEDAL_ICON_SLOT_SCENE_PATH) as PackedScene).instantiate() as TextureRect
 	icon.name = "MedalIcon"
 	icon.apply_icon(null, Color.WHITE, Vector2(20, 20))
 	center.add_child(icon)

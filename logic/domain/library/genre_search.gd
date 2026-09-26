@@ -1,4 +1,4 @@
-# logic/utils/genre_search.gd
+# logic/domain/library/genre_search.gd
 extends RefCounted
 class_name GenreSearch
 

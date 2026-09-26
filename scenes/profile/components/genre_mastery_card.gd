@@ -1,4 +1,4 @@
-# scenes/profile/genre_mastery_card.gd
+# scenes/profile/components/genre_mastery_card.gd
 extends PanelContainer
 
 signal expanded_changed(group_id: String, expanded: bool)
@@ -7,6 +7,7 @@ const _ProfileGenrePortrait = preload("res://logic/domain/profile/profile_genre_
 const _ProfileGenreMastery = preload("res://logic/domain/profile/profile_genre_mastery.gd")
 const _GenreGroupIcons = preload("res://logic/domain/library/genre_group_icons.gd")
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
+const _GenreSearch = preload("res://logic/domain/library/genre_search.gd")
 
 const COLOR_VALUE := Color(0.784314, 0.823529, 0.901961, 1)
 const COLOR_MUTED := Color(0.55, 0.58, 0.65, 0.92)
@@ -37,30 +38,33 @@ var _target_bar_value: float = 0.0
 var _bar_tween: Tween
 var _last_accent := Color.WHITE
 var _last_locked := true
+var _canonical_play_counts: Dictionary = {}
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	gui_input.connect(_on_card_gui_input)
+	UiClick.connect_clicked(self, _toggle_expanded, _genre_group_guard)
 	mouse_entered.connect(_on_card_mouse_entered)
 	mouse_exited.connect(_on_card_mouse_exited)
 	if _meta_label:
 		_meta_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _progress_bar:
+		_progress_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _subgenres_sep:
 		_subgenres_sep.visible = false
 
 
-func _on_card_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and _group_id != "":
-			if _expanded:
-				_UiModifierSounds.play_deselect()
-			else:
-				_UiModifierSounds.play_select()
-			set_expanded(not _expanded)
-			accept_event()
+func _genre_group_guard() -> bool:
+	return _group_id != ""
+
+
+func _toggle_expanded() -> void:
+	if _expanded:
+		_UiModifierSounds.play_deselect()
+	else:
+		_UiModifierSounds.play_select()
+	set_expanded(not _expanded)
 
 
 func _on_card_mouse_entered() -> void:
@@ -78,6 +82,16 @@ func setup(group_id: String, plays: int, genre_play_counts: Dictionary = {}) -> 
 	_genre_play_counts = genre_play_counts
 	_subgenres = _ProfileGenrePortrait.genres_for_group(group_id)
 	_dedupe_subgenres()
+	# Build local canonical cache: one pass, each raw key canonicalized once.
+	_canonical_play_counts.clear()
+	for raw_key in _genre_play_counts:
+		var canon := _GenreSearch.canonical_display_genre(str(raw_key))
+		if canon == "":
+			continue
+		var cnt := int(_genre_play_counts[raw_key])
+		if cnt <= 0:
+			continue
+		_canonical_play_counts[canon] = int(_canonical_play_counts.get(canon, 0)) + cnt
 	_sort_subgenres_by_plays()
 	if not is_node_ready():
 		await ready
@@ -185,7 +199,15 @@ func _update_meta_text(
 		locked = int(progress.get("level", 0)) <= 0
 		plays = _plays
 	var catalog := _subgenres.size()
-	var discovered := _ProfileGenreMastery.discovered_count_in_group(_group_id, _genre_play_counts)
+	var discovered: int
+	if not _canonical_play_counts.is_empty() or _genre_play_counts.is_empty():
+		discovered = 0
+		for genre_id in _subgenres:
+			var canon := _GenreSearch.canonical_display_genre(genre_id)
+			if canon != "" and int(_canonical_play_counts.get(canon, 0)) > 0:
+				discovered += 1
+	else:
+		discovered = _ProfileGenreMastery.discovered_count_in_group(_group_id, _genre_play_counts)
 	var count_hint := tr("PROFILE_GENRE_GROUP_COUNT_FMT") % [discovered, catalog]
 	if at_max:
 		_meta_label.text = "%s · %s" % [count_hint, tr("PROFILE_GENRE_PLAYS_FMT") % plays]
@@ -216,8 +238,8 @@ func _dedupe_subgenres() -> void:
 
 func _sort_subgenres_by_plays() -> void:
 	_subgenres.sort_custom(func(a: String, b: String) -> bool:
-		var ca := _ProfileGenrePortrait.display_genre_play_count(_genre_play_counts, a)
-		var cb := _ProfileGenrePortrait.display_genre_play_count(_genre_play_counts, b)
+		var ca := int(_canonical_play_counts.get(_GenreSearch.canonical_display_genre(a), 0))
+		var cb := int(_canonical_play_counts.get(_GenreSearch.canonical_display_genre(b), 0))
 		if ca != cb:
 			return ca > cb
 		return a < b

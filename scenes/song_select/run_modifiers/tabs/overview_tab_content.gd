@@ -4,6 +4,7 @@ extends VBoxContainer
 const CARD_SCENE := preload("res://scenes/song_select/run_modifiers/run_modifier_card.tscn")
 const _Sections = preload("res://scenes/song_select/run_modifiers/run_modifier_sections.gd")
 const _SubUi = preload("res://scenes/song_select/run_modifiers/run_modifier_subsection_ui.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 signal card_toggled(modifier_id: String, pressed: bool)
 signal card_hovered(modifier_id: String)
@@ -29,13 +30,18 @@ func apply_locale() -> void:
 
 
 func build_overview() -> void:
+	var _perf_clear := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.clear")
 	_cards.clear()
 	if _content == null:
+		PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.clear", _perf_clear)
 		return
 	for child in _content.get_children():
 		child.queue_free()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.clear", _perf_clear)
+	var _perf_groups := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.groups")
 	for group in _Sections.overview_groups():
 		_add_category_block(group)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.groups", _perf_groups)
 
 
 func _add_category_block(group: Dictionary) -> void:
@@ -69,6 +75,15 @@ func set_modifier_active(modifier_id: String, active: bool) -> void:
 
 func get_card(modifier_id: String):
 	return _cards.get(modifier_id, null)
+
+
+func get_ordered_visible_modifier_ids() -> Array[String]:
+	var out: Array[String] = []
+	for mod_id in _cards.keys():
+		var card = _cards.get(mod_id, null)
+		if card is Control and (card as Control).visible:
+			out.append(str(mod_id))
+	return out
 
 
 func set_card_visible(modifier_id: String, visible: bool) -> void:

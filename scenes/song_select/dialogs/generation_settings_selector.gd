@@ -1,4 +1,4 @@
-# scenes/song_select/generation_settings_selector.gd
+# scenes/song_select/dialogs/generation_settings_selector.gd
 class_name GenerationSettingsSelector
 extends Control
 
@@ -14,7 +14,12 @@ const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficu
 const _SegmentedOptionUtils = preload("res://logic/ui/segmented_option_utils.gd")
 const _PreviewRowScene = preload("res://scenes/song_select/endless/session_setup_preview_row.gd")
 const PRESETS_DIALOG_SCENE = preload("res://scenes/song_select/run_modifiers/modifier_presets_dialog.tscn")
+const SCOPE_MODAL_SCENE = preload("res://scenes/song_select/dialogs/generation_scope_modal.tscn")
 const _PresetActiveHeader = preload("res://logic/ui/preset_active_header.gd")
+const _ChoiceOverlayScene = preload("res://ui/overlays/app_choice_overlay.tscn")
+const _Overlay = preload("res://logic/ui/app_overlay_helpers.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+static var _cs_ready_count: int = 0
 
 const _STATUS_PANEL_WIDTH := 220.0
 const _NAV_LEFT := 16.0
@@ -76,6 +81,7 @@ var advanced_container: Control = null
 var _back_button: Button = null
 var _presets_button: Button = null
 var _mode_help_btn: Button = null
+var _gen_settings_btn: Button = null
 var _screen_margin: MarginContainer = null
 var _track_status_panel: PanelContainer = null
 var _preview_panel: PanelContainer = null
@@ -95,11 +101,18 @@ var _goal_cards: Dictionary = {}
 var _lane_buttons: Dictionary = {}
 var _spotlight_tutorial: CanvasLayer = null
 var _presets_dialog: Control = null
+var _scope_modal: Control = null
 var _preset_active_slot: int = 0
 var _preset_baseline: Dictionary = {}
 var _active_preset_row: HBoxContainer = null
 var _intent_card_pick_guard: bool = false
 var _style_reset_button: Button = null
+var _style_opened_snapshot: Dictionary = {}
+# True only after the user edits something inside the Advanced parameters section.
+# Drives the "reset style" button — basic edits (instrument / goal / lanes / etc.) must not show it.
+var _advanced_dirty: bool = false
+var _choice_overlay: AppChoiceOverlay = null
+var _back_prompt_active := false
 
 const ACTIVE_COLOR := Color(0.8, 0.8, 1.0, 1.0)
 const DEFAULT_COLOR := Color(1.0, 1.0, 1.0, 1.0)
@@ -152,13 +165,20 @@ const INTENT_SPECS := [
 
 
 func _ready() -> void:
+	_cs_ready_count += 1
+	var _perf_cs_ready := PerfTrace.begin("perf.detail.song_select.chart_style.ready.total")
+	var _perf_cs_ready_n := PerfTrace.begin("perf.detail.song_select.chart_style.ready.total.count%d" % _cs_ready_count)
 	UiIconHelper.configure_modal_overlay(self, 100)
+	_choice_overlay = _ChoiceOverlayScene.instantiate() as AppChoiceOverlay
+	if _choice_overlay:
+		add_child(_choice_overlay)
 	_applying_ui_state = true
 	var background := $Background
 	if background:
 		background.color = Color(0.02, 0.03, 0.06, 0.97)
 		background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	var _perf_cs_data := PerfTrace.begin("perf.detail.song_select.chart_style.ready.data")
 	selected_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
 	if selected_instrument not in ["drums", "bass"]:
 		selected_instrument = "drums"
@@ -200,23 +220,48 @@ func _ready() -> void:
 	)
 	selected_groove_completion = bool(clamped_flags["groove_completion"])
 	selected_raw_adtof = bool(clamped_flags["raw_adtof"])
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.data", _perf_cs_data)
 
+	var _perf_cs_cards := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards")
+	var _perf_cs_cards_controls := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.controls")
 	_bind_controls()
 	_setup_active_preset_header()
 	_setup_back_button()
 	_setup_presets_button()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.controls", _perf_cs_cards_controls)
+	var _perf_cs_cards_icons := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons")
+	var _perf_cs_cards_icons_sec := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons.section")
 	_setup_section_icons()
 	_ensure_mode_help_icon()
+	_ensure_gen_settings_icon()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons.section", _perf_cs_cards_icons_sec)
+	var _perf_cs_cards_icons_param := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons.param")
 	_setup_param_icons()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons.param", _perf_cs_cards_icons_param)
+	var _perf_cs_cards_checkbox_styles := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons.param.checkbox_styles")
 	_apply_settings_checkbox_styles()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons.param.checkbox_styles", _perf_cs_cards_checkbox_styles)
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons", _perf_cs_cards_icons)
+	var _perf_cs_cards_instr := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.instrument_cards")
 	_bind_instrument_cards()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.instrument_cards", _perf_cs_cards_instr)
+	var _perf_cs_cards_goal := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.goal_cards")
 	_bind_goal_cards()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.goal_cards", _perf_cs_cards_goal)
+	var _perf_cs_cards_lanes := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.lane_buttons")
 	_bind_lane_buttons()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.lane_buttons", _perf_cs_cards_lanes)
+	var _perf_cs_cards_diff := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.difficulty_setup")
 	_setup_difficulty_segmented()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.difficulty_setup", _perf_cs_cards_diff)
+	var _perf_cs_cards_preview := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.preview_panel")
 	_setup_preview_panel()
 	_ensure_smart_hint_labels()
 	_ensure_style_reset_button()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.preview_panel", _perf_cs_cards_preview)
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards", _perf_cs_cards)
 
+	var _perf_cs_sliders := PerfTrace.begin("perf.detail.song_select.chart_style.ready.sliders")
 	_apply_sliders_to_ui()
 
 	if selected_mode == "custom":
@@ -226,13 +271,17 @@ func _ready() -> void:
 		_apply_goal_difficulty(selected_goal, selected_difficulty, false, true)
 	_update_slider_labels()
 	_apply_advanced_section_visual()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.sliders", _perf_cs_sliders)
 
 	_applying_ui_state = false
+	var _perf_cs_refresh := PerfTrace.begin("perf.detail.song_select.chart_style.ready.refresh")
 	_sync_difficulty_section_visibility()
 	_update_selection_visuals()
 	_update_status_indicator()
 	_sync_preview()
 	_update_smart_preset_recommendation()
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.refresh", _perf_cs_refresh)
+	var _perf_cs_layout := PerfTrace.begin("perf.detail.song_select.chart_style.ready.layout")
 	call_deferred("apply_locale")
 	_apply_section_tooltips()
 	_setup_footer_icons()
@@ -241,9 +290,17 @@ func _ready() -> void:
 	call_deferred("_layout_nav_buttons")
 	call_deferred("_maybe_show_generation_settings_tutorial")
 	_sync_preset_tracking()
+	_style_opened_snapshot = get_draft_snapshot().duplicate(true)
+	_advanced_dirty = false
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.layout", _perf_cs_layout)
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.total.count%d" % _cs_ready_count, _perf_cs_ready_n)
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.total", _perf_cs_ready)
+	PerfTrace.record("perf.detail.song_select.chart_style.ready.count", _cs_ready_count)
 
 
 func _maybe_show_generation_settings_tutorial(force: bool = false) -> void:
+	if FirstStepsManager and FirstStepsManager.is_active():
+		return
 	if not SettingsManager or not SettingsManager.has_method("get_tutorial_generation_settings_done"):
 		return
 	if not force and SettingsManager.get_tutorial_generation_settings_done():
@@ -409,7 +466,7 @@ func _layout_nav_buttons() -> void:
 		_screen_margin.add_theme_constant_override("margin_top", int(header_row_y))
 	if _presets_button == null:
 		return
-	var presets_size := UiIconHelper.BACK_BUTTON_MIN_SIZE
+	var presets_size := Vector2(220, UiIconHelper.BACK_BUTTON_MIN_SIZE.y)
 	_presets_button.custom_minimum_size = presets_size
 	_presets_button.size = presets_size
 	_presets_button.position = Vector2(size.x - presets_size.x - _NAV_LEFT, _NAV_TOP)
@@ -442,12 +499,16 @@ func _bind_goal_cards() -> void:
 	var row := get_node_or_null(GOAL_ROW) as HBoxContainer
 	if row == null:
 		return
+	# Same as instruments: no unpress — re-click must not clear the selected look.
+	var goal_group := ButtonGroup.new()
+	goal_group.allow_unpress = false
 	for child in row.get_children():
 		var card := child as GenerationSelectCard
 		if card == null or card.card_id.strip_edges() == "":
 			continue
 		if card.card_id not in _GoalDiff.GOALS:
 			continue
+		card.button_group = goal_group
 		if not card.card_selected.is_connected(_on_goal_card_selected):
 			card.card_selected.connect(_on_goal_card_selected)
 		_goal_cards[card.card_id] = card
@@ -462,9 +523,9 @@ func _find_goal_spec(goal_id: String) -> Dictionary:
 
 func _difficulty_option_labels() -> PackedStringArray:
 	return PackedStringArray([
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "relaxed")),
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "standard")),
-		tr(_GoalDiff.difficulty_label_key(selected_goal, "dense")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "easy")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "medium")),
+		tr(_GoalDiff.difficulty_label_key(selected_goal, "hard")),
 	])
 
 
@@ -474,16 +535,16 @@ func _setup_difficulty_segmented() -> void:
 	if _difficulty_seg.is_empty():
 		_difficulty_option.clear()
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "relaxed")),
-			_GoalDiff.difficulty_option_id("relaxed"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "easy")),
+			_GoalDiff.difficulty_option_id("easy"),
 		)
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "standard")),
-			_GoalDiff.difficulty_option_id("standard"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "medium")),
+			_GoalDiff.difficulty_option_id("medium"),
 		)
 		_difficulty_option.add_item(
-			tr(_GoalDiff.difficulty_label_key(selected_goal, "dense")),
-			_GoalDiff.difficulty_option_id("dense"),
+			tr(_GoalDiff.difficulty_label_key(selected_goal, "hard")),
+			_GoalDiff.difficulty_option_id("hard"),
 		)
 		_difficulty_seg = _SegmentedOptionUtils.build_from_option_button(
 			_difficulty_option,
@@ -522,6 +583,8 @@ func _on_difficulty_segment_pressed(btn: Button) -> void:
 	var option_id := _SegmentedOptionUtils.id_from_button(btn)
 	var new_difficulty := _GoalDiff.difficulty_from_option_id(option_id)
 	if new_difficulty == selected_difficulty:
+		# Re-click: keep highlight in sync (segment buttons are not a ButtonGroup).
+		_sync_difficulty_segment()
 		return
 	_apply_goal_difficulty(selected_goal, new_difficulty, true)
 	UiScreenHotkeys.play_section_switch_sound()
@@ -603,6 +666,7 @@ func _set_preview_row(
 
 
 func _sync_preview() -> void:
+	var _perf_cs_prev := PerfTrace.begin("perf.detail.song_select.chart_style.refresh.preview")
 	if _preview_hero_label:
 		if selected_goal == "original":
 			# Original has no difficulty tier — don't show "Readable"/«Читаемая».
@@ -653,7 +717,7 @@ func _sync_preview() -> void:
 		true,
 	)
 	var tuning_text := tr("GEN_PREVIEW_TUNING_DEFAULT")
-	if _style_is_customized():
+	if _params_differ_from_intent_preset():
 		tuning_text = tr("GEN_PREVIEW_TUNING_CUSTOM")
 	elif _preset_active_slot > 0:
 		tuning_text = tr("GEN_PREVIEW_TUNING_PRESET") % preset_host_get_active_name()
@@ -662,8 +726,9 @@ func _sync_preview() -> void:
 		if tuning_row:
 			tuning_row.visible = false
 	else:
-		_set_preview_row("tuning", tuning_text, true, "warn" if _style_is_customized() else "normal")
+		_set_preview_row("tuning", tuning_text, true, "warn" if _params_differ_from_intent_preset() else "normal")
 	_sync_preview_status()
+	PerfTrace.end("perf.detail.song_select.chart_style.refresh.preview", _perf_cs_prev)
 
 
 func _sync_preview_status() -> void:
@@ -672,10 +737,10 @@ func _sync_preview_status() -> void:
 	var label := _preview_status_label if _preview_status_label else status_label
 	if label:
 		if exists:
-			label.text = tr("SONG_STATUS_NOTES_READY")
+			label.text = tr("GEN_AVAIL_READY")
 			label.add_theme_color_override("font_color", Color(0.45, 0.82, 0.58, 1.0))
 		else:
-			label.text = tr("SONG_STATUS_NO_NOTES")
+			label.text = tr("GEN_AVAIL_MISSING")
 			label.add_theme_color_override("font_color", Color(0.62, 0.7, 0.82, 0.92))
 	var hint := _preview_status_hint_label if _preview_status_hint_label else status_hint_label
 	if hint:
@@ -746,6 +811,7 @@ func _find_instrument_spec(inst_id: String) -> Dictionary:
 
 
 func apply_locale() -> void:
+	var _perf_cs_apply := PerfTrace.begin("perf.detail.song_select.chart_style.apply_locale.total")
 	if _back_button:
 		_back_button.text = tr("BTN_BACK")
 	var footer_hint := get_node_or_null("ScreenMargin/Container/FooterHintLabel") as Label
@@ -756,7 +822,7 @@ func apply_locale() -> void:
 		screen_title.text = tr("GEN_SCREEN_TITLE")
 	var screen_hint := get_node_or_null(ROOT + "/HeaderTitle/HintLabel")
 	if screen_hint:
-		screen_hint.text = tr("GEN_SCREEN_SUBTITLE")
+		screen_hint.text = "%s\n%s" % [tr("GEN_SCREEN_SUBTITLE"), tr("GEN_SCREEN_SUBTITLE_HINT")]
 	if status_title_label:
 		status_title_label.text = tr("GEN_TRACK_STATUS_TITLE")
 	_set_section_label_in(ROOT + "/BodyHBox/InstrumentPanel/InstrumentPanelVBox", "InstrumentTitle", "GEN_TITLE")
@@ -765,10 +831,13 @@ func apply_locale() -> void:
 	_set_section_label(ROOT + "/BodyHBox/MainScroll/MainVBox/ModeSection/ModeSectionVBox/ModeSubtitle", "GEN_GOAL_SECTION_SUB")
 	if _mode_help_btn:
 		_mode_help_btn.tooltip_text = tr("HELP_LINK_CHART_STYLE")
+	if _gen_settings_btn:
+		_gen_settings_btn.tooltip_text = tr("SESSION_CHART_STYLE_GEN_SETTINGS_TIP")
 	_set_section_label_in(DIFFICULTY_SECTION, "DifficultyTitle", "GEN_DIFF_SECTION_TITLE")
 	_set_section_label(DIFFICULTY_SECTION + "/DifficultySubtitle", "GEN_DIFF_SECTION_SUB")
 	_set_section_label_in(ROOT + "/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox", "LanesTitle", "GEN_LANES_LABEL")
 	_set_section_label(ROOT + "/BodyHBox/MainScroll/MainVBox/LanesSection/LanesSectionVBox/LanesSubtitle", "GEN_LANES_SECTION_SUB")
+	var _perf_cs_cards_setup := PerfTrace.begin("perf.detail.song_select.chart_style.cards.setup")
 	for card_id in _instrument_cards:
 		var spec := _find_instrument_spec(card_id)
 		if spec.is_empty():
@@ -784,7 +853,9 @@ func apply_locale() -> void:
 			INSTRUMENT_ICONS.get(card_id, ""),
 			INSTRUMENT_ICON_COLORS.get(card_id, SECTION_ICON_COLOR)
 		)
+	PerfTrace.end("perf.detail.song_select.chart_style.cards.setup", _perf_cs_cards_setup)
 	call_deferred("_normalize_instrument_card_layout")
+	var _perf_cs_cards_goal := PerfTrace.begin("perf.detail.song_select.chart_style.cards.setup.goal")
 	for goal_id in _goal_cards:
 		var spec := _find_goal_spec(goal_id)
 		var gcard: GenerationSelectCard = _goal_cards.get(goal_id)
@@ -800,6 +871,7 @@ func apply_locale() -> void:
 			INTENT_ICON_COLORS.get(goal_id, SECTION_ICON_COLOR),
 		)
 		gcard.tooltip_text = tr(str(spec.get("desc_key", "")))
+	PerfTrace.end("perf.detail.song_select.chart_style.cards.setup.goal", _perf_cs_cards_goal)
 	if _difficulty_option:
 		if _difficulty_seg.is_empty():
 			_setup_difficulty_segmented()
@@ -831,6 +903,7 @@ func apply_locale() -> void:
 		raw_adtof_cb.text = tr("GEN_RAW_ADTOF")
 	if _presets_button:
 		_presets_button.text = tr("GEN_PRESETS_BUTTON")
+		_presets_button.tooltip_text = tr("GEN_PRESETS_TOOLTIP")
 	_update_active_preset_header()
 	var reset_btn := get_node_or_null(FOOTER + "/ResetButton")
 	if reset_btn:
@@ -845,6 +918,7 @@ func apply_locale() -> void:
 	_update_selection_visuals()
 	_sync_preview()
 	call_deferred("_layout_nav_buttons")
+	PerfTrace.end("perf.detail.song_select.chart_style.apply_locale.total", _perf_cs_apply)
 
 
 func _set_section_label(path: String, key: String) -> void:
@@ -900,8 +974,48 @@ func _ensure_mode_help_icon() -> void:
 	row.add_child(_mode_help_btn)
 
 
+func _ensure_gen_settings_icon() -> void:
+	if _gen_settings_btn != null and is_instance_valid(_gen_settings_btn):
+		return
+	_ensure_mode_help_icon()
+	if _mode_help_btn == null or not is_instance_valid(_mode_help_btn):
+		return
+	var parent := _mode_help_btn.get_parent()
+	if parent == null:
+		return
+	_gen_settings_btn = _SettingsSectionUi.make_settings_icon_button(
+		tr("SESSION_CHART_STYLE_GEN_SETTINGS_TIP")
+	)
+	_gen_settings_btn.pressed.connect(_on_gen_settings_pressed)
+	parent.add_child(_gen_settings_btn)
+	parent.move_child(_gen_settings_btn, _mode_help_btn.get_index() + 1)
+
+
 func _on_mode_help_pressed() -> void:
 	_open_help_item("modes")
+
+
+func _on_gen_settings_pressed() -> void:
+	if _scope_modal and is_instance_valid(_scope_modal):
+		if _scope_modal.has_method("open"):
+			_scope_modal.open()
+		return
+	_scope_modal = SCOPE_MODAL_SCENE.instantiate()
+	add_child(_scope_modal)
+	move_child(_scope_modal, -1)
+	if _scope_modal.has_signal("closed"):
+		_scope_modal.closed.connect(_on_scope_modal_closed)
+	if _scope_modal.has_method("apply_locale"):
+		_scope_modal.apply_locale()
+	UiInteractionApplier.apply_from_engine(_scope_modal)
+	if _scope_modal.has_method("open"):
+		_scope_modal.open()
+
+
+func _on_scope_modal_closed() -> void:
+	if _scope_modal and is_instance_valid(_scope_modal):
+		_scope_modal.queue_free()
+	_scope_modal = null
 
 
 func _open_help_item(item_id: String) -> void:
@@ -964,18 +1078,22 @@ func _apply_settings_checkbox_styles() -> void:
 
 
 func _setup_param_icons() -> void:
+	var _perf_param_labels := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons.param.labels")
 	_add_icon_before_label(fill_label, PARAM_ICONS.fill, true, PARAM_ICON_COLORS.fill)
 	_add_icon_before_label(groove_label, PARAM_ICONS.groove, true, PARAM_ICON_COLORS.groove)
 	_add_icon_before_label(density_label, PARAM_ICONS.density, true, PARAM_ICON_COLORS.density)
 	_add_icon_before_label(grid_snap_label, PARAM_ICONS.grid_snap, true, PARAM_ICON_COLORS.grid_snap)
 	_add_icon_before_label(genre_template_label, PARAM_ICONS.genre_template, true, PARAM_ICON_COLORS.genre_template)
 	_add_icon_before_label(critic_strength_label, PARAM_ICONS.critic_strength, true, PARAM_ICON_COLORS.critic_strength)
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons.param.labels", _perf_param_labels)
+	var _perf_param_checks := PerfTrace.begin("perf.detail.song_select.chart_style.ready.cards.icons.param.checkboxes")
 	_set_checkbox_icon(accent_strong_beats_checkbox, "accent")
 	_set_checkbox_icon(include_hi_hats_checkbox, "hi_hats")
 	_set_checkbox_icon(groove_completion_checkbox, "groove_completion")
 	_set_checkbox_icon(raw_adtof_checkbox, "raw_adtof")
 	_set_checkbox_icon(enable_genre_detection_checkbox, "genre_detect")
 	_set_checkbox_icon(enable_stems_checkbox, "stems")
+	PerfTrace.end("perf.detail.song_select.chart_style.ready.cards.icons.param.checkboxes", _perf_param_checks)
 
 
 func _add_icon_before_label(
@@ -1087,7 +1205,8 @@ func _on_goal_card_selected(goal_id: String) -> void:
 		_intent_card_pick_guard = true
 		call_deferred("_release_intent_card_pick_guard")
 		return
-	_on_confirm_pressed()
+	# Already on this goal with default params — stay open; confirm via Enter / Confirm.
+	_update_selection_visuals()
 
 
 func _on_intent_card_selected(intent_id: String) -> void:
@@ -1100,6 +1219,7 @@ func _release_intent_card_pick_guard() -> void:
 
 func _on_lane_button_pressed(lanes: int) -> void:
 	if lanes == selected_lanes:
+		_update_selection_visuals()
 		return
 	selected_lanes = lanes
 	UiScreenHotkeys.play_section_switch_sound()
@@ -1228,6 +1348,7 @@ func _apply_sliders_to_ui() -> void:
 
 
 func _update_selection_visuals() -> void:
+	var _perf_cs_vis := PerfTrace.begin("perf.detail.song_select.chart_style.refresh.visuals")
 	for id in _instrument_cards:
 		var card: GenerationSelectCard = _instrument_cards[id]
 		card.set_card_selected(id == selected_instrument)
@@ -1237,7 +1358,6 @@ func _update_selection_visuals() -> void:
 		gcard.set_card_selected(goal_selected)
 		gcard.set_params_tuned(
 			goal_selected
-			and _preset_active_slot <= 0
 			and _params_differ_from_intent_preset()
 		)
 		var desc_key := str(_find_goal_spec(goal_id).get("desc_key", ""))
@@ -1255,6 +1375,7 @@ func _update_selection_visuals() -> void:
 	_apply_intent_advanced_guards()
 	_apply_instrument_advanced_visibility()
 	_sync_style_reset_button()
+	PerfTrace.end("perf.detail.song_select.chart_style.refresh.visuals", _perf_cs_vis)
 
 
 func _is_bass_generation() -> bool:
@@ -1298,7 +1419,11 @@ func _apply_instrument_advanced_visibility() -> void:
 
 
 func _style_is_customized() -> bool:
-	return selected_mode == "custom" or _params_differ_from_intent_preset()
+	if _style_opened_snapshot.is_empty():
+		return false
+	var opened := _UserPresets.sanitize_generation_slot(_style_opened_snapshot)
+	var current := _UserPresets.sanitize_generation_slot(get_draft_snapshot())
+	return opened != current
 
 
 func _reset_style_to_intent_defaults() -> void:
@@ -1314,6 +1439,61 @@ func _reset_style_to_intent_defaults() -> void:
 	selected_intent = _GoalDiff.intent_for(selected_goal, selected_difficulty)
 	_applying_ui_state = prev
 	_update_slider_labels()
+	_update_selection_visuals()
+	_sync_preview()
+
+
+func _reset_style_to_saved_settings() -> void:
+	_clear_generation_active_preset()
+	var prev := _applying_ui_state
+	_applying_ui_state = true
+
+	selected_instrument = SettingsManager.get_setting("last_generation_instrument", "drums")
+	if selected_instrument not in ["drums", "bass"]:
+		selected_instrument = "drums"
+	selected_mode = SettingsManager.get_setting("last_generation_mode", "basic")
+	var saved_intent := str(SettingsManager.get_setting("last_generation_intent", "")).strip_edges()
+	if saved_intent != "" and saved_intent in INTENTS:
+		selected_intent = saved_intent
+	elif selected_mode == "custom":
+		selected_intent = _Intents.closest_intent_for_params(_current_param_snapshot())
+		if selected_intent == "":
+			selected_intent = "groove"
+	else:
+		selected_intent = _Intents.migrate_legacy_mode(selected_mode)
+	var saved_goal := str(SettingsManager.get_setting("generation_goal", "")).strip_edges()
+	var saved_difficulty := str(SettingsManager.get_setting("generation_difficulty", "")).strip_edges()
+	if _GoalDiff.is_goal(saved_goal) and _GoalDiff.is_difficulty(saved_difficulty):
+		selected_goal = saved_goal
+		selected_difficulty = saved_difficulty
+	else:
+		var migrated := _GoalDiff.from_intent(selected_intent)
+		selected_goal = str(migrated.get("goal", _GoalDiff.DEFAULT_GOAL))
+		selected_difficulty = str(migrated.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY))
+	selected_intent = _GoalDiff.intent_for(selected_goal, selected_difficulty)
+	selected_lanes = SettingsManager.get_setting("last_generation_lanes", 4)
+	selected_fill = SettingsManager.get_setting("generation_fill", 50)
+	selected_groove = SettingsManager.get_setting("generation_groove", 50)
+	selected_density = SettingsManager.get_setting("generation_density", 50)
+	selected_grid_snap_strength = int(SettingsManager.get_setting("generation_grid_snap_strength", 80))
+	selected_accent_strong_beats = bool(SettingsManager.get_setting("generation_accent_strong_beats", true))
+	selected_genre_template_strength = int(SettingsManager.get_setting("generation_genre_template_strength", 60))
+	selected_enable_genre_detection = bool(SettingsManager.get_setting("enable_genre_detection", true))
+	selected_use_stems_in_generation = bool(SettingsManager.get_setting("use_stems_in_generation", true))
+	selected_include_hi_hats = bool(SettingsManager.get_setting("generation_include_hi_hats", true))
+	selected_critic_strength = int(SettingsManager.get_setting("generation_critic_strength", 50))
+	selected_groove_completion = bool(SettingsManager.get_setting("generation_groove_completion", true))
+	selected_raw_adtof = bool(SettingsManager.get_setting("generation_raw_adtof", false))
+	var clamped_flags := _Intents.clamp_advanced_flags(
+		selected_intent, selected_groove_completion, selected_raw_adtof
+	)
+	selected_groove_completion = bool(clamped_flags["groove_completion"])
+	selected_raw_adtof = bool(clamped_flags["raw_adtof"])
+
+	_apply_sliders_to_ui()
+	_apply_goal_difficulty(selected_goal, selected_difficulty, false, true)
+	_update_slider_labels()
+	_applying_ui_state = prev
 	_update_selection_visuals()
 	_sync_preview()
 
@@ -1341,7 +1521,9 @@ func _ensure_style_reset_button() -> void:
 
 
 func _style_reset_needed() -> bool:
-	return _preset_active_slot > 0 or _style_is_customized()
+	if _style_opened_snapshot.is_empty():
+		return false
+	return _advanced_dirty
 
 
 func _sync_style_reset_button() -> void:
@@ -1349,7 +1531,7 @@ func _sync_style_reset_button() -> void:
 		return
 	var has_preset := _preset_active_slot > 0
 	var customized := _style_is_customized()
-	var show := has_preset or customized
+	var show := _style_reset_needed()
 	_style_reset_button.visible = show
 	_style_reset_button.disabled = not show
 	if has_preset and not customized:
@@ -1364,12 +1546,18 @@ func _on_style_reset_pressed() -> void:
 	if not _style_reset_needed():
 		return
 	_UiModifierSounds.play_select()
-	if _preset_active_slot > 0 and not _style_is_customized():
-		_clear_generation_active_preset()
-		_update_selection_visuals()
-		_sync_preview()
+	if _style_opened_snapshot.is_empty():
+		_reset_style_to_saved_settings()
+		_advanced_dirty = false
+		_sync_style_reset_button()
 		return
-	_reset_style_to_intent_defaults()
+	var snapshot := _style_opened_snapshot.duplicate(true)
+	apply_preset_snapshot(snapshot)
+	selected_mode = str(snapshot.get("mode", selected_mode))
+	_reconcile_preset_baseline()
+	_update_active_preset_header()
+	_advanced_dirty = false
+	_sync_style_reset_button()
 
 
 func _params_differ_from_intent_preset() -> bool:
@@ -1448,6 +1636,7 @@ func _load_custom_generation_state() -> void:
 
 
 func _on_params_changed_from_ui() -> void:
+	_advanced_dirty = true
 	if selected_mode == "custom":
 		_update_active_preset_header()
 	_update_selection_visuals()
@@ -1657,11 +1846,25 @@ func _on_reset_pressed() -> void:
 	_sync_preview()
 
 
+func _sync_ready_instruments_with_selection(instrument: String) -> void:
+	## Keep chart-readiness instrument axis aligned with the style chip.
+	var inst := _GoalDiff.sanitize_ready_instrument(instrument)
+	var raw: Variant = SettingsManager.get_setting("generation_ready_instruments", [inst])
+	var ready := _GoalDiff.sanitize_ready_string_list(raw, _GoalDiff.READY_INSTRUMENTS, inst)
+	if ready.size() <= 1:
+		SettingsManager.set_setting("generation_ready_instruments", [inst])
+		return
+	if not ready.has(inst):
+		ready.append(inst)
+		SettingsManager.set_setting("generation_ready_instruments", ready)
+
+
 func _on_confirm_pressed() -> void:
 	selected_goal = _GoalDiff.sanitize_goal(selected_goal)
 	selected_difficulty = _GoalDiff.sanitize_difficulty(selected_difficulty)
 	selected_intent = _GoalDiff.intent_for(selected_goal, selected_difficulty)
 	SettingsManager.set_setting("last_generation_instrument", selected_instrument)
+	_sync_ready_instruments_with_selection(selected_instrument)
 	SettingsManager.set_setting("generation_goal", selected_goal)
 	SettingsManager.set_setting("generation_difficulty", selected_difficulty)
 	SettingsManager.set_setting("last_generation_intent", selected_intent)
@@ -1686,8 +1889,38 @@ func _on_confirm_pressed() -> void:
 	emit_signal("selector_closed")
 
 
+func _has_unsaved_changes() -> bool:
+	if _style_opened_snapshot.is_empty():
+		return false
+	return JSON.stringify(_style_opened_snapshot) != JSON.stringify(get_draft_snapshot())
+
+
 func _on_back_button_pressed() -> void:
-	emit_signal("selector_closed")
+	if _back_prompt_active:
+		return
+	if _has_unsaved_changes():
+		_back_prompt_active = true
+		var choice := await _Overlay.choose(
+			_choice_overlay,
+			tr("DLG_SETTINGS_UNSAVED_TEXT"),
+			"warning",
+			"",
+			tr("BTN_SAVE"),
+			tr("BTN_CANCEL"),
+			tr("BTN_DISCARD_CHANGES"),
+		)
+		_back_prompt_active = false
+		match choice:
+			"confirm":
+				_on_confirm_pressed()
+			"extra":
+				# Discard: revert to opened snapshot without saving
+				apply_preset_snapshot(_style_opened_snapshot)
+				emit_signal("selector_closed")
+			_:
+				return
+	else:
+		emit_signal("selector_closed")
 
 
 func set_current_song_path(path: String) -> void:
@@ -1810,24 +2043,34 @@ func _percussion_low_from_dna(dna: Dictionary) -> bool:
 
 
 func _update_status_indicator() -> void:
+	var _perf_cs_status := PerfTrace.begin("perf.detail.song_select.chart_style.refresh.status")
 	_sync_preview()
 	call_deferred("_layout_nav_buttons")
+	PerfTrace.end("perf.detail.song_select.chart_style.refresh.status", _perf_cs_status)
 
 
 func _notes_exist_for_selection() -> bool:
+	var _perf_cs_notes := PerfTrace.begin("perf.detail.song_select.chart_style.file_io.notes_exist")
 	if current_song_path == "":
+		PerfTrace.end("perf.detail.song_select.chart_style.file_io.notes_exist", _perf_cs_notes)
 		return false
-	return NotesUtils.notes_ready_for_scope(
+	var _res := NotesUtils.notes_ready_for_scope(
 		current_song_path,
 		selected_instrument,
 		_GoalDiff.chart_stem(selected_goal, selected_difficulty),
 		selected_lanes,
 	)
+	PerfTrace.end("perf.detail.song_select.chart_style.file_io.notes_exist", _perf_cs_notes)
+	return _res
 
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
+		return
+	if _scope_modal and is_instance_valid(_scope_modal) and _scope_modal.has_method("is_open") and _scope_modal.is_open():
+		if _scope_modal.has_method("handle_hotkey") and _scope_modal.handle_hotkey(event):
+			get_viewport().set_input_as_handled()
 		return
 	var viewport := get_viewport()
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -1849,9 +2092,9 @@ func _generation_hotkey_bindings() -> Dictionary:
 		KEY_2: _hotkey_select_instrument.bind("bass"),
 		KEY_Q: _hotkey_select_goal.bind("original"),
 		KEY_W: _hotkey_select_goal.bind("arcade"),
-		KEY_E: _hotkey_select_difficulty.bind("relaxed"),
-		KEY_R: _hotkey_select_difficulty.bind("standard"),
-		KEY_T: _hotkey_select_difficulty.bind("dense"),
+		KEY_E: _hotkey_select_difficulty.bind("easy"),
+		KEY_R: _hotkey_select_difficulty.bind("medium"),
+		KEY_T: _hotkey_select_difficulty.bind("hard"),
 		KEY_Z: _hotkey_toggle_advanced,
 		KEY_A: _hotkey_select_lanes.bind(3),
 		KEY_S: _hotkey_select_lanes.bind(4),
@@ -2119,6 +2362,8 @@ func preset_host_apply_preset(slot: int, snapshot: Dictionary) -> void:
 	_preset_active_slot = slot
 	_reconcile_preset_baseline()
 	_update_active_preset_header()
+	_style_opened_snapshot = get_draft_snapshot().duplicate(true)
+	_advanced_dirty = false
 
 
 func preset_host_mark_saved(slot: int) -> void:
@@ -2134,5 +2379,8 @@ func preset_host_clear_active() -> void:
 func _on_presets_dialog_closed(preset_loaded: bool = false) -> void:
 	_presets_dialog = null
 	_update_active_preset_header()
+	if _scope_modal and is_instance_valid(_scope_modal) and _scope_modal.has_method("is_open") and _scope_modal.is_open():
+		if _scope_modal.has_method("_sync_ready_axes_ui_from_settings"):
+			_scope_modal.call("_sync_ready_axes_ui_from_settings")
 	if not preset_loaded:
 		_UiModifierSounds.play_deselect()

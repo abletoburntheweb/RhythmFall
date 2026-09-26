@@ -1,4 +1,4 @@
-# logic/utils/spin_box_utils.gd
+# logic/ui/spin_box_utils.gd
 extends RefCounted
 class_name SpinBoxUtils
 

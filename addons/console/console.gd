@@ -92,10 +92,12 @@ func _enter_tree() -> void:
 	add_child(canvas_layer)
 	control.anchor_bottom = 1.0
 	control.anchor_right = 1.0
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas_layer.add_child(control)
 	control.add_child(panel)
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 0.5
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	rich_label.selection_enabled = true
 	rich_label.context_menu_enabled = true
 	rich_label.bbcode_enabled = true
@@ -232,6 +234,36 @@ func _input(event : InputEvent) -> void:
 				get_tree().get_root().set_input_as_handled()
 	elif event is InputEventMouseButton:
 				if (control.visible):
+					var is_wheel_up: bool = event.button_index == MOUSE_BUTTON_WHEEL_UP
+					var is_wheel_down: bool = event.button_index == MOUSE_BUTTON_WHEEL_DOWN
+					var is_wheel: bool = is_wheel_up or is_wheel_down
+					if is_wheel and not event.is_command_or_control_pressed():
+						# Hover-hit: only when pointer is over the visible console area.
+						var over_console: bool = false
+						var mouse_global: Vector2 = event.global_position
+						if panel and panel.get_global_rect().has_point(mouse_global):
+							over_console = true
+						elif rich_label and rich_label.get_global_rect().has_point(mouse_global):
+							over_console = true
+						elif line_edit and line_edit.get_global_rect().has_point(mouse_global):
+							over_console = true
+						elif control and panel and panel.get_global_rect().has_point(mouse_global):
+							# Fallback: control covers full viewport but panel is top-half;
+							# treat as over console only if y is within panel's bottom (visible console height).
+							over_console = mouse_global.y <= panel.get_global_rect().end.y
+						if over_console:
+							var scroll_bar: ScrollBar = rich_label.get_v_scroll_bar()
+							if scroll_bar:
+								# Use page-based delta, consistent with PageUp/PageDown (10%)
+								var delta: float = scroll_bar.page * 0.1
+								if delta < 10.0:
+									delta = 10.0
+								if is_wheel_up:
+									scroll_bar.value = max(scroll_bar.min_value, scroll_bar.value - delta)
+								else:
+									scroll_bar.value = min(scroll_bar.max_value - scroll_bar.page, scroll_bar.value + delta)
+							get_tree().get_root().set_input_as_handled()
+							return
 					if (event.is_command_or_control_pressed()):
 						if event.button_index == MOUSE_BUTTON_WHEEL_UP: # Increase font size with ctrl+mouse wheel up
 							if font_size <= 0:

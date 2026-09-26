@@ -1,4 +1,4 @@
-# logic/utils/segmented_option_utils.gd
+# logic/ui/segmented_option_utils.gd
 extends RefCounted
 class_name SegmentedOptionUtils
 

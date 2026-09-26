@@ -20,7 +20,8 @@ func configure(
 	amount: float,
 	max_amount: float,
 	accent: Color,
-	hide_when_zero: bool = true
+	hide_when_zero: bool = true,
+	value_text: String = ""
 ) -> void:
 	var visible_row := not hide_when_zero or amount > 0.001
 	visible = visible_row
@@ -36,7 +37,7 @@ func configure(
 	if _title:
 		_title.text = title_text
 	if _value:
-		_value.text = _format_amount(amount)
+		_value.text = value_text if value_text != "" else _format_amount(amount)
 		_value.add_theme_color_override("font_color", accent.lightened(0.08))
 	if _bar and _bar.has_method("set_fill"):
 		var ratio := amount / maxf(max_amount, 0.001)

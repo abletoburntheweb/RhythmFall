@@ -4,6 +4,7 @@ class_name GenerationApiClient
 
 const _RhythmDnaServerFetch = preload("res://server/rhythm_dna_server_fetch.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const _CONNECT_TIMEOUT_MS := 20000
 
 const SERVER_STATUS_ALIASES: Dictionary = {
@@ -14,6 +15,7 @@ const SERVER_STATUS_ALIASES: Dictionary = {
 	"Анализ басовой линии...": "GEN_API_BASS_LINE_ANALYSIS",
 	"Сборка бас-чарта...": "GEN_API_BASS_CHART_BUILD",
 	"Сохранение нот...": "GEN_API_SAVING_NOTES",
+	"Анализ структуры (SongFormer, CPU)...": "GEN_API_SPLITTING_STEMS",
 	"Формирование ответа...": "GEN_API_BUILDING_RESPONSE",
 }
 
@@ -69,6 +71,7 @@ var _bpm_res: Dictionary = {}
 var _genres_res: Dictionary = {}
 var _genre_analysis_res: Dictionary = {}
 var _notes_res: Dictionary = {}
+var _notes_last_stem_model: String = ""
 var _bpm_status_queue: Array = []
 var _genres_status_queue: Array = []
 var _genre_analysis_status_queue: Array = []
@@ -81,6 +84,7 @@ var _notes_done: bool = false
 
 var _cancel_bpm: bool = false
 var _cancel_notes: bool = false
+var _bpm_task_id: String = ""
 var _notes_active_task_id: String = ""
 var _next_chart_intent: String = ""
 var _next_goal: String = ""
@@ -94,7 +98,8 @@ var _genre_analysis_poll_timer: Timer = null
 func analyze_bpm(song_path: String):
 	if _bpm_thread:
 		return
-	_bpm_req = {"song_path": song_path}
+	_bpm_task_id = str(Time.get_ticks_msec()) + "_" + str(randi())
+	_bpm_req = {"song_path": song_path, "task_id": _bpm_task_id}
 	_bpm_res = {}
 	_bpm_done = false
 	_cancel_bpm = false
@@ -158,11 +163,14 @@ func generate_notes_for_task(task: Dictionary) -> void:
 		"[GenAPI] generate_notes_for_task goal=%s difficulty=%s stem=%s"
 		% [str(task.get("goal", "")), str(task.get("difficulty", "")), str(task.get("chart_stem", ""))]
 	)
+	var lanes := int(task.get("lanes", 4))
+	if int(task.get("preset_slot", 0)) > 0 or str(task.get("chart_tag", "")).strip_edges() != "":
+		lanes = NotesUtils.CANONICAL_MAX_LANES
 	generate_notes(
 		str(task.get("path", "")),
 		str(task.get("instrument", task.get("instrument_type", "drums"))),
 		float(task.get("bpm", 120.0)),
-		int(task.get("lanes", 4)),
+		lanes,
 		float(task.get("tolerance", task.get("sync_tolerance", 0.2))),
 		bool(task.get("auto_identify", true)),
 		str(task.get("artist", "")),
@@ -257,8 +265,22 @@ func generate_notes(
 		return
 	_notes_poll_timer = _replace_poll_timer(_notes_poll_timer, _check_notes)
 
+func is_bpm_cancelled() -> bool:
+	return _cancel_bpm
+
+func is_bpm_busy() -> bool:
+	return _bpm_thread != null
+
+func is_notes_busy() -> bool:
+	return _notes_thread != null
+
 func request_cancel_bpm():
 	_cancel_bpm = true
+	print("DEBUG_BPM_CLIENT: request_cancel_bpm _bpm_task_id=%s" % _bpm_task_id)
+	var task_id := _bpm_task_id
+	if task_id != "":
+		var cancel_thread := Thread.new()
+		cancel_thread.start(func(): _send_cancel_task_request(task_id))
 
 func request_cancel_notes():
 	_cancel_notes = true
@@ -280,9 +302,11 @@ func _poll_until_http_connected(http_client: HTTPClient, cancel_getter: Callable
 	return http_client.get_status() == HTTPClient.STATUS_CONNECTED
 
 
-func _read_http_response_body(http_client: HTTPClient) -> PackedByteArray:
+func _read_http_response_body(http_client: HTTPClient, cancel_getter: Callable = Callable()) -> PackedByteArray:
 	var response_body := PackedByteArray()
 	while http_client.get_status() == HTTPClient.STATUS_BODY:
+		if cancel_getter.is_valid() and cancel_getter.call():
+			return PackedByteArray()
 		http_client.poll()
 		var chunk = http_client.read_response_body_chunk()
 		if chunk.size() > 0:
@@ -364,6 +388,184 @@ func get_last_notes_task_id() -> String:
 	return str(_notes_res.get("task_id", ""))
 
 
+func get_last_notes_stem_model() -> String:
+	if _notes_last_stem_model != "":
+		return _notes_last_stem_model
+	return str(_notes_res.get("stem_model", ""))
+
+
+func _stem_download_temp_path(identifier: String, kind: String, format: String = "wav") -> String:
+	var id := String(identifier).strip_edges().to_lower()
+	if id == "":
+		id = "unknown"
+	var safe_id := ""
+	for c in id:
+		if String(c) in ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]:
+			safe_id += String(c)
+	if safe_id == "":
+		safe_id = "unknown"
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		k = "drums"
+	var fmt := String(format).strip_edges().to_lower()
+	if fmt not in ["wav", "mp3"]:
+		fmt = "wav"
+	# Temporary location — NOT persistent user://stems/ (Phase 3).
+	# Reuses existing DirectoryUtils helper; no new setting/dir-choice.
+	return "user://cache/stem_downloads/%s_%s.%s" % [safe_id, k, fmt]
+
+
+func _http_get_binary_to_file(query_path: String, out_file_path: String, cancel_getter: Callable = Callable()) -> Dictionary:
+	var out := {"ok": false, "code": 0, "path": "", "error": ""}
+	var http_client := HTTPClient.new()
+	if http_client.connect_to_host(_api_host(), _api_port()) != OK:
+		out.error = "connect_failed"
+		return out
+	if not _poll_until_http_connected(http_client, cancel_getter):
+		http_client.close()
+		out.error = "connect_timeout"
+		return out
+	http_client.request_raw(HTTPClient.METHOD_GET, query_path, PackedStringArray(), PackedByteArray())
+	while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+		http_client.poll()
+		OS.delay_msec(10)
+		if cancel_getter.is_valid() and cancel_getter.call():
+			http_client.close()
+			out.error = "cancelled"
+			return out
+	var code := http_client.get_response_code()
+	out.code = code
+	if code != 200:
+		var err_body := _read_http_response_body(http_client, cancel_getter)
+		var err_text := err_body.get_string_from_utf8()
+		var err_json = JSON.parse_string(err_text)
+		if err_json is Dictionary and err_json.has("error"):
+			out.error = str(err_json["error"])
+		elif err_text.strip_edges() != "":
+			out.error = err_text.strip_edges().substr(0, 200)
+		else:
+			out.error = "http_%d" % code
+		http_client.close()
+		return out
+	# 200 — stream WAV chunks directly to file, not holding whole file in RAM.
+	DirectoryUtils.ensure_dir_for_file(out_file_path)
+	var abs_out := DirectoryUtils.to_absolute(out_file_path)
+	# Remove stale file if exists
+	if FileAccess.file_exists(abs_out):
+		DirAccess.remove_absolute(abs_out)
+	var file := FileAccess.open(out_file_path, FileAccess.WRITE)
+	if file == null:
+		# Fallback via absolute path
+		file = FileAccess.open(abs_out, FileAccess.WRITE)
+	if file == null:
+		http_client.close()
+		out.error = "file_open_failed"
+		return out
+	while http_client.get_status() == HTTPClient.STATUS_BODY:
+		if cancel_getter.is_valid() and cancel_getter.call():
+			file.close()
+			http_client.close()
+			# Remove partial file
+			var abs_tmp := DirectoryUtils.to_absolute(out_file_path)
+			if abs_tmp != "" and FileAccess.file_exists(abs_tmp):
+				DirAccess.remove_absolute(abs_tmp)
+			out.error = "cancelled"
+			return out
+		http_client.poll()
+		var chunk := http_client.read_response_body_chunk()
+		if chunk.size() > 0:
+			file.store_buffer(chunk)
+		else:
+			OS.delay_msec(10)
+	file.close()
+	http_client.close()
+	# Validate file size (>1KB) like ChartStemManager.validate_stem
+	var abs_check := DirectoryUtils.to_absolute(out_file_path)
+	var sz := 0
+	if abs_check != "" and FileAccess.file_exists(abs_check):
+		var f2 := FileAccess.open(abs_check, FileAccess.READ)
+		if f2:
+			sz = int(f2.get_length())
+			f2.close()
+	if sz < 1024:
+		if abs_check != "" and FileAccess.file_exists(abs_check):
+			DirAccess.remove_absolute(abs_check)
+		out.error = "too_small"
+		return out
+	out.ok = true
+	out.path = out_file_path
+	return out
+
+
+func download_stem_file(content_hash: String, kind: String, chart_id: String = "", format: String = "wav") -> Dictionary:
+	# Minimal binary download for already generated stem — does NOT trigger generation.
+	# Uses existing HTTPClient + LAN host settings via _api_host/_api_port.
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		return {"ok": false, "code": 400, "path": "", "error": "invalid kind"}
+	var fmt := String(format).strip_edges().to_lower()
+	if fmt not in ["wav", "mp3"]:
+		fmt = "wav"
+	var ch := String(content_hash).strip_edges().to_lower()
+	var cid := String(chart_id).strip_edges().to_lower()
+	if ch == "" and cid == "":
+		return {"ok": false, "code": 400, "path": "", "error": "content_hash or chart_id required"}
+	var query := "/stem_file?kind=" + k + "&format=" + fmt
+	if ch != "":
+		query += "&content_hash=" + ch
+	if cid != "":
+		query += "&chart_id=" + cid
+	var identifier := ch if ch != "" else cid
+	var out_path := _stem_download_temp_path(identifier, k, fmt)
+	return _http_get_binary_to_file(query, out_path, Callable())
+
+
+func download_stem_for_song(song_path: String, kind: String = "drums", format: String = "wav") -> Dictionary:
+	# Convenience: compute Phase 1 content_hash via NotesUtils, fallback to chart_id.
+	# Does not generate stem — only downloads if already exists on server (404 otherwise).
+	var k := String(kind).strip_edges().to_lower()
+	if k not in ["drums", "bass"]:
+		k = "drums"
+	var fmt := String(format).strip_edges().to_lower()
+	if fmt not in ["wav", "mp3"]:
+		fmt = "wav"
+	var content_hash := ""
+	if song_path != "" and FileAccess.file_exists(song_path):
+		# Prefer content identity (Phase 1), stable on rename.
+		if NotesUtils:
+			content_hash = String(NotesUtils.audio_content_hash(song_path)).strip_edges().to_lower()
+	var chart_id := ""
+	if NotesUtils:
+		chart_id = String(NotesUtils.chart_id_from_song_path(song_path)).strip_edges().to_lower()
+	return download_stem_file(content_hash, k, chart_id, fmt)
+
+
+func fetch_storage_usage() -> Dictionary:
+	return _http_get_json("/storage_usage", Callable())
+
+
+func reclaim_temp_uploads() -> Dictionary:
+	var payload := JSON.stringify({"temp_uploads_root_artifacts": true}).to_utf8_buffer()
+	var headers := PackedStringArray(["Content-Type: application/json"])
+	var http_client := HTTPClient.new()
+	if http_client.connect_to_host(_api_host(), _api_port()) != OK:
+		return {"ok": false, "code": 0}
+	if not _poll_until_http_connected(http_client, Callable()):
+		http_client.close()
+		return {"ok": false, "code": 0}
+	http_client.request_raw(HTTPClient.METHOD_POST, "/storage_reclaim", headers, payload)
+	while http_client.get_status() == HTTPClient.STATUS_REQUESTING:
+		http_client.poll()
+		OS.delay_msec(50)
+	var code := http_client.get_response_code()
+	var body := _read_http_response_body(http_client)
+	http_client.close()
+	var js = JSON.parse_string(body.get_string_from_utf8())
+	if js is Dictionary:
+		return {"ok": code == 200, "code": code, "json": js}
+	return {"ok": code == 200, "code": code, "json": {}}
+
+
 func _resolve_rhythm_dna_for_result(
 	result: Dictionary,
 	task_id: String,
@@ -415,6 +617,13 @@ func _notes_payload_from_json(response_json: Variant, song_path: String, bpm: fl
 		result_dict["track_info"] = response_json.get("track_info", {})
 		if response_json.has("task_id"):
 			result_dict["task_id"] = str(response_json.get("task_id", ""))
+		# Phase 3D.2: actually used stem model (not config), empty if old server
+		if response_json.has("stem_model"):
+			result_dict["stem_model"] = str(response_json.get("stem_model", ""))
+		elif response_json.has("stem") and response_json["stem"] is Dictionary and (response_json["stem"] as Dictionary).has("model"):
+			result_dict["stem_model"] = str((response_json["stem"] as Dictionary).get("model", ""))
+		else:
+			result_dict["stem_model"] = ""
 		var rhythm_dna := _extract_rhythm_dna(response_json.get("rhythm_dna", null))
 		if not rhythm_dna.is_empty():
 			result_dict["rhythm_dna"] = rhythm_dna
@@ -530,6 +739,12 @@ func _check_bpm():
 		if _bpm_thread:
 			_bpm_thread.wait_to_finish()
 			_bpm_thread = null
+		# Cancellation must never be reported as a successful BPM.
+		# Root cause fix: worker can set a successful bpm after Cancel was
+		# requested (race between body read and final assignment). Force the
+		# result to a cancellation error so we never emit bpm_completed after Cancel.
+		if _cancel_bpm:
+			_bpm_res = {"error": "Операция отменена"}
 		if _bpm_res.has("error"):
 			emit_signal("bpm_error", _bpm_res.error)
 		elif _bpm_res.has("bpm"):
@@ -592,8 +807,10 @@ func _check_notes():
 			_notes_thread = null
 		_notes_active_task_id = ""
 		if _notes_res.has("error"):
+			_notes_last_stem_model = ""
 			emit_signal("notes_error", _notes_res.error)
 		elif _notes_res.has("manual_identification_required"):
+			_notes_last_stem_model = ""
 			_notes_status_queue.append("GEN_API_MANUAL_ID_REQUIRED")
 			var req = _notes_req
 			if has_method("generate_notes_for_task"):
@@ -617,6 +834,7 @@ func _check_notes():
 					req.generation_mode,
 				)
 		elif _notes_res.has("notes") or _notes_res.has("notes_variants"):
+			_notes_last_stem_model = str(_notes_res.get("stem_model", ""))
 			var task_id := str(_notes_res.get("task_id", _notes_active_task_id))
 			var song_path := str(_notes_req.get("song_path", ""))
 			var gen_mode := str(_notes_req.get("generation_mode", "basic"))
@@ -663,6 +881,7 @@ func _check_notes():
 						SongLibrary.update_metadata(path, {"genre_predictions": preds})
 						_notify_genre_analysis_achievement()
 		else:
+			_notes_last_stem_model = ""
 			emit_signal("notes_error", "Неизвестная ошибка")
 
 
@@ -706,7 +925,7 @@ func _bpm_worker(data_dict: Dictionary):
 				body.append_array(header.to_utf8_buffer())
 				body.append_array(file_data)
 				body.append_array(("\r\n--%s--\r\n" % boundary).to_utf8_buffer())
-				var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary])
+				var headers = PackedStringArray(["Content-Type: multipart/form-data; boundary=" + boundary, "X-Task-Id: " + str(data_dict.get("task_id", _bpm_task_id))])
 				_bpm_status_queue.append("GEN_API_SENDING_DATA")
 				http_client.request_raw(HTTPClient.METHOD_POST, "/analyze_bpm", headers, body)
 				http_client.poll()
@@ -718,10 +937,34 @@ func _bpm_worker(data_dict: Dictionary):
 						http_client.close()
 						_bpm_done = true
 						return
+				if _cancel_bpm:
+					_bpm_res = {"error": "Операция отменена"}
+					http_client.close()
+					_bpm_done = true
+					return
 				_bpm_status_queue.append("GEN_API_RECEIVING_RESPONSE")
 				var response_code = http_client.get_response_code()
-				var response_body = _read_http_response_body(http_client)
+				if _cancel_bpm:
+					_bpm_res = {"error": "Операция отменена"}
+					http_client.close()
+					_bpm_done = true
+					return
+				var response_body = _read_http_response_body(http_client, func(): return _cancel_bpm)
+				if _cancel_bpm or response_body.is_empty() and _cancel_bpm:
+					_bpm_res = {"error": "Операция отменена"}
+					http_client.close()
+					_bpm_done = true
+					return
 				_bpm_status_queue.append("GEN_API_PROCESSING_RESPONSE")
+				# Final cancellation check — the worker could have been cancelled
+				# after the body was already read but before JSON parsing.
+				# Without this check the cancelled job could still be reported
+				# as a successful BPM (the previous root cause).
+				if _cancel_bpm:
+					_bpm_res = {"error": "Операция отменена"}
+					http_client.close()
+					_bpm_done = true
+					return
 				var response_text = response_body.get_string_from_utf8()
 				var response_json = JSON.parse_string(response_text)
 				if response_code == 200 and response_json and response_json.has("bpm"):
@@ -729,7 +972,11 @@ func _bpm_worker(data_dict: Dictionary):
 				else:
 					local_error = "Ошибка: " + str(response_code)
 	http_client.close()
-	_bpm_res = local_result if local_error == "" else {"error": local_error}
+	# Ensure cancellation is never swallowed by a late success.
+	if _cancel_bpm:
+		_bpm_res = {"error": "Операция отменена"}
+	else:
+		_bpm_res = local_result if local_error == "" else {"error": local_error}
 	_bpm_done = true
 
 func _genre_analysis_worker(data_dict: Dictionary):
@@ -840,10 +1087,12 @@ func _genres_worker(data_dict: Dictionary):
 	_genres_done = true
 
 func _notes_worker(data_dict: Dictionary):
+	var _perf_network := PerfTrace.begin("perf.detail.generation.network.wait")
 	var local_result = {}
 	var local_error = ""
 	var song_path = data_dict.get("song_path", "")
 	if song_path == "":
+		PerfTrace.end("perf.detail.generation.network.wait", _perf_network)
 		_notes_res = {"error": "Пустой путь"}
 		_notes_done = true
 		return
@@ -863,6 +1112,7 @@ func _notes_worker(data_dict: Dictionary):
 		local_error = "Не удалось подключиться: " + str(err)
 	else:
 		if not _poll_until_http_connected(http_client, func(): return _cancel_notes):
+			PerfTrace.end("perf.detail.generation.network.wait", _perf_network)
 			if _cancel_notes:
 				_notes_res = {"error": "Отменено пользователем"}
 			else:
@@ -871,6 +1121,9 @@ func _notes_worker(data_dict: Dictionary):
 			_notes_done = true
 			return
 		_notes_status_queue.append("GEN_API_CONNECTED")
+	# SongFormer structure analysis — part of existing SPLITTING_STEMS stage, indeterminate (no %)
+	if SettingsManager and bool(SettingsManager.get_setting("songformer_enabled", false)):
+		_notes_status_queue.append("Анализ структуры (SongFormer, CPU)...")
 		if http_client.get_status() != HTTPClient.STATUS_CONNECTED:
 			local_error = "Нет подключения. Статус: " + str(http_client.get_status())
 		else:
@@ -926,7 +1179,7 @@ func _notes_worker(data_dict: Dictionary):
 				if goal_meta == "":
 					goal_meta = str(SettingsManager.get_setting("generation_goal", "original")).strip_edges().to_lower()
 				if difficulty_meta == "":
-					difficulty_meta = str(SettingsManager.get_setting("generation_difficulty", "standard")).strip_edges().to_lower()
+					difficulty_meta = str(SettingsManager.get_setting("generation_difficulty", "medium")).strip_edges().to_lower()
 			elif goal_meta == "" or difficulty_meta == "":
 				push_error(
 					"GenAPI: incomplete job style metadata goal=%s difficulty=%s stem=%s — check queue task"
@@ -976,6 +1229,8 @@ func _notes_worker(data_dict: Dictionary):
 				"stem_retention_mode": str(SettingsManager.get_setting("generation_stem_retention_mode", "after_job")),
 				"stem_keep_count": 10,
 				"stem_ttl_seconds": 900,
+				"songformer_enabled": bool(SettingsManager.get_setting("songformer_enabled", false)),
+				"songformer_backend": str(SettingsManager.get_setting("songformer_backend", "auto")),
 			}
 			# Goal×difficulty pairs carry density/fill/groove on the server preset.
 			# Client sliders apply only in custom mode or legacy intent requests.
@@ -1050,6 +1305,7 @@ func _notes_worker(data_dict: Dictionary):
 							task_result_done = true
 							break
 					if _cancel_notes:
+						PerfTrace.end("perf.detail.generation.network.wait", _perf_network)
 						_send_cancel_task_request(task_id)
 						_notes_res = {"error": "Отменено пользователем"}
 						http_client.close()
@@ -1097,7 +1353,16 @@ func _notes_worker(data_dict: Dictionary):
 				http_client.close()
 			if local_error == "" and local_result is Dictionary:
 				local_result["task_id"] = task_id
+	PerfTrace.end("perf.detail.generation.network.wait", _perf_network)
 	_notes_res = local_result if local_error == "" else {"error": local_error}
+	# Server perf: if response contained perf block, log it via PerfTrace
+	if _notes_res is Dictionary and _notes_res.has("perf") and _notes_res["perf"] is Dictionary:
+		var _perf_srv: Dictionary = _notes_res["perf"]
+		for k in _perf_srv.keys():
+			PerfTrace.record("perf.detail.generation.server." + str(k), int(_perf_srv[k] * 1000))
+		# Also print server perf for debug console when DETAIL enabled
+		if PerfTrace.is_enabled(PerfTrace.Level.DETAIL):
+			print("[PERF][SERVER] " + str(_perf_srv))
 	_notes_done = true
 
 

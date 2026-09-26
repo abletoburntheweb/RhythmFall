@@ -109,6 +109,23 @@ static func fetch_by_task_id(task_id: String) -> Dictionary:
 	return payload
 
 
+static func fetch_by_task_id_with_status(task_id: String) -> Dictionary:
+	var tid := task_id.strip_edges()
+	if tid == "":
+		return {"payload": {}, "code": 0, "is_processing": false}
+	var path := "/rhythm_dna?task_id=" + tid.uri_encode()
+	var resp := http_get_json(path)
+	if not resp.ok or not (resp.json is Dictionary):
+		return {"payload": {}, "code": int(resp.code), "is_processing": false}
+	var body: Dictionary = resp.json
+	if int(resp.code) == 202:
+		return {"payload": {}, "code": 202, "is_processing": true}
+	var payload := extract_payload(body.get("rhythm_dna", null))
+	if not payload.is_empty():
+		push_warning("RhythmDNA fetch: OK via /rhythm_dna task_id=%s" % tid)
+	return {"payload": payload, "code": int(resp.code), "is_processing": false}
+
+
 static func fetch_sidecar(song_path: String, mode: String, instrument: String = "drums") -> Dictionary:
 	var track := track_stem_from_song_path(song_path)
 	if track == "":
@@ -140,6 +157,37 @@ static func fetch_sidecar(song_path: String, mode: String, instrument: String = 
 	return payload
 
 
+static func fetch_sidecar_with_status(song_path: String, mode: String, instrument: String = "drums") -> Dictionary:
+	var track := track_stem_from_song_path(song_path)
+	if track == "":
+		return {"payload": {}, "code": 0, "is_not_found": false}
+	var path := "/rhythm_dna_sidecar?track=%s&mode=%s&instrument=%s" % [
+		track.uri_encode(),
+		String(mode).uri_encode(),
+		String(instrument).uri_encode(),
+	]
+	push_warning("RhythmDNA fetch: GET %s:%d%s" % [api_host(), api_port(), path])
+	var resp := http_get_json(path)
+	if not resp.ok or not (resp.json is Dictionary):
+		push_warning("RhythmDNA fetch: sidecar HTTP failed code=%d" % int(resp.code))
+		return {"payload": {}, "code": int(resp.code), "is_not_found": int(resp.code) == 404}
+	var body: Dictionary = resp.json
+	if int(resp.code) == 404 or body.has("error"):
+		push_warning("RhythmDNA fetch: sidecar 404/error track=%s err=%s" % [
+			track, str(body.get("error", "")),
+		])
+		return {"payload": {}, "code": int(resp.code), "is_not_found": true}
+	var payload := extract_payload(body.get("rhythm_dna", null))
+	if payload.is_empty():
+		push_warning("RhythmDNA fetch: sidecar empty body for track=%s" % track)
+		return {"payload": payload, "code": int(resp.code), "is_not_found": false}
+	var pipeline: Dictionary = payload.get("pipeline", {}) if payload.get("pipeline", {}) is Dictionary else {}
+	push_warning("RhythmDNA fetch: OK via sidecar track=%s source=%s" % [
+		track, str(pipeline.get("source", 0)),
+	])
+	return {"payload": payload, "code": int(resp.code), "is_not_found": false}
+
+
 static func fetch_for_song(
 	song_path: String,
 	mode: String,
@@ -155,3 +203,25 @@ static func fetch_for_song(
 	if not payload.is_empty():
 		push_warning("RhythmDNA fetch: sidecar returned minimal report")
 	return {}
+
+
+static func fetch_for_song_with_status(
+	song_path: String,
+	mode: String,
+	instrument: String = "drums",
+	task_id: String = ""
+) -> Dictionary:
+	var res_task := fetch_by_task_id_with_status(task_id)
+	if not (res_task.payload as Dictionary).is_empty() and not NotesUtils.is_minimal_rhythm_dna(res_task.payload):
+		return {"payload": res_task.payload, "code": res_task.code, "is_processing": false, "is_not_found": false, "is_minimal": false}
+	if bool(res_task.is_processing):
+		return {"payload": {}, "code": 202, "is_processing": true, "is_not_found": false, "is_minimal": false}
+	var res_side := fetch_sidecar_with_status(song_path, mode, instrument)
+	if not (res_side.payload as Dictionary).is_empty() and not NotesUtils.is_minimal_rhythm_dna(res_side.payload):
+		return {"payload": res_side.payload, "code": res_side.code, "is_processing": false, "is_not_found": false, "is_minimal": false}
+	if not (res_side.payload as Dictionary).is_empty():
+		push_warning("RhythmDNA fetch: sidecar returned minimal report")
+		return {"payload": res_side.payload, "code": res_side.code, "is_processing": false, "is_not_found": false, "is_minimal": true}
+	if bool(res_side.is_not_found):
+		return {"payload": {}, "code": res_side.code, "is_processing": false, "is_not_found": true, "is_minimal": false}
+	return {"payload": {}, "code": res_side.code, "is_processing": false, "is_not_found": false, "is_minimal": false}

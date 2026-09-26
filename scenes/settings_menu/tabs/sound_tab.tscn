@@ -257,6 +257,25 @@ theme = ExtResource("2_lf0cr")
 theme_type_variation = &"Dropdown"
 theme_override_font_sizes/font_size = 18
 
+[node name="PracticePreviewModeTitleLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/OptionsColumn/PreviewPanel/PreviewPanelMargin/PreviewRows/PreviewBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Предпросмотр практики"
+
+[node name="PracticePreviewModeDescLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/OptionsColumn/PreviewPanel/PreviewPanelMargin/PreviewRows/PreviewBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Сколько играет превью секции в Практике"
+
+[node name="PracticePreviewModeOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/OptionsColumn/PreviewPanel/PreviewPanelMargin/PreviewRows/PreviewBlock"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme = ExtResource("2_lf0cr")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 18
+
 [node name="CalibrationPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 theme_type_variation = &"SectionPanelTeal"
 layout_mode = 2
@@ -433,5 +452,6 @@ layout_mode = 1
 [connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/VolumePanel/VolumePanelMargin/VolumeInner/VolumeSlidersColumn/MetronomeVolumeRow/MetronomeVolumeSlider" to="." method="_on_metronome_volume_changed"]
 [connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/VolumePanel/VolumePanelMargin/VolumeInner/VolumeSlidersColumn/PreviewVolumeRow/PreviewVolumeSlider" to="." method="_on_preview_volume_changed"]
 [connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/OptionsColumn/PreviewPanel/PreviewPanelMargin/PreviewRows/PreviewBlock/PreviewModeOption" to="." method="_on_preview_mode_selected"]
+[connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/AudioTopRow/OptionsColumn/PreviewPanel/PreviewPanelMargin/PreviewRows/PreviewBlock/PracticePreviewModeOption" to="." method="_on_practice_preview_mode_selected"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationInner/CalibrationColumns/ActionsCard/ActionsCardMargin/ActionsCardVBox/CalibrationButtonsRow/StartCalibrationButton" to="." method="_on_start_calibration_pressed"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/CalibrationPanel/CalibrationPanelMargin/CalibrationInner/CalibrationColumns/ActionsCard/ActionsCardMargin/ActionsCardVBox/CalibrationButtonsRow/ResetCalibrationButton" to="." method="_on_reset_calibration_pressed"]

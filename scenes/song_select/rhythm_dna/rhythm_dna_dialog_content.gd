@@ -1,4 +1,4 @@
-# scenes/song_select/rhythm_dna_dialog_content.gd
+# scenes/song_select/rhythm_dna/rhythm_dna_dialog_content.gd
 extends RefCounted
 class_name RhythmDnaDialogContent
 
@@ -127,9 +127,6 @@ static func _build_summary_card(dna: Dictionary, cover: Texture2D) -> Control:
 	var preset := _View.format_chart_preset(track)
 	if preset != "":
 		meta_bits.append(preset)
-	var lanes := int(track.get("lanes", 0))
-	if lanes >= 3:
-		meta_bits.append(_tr("DNA_UI_LANES_FMT") % lanes)
 	var bpm := float(track.get("bpm", 0.0))
 	if bpm > 0.0:
 		meta_bits.append(_tr("DNA_META_BPM_FMT") % int(round(bpm)))
@@ -271,7 +268,15 @@ static func _add_section_block(
 	block.add_theme_constant_override("separation", 6)
 	block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_shrink_vertical(block)
-	block.add_child(_section_header(number, title, icon_file, tint))
+	var header := _section_header(number, title, icon_file, tint)
+	# Tooltip for "Структура трека" vs "Конвейер" to clarify 432 vs 266
+	if title == _tr("DNA_UI_TRACK_STRUCTURE"):
+		header.tooltip_text = _tr("DNA_STRUCTURE_TOOLTIP")
+		header.mouse_filter = Control.MOUSE_FILTER_STOP
+	elif title == _tr("DNA_SECTION_PIPELINE"):
+		header.tooltip_text = _tr("DNA_PIPELINE_TOOLTIP")
+		header.mouse_filter = Control.MOUSE_FILTER_STOP
+	block.add_child(header)
 	block.add_child(content)
 	parent.add_child(block)
 
@@ -346,7 +351,7 @@ static func _icon_text_row(icon_file: String, tint: Color, text: String, color: 
 
 
 static func _structure_section_card(dna: Dictionary) -> Control:
-	var timeline: Array = dna.get("structure_timeline", []) if dna.get("structure_timeline", []) is Array else []
+	var timeline: Array = RhythmDnaView.resolve_structure_timeline_for_ui(dna)
 	if timeline.is_empty():
 		return _structure_placeholder_card()
 	var track: Dictionary = dna.get("track", {}) if dna.get("track", {}) is Dictionary else {}
@@ -393,7 +398,7 @@ static func build_timeline_bar(timeline: Array, total_duration: float) -> Contro
 		var end_s := float(seg.get("end_s", start_s))
 		var span: float = maxf(0.05, end_s - start_s)
 		var block := ColorRect.new()
-		block.color = _segment_color(String(seg.get("kind", "steady")))
+		block.color = _segment_display_color(seg as Dictionary)
 		block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		block.size_flags_stretch_ratio = span / total_duration
 		block.custom_minimum_size = Vector2(4, 14)
@@ -417,18 +422,26 @@ static func build_timeline_row(seg: Dictionary) -> Control:
 	row_panel.add_child(row)
 	var dot := ColorRect.new()
 	dot.custom_minimum_size = Vector2(8, 8)
-	dot.color = _segment_color(kind)
+	dot.color = _segment_display_color(seg)
 	row.add_child(dot)
 	var start_s := float(seg.get("start_s", 0.0))
 	var end_s := float(seg.get("end_s", start_s))
 	var label_key := String(seg.get("label_key", "DNA_SEG_STEADY"))
 	var notes := int(seg.get("notes", 0))
 	var time_text := "%s – %s" % [_format_time(start_s), _format_time(end_s)]
-	var detail := _tr(label_key)
-	var role := String(seg.get("role", ""))
+	var headline := RhythmDnaView.format_section_headline(seg)
+	var detail_parts: PackedStringArray = []
+	var kind_label := _tr(label_key)
+	if kind_label != headline:
+		detail_parts.append(kind_label)
+	var role := String(seg.get("role", "")).strip_edges().to_lower()
 	if role != "":
-		var role_key := "DNA_ROLE_%s" % role.to_upper()
-		detail += " · " + _tr(role_key)
+		var role_label := _tr("DNA_ROLE_%s" % role.to_upper())
+		if role_label != headline and role_label not in detail_parts:
+			detail_parts.append(role_label)
+	var detail := headline
+	if detail_parts.size() > 0:
+		detail += " · " + " · ".join(detail_parts)
 	if notes > 0:
 		detail += " · " + (_tr("DNA_UI_TIMELINE_NOTES_FMT") % notes)
 	var label := _body_label("%s  %s" % [time_text, detail], COLOR_BODY, 13)
@@ -469,6 +482,28 @@ static func _segment_color(kind: String) -> Color:
 			return Color(0.38, 0.58, 0.82, 0.95)
 
 
+static func _segment_display_color(seg: Dictionary) -> Color:
+	var letter := RhythmDnaView.section_letter(seg)
+	if letter != "":
+		return _section_letter_color(letter)
+	return _segment_color(String(seg.get("kind", "steady")))
+
+
+static func _section_letter_color(letter: String) -> Color:
+	var palette := [
+		Color(0.38, 0.58, 0.82, 0.95),
+		Color(0.42, 0.78, 0.62, 0.95),
+		Color(0.62, 0.42, 0.88, 0.95),
+		Color(0.95, 0.58, 0.42, 0.95),
+		Color(0.55, 0.72, 0.88, 0.95),
+		Color(0.82, 0.62, 0.28, 0.95),
+	]
+	var code := 0
+	for i in letter.length():
+		code = (code * 31 + letter.unicode_at(i)) & 0x7FFFFFFF
+	return palette[code % palette.size()]
+
+
 static func _format_time(seconds: float) -> String:
 	var total: int = maxi(0, int(round(seconds)))
 	var minutes: int = int(total / 60)
@@ -479,7 +514,27 @@ static func _format_time(seconds: float) -> String:
 static func _structure_placeholder_card() -> Control:
 	var panel := _inner_panel()
 	_shrink_vertical(panel)
-	panel.add_child(_body_label(_tr("DNA_UI_STRUCTURE_PLACEHOLDER"), COLOR_MUTED, 14))
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	_shrink_vertical(vbox)
+	panel.add_child(vbox)
+	vbox.add_child(_body_label(_tr("DNA_UI_STRUCTURE_PLACEHOLDER"), COLOR_MUTED, 14))
+	var btn := Button.new()
+	btn.text = _tr("BTN_REGEN_SECTIONS")
+	btn.tooltip_text = _tr("BTN_REGEN_SECTIONS_TIP")
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	btn.add_theme_font_size_override("font_size", 12)
+	btn.pressed.connect(func():
+		var loop := Engine.get_main_loop()
+		if loop and loop is SceneTree:
+			var dock = (loop as SceneTree).root.get_node_or_null("GameEngine/NotificationsLayer/StatusDock")
+			if dock and dock.has_method("show_transient"):
+				dock.show_transient("regen_sections", TranslationServer.translate("STATUS_REGEN_SECTIONS_QUEUED"), "info", 2.5)
+	)
+	var helper = preload("res://logic/ui/ui_icon_helper.gd")
+	# helper is GDScript, check via can_instance
+	btn.icon = helper.load_tinted_icon("refresh-cw.svg", Color(0.62, 0.78, 0.96))
+	vbox.add_child(btn)
 	return panel
 
 
@@ -628,7 +683,9 @@ static func _genes_card(
 		if viable == "low":
 			vbox.add_child(_icon_text_row("triangle-alert.svg", COLOR_WARN, _tr("DNA_UI_PERCUSSION_LOW"), COLOR_MUTED, 13))
 		elif bool(rhythm.get("kit_detected", false)):
-			vbox.add_child(_icon_text_row("drum.svg", UiIconHelper.ACCENT, _tr("DNA_GENE_KIT_DETECTED"), COLOR_BODY, 14))
+			var track_tmp: Dictionary = dna.get("track", {}) if dna.get("track", {}) is Dictionary else {}
+			var kit_text := _format_kit_description(track_tmp, rhythm)
+			vbox.add_child(_icon_text_row("drum.svg", UiIconHelper.ACCENT, kit_text, COLOR_BODY, 14))
 		vbox.add_child(_metric_line(_tr("DNA_GENE_GROOVE_FMT") % _View.format_level(String(rhythm.get("groove_stability", "medium")))))
 		vbox.add_child(_metric_line(_tr("DNA_GENE_FILL_FMT") % _View.format_level(String(rhythm.get("fill_density", "medium")))))
 	var adtof: Dictionary = dna.get("adtof", {}) if dna.get("adtof", {}) is Dictionary else {}
@@ -649,6 +706,29 @@ static func _genes_card(
 		if quiet > 0:
 			vbox.add_child(_metric_line(_tr("DNA_UI_QUIET_DRUM_FMT") % quiet))
 	return panel
+
+
+static func _format_kit_description(track: Dictionary, rhythm: Dictionary) -> String:
+	var viable := String(rhythm.get("percussion_viable", "")).strip_edges().to_lower()
+	if viable == "low":
+		return _tr("DNA_GENE_KIT_PERCUSSIVE")
+	var genre := String(track.get("genre", "")).strip_edges().to_lower()
+	if genre == "":
+		return _tr("DNA_GENE_KIT_HYBRID")
+	# Conservative classification — genre is known, use it.
+	var electronic := ["electronic", "house", "techno", "trance", "dubstep", "drum and bass", "edm", "dance", "chillwave", "vaporwave", "synthwave", "hyperpop", "electropop", "future funk", "witch house", "edm", "ebm", "industrial"]
+	var acoustic := ["rock", "metal", "hardcore", "punk", "folk", "country", "jazz", "blues", "classical", "ska", "reggae", "latin", "soul", "funk", "disco", "world music"]
+	# Hybrid/pop stays hybrid to avoid overclaim.
+	if genre in electronic:
+		return _tr("DNA_GENE_KIT_ELECTRONIC")
+	if genre in acoustic:
+		return _tr("DNA_GENE_KIT_ACOUSTIC")
+	# Check substrings for compound genres like "k-pop" etc — fallback to percussive neutral if uncertain.
+	if "electronic" in genre or "techno" in genre or "house" in genre or "trance" in genre or "edm" in genre:
+		return _tr("DNA_GENE_KIT_ELECTRONIC")
+	if "rock" in genre or "metal" in genre or "punk" in genre or "jazz" in genre:
+		return _tr("DNA_GENE_KIT_ACOUSTIC")
+	return _tr("DNA_GENE_KIT_HYBRID")
 
 
 static func _confidence_card(confidence: Dictionary) -> Control:

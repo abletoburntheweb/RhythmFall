@@ -167,10 +167,10 @@ func _draw_library_watermark(w: float, h: float) -> void:
 	var lane_count := 4
 	var lane_w := w / float(lane_count + 1)
 	var lane_col := accent.lightened(0.1)
-	lane_col.a = 0.18 if locked else 0.3
+	lane_col.a = 0.35 if locked else 0.55
 	for i in range(lane_count):
 		var x := lane_w * float(i + 1)
-		draw_line(Vector2(x, h * 0.12), Vector2(x, h * 0.92), lane_col, 1.5)
+		draw_line(Vector2(x, h * 0.12), Vector2(x, h * 0.92), lane_col, 2.0)
 	for wave_i in range(3):
 		var y_base := h * (0.28 + float(wave_i) * 0.18)
 		var prev := Vector2(0.0, y_base)
@@ -179,8 +179,8 @@ func _draw_library_watermark(w: float, h: float) -> void:
 			var x := t * w
 			var y := y_base + sin(t * 8.0 + _motion_t * 1.2 + float(wave_i)) * 6.0
 			var wave_col := wash.lerp(accent, 0.5)
-			wave_col.a = 0.14 if locked else 0.24
-			draw_line(prev, Vector2(x, y), wave_col, 1.0)
+			wave_col.a = 0.3 if locked else 0.45
+			draw_line(prev, Vector2(x, y), wave_col, 1.6)
 			prev = Vector2(x, y)
 
 
@@ -191,8 +191,8 @@ func _draw_endless_watermark(w: float, h: float) -> void:
 	for ring_i in range(4):
 		var r := base_r * (0.45 + float(ring_i) * 0.22)
 		var ring_col := wash.lerp(accent, 0.35 + float(ring_i) * 0.1)
-		ring_col.a = 0.14 if locked else 0.26
-		draw_arc(center, r, spin + float(ring_i) * 0.4, spin + PI * 1.6 + float(ring_i) * 0.4, 48, ring_col, 1.5, true)
+		ring_col.a = 0.3 if locked else 0.55
+		draw_arc(center, r, spin + float(ring_i) * 0.4, spin + PI * 1.6 + float(ring_i) * 0.4, 48, ring_col, 2.0, true)
 	# Corner ticks instead of orbiting circles — distinct from library note dots.
 	var tick_offsets: Array[Vector2] = [
 		Vector2(w * 0.16, h * 0.24),
@@ -204,12 +204,12 @@ func _draw_endless_watermark(w: float, h: float) -> void:
 		var base_pos := tick_offsets[tick_i]
 		var pulse := sin(_motion_t * 1.4 + float(tick_i) * 1.1) * 2.0
 		var tick_col := accent.lightened(0.12)
-		tick_col.a = 0.2 if locked else 0.38
+		tick_col.a = 0.4 if locked else 0.65
 		var dir := (base_pos - center).normalized()
 		var ortho := Vector2(-dir.y, dir.x)
 		var tip := base_pos + dir * (4.0 + pulse)
-		draw_line(base_pos - ortho * 3.0, tip, tick_col, 1.4)
-		draw_line(base_pos + ortho * 3.0, tip, tick_col, 1.4)
+		draw_line(base_pos - ortho * 3.0, tip, tick_col, 2.0)
+		draw_line(base_pos + ortho * 3.0, tip, tick_col, 2.0)
 
 
 func _draw_marathon_watermark(w: float, h: float) -> void:
@@ -223,7 +223,7 @@ func _draw_marathon_watermark(w: float, h: float) -> void:
 	])
 	var progress := fmod(_motion_t * 0.12, 1.15)
 	var route_col := wash.lerp(accent, 0.45)
-	route_col.a = 0.22 if locked else 0.42
+	route_col.a = 0.35 if locked else 0.72
 	var total_len := 0.0
 	for i in range(points.size() - 1):
 		total_len += points[i].distance_to(points[i + 1])
@@ -235,7 +235,7 @@ func _draw_marathon_watermark(w: float, h: float) -> void:
 		var seg_end := points[i + 1]
 		var seg_len := seg_start.distance_to(seg_end)
 		if walked + seg_len <= draw_len:
-			draw_line(seg_start, seg_end, route_col, 2.0)
+			draw_line(seg_start, seg_end, route_col, 2.5)
 			prev = seg_end
 			walked += seg_len
 		else:
@@ -243,12 +243,12 @@ func _draw_marathon_watermark(w: float, h: float) -> void:
 			if remain > 0.0:
 				var dir := (seg_end - seg_start).normalized()
 				var partial := seg_start + dir * remain
-				draw_line(seg_start, partial, route_col, 2.0)
+				draw_line(seg_start, partial, route_col, 2.5)
 				prev = partial
 			break
 	for i in range(points.size()):
 		var marker_col := accent if i == 0 else wash.lerp(accent, 0.4)
-		marker_col.a = 0.28 if locked else 0.48
+		marker_col.a = 0.35 if locked else 0.62
 		if float(i) / float(points.size() - 1) <= progress:
 			var p := points[i]
 			if i == points.size() - 1:
@@ -256,7 +256,7 @@ func _draw_marathon_watermark(w: float, h: float) -> void:
 			else:
 				draw_rect(Rect2(p.x - 2.5, p.y - 2.5, 5.0, 5.0), marker_col)
 	var flag_col := accent.lightened(0.15)
-	flag_col.a = 0.28 if locked else 0.45
+	flag_col.a = 0.35 if locked else 0.6
 	draw_line(points[-1], points[-1] + Vector2(0.0, -h * 0.14), flag_col, 1.5)
 
 

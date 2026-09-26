@@ -6,6 +6,8 @@ const Z_INDEX := 120
 
 @onready var _backdrop: ColorRect = %Backdrop
 
+static var _open_modals: int = 0
+
 var _dismissed := false
 
 
@@ -13,11 +15,13 @@ func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _backdrop:
-		_backdrop.gui_input.connect(_on_backdrop_gui_input)
+		UiClick.connect_clicked(_backdrop, _on_backdrop_pressed)
 
 
 func present() -> void:
 	_dismissed = false
+	_open_modals += 1
+	_notify_modal_state_changed()
 	_ensure_fullscreen()
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -31,8 +35,21 @@ func dismiss() -> void:
 		return
 	_dismissed = true
 	set_process_input(false)
+	_open_modals -= 1
+	_notify_modal_state_changed()
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+## Число открытых модалок изменилось: оповещаем подписчиков группы (см.
+## locale_manager._notify_locale_refresh — тот же паттерн обхода группы).
+func _notify_modal_state_changed() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	for node in tree.get_nodes_in_group("app_overlay_watchers"):
+		if node.has_method("on_app_overlay_modal_changed"):
+			node.on_app_overlay_modal_changed()
 
 
 func try_dismiss() -> bool:
@@ -90,10 +107,8 @@ func _ensure_fullscreen() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BOTH
 
 
-func _on_backdrop_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_on_backdrop_pressed()
-
-
 func _on_backdrop_pressed() -> void:
 	pass
+
+static func is_modal_open() -> bool:
+	return _open_modals > 0

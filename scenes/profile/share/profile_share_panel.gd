@@ -8,6 +8,7 @@ const _Snapshot = preload("res://scenes/profile/share/profile_share_snapshot.gd"
 const _Exporter = preload("res://scenes/profile/share/profile_share_export.gd")
 const _ExportMessages = preload("res://scenes/profile/share/profile_share_export_messages.gd")
 const _NoticeScene = preload("res://ui/overlays/app_notice_overlay.tscn")
+const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const CARD_SCENE := preload("res://scenes/profile/share/profile_share_card.tscn")
 
 @onready var _title_label: Label = %ShareTitleLabel
@@ -164,9 +165,9 @@ func _find_card(card_id: String) -> Control:
 
 
 func _show_export_result(result: Dictionary) -> void:
-	var overlay := _get_result_overlay()
 	var text := ""
-	if result.get("ok", false):
+	var ok := bool(result.get("ok", false))
+	if ok:
 		if result.has("count"):
 			text = _ExportMessages.format_all_ok(
 				int(result.get("count", 0)),
@@ -174,13 +175,14 @@ func _show_export_result(result: Dictionary) -> void:
 			)
 		else:
 			text = tr("PROFILE_SHARE_EXPORT_OK") % str(result.get("path", ""))
-	else:
-		var key := str(result.get("error_key", "PROFILE_SHARE_EXPORT_ERR_WRITE"))
-		var detail := str(result.get("detail", ""))
-		text = tr(key)
-		if detail != "":
-			text = "%s (%s)" % [text, detail]
-	overlay.show_message(text)
+		_StatusToast.show_from_node(self, "share_export_ok", text, "success", 3.2)
+		return
+	var key := str(result.get("error_key", "PROFILE_SHARE_EXPORT_ERR_WRITE"))
+	var detail := str(result.get("detail", ""))
+	text = tr(key)
+	if detail != "":
+		text = "%s (%s)" % [text, detail]
+	_get_result_overlay().show_message(text)
 
 
 func _get_result_overlay() -> AppNoticeOverlay:

@@ -40,6 +40,9 @@ const _ACTIONS := "%s/CalibrationColumns/ActionsCard/ActionsCardMargin/ActionsCa
 @onready var preview_mode_option: OptionButton = get_node("%s/PreviewModeOption" % _PREVIEW)
 @onready var preview_mode_title_label: Label = get_node("%s/PreviewModeTitleLabel" % _PREVIEW)
 @onready var preview_mode_desc_label: Label = get_node("%s/PreviewModeDescLabel" % _PREVIEW)
+@onready var practice_preview_mode_option: OptionButton = get_node("%s/PracticePreviewModeOption" % _PREVIEW)
+@onready var practice_preview_mode_title_label: Label = get_node("%s/PracticePreviewModeTitleLabel" % _PREVIEW)
+@onready var practice_preview_mode_desc_label: Label = get_node("%s/PracticePreviewModeDescLabel" % _PREVIEW)
 @onready var output_hint_label: Label = get_node("%s/OutputHintLabel" % _CAL)
 @onready var timing_offset_value_label: Label = get_node("%s/CalibrationColumns/OffsetCard/OffsetCardMargin/OffsetCardVBox/TimingOffsetValueLabel" % _CAL)
 @onready var output_latency_label: Label = get_node("%s/CalibrationColumns/LatencyCard/LatencyCardMargin/LatencyCardVBox/OutputLatencyLabel" % _CAL)
@@ -90,6 +93,7 @@ func _setup_ui() -> void:
 	metronome_volume_slider.set_value_no_signal(SettingsManager.get_metronome_volume())
 	preview_volume_slider.set_value_no_signal(SettingsManager.get_preview_volume())
 	_setup_preview_mode_option()
+	_setup_practice_preview_mode_option()
 	_update_volume_labels()
 	call_deferred("_align_volume_rows")
 	_update_timing_offset_label()
@@ -110,6 +114,8 @@ func _notification(what: int) -> void:
 
 
 func _maybe_show_calibration_tutorial(force: bool = false) -> void:
+	if FirstStepsManager and FirstStepsManager.is_active():
+		return
 	if not SettingsManager or not SettingsManager.has_method("get_tutorial_calibration_done"):
 		return
 	if not force and SettingsManager.get_tutorial_calibration_done():
@@ -417,6 +423,23 @@ func _on_preview_mode_selected(index: int) -> void:
 	emit_signal("settings_changed")
 
 
+func _setup_practice_preview_mode_option() -> void:
+	if practice_preview_mode_option == null:
+		return
+	_OptionButtonPopupUtils.apply_popup_font_size(practice_preview_mode_option, 24)
+	practice_preview_mode_option.clear()
+	practice_preview_mode_option.add_item(tr("PRACTICE_PREVIEW_MODE_SHORT"), 0)
+	practice_preview_mode_option.add_item(tr("PRACTICE_PREVIEW_MODE_RANGE_END"), 1)
+	var mode := SettingsManager.get_practice_preview_mode()
+	practice_preview_mode_option.select(1 if mode == "range_end" else 0)
+
+
+func _on_practice_preview_mode_selected(index: int) -> void:
+	var mode := "range_end" if index == 1 else "short"
+	SettingsManager.set_practice_preview_mode(mode)
+	emit_signal("settings_changed")
+
+
 func _on_preview_volume_changed(value: float) -> void:
 	SettingsManager.set_preview_volume(int(value))
 	_update_volume_labels()
@@ -551,6 +574,13 @@ func apply_locale() -> void:
 		_set_tooltip(preview_mode_option, "SOUND_PREVIEW_MODE_TOOLTIP")
 	if preview_mode_desc_label:
 		preview_mode_desc_label.text = tr("SOUND_PREVIEW_DESC")
+	if practice_preview_mode_title_label:
+		practice_preview_mode_title_label.text = tr("PRACTICE_PREVIEW_MODE_LABEL")
+		_set_tooltip(practice_preview_mode_title_label, "PRACTICE_PREVIEW_MODE_TOOLTIP")
+	if practice_preview_mode_option:
+		_set_tooltip(practice_preview_mode_option, "PRACTICE_PREVIEW_MODE_TOOLTIP")
+	if practice_preview_mode_desc_label:
+		practice_preview_mode_desc_label.text = tr("PRACTICE_PREVIEW_DESC")
 	if output_hint_label:
 		output_hint_label.text = tr("SOUND_HINT_OUTPUT_LATENCY")
 	if offset_title_label:
@@ -570,6 +600,7 @@ func apply_locale() -> void:
 		start_calibration_button.text = tr("SOUND_START_CALIBRATION")
 	_update_volume_labels()
 	_setup_preview_mode_option()
+	_setup_practice_preview_mode_option()
 	_update_timing_offset_label()
 	_update_output_latency_label()
 	call_deferred("_align_volume_rows")

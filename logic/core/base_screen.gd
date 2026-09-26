@@ -1,4 +1,4 @@
-# logic/base_screen.gd
+# logic/core/base_screen.gd
 class_name BaseScreen
 extends Control
 
@@ -96,7 +96,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if UiScreenHotkeys.is_global_loading_active(get_viewport()):
 		get_viewport().set_input_as_handled()
 		return
-	if (event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed and not event.echo) \
-			or event.is_action_pressed("ui_cancel"):
+	# Only ui_cancel — Esc is already mapped to it. Checking KEY_ESCAPE too
+	# fires twice (InputEventKey + InputEventAction) and doubles cancel SFX.
+	if event.is_action_pressed("ui_cancel"):
 		accept_event()
 		_on_back_pressed()

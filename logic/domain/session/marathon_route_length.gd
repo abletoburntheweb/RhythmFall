@@ -91,7 +91,11 @@ static func tracks_range_label(template: Dictionary) -> String:
 
 static func not_enough_songs_message(template: Dictionary = {}, preview: Dictionary = {}) -> String:
 	var min_need := _required_track_count(template, preview)
-	return TranslationServer.translate("MARATHON_NOT_ENOUGH_SONGS_MIN_FMT") % min_need
+	var base := TranslationServer.translate("MARATHON_NOT_ENOUGH_SONGS_MIN_FMT") % min_need
+	const _MarathonSessionConfig = preload("res://logic/domain/session/marathon_session_config.gd")
+	if not _MarathonSessionConfig.is_setup_field_locked(template, "chart_style"):
+		return "%s %s" % [base, TranslationServer.translate("MARATHON_NOT_ENOUGH_SONGS_STYLE_HINT")]
+	return base
 
 
 static func catalog_status_message(template: Dictionary = {}, preview: Dictionary = {}) -> String:

@@ -1,0 +1,152 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/profile/dialogs/profile_history_dialog.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ProfileHistoryDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.03, 0.06, 0.9)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+
+[node name="TopMargin" type="MarginContainer" parent="Container"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 24
+
+[node name="TopVBox" type="VBoxContainer" parent="Container/TopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NavRow" type="HBoxContainer" parent="Container/TopMargin/TopVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackButton" type="Button" parent="Container/TopMargin/TopVBox/NavRow"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatBackButton"
+text = "Назад"
+
+[node name="NavSpacer" type="Control" parent="Container/TopMargin/TopVBox/NavRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CalendarButton" type="Button" parent="Container/TopMargin/TopVBox/NavRow"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatBackButton"
+text = "Calendar"
+metadata/ui_icon_file = "calendar.svg"
+
+[node name="TitleLabel" type="Label" parent="Container/TopMargin/TopVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.92, 0.99, 1)
+theme_override_font_sizes/font_size = 20
+text = "История"
+horizontal_alignment = 1
+
+[node name="SectionRow" type="HBoxContainer" parent="Container/TopMargin/TopVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TimelineButton" type="Button" parent="Container/TopMargin/TopVBox/SectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+focus_mode = 0
+text = "Timeline"
+
+[node name="RecordsButton" type="Button" parent="Container/TopMargin/TopVBox/SectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+focus_mode = 0
+text = "Records"
+
+[node name="CapsulesButton" type="Button" parent="Container/TopMargin/TopVBox/SectionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+focus_mode = 0
+text = "Capsules"
+
+[node name="BodyMargin" type="MarginContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
+
+[node name="ContentShell" type="PanelContainer" parent="Container/BodyMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_horizontal = 3
+
+[node name="ShellMargin" type="MarginContainer" parent="Container/BodyMargin/ContentShell"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ContentScroll" type="ScrollContainer" parent="Container/BodyMargin/ContentShell/ShellMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ContentVBox" type="VBoxContainer" parent="Container/BodyMargin/ContentShell/ShellMargin/ContentScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="FooterMargin" type="MarginContainer" parent="Container"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="FooterHintLabel" type="Label" parent="Container/FooterMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.5, 0.58, 0.75)
+theme_override_font_sizes/font_size = 14
+text = "Esc — выход · 1–3 вкладки · Q–T фильтры ленты"
+horizontal_alignment = 1

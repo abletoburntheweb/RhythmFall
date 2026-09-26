@@ -4,6 +4,7 @@ extends HBoxContainer
 signal toggled(mod_id: String, on: bool)
 
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
+const _SubUi = preload("res://scenes/song_select/run_modifiers/run_modifier_subsection_ui.gd")
 
 @onready var _icon: TextureRect = $Icon
 @onready var _check: CheckButton = $Check
@@ -16,6 +17,7 @@ func setup(p_mod_id: String, title_text: String, enabled: bool) -> void:
 	if _check:
 		_check.text = title_text
 		_check.set_pressed_no_signal(enabled)
+		_SubUi.apply_modifier_checkbox(_check, 16, true)
 		if not _check.toggled.is_connected(_on_check_toggled):
 			_check.toggled.connect(_on_check_toggled)
 	_refresh_icon()

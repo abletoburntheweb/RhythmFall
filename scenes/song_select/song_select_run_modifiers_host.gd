@@ -5,7 +5,10 @@ extends Node
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
-const _ModifiersScene := preload("res://scenes/song_select/run_modifiers/run_modifiers_screen.tscn")
+const _ModifiersScenePath := "res://scenes/song_select/run_modifiers/run_modifiers_screen.tscn"
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+
+var _rm_open_count: int = 0
 
 var screen: BaseScreen = null
 var overlay: Control = null
@@ -23,9 +26,21 @@ func open() -> void:
 
 
 func _mount_overlay() -> void:
+	_rm_open_count += 1
+	var _perf_open := PerfTrace.begin("perf.detail.song_select.run_modifiers.open")
+	var _perf_open_n := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.count%d" % _rm_open_count)
 	if overlay and is_instance_valid(overlay):
 		overlay.queue_free()
-	overlay = _ModifiersScene.instantiate()
+	var _perf_load := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.load")
+	var _perf_load_n := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.load.count%d" % _rm_open_count)
+	var _packed := load(_ModifiersScenePath) as PackedScene
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.load.count%d" % _rm_open_count, _perf_load_n)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.load", _perf_load)
+	var _perf_inst := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.instantiate")
+	var _perf_inst_n := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.instantiate.count%d" % _rm_open_count)
+	overlay = _packed.instantiate() if _packed else null
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.instantiate.count%d" % _rm_open_count, _perf_inst_n)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.instantiate", _perf_inst)
 	if screen and screen.get_tree():
 		await screen.get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -34,8 +49,13 @@ func _mount_overlay() -> void:
 	if overlay.has_signal("screen_closed"):
 		overlay.screen_closed.connect(on_closed)
 	var host := screen.get_parent()
+	var _perf_add := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.add")
+	var _perf_add_n := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.add.count%d" % _rm_open_count)
 	host.add_child(overlay)
 	host.move_child(overlay, -1)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.add.count%d" % _rm_open_count, _perf_add_n)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.add", _perf_add)
+	var _perf_ctx := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.context")
 	if overlay.has_method("set_playfield_lanes"):
 		overlay.set_playfield_lanes(screen.current_lanes)
 	if overlay.has_method("set_song_context"):
@@ -50,11 +70,21 @@ func _mount_overlay() -> void:
 		)
 	if overlay.has_method("set_active_modifiers"):
 		overlay.set_active_modifiers(screen.active_run_modifiers)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.context", _perf_ctx)
+	var _perf_ui := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.ui_apply")
 	UiInteractionApplier.apply_from_engine(overlay)
-	if overlay.has_method("apply_locale"):
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.ui_apply", _perf_ui)
+	var _perf_locale := PerfTrace.begin("perf.detail.song_select.run_modifiers.open.locale")
+	if overlay.has_method("refresh_state_after_host_context"):
+		overlay.refresh_state_after_host_context()
+	elif overlay.has_method("apply_locale"):
 		overlay.apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.locale", _perf_locale)
 	await screen.get_tree().process_frame
 	update_button_label()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open.count%d" % _rm_open_count, _perf_open_n)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.open", _perf_open)
+	PerfTrace.record("perf.detail.song_select.run_modifiers.open.count", _rm_open_count)
 
 
 func on_closed() -> void:

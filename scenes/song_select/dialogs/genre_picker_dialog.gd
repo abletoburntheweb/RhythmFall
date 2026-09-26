@@ -1,7 +1,8 @@
-# scenes/song_select/genre_picker_dialog.gd
+# scenes/song_select/dialogs/genre_picker_dialog.gd
 extends Control
 class_name GenrePickerDialog
 
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const GenreSearch = preload("res://logic/domain/library/genre_search.gd")
 const GenreGroupIcons = preload("res://logic/domain/library/genre_group_icons.gd")
 const GenrePortraitRowsUi = preload("res://logic/domain/profile/genre_portrait_rows_ui.gd")
@@ -54,6 +55,7 @@ const _SELECT_ACCENT := Color(0.38, 0.78, 0.74, 1.0)
 
 
 func _ready():
+	var _perf_ready := PerfTrace.begin("perf.detail.song_select.genre_picker.ready.total")
 	var overlay_layer := 110 if get_parent() is MetadataEditDialog else 100
 	UiIconHelper.configure_modal_overlay(self, overlay_layer)
 	_search = get_node_or_null(_SEARCH_PATH)
@@ -67,21 +69,30 @@ func _ready():
 	_confirm_button = get_node_or_null(_LEFT + "/ActionsHBox/ConfirmButton") as Button
 	_card_panel = get_node_or_null("Container/BodyCenter/CardPanel") as PanelContainer
 	_apply_layout_sizes()
+	var _perf_populate := PerfTrace.begin("perf.detail.song_select.genre_picker.populate")
 	_populate()
+	PerfTrace.end("perf.detail.song_select.genre_picker.populate", _perf_populate)
 	if _list:
+		var _perf_render := PerfTrace.begin("perf.detail.song_select.genre_picker.populate.render")
 		_grouped_data = _build_grouped_data(_filtered)
 		_render_grouped_data()
+		PerfTrace.end("perf.detail.song_select.genre_picker.populate.render", _perf_render)
 		_list.deselect_all()
 		if allow_multi:
 			_list.select_mode = ItemList.SELECT_MULTI
 		else:
 			_list.select_mode = ItemList.SELECT_SINGLE
+		var _perf_icons := PerfTrace.begin("perf.detail.song_select.genre_picker.ready.icons")
 		_setup_ui_icons()
+		PerfTrace.end("perf.detail.song_select.genre_picker.ready.icons", _perf_icons)
 		UiInteractionApplier.apply_from_engine(self)
+	var _perf_pred := PerfTrace.begin("perf.detail.song_select.genre_picker.ready.predictions")
 	_render_predictions()
+	PerfTrace.end("perf.detail.song_select.genre_picker.ready.predictions", _perf_pred)
 	_update_selected_card()
 	_update_cache_status_label()
 	call_deferred("apply_locale")
+	PerfTrace.end("perf.detail.song_select.genre_picker.ready.total", _perf_ready)
 
 
 func _notification(what: int) -> void:
@@ -100,6 +111,7 @@ func _apply_layout_sizes() -> void:
 
 
 func configure(song_path: String, cached_predictions: Array = []) -> void:
+	var _perf := PerfTrace.begin("perf.detail.song_select.genre_picker")
 	_song_path = str(song_path).strip_edges()
 	_predictions_from_cache = false
 	if cached_predictions is Array and cached_predictions.size() > 0:
@@ -110,6 +122,7 @@ func configure(song_path: String, cached_predictions: Array = []) -> void:
 	if is_inside_tree():
 		_render_predictions()
 		_update_cache_status_label()
+	PerfTrace.end("perf.detail.song_select.genre_picker", _perf)
 
 
 func apply_locale() -> void:
@@ -177,6 +190,7 @@ func _setup_ui_icons() -> void:
 
 func _populate():
 	_all = []
+	var _perf_load := PerfTrace.begin("perf.detail.song_select.genre_picker.populate.data_load")
 	var user_path = "user://genre_groups.json"
 	var res_path = "res://data/genre_groups.json"
 	var open_path = user_path if FileAccess.file_exists(user_path) else res_path
@@ -199,6 +213,8 @@ func _populate():
 							var s = g.strip_edges()
 							if s != "":
 								_all.append(s)
+	PerfTrace.end("perf.detail.song_select.genre_picker.populate.data_load", _perf_load)
+	var _perf_prepare := PerfTrace.begin("perf.detail.song_select.genre_picker.populate.data_prepare")
 	var normalized: Array = []
 	for s in _all:
 		normalized.append(GenreSearch.canonical_display_genre(str(s)))
@@ -212,9 +228,12 @@ func _populate():
 	deduped.sort()
 	_all = deduped.duplicate()
 	_filtered = _all.duplicate()
+	PerfTrace.end("perf.detail.song_select.genre_picker.populate.data_prepare", _perf_prepare)
+	var _perf_render2 := PerfTrace.begin("perf.detail.song_select.genre_picker.populate.render")
 	if _list:
 		_grouped_data = _build_grouped_data(_filtered)
 		_render_grouped_data()
+	PerfTrace.end("perf.detail.song_select.genre_picker.populate.render", _perf_render2)
 
 
 func _on_search_changed(text: String):
@@ -330,7 +349,7 @@ func _apply_button_pill_style(btn: Button, stylebox: StyleBoxFlat) -> void:
 
 
 func _on_confirm_pressed() -> void:
-	MusicManager.play_select_sound()
+	MusicManager.play_modifier_select_sound()
 	_emit_selection_and_close()
 
 

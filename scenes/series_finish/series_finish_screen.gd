@@ -68,6 +68,7 @@ func _ready() -> void:
 		_play_again_button.pressed.connect(_on_play_again_pressed)
 	if _secondary_button and not _secondary_button.pressed.is_connected(_on_secondary_pressed):
 		_secondary_button.pressed.connect(_on_secondary_pressed)
+	_start_finish_music()
 	_refresh_all()
 
 
@@ -76,8 +77,21 @@ func set_summary_data(summary: Dictionary, return_flag: bool = true) -> void:
 	_return_flag = return_flag
 	_persisted = false
 	_persist_results()
+	_start_finish_music()
 	if is_node_ready():
 		_refresh_all()
+
+
+func _start_finish_music() -> void:
+	if MusicManager == null:
+		return
+	if MusicManager.has_method("stop_game_music"):
+		MusicManager.stop_game_music()
+	# Same ambient as free-mode victory; restart so a leftover stream cannot block playback.
+	if MusicManager.has_method("play_screen_ambient_music"):
+		MusicManager.play_screen_ambient_music(MusicManager.DEFAULT_VICTORY_SCREEN_MUSIC, true)
+	elif MusicManager.has_method("play_victory_screen_music"):
+		MusicManager.play_victory_screen_music()
 
 
 func apply_locale() -> void:

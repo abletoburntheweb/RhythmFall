@@ -1,4 +1,4 @@
-# scenes/shop/item_card.gd
+# scenes/shop/components/item_card.gd
 extends PanelContainer
 
 signal buy_pressed(item_id: String)
@@ -39,8 +39,10 @@ static var _preview_frames: Dictionary = {}
 static var _shell_styles: Dictionary = {}
 static var _color_textures: Dictionary = {}
 static var _note_textures: Dictionary = {}
+static var _last_ready_end_usec: int = 0
 
 const _ShopItemLocale = preload("res://logic/i18n/shop_item_locale.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const _HitParticlePresets = preload("res://logic/domain/rhythm/hit_particle_presets.gd")
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
 const _KickPreviewFx = preload("res://scenes/shop/components/kick_preview_fx.gd")
@@ -60,6 +62,11 @@ var _current_image_path: String = ""
 var _kick_preview_fx: Control = null
 var _particle_preview_fx: Node2D = null
 var _preview_fx_ready := false
+var _precomputed_total_medals: int = -1
+static var _diag_total_medal_calls: int = 0
+static var _diag_precomputed_hits: int = 0
+static var _diag_fallback_calls: int = 0
+static var _diag_medal_cards_created: int = 0
 
 @onready var _card_anim: AnimationPlayer = get_node_or_null("CardAnim")
 
@@ -75,10 +82,17 @@ func apply_locale() -> void:
 	_update_buttons_and_status()
 
 
+func _enter_tree() -> void:
+	var _perf_et := PerfTrace.begin("perf.detail.shop.item_card.enter_tree")
+	PerfTrace.end("perf.detail.shop.item_card.enter_tree", _perf_et)
+
 func _ready():
+	var _perf_t := PerfTrace.begin("perf.detail.shop.item_card.ready")
 	if not item_data.has("item_id"):
 		visible = false
 		queue_free()
+		_last_ready_end_usec = Time.get_ticks_usec()
+		PerfTrace.end("perf.detail.shop.item_card.ready", _perf_t)
 		return
 
 	custom_minimum_size = Vector2(280, 350)
@@ -88,12 +102,20 @@ func _ready():
 	if not visibility_changed.is_connected(_on_visibility_changed):
 		visibility_changed.connect(_on_visibility_changed)
 	_finish_shop_setup()
+	_last_ready_end_usec = Time.get_ticks_usec()
+	PerfTrace.end("perf.detail.shop.item_card.ready", _perf_t)
 
 
 func _finish_shop_setup() -> void:
+	var _perf_tl := PerfTrace.begin("perf.detail.shop.item_card.text_layout")
 	_apply_card_text_layout()
+	PerfTrace.end("perf.detail.shop.item_card.text_layout", _perf_tl)
+	var _perf_si := PerfTrace.begin("perf.detail.shop.item_card.setup_item")
 	_setup_item()
+	PerfTrace.end("perf.detail.shop.item_card.setup_item", _perf_si)
+	var _perf_nw := PerfTrace.begin("perf.detail.shop.item_card.new_reward_visuals")
 	_update_new_reward_visuals()
+	PerfTrace.end("perf.detail.shop.item_card.new_reward_visuals", _perf_nw)
 
 func _apply_card_text_layout() -> void:
 	var content := get_node_or_null("MarginContainer/ContentContainer") as VBoxContainer
@@ -197,9 +219,12 @@ func _on_image_rect_gui_input(event: InputEvent):
 
 
 func _setup_item():
+	var _perf_state := PerfTrace.begin("perf.detail.shop.item_card.setup_item.state")
 	if not item_data.has("item_id"):
+		PerfTrace.end("perf.detail.shop.item_card.setup_item.state", _perf_state)
 		return
 
+	var _perf_kind := PerfTrace.begin("perf.detail.shop.item_card.setup_item.state.kind")
 	var item_id_str = item_data.get("item_id", "") 
 	is_default = item_data.get("is_default", false)
 
@@ -212,8 +237,20 @@ func _setup_item():
 	required_daily_completed = item_data.get("required_daily_completed", 0)
 	is_medal_reward = _is_medal_reward_item()
 	medal_price = int(item_data.get("medal_price", 0))
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.state.kind", _perf_kind)
+	var _perf_medals := PerfTrace.begin("perf.detail.shop.item_card.setup_item.state.medals")
 	if is_medal_reward:
-		medal_unlocked = PlayerDataManager.get_total_medals_earned() >= medal_price
+		_diag_medal_cards_created += 1
+		_diag_total_medal_calls += 1
+		var _use_precomputed := _precomputed_total_medals >= 0
+		if _use_precomputed:
+			_diag_precomputed_hits += 1
+		else:
+			_diag_fallback_calls += 1
+		var total_medals := _precomputed_total_medals if _use_precomputed else PlayerDataManager.get_total_medals_earned()
+		medal_unlocked = total_medals >= medal_price
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.state.medals", _perf_medals)
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.state", _perf_state)
 
 	var image_rect = $MarginContainer/ContentContainer/ImageWrapper/ImageRect
 	var name_label = $MarginContainer/ContentContainer/NameLabel
@@ -223,8 +260,11 @@ func _setup_item():
 	if status_hbox:
 		status_hbox.visible = false
 
+	var _perf_image := PerfTrace.begin("perf.detail.shop.item_card.setup_item.image")
 	_apply_initial_image()
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.image", _perf_image)
 
+	var _perf_imgvis := PerfTrace.begin("perf.detail.shop.item_card.setup_item.image_visibility")
 	if image_rect:
 		image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		var category := str(item_data.get("category", ""))
@@ -237,11 +277,16 @@ func _setup_item():
 			image_rect.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		else:
 			image_rect.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.image_visibility", _perf_imgvis)
 
+	var _perf_name := PerfTrace.begin("perf.detail.shop.item_card.setup_item.name_label")
 	if name_label:
 		_set_name_label(name_label)
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.name_label", _perf_name)
 
+	var _perf_buttons := PerfTrace.begin("perf.detail.shop.item_card.setup_item.buttons")
 	_update_buttons_and_status()
+	PerfTrace.end("perf.detail.shop.item_card.setup_item.buttons", _perf_buttons)
 
 
 func _update_preview_button(preview_button):
@@ -674,6 +719,47 @@ func _apply_status_label_style() -> void:
 		label.add_theme_constant_override("outline_size", 4)
 
 
+func set_keyboard_selected(on: bool) -> void:
+	modulate = Color(1.08, 1.1, 1.14, 1.0) if on else Color.WHITE
+
+
+func activate_preview() -> bool:
+	var preview_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/PreviewButton"
+	) as Button
+	if preview_button == null or not preview_button.visible or preview_button.disabled:
+		return false
+	_on_preview_pressed()
+	return true
+
+
+func activate_primary_action() -> bool:
+	## Prefer Use when available, else Buy / medal buy / open reward.
+	var use_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/UseButton"
+	) as Button
+	if use_button and use_button.visible and not use_button.disabled:
+		_on_use_pressed()
+		return true
+	var buy_button := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/BuyButton"
+	) as Button
+	if buy_button and buy_button.visible and not buy_button.disabled:
+		_on_buy_pressed()
+		return true
+	var medal_buy := get_node_or_null(
+		"MarginContainer/ContentContainer/ButtonsContainer/TopButtonContainer/MedalBuyButton"
+	) as Button
+	if medal_buy and medal_buy.visible and not medal_buy.disabled:
+		_on_medal_buy_pressed()
+		return true
+	var open_btn := _get_open_reward_button()
+	if open_btn and open_btn.visible and not open_btn.disabled:
+		_on_open_reward_pressed()
+		return true
+	return false
+
+
 func _on_buy_pressed():
 	var item_id_str = item_data.get("item_id", "")
 	_play_card_anim("buy_pop")
@@ -833,7 +919,8 @@ func update_state(purchased: bool, active: bool, file_available: bool = true, ac
 	is_medal_reward = _is_medal_reward_item()
 	medal_price = int(item_data.get("medal_price", 0))
 	if is_medal_reward:
-		medal_unlocked = PlayerDataManager.get_total_medals_earned() >= medal_price
+		var total_medals := _precomputed_total_medals if _precomputed_total_medals >= 0 else PlayerDataManager.get_total_medals_earned()
+		medal_unlocked = total_medals >= medal_price
 	
 	if is_level_reward and level_unlocked_param:
 		is_purchased = true 

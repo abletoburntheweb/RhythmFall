@@ -1,0 +1,154 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" uid="uid://6cyjmi2plvka" path="res://scenes/victory_screen/victory_accuracy_details.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/icons/crosshair.svg" id="3_crosshair"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 24.0
+content_margin_top = 22.0
+content_margin_right = 24.0
+content_margin_bottom = 22.0
+bg_color = Color(0.09, 0.1, 0.14, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34902, 0.819608, 0.745098, 0.42)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.34902, 0.819608, 0.745098, 0.12)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(1, 1, 1, 0.1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.09, 0.1, 0.14, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34902, 0.819608, 0.745098, 0.20)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="VictoryAccuracyDetails" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.031373, 0.039216, 0.066667, 0.88)
+
+[node name="CenterWrap" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogPanel" type="PanelContainer" parent="CenterWrap"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+
+[node name="Margin" type="MarginContainer" parent="CenterWrap/DialogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="DialogVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeroIcon" type="TextureRect" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+texture = ExtResource("3_crosshair")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderText" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 28
+text = "ТОЧНОСТЬ • БЕТА"
+
+[node name="SubtitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Точность по секциям чарта"
+
+[node name="RowsVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FooterSep" type="HSeparator" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="FooterHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+
+[node name="FooterTotalLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FooterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "ОБЩАЯ ТОЧНОСТЬ"
+
+[node name="FooterValueLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FooterHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_font_sizes/font_size = 22
+text = "0%"
+
+[node name="CloseButton" type="Button" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close")
+theme_override_styles/focus = SubResource("StyleBoxFlat_close")
+theme_override_colors/font_color = Color(0.85, 0.9, 0.97, 1)
+theme_override_colors/font_hover_color = Color(0.34902, 0.819608, 0.745098, 1)
+theme_override_colors/font_pressed_color = Color(0.34902, 0.819608, 0.745098, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "ЗАКРЫТЬ"

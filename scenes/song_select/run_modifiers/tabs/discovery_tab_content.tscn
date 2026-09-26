@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://933672956d066f2f38ced100fe01ab25"]
+[ext_resource type="Script" path="res://scenes/song_select/run_modifiers/tabs/discovery_tab_content.gd" id="1_dis"]
+[node name="DiscoveryTabContent" type="VBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_dis")

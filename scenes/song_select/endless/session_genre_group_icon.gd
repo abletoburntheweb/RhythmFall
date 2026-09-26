@@ -47,9 +47,21 @@ func _build_icon() -> void:
 	_icon_frame = _GenreGroupIcons.make_icon_frame_for_group(group_id, tint, FRAME_SIZE, ICON_SIZE, false)
 	_icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_icon_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_icon_frame.offset_left = 0.0
+	_icon_frame.offset_top = 0.0
+	_icon_frame.offset_right = 0.0
+	_icon_frame.offset_bottom = 0.0
+	_icon_frame.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_icon_frame.grow_vertical = Control.GROW_DIRECTION_BOTH
 	add_child(_icon_frame)
+	pivot_offset = custom_minimum_size * 0.5
 	for state in ["normal", "hover", "focus", "pressed", "disabled"]:
 		add_theme_stylebox_override(state, _empty_button_style())
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		pivot_offset = size * 0.5
 
 
 func _empty_button_style() -> StyleBoxEmpty:

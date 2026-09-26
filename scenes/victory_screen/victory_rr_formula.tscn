@@ -1,0 +1,227 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/victory_screen/victory_rr_formula.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.08, 0.09, 0.13, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94902, 0.701961, 0.352941, 0.35)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.94902, 0.701961, 0.352941, 0.10)
+shadow_size = 20
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_table_border"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94902, 0.701961, 0.352941, 0.12)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_final"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.06, 0.07, 0.10, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94902, 0.701961, 0.352941, 0.22)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.09, 0.1, 0.14, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94902, 0.701961, 0.352941, 0.20)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="VictoryRrFormula" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.031373, 0.039216, 0.066667, 0.88)
+
+[node name="CenterWrap" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogPanel" type="PanelContainer" parent="CenterWrap"]
+custom_minimum_size = Vector2(820, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+
+[node name="Margin" type="MarginContainer" parent="CenterWrap/DialogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="DialogVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeaderHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeroIcon" type="TextureRect" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderText" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 26
+text = "КАК СЧИТАЕТСЯ RR"
+
+[node name="SubtitleLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/HeaderHBox/HeaderText"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Как рассчитан рейтинг забега именно для этого чарта, инструмента, режима и набора модов."
+
+[node name="TableBorder" type="PanelContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_table_border")
+
+[node name="TableVBox" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/TableBorder"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="FinalBorder" type="PanelContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_final")
+
+[node name="FinalHBox" type="HBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="FinalLeft" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="FinalTitle" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox/FinalLeft"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.9)
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+text = "ФИНАЛЬНЫЙ РАСЧЁТ"
+
+[node name="FinalFormulaLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox/FinalLeft"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 0.97, 1)
+theme_override_font_sizes/font_size = 16
+text = "800 × 0.92"
+
+[node name="ScaleNoteLabel" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox/FinalLeft"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.74, 0.85)
+theme_override_font_sizes/font_size = 11
+text = "0.92 — фиксированный коэффициент формулы"
+
+[node name="FinalRight" type="VBoxContainer" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FinalRrCaption" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox/FinalRight"]
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 0.9)
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 2
+text = "ИТОГОВЫЙ RR"
+
+[node name="FinalRrValue" type="Label" parent="CenterWrap/DialogPanel/Margin/DialogVBox/FinalBorder/FinalHBox/FinalRight"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_colors/font_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_shadow_color = Color(0.94902, 0.701961, 0.352941, 0.3)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 2
+horizontal_alignment = 2
+text = "1265"
+
+[node name="CloseButton" type="Button" parent="CenterWrap/DialogPanel/Margin/DialogVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close")
+theme_override_styles/focus = SubResource("StyleBoxFlat_close")
+theme_override_colors/font_color = Color(0.85, 0.9, 0.97, 1)
+theme_override_colors/font_hover_color = Color(0.94902, 0.701961, 0.352941, 1)
+theme_override_colors/font_pressed_color = Color(0.94902, 0.701961, 0.352941, 0.8)
+theme_override_font_sizes/font_size = 17
+text = "ЗАКРЫТЬ"

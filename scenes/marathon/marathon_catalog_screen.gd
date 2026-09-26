@@ -14,6 +14,7 @@ const _RhythmDnaCoverLoader = preload("res://scenes/song_select/rhythm_dna/lib/r
 const _MarathonCourseSettings = preload("res://scenes/marathon/marathon_course_settings.gd")
 const _NoticeOverlayScene = preload("res://ui/overlays/app_notice_overlay.tscn")
 const _SongSelectUiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
+const _ChartDifficultyAnalyzer = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
 const _PreviewRowScript = preload("res://scenes/song_select/endless/session_setup_preview_row.gd")
 const _MarathonSummaryBadgesPanel = preload("res://scenes/marathon/marathon_summary_badges_panel.gd")
 const _MarathonSummaryRulesPanel = preload("res://scenes/marathon/marathon_summary_rules_panel.gd")
@@ -26,24 +27,23 @@ const _MarathonRouteCharacter = preload("res://logic/domain/session/marathon_rou
 const _MarathonSeason = preload("res://logic/domain/session/marathon_season.gd")
 const _TimeUtils = preload("res://logic/platform/time_utils.gd")
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
+const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 
 var _accent: Color = _PlayModeIds.accent_for(_PlayModeIds.MARATHON)
-
-enum CatalogTab { ALL, BY_GENRES, DAILY }
 
 const _MarathonDailyRoute = preload("res://logic/domain/session/marathon_daily_route.gd")
 const _MarathonRouteLength = preload("res://logic/domain/session/marathon_route_length.gd")
 const _MarathonRouteRolls = preload("res://logic/domain/session/marathon_route_rolls.gd")
 const GenerationService = preload("res://logic/services/generation_service.gd")
+const _ConfirmOverlayScene = preload("res://ui/overlays/app_confirm_overlay.tscn")
+const _Overlay = preload("res://logic/ui/app_overlay_helpers.gd")
+const _SessionScopeResolver = preload("res://logic/domain/session/session_scope_resolver.gd")
 
 var _courses: Array[Dictionary] = []
 var _selected_route_id := ""
-var _active_tab := CatalogTab.ALL
 var _run_config: Dictionary = {}
 var _course_settings: MarathonCourseSettings = null
 var _list_item_nodes: Dictionary = {}
-var _tab_buttons: Dictionary = {}
-var _tab_group: ButtonGroup = null
 var _notice_overlay: AppNoticeOverlay = null
 var _summary_rows: Dictionary = {}
 var _rules_panel: MarathonSummaryRulesPanel = null
@@ -52,8 +52,14 @@ var _mods_panel: MarathonSummaryModsPanel = null
 var _badges_panel: MarathonSummaryBadgesPanel = null
 var _preview_panel: MarathonRoutePreviewPanel = null
 var _progress_panel: MarathonRouteProgressPanel = null
-var _pending_initial_tab: int = -1
 var _preview_cache: Dictionary = {}
+var _candidate_cache: Dictionary = {}
+var _cached_route: Dictionary = {}
+var _cached_route_id: String = ""
+var _cached_template: Dictionary = {}
+var _cached_template_id: String = ""
+var _cold_token: int = 0
+var _cold_start_usec: int = 0
 var _season_reset_label: Label = null
 var _next_set_toggle: Button = null
 var _next_set_vbox: VBoxContainer = null
@@ -63,6 +69,8 @@ var _season_timer: Timer = null
 var _route_preview_player: SongDetailsManager = null
 var _library_refresh_timer: Timer = null
 var _refresh_pool_button: Button = null
+var _generate_missing_button: Button = null
+var _confirm_overlay: AppConfirmOverlay = null
 var _generation_service: GenerationService = null
 var _preview_audio_song_path := ""
 var _settings_refresh_timer: Timer = null
@@ -70,7 +78,11 @@ var _pending_settings_rebuild_list := false
 var _pending_settings_full_refresh := false
 var _suppress_settings_changed := false
 var _cached_selected_preview: Dictionary = {}
+var _cached_selected_preview_key: String = ""
 var _help_btn: Button = null
+var _rebuild_token: int = 0
+var _initial_build_done: bool = false
+const _REBUILD_BATCH_SIZE := 4
 
 const _POOL_AFFECTING_KEYS: Array[String] = [
 	"generation_mode_policy",
@@ -81,16 +93,12 @@ const _POOL_AFFECTING_KEYS: Array[String] = [
 	"difficulty_max",
 	"instrument",
 	"instruments",
-	"lanes",
 ]
 
 @onready var _back_button: Button = %BackButton
 @onready var _title_label: Label = %TitleLabel
 @onready var _subtitle_label: Label = %SubtitleLabel
 @onready var _courses_title: Label = %CoursesTitle
-@onready var _tab_all_button: Button = %TabAllButton
-@onready var _tab_genres_button: Button = %TabGenresButton
-@onready var _tab_playlists_button: Button = %TabPlaylistsButton
 @onready var _courses_scroll: ScrollContainer = %CoursesScroll
 @onready var _courses_list_vbox: VBoxContainer = %CoursesListVBox
 @onready var _playlists_placeholder: Label = %PlaylistsPlaceholder
@@ -101,6 +109,7 @@ const _POOL_AFFECTING_KEYS: Array[String] = [
 @onready var _stat_tracks_label: Label = %StatTracksLabel
 @onready var _stat_duration_label: Label = %StatDurationLabel
 @onready var _stat_difficulty_label: Label = %StatDifficultyLabel
+var _stat_difficulty_zap: Control = null
 @onready var _settings_host: VBoxContainer = %SettingsHost
 @onready var _summary_title: Label = %SummaryTitle
 @onready var _summary_vbox: VBoxContainer = %SummaryVBox
@@ -109,6 +118,9 @@ const _POOL_AFFECTING_KEYS: Array[String] = [
 
 
 func _ready() -> void:
+	var _cold_t := Time.get_ticks_usec()
+	_cold_token += 1
+	_cold_start_usec = _cold_t
 	var game_engine := get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		setup_managers(game_engine.get_transitions())
@@ -119,7 +131,6 @@ func _ready() -> void:
 		_back_button.pressed.connect(_on_back_pressed)
 	if _start_button and not _start_button.pressed.is_connected(_on_start_pressed):
 		_start_button.pressed.connect(_on_start_pressed)
-	_setup_tabs()
 	_setup_panels()
 	_setup_summary_rows()
 	_setup_course_settings()
@@ -141,61 +152,19 @@ func _setup_route_preview_player() -> void:
 	_route_preview_player.setup_audio_player()
 
 
-func set_initial_tab(tab: CatalogTab) -> void:
-	_pending_initial_tab = int(tab)
-	if is_node_ready():
-		_apply_initial_tab()
-
-
-func set_initial_tab_daily() -> void:
-	set_initial_tab(CatalogTab.DAILY)
-
-
-func _apply_initial_tab() -> void:
-	if _pending_initial_tab < 0:
-		return
-	var tab := _pending_initial_tab as CatalogTab
-	_pending_initial_tab = -1
-	_active_tab = tab
-	var btn: Button = _tab_buttons.get(tab, null)
-	if btn:
-		btn.set_pressed_no_signal(true)
-	if tab == CatalogTab.DAILY:
-		_select_daily_route()
-	_rebuild_list()
-	_refresh_selection_ui()
-
-
 func _deferred_boot() -> void:
+	var _t := Time.get_ticks_usec()
 	_sync_ambient_profile()
-	if _MarathonSeason.is_enabled():
-		var tab_row := get_node_or_null("%TabRow") as Control
-		if tab_row:
-			tab_row.visible = false
-	else:
-		_sync_tab_locks()
+	var _t_rc := Time.get_ticks_usec()
 	_rebuild_courses()
-	if _pending_initial_tab >= 0:
-		_apply_initial_tab()
-	elif _selected_route_id == "" and not _courses.is_empty():
+	_initial_build_done = true
+	# Defer heavy selected-route preview to next frame — keep open frame shell-only (4 cards) for smooth animation.
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	if _selected_route_id == "" and not _courses.is_empty():
+		var _t_sel := Time.get_ticks_usec()
 		_select_route(str(_courses[0].get("route_id", "")))
-
-
-func _setup_tabs() -> void:
-	_tab_group = ButtonGroup.new()
-	_tab_group.allow_unpress = false
-	for btn in [_tab_all_button, _tab_genres_button, _tab_playlists_button]:
-		if btn:
-			btn.button_group = _tab_group
-			btn.toggled.connect(_on_tab_toggled.bind(btn))
-	_tab_buttons = {
-		CatalogTab.ALL: _tab_all_button,
-		CatalogTab.BY_GENRES: _tab_genres_button,
-		CatalogTab.DAILY: _tab_playlists_button,
-	}
-	if _tab_all_button:
-		_tab_all_button.set_pressed_no_signal(true)
-	_sync_tab_locks()
 
 
 func _setup_season_ui() -> void:
@@ -248,9 +217,6 @@ func _setup_season_ui() -> void:
 
 
 func _on_next_set_toggled(on: bool) -> void:
-	# #region agent log
-	_agent_dbg("D", "marathon_catalog_screen.gd:_on_next_set_toggled", "toggle", {"on": on, "msec": Time.get_ticks_msec()})
-	# #endregion
 	_next_set_visible = on
 	if _courses_scroll:
 		_courses_scroll.visible = not on
@@ -261,87 +227,30 @@ func _on_next_set_toggled(on: bool) -> void:
 func _rebuild_next_set_preview() -> void:
 	if _next_set_vbox == null:
 		return
-	# #region agent log
-	var _t0 := Time.get_ticks_msec()
-	# #endregion
 	for child in _next_set_vbox.get_children():
 		child.queue_free()
 	if _next_set_scroll:
 		_next_set_scroll.visible = _next_set_visible
 	if not _next_set_visible:
 		return
-	# #region agent log
-	var _t_meta0 := Time.get_ticks_msec()
-	# #endregion
 	var metas := _MarathonSeason.all_route_metas(_MarathonSeason.next_season_start_iso())
-	# #region agent log
-	var _meta_ms := Time.get_ticks_msec() - _t_meta0
-	var _preview_ms := 0
-	var _card_ms := 0
-	var _n := 0
-	# #endregion
 	for meta in metas:
 		var route_id := str(meta.get("route_id", "")).strip_edges()
 		if route_id == "":
 			continue
-		# #region agent log
-		var _had_cache := _preview_cache.has(route_id)
-		var _tc0 := Time.get_ticks_msec()
-		# #endregion
 		var template: Dictionary = {}
 		var raw_tmpl: Variant = meta.get("template", {})
 		if raw_tmpl is Dictionary:
 			template = raw_tmpl as Dictionary
 		# Next-set cards are locked previews — skip heavy playable scope scan.
 		var card := _make_route_list_card(route_id, false, template)
-		# #region agent log
-		var _dt := Time.get_ticks_msec() - _tc0
-		_card_ms += _dt
-		if not _had_cache:
-			_preview_ms += _dt
-		_n += 1
-		# #endregion
 		if not template.is_empty():
 			var fill := _MarathonSeason.fill_summary_line(template)
 			if fill != "":
 				_set_list_card_subtitle(card, fill)
 		_next_set_vbox.add_child(card)
-	# #region agent log
-	_agent_dbg("A/B/C", "marathon_catalog_screen.gd:_rebuild_next_set_preview", "rebuild timings", {
-		"runId": "post-fix",
-		"routes": _n,
-		"meta_ms": _meta_ms,
-		"uncached_card_ms": _preview_ms,
-		"all_card_ms": _card_ms,
-		"total_ms": Time.get_ticks_msec() - _t0,
-		"cache_size": _preview_cache.size(),
-		"light_cards": true,
-	})
-	# #endregion
 
 
-# #region agent log
-func _agent_dbg(hypothesis_id: String, location: String, message: String, data: Dictionary = {}) -> void:
-	var path := ProjectSettings.globalize_path("res://debug-67397e.log")
-	var payload := {
-		"sessionId": "67397e",
-		"hypothesisId": hypothesis_id,
-		"location": location,
-		"message": message,
-		"data": data,
-		"timestamp": Time.get_unix_time_from_system() * 1000.0,
-	}
-	var f: FileAccess
-	if FileAccess.file_exists(path):
-		f = FileAccess.open(path, FileAccess.READ_WRITE)
-		if f:
-			f.seek_end()
-	else:
-		f = FileAccess.open(path, FileAccess.WRITE)
-	if f:
-		f.store_line(JSON.stringify(payload))
-		f.close()
-# #endregion
 
 
 func _update_season_labels() -> void:
@@ -467,6 +376,14 @@ func _setup_summary_rows() -> void:
 	_refresh_pool_button.pressed.connect(_on_refresh_pool_pressed)
 	_summary_vbox.add_child(_refresh_pool_button)
 
+	_generate_missing_button = Button.new()
+	_generate_missing_button.text = tr("MARATHON_GENERATE_MISSING")
+	if _generate_missing_button.text == "MARATHON_GENERATE_MISSING" or _generate_missing_button.text.strip_edges() == "":
+		_generate_missing_button.text = "Сгенерировать отсутствующие чарты"
+	_generate_missing_button.visible = false
+	_generate_missing_button.pressed.connect(_on_generate_missing_pressed)
+	_summary_vbox.add_child(_generate_missing_button)
+
 	# Keep rules/badges above detail rows.
 	_summary_vbox.move_child(_preview_panel, 0)
 	_summary_vbox.move_child(_rules_panel, 1)
@@ -542,12 +459,6 @@ func apply_locale() -> void:
 		_help_btn.tooltip_text = tr("HELP_LINK_MARATHON_ROUTES")
 	if _courses_title:
 		_sync_courses_title()
-	if _tab_all_button:
-		_tab_all_button.text = tr("MARATHON_CATALOG_TAB_ALL")
-	if _tab_genres_button:
-		_tab_genres_button.text = tr("MARATHON_CATALOG_TAB_GENRES")
-	if _tab_playlists_button:
-		_tab_playlists_button.text = tr("MARATHON_CATALOG_TAB_DAILY")
 	if _playlists_placeholder:
 		_playlists_placeholder.text = tr("MARATHON_DAILY_TAB_HINT")
 	if _summary_title:
@@ -575,9 +486,19 @@ func apply_locale() -> void:
 
 
 func _rebuild_courses() -> void:
+	var _t := Time.get_ticks_usec()
+	var _t_all := Time.get_ticks_usec()
+	var _routes := _MarathonRouteCatalog.all_routes()
+	var _t_all_ms := (Time.get_ticks_usec()-_t_all)/1000.0
+	var _g_all_calls := MarathonGenrePicker._diag_all_calls
+	var _g_hits := MarathonGenrePicker._diag_all_hits
+	var _g_misses := MarathonGenrePicker._diag_all_misses
+	var _g_res_total: float = 0.0
+	for _v in MarathonGenrePicker._diag_per_route.values():
+		_g_res_total += float((_v as Dictionary).get("resolve_total", 0.0))
 	_clear_preview_cache()
 	_courses.clear()
-	for route in _MarathonRouteCatalog.all_routes():
+	for route in _routes:
 		_courses.append(route.duplicate(true))
 	if not _MarathonSeason.is_enabled():
 		_courses.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -585,6 +506,7 @@ func _rebuild_courses() -> void:
 			var key_b := _route_title(b)
 			return key_a.naturalnocasecmp_to(key_b) < 0
 		)
+	var _t_list := Time.get_ticks_usec()
 	_rebuild_list()
 
 
@@ -615,8 +537,11 @@ func _route_fill_line(route_id: String, template: Dictionary) -> String:
 
 
 func _rebuild_list() -> void:
+	var _t := Time.get_ticks_usec()
 	if _courses_list_vbox == null:
 		return
+	_rebuild_token += 1
+	var token := _rebuild_token
 	for child in _courses_list_vbox.get_children():
 		child.queue_free()
 	_list_item_nodes.clear()
@@ -636,11 +561,128 @@ func _rebuild_list() -> void:
 			challenge_routes.append(course)
 			continue
 		rotation_routes.append(course)
+	# Create shells synchronously (light), then fill previews batched.
+	var _t_shell := Time.get_ticks_usec()
 	if not challenge_routes.is_empty():
-		_add_list_section(tr("MARATHON_CATALOG_CHALLENGES_TITLE"), challenge_routes)
+		_add_list_section(tr("MARATHON_CATALOG_CHALLENGES_TITLE"), challenge_routes, true)
 	if not rotation_routes.is_empty():
 		var rotation_title := tr("MARATHON_SEASON_ROUTES_TITLE") if _MarathonSeason.is_enabled() else tr("MARATHON_CATALOG_COURSES_TITLE")
-		_add_list_section(rotation_title, rotation_routes)
+		_add_list_section(rotation_title, rotation_routes, true)
+	# Kick batched preview fill for all routes.
+	var all_for_preview: Array[Dictionary] = []
+	all_for_preview.append_array(challenge_routes)
+	all_for_preview.append_array(rotation_routes)
+	var _t_kick := Time.get_ticks_usec()
+	_kick_batched_preview_fill(token, all_for_preview)
+
+
+func _kick_batched_preview_fill(token: int, courses: Array[Dictionary]) -> void:
+	if courses.is_empty():
+		return
+	# Use existing async helper if available, otherwise inline.
+	var engine := get_parent()
+	if engine and engine.has_method("run_async"):
+		engine.run_async(_batched_preview_coro.bind(token, courses))
+	else:
+		_batched_preview_coro(token, courses)
+
+
+func _batched_preview_coro(token: int, courses: Array[Dictionary]) -> void:
+	var _diag_start := Time.get_ticks_usec()
+	var _diag_count := 0
+	var _diag_hits := 0
+	var _diag_miss := 0
+	var _diag_min_ms := INF
+	var _diag_max_ms := 0.0
+	if token != _rebuild_token or not is_inside_tree():
+		return
+	var batch_count := 0
+	for course in courses:
+		if token != _rebuild_token or not is_inside_tree():
+			return
+		var route_id := str(course.get("route_id", "")).strip_edges()
+		if route_id == "":
+			continue
+		# Selected route preview is deferred via _deferred_refresh_selected_preview — skip here to avoid double heavy.
+		if route_id == _selected_route_id:
+			continue
+		var cfg: Dictionary = {}
+		var key := _preview_cache_key(route_id, cfg)
+		if _preview_cache.has(key):
+			_diag_hits += 1
+			# Cache hit — still ensure card meta is synced without heavy recompute.
+			var cached: Dictionary = _preview_cache[key] as Dictionary
+			_update_card_with_preview(route_id, cached)
+			continue
+		_diag_miss += 1
+		# Heavy sync work — one route at a time via cached wrapper.
+		var _p_t := Time.get_ticks_usec()
+		var preview := _preview_for_route(route_id)
+		var _p_ms := (Time.get_ticks_usec() - _p_t) / 1000.0
+		_diag_min_ms = minf(_diag_min_ms, _p_ms)
+		_diag_max_ms = maxf(_diag_max_ms, _p_ms)
+		_diag_count += 1
+		if not _preview_cache.has(key) and not preview.is_empty():
+			_preview_cache[key] = preview
+		_update_card_with_preview(route_id, preview)
+		batch_count += 1
+		if batch_count % _REBUILD_BATCH_SIZE == 0:
+			await get_tree().process_frame
+			if token != _rebuild_token or not is_inside_tree():
+				return
+	# After all batches, selection hero already handled via deferred refresh; no extra heavy call here.
+
+
+func _update_card_with_preview(route_id: String, preview: Dictionary) -> void:
+	var panel: PanelContainer = _list_item_nodes.get(route_id, null) as PanelContainer
+	if panel == null or not is_instance_valid(panel):
+		return
+	# Update playable meta and visual state without recreating card.
+	var playable: bool = bool(preview.get("ok", false))
+	panel.set_meta("route_playable", playable)
+	# Update border and modulate via existing helper.
+	_sync_list_item_focus(route_id)
+	# Update meta label (catalog_list_subtitle) if present.
+	# Find text_col -> meta is 3rd child of text_col (title, fill, meta)
+	var preview_template: Dictionary = preview.get("template", {}) as Dictionary if preview.get("template") is Dictionary else {}
+	var template: Dictionary = preview_template
+	if template.is_empty():
+		template = _MarathonRouteCatalog.template_for_route(route_id)
+		if template.is_empty() and _MarathonSeason.is_season_route(route_id):
+			template = _MarathonSeason.template_for_route_id(route_id)
+	var meta_text := _MarathonRouteLength.catalog_list_subtitle(template, preview)
+	var best_text := _best_completion_label(route_id) if playable else ""
+	# Locate card structure: panel -> root HBox -> text_col VBox
+	var root := panel.get_child(0) as HBoxContainer
+	if root == null or root.get_child_count() < 2:
+		return
+	var text_col := root.get_child(1) as VBoxContainer
+	if text_col == null:
+		return
+	# Children: title(0), fill(1), meta(2), best(3?)
+	if text_col.get_child_count() >= 3:
+		var meta_label := text_col.get_child(2) as Label
+		if meta_label:
+			meta_label.text = meta_text
+			meta_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88, 1.0) if playable else Color(0.82, 0.62, 0.58, 1.0))
+	if text_col.get_child_count() >= 4:
+		var best_label := text_col.get_child(3) as Label
+		if best_label:
+			if best_text != "":
+				best_label.text = best_text
+				best_label.visible = true
+				best_label.modulate = Color.WHITE
+				var done := _route_is_completed(route_id)
+				best_label.add_theme_color_override(
+					"font_color",
+					Color(0.55, 0.88, 0.7, 1.0) if done else Color(0.96, 0.78, 0.34, 1.0)
+				)
+			else:
+				# Keep placeholder height stable (16px) — no layout jump.
+				best_label.text = ""
+				best_label.add_theme_color_override("font_color", Color(0, 0, 0, 0))
+				best_label.modulate = Color(1, 1, 1, 0)
+				best_label.visible = true
 
 
 func _ready_courses() -> Array[Dictionary]:
@@ -661,7 +703,7 @@ func _locked_courses() -> Array[Dictionary]:
 	return out
 
 
-func _add_list_section(title: String, courses: Array[Dictionary]) -> void:
+func _add_list_section(title: String, courses: Array[Dictionary], use_placeholder: bool = false) -> void:
 	if courses.is_empty():
 		return
 	var header := Label.new()
@@ -670,29 +712,42 @@ func _add_list_section(title: String, courses: Array[Dictionary]) -> void:
 	header.add_theme_color_override("font_color", _accent.lerp(Color.WHITE, 0.1))
 	_courses_list_vbox.add_child(header)
 	for course in courses:
-		_add_course_row(str(course.get("route_id", "")))
+		_add_course_row(str(course.get("route_id", "")), use_placeholder)
 
 
 func _make_route_list_card(
 	route_id: String,
 	selectable: bool = true,
-	template_hint: Dictionary = {}
+	template_hint: Dictionary = {},
+	use_placeholder: bool = false
 ) -> PanelContainer:
 	# Selectable rows need playable scope; locked next-set previews use template only.
 	var preview := {}
 	var playable := false
 	if selectable:
-		preview = _preview_for_route(route_id)
-		playable = bool(preview.get("ok", false))
+		if use_placeholder:
+			# Fast path: use cached preview if available, otherwise placeholder (assume playable).
+			if _preview_cache.has(route_id):
+				preview = _preview_cache[route_id] as Dictionary
+				playable = bool(preview.get("ok", false))
+			else:
+				preview = {}
+				playable = true
+		else:
+			preview = _preview_for_route(route_id)
+			playable = bool(preview.get("ok", false))
 	var route := _MarathonRouteCatalog.route_by_id(route_id)
 	if route.is_empty() and _MarathonSeason.is_season_route(route_id):
 		route = _MarathonSeason.route_by_id(route_id)
 	var group_id := str(route.get("source_id", _MarathonRouteCatalog.genre_group_for_route(route_id)))
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.custom_minimum_size = Vector2(0, 88)
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	panel.clip_contents = true
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP if selectable else Control.MOUSE_FILTER_IGNORE
 	if selectable:
-		panel.gui_input.connect(_on_course_row_gui_input.bind(route_id))
+		UiClick.connect_clicked(panel, func() -> void: _select_route(route_id))
 	else:
 		panel.tooltip_text = tr("MARATHON_ROTATION_PREVIEW_LOCKED")
 		panel.modulate = Color(0.88, 0.9, 0.94, 0.85)
@@ -733,6 +788,7 @@ func _make_route_list_card(
 	title.text = _route_title(route, template) if not route.is_empty() else tr("MARATHON_CATALOG_NO_SELECTION")
 	title.add_theme_font_size_override("font_size", 15)
 	title.add_theme_color_override("font_color", Color(0.96, 0.98, 1.0, 1.0))
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_col.add_child(title)
 
 	var fill := Label.new()
@@ -746,7 +802,33 @@ func _make_route_list_card(
 	meta.text = _MarathonRouteLength.catalog_list_subtitle(template, preview)
 	meta.add_theme_font_size_override("font_size", 12)
 	meta.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88, 1.0) if playable else Color(0.82, 0.62, 0.58, 1.0))
+	meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_col.add_child(meta)
+
+	var best_label := _best_completion_label(route_id) if selectable else ""
+	var best := Label.new()
+	best.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	best.add_theme_font_size_override("font_size", 12)
+	best.custom_minimum_size = Vector2(0, 16)
+	if best_label != "":
+		best.text = best_label
+		var done := _route_is_completed(route_id)
+		best.add_theme_color_override(
+			"font_color",
+			Color(0.55, 0.88, 0.7, 1.0) if done else Color(0.96, 0.78, 0.34, 1.0)
+		)
+		best.visible = true
+		best.modulate = Color.WHITE
+		if done:
+			box.border_color = Color(0.55, 0.88, 0.7, 0.55)
+			root.add_child(_UiIconHelper.make_icon_frame("circle-check.svg", 28, 16, Color(0.55, 0.88, 0.7, 1.0)))
+	else:
+		# Placeholder keeps 88px card height stable — no jump when preview fills or best appears.
+		best.text = ""
+		best.add_theme_color_override("font_color", Color(0, 0, 0, 0))
+		best.modulate = Color(1, 1, 1, 0)
+		best.visible = true
+	text_col.add_child(best)
 
 	if not playable and selectable:
 		panel.modulate = Color(0.88, 0.9, 0.94, 1.0)
@@ -754,6 +836,23 @@ func _make_route_list_card(
 		panel.set_meta("route_playable", playable)
 		_list_item_nodes[route_id] = panel
 		_sync_list_item_focus(route_id)
+		if playable:
+			panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			# Hover — whole card, reuse existing focus colors, no new animations
+			panel.mouse_entered.connect(func() -> void:
+				if route_id == _selected_route_id:
+					return
+				var b := panel.get_theme_stylebox("panel") as StyleBoxFlat
+				if b:
+					b.border_color = _accent.lightened(0.22)
+			)
+			panel.mouse_exited.connect(func() -> void:
+				_sync_list_item_focus(route_id)
+			)
+		else:
+			panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	else:
+		panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
 	return panel
 
 
@@ -771,15 +870,10 @@ func _set_list_card_subtitle(card: PanelContainer, text: String) -> void:
 		fill.text = text
 
 
-func _add_course_row(route_id: String) -> void:
+func _add_course_row(route_id: String, use_placeholder: bool = false) -> void:
 	if _courses_list_vbox == null:
 		return
-	_courses_list_vbox.add_child(_make_route_list_card(route_id, true))
-
-
-func _on_course_row_gui_input(event: InputEvent, route_id: String) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_select_route(route_id)
+	_courses_list_vbox.add_child(_make_route_list_card(route_id, true, {}, use_placeholder))
 
 
 func _select_route(route_id: String) -> void:
@@ -816,6 +910,54 @@ func _select_route(route_id: String) -> void:
 		_sync_list_item_focus(str(item_route_id))
 	_preview_audio_song_path = ""
 	_cached_selected_preview.clear()
+	_cached_selected_preview_key = ""
+	# Keep click frame light: show placeholder immediately, defer heavy preview+cover to next frame.
+	_refresh_selection_ui_placeholder()
+	call_deferred("_deferred_refresh_selected_preview", rid, _rebuild_token)
+
+
+func _refresh_selection_ui_placeholder() -> void:
+	var _diag_t := Time.get_ticks_usec()
+	# Light placeholder — no preview_for_route / Image.load. Heavy work deferred to next frame.
+	var route_id := _selected_route_id
+	if route_id == "":
+		_refresh_selection_ui()
+		return
+	var _s_route := Time.get_ticks_usec()
+	var route := _get_route_cached(route_id)
+	var _s_tmpl := Time.get_ticks_usec()
+	var template: Dictionary
+	if not route.is_empty() and route.has("template") and route["template"] is Dictionary and not (route["template"] as Dictionary).is_empty():
+		template = route["template"] as Dictionary
+		_cached_template = template
+		_cached_template_id = route_id
+	else:
+		template = _get_template_cached(route_id)
+	var _s_hero := Time.get_ticks_usec()
+	if _hero_title_label:
+		_hero_title_label.text = _MarathonRouteCharacter.display_title(template, route) if not template.is_empty() else _route_title(route)
+	if _hero_subtitle_label:
+		_hero_subtitle_label.text = _MarathonRouteCharacter.tagline(template) if not template.is_empty() and _MarathonRouteCharacter.tagline(template) != "" else tr("MARATHON_CATALOG_PICK_COURSE")
+	var _s_stat := Time.get_ticks_usec()
+	if _stat_tracks_label:
+		_stat_tracks_label.text = _MarathonRouteLength.hint_line(template) if not template.is_empty() else "..."
+	if _stat_duration_label:
+		_stat_duration_label.text = tr("MARATHON_CATALOG_STAT_DURATION_FMT") % _format_duration_minutes(0.0)
+	var _s_btn := Time.get_ticks_usec()
+	if _start_button:
+		_start_button.disabled = true
+		_start_button.modulate = Color(0.58, 0.62, 0.72, 0.72)
+	# Keep summary rows showing loading hint (reuse existing full refresh with empty preview lazily if needed).
+	# Do not call _selected_preview here.
+
+
+func _deferred_refresh_selected_preview(expected_rid: String, token: int) -> void:
+	var _diag_t := Time.get_ticks_usec()
+	if token != _rebuild_token or not is_inside_tree():
+		return
+	if str(expected_rid).strip_edges() != str(_selected_route_id).strip_edges():
+		return
+	# Now safe to do heavy preview + cover + sync.
 	_refresh_selection_ui()
 
 
@@ -835,7 +977,9 @@ func _on_course_settings_changed(config: Dictionary) -> void:
 		_pending_settings_full_refresh = true
 	elif order_changed:
 		_pending_settings_full_refresh = true
-	_schedule_settings_refresh(pool_changed or order_changed)
+	# Do not clear preview audio here — _sync_route_audio_preview restarts only when
+	# the first route song path actually changes.
+	_schedule_settings_refresh()
 
 
 func _pool_affecting_config_changed(prev: Dictionary, next: Dictionary) -> bool:
@@ -847,9 +991,89 @@ func _pool_affecting_config_changed(prev: Dictionary, next: Dictionary) -> bool:
 	return false
 
 
-func _schedule_settings_refresh(force_audio_resync: bool = false) -> void:
-	if force_audio_resync:
-		_preview_audio_song_path = ""
+func _config_hash(cfg: Dictionary) -> String:
+	if cfg.is_empty():
+		return ""
+	var parts: Array[String] = []
+	for k in _POOL_AFFECTING_KEYS:
+		parts.append(str(cfg.get(k, "")))
+	parts.append(str(cfg.get("track_order", "")))
+	parts.append(str(cfg.get("instrument", "")))
+	return "|".join(parts)
+
+
+func _preview_cache_key(rid: String, cfg: Dictionary) -> String:
+	var h := _config_hash(cfg)
+	if h == "":
+		return rid
+	return "%s|%s" % [rid, h]
+
+
+func _candidate_cache_key(rid: String, scope_cfg: Dictionary) -> String:
+	var h := _config_hash(scope_cfg)
+	if h == "":
+		return "cand|%s" % rid
+	return "cand|%s|%s" % [rid, h]
+
+
+func _candidate_songs_for_route(route_id: String, effective_config: Dictionary = {}) -> int:
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return 0
+	var template := _MarathonRouteCatalog.template_for_route(rid)
+	if template.is_empty():
+		return 0
+	var scope_cfg: Dictionary
+	if not effective_config.is_empty():
+		scope_cfg = _MarathonSessionConfig.to_scope_config(effective_config, template)
+	else:
+		var gid := str(template.get("genre_group_id", "")).strip_edges()
+		scope_cfg = _EndlessSessionConfig.sanitize({
+			"track_source": _EndlessSessionConfig.TRACK_SOURCE_RANDOM,
+			"genre_policy": _EndlessSessionConfig.GENRE_POLICY_GROUPS,
+			"genre_group_ids": [gid] if gid != "" else [],
+			"difficulty_min": float(template.get("difficulty_min", 2.0)),
+			"difficulty_max": float(template.get("difficulty_max", 7.0)),
+			"duration_min_sec": int(template.get("duration_min_sec", 90)),
+			"duration_max_sec": int(template.get("duration_max_sec", 420)),
+			"mod_policy": str(template.get("mod_policy", _EndlessSessionConfig.MOD_POLICY_NONE)),
+			"generation_mode_policy": _EndlessSessionConfig.GEN_MODE_POLICY_ALL,
+		})
+	var key := _candidate_cache_key(rid, scope_cfg)
+	if _candidate_cache.has(key):
+		return int(_candidate_cache[key])
+	var _t := Time.get_ticks_usec()
+	var stats: Dictionary = _SessionScopeResolver.candidate_pool_stats(scope_cfg)
+	var cand: int = int(stats.get("songs", 0))
+	_candidate_cache[key] = cand
+	return cand
+
+
+func _get_route_cached(route_id: String) -> Dictionary:
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return {}
+	if _cached_route_id == rid and not _cached_route.is_empty():
+		return _cached_route
+	var r := _MarathonRouteCatalog.route_by_id(rid)
+	_cached_route = r
+	_cached_route_id = rid
+	return r
+
+
+func _get_template_cached(route_id: String) -> Dictionary:
+	var rid := str(route_id).strip_edges()
+	if rid == "":
+		return _MarathonRouteCatalog.sanitize_template({})
+	if _cached_template_id == rid and not _cached_template.is_empty():
+		return _cached_template
+	var t := _MarathonRouteCatalog.template_for_route(rid)
+	_cached_template = t
+	_cached_template_id = rid
+	return t
+
+
+func _schedule_settings_refresh() -> void:
 	if _settings_refresh_timer == null:
 		_settings_refresh_timer = Timer.new()
 		_settings_refresh_timer.one_shot = true
@@ -866,6 +1090,7 @@ func _on_settings_refresh_debounced() -> void:
 	if _pending_settings_full_refresh:
 		_pending_settings_full_refresh = false
 		_cached_selected_preview.clear()
+		_cached_selected_preview_key = ""
 		_refresh_selection_ui()
 	else:
 		_refresh_settings_chrome_only()
@@ -897,7 +1122,14 @@ func _refresh_settings_chrome_only() -> void:
 
 func _clear_preview_cache() -> void:
 	_preview_cache.clear()
+	_candidate_cache.clear()
+	MarathonGenrePicker.clear_meets_cache()
+	_cached_route.clear()
+	_cached_route_id = ""
+	_cached_template.clear()
+	_cached_template_id = ""
 	_cached_selected_preview.clear()
+	_cached_selected_preview_key = ""
 
 
 func _preview_for_route(route_id: String) -> Dictionary:
@@ -905,50 +1137,31 @@ func _preview_for_route(route_id: String) -> Dictionary:
 	if rid == "":
 		return {}
 	var config := _run_config if rid == _selected_route_id else {}
-	if config.is_empty():
-		if _preview_cache.has(rid):
-			return _preview_cache[rid] as Dictionary
-		# #region agent log
-		var _tp0 := Time.get_ticks_msec()
-		# #endregion
-		var cached := _MarathonRouteBuilder.preview_for_route(rid, {})
-		# #region agent log
-		_agent_dbg("A", "marathon_catalog_screen.gd:_preview_for_route", "uncached preview", {
-			"route_id": rid,
-			"ms": Time.get_ticks_msec() - _tp0,
-			"ok": bool(cached.get("ok", false)),
-		})
-		# #endregion
-		_preview_cache[rid] = cached
-		return cached
-	return _MarathonRouteBuilder.preview_for_route(rid, config)
+	var key := _preview_cache_key(rid, config)
+	if _preview_cache.has(key):
+		return _preview_cache[key] as Dictionary
+	var built := _MarathonRouteBuilder.preview_for_route(rid, config)
+	_preview_cache[key] = built
+	return built
 
 
-func _genres_tab_unlocked() -> bool:
-	if PlayerDataManager == null:
-		return true
-	return PlayerDataManager.get_marathon_courses_completed_count() > 0
 
-
-func _sync_tab_locks() -> void:
-	if _tab_genres_button == null:
-		return
-	var unlocked := _genres_tab_unlocked()
-	_tab_genres_button.disabled = not unlocked
-	_tab_genres_button.tooltip_text = "" if unlocked else tr("MARATHON_CATALOG_TAB_GENRES_LOCKED")
-	if not unlocked and _active_tab == CatalogTab.BY_GENRES:
-		_active_tab = CatalogTab.ALL
-		if _tab_all_button:
-			_tab_all_button.set_pressed_no_signal(true)
-		_rebuild_list()
 
 
 func _selected_preview() -> Dictionary:
 	if _selected_route_id == "":
 		return {}
-	if not _cached_selected_preview.is_empty():
+	var key := _preview_cache_key(_selected_route_id, _run_config)
+	if _cached_selected_preview_key == key and not _cached_selected_preview.is_empty():
+		return _cached_selected_preview
+	# Reuse _preview_cache if already built for this config.
+	if _preview_cache.has(key):
+		_cached_selected_preview = _preview_cache[key] as Dictionary
+		_cached_selected_preview_key = key
 		return _cached_selected_preview
 	_cached_selected_preview = _MarathonRouteBuilder.preview_for_route(_selected_route_id, _run_config)
+	_cached_selected_preview_key = key
+	_preview_cache[key] = _cached_selected_preview
 	return _cached_selected_preview
 
 
@@ -967,17 +1180,67 @@ func _sync_instrument_from_preview(preview: Dictionary) -> void:
 		_course_settings.set_resolved_instrument(inst)
 
 
+func _sync_chart_style_from_preview(preview: Dictionary) -> void:
+	if preview.is_empty() or not bool(preview.get("chart_style_auto_widened", false)):
+		return
+	var rc: Variant = preview.get("run_config", {})
+	if rc is not Dictionary:
+		return
+	var policy := str((rc as Dictionary).get("generation_mode_policy", ""))
+	var allowed: Array = (rc as Dictionary).get("generation_modes_allowed", [])
+	if policy == "":
+		return
+	_run_config["generation_mode_policy"] = policy
+	_run_config["generation_modes_allowed"] = allowed.duplicate()
+	if _course_settings == null:
+		return
+	_suppress_settings_changed = true
+	_course_settings.set_config(_run_config)
+	_suppress_settings_changed = false
+
+
 func _refresh_selection_ui() -> void:
+	var _diag_t := Time.get_ticks_usec()
+	var _diag_steps_sum := 0.0
+	var _diag_preview_t := Time.get_ticks_usec()
 	var preview := _selected_preview()
+	var _diag_preview_ms := (Time.get_ticks_usec() - _diag_preview_t) / 1000.0
+	_diag_steps_sum += _diag_preview_ms
+	var _s_result_handling := Time.get_ticks_usec()
 	var playable := bool(preview.get("ok", false))
 	var template: Dictionary = preview.get("template", {}) if preview.get("template") is Dictionary else {}
+	if template.is_empty() and _selected_route_id != "":
+		var _s_tmpl2 := Time.get_ticks_usec()
+		template = _get_template_cached(_selected_route_id)
+		var _d_tmpl2 := (Time.get_ticks_usec()-_s_tmpl2)/1000.0
+		_diag_steps_sum += _d_tmpl2
 	var route_id := _selected_route_id
-	var route := _MarathonRouteCatalog.route_by_id(route_id)
+	var _d_result_handling := (Time.get_ticks_usec()-_s_result_handling)/1000.0
+	_diag_steps_sum += _d_result_handling
+	var _s_route_lookup := Time.get_ticks_usec()
+	var route: Dictionary
+	if route_id == "":
+		route = {}
+	else:
+		route = _get_route_cached(route_id)
+	var _d_route_lookup := (Time.get_ticks_usec()-_s_route_lookup)/1000.0
+	_diag_steps_sum += _d_route_lookup
 
+	var _s_sync_inst := Time.get_ticks_usec()
 	_sync_instrument_from_preview(preview)
+	var _d_sync_inst := (Time.get_ticks_usec()-_s_sync_inst)/1000.0
+	_diag_steps_sum += _d_sync_inst
+	var _s_sync_style := Time.get_ticks_usec()
+	_sync_chart_style_from_preview(preview)
+	var _d_sync_style := (Time.get_ticks_usec()-_s_sync_style)/1000.0
+	_diag_steps_sum += _d_sync_style
+	var _s_course_prev := Time.get_ticks_usec()
 	if _course_settings and _course_settings.has_method("set_route_preview"):
 		_course_settings.set_route_preview(preview)
+	var _d_course_prev := (Time.get_ticks_usec()-_s_course_prev)/1000.0
+	_diag_steps_sum += _d_course_prev
 
+	var _s_hero_labels := Time.get_ticks_usec()
 	if _hero_title_label:
 		if route_id == "":
 			_hero_title_label.text = tr("MARATHON_CATALOG_NO_SELECTION")
@@ -995,9 +1258,14 @@ func _refresh_selection_ui() -> void:
 			else:
 				var idea := _MarathonRouteCharacter.idea_label(template)
 				_hero_subtitle_label.text = idea if idea != "" else tr("MARATHON_CATALOG_PICK_COURSE")
-
+	var _d_hero_labels := (Time.get_ticks_usec()-_s_hero_labels)/1000.0
+	_diag_steps_sum += _d_hero_labels
+	var _s_cover := Time.get_ticks_usec()
 	_update_hero_cover(preview)
+	var _d_cover := (Time.get_ticks_usec()-_s_cover)/1000.0
+	_diag_steps_sum += _d_cover
 
+	var _s_stats := Time.get_ticks_usec()
 	var built_count := int(preview.get("track_count", 0))
 	var est_sec := float(preview.get("estimated_duration_sec", 0.0))
 	var dmin := float(template.get("difficulty_min", 2.0))
@@ -1010,20 +1278,39 @@ func _refresh_selection_ui() -> void:
 	if _stat_duration_label:
 		_stat_duration_label.text = tr("MARATHON_CATALOG_STAT_DURATION_FMT") % _format_duration_minutes(est_sec)
 	if _stat_difficulty_label:
-		_stat_difficulty_label.text = tr("MARATHON_CATALOG_STAT_DIFFICULTY_FMT") % [dmin, dmax]
-
+		# Keep numeric range, ZAP icon shows difficulty tier (reuse ChartDifficultyAnalyzer pattern)
+		_stat_difficulty_label.text = "%.1f → %.1f" % [dmin, dmax]
+		var avg := (dmin + dmax) * 0.5
+		var tint := _ChartDifficultyAnalyzer.rating_color(int(round(avg)))
+		if _stat_difficulty_zap and is_instance_valid(_stat_difficulty_zap):
+			_stat_difficulty_zap.queue_free()
+			_stat_difficulty_zap = null
+		_stat_difficulty_zap = _UiIconHelper.make_icon_frame("zap.svg", 20, 12, tint)
+		var stats_row := _stat_difficulty_label.get_parent() as HBoxContainer
+		if stats_row:
+			var idx := _stat_difficulty_label.get_index()
+			stats_row.add_child(_stat_difficulty_zap)
+			stats_row.move_child(_stat_difficulty_zap, idx + 1)
 	if _playlists_placeholder:
-		if _active_tab == CatalogTab.DAILY and route_id != "":
+		if _MarathonDailyRoute.is_daily_route(route_id):
 			_playlists_placeholder.text = "%s\n\n%s" % [
 				tr("MARATHON_DAILY_TAB_HINT"),
 				_MarathonDailyRoute.summary_line(template),
 			]
-		elif _active_tab == CatalogTab.DAILY:
+		elif route_id == "":
 			_playlists_placeholder.text = tr("MARATHON_DAILY_TAB_HINT")
-
-	_refresh_summary_rows(preview, playable, template, route_id)
+	var _d_stats := (Time.get_ticks_usec()-_s_stats)/1000.0
+	_diag_steps_sum += _d_stats
+	var _s_summary := Time.get_ticks_usec()
+	_refresh_summary_rows(preview, playable, template, route_id, route)
+	var _d_summary := (Time.get_ticks_usec()-_s_summary)/1000.0
+	_diag_steps_sum += _d_summary
+	var _s_audio := Time.get_ticks_usec()
 	_sync_route_audio_preview(preview)
+	var _d_audio := (Time.get_ticks_usec()-_s_audio)/1000.0
+	_diag_steps_sum += _d_audio
 
+	var _s_tail := Time.get_ticks_usec()
 	if _start_button:
 		_start_button.disabled = not playable or route_id == ""
 		_start_button.modulate = Color.WHITE if _start_button.disabled == false else Color(0.58, 0.62, 0.72, 0.72)
@@ -1034,14 +1321,23 @@ func _refresh_selection_ui() -> void:
 	if route_id == "":
 		if _hero_cover:
 			_hero_cover.texture = null
+	var _d_tail := (Time.get_ticks_usec()-_s_tail)/1000.0
+	_diag_steps_sum += _d_tail
+	var _total_ms := (Time.get_ticks_usec()-_diag_t)/1000.0
+	var _unaccounted := _total_ms - _diag_steps_sum
 
 
 func _refresh_summary_rows(
 	preview: Dictionary,
 	playable: bool,
 	template: Dictionary,
-	route_id: String
+	route_id: String,
+	route: Dictionary = {}
 ) -> void:
+	var _diag_t := Time.get_ticks_usec()
+	var _route_for_panel: Dictionary = route
+	if _route_for_panel.is_empty() and route_id != "":
+		_route_for_panel = _get_route_cached(route_id)
 	var route_row: SessionSetupPreviewRow = _summary_rows.get("route", null)
 	var order_row: SessionSetupPreviewRow = _summary_rows.get("order", null)
 	var best_row: SessionSetupPreviewRow = _summary_rows.get("best", null)
@@ -1052,6 +1348,7 @@ func _refresh_summary_rows(
 	var tracks_label := _MarathonRouteLength.tracks_range_label(template)
 	var available := int(preview.get("available_songs", 0))
 
+	var _s_route_row := Time.get_ticks_usec()
 	if route_row:
 		if route_id == "":
 			route_row.set_text(tr("MARATHON_CATALOG_SUMMARY_EMPTY"))
@@ -1065,13 +1362,14 @@ func _refresh_summary_rows(
 			route_row.set_text(tr("MARATHON_CATALOG_SUMMARY_LENGTH_FMT") % _MarathonRouteLength.hint_line(template))
 			route_row.set_tone("warn")
 		route_row.visible = true
-
+	var _s_rules := Time.get_ticks_usec()
 	if _rules_panel:
 		if route_id == "":
 			_rules_panel.visible = false
 		else:
 			_rules_panel.refresh(template)
 
+	var _s_rewards := Time.get_ticks_usec()
 	if _rewards_panel:
 		if route_id == "" or not playable:
 			_rewards_panel.visible = false
@@ -1079,32 +1377,33 @@ func _refresh_summary_rows(
 			var effective_cfg := _MarathonSessionConfig.resolve_effective_mod_config(_run_config, template)
 			var reward_tracks := built_count if built_count > 0 else int(template.get("track_count", 5))
 			_rewards_panel.refresh(template, effective_cfg, reward_tracks, playable)
-
+	var _s_mods := Time.get_ticks_usec()
 	if _mods_panel:
 		if route_id == "":
 			_mods_panel.visible = false
 		else:
 			var mod_cfg := _MarathonSessionConfig.resolve_effective_mod_config(_run_config, template)
 			_mods_panel.refresh(template, mod_cfg)
-
+	var _s_badges := Time.get_ticks_usec()
 	if _badges_panel:
 		if route_id == "":
 			_badges_panel.visible = false
 		else:
 			_badges_panel.refresh(route_id, template, _earned_badges(route_id))
-
+	var _s_preview_panel := Time.get_ticks_usec()
 	if _preview_panel:
 		if route_id == "":
 			_preview_panel.visible = false
 		else:
-			_preview_panel.refresh(template, preview, _MarathonRouteCatalog.route_by_id(route_id))
-
+			_preview_panel.refresh(template, preview, _route_for_panel)
+	var _s_progress := Time.get_ticks_usec()
 	if _progress_panel:
 		if route_id == "":
 			_progress_panel.visible = false
 		else:
 			_progress_panel.refresh(route_id, template)
 
+	var _s_order := Time.get_ticks_usec()
 	if order_row:
 		if route_id == "":
 			order_row.visible = false
@@ -1116,7 +1415,7 @@ func _refresh_summary_rows(
 			else:
 				order_row.set_text(tr("MARATHON_CATALOG_SUMMARY_ORDER_COURSE"))
 			order_row.set_tone("default")
-
+	var _s_best := Time.get_ticks_usec()
 	if best_row:
 		if route_id == "":
 			best_row.visible = false
@@ -1126,27 +1425,67 @@ func _refresh_summary_rows(
 			best_row.set_text(best if best != "" else tr("MARATHON_CATALOG_SUMMARY_NO_BEST"))
 			best_row.set_tone("good" if best != "" else "default")
 
+	var _s_pool := Time.get_ticks_usec()
 	if pool_row:
 		if route_id == "":
 			pool_row.visible = false
 		else:
 			pool_row.visible = true
-			pool_row.set_text(tr("MARATHON_CATALOG_SUMMARY_POOL_FMT") % available)
+			var cand_eff: Dictionary = preview.get("run_config", _run_config) as Dictionary if preview.get("run_config", null) is Dictionary else _run_config
+			var candidate := _candidate_songs_for_route(route_id, cand_eff)
+			if candidate <= 0:
+				candidate = available
+			if candidate > available:
+				pool_row.set_text("Подходит: %d · Готово: %d" % [candidate, available])
+			else:
+				pool_row.set_text(tr("MARATHON_CATALOG_SUMMARY_POOL_FMT") % available)
 			pool_row.set_tone("default")
-
+	var _s_locked := Time.get_ticks_usec()
 	if locked_row:
 		if playable or route_id == "":
 			locked_row.visible = false
 		else:
 			locked_row.visible = true
-			locked_row.set_text(_MarathonRouteLength.catalog_status_message(template, preview))
+			var cand_eff2: Dictionary = preview.get("run_config", _run_config) as Dictionary if preview.get("run_config", null) is Dictionary else _run_config
+			var candidate2 := _candidate_songs_for_route(route_id, cand_eff2)
+			if candidate2 <= 0:
+				candidate2 = available
+			if candidate2 > available and candidate2 >= int(preview.get("required_track_count", 0)):
+				var missing := candidate2 - available
+				locked_row.set_text("Для %d треков отсутствуют чарты · %d готово / %d подходит" % [missing, available, candidate2])
+			else:
+				locked_row.set_text(_MarathonRouteLength.catalog_status_message(template, preview))
 			locked_row.set_tone("bad")
 
 	if _refresh_pool_button:
 		_refresh_pool_button.visible = not playable and route_id != ""
+	# Generate missing uses effective run config; visible when candidate sufficient but playable insufficient.
+	if _generate_missing_button:
+		var show_gen := false
+		if not playable and route_id != "":
+			var cand_eff3: Dictionary = preview.get("run_config", _run_config) as Dictionary if preview.get("run_config", null) is Dictionary else _run_config
+			var cand := _candidate_songs_for_route(route_id, cand_eff3)
+			if cand <= 0:
+				cand = available
+			if cand >= int(preview.get("required_track_count", 3)) and cand > available:
+				show_gen = true
+		_generate_missing_button.visible = show_gen
+		if show_gen:
+			var cand_eff4: Dictionary = preview.get("run_config", _run_config) as Dictionary if preview.get("run_config", null) is Dictionary else _run_config
+			var cand := _candidate_songs_for_route(route_id, cand_eff4)
+			if cand <= 0:
+				cand = available
+			var miss := cand - available
+			var btn_txt := tr("MARATHON_GENERATE_MISSING_FMT")
+			if btn_txt == "MARATHON_GENERATE_MISSING_FMT" or btn_txt.strip_edges() == "":
+				btn_txt = "Сгенерировать %d чартов" % miss
+			else:
+				btn_txt = btn_txt % miss
+			_generate_missing_button.text = btn_txt
 
 
 func _sync_route_audio_preview(preview: Dictionary) -> void:
+	var _diag_t := Time.get_ticks_usec()
 	if _route_preview_player == null:
 		return
 	if not bool(preview.get("ok", false)):
@@ -1172,6 +1511,7 @@ func _sync_route_audio_preview(preview: Dictionary) -> void:
 		return
 	_preview_audio_song_path = song_path
 	_route_preview_player.stop_preview()
+	var _t2 := Time.get_ticks_usec()
 	_route_preview_player.play_song_preview(song_path)
 
 
@@ -1192,6 +1532,8 @@ func _on_notes_generation_completed(_song_path: String, _instrument: String, _di
 
 func _on_visibility_changed() -> void:
 	if is_visible_in_tree():
+		if not _initial_build_done:
+			return
 		_clear_preview_cache()
 		_rebuild_list()
 		_refresh_selection_ui()
@@ -1229,6 +1571,100 @@ func _on_refresh_pool_pressed() -> void:
 		_show_notice(tr("MARATHON_CATALOG_REFRESH_POOL_STILL"))
 
 
+func _ensure_confirm_overlay() -> AppConfirmOverlay:
+	if _confirm_overlay != null and is_instance_valid(_confirm_overlay):
+		return _confirm_overlay
+	var existing := get_node_or_null("%ConfirmOverlay") as AppConfirmOverlay
+	if existing != null:
+		_confirm_overlay = existing
+		return _confirm_overlay
+	if _ConfirmOverlayScene != null and _ConfirmOverlayScene is PackedScene:
+		var inst := (_ConfirmOverlayScene as PackedScene).instantiate() as AppConfirmOverlay
+		if inst != null:
+			add_child(inst)
+			_confirm_overlay = inst
+			return inst
+	return null
+
+
+func _on_generate_missing_pressed() -> void:
+	if _selected_route_id == "":
+		return
+	var missing: Array[Dictionary] = _MarathonRouteBuilder.missing_chart_requirements(_selected_route_id, _run_config)
+	if missing.is_empty():
+		_show_notice(tr("MARATHON_GENERATE_MISSING_NONE"))
+		return
+	var preview := _selected_preview()
+	var candidate := int(preview.get("candidate_songs", 0))
+	var available := int(preview.get("available_songs", 0))
+	var title := tr("MARATHON_GENERATE_MISSING_TITLE")
+	if title == "MARATHON_GENERATE_MISSING_TITLE" or title.strip_edges() == "":
+		title = "Сгенерировать чарты"
+	var msg := tr("MARATHON_GENERATE_MISSING_FMT") % [missing.size(), candidate, available]
+	if msg == "MARATHON_GENERATE_MISSING_FMT" or msg.strip_edges() == "":
+		msg = "Будет сгенерировано %d чартов.\nПодходит: %d · Готово: %d.\nПродолжить?" % [missing.size(), candidate, available]
+	# Detail first 5 variants
+	var detail_lines: PackedStringArray = []
+	for i in range(mini(missing.size(), 5)):
+		var r := missing[i]
+		var path: String = str(r.get("song_path", "")).get_file().get_basename()
+		if path == "":
+			path = str(r.get("song_path", "")).strip_edges()
+		detail_lines.append("%s · %s (%s)" % [path, str(r.get("instrument", "")), str(r.get("chart_stem", ""))])
+	if detail_lines.size() > 0:
+		msg += "\n\n" + "\n".join(detail_lines)
+		if missing.size() > 5:
+			msg += "\n… +%d" % (missing.size() - 5)
+	_ensure_confirm_overlay()
+	if _confirm_overlay == null:
+		return
+	var confirmed: bool = await _Overlay.ask(_confirm_overlay, msg, "info", title, tr("BTN_OK"), tr("BTN_CANCEL"))
+	if not confirmed:
+		return
+	_start_missing_generation(missing)
+
+
+func _start_missing_generation(reqs: Array[Dictionary]) -> void:
+	if reqs.is_empty() or _generation_service == null:
+		if _generation_service == null:
+			var eng := get_parent()
+			if eng and eng.has_method("get_background_service"):
+				_generation_service = eng.get_background_service() as GenerationService
+			if _generation_service == null:
+				_show_notice("Generation service unavailable")
+				return
+	for req in reqs:
+		var song_path := str(req.get("song_path", "")).strip_edges()
+		if song_path == "":
+			continue
+		var instrument := str(req.get("instrument", _EndlessSessionConfig.DEFAULT_INSTRUMENT))
+		var chart_stem := str(req.get("chart_stem", "arcade_medium"))
+		var pair := _MarathonRouteCatalog.template_for_route(_selected_route_id) # not used, but keep
+		var lanes := int(req.get("lanes", 4))
+		var goal := str(req.get("goal", "arcade"))
+		var difficulty := str(req.get("difficulty", "medium"))
+		var meta := SongLibrary.get_metadata_for_song(song_path) if SongLibrary else {}
+		var bpm_raw: Variant = meta.get("bpm", "0") if meta else "0"
+		var bpm := 120.0
+		if bpm_raw is int or bpm_raw is float:
+			bpm = float(bpm_raw)
+		else:
+			var s := str(bpm_raw).strip_edges()
+			if s.is_valid_float():
+				bpm = float(s)
+		if bpm <= 0.0:
+			bpm = 120.0
+		var artist := str(meta.get("artist", "Unknown")) if meta else "Unknown"
+		var title := str(meta.get("title", song_path.get_file())) if meta else song_path.get_file()
+		if artist.strip_edges() == "":
+			artist = "Unknown"
+		if title.strip_edges() == "":
+			title = "Unknown"
+		_generation_service.start_notes_generation(song_path, instrument, bpm, lanes, 0.2, true, artist, title, "basic", "", "", goal, difficulty, 0)
+		# Note: start_notes_generation handles queue; we fire all, StatusDock shows combined.
+	_show_notice(tr("MARATHON_GENERATE_MISSING_STARTED") if tr("MARATHON_GENERATE_MISSING_STARTED") != "MARATHON_GENERATE_MISSING_STARTED" else "Генерация запущена — прогресс слева")
+
+
 func cleanup_before_exit() -> void:
 	if _route_preview_player:
 		_route_preview_player.stop_preview()
@@ -1237,6 +1673,7 @@ func cleanup_before_exit() -> void:
 
 
 func _update_hero_cover(preview: Dictionary) -> void:
+	var _diag_t := Time.get_ticks_usec()
 	if _hero_cover == null:
 		return
 	var song_path := ""
@@ -1254,6 +1691,7 @@ func _update_hero_cover(preview: Dictionary) -> void:
 
 
 func _sync_list_item_focus(route_id: String) -> void:
+	var _diag_t := Time.get_ticks_usec()
 	var panel: PanelContainer = _list_item_nodes.get(route_id, null) as PanelContainer
 	if panel == null:
 		return
@@ -1303,6 +1741,16 @@ func _best_completion_label(route_id: String) -> String:
 	return tr("MARATHON_CATALOG_BEST_RATIO_FMT") % int(round(ratio * 100.0))
 
 
+func _route_is_completed(route_id: String) -> bool:
+	if PlayerDataManager == null or route_id == "":
+		return false
+	var completions: Variant = PlayerDataManager.data.get("marathon_completions", {})
+	if not completions is Dictionary:
+		return false
+	var entry: Variant = completions.get(route_id, {})
+	return entry is Dictionary and float(entry.get("best_ratio", 0.0)) >= 0.999
+
+
 func _earned_badges(route_id: String) -> Array:
 	if PlayerDataManager == null or route_id == "":
 		return []
@@ -1336,24 +1784,6 @@ func _earned_badges_label(route_id: String) -> String:
 func _format_duration_minutes(seconds: float) -> String:
 	var mins := maxi(1, int(round(seconds / 60.0)))
 	return tr("MARATHON_CATALOG_DURATION_MIN_FMT") % mins
-
-
-func _on_tab_toggled(on: bool, btn: Button) -> void:
-	if not on:
-		return
-	if btn == _tab_genres_button and not _genres_tab_unlocked():
-		if _tab_all_button:
-			_tab_all_button.set_pressed_no_signal(true)
-		return
-	if btn == _tab_all_button:
-		_active_tab = CatalogTab.ALL
-	elif btn == _tab_genres_button:
-		_active_tab = CatalogTab.BY_GENRES
-	elif btn == _tab_playlists_button:
-		_active_tab = CatalogTab.DAILY
-		_select_daily_route()
-	_rebuild_list()
-	_refresh_selection_ui()
 
 
 func _select_daily_route() -> void:

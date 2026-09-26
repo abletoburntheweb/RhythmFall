@@ -17,6 +17,7 @@ static func apply_to_template(template: Dictionary, seed_text: String) -> Dictio
 	_roll_chart_styles(out, rng)
 	if not bool(out.get("mod_policy_locked", false)):
 		_roll_mod_policy(out, rng)
+	_roll_run_rules(out, rng)
 	out = _MarathonRouteSetup.apply_to_template(out, rng)
 	return out
 
@@ -83,11 +84,15 @@ static func _roll_mod_policy(out: Dictionary, rng: RandomNumberGenerator) -> voi
 
 
 static func _roll_chart_styles(out: Dictionary, rng: RandomNumberGenerator) -> void:
+	# Prefer wider pools so open routes are playable more often on mixed libraries.
 	var roll := rng.randf()
-	if roll < 0.62:
+	if roll < 0.28:
 		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
 		out["rolled_generation_modes_allowed"] = ["arcade"]
-	elif roll < 0.88:
+	elif roll < 0.48:
+		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
+		out["rolled_generation_modes_allowed"] = ["original"]
+	elif roll < 0.72:
 		out["rolled_generation_mode_policy"] = _EndlessSessionConfig.GEN_MODE_POLICY_SELECTED
 		out["rolled_generation_modes_allowed"] = ["arcade", "original"]
 	else:
@@ -103,6 +108,70 @@ static func _pick_mod_pool(rng: RandomNumberGenerator) -> Array[String]:
 	var pool := candidates.duplicate()
 	pool.shuffle()
 	return pool.slice(0, count)
+
+
+static func _roll_run_rules(out: Dictionary, rng: RandomNumberGenerator) -> void:
+	# Controlled rotation of run rules — deterministic, keeps archetype identity
+	# Only adds new atomic rules (max_good_notes, min_streak), not just new values of old rules
+	var aid := str(out.get("archetype_id", "")).strip_edges()
+	var base_rules: Array = out.get("run_rules", [])
+	if not base_rules is Array:
+		base_rules = []
+	# Define small pools per archetype — each entry is a complete run_rules array variant
+	var pools: Dictionary = {
+		"sprint": [
+			[],
+			["max_good_notes_15"],
+			["min_streak_50"],
+		],
+		"standard": [
+			[],
+			["max_good_notes_20"],
+			["min_accuracy_90"],
+		],
+		"boss_rush": [
+			[],
+			["min_streak_30"],
+		],
+		"precision": [
+			["min_accuracy_92"],
+			["min_accuracy_92", "max_good_notes_20"],
+			["min_accuracy_92", "min_streak_40"],
+		],
+		"accelerando": [
+			["hp_recovery_15", "max_misses_15"],
+			["hp_recovery_15", "max_good_notes_20"],
+			["hp_recovery_15", "min_streak_40"],
+		],
+		"chaos": [
+			[],
+			["min_streak_30"],
+			["max_good_notes_25"],
+		],
+		"journey": [
+			["hp_recovery_0", "max_misses_20"],
+			["hp_recovery_0", "max_good_notes_25"],
+			["hp_recovery_0", "max_misses_20", "min_streak_40"],
+		],
+		"ultimate": [
+			["hp_recovery_0", "max_misses_25"],
+			["hp_recovery_0", "max_misses_25", "min_streak_50"],
+			["hp_recovery_0", "max_good_notes_30"],
+		],
+	}
+	var pool: Array = pools.get(aid, [base_rules])
+	if pool.is_empty():
+		return
+	# 70% chance to keep base, 30% to roll variant (keeps identity, adds variety)
+	if rng.randf() < 0.7:
+		return
+	var idx := rng.randi_range(0, pool.size() - 1)
+	var picked: Array = pool[idx]
+	# Avoid picking identical to base too often — if picked == base, try next
+	if str(picked) == str(base_rules) and pool.size() > 1:
+		idx = (idx + 1) % pool.size()
+		picked = pool[idx]
+	out["run_rules"] = picked.duplicate()
 
 
 static func _seeded_rng(seed_text: String) -> RandomNumberGenerator:

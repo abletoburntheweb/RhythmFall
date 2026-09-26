@@ -1,4 +1,4 @@
-# logic/score_manager.gd
+# logic/core/score_manager.gd
 extends RefCounted
 
 var score: int = 0
@@ -14,6 +14,9 @@ var hit_notes: int = 0
 var accuracy: float = 100.0
 var game_screen
 var score_reward_multiplier: float = 1.0
+## Подавляет отладочный вывод (используется Replay Player при пересчёте счёта
+## после seek — иначе сотни строк в консоли на каждый перемот).
+var silent := false
 
 func _init(screen):
 	game_screen = screen
@@ -42,7 +45,8 @@ func add_perfect_hit() -> int:
 	_sync_score_from_raw()
 	hit_notes += 1
 	update_accuracy()
-	print("[ScoreManager] PERFECT hit! +%d raw | total %d (mod x%.2f) | Combo: %d" % [base_final, score, score_reward_multiplier, combo])
+	if not silent:
+		print("[ScoreManager] PERFECT hit! +%d raw | total %d (mod x%.2f) | Combo: %d" % [base_final, score, score_reward_multiplier, combo])
 	return base_final
 
 func add_good_hit() -> int:
@@ -53,7 +57,8 @@ func add_good_hit() -> int:
 	_sync_score_from_raw()
 	hit_notes += 1
 	update_accuracy()
-	print("[ScoreManager] GOOD hit! +%d -> scaled total %d | Combo: %d" % [base_final, score, combo])
+	if not silent:
+		print("[ScoreManager] GOOD hit! +%d -> scaled total %d | Combo: %d" % [base_final, score, combo])
 	return base_final
 
 func add_hold_sustain_points(amount: int = 8) -> int:
@@ -76,7 +81,8 @@ func add_miss_hit() -> int:
 	missed_notes += 1
 	reset_combo()
 	update_accuracy()
-	print("[ScoreManager] Miss! Combo reset, accuracy: %.2f%%" % accuracy)
+	if not silent:
+		print("[ScoreManager] Miss! Combo reset, accuracy: %.2f%%" % accuracy)
 	return 0
 
 func reset_combo():

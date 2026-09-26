@@ -106,6 +106,11 @@ var _insight_body: Label
 var _insight_ready := false
 var _cached_insight: Dictionary = {}
 var _last_insight_title := ""
+var _cached_chart_history_hash: int = 0
+var _cached_chart_metric: String = ""
+var _cached_chart_session_count: int = -1
+var _cached_trends_hash: int = 0
+var _cached_trends: Dictionary = {}
 
 @onready var general_stats_title: Label = get_node_or_null("%s/GeneralStatsCard/ContentVBox/HeaderRow/CardTitle" % _LEFT) as Label
 @onready var instrument_stats_button: Button = get_node_or_null(_INSTRUMENT_STATS_BUTTON) as Button
@@ -162,6 +167,7 @@ func apply_locale() -> void:
 
 
 func refresh_fast() -> void:
+	var _perf_t := PerfTrace.begin("perf.load.profile.stats")
 	_refresh_insight_card(false)
 	var total_notes_hit = PlayerDataManager.get_total_notes_hit()
 	var total_notes_missed = PlayerDataManager.get_total_notes_missed()
@@ -186,6 +192,7 @@ func refresh_fast() -> void:
 	_set_grade_tile("S", int(grades.get("S", 0)))
 	_set_grade_tile("A", int(grades.get("A", 0)))
 	_set_grade_tile("B", int(grades.get("B", 0)))
+	PerfTrace.end("perf.load.profile.stats", _perf_t)
 
 
 func on_daily_quests_updated() -> void:
@@ -439,7 +446,22 @@ func _apply_stat_trends() -> void:
 	var history: Array = []
 	if screen and screen.results_history_service and screen.results_history_service.has_method("get_history"):
 		history = screen.results_history_service.get_history()
+	var h_hash := history.size() * 1000003
+	if history.size() > 0:
+		var last: Dictionary = history[history.size() - 1] as Dictionary
+		h_hash ^= hash(str(last.get("date", "")))
+	if h_hash == _cached_trends_hash and not _cached_trends.is_empty():
+		var trends_cached: Dictionary = _cached_trends
+		for tile_key in _STAT_TILE_SPECS:
+			var key := str(tile_key[0])
+			_set_tile_trend(_stat_trend_tiles, key, trends_cached.get(key, {}))
+		for spec in _GRADE_TILE_SPECS:
+			var grade_key := str(spec[0])
+			_set_tile_trend(_grade_trend_tiles, grade_key, trends_cached.get("grade_%s" % grade_key, {}))
+		return
 	var trends: Dictionary = _ProfileStatTrends.compute_tile_trends(history)
+	_cached_trends_hash = h_hash
+	_cached_trends = trends.duplicate(true)
 	for tile_key in _STAT_TILE_SPECS:
 		var key := str(tile_key[0])
 		_set_tile_trend(_stat_trend_tiles, key, trends.get(key, {}))
@@ -515,7 +537,7 @@ func _apply_chart_metric_buttons(selected: String) -> void:
 			button.set_block_signals(true)
 			button.button_pressed = active
 			button.set_block_signals(false)
-			_UiCategoryButton.apply_selection(button, active, 16, true)
+			_style_chart_metric_button(button, metric_key, active)
 	if screen and screen.get_tree():
 		screen.get_tree().create_timer(0.05).timeout.connect(
 			func() -> void: _apply_chart_metric_buttons_immediate(selected),
@@ -527,7 +549,16 @@ func _apply_chart_metric_buttons_immediate(selected: String) -> void:
 	for metric_key in CHART_METRIC_KEYS:
 		var button := get_chart_metric_button(metric_key)
 		if button:
-			_UiCategoryButton.apply_selection(button, selected == metric_key, 16, true)
+			_style_chart_metric_button(button, metric_key, selected == metric_key)
+
+
+func _style_chart_metric_button(button: Button, metric_key: String, active: bool) -> void:
+	# Idle: per-metric text color, dim icon. Active: accent on icon + text + outline.
+	_UiCategoryButton.apply_selection(button, active, 16, true, false)
+	var accent: Color = CHART_METRIC_BUTTON_ACCENTS.get(metric_key, PROFILE_ACCENT)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, accent)
+	button.modulate = Color.WHITE
 
 
 func _on_chart_metric_pressed() -> void:
@@ -766,15 +797,31 @@ func _update_session_chart() -> void:
 	if accuracy_chart_points == null or chart_plot_frame == null:
 		return
 
-	_clear_session_chart()
-
 	if screen == null or screen.results_history_service == null:
 		printerr("StatsTab: ResultsHistoryService не установлен!")
 		return
 
 	var relevant_history := _get_chart_relevant_history()
 	if relevant_history.is_empty():
+		_clear_session_chart()
+		_cached_chart_history_hash = 0
+		_cached_chart_metric = _chart_metric
+		_cached_chart_session_count = 0
 		return
+
+	# Cache: avoid full rebuild if metric and relevant history unchanged (hash = size + last date).
+	var history_hash := relevant_history.size() * 1000003
+	if relevant_history.size() > 0:
+		var last: Dictionary = relevant_history[relevant_history.size() - 1]
+		history_hash ^= hash(str(last.get("date", "")))
+		history_hash ^= hash(str(last.get("score", 0)))
+	if history_hash == _cached_chart_history_hash and _chart_metric == _cached_chart_metric and relevant_history.size() == _cached_chart_session_count and accuracy_chart_points.get_child_count() > 0:
+		return
+	_cached_chart_history_hash = history_hash
+	_cached_chart_metric = _chart_metric
+	_cached_chart_session_count = relevant_history.size()
+
+	_clear_session_chart()
 
 	var scale_max := _chart_scale_max(relevant_history, _chart_metric)
 	var tick_data := _build_chart_tick_labels(scale_max, _chart_metric)
@@ -861,7 +908,8 @@ func _clamp_chart_point_y(y: float, decor: Control) -> float:
 	if plot.size.y <= 0.0:
 		return y
 	var top_pad := 10.0
-	var bottom_pad := 4.0
+	# Keep dots above grade captions so labels aren't clipped by plot frame.
+	var bottom_pad := 16.0
 	return clampf(y, plot.position.y + top_pad, plot.position.y + plot.size.y - bottom_pad)
 
 

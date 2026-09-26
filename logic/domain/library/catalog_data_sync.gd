@@ -1,4 +1,4 @@
-# logic/utils/catalog_data_sync.gd
+# logic/domain/library/catalog_data_sync.gd
 extends RefCounted
 class_name CatalogDataSync
 
@@ -10,6 +10,63 @@ class_name CatalogDataSync
 
 const _ACHIEVEMENT_PROGRESS_KEYS := ["current", "unlocked", "unlock_date"]
 
+# Startup cache for already parsed catalog JSON (shop/achievements/genre) — avoids duplicate FileAccess+parse before first frame
+static var _startup_json_cache: Dictionary = {}
+
+static func _cached_read_json_dict(path: String) -> Dictionary:
+	if _startup_json_cache.has(path):
+		var cached: Variant = _startup_json_cache[path]
+		if cached is Dictionary:
+			return (cached as Dictionary).duplicate(true)
+	if path.ends_with("shop_data.json") or path.ends_with("achievements_data.json") or path.ends_with("genre_groups.json"):
+		var data := JsonUtils.read_json_dict(path)
+		if not data.is_empty():
+			_startup_json_cache[path] = data.duplicate(true)
+		return data
+	return JsonUtils.read_json_dict(path)
+
+static func _cached_write_json(path: String, value: Dictionary) -> bool:
+	var ok := JsonUtils.write_json(path, value, false, true)
+	if ok and (path.ends_with("shop_data.json") or path.ends_with("achievements_data.json") or path.ends_with("genre_groups.json")):
+		_startup_json_cache[path] = value.duplicate(true)
+	elif not ok:
+		_startup_json_cache.erase(path)
+	return ok
+
+static func _cached_write_json_variant(path: String, value: Variant) -> bool:
+	var ok := JsonUtils.write_json(path, value, false, true)
+	if ok and (path.ends_with("shop_data.json") or path.ends_with("achievements_data.json") or path.ends_with("genre_groups.json")):
+		if value is Dictionary:
+			_startup_json_cache[path] = (value as Dictionary).duplicate(true)
+		elif value is Array:
+			_startup_json_cache[path] = (value as Array).duplicate(true)
+		else:
+			_startup_json_cache[path] = value
+	elif not ok:
+		_startup_json_cache.erase(path)
+	return ok
+
+static func _cache_set(path: String, data: Dictionary) -> void:
+	if path.ends_with("shop_data.json") or path.ends_with("achievements_data.json") or path.ends_with("genre_groups.json"):
+		_startup_json_cache[path] = data.duplicate(true)
+
+static func _cached_read_json(path: String) -> Variant:
+	if _startup_json_cache.has(path):
+		var cached: Variant = _startup_json_cache[path]
+		if cached is Dictionary:
+			return (cached as Dictionary).duplicate(true)
+		if cached is Array:
+			return (cached as Array).duplicate(true)
+		return cached
+	var data: Variant = JsonUtils.read_json(path)
+	if data != null and (path.ends_with("shop_data.json") or path.ends_with("achievements_data.json") or path.ends_with("genre_groups.json")):
+		_startup_json_cache[path] = data
+		if data is Dictionary:
+			return (data as Dictionary).duplicate(true)
+		if data is Array:
+			return (data as Array).duplicate(true)
+	return data
+
 
 static func _achievement_id_key(raw_id: Variant) -> String:
 	if typeof(raw_id) == TYPE_FLOAT or typeof(raw_id) == TYPE_INT:
@@ -19,10 +76,12 @@ static func _achievement_id_key(raw_id: Variant) -> String:
 static func sync_catalogs_from_bundled() -> void:
 	_sync_shop_data()
 	_sync_replace_whole_file("genre_groups.json")
+	_sync_achievements_data()
+
+static func sync_deferred_catalogs_from_bundled() -> void:
 	_sync_replace_whole_file("daily_quests.json")
 	_sync_replace_whole_file("help_content.json")
 	_sync_versioned_reference("marathon_routes.json")
-	_sync_achievements_data()
 
 
 static func resolve_bundled_path(file_name: String) -> String:
@@ -44,20 +103,20 @@ static func _sync_replace_whole_file(file_name: String) -> void:
 	var bundled_path := resolve_bundled_path(file_name)
 	if bundled_path == "":
 		return
-	var bundled: Variant = JsonUtils.read_json(bundled_path)
+	var bundled: Variant = _cached_read_json(bundled_path)
 	if bundled == null:
 		return
 	var user_path := _user_path(file_name)
 	if not FileAccess.file_exists(user_path):
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 		return
-	var user_data: Variant = JsonUtils.read_json(user_path)
+	var user_data: Variant = _cached_read_json(user_path)
 	if user_data == null:
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 		return
 	if JSON.stringify(user_data) == JSON.stringify(bundled):
 		return
-	JsonUtils.write_json(user_path, bundled, false, true)
+	_cached_write_json_variant(user_path, bundled)
 
 
 ## Copies bundled JSON to user:// when missing, or when bundled `version` is newer.
@@ -65,43 +124,72 @@ static func _sync_versioned_reference(file_name: String) -> void:
 	var bundled_path := resolve_bundled_path(file_name)
 	if bundled_path == "":
 		return
-	var bundled: Variant = JsonUtils.read_json(bundled_path)
+	var bundled: Variant = _cached_read_json(bundled_path)
 	if not bundled is Dictionary:
 		return
 	var user_path := _user_path(file_name)
 	if not FileAccess.file_exists(user_path):
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 		return
-	var user_data: Variant = JsonUtils.read_json(user_path)
+	var user_data: Variant = _cached_read_json(user_path)
 	if not user_data is Dictionary:
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 		return
 	var bundled_ver := int(bundled.get("version", 0))
 	var user_ver := int(user_data.get("version", 0))
 	if bundled_ver > user_ver:
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 		return
 	if bundled_ver == user_ver and JSON.stringify(user_data) != JSON.stringify(bundled):
-		JsonUtils.write_json(user_path, bundled, false, true)
+		_cached_write_json_variant(user_path, bundled)
 
 
 static func _sync_shop_data() -> void:
 	var bundled_path := resolve_bundled_path("shop_data.json")
 	if bundled_path == "":
 		return
-	var bundled: Dictionary = JsonUtils.read_json_dict(bundled_path)
+	var bundled: Dictionary = _cached_read_json_dict(bundled_path)
 	if bundled.is_empty() or not (bundled.get("items") is Array):
 		return
 
 	var user_path := _user_path("shop_data.json")
 	var user: Dictionary = {}
 	if FileAccess.file_exists(user_path):
-		user = JsonUtils.read_json_dict(user_path)
+		user = _cached_read_json_dict(user_path)
 
 	var merged: Dictionary = merge_shop_items(user, bundled)
 	if JSON.stringify(user) == JSON.stringify(merged):
 		return
-	JsonUtils.write_json(user_path, merged, false, true)
+	_cached_write_json(user_path, merged)
+
+
+const _REMOVED_COVER_ITEM_IDS := [
+	"covers_default",
+	"covers_geometric",
+	"covers_flowing_lines",
+	"covers_music_note",
+	"covers_ink_splash",
+	"covers_vinyl",
+	"covers_spiderweb",
+	"covers_explosion",
+	"covers_shards",
+	"covers_cross",
+	"covers_brush",
+	"covers_falling_blocks",
+	"pixel_amp",
+	"covers_shatter",
+	"covers_marble_flow",
+]
+
+
+static func _is_removed_shop_item(item: Dictionary) -> bool:
+	var item_id := str(item.get("item_id", "")).strip_edges()
+	if item_id == "":
+		return false
+	if item_id in _REMOVED_COVER_ITEM_IDS or item_id.begins_with("covers_"):
+		return true
+	var category := str(item.get("category", "")).strip_edges()
+	return category == "Обложки" or category.to_lower() == "covers"
 
 
 static func merge_shop_items(user: Dictionary, bundled: Dictionary) -> Dictionary:
@@ -129,6 +217,9 @@ static func merge_shop_items(user: Dictionary, bundled: Dictionary) -> Dictionar
 		var item_id := str(raw["item_id"])
 		if bundled_ids.has(item_id):
 			continue
+		# Covers removed from shop; orphaned user:// rows must not reappear under «Все».
+		if _is_removed_shop_item(raw as Dictionary):
+			continue
 		merged_items.append(raw.duplicate(true))
 
 	var out: Dictionary = {"items": merged_items}
@@ -141,19 +232,19 @@ static func _sync_achievements_data() -> void:
 	var bundled_path := resolve_bundled_path("achievements_data.json")
 	if bundled_path == "":
 		return
-	var bundled: Dictionary = JsonUtils.read_json_dict(bundled_path)
+	var bundled: Dictionary = _cached_read_json_dict(bundled_path)
 	if bundled.is_empty() or not (bundled.get("achievements") is Array):
 		return
 
 	var user_path := _user_path("achievements_data.json")
 	var user: Dictionary = {}
 	if FileAccess.file_exists(user_path):
-		user = JsonUtils.read_json_dict(user_path)
+		user = _cached_read_json_dict(user_path)
 
 	var merged: Dictionary = _merge_achievements(user, bundled)
 	if JSON.stringify(user) == JSON.stringify(merged):
 		return
-	JsonUtils.write_json(user_path, merged, false, true)
+	_cached_write_json(user_path, merged)
 
 
 static func _merge_achievements(user: Dictionary, bundled: Dictionary) -> Dictionary:

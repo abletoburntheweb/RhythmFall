@@ -1,4 +1,4 @@
-# scenes/shop/shop_collection_card.gd
+# scenes/shop/components/shop_collection_card.gd
 extends PanelContainer
 
 signal pressed(collection_id: String)
@@ -29,7 +29,7 @@ var _icon_frame: PanelContainer
 
 func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	gui_input.connect(_on_gui_input)
+	UiClick.connect_clicked(self, _on_card_clicked)
 
 
 func setup(collection: Dictionary, unlocked: int, total: int) -> void:
@@ -152,10 +152,7 @@ func _parse_accent(hex: String) -> Color:
 	return color
 
 
-func _on_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
-			var cid := get_collection_id()
-			if cid != "":
-				pressed.emit(cid)
+func _on_card_clicked() -> void:
+	var cid := get_collection_id()
+	if cid != "":
+		pressed.emit(cid)

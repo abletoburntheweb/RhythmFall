@@ -1,4 +1,4 @@
-# logic/utils/daily_quest_locale.gd
+# logic/i18n/daily_quest_locale.gd
 extends RefCounted
 class_name DailyQuestLocale
 

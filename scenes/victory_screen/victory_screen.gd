@@ -13,7 +13,12 @@ const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
 const _SpotlightTutorialScene = preload("res://ui/spotlight_tutorial.tscn")
 const ResultsHistoryService = preload("res://logic/data/results_history_service.gd")
+const _ReplayLauncher = preload("res://logic/domain/replay/replay_launcher.gd")
+const _RfrCodec = preload("res://logic/platform/rfr_replay_codec.gd")
+const _ReplayStore = preload("res://logic/domain/replay/replay_store.gd")
+const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const MEDAL_ICON_SLOT_SCENE := preload("res://scenes/ui/medal_icon_slot.tscn")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 signal song_select_requested
 signal replay_requested
@@ -25,6 +30,7 @@ var accuracy: float
 var song_info: Dictionary = {}
 var earned_currency: int = 0
 var earned_xp: int = 0 
+var _first_steps_guide: FirstStepsGuide = null 
 
 var calculated_combo_multiplier: float = 1.0 
 var calculated_total_notes: int = 0
@@ -136,6 +142,8 @@ var _last_int_good: int = -1
 var _last_int_miss: int = -1
 var _last_acc_tenths: int = -1
 var _rewards_detail_clickable: bool = false
+var _accuracy_details_clickable: bool = false
+var _rr_details_clickable: bool = false
 var _grade_revealed: bool = false
 var _countups_skipped: bool = false
 @export var count_progress: float:
@@ -372,6 +380,15 @@ var victory_animation_player: AnimationPlayer = null
 @onready var accuracy_delta_label: Label = (
 	$MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox/AccuracyDeltaLabel
 )
+@onready var accuracy_tile: PanelContainer = (
+	$MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile
+)
+@onready var accuracy_caption_label: Label = (
+	$MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox/CaptionLabel
+)
+@onready var accuracy_value_label: Label = (
+	$MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/AccuracyTile/StatVBox/AccuracyLabel
+)
 @onready var perfect_label: Label = (
 	$MainMargin/MainVBox/BottomRowHBox/StatsPanel/StatsMargin/StatsGrid/PerfectTile/StatVBox/PerfectLabel
 )
@@ -387,6 +404,9 @@ var victory_animation_player: AnimationPlayer = null
 @onready var currency_caption_label: Label = (
 	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyCaption
 )
+@onready var _currency_icon: TextureRect = (
+	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol/CurrencyTop/CurrencyIcon
+)
 @onready var _currency_row: Control = (
 	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/CurrencyCol
 )
@@ -395,6 +415,9 @@ var victory_animation_player: AnimationPlayer = null
 )
 @onready var xp_caption_label: Label = (
 	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol/XPCaption
+)
+@onready var _xp_icon: TextureRect = (
+	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol/XPTop/XPIcon
 )
 @onready var _xp_row: Control = (
 	$MainMargin/MainVBox/TopRowHBox/RightColVBox/RewardsPanel/RewardsMargin/RewardsVBox/RewardsBodyHBox/XPCol
@@ -450,12 +473,16 @@ var victory_animation_player: AnimationPlayer = null
 	$MainMargin/MainVBox/BottomRowHBox/RecommendPanel/RecommendMargin/RecommendVBox/RecommendHBox/RecommendTextVBox/RecommendDifficultyRow/RecommendDifficultyValueLabel
 )
 @onready var replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/ReplayButton
+@onready var save_run_replay_button: Button = $MainMargin/MainVBox/ButtonsContainer/SaveRunReplayButton
 @onready var song_select_button: Button = $MainMargin/MainVBox/ButtonsContainer/SongSelectButton
 @onready var next_track_button: Button = $MainMargin/MainVBox/ButtonsContainer/NextTrackButton
 @onready var countups_delay_timer: Timer = $CountupsDelayTimer
 @onready var hint_label: Label = $MainMargin/MainVBox/HintLabel
 
 var _spotlight_tutorial: CanvasLayer = null
+## Карточка-рекомендация после завершения «Первых шагов» (прокрутить First Steps
+## больше нельзя — практика предлагается как отдельная возможность, CTA).
+var _first_steps_done_card: Control = null
 
 const _MOCKUP_CONTENT_WIDTH := 1140
 const _ACCENT_CYAN := Color(0.34902, 0.819608, 0.745098, 1.0)
@@ -468,10 +495,31 @@ const _ICON_RECOMMEND := Color(0.42, 0.72, 0.68, 0.95)
 const _RECOMMEND_ICON_SIZE := 92
 var _chart_difficulty_icon_texture: Texture2D = null
 
+var _currency_chevron: TextureRect = null
+var _xp_chevron: TextureRect = null
+var _accuracy_chevron: TextureRect = null
+var _rr_chevron: TextureRect = null
+
+## Интерактивность строк деталей (шаг «Результат»): при наведении строка слегка
+## подсвечивается, chevron-right становится ярче и сдвигается вправо (2-4 px) —
+## классический паттерн «эта строка раскрывается».
+const _ROW_CHEVRON_HOVER := Color(0.88, 0.94, 1.0, 1.0)
+const _ROW_CHEVRON_SHIFT := 3.0
+const _ROW_HOVER_TINT := Color(1.12, 1.12, 1.16, 1.0)
+var _row_hover_tweens: Dictionary = {}
+
 
 func _ready():
+	var _perf_ready_t := PerfTrace.begin("perf.load.victory.ready")
 	add_to_group("locale_refresh")
+	if FirstStepsManager:
+		FirstStepsManager.register_screen(FirstStepsManager.SCREEN_VICTORY)
+		FirstStepsManager.notify_event("run_completed")
+		if not FirstStepsManager.completed.is_connected(_on_first_steps_completed):
+			FirstStepsManager.completed.connect(_on_first_steps_completed)
 	replay_button.pressed.connect(_on_replay_button_pressed)
+	if save_run_replay_button:
+		save_run_replay_button.pressed.connect(_on_save_run_replay_pressed)
 	song_select_button.pressed.connect(_on_song_select_button_pressed)
 	if next_track_button:
 		next_track_button.pressed.connect(_on_next_track_button_pressed)
@@ -482,10 +530,29 @@ func _ready():
 		victory_animation_player.animation_finished.connect(_on_victory_anim_finished)
 	
 	if currency_label:
-		currency_label.gui_input.connect(_on_currency_label_clicked)
-	
+		UiClick.connect_clicked(currency_label, _on_currency_label_clicked, _rewards_clickable_guard)
+	if _currency_row:
+		UiClick.connect_clicked(_currency_row, _on_currency_label_clicked, _rewards_clickable_guard)
+
 	if xp_label:
-		xp_label.gui_input.connect(_on_xp_label_clicked)
+		UiClick.connect_clicked(xp_label, _on_xp_label_clicked, _rewards_clickable_guard)
+	if _xp_row:
+		UiClick.connect_clicked(_xp_row, _on_xp_label_clicked, _rewards_clickable_guard)
+
+	if accuracy_tile:
+		UiClick.connect_clicked(accuracy_tile, _on_accuracy_tile_clicked, _accuracy_clickable_guard)
+	if accuracy_caption_label:
+		UiClick.connect_clicked(accuracy_caption_label, _on_accuracy_tile_clicked, _accuracy_clickable_guard)
+	if accuracy_value_label:
+		UiClick.connect_clicked(accuracy_value_label, _on_accuracy_tile_clicked, _accuracy_clickable_guard)
+
+	if rr_label:
+		UiClick.connect_clicked(rr_label, _on_rr_label_clicked, _rr_clickable_guard)
+
+	if grade_card:
+		UiClick.connect_clicked(grade_card, _on_rr_label_clicked, _rr_clickable_guard)
+
+	_wire_detail_row_hover()
 	
 	_set_rewards_detail_clickable(false)
 	
@@ -496,6 +563,9 @@ func _ready():
 	call_deferred("_setup_ui_icons")
 	call_deferred("_apply_victory_chrome")
 	call_deferred("apply_locale")
+	_setup_first_steps_guide()
+	resized.connect(_refresh_rewards_chevron_visibility)
+	PerfTrace.end("perf.load.victory.ready", _perf_ready_t)
 
 
 func _exit_tree() -> void:
@@ -511,7 +581,127 @@ func _setup_ui_icons() -> void:
 	_setup_recommend_icon()
 	_refresh_next_track_button_chrome()
 	UiIconHelper.configure_button_icon(replay_button, "repeat.svg", UiIconHelper.ICON_NEUTRAL_BTN)
+	if save_run_replay_button:
+		# Icon will be refreshed per state (save vs watch)
+		_refresh_save_run_replay_button()
 	UiIconHelper.configure_button_icon(song_select_button, "music.svg", _ICON_MUSIC)
+	_setup_rewards_chevrons()
+
+
+func _setup_rewards_chevrons() -> void:
+	_currency_chevron = _make_row_chevron()
+	_xp_chevron = _make_row_chevron()
+	_accuracy_chevron = _make_row_chevron()
+	_rr_chevron = _make_row_chevron()
+	# Move chevrons to end of children list so they paint on top of all panels.
+	for chev in [_currency_chevron, _xp_chevron, _accuracy_chevron, _rr_chevron]:
+		if chev and is_instance_valid(chev):
+			move_child(chev, get_child_count() - 1)
+	_refresh_rewards_chevron_visibility()
+
+
+func _make_row_chevron() -> TextureRect:
+	var chev := TextureRect.new()
+	chev.name = "DetailChevron"
+	chev.custom_minimum_size = Vector2(14, 14)
+	chev.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	chev.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	chev.texture = UiIconHelper.load_tinted_icon("chevron-right.svg", Color(0.78, 0.86, 0.98, 1.0), 16)
+	chev.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chev.visible = false
+	add_child(chev)
+	return chev
+
+
+func _refresh_rewards_chevron_visibility() -> void:
+	# Шевроны стоят у верхнего края карточки-контейнера, справа — как индикатор
+	# того, что карточка раскрывает подробности, а не как часть числового значения.
+	if _currency_chevron:
+		_currency_chevron.visible = _rewards_detail_clickable
+		_place_row_chevron(_currency_chevron, _currency_row)
+	if _xp_chevron:
+		_xp_chevron.visible = _rewards_detail_clickable
+		_place_row_chevron(_xp_chevron, _xp_row)
+	if _accuracy_chevron:
+		_accuracy_chevron.visible = _accuracy_details_clickable
+		_place_row_chevron(_accuracy_chevron, accuracy_tile)
+	if _rr_chevron:
+		_rr_chevron.visible = _rr_details_clickable
+		_place_row_chevron(_rr_chevron, grade_card)
+
+
+func _place_row_chevron(chev: TextureRect, row: Control) -> void:
+	if chev == null or row == null or not is_instance_valid(row):
+		return
+	var rect := row.get_global_rect()
+	if rect.size == Vector2.ZERO:
+		if chev.visible:
+			var target_row: Control = row
+			var target_chev: TextureRect = chev
+			await get_tree().process_frame
+			_place_row_chevron(target_chev, target_row)
+		return
+	var size := chev.custom_minimum_size
+	chev.global_position = Vector2(
+		rect.end.x - size.x - 8.0,
+		rect.position.y + 4.0
+	)
+	chev.set_meta("base_x", chev.global_position.x)
+
+
+## Строки деталей (Currency / XP / Accuracy): при наведении — лёгкая подсветка
+## строки + chevron-right ярче и сдвинут вправо (намек «строка раскрывается»).
+func _wire_detail_row_hover() -> void:
+	if currency_label:
+		currency_label.mouse_entered.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, true))
+		currency_label.mouse_exited.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, false))
+	if currency_caption_label:
+		currency_caption_label.mouse_entered.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, true))
+		currency_caption_label.mouse_exited.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, false))
+	if _currency_icon:
+		_currency_icon.mouse_entered.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, true))
+		_currency_icon.mouse_exited.connect(func(): _set_row_hovered(_currency_row, _currency_chevron, false))
+	if xp_label:
+		xp_label.mouse_entered.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, true))
+		xp_label.mouse_exited.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, false))
+	if xp_caption_label:
+		xp_caption_label.mouse_entered.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, true))
+		xp_caption_label.mouse_exited.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, false))
+	if _xp_icon:
+		_xp_icon.mouse_entered.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, true))
+		_xp_icon.mouse_exited.connect(func(): _set_row_hovered(_xp_row, _xp_chevron, false))
+	if accuracy_tile:
+		accuracy_tile.mouse_entered.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, true))
+		accuracy_tile.mouse_exited.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, false))
+	if accuracy_caption_label:
+		accuracy_caption_label.mouse_entered.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, true))
+		accuracy_caption_label.mouse_exited.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, false))
+	if accuracy_value_label:
+		accuracy_value_label.mouse_entered.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, true))
+		accuracy_value_label.mouse_exited.connect(func(): _set_row_hovered(accuracy_tile, _accuracy_chevron, false))
+	if rr_label:
+		rr_label.mouse_entered.connect(func(): _set_row_hovered(grade_card, _rr_chevron, true))
+		rr_label.mouse_exited.connect(func(): _set_row_hovered(grade_card, _rr_chevron, false))
+	if grade_card:
+		grade_card.mouse_entered.connect(func(): _set_row_hovered(grade_card, _rr_chevron, true))
+		grade_card.mouse_exited.connect(func(): _set_row_hovered(grade_card, _rr_chevron, false))
+
+
+func _set_row_hovered(row: Control, chev: TextureRect, hovered: bool) -> void:
+	if row != null and is_instance_valid(row):
+		row.self_modulate = _ROW_HOVER_TINT if hovered else Color.WHITE
+	if chev == null or not is_instance_valid(chev) or not chev.visible:
+		return
+	chev.modulate = _ROW_CHEVRON_HOVER if hovered else Color.WHITE
+	var base_x := float(chev.get_meta("base_x", -1.0))
+	if base_x < 0.0:
+		return
+	var tween: Tween = _row_hover_tweens.get(chev)
+	if tween != null and tween.is_valid():
+		tween.kill()
+	tween = create_tween()
+	tween.tween_property(chev, "global_position:x", base_x + (_ROW_CHEVRON_SHIFT if hovered else 0.0), 0.12)
+	_row_hover_tweens[chev] = tween
 
 
 func _refresh_next_track_button_chrome() -> void:
@@ -656,6 +846,7 @@ func _refresh_recommend_cover(song: Dictionary) -> void:
 func _wire_recommend_panel() -> void:
 	if recommend_panel == null:
 		return
+	UiClick.connect_clicked(recommend_panel, _on_next_track_button_pressed)
 	if not recommend_panel.gui_input.is_connected(_on_recommend_panel_gui_input):
 		recommend_panel.gui_input.connect(_on_recommend_panel_gui_input)
 
@@ -670,6 +861,8 @@ func apply_locale() -> void:
 		title_label.text = tr("VICTORY_TITLE")
 	if replay_button:
 		replay_button.text = tr("VICTORY_REPLAY").to_upper()
+	if save_run_replay_button:
+		_refresh_save_run_replay_button()
 	if song_select_button:
 		song_select_button.text = tr("VICTORY_SONG_SELECT").to_upper()
 	if next_track_button:
@@ -695,8 +888,12 @@ func apply_locale() -> void:
 	_refresh_modifiers_display()
 	_refresh_stat_captions()
 	_refresh_stat_labels()
-	if is_instance_valid(grade_label) and grade_label.visible:
-		grade_label.text = _calculate_grade()
+	if is_instance_valid(grade_label):
+		if grade_label.visible:
+			grade_label.text = _calculate_grade()
+		grade_label.tooltip_text = tr("VICTORY_GRADE_HINT")
+	if is_instance_valid(rr_label):
+		rr_label.tooltip_text = tr("VICTORY_RR_HINT")
 	_refresh_rr_label()
 	_refresh_first_clear_label()
 	_refresh_run_medals_row()
@@ -724,6 +921,11 @@ func _format_song_meta_line() -> String:
 
 
 func _song_duration_display() -> String:
+	var play_sec := int(song_info.get("duration_sec", 0))
+	if play_sec > 0:
+		var minutes := play_sec / 60
+		var seconds := play_sec % 60
+		return "%02d:%02d" % [minutes, seconds]
 	var song_path := str(song_info.get("path", ""))
 	if song_path != "" and SongLibrary:
 		var md: Variant = SongLibrary.get_metadata_for_song(song_path)
@@ -784,6 +986,10 @@ func _capture_chart_baseline(p_song_path: String) -> Dictionary:
 	if not modifiers is Array:
 		modifiers = []
 	var previous_rr := 0
+	if ProfileMilestonesManager:
+		previous_rr = ProfileMilestonesManager.get_best_rr_for_chart(
+			p_song_path, instrument, mode, lanes, modifiers
+		)
 	var best_score := 0
 	var best_accuracy := 0.0
 	var best_combo := 0
@@ -1073,6 +1279,10 @@ func _resolve_rr_repeat_state() -> void:
 	if not modifiers is Array:
 		modifiers = []
 	var previous_rr := 0
+	if ProfileMilestonesManager:
+		previous_rr = ProfileMilestonesManager.get_best_rr_for_chart(
+			song_path, instrument, mode, lanes, modifiers
+		)
 	if previous_rr > 0 and run_rr <= previous_rr:
 		run_rr_is_repeat = true
 		return
@@ -1380,9 +1590,54 @@ func _set_rewards_detail_clickable(enabled: bool) -> void:
 	if currency_label:
 		currency_label.mouse_filter = filter
 		currency_label.mouse_default_cursor_shape = cursor
+	if currency_caption_label:
+		currency_caption_label.mouse_filter = filter
+		currency_caption_label.mouse_default_cursor_shape = cursor
+	if _currency_icon:
+		_currency_icon.mouse_filter = filter
+		_currency_icon.mouse_default_cursor_shape = cursor
 	if xp_label:
 		xp_label.mouse_filter = filter
 		xp_label.mouse_default_cursor_shape = cursor
+	if xp_caption_label:
+		xp_caption_label.mouse_filter = filter
+		xp_caption_label.mouse_default_cursor_shape = cursor
+	if _xp_icon:
+		_xp_icon.mouse_filter = filter
+		_xp_icon.mouse_default_cursor_shape = cursor
+	# Клик работает по всей колонке (метка + подпись), а не только по тексту.
+	if _currency_row:
+		_currency_row.mouse_filter = filter
+		_currency_row.mouse_default_cursor_shape = cursor
+	if _xp_row:
+		_xp_row.mouse_filter = filter
+		_xp_row.mouse_default_cursor_shape = cursor
+	_accuracy_details_clickable = enabled
+	if accuracy_tile:
+		var acc_filter := Control.MOUSE_FILTER_STOP if _accuracy_details_clickable else Control.MOUSE_FILTER_PASS
+		var acc_cursor := Control.CURSOR_POINTING_HAND if _accuracy_details_clickable else Control.CURSOR_ARROW
+		accuracy_tile.mouse_filter = acc_filter
+		accuracy_tile.mouse_default_cursor_shape = acc_cursor
+	_rr_details_clickable = enabled and run_rr > 0
+	if rr_label:
+		var rr_filter := Control.MOUSE_FILTER_STOP if _rr_details_clickable else Control.MOUSE_FILTER_IGNORE
+		var rr_cursor := Control.CURSOR_POINTING_HAND if _rr_details_clickable else Control.CURSOR_ARROW
+		rr_label.mouse_filter = rr_filter
+		rr_label.mouse_default_cursor_shape = rr_cursor
+	# Вся RR-карточка (GradeCard) кликабельна, а не только метка RR.
+	if grade_card:
+		var grade_filter := Control.MOUSE_FILTER_STOP if _rr_details_clickable else Control.MOUSE_FILTER_IGNORE
+		var grade_cursor := Control.CURSOR_POINTING_HAND if _rr_details_clickable else Control.CURSOR_ARROW
+		grade_card.mouse_filter = grade_filter
+		grade_card.mouse_default_cursor_shape = grade_cursor
+	_refresh_rewards_chevron_visibility()
+	if enabled:
+		_first_steps_refresh_guide()
+
+
+func _first_steps_refresh_guide() -> void:
+	if _first_steps_guide and is_instance_valid(_first_steps_guide):
+		_first_steps_guide.refresh()
 
 func _calculate_grade() -> String:
 	if accuracy == 100.0: 
@@ -1466,9 +1721,43 @@ func _notify_profile_milestones(
 	date_str: String,
 	medals_new: Array
 ) -> void:
-	if p_song_path == "":
+	if p_song_path == "" or not ProfileMilestonesManager:
 		return
-	return
+	var duration_sec := 0.0
+	var bpm := 0.0
+	var primary_genre := ""
+	if SongLibrary:
+		var md := SongLibrary.get_metadata_for_song(p_song_path)
+		if md is Dictionary:
+			primary_genre = str(md.get("primary_genre", ""))
+			bpm = ChartDifficultyAnalyzer.parse_bpm(md.get("bpm", 0))
+			var duration_text := str(md.get("duration", ""))
+			if duration_text.contains(":"):
+				var parts := duration_text.split(":")
+				if parts.size() >= 2:
+					duration_sec = float(parts[0].to_int() * 60 + parts[1].to_int())
+	ProfileMilestonesManager.on_run_completed({
+		"song_path": p_song_path,
+		"instrument": instrument,
+		"mode": mode,
+		"lanes": lanes,
+		"modifiers": modifiers,
+		"accuracy": p_accuracy,
+		"grade": grade,
+		"chart_rating": chart_rating,
+		"full_combo": full_combo,
+		"max_combo": p_max_combo,
+		"score": p_score,
+		"title": title,
+		"artist": artist,
+		"date": date_str,
+		"duration_sec": duration_sec,
+		"bpm": bpm,
+		"primary_genre": primary_genre,
+		"medals_new": medals_new,
+	})
+	var _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	_DiaryCelebration.flush_from_node(self)
 
 func _setup_recommendation() -> void:
 	_recommendation = {}
@@ -1682,7 +1971,8 @@ func _launch_recommended_track() -> void:
 				results_manager,
 				str(launch_data.get("mode", "basic")),
 				int(launch_data.get("lanes", 4)),
-				launch_data.get("modifiers", [])
+				launch_data.get("modifiers", []),
+				""
 			)
 	queue_free()
 
@@ -1700,13 +1990,52 @@ func _on_replay_button_pressed():
 	if game_engine and game_engine.has_method("get_transitions"):
 		var transitions = game_engine.get_transitions()
 		if transitions and transitions.has_method("open_game_with_song"):
-			var instrument_to_use = song_info.get("instrument", "standard")
-			var mode_to_use = str(song_info.get("mode", "basic"))
+			var instrument_to_use = song_info.get("instrument", "drums")
+			# Never replay legacy "basic" as-is — resolve to current chart stem (original / arcade_*).
+			var mode_to_use := _RhythmRating.normalize_mode(str(song_info.get("mode", "original")))
 			var lanes_to_use = int(song_info.get("lanes", 4))
 			var mods: Array = song_info.get("modifiers", [])
-			transitions.open_game_with_song(song_info, instrument_to_use, results_manager, mode_to_use, lanes_to_use, mods)
+			song_info["mode"] = mode_to_use
+			transitions.open_game_with_song(song_info, instrument_to_use, results_manager, mode_to_use, lanes_to_use, mods, "")
 	
 	queue_free()
+
+
+func _setup_first_steps_guide() -> void:
+	if not FirstStepsManager:
+		return
+	_first_steps_guide = FirstStepsGuide.new()
+	_first_steps_guide.screen_id = FirstStepsManager.SCREEN_VICTORY
+	_first_steps_guide.navigate_to_expected_screen = Callable(self, "_first_steps_navigate")
+	_first_steps_guide.spotlight_targets_provider = Callable(self, "_first_steps_spotlight_targets")
+	add_child(_first_steps_guide)
+
+
+func _first_steps_navigate() -> void:
+	# Практика больше не является шагом «Первых шагов»: результат (шаг 4) —
+	# последний, его завершение оставляет игрока на экране результата.
+	pass
+
+
+func _first_steps_spotlight_targets() -> Array:
+	if not FirstStepsManager or FirstStepsManager.get_current_step() != 4:
+		return []
+	var out: Array = []
+	# Подсвечиваем только ещё не открытые модалки деталей: после открытия
+	# каждой её bit маски выставляется, glow снимается и остаётся только на
+	# следующих — игрок последовательно прокликивает все три окна.
+	if _rewards_detail_clickable:
+		if not FirstStepsManager.is_detail_opened(FirstStepsManager.DETAILS_MASK_CURRENCY):
+			if _currency_row is Control and is_instance_valid(_currency_row) and _currency_row.is_visible_in_tree():
+				out.append(_currency_row)
+		if not FirstStepsManager.is_detail_opened(FirstStepsManager.DETAILS_MASK_XP):
+			if _xp_row is Control and is_instance_valid(_xp_row) and _xp_row.is_visible_in_tree():
+				out.append(_xp_row)
+	if _accuracy_details_clickable \
+			and not FirstStepsManager.is_detail_opened(FirstStepsManager.DETAILS_MASK_ACCURACY):
+		if accuracy_tile is Control and is_instance_valid(accuracy_tile) and accuracy_tile.is_visible_in_tree():
+			out.append(accuracy_tile)
+	return out
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1718,6 +2047,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var bindings := {
 		KEY_R: _on_replay_button_pressed,
 		KEY_M: _on_song_select_button_pressed,
+		KEY_C: _hotkey_currency_details,
+		KEY_X: _hotkey_xp_details,
 	}
 	if next_track_button and next_track_button.visible:
 		bindings[KEY_N] = _on_next_track_button_pressed
@@ -1725,6 +2056,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		bindings[KEY_KP_ENTER] = _on_next_track_button_pressed
 	if UiScreenHotkeys.try_handle(bindings, event, get_viewport()):
 		get_viewport().set_input_as_handled()
+
+
+func _hotkey_currency_details() -> void:
+	if _rewards_detail_clickable:
+		_show_currency_details()
+
+
+func _hotkey_xp_details() -> void:
+	if _rewards_detail_clickable:
+		_show_xp_details()
 
 
 func _on_song_select_button_pressed():
@@ -1740,14 +2081,25 @@ func _on_song_select_button_pressed():
 
 	queue_free()
 
-func _on_currency_label_clicked(event):
-	if not _rewards_detail_clickable:
-		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		MusicManager.play_modifier_select_sound()
-		_show_currency_details()
+func _rewards_clickable_guard() -> bool:
+	return _rewards_detail_clickable
+
+
+func _accuracy_clickable_guard() -> bool:
+	return _accuracy_details_clickable
+
+
+func _rr_clickable_guard() -> bool:
+	return _rr_details_clickable
+
+
+func _on_currency_label_clicked() -> void:
+	MusicManager.play_modifier_select_sound()
+	_show_currency_details()
 
 func _show_currency_details():
+	if FirstStepsManager and FirstStepsManager.has_method("notify_event"):
+		FirstStepsManager.notify_event("details_currency")
 	var currency_details_scene = load("res://scenes/victory_screen/victory_currency_details.tscn")
 	var currency_details = currency_details_scene.instantiate()
 	
@@ -1755,6 +2107,10 @@ func _show_currency_details():
 	
 	add_child(currency_details)
 	UiInteractionApplier.apply_from_engine(currency_details)
+	# Модалка деталей = модальный оверлей для target_glow: пока она открыта,
+	# glow (слой 119) прячется, после закрытия — восстанавливается на тех
+	# целях, которые игрок ещё не смотрел.
+	currency_details.add_to_group("app_modal_overlays")
 	
 	currency_details.show_details(
 		score, 
@@ -1769,19 +2125,19 @@ func _show_currency_details():
 func _on_currency_details_closed():
 	pass
 
-func _on_xp_label_clicked(event):
-	if not _rewards_detail_clickable:
-		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		MusicManager.play_modifier_select_sound()
-		_show_xp_details()
+func _on_xp_label_clicked() -> void:
+	MusicManager.play_modifier_select_sound()
+	_show_xp_details()
 
 func _show_xp_details():
+	if FirstStepsManager and FirstStepsManager.has_method("notify_event"):
+		FirstStepsManager.notify_event("details_xp")
 	var xp_details_scene = load("res://scenes/victory_screen/victory_xp_details.tscn")
 	var xp_details = xp_details_scene.instantiate()
 	
 	add_child(xp_details)
 	UiInteractionApplier.apply_from_engine(xp_details)
+	xp_details.add_to_group("app_modal_overlays")
 	
 	var grade = _calculate_grade()
 	xp_details.show_details(
@@ -1793,6 +2149,79 @@ func _show_xp_details():
 		earned_xp
 	)
 
+func _on_accuracy_tile_clicked() -> void:
+	MusicManager.play_modifier_select_sound()
+	_show_accuracy_details()
+
+func _show_accuracy_details():
+	if FirstStepsManager and FirstStepsManager.has_method("notify_event"):
+		FirstStepsManager.notify_event("details_accuracy")
+	var details_scene = load("res://scenes/victory_screen/victory_accuracy_details.tscn")
+	var details = details_scene.instantiate()
+	
+	details.details_closed.connect(_on_accuracy_details_closed)
+	
+	add_child(details)
+	UiInteractionApplier.apply_from_engine(details)
+	details.add_to_group("app_modal_overlays")
+	
+	var section_accuracy: Array = song_info.get("section_accuracy", [])
+	details.show_details(section_accuracy, accuracy)
+
+func _on_accuracy_details_closed():
+	pass
+
+func _on_rr_label_clicked() -> void:
+	MusicManager.play_modifier_select_sound()
+	_show_rr_details()
+
+func _show_rr_details():
+	var song_path := str(song_info.get("path", ""))
+	var instrument := str(song_info.get("instrument", "standard"))
+	var mode := str(song_info.get("mode", "basic"))
+	var lanes := int(song_info.get("lanes", 4))
+	var modifiers: Array = song_info.get("modifiers", [])
+	if not modifiers is Array:
+		modifiers = []
+	var modifier_params: Dictionary = song_info.get("modifier_params", {})
+	if modifier_params is Dictionary:
+		modifier_params = _RunModifiers.sync_params_from_modifiers(modifiers, modifier_params)
+	else:
+		modifier_params = _RunModifiers.sync_params_from_modifiers(modifiers, {})
+	var chart_rating := ChartDifficultyAnalyzer.get_run_rating(song_path, instrument, mode, lanes)
+	var grade := _calculate_grade()
+	var full_combo := calculated_missed_notes == 0 and calculated_total_notes > 0
+	var multiplier := _RunModifiers.score_multiplier(modifiers, modifier_params)
+	var best_rr := ProfileMilestonesManager.get_best_rr_for_chart(song_path, instrument, mode, lanes, modifiers)
+	var best_run := {}
+	if ProfileMilestonesManager and ProfileMilestonesManager.has_method("get_best_run_for_chart"):
+		best_run = ProfileMilestonesManager.get_best_run_for_chart(song_path, instrument, mode, lanes, modifiers)
+	var details_scene = load("res://scenes/victory_screen/victory_rr_details.tscn")
+	var details = details_scene.instantiate()
+
+	details.details_closed.connect(_on_rr_details_closed)
+
+	add_child(details)
+	UiInteractionApplier.apply_from_engine(details)
+	details.add_to_group("app_modal_overlays")
+
+	details.show_details(
+		accuracy,
+		chart_rating,
+		grade,
+		full_combo,
+		modifiers,
+		modifier_params,
+		multiplier,
+		run_rr,
+		best_rr,
+		run_rr_is_repeat,
+		best_run
+	)
+
+func _on_rr_details_closed():
+	pass
+
 func set_results_manager(results_mgr):
 	results_manager = results_mgr
 
@@ -1801,6 +2230,7 @@ func set_achievement_system(ach_sys):
 		results_manager.set_achievement_system(ach_sys)
 
 func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: float, p_song_info: Dictionary = {}, p_combo_multiplier: float = 1.0, p_total_notes: int = 0, p_missed_notes: int = 0, p_perfect_hits: int = 0, p_hit_notes: int = 0):
+	print("[RUN PIPELINE] VictoryScreen.set_victory_data entered score=%d accuracy=%.2f song_path=%s play_mode=%s is_inside_tree=%s" % [p_score, p_accuracy, str(p_song_info.get("path","")), str(p_song_info.get("play_mode","")), str(is_inside_tree())])
 	score = p_score
 	combo = p_combo
 	max_combo = p_max_combo
@@ -1819,6 +2249,8 @@ func set_victory_data(p_score: int, p_combo: int, p_max_combo: int, p_accuracy: 
 	
 	earned_currency = _calculate_currency_new()
 	earned_xp = _calculate_xp_new() 
+
+	_refresh_save_run_replay_button()
 
 	_start_victory_screen_music()
 	call_deferred("_deferred_update_ui")
@@ -1942,26 +2374,156 @@ func _ensure_chart_highlights() -> void:
 
 
 func _finish_deferred_update_ui() -> void:
+	var _perf_deferred_t := PerfTrace.begin("perf.load.victory.deferred")
+	print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui entered is_inside_tree=%s song_path=%s" % [str(is_inside_tree()), str(song_info.get("path",""))])
 	if not is_inside_tree():
+		print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui early_return reason=not_inside_tree_1")
+		PerfTrace.end("perf.load.victory.deferred", _perf_deferred_t)
 		return
 	await get_tree().process_frame
 	if not is_inside_tree():
+		print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui early_return reason=not_inside_tree_2")
+		PerfTrace.end("perf.load.victory.deferred", _perf_deferred_t)
 		return
+	var _perf_phase1_t := PerfTrace.begin("perf.load.victory.deferred_phase1")
 	_refresh_cover_texture()
 	_refresh_chart_difficulty_display()
+	PerfTrace.end("perf.load.victory.deferred_phase1", _perf_phase1_t)
 	await get_tree().process_frame
 	if not is_inside_tree():
+		print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui early_return reason=not_inside_tree_3")
+		PerfTrace.end("perf.load.victory.deferred", _perf_deferred_t)
 		return
+	var _perf_phase2_t := PerfTrace.begin("perf.load.victory.deferred_phase2")
 	_setup_accuracy_chart()
 	var song_path_early := str(song_info.get("path", ""))
 	if song_path_early != "" and _chart_baseline.is_empty():
 		_chart_baseline = _capture_chart_baseline(song_path_early)
+	PerfTrace.end("perf.load.victory.deferred_phase2", _perf_phase2_t)
 	await get_tree().process_frame
+	print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui before _persist is_inside_tree=%s" % str(is_inside_tree()))
 	if is_inside_tree():
+		print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui calling _persist_run_results")
+		var _perf_persist_t := PerfTrace.begin("perf.load.victory.persist")
 		_persist_run_results()
+		PerfTrace.end("perf.load.victory.persist", _perf_persist_t)
+		_notify_auto_saved_replay()
+	else:
+		print("[RUN PIPELINE] VictoryScreen._finish_deferred_update_ui SKIPPED _persist reason=not_inside_tree_4")
+	PerfTrace.end("perf.load.victory.deferred", _perf_deferred_t)
+
+
+func _refresh_save_run_replay_button() -> void:
+	if save_run_replay_button == null:
+		return
+	var has_source := _has_replay_export_source()
+	save_run_replay_button.visible = has_source
+	if not has_source:
+		return
+	# Single button dual-state: SAVE → WATCH after exact current run is saved (file exists)
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	var can_watch := replay_path != "" and (FileAccess.file_exists(replay_path) or FileAccess.file_exists(ProjectSettings.globalize_path(replay_path)))
+	if can_watch:
+		var txt := tr("REPLAY_WATCH_BUTTON")
+		if txt == "REPLAY_WATCH_BUTTON" or txt.strip_edges() == "":
+			txt = "WATCH REPLAY"
+		save_run_replay_button.text = txt.to_upper()
+		save_run_replay_button.disabled = false
+		var tip := tr("REPLAY_WATCH_BUTTON_TOOLTIP")
+		save_run_replay_button.tooltip_text = tip if tip != "REPLAY_WATCH_BUTTON_TOOLTIP" and tip.strip_edges() != "" else "Watch exact replay of this run"
+		UiIconHelper.configure_button_icon(save_run_replay_button, "eye.svg", Color(0.72, 0.58, 0.95, 1.0))
+	else:
+		save_run_replay_button.text = tr("REPLAY_SAVE_BUTTON").to_upper()
+		save_run_replay_button.disabled = false
+		var tip_save := tr("REPLAY_SAVE_BUTTON_TOOLTIP")
+		save_run_replay_button.tooltip_text = tip_save if tip_save != "REPLAY_SAVE_BUTTON_TOOLTIP" and tip_save.strip_edges() != "" else "Save replay to file"
+		UiIconHelper.configure_button_icon(save_run_replay_button, "rotate-ccw.svg", Color(0.45, 0.78, 0.98, 1.0))
+
+
+func _has_replay_export_source() -> bool:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path != "":
+		return true
+	var payload: Variant = song_info.get("replay_payload", {})
+	return payload is Dictionary and not (payload as Dictionary).is_empty()
+
+
+func _has_saved_replay() -> bool:
+	# Source of truth: a non-empty replay_path is set only after the replay was
+	# actually written to disk (auto-save via _finalize_replay_recording, or a
+	# successful manual save via _on_manual_replay_saved).
+	return str(song_info.get("replay_path", "")).strip_edges() != ""
+
+
+func _replay_export_payload() -> Dictionary:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path != "":
+		var abs := ProjectSettings.globalize_path(replay_path)
+		return _RfrCodec.read_file(abs)
+	var payload: Variant = song_info.get("replay_payload", {})
+	if payload is Dictionary:
+		return (payload as Dictionary).duplicate(true)
+	return {}
+
+
+func _has_watch_replay_available() -> bool:
+	# Helper for exact current run — file exists OR in-memory payload (auto-save off)
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path != "":
+		if FileAccess.file_exists(replay_path) or FileAccess.file_exists(ProjectSettings.globalize_path(replay_path)):
+			return true
+		var payload_fallback: Variant = song_info.get("replay_payload", {})
+		if payload_fallback is Dictionary and not (payload_fallback as Dictionary).is_empty():
+			return true
+		return false
+	var payload: Variant = song_info.get("replay_payload", {})
+	return payload is Dictionary and not (payload as Dictionary).is_empty()
+
+
+func _notify_auto_saved_replay() -> void:
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	if replay_path == "":
+		return
+	_refresh_save_run_replay_button()
+	_StatusToast.show_from_node(self, "replay", tr("REPLAY_SAVED_AUTO_TOAST"), "success")
+
+
+func _on_save_run_replay_pressed() -> void:
+	# Single button: SAVE → WATCH. If already saved/watchable, open exact current run replay.
+	var replay_path := str(song_info.get("replay_path", "")).strip_edges()
+	var can_watch := replay_path != "" and (FileAccess.file_exists(replay_path) or FileAccess.file_exists(ProjectSettings.globalize_path(replay_path)))
+	if can_watch:
+		MusicManager.play_select_sound()
+		if _ReplayLauncher.open_replay_path(self, replay_path):
+			return
+		# File exists but open failed (invalid) — try payload fallback
+		var payload_fb := _replay_export_payload()
+		if not payload_fb.is_empty():
+			_ReplayLauncher.launch_payload(self, payload_fb, replay_path)
+		return
+	# Not yet saved (or file missing) → existing save flow
+	var payload := _replay_export_payload()
+	if payload.is_empty():
+		return
+	var default_name := str(song_info.get("replay_path", "")).get_file()
+	if default_name == "":
+		default_name = _ReplayStore.default_filename(payload)
+	_ReplayLauncher.save_file_dialog(self, default_name, payload, _on_manual_replay_saved)
+
+
+func _on_manual_replay_saved(saved_path: String) -> void:
+	var path := saved_path.strip_edges()
+	if path == "":
+		return
+	song_info["replay_path"] = path
+	_refresh_save_run_replay_button()
 
 
 func _persist_run_results() -> void:
+	if song_info.get("debug_win_no_save", false) or song_info.get("is_test_preview", false):
+		print("[RUN PIPELINE] VictoryScreen._persist_run_results SKIPPED debug_win_no_save")
+		return
+	print("[RUN PIPELINE] VictoryScreen._persist_run_results entered song_path=%s play_mode=%s results_manager_null=%s modifiers_block=%s" % [str(song_info.get("path","")), str(song_info.get("play_mode","")), str(results_manager==null), str(_modifiers_block_rewards())])
 	PlayerDataManager.add_hit_notes(hit_notes_this_level)
 	PlayerDataManager.add_missed_notes(calculated_missed_notes)
 	PlayerDataManager.add_currency(earned_currency)
@@ -1999,6 +2561,7 @@ func _persist_run_results() -> void:
 		and song_info.get("path")
 		and not _modifiers_block_rewards()
 	)
+	print("[RUN PIPELINE] VictoryScreen should_save_result_later=%s results_manager_null=%s song_info_empty=%s path=%s block_rewards=%s" % [str(should_save_result_later), str(results_manager==null), str(song_info.is_empty()), str(song_info.get("path","")), str(_modifiers_block_rewards())])
 	var song_path = song_info.get("path", "")
 	var final_grade = _calculate_grade()
 	var is_repeat_ss := final_grade == "SS" and GradeDisplay.is_repeat_ss_on_track(song_path)
@@ -2016,11 +2579,17 @@ func _persist_run_results() -> void:
 	if song_path != "" and _chart_baseline.is_empty():
 		_chart_baseline = _capture_chart_baseline(song_path)
 	if should_save_result_later:
-		var instrument_for_result = song_info.get("instrument", "standard")
-		if instrument_for_result == "drums":
-			instrument_for_result = "Перкуссия"
+		var instrument_for_result := str(song_info.get("instrument", "drums")).strip_edges().to_lower()
+		if instrument_for_result in ["", "standard", "стандарт", "перкуссия", "percussion"]:
+			instrument_for_result = "drums"
+		elif instrument_for_result == "бас":
+			instrument_for_result = "bass"
+		# Defense-in-depth: series modes skip victory, but never write museum rows if tagged.
+		var play_mode := str(song_info.get("play_mode", "")).strip_edges().to_lower()
+		var save_to_museum := play_mode not in ["endless", "marathon"]
 		var result_datetime_for_result = _TimeUtils.now_local_datetime_string()
-		var mode_for_result = str(song_info.get("mode", ""))
+		print("[TIME TRACE] stage=VictoryScreen_result_datetime unix=%d local=%s utc=%s src_datetime=%s unix_from_src=%d file=results/*.json offset=%d" % [Time.get_unix_time_from_system(), Time.get_datetime_string_from_system(false), Time.get_datetime_string_from_system(true), result_datetime_for_result, _TimeUtils.unix_from_local_iso_datetime(result_datetime_for_result), _TimeUtils._local_wall_clock_unix_offset()])
+		var mode_for_result := _RhythmRating.normalize_mode(str(song_info.get("mode", "basic")))
 		var run_modifiers: Array = song_info.get("modifiers", [])
 		if not run_modifiers is Array:
 			run_modifiers = []
@@ -2035,25 +2604,43 @@ func _persist_run_results() -> void:
 		var title_for_result := str(song_info.get("title", ""))
 		var artist_for_result := str(song_info.get("artist", ""))
 		var lanes_for_result := int(song_info.get("lanes", 4))
-		var medals_new: Array = results_manager.save_result_for_song(
-			song_info.get("path", ""), 
-			instrument_for_result,          
-			score,                    
-			accuracy,                  
-			final_grade,                   
-			grade_color_for_result,              
-			result_datetime_for_result,
-			mode_for_result,
-			is_repeat_ss,
-			medals_earned,
-			run_modifiers,
-			full_combo_for_result,
-			max_combo,
-			chart_rating_for_run,
-			title_for_result,
-			artist_for_result,
-			lanes_for_result
-		)
+		var play_sec_for_result := int(song_info.get("duration_sec", song_info.get("duration", 0)))
+		if play_sec_for_result <= 0:
+			play_sec_for_result = int(round(float(song_info.get("length", 0))))
+		if play_sec_for_result <= 0 and SongLibrary:
+			var md := SongLibrary.get_metadata_for_song(str(song_info.get("path", "")))
+			if md is Dictionary:
+				play_sec_for_result = int(round(ChartDifficultyAnalyzer.parse_duration_seconds(md.get("duration", "00:00"))))
+		
+		
+		print("[RUN PIPELINE] VictoryScreen save_to_museum=%s play_mode=%s will_call_save=%s" % [str(save_to_museum), str(play_mode), str(save_to_museum)])
+		var medals_new: Array = []
+		if save_to_museum:
+			print("[RUN PIPELINE] VictoryScreen calling save_result_for_song path=%s date=%s" % [str(song_info.get("path","")), result_datetime_for_result])
+			# QOL-RES-02 exact: persistent replay_path only (payload ignored when OFF)
+			var exact_replay_path := str(song_info.get("replay_path", "")).strip_edges()
+			medals_new = results_manager.save_result_for_song(
+				song_info.get("path", ""),
+				instrument_for_result,
+				score,
+				accuracy,
+				final_grade,
+				grade_color_for_result,
+				result_datetime_for_result,
+				mode_for_result,
+				is_repeat_ss,
+				medals_earned,
+				run_modifiers,
+				full_combo_for_result,
+				max_combo,
+				chart_rating_for_run,
+				title_for_result,
+				artist_for_result,
+				lanes_for_result,
+				run_rr,
+				play_sec_for_result,
+				exact_replay_path
+			)
 		_first_clear_this_run = false
 		for medal_id in medals_new:
 			if str(medal_id) == _TrackMedals.ID_FIRST_CLEAR:
@@ -2062,25 +2649,27 @@ func _persist_run_results() -> void:
 		_medals_new_run = medals_new.duplicate()
 		if _run_highlights.is_empty():
 			_run_highlights = _compute_run_highlights(_chart_baseline)
-		_notify_profile_milestones(
-			song_path,
-			str(song_info.get("instrument", "standard")),
-			mode_for_result,
-			lanes_for_result,
-			run_modifiers,
-			accuracy,
-			final_grade,
-			chart_rating_for_run,
-			full_combo_for_result,
-			max_combo,
-			score,
-			title_for_result,
-			artist_for_result,
-			result_datetime_for_result,
-			medals_new
-		)
+		if save_to_museum:
+			_notify_profile_milestones(
+				song_path,
+				instrument_for_result,
+				mode_for_result,
+				lanes_for_result,
+				run_modifiers,
+				accuracy,
+				final_grade,
+				chart_rating_for_run,
+				full_combo_for_result,
+				max_combo,
+				score,
+				title_for_result,
+				artist_for_result,
+				result_datetime_for_result,
+				medals_new
+			)
 
 	else:
+		print("[RUN PIPELINE] VictoryScreen should_save_result_later=false SKIPPED save_to_museum song_path=%s play_mode=%s" % [str(song_path), str(song_info.get("play_mode",""))])
 		_medals_new_run = []
 		if _run_highlights.is_empty():
 			_run_highlights = _compute_run_highlights(_chart_baseline)
@@ -2102,8 +2691,10 @@ func _persist_run_results() -> void:
 			if achievement_manager:
 				achievement_manager.notification_mgr = game_engine
 
+	print("[RUN PIPELINE] VictoryScreen before add_session_result game_engine_null=%s has_method=%s" % [str(game_engine==null), str(game_engine!=null and game_engine.has_method("get_results_history_service"))])
 	if game_engine and game_engine.has_method("get_results_history_service"):
 		var results_service = game_engine.get_results_history_service()
+		print("[RUN PIPELINE] VictoryScreen results_service_null=%s will_add_session=%s" % [str(results_service==null), str(results_service!=null)])
 		if results_service:
 			var instrument_type_for_history = song_info.get("instrument", "standard")
 			if instrument_type_for_history == "drums":
@@ -2111,9 +2702,15 @@ func _persist_run_results() -> void:
 			var grade_for_history = final_grade
 			var grade_color_for_history = grade_color_for_result
 			var current_time_string = _TimeUtils.now_local_datetime_string()
+			print("[TIME TRACE] stage=VictoryScreen_session_datetime unix=%d local=%s utc=%s src_datetime=%s unix_from_src=%d file=session_history.json offset=%d" % [Time.get_unix_time_from_system(), Time.get_datetime_string_from_system(false), Time.get_datetime_string_from_system(true), current_time_string, _TimeUtils.unix_from_local_iso_datetime(current_time_string), _TimeUtils._local_wall_clock_unix_offset()])
 			var artist := str(song_info.get("artist", ""))
 			var title := str(song_info.get("title", ""))
 			var resolved := _resolve_session_track_labels(song_path, title, artist)
+			var mode_for_history := _RhythmRating.normalize_mode(str(song_info.get("mode", "basic")))
+			var run_modifiers: Array = song_info.get("modifiers", [])
+			if not run_modifiers is Array:
+				run_modifiers = []
+			var lanes_for_history := int(song_info.get("lanes", 4))
 			results_service.add_session_result(
 				accuracy,
 				current_time_string,
@@ -2121,12 +2718,15 @@ func _persist_run_results() -> void:
 				grade_color_for_history,
 				instrument_type_for_history,
 				score,
-				resolved.artist,
-				resolved.title,
-				is_repeat_ss,
-				run_rr,
-				song_path,
-			)
+					resolved.artist,
+					resolved.title,
+					is_repeat_ss,
+					run_rr,
+					song_path,
+					mode_for_history,
+					run_modifiers,
+					lanes_for_history
+				)
 
 	if achievement_system:
 		achievement_system.on_level_completed(
@@ -2164,6 +2764,22 @@ func _persist_run_results() -> void:
 		achievement_manager.clear_new_mastery_achievements()
 
 	PlayerDataManager.add_xp(earned_xp)
+	var activity_mode := _RhythmRating.normalize_mode(str(song_info.get("mode", "basic")))
+	var play_sec := int(song_info.get("duration_sec", song_info.get("duration", 0)))
+	if play_sec <= 0:
+		play_sec = int(round(float(song_info.get("length", 0))))
+	print("[RUN PIPELINE] VictoryScreen before record_activity_run grade=%s play_mode=%s instrument=%s activity_mode=%s play_sec=%d" % [str(final_grade), str(song_info.get("play_mode","")), str(song_info.get("instrument","")), str(activity_mode), play_sec])
+	print("[RUN PIPELINE] VictoryScreen calling record_activity_run grade=%s mode=%s play_sec=%d" % [str(final_grade), str(activity_mode), play_sec])
+	PlayerDataManager.record_activity_run({
+		"grade": final_grade,
+		"mode": activity_mode,
+		"instrument": str(song_info.get("instrument", "drums")),
+		"play_seconds": maxi(0, play_sec),
+		"currency_earned": maxi(0, int(earned_currency)),
+		"cleared": true,
+		"score": int(score),
+		"max_combo": int(max_combo),
+	})
 	# Единственная немедленная запись на диск за весь блок: остальные мутации данных
 	# планируют отложенный дебаунс-сейв, а здесь мы форсируем их разом.
 	PlayerDataManager.flush_save()
@@ -2287,10 +2903,13 @@ func _reveal_grade():
 	_setup_lane_stats()
 	_play_pb_banner_reveal()
 	_setup_recommendation()
+	call_deferred("_refresh_rewards_chevron_visibility")
 	call_deferred("_maybe_show_victory_tutorial")
 
 
 func _maybe_show_victory_tutorial(force: bool = false) -> void:
+	if FirstStepsManager and FirstStepsManager.is_active():
+		return
 	if not SettingsManager or not SettingsManager.has_method("get_tutorial_victory_done"):
 		return
 	if not force and SettingsManager.get_tutorial_victory_done():
@@ -2333,6 +2952,69 @@ func _maybe_show_victory_tutorial(force: bool = false) -> void:
 func _on_victory_tutorial_closed() -> void:
 	if SettingsManager and SettingsManager.has_method("set_tutorial_victory_done"):
 		SettingsManager.set_tutorial_victory_done(true)
+
+
+func _on_first_steps_completed() -> void:
+	# Карточка-рекомендация после завершения «Первых шагов»: туториал закончен
+	# на шаге «Результат», практика — самостоятельная возможность.
+	call_deferred("_show_first_steps_done_card")
+
+
+func _show_first_steps_done_card() -> void:
+	if _first_steps_done_card != null and is_instance_valid(_first_steps_done_card):
+		return
+	var dim := ColorRect.new()
+	dim.name = "FirstStepsDoneDim"
+	dim.color = Color(0.0, 0.0, 0.0, 0.6)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.add_child(center)
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", AppOverlayStyles.tutorial_panel())
+	panel.custom_minimum_size = Vector2(460, 0)
+	center.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 28)
+	margin.add_theme_constant_override("margin_right", 28)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
+	panel.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	margin.add_child(vbox)
+	var title := Label.new()
+	title.text = tr("FIRST_STEPS_DONE_TITLE")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", AppOverlayStyles.tutorial_accent_color())
+	vbox.add_child(title)
+	var body := Label.new()
+	body.text = tr("FIRST_STEPS_DONE_BODY")
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.add_theme_font_size_override("font_size", 15)
+	vbox.add_child(body)
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 12)
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(buttons)
+	var close_btn := Button.new()
+	close_btn.text = tr("FIRST_STEPS_DONE_CLOSE")
+	close_btn.theme_type_variation = &"FlatButtonOrange"
+	close_btn.custom_minimum_size = Vector2(160, 48)
+	close_btn.pressed.connect(_hide_first_steps_done_card)
+	buttons.add_child(close_btn)
+	_first_steps_done_card = dim
+
+
+func _hide_first_steps_done_card() -> void:
+	if _first_steps_done_card != null and is_instance_valid(_first_steps_done_card):
+		_first_steps_done_card.queue_free()
+	_first_steps_done_card = null
 
 
 func debug_show_tutorial() -> void:
@@ -2383,3 +3065,4 @@ func _resolve_session_track_labels(song_path: String, title: String, artist: Str
 	if out_artist == "":
 		out_artist = "N/A"
 	return {"title": out_title, "artist": out_artist}
+

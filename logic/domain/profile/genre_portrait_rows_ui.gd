@@ -1,4 +1,4 @@
-# logic/utils/genre_portrait_rows_ui.gd
+# logic/domain/profile/genre_portrait_rows_ui.gd
 extends RefCounted
 class_name GenrePortraitRowsUi
 

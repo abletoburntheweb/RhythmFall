@@ -1,8 +1,9 @@
-# scenes/song_select/generation_select_card.gd
+# scenes/song_select/components/generation_select_card.gd
 extends Button
 class_name GenerationSelectCard
 
 const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 signal card_selected(card_id: String)
 
@@ -112,6 +113,7 @@ func setup(
 	accent_color: Color = UiIconHelper.ACCENT,
 	subtitle_text: String = ""
 ) -> void:
+	var _perf_card_setup := PerfTrace.begin("perf.detail.song_select.chart_style.cards.card.setup")
 	_bind_nodes()
 	_reset_custom_title_display()
 	card_id = p_id
@@ -134,8 +136,11 @@ func setup(
 	_badge_base_text = badge_text
 	_apply_badge_text()
 	_apply_locked_visual()
+	var _perf_card_style := PerfTrace.begin("perf.detail.song_select.chart_style.cards.card.stylebox")
 	_sync_style()
+	PerfTrace.end("perf.detail.song_select.chart_style.cards.card.stylebox", _perf_card_style)
 	_queue_sync_style()
+	PerfTrace.end("perf.detail.song_select.chart_style.cards.card.setup", _perf_card_setup)
 
 
 func set_recommended(on: bool) -> void:
@@ -335,9 +340,11 @@ func _ensure_custom_title_rich() -> RichTextLabel:
 
 
 func _sync_icon_visual(selected: bool) -> void:
+	var _perf_card_icon := PerfTrace.begin("perf.detail.song_select.chart_style.cards.card.icon")
 	if _icon_rect == null or _icon_file.strip_edges() == "":
 		if _icon_rect:
 			_icon_rect.visible = false
+		PerfTrace.end("perf.detail.song_select.chart_style.cards.card.icon", _perf_card_icon)
 		return
 	var tint := UiIconHelper.MUTED if _is_locked else (_accent_color.lightened(0.12) if selected else _accent_color)
 	_icon_rect.texture = UiIconHelper.load_tinted_icon(_icon_file, tint)
@@ -347,3 +354,4 @@ func _sync_icon_visual(selected: bool) -> void:
 		var alpha := _FRAME_SELECTED_ALPHA if selected and not _is_locked else _FRAME_NORMAL_ALPHA
 		_icon_frame_box.bg_color = Color(tint.r, tint.g, tint.b, alpha)
 		_icon_frame.add_theme_stylebox_override("panel", _icon_frame_box)
+	PerfTrace.end("perf.detail.song_select.chart_style.cards.card.icon", _perf_card_icon)

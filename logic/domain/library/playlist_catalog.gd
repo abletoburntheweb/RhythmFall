@@ -107,12 +107,11 @@ static func normalize_view_filter(raw: Variant) -> Dictionary:
 	var goals := _sanitize_string_list(src.get("goals", []), _GoalDiff.GOALS)
 	if goals.is_empty():
 		goals = [_GoalDiff.DEFAULT_GOAL]
-	elif goals.size() > 1:
-		goals = [goals[0]]
 	out["goals"] = goals
 	out["difficulties"] = _sanitize_string_list(src.get("difficulties", []), _GoalDiff.DIFFICULTIES)
 	if out["difficulties"].is_empty():
 		out["difficulties"] = _GoalDiff.DIFFICULTIES.duplicate()
+	# Original has no difficulty tiers — keep stored diffs only for Arcade stems.
 	var inst := str(src.get("instrument", "drums")).strip_edges().to_lower()
 	out["instrument"] = inst if inst != "" else "drums"
 	out["lanes"] = clampi(int(src.get("lanes", 4)), 1, 8)
@@ -298,6 +297,95 @@ static func create_playlist(name: String) -> String:
 	return id
 
 
+static func duplicate_playlist(playlist_id: String) -> String:
+	if PlayerDataManager == null:
+		return ""
+	var pid := str(playlist_id).strip_edges()
+	if not is_user_playlist(pid):
+		return ""
+	var src := playlist_raw(pid)
+	if src.is_empty():
+		return ""
+	var base_name := str(src.get("name", "")).strip_edges()
+	if base_name == "":
+		base_name = TranslationServer.translate("PLAYLIST_DEFAULT_NAME")
+	# Handle name collision: "Name copy", "Name copy (1)", etc.
+	var new_name := base_name
+	var fmt_copy: String = TranslationServer.translate("PLAYLIST_DUPLICATE_NAME_FMT")
+	if fmt_copy == "PLAYLIST_DUPLICATE_NAME_FMT" or fmt_copy.strip_edges() == "":
+		fmt_copy = "%s (copy)"
+	var candidate := fmt_copy % base_name
+	# Check existing names
+	var existing_names: Dictionary = {}
+	for entry in all_playlists():
+		existing_names[str(entry.get("name", "")).strip_edges()] = true
+	if not existing_names.has(candidate):
+		new_name = candidate
+	else:
+		var idx := 1
+		while true:
+			var try_name := "%s (%d)" % [candidate, idx]
+			# For first collision, try "Name copy (1)" etc, fallback to "Name (1)"
+			if not existing_names.has(try_name):
+				new_name = try_name
+				break
+			idx += 1
+			if idx > 99:
+				new_name = "%s_%d" % [base_name, int(Time.get_unix_time_from_system()) % 10000]
+				break
+	var new_id := "pl_%d" % int(Time.get_unix_time_from_system() * 1000.0 + randi() % 1000)
+	# Ensure uniqueness
+	while is_valid_playlist_id(new_id):
+		new_id = "pl_%d" % int(Time.get_unix_time_from_system() * 1000.0 + randi() % 1000 + 1)
+	var new_entry := normalize_entry({
+		"id": new_id,
+		"name": new_name,
+		"entries": (src.get("entries", []) as Array).duplicate(true),
+		"view_filter": (src.get("view_filter", {}) as Dictionary).duplicate(true),
+		"preserve_order": bool(src.get("preserve_order", true)),
+	})
+	# Do not copy activity
+	PlayerDataManager.save_playlist(new_entry)
+	return new_id
+
+
+static func move_playlist(playlist_id: String, delta: int) -> bool:
+	if PlayerDataManager == null:
+		return false
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or pid == BUILTIN_FAVORITES_ID:
+		return false
+	if not is_user_playlist(pid):
+		return false
+	if delta == 0:
+		return false
+	var raw_list: Array = PlayerDataManager.get_user_playlists()
+	# raw_list is Array of Dictionary as stored
+	var idx := -1
+	for i in range(raw_list.size()):
+		var item: Variant = raw_list[i]
+		if item is Dictionary and str((item as Dictionary).get("id", "")).strip_edges() == pid:
+			idx = i
+			break
+	if idx < 0:
+		return false
+	var new_idx := clampi(idx + delta, 0, raw_list.size() - 1)
+	if new_idx == idx:
+		return false
+	var entry: Variant = raw_list[idx]
+	raw_list.remove_at(idx)
+	raw_list.insert(new_idx, entry)
+	PlayerDataManager.data["user_playlists"] = raw_list
+	if PlayerDataManager.has_method("_save"):
+		PlayerDataManager._save()
+	elif PlayerDataManager.has_method("flush_save"):
+		PlayerDataManager.flush_save()
+	else:
+		# Fallback: trigger save via save_playlist no-op
+		pass
+	return true
+
+
 static func toggle_song_entry(playlist_id: String, song_path: String, chart_stem: String = "") -> bool:
 	var pid := str(playlist_id).strip_edges()
 	if not is_user_playlist(pid):
@@ -404,3 +492,70 @@ static func _sanitize_paths(raw: Variant) -> Array[String]:
 				continue
 			out.append(path)
 	return out
+
+
+## Endless playlist activity (launches + clears inside those runs).
+static func get_activity(playlist_id: String) -> Dictionary:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var root: Variant = PlayerDataManager.data.get("playlist_activity", {})
+	if root is not Dictionary:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var entry: Variant = (root as Dictionary).get(pid, {})
+	if entry is not Dictionary:
+		return {"run_count": 0, "session_clears": 0, "last_played": ""}
+	var d := entry as Dictionary
+	return {
+		"run_count": maxi(0, int(d.get("run_count", 0))),
+		"session_clears": maxi(0, int(d.get("session_clears", 0))),
+		"last_played": str(d.get("last_played", "")).strip_edges(),
+	}
+
+
+static func _ensure_activity_root() -> Dictionary:
+	if PlayerDataManager == null:
+		return {}
+	if not PlayerDataManager.data.has("playlist_activity") \
+		or not PlayerDataManager.data["playlist_activity"] is Dictionary:
+		PlayerDataManager.data["playlist_activity"] = {}
+	return PlayerDataManager.data["playlist_activity"] as Dictionary
+
+
+static func _write_activity_entry(playlist_id: String, entry: Dictionary) -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var root := _ensure_activity_root()
+	root[pid] = entry
+	PlayerDataManager.data["playlist_activity"] = root
+	if PlayerDataManager.has_method("flush_save"):
+		PlayerDataManager.flush_save()
+
+
+static func record_playlist_run(playlist_id: String, datetime_iso: String = "") -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var prev := get_activity(pid)
+	var iso := datetime_iso.strip_edges()
+	if iso == "":
+		iso = TimeUtils.now_local_datetime_string() if typeof(TimeUtils) != TYPE_NIL else ""
+	_write_activity_entry(pid, {
+		"run_count": int(prev.get("run_count", 0)) + 1,
+		"session_clears": int(prev.get("session_clears", 0)),
+		"last_played": iso if iso != "" else str(prev.get("last_played", "")),
+	})
+
+
+static func record_playlist_session_clear(playlist_id: String) -> void:
+	var pid := str(playlist_id).strip_edges()
+	if pid == "" or PlayerDataManager == null:
+		return
+	var prev := get_activity(pid)
+	var iso := TimeUtils.now_local_datetime_string() if typeof(TimeUtils) != TYPE_NIL else ""
+	_write_activity_entry(pid, {
+		"run_count": int(prev.get("run_count", 0)),
+		"session_clears": int(prev.get("session_clears", 0)) + 1,
+		"last_played": iso if iso != "" else str(prev.get("last_played", "")),
+	})

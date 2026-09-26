@@ -5,23 +5,23 @@ const INT64_MAX := 9223372036854775807
 const MAX_INPUT_DELTA := 1000000000
 
 func _ready():
-	call_deferred("_register_console")
-
-func _register_console() -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	if not c:
-		push_warning("DebugCommands: Console autoload не найден")
-		return
-	_remove_aliases(c)
-	_register(c)
-	_refresh_autocomplete(c)
+	if c:
+		_remove_aliases(c)
+		_register(c)
+		_refresh_autocomplete(c)
 
 func _register(c):
 	c.add_command("achievement.unlock", _ach_unlock, ["id"], 1, "Разблокировать достижение по id")
+	c.add_command("achievement.unlock_random", _ach_unlock_random, [], 0, "Разблокировать случайное заблокированное достижение")
 	c.add_command("achievement.show", _ach_show, ["id"], 1, "Поставить попап достижения в очередь")
+	c.add_command("achievement.show_random", _ach_show_random, ["count"], 0, "Показать случайное достижение (1 или N) без разблокировки")
+	c.add_command("notification.show_random", _notif_show_random, ["count"], 0, "Показать случайные обычные уведомления (1 или N)")
+	c.add_command("notification.show_scan", _notif_show_scan, [], 0, "Тест сканирования: show_operation -> success")
 	c.add_command("achievement.resync", _ach_resync, [], 0, "Пересчитать все достижения")
 	c.add_command("achievement.queue_size", _ach_queue_size, [], 0, "Размер очереди ачивок")
 	c.add_command("achievement.clear_queue", _ach_clear_queue, [], 0, "Очистить очередь ачивок")
+	c.add_command("event.status", _event_status, [], 0, "Диагностика событий: дата и окна event-достижений (только чтение)")
 	c.add_command("player.currency.add", _player_add_currency, ["amount"], 1, "Добавить валюту")
 	c.add_command("player.currency.set", _player_set_currency, ["amount"], 1, "Установить валюту")
 	c.add_command("player.playtime.add_minutes", _player_add_minutes, ["minutes"], 1, "Добавить минуты времени")
@@ -39,50 +39,46 @@ func _register(c):
 	c.add_command("daily.complete_all", _daily_complete_all, [], 0, "Завершить все текущие ежедневки")
 	c.add_command("daily.load_all", _daily_load_all, [], 0, "Загрузить все ежедневки из daily_quests.json на сегодня")
 	c.add_command("game.info", _game_info, [], 0, "Показать параметры текущей игры")
-	c.add_command("game.score.add_1000", _game_score_add_1000, [], 0, "Добавить 1000 очков с множителем")
-	c.add_command("game.score.sub_1000", _game_score_sub_1000, [], 0, "Уменьшить счёт на 1000")
-	c.add_command("game.combo.add_10", _game_combo_add_10, [], 0, "Добавить 10 к комбо")
 	c.add_command("game.score.add", _game_score_add, ["amount"], 1, "Добавить очки с множителем")
 	c.add_command("game.score.sub", _game_score_sub, ["amount"], 1, "Уменьшить счёт на значение")
 	c.add_command("game.combo.add", _game_combo_add, ["amount"], 1, "Добавить к комбо")
 	c.add_command("game.combo.sub", _game_combo_sub, ["amount"], 1, "Уменьшить комбо")
-	c.add_command("game.seek_to_no_notes", _game_seek_to_no_notes, [], 0, "Переместиться к концу песни без нот")
+	c.add_command("game.seek.no_notes", _game_seek_to_no_notes, [], 0, "Переместиться к концу песни без нот")
 	c.add_command("game.seek", _game_seek_to_time, ["pos"], 1, "Переместиться к позиции (сек или MM:SS)")
+	c.add_command("game.seek.section", _game_seek_section, ["number"], 1, "Переместиться к началу секции (1-based, из sections.rfd)")
+	c.add_command("game.seek.intro", _game_seek_intro, [], 0, "Переместиться к intro секции")
+	c.add_command("game.seek.outro", _game_seek_outro, [], 0, "Переместиться к outro секции")
+	c.add_command("game.seek.random", _game_seek_random, [], 0, "Переместиться к случайной секции")
+	c.add_command("chart.sections", _chart_sections, [], 0, "Показать canonical секции текущего чарта (sections.rfd)")
 	c.add_command("game.accuracy.set", _game_accuracy_set, ["percent"], 1, "Установить точность 0-100")
 	c.add_command("game.win", _game_win, ["accuracy"], 0, "Симулировать победу (опционально точность)")
+	c.add_command("game.win_nosave", _game_win_nosave, ["accuracy"], 0, "Симулировать победу без сохранения (опционально точность)")
+	c.add_command("game.series.win", _game_series_win, ["accuracy"], 0, "Выживание/марафон: очистить трек и перейти дальше (точность 0-100)")
 	c.add_command("game.autoplay.status", _game_autoplay_status, [], 0, "Показать состояние автоигры")
-	c.add_command("game.autoplay.late_ms", _game_autoplay_late_ms, ["ms"], 0, "Смещение автоплея в мс (0=Perfect, ~80=Good на EZ / Miss на ST)")
-	c.add_command("game.autoplay_late", _game_autoplay_late_ms, ["ms"], 0, "То же что game.autoplay.late_ms")
-	c.add_command("game.autoplay", _game_autoplay_router, ["sub", "value"], 0, "Автоигра: toggle | status | late_ms <ms>")
-	c.add_command("mod.preview.ez", _mod_preview_ez, [], 0, "Превью Easy Windows: мод + автоплей + окна + overlay")
-	c.add_command("mod.preview.st", _mod_preview_st, [], 0, "Превью Strict Timing: мод + автоплей + окна + overlay")
+	c.add_command("game.autoplay", _game_autoplay_toggle, [], 0, "Переключить автоигру")
 	c.add_command("diag.verify_data", _diag_verify_data, [], 0, "Проверить целостность пользовательских данных")
-	c.add_command("timing.debug.status", _timing_debug_status, [], 0, "Флаги отладки тайминга (Experimental → Debug или settings.json)")
-	c.add_command("timing.debug.log", _timing_debug_log_toggle, [], 0, "Переключить CSV user://timing_hit_debug.csv и [TimingDebug]")
-	c.add_command("timing.debug.overlay", _timing_debug_overlay_toggle, [], 0, "Переключить жёлтый оверлей latency/drift")
-	c.add_command("timing.autoplay.windows", _timing_autoplay_windows_toggle, [], 0, "Автоплей с теми же окнами ±мс что и игрок")
+	c.add_command("timing.debug.status", _timing_debug_status, [], 0, "Флаги отладки тайминга (только до перезапуска игры, не в settings.json)")
+	c.add_command("timing.debug.log", _timing_debug_log_toggle, [], 0, "Переключить CSV user://timing_hit_debug.csv и [TimingDebug] (сессия)")
+	c.add_command("timing.debug.overlay", _timing_debug_overlay_toggle, [], 0, "Переключить оверлей latency/drift (сессия)")
+	c.add_command("timing.autoplay.windows", _timing_autoplay_windows_toggle, [], 0, "Автоплей с теми же окнами ±мс, что и игрок (сессия)")
 	c.add_command("tutorial.song_select.reset", _tutorial_song_select_reset, [], 0, "Сбросить флаг туториала библиотеки песен")
 	c.add_command("tutorial.song_select.show", _tutorial_song_select_show, [], 0, "Сбросить флаг и показать туториал (если открыта библиотека)")
 	c.add_command("tutorial.shop.reset", _tutorial_shop_reset, [], 0, "Сбросить флаг туториала магазина")
 	c.add_command("tutorial.shop.show", _tutorial_shop_show, [], 0, "Сбросить флаг и показать туториал (если открыт магазин)")
-	c.add_command("tutorial.gameplay.reset", Callable(self, "_tutorial_flag_reset").bind("gameplay"), [], 0, "Сбросить флаг туториала геймплея")
-	c.add_command("tutorial.gameplay.show", Callable(self, "_tutorial_flag_show").bind("gameplay"), [], 0, "Показать туториал геймплея на текущем экране")
-	c.add_command("tutorial.victory.reset", Callable(self, "_tutorial_flag_reset").bind("victory"), [], 0, "Сбросить флаг туториала победы")
-	c.add_command("tutorial.victory.show", Callable(self, "_tutorial_flag_show").bind("victory"), [], 0, "Показать туториал победы")
-	c.add_command("tutorial.profile.reset", Callable(self, "_tutorial_flag_reset").bind("profile"), [], 0, "Сбросить флаг туториала профиля")
-	c.add_command("tutorial.profile.show", Callable(self, "_tutorial_flag_show").bind("profile"), [], 0, "Показать туториал профиля")
-	c.add_command("tutorial.calibration.reset", Callable(self, "_tutorial_flag_reset").bind("calibration"), [], 0, "Сбросить флаг туториала калибровки")
-	c.add_command("tutorial.calibration.show", Callable(self, "_tutorial_flag_show").bind("calibration"), [], 0, "Показать туториал калибровки (вкладка Sound)")
-	c.add_command("tutorial.generation_settings.reset", Callable(self, "_tutorial_flag_reset").bind("generation_settings"), [], 0, "Сбросить флаг туториала параметров генерации")
-	c.add_command("tutorial.generation_settings.show", Callable(self, "_tutorial_flag_show").bind("generation_settings"), [], 0, "Показать туториал попапа параметров генерации")
-	c.add_command("tutorial.rhythm_dna_setting.reset", Callable(self, "_tutorial_flag_reset").bind("rhythm_dna_setting"), [], 0, "Сбросить флаг туториала Rhythm DNA (Experimental)")
-	c.add_command("tutorial.rhythm_dna_setting.show", Callable(self, "_tutorial_flag_show").bind("rhythm_dna_setting"), [], 0, "Показать туториал включения Rhythm DNA")
-	c.add_command("tutorial.rhythm_dna_usage.reset", Callable(self, "_tutorial_flag_reset").bind("rhythm_dna_usage"), [], 0, "Сбросить флаг туториала кнопки Rhythm DNA")
-	c.add_command("tutorial.rhythm_dna_usage.show", Callable(self, "_tutorial_flag_show").bind("rhythm_dna_usage"), [], 0, "Показать туториал кнопки Rhythm DNA в библиотеке")
-	c.add_command("tutorial.modifiers.reset", Callable(self, "_tutorial_flag_reset").bind("modifiers"), [], 0, "Сбросить флаг туториала экрана модификаторов")
-	c.add_command("tutorial.modifiers.show", Callable(self, "_tutorial_flag_show").bind("modifiers"), [], 0, "Показать туториал экрана модификаторов")
-	c.add_command("notice.welcome.reset", _notice_welcome_reset, [], 0, "Сбросить флаг welcome-notice (сервер)")
-	c.add_command("notice.welcome.show", _notice_welcome_show, [], 0, "Сбросить флаг и показать welcome-notice (если открыто главное меню)")
+	c.add_command("tutorial.first_steps.reset", _tutorial_first_steps_reset, [], 0, "Сбросить прогресс обучения «Первые шаги»")
+	c.add_command("tutorial.first_steps.show", _tutorial_first_steps_show, [], 0, "Показать обучение «Первые шаги» с шага 1 (предпросмотр, без данных профиля)")
+	c.add_command("tutorial.first_steps.next", _tutorial_first_steps_next, [], 0, "Следующий шаг предпросмотра «Первые шаги»")
+	c.add_command("tutorial.first_steps.exit", _tutorial_first_steps_exit, [], 0, "Выйти из предпросмотра «Первые шаги»")
+	c.add_command("tutorial.practice.show", _tutorial_practice_show, [], 0, "Сбросить флаг туториала практики (покажется при следующем открытии панели практики)")
+	c.add_command("diary.toast.show", _diary_toast_show, ["kind"], 0, "Показать diary StatusDock toast: first_ss|first_fc|library|mastery|rr|genre_ss")
+	c.add_command("ui.notice.show", _ui_notice_show, ["message"], 0, "Показать AppNoticeOverlay на текущем экране (если есть %NoticeOverlay)")
+	c.add_command("perf.debug", _perf_debug, ["mode"], 0, "Perf debug: off|load|runtime|detail|status (уровень профилирования)")
+	c.add_command("perf.stats", _perf_stats, [], 0, "Показать накопленную PerfTrace статистику (count/avg/min/max)")
+	c.add_command("perf.reset", _perf_reset, [], 0, "Сбросить накопленную PerfTrace статистику")
+	c.add_command("hitfx.debug", _hitfx_debug, ["mode"], 0, "Hit FX: legacy/current/status")
+	c.add_command("debug.empty_state", _debug_empty_state, ["state"], 0, "Empty state debug: on|off|toggle — force Main Menu/Profile to show new-player empty state (runtime only, no save change)")
+	c.add_command("debug.progress", _debug_progress, ["type", "value"], 0, "Progress debug: milestone <id> | genre_mastery <5|10|15|20> | rr_total <25000|50000|100000|250000|500000|1000000> | library <100|500|1000> | off — temporary Activity progress (runtime only)")
+	c.add_command("debug.scenario", _debug_scenario, ["name"], 0, "Scenario debug: activity | off — temporary Main Menu Activity 5-row test set (runtime only)")
 func _remove_aliases(c):
 	c.remove_command("ach.unlock")
 	c.remove_command("ach.show")
@@ -102,6 +98,9 @@ func _refresh_autocomplete(c):
 	if ach_ids.size() > 0:
 		c.add_command_autocomplete_list("achievement.unlock", ach_ids)
 		c.add_command_autocomplete_list("achievement.show", ach_ids)
+	c.add_command_autocomplete_list("diary.toast.show", [
+		"first_ss", "first_fc", "first_track", "library", "mastery", "rr", "genre_ss"
+	])
 	var categories = _get_item_categories()
 	if categories.size() > 0:
 		c.add_command_autocomplete_list("items.activate", categories)
@@ -119,14 +118,18 @@ func _refresh_autocomplete(c):
 	c.add_command_autocomplete_list("stats.hits.add", PackedStringArray(["10","50","100","500"]))
 	c.add_command_autocomplete_list("stats.misses.add", PackedStringArray(["1","5","10","50"]))
 	c.add_command_autocomplete_list("stats.perfect.add", PackedStringArray(["1","5","10","50"]))
-	c.add_command_autocomplete_list("game.seek", PackedStringArray(["30","60","90","120","01:00","01:30","02:00"]))
+	c.add_command_autocomplete_list("game.seek", PackedStringArray(["30","60","90","120","01:00","01:30","02:00","section","intro","outro","random"]))
 	c.add_command_autocomplete_list("game.score.add", PackedStringArray(["100","500","1000","5000"]))
 	c.add_command_autocomplete_list("game.score.sub", PackedStringArray(["100","500","1000","5000"]))
 	c.add_command_autocomplete_list("game.combo.add", PackedStringArray(["1","5","10","25"]))
 	c.add_command_autocomplete_list("game.combo.sub", PackedStringArray(["1","5","10","25"]))
-	c.add_command_autocomplete_list("game.autoplay.late_ms", PackedStringArray(["0","60","75","80","100","110","120"]))
-	c.add_command_autocomplete_list("game.autoplay_late", PackedStringArray(["0","60","75","80","100","110","120"]))
-	c.add_command_autocomplete_list("game.autoplay", PackedStringArray(["status","late_ms"]))
+	c.add_command_autocomplete_list("game.win", PackedStringArray(["","90","95","100"]))
+	c.add_command_autocomplete_list("game.win_nosave", PackedStringArray(["","90","95","100"]))
+	c.add_command_autocomplete_list("game.series.win", PackedStringArray(["","90","95","100"]))
+	c.add_command_autocomplete_list("perf.debug", PackedStringArray(["off","load","runtime","detail","status"]))
+	c.add_command_autocomplete_list("debug.empty_state", PackedStringArray(["on","off","toggle"]))
+	c.add_command_autocomplete_list("debug.progress", PackedStringArray(["milestone", "genre_mastery", "rr_total", "library", "off"]))
+	c.add_command_autocomplete_list("debug.scenario", PackedStringArray(["activity", "off"]))
 func _get_engine():
 	return get_tree().root.get_node_or_null("GameEngine")
 
@@ -217,6 +220,24 @@ func _ach_unlock(id_str: String):
 		else:
 			c.print_error("Не удалось разблокировать достижение: " + id_str)
 
+func _ach_unlock_random():
+	var c = get_tree().root.get_node_or_null("Console")
+	var ge = _get_engine()
+	var candidates: Array = []
+	if ge and ge.has_method("get_achievement_manager"):
+		var am = ge.get_achievement_manager()
+		if am:
+			for a in am.achievements:
+				if not bool(a.get("unlocked", false)) and not bool(a.get("deprecated", false)):
+					candidates.append(int(a.get("id", -1)))
+	if candidates.is_empty():
+		if c: c.print_info("Нет заблокированных достижений")
+		return
+	candidates.shuffle()
+	var pick: int = candidates[0]
+	_ach_unlock(str(pick))
+
+
 func _unlock_achievement_in_user_json(achievement_id: int) -> bool:
 	var paths := [
 		"user://achievements_data.json",
@@ -266,6 +287,99 @@ func _ach_show(id_str: String):
 	if c:
 		c.print_info("Попап ачивки поставлен в очередь: " + id_str)
 
+
+func _ach_show_random(count_str: String = ""):
+	var c = get_tree().root.get_node_or_null("Console")
+	var ge = _get_engine()
+	var count := 1
+	if count_str.strip_edges() != "" and count_str.is_valid_int():
+		count = clampi(int(count_str), 1, 20)
+	var am = null
+	if ge and ge.has_method("get_achievement_manager"):
+		am = ge.get_achievement_manager()
+	if am == null or am.achievements.is_empty():
+		if c: c.print_error("AchievementManager недоступен")
+		return
+	var pool: Array = []
+	for a in am.achievements:
+		if a is Dictionary and not bool(a.get("deprecated", false)):
+			pool.append(a)
+	if pool.is_empty():
+		if c: c.print_error("Нет доступных достижений")
+		return
+	pool.shuffle()
+	for i in range(mini(count, pool.size())):
+		var pick: Dictionary = pool[i]
+		if ge and ge.has_method("show_achievement_popup"):
+			ge.show_achievement_popup(pick)
+		elif ge and ge.has_method("get_achievement_queue_manager"):
+			var qm = ge.get_achievement_queue_manager()
+			if qm and qm.has_method("add_achievement_to_queue"):
+				qm.add_achievement_to_queue(pick)
+	if c:
+		c.print_info("Показано достижений: %d (без разблокировки)" % mini(count, pool.size()))
+
+
+func _notif_show_random(count_str: String = ""):
+	var c = get_tree().root.get_node_or_null("Console")
+	var count := 1
+	if count_str.strip_edges() != "" and count_str.is_valid_int():
+		count = clampi(int(count_str), 1, 20)
+	var dock := _get_status_dock()
+	if dock == null or not dock.has_method("show_transient"):
+		# Fallback via StatusToast
+		dock = null
+	var pool: Array[Dictionary] = [
+		{"id": "settings", "text": tr("STATUS_SAVED"), "kind": "success", "duration": 2.5},
+		{"id": "library_scan", "text": tr("MISC_SCAN_SONGS_NONE"), "kind": "info", "duration": 2.5},
+		{"id": "gen_queue_dup", "text": tr("GEN_QUEUE_ALREADY"), "kind": "info", "duration": 2.5},
+		{"id": "gen_no_jobs", "text": tr("SONG_GEN_NOTHING_TO_DO"), "kind": "info", "duration": 2.5},
+		{"id": "practice_need_range", "text": tr("PAUSE_PRACTICE_NEED_RANGE"), "kind": "warn", "duration": 2.0},
+		{"id": "rhythm_dna_missing", "text": tr("DNA_TOAST_UNAVAILABLE"), "kind": "info", "duration": 2.5},
+	]
+	pool.shuffle()
+	for i in range(count):
+		var item: Dictionary = pool[i % pool.size()]
+		var nid: String = str(item.get("id", "notif")) + ("_%d" % i)
+		var ntext: String = str(item.get("text", ""))
+		var nkind: String = str(item.get("kind", "info"))
+		var ndur: float = float(item.get("duration", 2.5))
+		if dock != null:
+			dock.show_transient(nid, ntext, nkind, ndur)
+		else:
+			var st := get_tree().root.get_node_or_null("GameEngine")
+			if st == null:
+				var StatusToast = preload("res://logic/ui/status_toast.gd")
+				StatusToast.show_from_node(c if c != null else get_tree().root, nid, ntext, nkind, ndur)
+	if c:
+		c.print_info("Показано уведомлений: %d" % count)
+
+
+func _notif_show_scan():
+	var c = get_tree().root.get_node_or_null("Console")
+	var dock := _get_status_dock()
+	if dock == null:
+		if c:
+			c.print_error("StatusDock не найден")
+		return
+	dock.show_operation({"id":"library_scan","title":tr("STATUS_LIBRARY_SCANNING"),"subtitle":"","progress":0.0,"indeterminate":true,"compact":false,"icon_kind":"scan"})
+	if c:
+		c.print_info("Сканирование... показано, через 3с будет success")
+	await get_tree().create_timer(3.0).timeout
+	dock.clear_operation("library_scan")
+	dock.show_transient("library_scan", tr("MISC_SCAN_SONGS_ADDED") % 5, "success", 3.0)
+	if c:
+		c.print_info("Сканирование success показано")
+
+
+func _get_status_dock() -> Control:
+	var ge = _get_engine()
+	if ge:
+		var nl := ge.get_node_or_null("NotificationsLayer")
+		if nl:
+			return nl.get_node_or_null("StatusDock") as Control
+	return get_tree().root.get_node_or_null("GameEngine/NotificationsLayer/StatusDock") as Control
+
 func _ach_resync():
 	var ge = _get_engine()
 	if ge and ge.has_method("get_achievement_system"):
@@ -296,6 +410,43 @@ func _ach_clear_queue():
 	var c = get_tree().root.get_node_or_null("Console")
 	if c:
 		c.print_info("Очередь ачивок очищена")
+
+## Read-only диагностика календарных event-достижений (дни рождения/сезонные).
+## Использует только pure API AchievementManager (get_event_date /
+## get_calendar_event_ids / get_event_window) и read-only геттеры
+## get_achievement_by_id / is_deprecated. НЕ вызывает check_event_achievements,
+## unlock, save_achievements, resync и не меняет PlayerData.
+func _event_status():
+	var c = get_tree().root.get_node_or_null("Console")
+	var date: Dictionary = AchievementManager.get_event_date()
+	var stamp := "%04d-%02d-%02d" % [int(date.get("year", 0)), int(date.get("month", 0)), int(date.get("day", 0))]
+	var am = null
+	var ge = _get_engine()
+	if ge and ge.has_method("get_achievement_manager"):
+		am = ge.get_achievement_manager()
+	if c:
+		c.print_info("EVENT STATUS")
+		c.print_info("Local system date: " + stamp)
+	for event_id in AchievementManager.get_calendar_event_ids():
+		var w: Dictionary = AchievementManager.get_event_window(event_id, date)
+		var in_catalog := false
+		var deprecated := false
+		var unlocked := false
+		if am and am.has_method("get_achievement_by_id"):
+			var a = am.get_achievement_by_id(event_id)
+			if a is Dictionary and not (a as Dictionary).is_empty():
+				in_catalog = true
+				deprecated = AchievementManager.is_deprecated(a)
+				unlocked = bool((a as Dictionary).get("unlocked", false))
+		if c:
+			c.print_info("Event %d:" % event_id)
+			c.print_info("  Window: %s..%s" % [str(w.get("start", "")), str(w.get("end", ""))])
+			c.print_info("  Active now: " + str(bool(w.get("active", false))))
+			c.print_info("  In catalog: " + str(in_catalog))
+			c.print_info("  Deprecated: " + str(deprecated))
+			c.print_info("  Unlocked: " + str(unlocked))
+	if c:
+		c.print_info("FINAL: read-only; no unlock/save performed.")
 
 func _player_add_currency(amount_str: String):
 	var amt = _parse_bounded_delta(amount_str)
@@ -472,6 +623,8 @@ func _daily_context_for_quest(q: Dictionary) -> Dictionary:
 			return {"missed_notes": 0}
 		"play_drum_level":
 			return {"is_drum_mode": true}
+		"play_bass_level":
+			return {"is_bass_mode": true}
 		"play_genre_group":
 			var target_group := str(q.get("target_group", "")).strip_edges()
 			if target_group != "":
@@ -579,6 +732,210 @@ func _game_seek_to_time(pos: String):
 		var m := int(floor(t / 60.0))
 		var s := int(floor(fmod(t, 60.0)))
 		c.print_info("Перемещено к позиции: " + str(t) + " сек (" + str(m).pad_zeros(2) + ":" + str(s).pad_zeros(2) + ")")
+
+func _get_canonical_sections_for_current_game() -> Array:
+	var gs = _get_game_screen()
+	if gs == null:
+		return []
+	var song_path := ""
+	if "selected_song_data" in gs and gs.selected_song_data is Dictionary:
+		song_path = str(gs.selected_song_data.get("path", "")).strip_edges()
+	if song_path == "" and "song_info" in gs and gs.song_info is Dictionary:
+		song_path = str(gs.song_info.get("path", "")).strip_edges()
+	if song_path == "" and gs.has_method("get_current_song_path"):
+		song_path = str(gs.get_current_song_path()).strip_edges()
+	if song_path == "":
+		return []
+	var NotesUtils = preload("res://logic/domain/rhythm/notes_utils.gd")
+	var canon_secs := NotesUtils.load_canonical_sections(song_path)
+	if canon_secs.is_empty():
+		return []
+	var RhythmDnaView = preload("res://logic/data/rhythm_dna_view.gd")
+	var sections := RhythmDnaView.annotate_sections_with_names(canon_secs)
+	if sections.is_empty():
+		var raw_sections := RhythmDnaView.resolve_structure_timeline_for_ui({"structure_timeline": canon_secs})
+		sections = RhythmDnaView.annotate_sections_with_names(raw_sections)
+	return sections
+
+func _seek_to_section_time(target: float, section_label: String) -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем game.seek.*")
+		return
+	var t := maxf(0.0, target)
+	gs.game_time = t
+	if MusicManager.has_method("set_music_position"):
+		MusicManager.set_music_position(t)
+	if gs.note_manager:
+		if gs.note_manager.has_method("clear_active_notes"):
+			gs.note_manager.clear_active_notes()
+		gs.note_manager.skip_notes_before_time(t)
+	if gs.has_method("_update_hint"):
+		gs._update_hint()
+	if gs.has_method("_check_song_end"):
+		gs._check_song_end()
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if c:
+		var m := int(floor(t / 60.0))
+		var s := int(floor(fmod(t, 60.0)))
+		if section_label != "":
+			c.print_info("Перемещено к %s: %s сек (%s:%s)" % [section_label, str(t), str(m).pad_zeros(2), str(s).pad_zeros(2)])
+		else:
+			c.print_info("Перемещено к позиции: " + str(t) + " сек (" + str(m).pad_zeros(2) + ":" + str(s).pad_zeros(2) + ")")
+
+func _game_seek_section(number_str: String):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем game.seek.section <number>")
+		return
+	var n := int(number_str.strip_edges())
+	if number_str.strip_edges() == "" or not number_str.strip_edges().is_valid_int() or n <= 0:
+		if c:
+			c.print_error("Некорректный номер секции: '%s' (ожидается 1..N)" % number_str)
+		return
+	var sections := _get_canonical_sections_for_current_game()
+	if sections.is_empty():
+		if c:
+			c.print_error("У текущего чарта нет секций (sections.rfd отсутствует)")
+		return
+	if n < 1 or n > sections.size():
+		if c:
+			c.print_error("Секция %d не существует (доступно 1..%d)" % [n, sections.size()])
+		return
+	var seg: Dictionary = sections[n - 1] if sections[n - 1] is Dictionary else {}
+	var target := float(seg.get("start_s", 0.0))
+	var label := "секции %d" % n
+	if seg.has("display_full"):
+		label = str(seg.get("display_full", label))
+	elif seg.has("role"):
+		label = str(seg.get("role", label))
+	_seek_to_section_time(target, label)
+
+func _game_seek_intro():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем game.seek.intro")
+		return
+	var sections := _get_canonical_sections_for_current_game()
+	if sections.is_empty():
+		if c:
+			c.print_error("У текущего чарта нет секций (sections.rfd отсутствует)")
+		return
+	var found: Dictionary = {}
+	for seg in sections:
+		if not seg is Dictionary:
+			continue
+		var role_norm := str(seg.get("role", "")).strip_edges().to_lower().replace("_", "-")
+		if role_norm == "intro":
+			found = seg
+			break
+	if found.is_empty():
+		if c:
+			c.print_error("Intro секция не найдена (роль intro отсутствует)")
+		return
+	var target := float(found.get("start_s", 0.0))
+	var label := "intro"
+	if found.has("display_full"):
+		label = str(found.get("display_full", label))
+	_seek_to_section_time(target, label)
+
+func _game_seek_outro():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем game.seek.outro")
+		return
+	var sections := _get_canonical_sections_for_current_game()
+	if sections.is_empty():
+		if c:
+			c.print_error("У текущего чарта нет секций (sections.rfd отсутствует)")
+		return
+	var found: Dictionary = {}
+	for i in range(sections.size() - 1, -1, -1):
+		var seg = sections[i]
+		if not seg is Dictionary:
+			continue
+		var role_norm := str(seg.get("role", "")).strip_edges().to_lower().replace("_", "-")
+		if role_norm == "outro":
+			found = seg
+			break
+	if found.is_empty():
+		if c:
+			c.print_error("Outro секция не найдена (роль outro отсутствует)")
+		return
+	var target := float(found.get("start_s", 0.0))
+	var label := "outro"
+	if found.has("display_full"):
+		label = str(found.get("display_full", label))
+	_seek_to_section_time(target, label)
+
+func _game_seek_random():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем game.seek.random")
+		return
+	var sections := _get_canonical_sections_for_current_game()
+	if sections.is_empty():
+		if c:
+			c.print_error("У текущего чарта нет секций (sections.rfd отсутствует)")
+		return
+	var idx := randi() % sections.size()
+	var seg: Dictionary = sections[idx] if sections[idx] is Dictionary else {}
+	var target := float(seg.get("start_s", 0.0))
+	var label := "случайной секции %d" % (idx + 1)
+	if seg.has("display_full"):
+		label = str(seg.get("display_full", label))
+	_seek_to_section_time(target, label)
+
+func _chart_sections():
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen не найден — открой уровень (игра), затем chart.sections")
+		return
+	var sections := _get_canonical_sections_for_current_game()
+	if sections.is_empty():
+		if c:
+			c.print_info("No canonical sections found for current chart.")
+		return
+	if c:
+		c.print_info("Sections: %d" % sections.size())
+		for i in range(sections.size()):
+			var seg: Dictionary = sections[i] if sections[i] is Dictionary else {}
+			var start_s := float(seg.get("start_s", 0.0))
+			var end_s := float(seg.get("end_s", start_s))
+			var role: String = ""
+			if seg.has("display_full"):
+				role = str(seg.get("display_full", ""))
+			elif seg.has("role"):
+				role = str(seg.get("role", ""))
+			elif seg.has("section"):
+				role = str(seg.get("section", ""))
+			elif seg.has("label_key"):
+				role = str(seg.get("label_key", ""))
+			if role.strip_edges() == "":
+				role = "—"
+			var start_str := _format_section_time(start_s)
+			var end_str := _format_section_time(end_s)
+			c.print_info("%d. %s–%s  %s" % [i + 1, start_str, end_str, role])
+
+func _format_section_time(t: float) -> String:
+	var total_ms := int(round(t * 1000.0))
+	var m := int(total_ms / 60000)
+	var s := int((total_ms % 60000) / 1000)
+	var ms := total_ms % 1000
+	return "%02d:%02d.%03d" % [m, s, ms]
 
 func _daily_load_all():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -765,49 +1122,6 @@ func _game_info():
 		c.print_info("BPM: " + bpm_txt)
 		c.print_info("Время: " + t_txt + " (" + mm + ":" + ss + ")")
 
-func _game_score_add_1000():
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs or not gs.score_manager:
-		if c: c.print_error("ScoreManager недоступен")
-		return
-	var current_combo = gs.score_manager.combo
-	var multiplier = min(4.0, 1.0 + float(int(current_combo / 10)))
-	var actual_points = int(1000 * multiplier)
-	gs.score_manager.score += actual_points
-	if gs.has_method("update_ui"):
-		gs.update_ui()
-	if c:
-		c.print_info("Добавлено очков: %d (x%.1f)" % [actual_points, multiplier])
-
-func _game_score_sub_1000():
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs or not gs.score_manager:
-		if c: c.print_error("ScoreManager недоступен")
-		return
-	gs.score_manager.score = max(0, gs.score_manager.score - 1000)
-	if gs.has_method("update_ui"):
-		gs.update_ui()
-	if c:
-		c.print_info("Минус 1000 очков. Текущий счёт: %d" % gs.score_manager.score)
-
-func _game_combo_add_10():
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs or not gs.score_manager:
-		if c: c.print_error("ScoreManager недоступен")
-		return
-	var new_combo = gs.score_manager.combo + 10
-	gs.score_manager.combo = new_combo
-	if new_combo > gs.score_manager.max_combo:
-		gs.score_manager.max_combo = new_combo
-	gs.score_manager.combo_multiplier = min(4.0, 1.0 + float(int(new_combo / 10)))
-	if gs.has_method("update_ui"):
-		gs.update_ui()
-	if c:
-		c.print_info("Комбо: %d | Макс.: %d | Множитель: x%.1f" % [gs.score_manager.combo, gs.score_manager.max_combo, gs.score_manager.combo_multiplier])
-
 func _game_score_add(amount_str: String):
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
@@ -931,6 +1245,24 @@ func _game_accuracy_set(percent_str: String):
 			% [stats.accuracy, stats.total_notes, stats.hit_notes, stats.missed_notes]
 		)
 
+func _game_series_win(accuracy_opt = ""):
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	if gs == null:
+		if c:
+			c.print_error("GameScreen недоступен — открой уровень (игра), затем series.win")
+		return
+	if not gs.has_method("_is_series_mode") or not bool(gs.call("_is_series_mode")):
+		if c:
+			c.print_error("series.win работает только в выживании или марафоне")
+		return
+	_game_win(accuracy_opt)
+	if c:
+		var mode := "endless"
+		if gs.has_method("_is_marathon_mode") and bool(gs.call("_is_marathon_mode")):
+			mode = "marathon"
+		c.print_info("Серия (%s): трек засчитан, переход к следующему или итогам." % mode)
+
 func _game_win(accuracy_opt = ""):
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
@@ -966,6 +1298,15 @@ func _game_win(accuracy_opt = ""):
 	var current_score = sm.get_score()
 	var recompute = override or current_score <= 0
 	if recompute:
+		# Recompute reward mult from active run mods (can be stale/1.0 if runtime apply was skipped).
+		var RunModifiers = load("res://logic/domain/modifiers/run_modifiers.gd")
+		if RunModifiers and ("run_modifiers_player" in gs):
+			var params: Dictionary = {}
+			if "run_modifier_params" in gs and gs.run_modifier_params is Dictionary:
+				params = gs.run_modifier_params
+			gs._score_reward_multiplier = RunModifiers.reward_multiplier(gs.run_modifiers_player, params)
+		if gs.has_method("_apply_score_reward_multiplier"):
+			gs._apply_score_reward_multiplier()
 		var hits_for_score = max(1, sm.get_hit_notes_count())
 		var raw_total := int(hits_for_score * base_score_per_hit * multiplier)
 		if sm.has_method("set_raw_score"):
@@ -976,13 +1317,107 @@ func _game_win(accuracy_opt = ""):
 		gs.update_ui()
 	if nm.has_method("clear_notes"):
 		nm.clear_notes()
+	print("[RUN PIPELINE] debug_commands.game.win entered accuracy_opt=%s target_accuracy=%s play_mode=%s song_path=%s" % [str(accuracy_opt), str(target_accuracy), str(gs._play_mode), str(gs.selected_song_data.get("path",""))])
 	if gs.has_method("end_game"):
+		print("[RUN PIPELINE] debug_commands.game.win calling gs.end_game() source=debug_win")
 		gs.end_game()
 	if c:
+		var reward_mult := 1.0
+		if sm.has_method("get_score_reward_multiplier"):
+			reward_mult = float(sm.get_score_reward_multiplier())
 		c.print_info(
-			"Симулировано завершение уровня (точность: %.2f%%, hit=%d, miss=%d, score=%d)"
-			% [sm.get_accuracy(), sm.get_hit_notes_count(), sm.get_missed_notes_count(), sm.get_score()]
+			"Симулировано завершение уровня (точность: %.2f%%, hit=%d, miss=%d, raw=%d, mod×%.2f, score=%d)"
+			% [
+				sm.get_accuracy(),
+				sm.get_hit_notes_count(),
+				sm.get_missed_notes_count(),
+				sm.get_raw_score() if sm.has_method("get_raw_score") else sm.get_score(),
+				reward_mult,
+				sm.get_score(),
+			]
 		)
+
+func _game_win_nosave(accuracy_opt = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var gs = _get_game_screen()
+	var sm = _get_score_manager(gs)
+	var nm = _get_note_manager(gs)
+	if gs == null or sm == null or nm == null:
+		if c:
+			c.print_error("GameScreen недоступен — открой уровень (игра), затем game.win_nosave")
+		return
+	var parsed := _parse_accuracy_arg(accuracy_opt)
+	var override := parsed >= 0.0
+	var target_accuracy: float = parsed if override else float(sm.get_accuracy())
+	var total_notes: int = int(sm.total_notes)
+	if override:
+		var stats := _apply_simulated_accuracy(gs, target_accuracy)
+		total_notes = stats.total_notes
+		target_accuracy = stats.accuracy
+	var hits_for_combo = sm.get_hit_notes_count()
+	if target_accuracy >= 100.0 and hits_for_combo > 0:
+		sm.combo = hits_for_combo
+		sm.max_combo = max(sm.max_combo, hits_for_combo)
+		gs.perfect_hits_this_level = hits_for_combo
+	elif override:
+		gs.perfect_hits_this_level = hits_for_combo
+	var base_score_per_hit = 100
+	var multiplier = 1.0
+	if target_accuracy >= 100.0:
+		multiplier = min(4.0, 1.0 + (float(total_notes) / 10.0))
+	elif target_accuracy >= 95.0:
+		multiplier = 2.0
+	elif target_accuracy >= 90.0:
+		multiplier = 1.5
+	var current_score = sm.get_score()
+	var recompute = override or current_score <= 0
+	if recompute:
+		var RunModifiers = load("res://logic/domain/modifiers/run_modifiers.gd")
+		if RunModifiers and ("run_modifiers_player" in gs):
+			var params: Dictionary = {}
+			if "run_modifier_params" in gs and gs.run_modifier_params is Dictionary:
+				params = gs.run_modifier_params
+			gs._score_reward_multiplier = RunModifiers.reward_multiplier(gs.run_modifiers_player, params)
+		if gs.has_method("_apply_score_reward_multiplier"):
+			gs._apply_score_reward_multiplier()
+		var hits_for_score = max(1, sm.get_hit_notes_count())
+		var raw_total := int(hits_for_score * base_score_per_hit * multiplier)
+		if sm.has_method("set_raw_score"):
+			sm.set_raw_score(raw_total)
+		else:
+			sm.score = raw_total
+	if gs.has_method("update_ui"):
+		gs.update_ui()
+	if nm.has_method("clear_notes"):
+		nm.clear_notes()
+	print("[RUN PIPELINE] debug_commands.game.win_nosave entered accuracy_opt=%s target_accuracy=%s play_mode=%s song_path=%s" % [str(accuracy_opt), str(target_accuracy), str(gs._play_mode), str(gs.selected_song_data.get("path",""))])
+	if gs.has_method("end_game"):
+		print("[RUN PIPELINE] debug_commands.game.win_nosave calling gs.end_game() source=debug_win_nosave (non-persistent)")
+		if "is_test_preview" in gs:
+			gs.is_test_preview = true
+		if gs.has_method("set_meta"):
+			gs.set_meta("debug_win_no_save", true)
+		# Ensure VictoryScreen can detect non-persistent via song_info
+		if "selected_song_data" in gs and gs.selected_song_data is Dictionary:
+			gs.selected_song_data["debug_win_no_save"] = true
+			gs.selected_song_data["is_test_preview"] = true
+		gs.end_game()
+	if c:
+		var reward_mult := 1.0
+		if sm.has_method("get_score_reward_multiplier"):
+			reward_mult = float(sm.get_score_reward_multiplier())
+		c.print_info(
+			"Симулировано завершение уровня (без сохранения) (точность: %.2f%%, hit=%d, miss=%d, raw=%d, mod×%.2f, score=%d)"
+			% [
+				sm.get_accuracy(),
+				sm.get_hit_notes_count(),
+				sm.get_missed_notes_count(),
+				sm.get_raw_score() if sm.has_method("get_raw_score") else sm.get_score(),
+				reward_mult,
+				sm.get_score(),
+			]
+		)
+
 func _game_autoplay_on():
 	var c = get_tree().root.get_node_or_null("Console")
 	var gs = _get_game_screen()
@@ -1003,30 +1438,9 @@ func _game_autoplay_status():
 		return
 	if gs.has_method("is_autoplay_enabled"):
 		var st = gs.is_autoplay_enabled()
-		var late := 0.0
-		if gs.has_method("get_autoplay_late_ms"):
-			late = gs.get_autoplay_late_ms()
-		if c:
-			c.print_info("Автоигра: " + ("ВКЛ." if st else "ВЫКЛ."))
-			if gs.has_method("get_autoplay_late_ms"):
-				c.print_info("Смещение late_ms: %.0f (0=Perfect, ~80=поздний тап)" % late)
+		if c: c.print_info("Автоигра: " + ("ВКЛ." if st else "ВЫКЛ."))
 	else:
 		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
-
-func _game_autoplay_router(sub: String = "", value: String = ""):
-	var key := sub.strip_edges().to_lower()
-	match key:
-		"":
-			_game_autoplay_toggle()
-		"status":
-			_game_autoplay_status()
-		"late_ms", "late":
-			_game_autoplay_late_ms(value)
-		_:
-			var c = get_tree().root.get_node_or_null("Console")
-			if c:
-				c.print_error("game.autoplay: неизвестно '%s'. Подкоманды: status, late_ms <ms>" % sub)
-				c.print_info("Пример: game.autoplay late_ms 80  или  game.autoplay.late_ms 80")
 
 func _game_autoplay_toggle():
 	var c = get_tree().root.get_node_or_null("Console")
@@ -1041,76 +1455,6 @@ func _game_autoplay_toggle():
 	else:
 		if c: c.print_error("Автоигра не поддерживается в текущей сцене")
 
-func _game_autoplay_late_ms(ms_str: String = ""):
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs:
-		if c:
-			c.print_error("GameScreen не найден")
-		return
-	if not gs.has_method("set_autoplay_late_ms") or not gs.has_method("get_autoplay_late_ms"):
-		if c:
-			c.print_error("Смещение автоплея не поддерживается — перезапусти игру после обновления")
-		return
-	var ms_text := ms_str.strip_edges()
-	if ms_text.is_empty():
-		if c:
-			c.print_info("game.autoplay.late_ms: %.0f" % gs.get_autoplay_late_ms())
-			c.print_info("0 = Perfect на линии; ~80 = Good (EZ); ~110 = Miss (ST)")
-			c.print_info("Синтаксис: game.autoplay.late_ms 80  или  game.autoplay late_ms 80")
-		return
-	if not ms_text.is_valid_float():
-		if c:
-			c.print_error("Нужно число миллисекунд, получено: '%s'" % ms_text)
-		return
-	var ms := float(ms_text)
-	gs.set_autoplay_late_ms(ms)
-	if c:
-		c.print_info("game.autoplay.late_ms: %.0f" % ms)
-		if ms <= 0.0:
-			c.print_info("Автоплей бьёт в Perfect-окно.")
-		else:
-			c.print_info("Автоплей бьёт на +%.0f ms после идеала." % ms)
-
-func _mod_preview_timing_setup(modifier_id: String, mod_label: String, late_hint: String) -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	var gs = _get_game_screen()
-	if not gs:
-		if c:
-			c.print_error("GameScreen не найден — зайди в уровень")
-		return
-	if SettingsManager == null:
-		if c:
-			c.print_error("SettingsManager недоступен")
-		return
-	if not SettingsManager.has_method("set_autoplay_respects_hit_windows"):
-		if c:
-			c.print_error("Нет поддержки timing.autoplay.windows")
-		return
-	SettingsManager.set_autoplay_respects_hit_windows(true)
-	if SettingsManager.has_method("set_timing_debug_overlay"):
-		SettingsManager.set_timing_debug_overlay(true)
-	if gs.has_method("debug_apply_run_modifiers"):
-		gs.debug_apply_run_modifiers(["no_fail", modifier_id])
-	else:
-		if c:
-			c.print_error("GameScreen: нет debug_apply_run_modifiers")
-		return
-	if gs.has_method("set_autoplay_late_ms"):
-		gs.set_autoplay_late_ms(0.0)
-	if gs.has_method("set_autoplay_enabled"):
-		gs.set_autoplay_enabled(true)
-	if c:
-		c.print_info("Превью %s: мод + no_fail, автоплей, окна судьи, overlay." % mod_label)
-		c.print_info("Сначала идут Perfect (late_ms=0). Для демо: game.autoplay.late_ms %s" % late_hint)
-		c.print_info("timing.debug.overlay — meter/оверлей; game.autoplay.status — статус.")
-
-func _mod_preview_ez():
-	_mod_preview_timing_setup("easy_windows", "Easy Windows (ЛГ)", "80")
-
-func _mod_preview_st():
-	_mod_preview_timing_setup("strict_timing", "Strict Timing (СТ)", "110")
-
 func _timing_debug_status():
 	var c = get_tree().root.get_node_or_null("Console")
 	if SettingsManager == null:
@@ -1121,7 +1465,7 @@ func _timing_debug_status():
 	var ov_on := SettingsManager.get_timing_debug_overlay()
 	var apw := SettingsManager.get_autoplay_respects_hit_windows()
 	if c:
-		c.print_info("(Сохраняется в settings.json — вкладка Experimental → Debug)")
+		c.print_info("(Только до выхода из игры; не сохраняется в settings.json)")
 		c.print_info("Лог попаданий (CSV + консоль): " + ("ВКЛ." if log_on else "ВЫКЛ."))
 		c.print_info("Оверлей на игровом экране: " + ("ВКЛ." if ov_on else "ВЫКЛ."))
 		c.print_info("Автоплей с окнами судьи как у человека: " + ("ВКЛ." if apw else "ВЫКЛ."))
@@ -1214,121 +1558,98 @@ func _tutorial_shop_show() -> void:
 	if c:
 		c.print_info("Туториал сброшен. Открой магазин — overlay появится автоматически")
 
-func _tutorial_flag_reset(flag: String) -> void:
+
+func _tutorial_first_steps_reset() -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	var setter := "set_tutorial_%s_done" % flag
-	if SettingsManager == null or not SettingsManager.has_method(setter):
+	if FirstStepsManager == null or not FirstStepsManager.has_method("reset_progress"):
 		if c:
-			c.print_error("SettingsManager: нет метода %s" % setter)
+			c.print_error("FirstStepsManager недоступен")
 		return
-	SettingsManager.call(setter, false)
+	FirstStepsManager.reset_progress()
 	if c:
-		c.print_info("Туториал '%s' сброшен" % flag)
+		c.print_info("Прогресс «Первых шагов» сброшен. Открой главное меню — блок появится снова")
 
 
-func _tutorial_flag_show(flag: String) -> void:
+func _tutorial_first_steps_show() -> void:
 	var c = get_tree().root.get_node_or_null("Console")
-	_tutorial_flag_reset(flag)
-	var shown := _tutorial_try_invoke_debug_show(flag)
+	if FirstStepsManager == null or not FirstStepsManager.has_method("enter_preview"):
+		if c:
+			c.print_error("FirstStepsManager недоступен")
+		return
+	FirstStepsManager.enter_preview()
 	if c:
-		if shown:
-			c.print_info("Туториал '%s' запущен" % flag)
-		else:
-			c.print_info("Туториал '%s' сброшен — открой нужный экран" % flag)
+		c.print_info("Предпросмотр «Первых шагов» включён с шага 1. Открой главное меню, затем tutorial.first_steps.next — следующий шаг")
 
 
-func _tutorial_try_invoke_debug_show(flag: String) -> bool:
+func _tutorial_first_steps_next() -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	if FirstStepsManager == null or not FirstStepsManager.has_method("advance_preview"):
+		if c:
+			c.print_error("FirstStepsManager недоступен")
+		return
+	if not FirstStepsManager.is_preview_active():
+		if c:
+			c.print_info("Предпросмотр не активен. Сначала выполни tutorial.first_steps.show")
+		return
+	FirstStepsManager.advance_preview()
+	if c:
+		c.print_info("Показан шаг %d из %d" % [FirstStepsManager.get_step() + 1, FirstStepsManager.get_step_count()])
+
+
+func _tutorial_practice_show() -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	if SettingsManager == null or not SettingsManager.has_method("set_tutorial_practice_done"):
+		if c:
+			c.print_error("SettingsManager недоступен")
+		return
+	SettingsManager.set_tutorial_practice_done(false)
+	if c:
+		c.print_info("Флаг туториала практики сброшен. Открой паузу → «Практика» — спотлайт покажется снова")
+
+
+func _tutorial_first_steps_exit() -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	if FirstStepsManager == null or not FirstStepsManager.has_method("exit_preview"):
+		if c:
+			c.print_error("FirstStepsManager недоступен")
+		return
+	FirstStepsManager.exit_preview()
+	if c:
+		c.print_info("Предпросмотр «Первых шагов» выключен")
+
+
+func _diary_toast_show(kind: String = "first_ss") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var ge = _get_engine()
+	var host: Node = ge if ge else get_tree().root
+	const _DiaryCelebration = preload("res://logic/ui/diary_celebration.gd")
+	var sample := str(kind).strip_edges().to_lower()
+	if sample == "":
+		sample = "first_ss"
+	_DiaryCelebration.debug_show(host, sample)
+	if c:
+		c.print_info("Diary toast: " + sample)
+
+
+func _ui_notice_show(message: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var text := str(message).strip_edges()
+	if text == "":
+		text = "Test notice"
+	var notice: Node = null
 	var ge = _get_engine()
 	var screen: Node = ge.get("current_screen") if ge else null
 	if screen:
-		if flag == "generation_settings":
-			for child in screen.get_children():
-				if child.has_method("debug_show_tutorial"):
-					child.debug_show_tutorial()
-					return true
-		if flag == "calibration" or flag == "rhythm_dna_setting":
-			var settings := _find_settings_shell()
-			if settings:
-				if flag == "calibration" and settings.has_method("switch_to_page"):
-					settings.switch_to_page("sound")
-				if flag == "rhythm_dna_setting" and settings.has_method("switch_to_page"):
-					settings.switch_to_page("experimental")
-				var tab_name := "SoundTab" if flag == "calibration" else "ExperimentalTab"
-				var tab: Node = settings.get_node_or_null("MainHBox/ContentColumn/ContentContainer/ContentCard/ContentCardMargin/SettingsTabContainer/%s" % tab_name)
-				if tab == null:
-					tab = settings.get_node_or_null(tab_name)
-				if tab and tab.has_method("debug_show_tutorial"):
-					tab.debug_show_tutorial()
-					return true
-				if flag == "rhythm_dna_setting" and tab and tab.has_method("debug_show_rhythm_dna_tutorial"):
-					tab.debug_show_rhythm_dna_tutorial()
-					return true
-		if flag == "rhythm_dna_usage" and screen.has_method("debug_show_rhythm_dna_usage_tutorial"):
-			screen.debug_show_rhythm_dna_usage_tutorial()
-			return true
-		if flag == "modifiers":
-			var mods_screen := _find_run_modifiers_screen()
-			if mods_screen and mods_screen.has_method("debug_show_tutorial"):
-				mods_screen.debug_show_tutorial()
-				return true
-		if screen.has_method("debug_show_tutorial"):
-			screen.debug_show_tutorial()
-			return true
-	return false
-
-
-func _find_run_modifiers_screen() -> Node:
-	var ge = _get_engine()
-	if ge == null:
-		return null
-	for child in ge.get_children():
-		if child.name == "RunModifiersScreen" and child.has_method("debug_show_tutorial"):
-			return child
-	return null
-
-
-func _find_settings_shell() -> Node:
-	var ge = _get_engine()
-	if ge == null:
-		return null
-	for child in ge.get_children():
-		if child.has_method("switch_to_page"):
-			return child
-	var screen: Node = ge.get("current_screen") if ge else null
-	if screen:
-		for child in screen.get_children():
-			if child.has_method("switch_to_page"):
-				return child
-	return null
-
-
-func _notice_welcome_reset() -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	if SettingsManager == null or not SettingsManager.has_method("set_seen_server_setup_notice"):
+		notice = screen.find_child("NoticeOverlay", true, false)
+	if notice == null:
+		notice = get_tree().root.find_child("NoticeOverlay", true, false)
+	if notice == null or not notice.has_method("show_message"):
 		if c:
-			c.print_error("SettingsManager: нет флага seen_server_setup_notice")
+			c.print_error("NoticeOverlay не найден на текущем экране (нужен %NoticeOverlay / AppNoticeOverlay)")
 		return
-	SettingsManager.set_seen_server_setup_notice(false)
+	notice.show_message(text)
 	if c:
-		c.print_info("Welcome-notice сброшен. Перезайди в главное меню или выполни notice.welcome.show")
-
-
-func _notice_welcome_show() -> void:
-	var c = get_tree().root.get_node_or_null("Console")
-	if SettingsManager == null or not SettingsManager.has_method("set_seen_server_setup_notice"):
-		if c:
-			c.print_error("SettingsManager: нет флага seen_server_setup_notice")
-		return
-	SettingsManager.set_seen_server_setup_notice(false)
-	var ge = _get_engine()
-	var screen: Node = ge.get("current_screen") if ge else null
-	if screen and screen.has_method("debug_show_welcome_notice"):
-		screen.debug_show_welcome_notice()
-		if c:
-			c.print_info("Welcome-notice запущен на главном меню")
-		return
-	if c:
-		c.print_info("Welcome-notice сброшен. Открой главное меню — notice появится автоматически")
+		c.print_info("Notice shown")
 
 
 func _parse_int(s: String) -> int:
@@ -1344,6 +1665,219 @@ func _parse_int(s: String) -> int:
 	if out != "" and out != "-" and out != "+":
 		val = int(out)
 	return val
+func _perf_debug(mode: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var arg := str(mode).strip_edges().to_lower()
+	if arg == "":
+		arg = "status"
+	match arg:
+		"off":
+			PerfTrace.set_level(PerfTrace.Level.OFF)
+			if c: c.print_info(PerfTrace.status_text())
+		"load":
+			PerfTrace.set_level(PerfTrace.Level.LOAD)
+			if c: c.print_info(PerfTrace.status_text())
+		"runtime":
+			PerfTrace.set_level(PerfTrace.Level.RUNTIME)
+			if c: c.print_info(PerfTrace.status_text())
+		"detail":
+			PerfTrace.set_level(PerfTrace.Level.DETAIL)
+			if c: c.print_info(PerfTrace.status_text())
+		"status":
+			if c: c.print_info(PerfTrace.status_text())
+		_:
+			if c:
+				c.print_error("perf.debug: неизвестный режим '%s' (ожидается off|load|runtime|detail|status)" % str(mode))
+				c.print_info(PerfTrace.status_text())
+
+func _perf_stats() -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var text := PerfTrace.format_stats_text()
+	if c:
+		c.print_info(text)
+	else:
+		print(text)
+
+func _perf_reset() -> void:
+	PerfTrace.reset()
+	var c = get_tree().root.get_node_or_null("Console")
+	if c:
+		c.print_info("[PERF] stats reset")
+
+
+func _hitfx_debug(mode: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var key := mode.strip_edges().to_lower()
+	const HitFX = preload("res://logic/domain/rhythm/hit_particle_presets.gd")
+	if key == "":
+		key = "status"
+	match key:
+		"legacy":
+			HitFX.set_debug_mode(HitFX.DebugMode.LEGACY)
+			if c: c.print_info("Hit FX debug: LEGACY")
+		"current":
+			HitFX.set_debug_mode(HitFX.DebugMode.CURRENT)
+			if c: c.print_info("Hit FX debug: CURRENT")
+		"status":
+			if c:
+				c.print_info("Hit FX debug: " + HitFX.get_debug_mode_name())
+				var is_legacy := HitFX.get_debug_mode() == HitFX.DebugMode.LEGACY
+				c.print_info("Hit FX rendering: " + ("null texture" if is_legacy else "procedural texture"))
+				c.print_info("Hit FX secondary ring: " + ("disabled" if is_legacy else "enabled"))
+		_:
+			if c:
+				c.print_error("hitfx.debug: неизвестный режим '%s' (ожидается legacy/current/status)" % mode)
+				c.print_info("Hit FX debug: " + HitFX.get_debug_mode_name())
+				var is_legacy2 := HitFX.get_debug_mode() == HitFX.DebugMode.LEGACY
+				c.print_info("Hit FX rendering: " + ("null texture" if is_legacy2 else "procedural texture"))
+				c.print_info("Hit FX secondary ring: " + ("disabled" if is_legacy2 else "enabled"))
+
+
+func _debug_empty_state(state: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var key := str(state).strip_edges().to_lower()
+	var DebugEmptyState = preload("res://logic/debug/debug_empty_state.gd")
+	var new_state: bool
+	match key:
+		"on", "1", "true", "enable":
+			new_state = true
+			DebugEmptyState.set_enabled(true)
+		"off", "0", "false", "disable":
+			new_state = false
+			DebugEmptyState.set_enabled(false)
+		"", "toggle":
+			new_state = DebugEmptyState.toggle()
+		_:
+			if c:
+				c.print_error("debug.empty_state: неизвестный аргумент '%s' (ожидается on/off/toggle)" % state)
+			return
+	if c:
+		c.print_info("debug.empty_state: " + ("ON — Main Menu/Profile показывают пустое состояние нового игрока (runtime only)" if new_state else "OFF — реальная история снова видима"))
+	# Refresh already open Main Menu / Profile without restart if possible
+	var tree := get_tree()
+	if tree:
+		for node in tree.root.find_children("*", "Control", true, false):
+			if node.has_method("_render_last_track_panel") and node.has_method("queue_refresh_on_show"):
+				if node.has_method("_render_last_track_panel"):
+					node.call_deferred("_render_last_track_panel")
+				if node.has_method("_render_hub_panels"):
+					node.call_deferred("_render_hub_panels")
+			if node is Control and node.has_method("_refresh_favorite_track"):
+				node.call_deferred("_refresh_favorite_track")
+				if node.has_method("_update_recent_achievements"):
+					node.call_deferred("_update_recent_achievements")
+			if node.has_method("_update_genre_portrait"):
+				node.call_deferred("_update_genre_portrait")
+
+func _debug_progress(type: String = "", value: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var t := str(type).strip_edges().to_lower()
+	var v := str(value).strip_edges()
+	var DebugProgress = preload("res://logic/debug/debug_progress.gd")
+	var ok := false
+	var msg := ""
+	match t:
+		"milestone":
+			if v == "":
+				if c:
+					c.print_error("debug.progress milestone <id> — нужен id из whitelist (first_track_played, first_ss, first_fc, first_mod_clear, unique_100_tracks, clears_250, genre_group_level_10, total_rr_10000, endless_unlocked, marathon_unlocked)")
+				return
+			ok = DebugProgress.set_milestone(v)
+			if not ok and c:
+				c.print_error("debug.progress: неизвестный milestone '%s' (разрешённые: first_track_played, first_ss, first_fc, first_mod_clear, unique_100_tracks, clears_250, genre_group_level_10, total_rr_10000, endless_unlocked, marathon_unlocked)" % v)
+				return
+			msg = "milestone %s" % v
+		"genre_mastery", "genre", "mastery":
+			if v == "":
+				if c:
+					c.print_error("debug.progress genre_mastery <5|10|15|20>")
+				return
+			ok = DebugProgress.set_genre_mastery(v)
+			if not ok and c:
+				c.print_error("debug.progress: неизвестный уровень '%s' (разрешённые: 5, 10, 15, 20)" % v)
+				return
+			msg = "genre_mastery %s" % v
+		"rr_total", "rr", "rr_ladder":
+			if v == "":
+				if c:
+					c.print_error("debug.progress rr_total <25000|50000|100000|250000|500000|1000000>")
+				return
+			ok = DebugProgress.set_rr_total(v)
+			if not ok and c:
+				c.print_error("debug.progress: неизвестный порог '%s' (разрешённые: 25000, 50000, 100000, 250000, 500000, 1000000)" % v)
+				return
+			msg = "rr_total %s" % v
+		"library", "lib":
+			if v == "":
+				if c:
+					c.print_error("debug.progress library <100|500|1000>")
+				return
+			ok = DebugProgress.set_library(v)
+			if not ok and c:
+				c.print_error("debug.progress: неизвестный порог '%s' (разрешённые: 100, 500, 1000)" % v)
+				return
+			msg = "library %s" % v
+		"off", "clear", "disable", "hide":
+			DebugProgress.clear()
+			if c:
+				c.print_info("debug.progress: OFF — временное progress событие удалено (runtime only)")
+			var tree2 := get_tree()
+			if tree2:
+				for node in tree2.root.find_children("*", "Control", true, false):
+					if node.has_method("_render_last_track_panel") and node.has_method("queue_refresh_on_show"):
+						if node.has_method("_render_hub_panels"):
+							node.call_deferred("_render_hub_panels")
+			return
+		"":
+			if c:
+				c.print_error("debug.progress: нужен тип (milestone, genre_mastery, rr_total, library, off)")
+			return
+		_:
+			if c:
+				c.print_error("debug.progress: неизвестный тип '%s' (ожидается milestone|genre_mastery|rr_total|library|off)" % type)
+			return
+	if ok and c:
+		c.print_info("debug.progress: %s — временное progress событие установлено (runtime only, now)" % msg)
+	var tree := get_tree()
+	if tree:
+		for node in tree.root.find_children("*", "Control", true, false):
+			if node.has_method("_render_last_track_panel") and node.has_method("queue_refresh_on_show"):
+				if node.has_method("_render_hub_panels"):
+					node.call_deferred("_render_hub_panels")
+
+func _debug_scenario(name: String = "") -> void:
+	var c = get_tree().root.get_node_or_null("Console")
+	var key := str(name).strip_edges().to_lower()
+	var DebugScenario = preload("res://logic/debug/debug_scenario.gd")
+	var DebugEmptyState = preload("res://logic/debug/debug_empty_state.gd")
+	match key:
+		"activity":
+			if DebugEmptyState.is_enabled() and c:
+				c.print_warning("debug.scenario activity: включён debug.empty_state — Activity покажет empty, а не сценарий (empty_state имеет приоритет)")
+			DebugScenario.set_activity()
+			if c:
+				c.print_info("debug.scenario activity — временный набор 5 Activity событий установлен (runtime only, now)")
+		"off", "clear", "disable", "hide", "":
+			var had := DebugScenario.has_activity_override()
+			DebugScenario.clear_activity()
+			if c:
+				if had:
+					c.print_info("debug.scenario: OFF — временный Activity сценарий удалён, возвращены реальные данные (runtime only)")
+				else:
+					c.print_info("debug.scenario: уже выключен")
+		_:
+			if c:
+				c.print_error("debug.scenario: неизвестный сценарий '%s' (ожидается activity|off)" % name)
+			return
+	var tree2 := get_tree()
+	if tree2:
+		for node in tree2.root.find_children("*", "Control", true, false):
+			if node.has_method("_render_last_track_panel") and node.has_method("queue_refresh_on_show"):
+				if node.has_method("_render_hub_panels"):
+					node.call_deferred("_render_hub_panels")
+				if node.has_method("_render_last_track_panel"):
+					node.call_deferred("_render_last_track_panel")
+
 func _get_shop_item(id: String) -> Dictionary:
 	var user_path = "user://shop_data.json"
 	var path = user_path if FileAccess.file_exists(user_path) else "res://data/shop_data.json"

@@ -1,4 +1,4 @@
-# logic/utils/ui_icon_helper.gd
+# logic/ui/ui_icon_helper.gd
 extends RefCounted
 class_name UiIconHelper
 
@@ -22,7 +22,7 @@ static var _svg_source_cache: Dictionary = {}
 # display resolution keeps icons crisp instead of upscaling the small
 # imported bitmap (which caused blurry "staircase" edges).
 const _SVG_NATIVE_SIZE := 24.0
-const _RASTER_SCALE := 4
+const _RASTER_SCALE := 6
 
 
 static func raster_size_for_display(display_px: int) -> int:
@@ -46,25 +46,35 @@ static func load_icon(file_name: String) -> Texture2D:
 
 
 static func load_tinted_icon(file_name: String, color: Color, min_pixel_size: int = 48) -> Texture2D:
+	var _perf_cache_check := PerfTrace.begin("perf.detail.icon.load_tinted.cache_check")
 	if file_name.strip_edges() == "":
+		PerfTrace.end("perf.detail.icon.load_tinted.cache_check", _perf_cache_check)
 		return null
 	var cache_key := "%s|%.4f|%.4f|%.4f|%.4f|%d" % [
 		file_name, color.r, color.g, color.b, color.a, min_pixel_size
 	]
 	if _tint_cache.has(cache_key):
+		PerfTrace.end("perf.detail.icon.load_tinted.cache_check", _perf_cache_check)
 		return _tint_cache[cache_key]
+	PerfTrace.end("perf.detail.icon.load_tinted.cache_check", _perf_cache_check)
+	var _perf_rasterize := PerfTrace.begin("perf.detail.icon.load_tinted.rasterize")
 	var image := _rasterize_svg(file_name, min_pixel_size)
 	if image == null:
 		var base := load_icon(file_name)
 		if base == null:
+			PerfTrace.end("perf.detail.icon.load_tinted.rasterize", _perf_rasterize)
 			return null
 		image = base.get_image()
 		if image == null or image.is_empty():
 			_tint_cache[cache_key] = base
+			PerfTrace.end("perf.detail.icon.load_tinted.rasterize", _perf_rasterize)
 			return base
 		image = _ensure_icon_resolution(image, min_pixel_size)
+	PerfTrace.end("perf.detail.icon.load_tinted.rasterize", _perf_rasterize)
+	var _perf_tint := PerfTrace.begin("perf.detail.icon.load_tinted.tint")
 	var tinted_img := _tint_image(image, color)
 	var tinted := ImageTexture.create_from_image(tinted_img)
+	PerfTrace.end("perf.detail.icon.load_tinted.tint", _perf_tint)
 	_tint_cache[cache_key] = tinted
 	return tinted
 
@@ -74,7 +84,10 @@ static func make_texture_rect(texture: Texture2D, size: int) -> TextureRect:
 	icon.custom_minimum_size = Vector2(size, size)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	# Nearest is crisp for integer scales; linear softens odd downscales of tinted SVGs.
+	icon.texture_filter = (
+		CanvasItem.TEXTURE_FILTER_NEAREST if size >= 16 else CanvasItem.TEXTURE_FILTER_LINEAR
+	)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.texture = texture
 	icon.modulate = Color.WHITE
@@ -267,8 +280,29 @@ static func setup_modal_accent_button(
 	if button == null:
 		return
 	button.theme_type_variation = variation
+	apply_outline_accent(button, border_accent, variation)
+	if icon_file.strip_edges() != "":
+		configure_button_icon(button, icon_file, border_accent, icon_size)
+
+
+## Tint Flat* outline buttons to a page accent (settings tabs, etc.).
+## Keeps existing theme_type_variation; skips exit/danger styles.
+static func apply_outline_accent(
+	button: BaseButton,
+	border_accent: Color,
+	variation: StringName = &""
+) -> void:
+	if button == null:
+		return
+	var type_name: StringName = variation if variation != &"" else button.theme_type_variation
+	if type_name == &"":
+		type_name = &"FlatButton"
+	if is_danger_button_variation(type_name):
+		return
 	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var base := button.get_theme_stylebox(state, variation)
+		var base := button.get_theme_stylebox(state, type_name)
+		if base == null:
+			base = button.get_theme_stylebox(state)
 		if base == null:
 			continue
 		var box := base.duplicate() as StyleBoxFlat
@@ -281,9 +315,25 @@ static func setup_modal_accent_button(
 			border = border.lerp(Color(1, 1, 1, 1), 0.12)
 		elif state == "pressed":
 			border = border.darkened(0.08)
+		else:
+			border = Color(border.r, border.g, border.b, 0.85)
 		box.border_color = border
+		# Soft fill wash in the accent hue (keeps dark slate base).
+		if state != "disabled":
+			var wash_a := 0.14 if state == "normal" else (0.2 if state == "hover" else 0.18)
+			box.bg_color = Color(border_accent.r, border_accent.g, border_accent.b, wash_a).lerp(
+				Color(0.10, 0.11, 0.15, 0.96),
+				0.55
+			)
 		button.add_theme_stylebox_override(state, box)
-	configure_button_icon(button, icon_file, border_accent, icon_size)
+
+
+static func is_danger_button_variation(variation: StringName) -> bool:
+	return (
+		variation == &"FlatExitButton"
+		or variation == &"FlatModalDangerButton"
+		or variation == &"FlatDangerButton"
+	)
 
 
 static func configure_modal_overlay(control: Control, layer: int = 100) -> void:
@@ -291,6 +341,9 @@ static func configure_modal_overlay(control: Control, layer: int = 100) -> void:
 		return
 	control.z_as_relative = false
 	control.z_index = layer
+	# Модальные диалоги (здесь: любой z_index 100+) регистрируются в группе,
+	# чтобы overlay-слои (напр. target_glow) могли скрываться под ними.
+	control.add_to_group("app_modal_overlays")
 	var bg := control.get_node_or_null("Background") as ColorRect
 	if bg:
 		var c := bg.color
@@ -299,6 +352,68 @@ static func configure_modal_overlay(control: Control, layer: int = 100) -> void:
 
 static func setup_back_button(button: BaseButton, tint: Color = MUTED) -> void:
 	configure_button_icon(button, "arrow-left.svg", tint, 16)
+	enable_hover_animation(button, "arrow-left.svg")
+
+
+const HOVER_TWEEN_META := "_ui_hover_tween"
+
+static func enable_hover_animation(button: BaseButton, icon_file: String) -> void:
+	if button == null or not is_instance_valid(button) or icon_file.strip_edges() == "":
+		return
+	# Avoid double-connect
+	if button.has_meta("_ui_hover_enabled"):
+		return
+	button.set_meta("_ui_hover_enabled", true)
+	button.mouse_entered.connect(_on_hover_enter.bind(button, icon_file))
+	button.mouse_exited.connect(_on_hover_exit.bind(button, icon_file))
+
+
+static func _on_hover_enter(button: BaseButton, icon_file: String) -> void:
+	_animate_hover(button, icon_file, true)
+
+
+static func _on_hover_exit(button: BaseButton, icon_file: String) -> void:
+	_animate_hover(button, icon_file, false)
+
+
+static func _animate_hover(button: BaseButton, icon_file: String, hovered: bool) -> void:
+	if button == null or not is_instance_valid(button):
+		return
+	if button.has_meta(HOVER_TWEEN_META):
+		var old: Variant = button.get_meta(HOVER_TWEEN_META)
+		if old is Tween and (old as Tween).is_valid():
+			(old as Tween).kill()
+	button.pivot_offset = button.size * 0.5
+	var tw := button.create_tween()
+	button.set_meta(HOVER_TWEEN_META, tw)
+	tw.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	var is_back := "arrow-left" in icon_file
+	var is_forward := "chevron-right" in icon_file or "arrow-right" in icon_file or "fast-forward" in icon_file or "chevron" in icon_file
+	var is_refresh := "refresh" in icon_file or "rotate" in icon_file
+	var is_play := "play" in icon_file
+	var is_sparkles := "sparkles" in icon_file
+	if hovered:
+		if is_back or is_forward:
+			tw.tween_property(button, "scale", Vector2(1.04, 1.04), 0.12)
+			tw.parallel().tween_property(button, "modulate", Color(1, 1, 1, 1), 0.12)
+		elif is_refresh:
+			tw.tween_property(button, "rotation_degrees", 18.0, 0.15)
+			tw.parallel().tween_property(button, "modulate", Color(1, 1, 1, 1), 0.12)
+		elif is_play:
+			tw.tween_property(button, "scale", Vector2(1.06, 1.06), 0.12)
+			tw.parallel().tween_property(button, "modulate", Color(1, 1, 1, 1), 0.12)
+		elif is_sparkles:
+			tw.tween_property(button, "scale", Vector2(1.06, 1.06), 0.12)
+			tw.parallel().tween_property(button, "position:y", button.position.y - 1.5, 0.12)
+			tw.parallel().tween_property(button, "modulate", Color(1, 1, 1, 1), 0.12)
+		else:
+			tw.tween_property(button, "scale", Vector2(1.03, 1.03), 0.11)
+			tw.parallel().tween_property(button, "modulate", Color(1, 1, 1, 1), 0.11)
+	else:
+		tw.tween_property(button, "scale", Vector2.ONE, 0.12)
+		tw.parallel().tween_property(button, "position", button.position, 0.12)
+		tw.parallel().tween_property(button, "rotation_degrees", 0.0, 0.12)
+		tw.parallel().tween_property(button, "modulate", Color.WHITE, 0.12)
 
 
 ## Full-screen hub screens (play modes, profile, library, …):

@@ -77,6 +77,8 @@ static func _apply_cursor(control: Control) -> void:
 		return
 	if control is Button or control is CheckBox or control is CheckButton:
 		control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	elif control is TextureButton:
+		control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	elif control is LinkButton or control is OptionButton or control is MenuButton or control is ColorPickerButton:
 		control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	elif control is ItemList or control is Tree or control is TabBar or control is SpinBox:

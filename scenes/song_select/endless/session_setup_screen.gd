@@ -12,13 +12,16 @@ const _InstrumentIconScript = preload("res://scenes/song_select/endless/session_
 const _GenreGroupIconScript = preload("res://scenes/song_select/endless/session_genre_group_icon.gd")
 const _ProfileGenrePortrait = preload("res://logic/domain/profile/profile_genre_portrait.gd")
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
+const _ChartDifficultyAnalyzer = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
 const _NoticeOverlayScene = preload("res://ui/overlays/app_notice_overlay.tscn")
 const _UiScreenHotkeys = preload("res://logic/ui/ui_screen_hotkeys.gd")
 const _HelpCalloutScene = preload("res://scenes/help/help_callout.tscn")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 const _ChartStyleSettings = preload("res://scenes/song_select/lib/chart_style_settings.gd")
 const _PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const _SliderScrollUtils = preload("res://logic/ui/slider_scroll_utils.gd")
+const _HelpSectionUi = preload("res://logic/ui/settings_section_ui.gd")
 
 var _config: Dictionary = {}
 var _notice_overlay: AppNoticeOverlay = null
@@ -115,6 +118,9 @@ var _preview_rows: Dictionary = {}
 var _last_scope_count: int = -1
 ## Coalesce rapid toggles into one scope scan per frame.
 var _preview_sync_queued: bool = false
+var _preview_sync_pending_scope: bool = false
+var _scope_count_token := 0
+const SCOPE_COUNT_YIELD_EVERY := 10
 var _track_filters_panel: VBoxContainer = null
 var _track_filter_bodies_container: VBoxContainer = null
 var _track_filter_chips_row: HBoxContainer = null
@@ -146,6 +152,7 @@ func _free_container_children(container: Node) -> void:
 
 
 func _ready() -> void:
+	var _perf_t := PerfTrace.begin("perf.load.endless.setup")
 	var game_engine := get_parent()
 	if game_engine and game_engine.has_method("get_transitions"):
 		setup_managers(game_engine.get_transitions())
@@ -161,13 +168,20 @@ func _ready() -> void:
 	_notice_overlay = _NoticeOverlayScene.instantiate() as AppNoticeOverlay
 	if _notice_overlay:
 		add_child(_notice_overlay)
+	var _perf_panel := PerfTrace.begin("perf.detail.endless.setup.panel_styles")
 	_apply_panel_styles()
+	PerfTrace.end("perf.detail.endless.setup.panel_styles", _perf_panel)
+	var _perf_dynamic := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui")
 	_ensure_dynamic_ui()
+	PerfTrace.end("perf.detail.endless.setup.dynamic_ui", _perf_dynamic)
+	var _perf_sliders := PerfTrace.begin("perf.detail.endless.setup.sliders")
 	_setup_random_favorites_check()
 	_setup_unique_songs_check()
 	_setup_difficulty_sliders()
 	_setup_duration_sliders()
+	PerfTrace.end("perf.detail.endless.setup.sliders", _perf_sliders)
 	call_deferred("_disable_slider_wheel_scroll")
+	var _perf_sync := PerfTrace.begin("perf.detail.endless.setup.sync")
 	_sync_source_selection()
 	_sync_random_favorites_visibility()
 	_sync_difficulty_ui()
@@ -184,9 +198,13 @@ func _ready() -> void:
 	_sync_playlist_ui()
 	_setup_selected_pool_after_option()
 	_apply_setup_tooltips()
+	PerfTrace.end("perf.detail.endless.setup.sync", _perf_sync)
+	var _perf_filters := PerfTrace.begin("perf.detail.endless.setup.track_filters")
 	_setup_track_filters_layout()
 	_setup_preview_mode_blurb()
-	_queue_preview_sync()
+	PerfTrace.end("perf.detail.endless.setup.track_filters", _perf_filters)
+	_record_scope_trigger("initial")
+	_queue_preview_sync(true)
 	if _start_button and not _start_button.pressed.is_connected(_on_start_pressed):
 		_start_button.pressed.connect(_on_start_pressed)
 	if _selected_tracks_button and not _selected_tracks_button.pressed.is_connected(_on_selected_tracks_pressed):
@@ -199,6 +217,9 @@ func _ready() -> void:
 	call_deferred("_sync_ambient_profile")
 	call_deferred("_maybe_show_setup_hint")
 	call_deferred("_setup_ui_icons")
+	_ensure_help_button()
+	call_deferred("_ensure_help_button")
+	PerfTrace.end("perf.load.endless.setup", _perf_t)
 
 
 func _setup_ui_icons() -> void:
@@ -295,7 +316,7 @@ func _on_mod_pool_select_all_pressed() -> void:
 	_config["mod_pool"] = pool
 	_sync_mod_pool_selection()
 	_sync_mod_pool_count_label()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -303,21 +324,23 @@ func _on_mod_pool_reset_pressed() -> void:
 	_config["mod_pool"] = _EndlessSessionConfig.default_mod_pool()
 	_sync_mod_pool_selection()
 	_sync_mod_pool_count_label()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	MusicManager.play_modifier_deselect_sound()
 
 
 func _on_genre_groups_select_all_pressed() -> void:
 	_config["genre_group_ids"] = _ProfileGenrePortrait.all_group_ids()
 	_sync_genre_group_icons()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	MusicManager.play_modifier_select_sound()
 
 
 func _on_genre_groups_reset_pressed() -> void:
 	_config["genre_group_ids"] = []
 	_sync_genre_group_icons()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	MusicManager.play_modifier_deselect_sound()
 
 
@@ -391,23 +414,33 @@ func _ensure_dynamic_ui() -> void:
 	if _mod_policy_buttons.is_empty():
 		_build_mod_policy_buttons()
 	if _mod_pool_cards.is_empty():
+		var _t_mod_pool := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui.mod_pool")
 		_build_mod_pool_cards()
+		PerfTrace.end("perf.detail.endless.setup.dynamic_ui.mod_pool", _t_mod_pool)
 	if _mod_count_buttons.is_empty():
 		_build_mod_count_buttons()
 	if _mod_pick_buttons.is_empty():
 		_build_mod_pick_buttons()
 	if _chart_style_settings == null:
+		var _t_chart := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui.chart_style")
 		_ensure_chart_style_settings()
+		PerfTrace.end("perf.detail.endless.setup.dynamic_ui.chart_style", _t_chart)
 	if not _playlist_ui_ready:
 		_ensure_playlist_ui()
 	if _genre_policy_buttons.is_empty():
 		_build_genre_policy_buttons()
 	if _genre_group_icons.is_empty():
+		var _t_genre := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui.genre_icons")
 		_build_genre_group_icons()
+		PerfTrace.end("perf.detail.endless.setup.dynamic_ui.genre_icons", _t_genre)
 	if _instrument_icons.is_empty():
+		var _t_inst := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui.instrument_icons")
 		_build_instrument_icons()
+		PerfTrace.end("perf.detail.endless.setup.dynamic_ui.instrument_icons", _t_inst)
 	if _preview_rows.is_empty():
+		var _t_prev := PerfTrace.begin("perf.detail.endless.setup.dynamic_ui.preview_rows")
 		_build_preview_rows()
+		PerfTrace.end("perf.detail.endless.setup.dynamic_ui.preview_rows", _t_prev)
 
 
 func _update_dynamic_ui_labels() -> void:
@@ -569,7 +602,8 @@ func _sync_chart_style_ui() -> void:
 func _on_chart_style_settings_changed(fragment: Dictionary) -> void:
 	for key in fragment.keys():
 		_config[key] = fragment[key]
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -639,7 +673,7 @@ func _on_hp_recovery_slider_changed(value: float) -> void:
 	var idx := clampi(int(round(value)), 0, _EndlessSessionConfig.INTER_TRACK_HP_RECOVERY_OPTIONS.size() - 1)
 	_config["inter_track_hp_recovery_pct"] = _EndlessSessionConfig.INTER_TRACK_HP_RECOVERY_OPTIONS[idx]
 	_sync_hp_recovery_ui()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -745,7 +779,8 @@ func _on_playlist_favorites_pressed() -> void:
 	_config["playlist_id"] = _PlaylistCatalog.BUILTIN_FAVORITES_ID
 	_config["track_source"] = _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST
 	_sync_playlist_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -798,7 +833,8 @@ func _on_instrument_pool_toggled(instrument_id: String, pressed: bool) -> void:
 	_config["instruments"] = pool
 	_config["instrument"] = str(pool[0])
 	_sync_instrument_icons()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	if pressed:
 		MusicManager.play_modifier_select_sound()
 	else:
@@ -851,7 +887,8 @@ func _on_genre_policy_toggled(on: bool, policy_id: String) -> void:
 	_sync_genre_policy_buttons()
 	_sync_genre_group_icons()
 	_sync_genre_visibility()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -899,7 +936,8 @@ func _on_genre_group_toggled(group_id: String, pressed: bool) -> void:
 		allowed.erase(gid)
 	_config["genre_group_ids"] = allowed
 	_sync_genre_group_icons()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	if pressed:
 		MusicManager.play_modifier_select_sound()
 	else:
@@ -929,7 +967,7 @@ func _build_preview_rows() -> void:
 		{"id": "genre", "icon": "tags.svg", "tint": accent},
 		{"id": "playlist", "icon": "layers.svg", "tint": accent},
 		{"id": "tracks", "icon": "music.svg", "tint": accent},
-		{"id": "difficulty", "icon": "star.svg", "tint": accent},
+		{"id": "difficulty", "icon": "zap.svg", "tint": accent},
 		{"id": "duration", "icon": "clock.svg", "tint": accent},
 		{"id": "gen_modes", "icon": "settings-2.svg", "tint": accent},
 		{"id": "hp_recovery", "icon": "heart-pulse.svg", "tint": accent},
@@ -991,7 +1029,8 @@ func _sync_start_button_state(
 	fav_count: int,
 	selected_count: int,
 	genre_groups: Array,
-	pool: Array
+	pool: Array,
+	scope_count: int = 0
 ) -> void:
 	if _start_button == null:
 		return
@@ -999,7 +1038,7 @@ func _sync_start_button_state(
 	_start_button.disabled = not enabled
 	_start_button.modulate = Color.WHITE if enabled else Color(0.58, 0.62, 0.72, 0.72)
 	var reasons := _start_block_reasons(
-		fav_ok, mods_ok, scope_ok, genre_ok, selected_ok, favorites_only, fav_count, selected_count, genre_groups, pool
+		fav_ok, mods_ok, scope_ok, genre_ok, selected_ok, favorites_only, fav_count, selected_count, genre_groups, pool, scope_count
 	)
 	if _start_block_hint_label:
 		if enabled:
@@ -1024,13 +1063,18 @@ func _start_block_reasons(
 	fav_count: int,
 	selected_count: int,
 	genre_groups: Array,
-	pool: Array
+	pool: Array,
+	scope_count: int = 0
 ) -> PackedStringArray:
 	var reasons: PackedStringArray = []
+	var min_tracks := _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
 	if not fav_ok and favorites_only:
-		reasons.append(tr("SESSION_SETUP_START_BLOCK_FAVORITES") % fav_count)
+		reasons.append(tr("SESSION_SETUP_START_BLOCK_TRACKS") % [min_tracks, fav_count])
 	if not scope_ok:
-		reasons.append(tr("SESSION_SETUP_START_BLOCK_SCOPE"))
+		if scope_count > 0:
+			reasons.append(tr("SESSION_SETUP_START_BLOCK_TRACKS") % [min_tracks, scope_count])
+		else:
+			reasons.append(tr("SESSION_SETUP_START_BLOCK_SCOPE"))
 	if not genre_ok:
 		reasons.append(tr("SESSION_SETUP_START_BLOCK_GENRE") % genre_groups.size())
 	if not mods_ok:
@@ -1038,7 +1082,7 @@ func _start_block_reasons(
 	if not selected_ok:
 		reasons.append(
 			tr("SESSION_SETUP_START_BLOCK_TRACKS") % [
-				_EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN,
+				min_tracks,
 				selected_count,
 			]
 		)
@@ -1056,7 +1100,7 @@ func _setup_unique_songs_check() -> void:
 
 func _on_unique_songs_toggled(on: bool) -> void:
 	_config["unique_songs_only"] = on
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 
 
 func _setup_random_favorites_check() -> void:
@@ -1070,7 +1114,8 @@ func _setup_random_favorites_check() -> void:
 
 func _on_random_favorites_toggled(on: bool) -> void:
 	_config["random_favorites_only"] = on
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 
 
 func _setup_difficulty_sliders() -> void:
@@ -1170,7 +1215,8 @@ func _on_duration_min_changed(value: float) -> void:
 		if _duration_max_slider:
 			_duration_max_slider.set_value_no_signal(value)
 	_sync_duration_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("duration")
+	_queue_preview_sync(true)
 
 
 func _on_duration_max_changed(value: float) -> void:
@@ -1182,7 +1228,8 @@ func _on_duration_max_changed(value: float) -> void:
 	if value < _EndlessSessionConfig.DURATION_SLIDER_MAX_SEC:
 		_config["duration_max_open"] = false
 	_sync_duration_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("duration")
+	_queue_preview_sync(true)
 
 
 func _on_duration_max_open_toggled(on: bool) -> void:
@@ -1191,7 +1238,8 @@ func _on_duration_max_open_toggled(on: bool) -> void:
 		_config["duration_max_sec"] = _EndlessSessionConfig.DURATION_SLIDER_MAX_SEC
 		_duration_max_slider.set_value_no_signal(_EndlessSessionConfig.DURATION_SLIDER_MAX_SEC)
 	_sync_duration_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("duration")
+	_queue_preview_sync(true)
 
 
 func _sync_duration_ui() -> void:
@@ -1329,7 +1377,9 @@ func _on_mod_pick_toggled(on: bool, strategy_id: String) -> void:
 	if not on:
 		return
 	_config["mod_pick_strategy"] = strategy_id
-	_queue_preview_sync()
+	_queue_preview_sync(false)
+	if MusicManager:
+		MusicManager.play_modifier_select_sound()
 
 
 func _build_gen_mode_policy_buttons() -> void:
@@ -1369,7 +1419,7 @@ func _on_mod_policy_toggled(on: bool, policy_id: String) -> void:
 		if pool is Array and (pool as Array).is_empty():
 			_config["mod_pool"] = _EndlessSessionConfig.default_mod_pool()
 	_sync_mod_ui()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -1382,7 +1432,7 @@ func _on_mod_count_toggled(on: bool, count: int) -> void:
 	if not on:
 		return
 	_config["mod_random_count"] = count
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	MusicManager.play_modifier_select_sound()
 
 
@@ -1404,7 +1454,7 @@ func _on_mod_pool_icon_toggled(modifier_id: String, pressed: bool) -> void:
 	_config["mod_pool"] = pool
 	_sync_mod_pool_selection()
 	_sync_mod_pool_count_label()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	if pressed:
 		MusicManager.play_modifier_select_sound()
 	else:
@@ -1418,7 +1468,8 @@ func _on_difficulty_min_changed(value: float) -> void:
 		if _difficulty_max_slider:
 			_difficulty_max_slider.set_value_no_signal(value)
 	_sync_difficulty_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("difficulty")
+	_queue_preview_sync(true)
 
 
 func _on_difficulty_max_changed(value: float) -> void:
@@ -1430,7 +1481,8 @@ func _on_difficulty_max_changed(value: float) -> void:
 	if value < _EndlessSessionConfig.DIFFICULTY_BASE_MAX:
 		_config["difficulty_max_over_cap"] = false
 	_sync_difficulty_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("difficulty")
+	_queue_preview_sync(true)
 
 
 func _on_difficulty_max_over_cap_toggled(on: bool) -> void:
@@ -1439,7 +1491,8 @@ func _on_difficulty_max_over_cap_toggled(on: bool) -> void:
 		_config["difficulty_max"] = _EndlessSessionConfig.DIFFICULTY_BASE_MAX
 		_difficulty_max_slider.set_value_no_signal(_EndlessSessionConfig.DIFFICULTY_BASE_MAX)
 	_sync_difficulty_ui()
-	_queue_preview_sync()
+	_record_scope_trigger("difficulty")
+	_queue_preview_sync(true)
 
 
 func _sync_difficulty_ui() -> void:
@@ -1460,9 +1513,38 @@ func _sync_difficulty_ui() -> void:
 			_difficulty_max_over_cap_check.button_pressed = max_over_cap and can_over_cap
 			_difficulty_max_over_cap_check.set_block_signals(false)
 	if _difficulty_min_value_label:
-		_difficulty_min_value_label.text = _EndlessSessionConfig.format_difficulty_value(dmin)
+		_ensure_zap_for_label(_difficulty_min_value_label, dmin, false)
 	if _difficulty_max_value_label:
-		_difficulty_max_value_label.text = _EndlessSessionConfig.format_difficulty_value(dmax, max_over_cap)
+		_ensure_zap_for_label(_difficulty_max_value_label, dmax, max_over_cap)
+
+
+func _ensure_zap_for_label(label: Label, value: float, over_cap: bool) -> void:
+	if label == null:
+		return
+	var parent := label.get_parent()
+	if parent == null:
+		return
+	var icon_name := label.name + "_Zap"
+	var icon := parent.get_node_or_null(icon_name) as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = icon_name
+		icon.custom_minimum_size = Vector2(16, 16)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		parent.add_child(icon)
+		parent.move_child(icon, label.get_index())
+	icon.texture = _UiIconHelper.load_tinted_icon("zap.svg", _ChartDifficultyAnalyzer.rating_color_for_decimal(value if not over_cap else 10.0), 16)
+	var tint := _ChartDifficultyAnalyzer.rating_color_for_decimal(value if not over_cap else 10.0)
+	label.add_theme_color_override("font_color", tint)
+	if over_cap and value >= _EndlessSessionConfig.DIFFICULTY_BASE_MAX - 0.001:
+		label.text = "10+"
+	elif value <= 0.0:
+		label.text = "—"
+	else:
+		label.text = _ChartDifficultyAnalyzer.format_decimal_rating(value, false)
 
 
 func _mod_pool_min_for_policy() -> int:
@@ -1578,7 +1660,8 @@ func _on_source_button_toggled(on: bool, source_id: String) -> void:
 	_sync_source_selection()
 	_sync_random_favorites_visibility()
 	_sync_genre_visibility()
-	_queue_preview_sync()
+	_record_scope_trigger("filter")
+	_queue_preview_sync(true)
 	if not opened_picker:
 		MusicManager.play_modifier_select_sound()
 
@@ -1867,11 +1950,14 @@ func _sync_filter_chip_summaries() -> void:
 	var dmin := float(_config.get("difficulty_min", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MIN))
 	var dmax := float(_config.get("difficulty_max", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MAX))
 	var max_over_cap := bool(_config.get("difficulty_max_over_cap", false))
-	var diff_summary := "%s – %s" % [
-		_EndlessSessionConfig.format_difficulty_value(dmin),
-		_EndlessSessionConfig.format_difficulty_value(dmax, max_over_cap),
-	]
+	var dmin_txt := "10+" if max_over_cap and dmin >= _EndlessSessionConfig.DIFFICULTY_BASE_MAX - 0.001 else (_ChartDifficultyAnalyzer.format_decimal_rating(dmin, false) if dmin > 0.0 else "—")
+	var dmax_txt := "10+" if max_over_cap and dmax >= _EndlessSessionConfig.DIFFICULTY_BASE_MAX - 0.001 else (_ChartDifficultyAnalyzer.format_decimal_rating(dmax, false) if dmax > 0.0 else "—")
+	var diff_summary := "%s – %s" % [dmin_txt, dmax_txt]
 	_set_filter_chip_text("difficulty", tr("SESSION_SETUP_FILTER_CHIP_DIFFICULTY"), diff_summary)
+	var diff_chip = _track_filter_chips.get("difficulty", null) as Button
+	if diff_chip:
+		var diff_tint := _ChartDifficultyAnalyzer.rating_color_for_decimal(dmax if not max_over_cap else 10.0)
+		diff_chip.icon = _UiIconHelper.load_tinted_icon("zap.svg", diff_tint, 16)
 	var dur_min := int(_config.get("duration_min_sec", _EndlessSessionConfig.DEFAULT_DURATION_MIN_SEC))
 	var dur_max := int(_config.get("duration_max_sec", _EndlessSessionConfig.DEFAULT_DURATION_MAX_SEC))
 	var dur_max_open := bool(_config.get("duration_max_open", false))
@@ -1956,14 +2042,19 @@ func _on_selected_pool_after_changed(index: int) -> void:
 		return
 	var policy := str(_selected_pool_after_option.get_item_metadata(index))
 	_config["selected_pool_after"] = _EndlessSessionConfig.normalize_selected_pool_after(policy)
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 
 
 func _on_selected_tracks_pressed() -> void:
 	_open_track_picker()
 
 
-func _queue_preview_sync() -> void:
+func _record_scope_trigger(cause: String) -> void:
+	PerfTrace.record("perf.detail.endless.scope_trigger." + cause, 1)
+
+func _queue_preview_sync(needs_scope: bool = true) -> void:
+	if needs_scope:
+		_preview_sync_pending_scope = true
 	if _preview_sync_queued:
 		return
 	_preview_sync_queued = true
@@ -1972,10 +2063,13 @@ func _queue_preview_sync() -> void:
 
 func _flush_preview_sync() -> void:
 	_preview_sync_queued = false
-	_sync_preview()
+	var needs_scope := _preview_sync_pending_scope
+	_preview_sync_pending_scope = false
+	_sync_preview(needs_scope)
 
 
-func _sync_preview() -> void:
+func _sync_preview(needs_scope: bool = true) -> void:
+	var _perf_t := PerfTrace.begin("perf.detail.endless.setup.preview_sync")
 	_config = _EndlessSessionConfig.sanitize(_config)
 	var source := str(_config.get("track_source", _EndlessSessionConfig.TRACK_SOURCE_RANDOM))
 	var favorites_only := bool(_config.get("random_favorites_only", false))
@@ -1983,12 +2077,14 @@ func _sync_preview() -> void:
 	var dmin := float(_config.get("difficulty_min", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MIN))
 	var dmax := float(_config.get("difficulty_max", _EndlessSessionConfig.DEFAULT_DIFFICULTY_MAX))
 	var max_over_cap := bool(_config.get("difficulty_max_over_cap", false))
-	var source_text := _EndlessSessionConfig.preview_source_text(source, false)
+	# Fold favorites-only into the source line when on; hide the redundant OFF row
+	# ("All library") that duplicated genre policy's "All library" wording.
+	var source_text := _EndlessSessionConfig.preview_source_text(source, favorites_only)
 	_set_preview_row("source", source_text, true)
 	_set_preview_row(
 		"favorites",
-		tr("SESSION_SETUP_PREVIEW_FAVORITES_ON") if favorites_only else tr("SESSION_SETUP_PREVIEW_FAVORITES_OFF"),
-		source == _EndlessSessionConfig.TRACK_SOURCE_RANDOM
+		tr("SESSION_SETUP_PREVIEW_FAVORITES_ON"),
+		source == _EndlessSessionConfig.TRACK_SOURCE_RANDOM and favorites_only
 	)
 	var unique_only := bool(_config.get("unique_songs_only", false))
 	_set_preview_row(
@@ -2027,14 +2123,18 @@ func _sync_preview() -> void:
 		],
 		source == _EndlessSessionConfig.TRACK_SOURCE_PLAYLIST
 	)
+	var dmin_txt := "10+" if max_over_cap and dmin >= _EndlessSessionConfig.DIFFICULTY_BASE_MAX - 0.001 else (_ChartDifficultyAnalyzer.format_decimal_rating(dmin, false) if dmin > 0.0 else "—")
+	var dmax_txt := "10+" if max_over_cap and dmax >= _EndlessSessionConfig.DIFFICULTY_BASE_MAX - 0.001 else (_ChartDifficultyAnalyzer.format_decimal_rating(dmax, false) if dmax > 0.0 else "—")
 	_set_preview_row(
 		"difficulty",
-		tr("SESSION_SETUP_PREVIEW_DIFFICULTY_FMT") % [
-			_EndlessSessionConfig.format_difficulty_value(dmin),
-			_EndlessSessionConfig.format_difficulty_value(dmax, max_over_cap),
-		],
+		tr("SESSION_SETUP_PREVIEW_DIFFICULTY_FMT") % [dmin_txt, dmax_txt],
 		true
 	)
+	var diff_row = _preview_rows.get("difficulty", null)
+	if diff_row and diff_row.has_method("set_icon"):
+		var diff_rating := dmax if not max_over_cap else 10.0
+		var diff_tint := _ChartDifficultyAnalyzer.rating_color_for_decimal(diff_rating)
+		diff_row.set_icon("zap.svg", diff_tint)
 	var dur_min := int(_config.get("duration_min_sec", _EndlessSessionConfig.DEFAULT_DURATION_MIN_SEC))
 	var dur_max := int(_config.get("duration_max_sec", _EndlessSessionConfig.DEFAULT_DURATION_MAX_SEC))
 	var dur_max_open := bool(_config.get("duration_max_open", false))
@@ -2066,16 +2166,104 @@ func _sync_preview() -> void:
 		true
 	)
 	_set_preview_row("mods", tr("SESSION_SETUP_PREVIEW_MODS_FMT") % _preview_mods_text(), true)
-	var scope_count := _SessionScopeResolver.scope_count(_config)
-	var scope_ok := scope_count > 0
-	_sync_scope_hero(scope_count, scope_ok)
-	_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % scope_count, false)
+	# Keep last known scope while async recount runs (avoids UI freeze on every toggle).
+	if _last_scope_count >= 0:
+		_sync_scope_hero(_last_scope_count, _last_scope_count > 0)
+		_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % _last_scope_count, false)
 	_sync_genre_policy_buttons()
 	_sync_genre_group_icons()
 	_sync_genre_visibility()
 	_sync_playlist_ui()
 	_sync_instrument_icons()
-	var fav_ok := not favorites_only or fav_count > 0
+	_apply_start_gates_with_scope(_last_scope_count if _last_scope_count >= 0 else 0)
+	_sync_filter_chip_summaries()
+	_sync_setup_option_styles()
+	_persist_config()
+	if needs_scope:
+		_kick_scope_count_async()
+	PerfTrace.end("perf.detail.endless.setup.preview_sync", _perf_t)
+
+
+func _kick_scope_count_async() -> void:
+	_scope_count_token += 1
+	var token := _scope_count_token
+	var cfg := _config.duplicate(true)
+	var engine := get_parent()
+	if engine and engine.has_method("run_async"):
+		engine.run_async(_scope_count_coro.bind(token, cfg))
+	else:
+		var _perf_t := PerfTrace.begin("perf.detail.endless.setup.scope_count")
+		NotesUtils.begin_scope_fast_cache()
+		var count := _SessionScopeResolver.scope_count_fast(cfg)
+		NotesUtils.end_scope_fast_cache()
+		PerfTrace.end("perf.detail.endless.setup.scope_count", _perf_t)
+		if token == _scope_count_token:
+			_apply_scope_count_result(count)
+
+
+func _scope_count_coro(token: int, cfg: Dictionary) -> void:
+	var _perf_t := PerfTrace.begin("perf.detail.endless.setup.scope_count")
+	if token != _scope_count_token or not is_inside_tree():
+		PerfTrace.end("perf.detail.endless.setup.scope_count", _perf_t)
+		return
+	NotesUtils.begin_scope_fast_cache()
+	var _perf_scan := PerfTrace.begin("perf.detail.endless.setup.scope.scan_plan")
+	var plan := _SessionScopeResolver.scope_scan_plan(cfg)
+	PerfTrace.end("perf.detail.endless.setup.scope.scan_plan", _perf_scan)
+	var count := 0
+	if bool(plan.get("playlist_mode", false)):
+		var _perf_fast := PerfTrace.begin("perf.detail.endless.setup.scope.count_fast")
+		count = _SessionScopeResolver.scope_count_fast(cfg)
+		PerfTrace.end("perf.detail.endless.setup.scope.count_fast", _perf_fast)
+	else:
+		var paths: Array = plan.get("paths", [])
+		var instruments: Array = plan.get("instruments", [])
+		var sanitized: Dictionary = plan.get("cfg", cfg)
+		var n := 0
+		var _perf_loop := PerfTrace.begin("perf.detail.endless.setup.scope.count_loop")
+		for song_path in paths:
+			if token != _scope_count_token:
+				PerfTrace.end("perf.detail.endless.setup.scope.count_loop", _perf_loop)
+				NotesUtils.end_scope_fast_cache()
+				PerfTrace.end("perf.detail.endless.setup.scope_count", _perf_t)
+				return
+			var _perf_cpu := PerfTrace.begin("perf.detail.endless.setup.scope.count_loop.cpu")
+			for inst in instruments:
+				count += _SessionScopeResolver.count_entries_for_song(
+					str(song_path), sanitized, str(inst)
+				)
+			PerfTrace.end("perf.detail.endless.setup.scope.count_loop.cpu", _perf_cpu)
+			n += 1
+			if n % SCOPE_COUNT_YIELD_EVERY == 0:
+				var _perf_yield := PerfTrace.begin("perf.detail.endless.setup.scope.count_loop.yield_wait")
+				await get_tree().process_frame
+				PerfTrace.end("perf.detail.endless.setup.scope.count_loop.yield_wait", _perf_yield)
+		PerfTrace.end("perf.detail.endless.setup.scope.count_loop", _perf_loop)
+	if token != _scope_count_token or not is_inside_tree():
+		NotesUtils.end_scope_fast_cache()
+		PerfTrace.end("perf.detail.endless.setup.scope_count", _perf_t)
+		return
+	_apply_scope_count_result(count)
+	NotesUtils.end_scope_fast_cache()
+	PerfTrace.end("perf.detail.endless.setup.scope_count", _perf_t)
+
+
+func _apply_scope_count_result(scope_count: int) -> void:
+	var scope_ok := scope_count > 0
+	_sync_scope_hero(scope_count, scope_ok)
+	_set_preview_row("scope", tr("SESSION_SETUP_PREVIEW_SCOPE_FMT") % scope_count, false)
+	_apply_start_gates_with_scope(scope_count)
+
+
+func _apply_start_gates_with_scope(scope_count: int) -> void:
+	var source := str(_config.get("track_source", _EndlessSessionConfig.TRACK_SOURCE_RANDOM))
+	var favorites_only := bool(_config.get("random_favorites_only", false))
+	var fav_count := _favorite_track_count()
+	var genre_policy := str(_config.get("genre_policy", _EndlessSessionConfig.GENRE_POLICY_ALL))
+	var genre_groups: Array = _config.get("genre_group_ids", [])
+	var selected_paths: Array = _config.get("selected_song_paths", [])
+	var scope_ok := scope_count >= _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
+	var fav_ok := not favorites_only or fav_count >= _EndlessSessionConfig.SELECTED_TRACK_PICKER_MIN
 	var mod_policy := str(_config.get("mod_policy", _EndlessSessionConfig.MOD_POLICY_NONE))
 	var pool: Array = _config.get("mod_pool", [])
 	var mods_ok := (
@@ -2113,11 +2301,9 @@ func _sync_preview() -> void:
 		fav_count,
 		selected_paths.size(),
 		genre_groups,
-		pool
+		pool,
+		scope_count
 	)
-	_sync_filter_chip_summaries()
-	_sync_setup_option_styles()
-	_persist_config()
 
 
 func _preview_mods_text() -> String:
@@ -2278,8 +2464,73 @@ func apply_locale() -> void:
 	_sync_genre_visibility()
 	_sync_playlist_ui()
 	_sync_active_track_filter()
-	_queue_preview_sync()
+	_queue_preview_sync(false)
 	_apply_setup_tooltips()
+	_ensure_help_button()
+
+
+func _ensure_help_button() -> void:
+	if _title_label == null or not is_instance_valid(_title_label):
+		return
+	if _title_label.has_meta("help_icon_btn"):
+		var existing_meta: Variant = _title_label.get_meta("help_icon_btn")
+		if existing_meta is Button and is_instance_valid(existing_meta):
+			(existing_meta as Button).tooltip_text = tr("HELP_LINK_PLAY_MODES")
+			(existing_meta as Button).visible = true
+			return
+	var parent := _title_label.get_parent()
+	if parent == null:
+		return
+	var existing_btn := parent.get_node_or_null("HelpButton") as Button
+	if existing_btn != null and is_instance_valid(existing_btn):
+		existing_btn.tooltip_text = tr("HELP_LINK_PLAY_MODES")
+		existing_btn.visible = true
+		return
+	var row_existing := parent.get_node_or_null("TitleHelpRow") as HBoxContainer
+	if row_existing != null:
+		var btn_in_row := row_existing.get_node_or_null("HelpButton") as Button
+		if btn_in_row != null and is_instance_valid(btn_in_row):
+			btn_in_row.tooltip_text = tr("HELP_LINK_PLAY_MODES")
+			btn_in_row.visible = true
+			return
+	var legacy_row := parent.get_node_or_null("ScreenTitleLabelHelpRow") as HBoxContainer
+	if legacy_row != null:
+		var btn_legacy := legacy_row.get_node_or_null("HelpButton") as Button
+		if btn_legacy != null and is_instance_valid(btn_legacy):
+			btn_legacy.tooltip_text = tr("HELP_LINK_PLAY_MODES")
+			return
+	var btn := _HelpSectionUi.attach_help_icon_beside_label(
+		_title_label,
+		tr("HELP_LINK_PLAY_MODES"),
+		_on_help_pressed,
+		true
+	)
+	if btn and is_instance_valid(btn):
+		btn.name = "HelpButton"
+		btn.visible = true
+
+
+func _on_help_pressed() -> void:
+	_open_help_item("endless_mode")
+
+
+func _open_help_item(item_id: String) -> void:
+	if transitions and transitions.has_method("open_help_item"):
+		transitions.open_help_item(item_id)
+		return
+	var parent := get_parent()
+	if parent and parent.has_method("get_transitions"):
+		var trans = parent.get_transitions()
+		if trans and trans.has_method("open_help_item"):
+			trans.open_help_item(item_id)
+			return
+	var tree := get_tree()
+	if tree:
+		var root: Node = tree.root.get_node_or_null("GameEngine") as Node
+		if root and root.has_method("get_transitions"):
+			var t2 = root.get_transitions()
+			if t2 and t2.has_method("open_help_item"):
+				t2.open_help_item(item_id)
 
 
 func cleanup_before_exit() -> void:
@@ -2313,11 +2564,28 @@ func _execute_close_transition() -> void:
 
 func _on_start_pressed() -> void:
 	var config := _EndlessSessionConfig.sanitize(_config)
+	var scope_n := _SessionScopeResolver.scope_count_fast(config)
+	if scope_n <= 0:
+		if _notice_overlay:
+			_notice_overlay.show_with_actions(
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_TITLE"),
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_BODY"),
+			)
+		if MusicManager:
+			MusicManager.play_modifier_deselect_sound()
+		return
 	if transitions and transitions.has_method("stage_endless_session_config"):
 		transitions.stage_endless_session_config(config)
 	if transitions and transitions.has_method("open_endless_run"):
 		transitions.open_endless_run(config)
-		MusicManager.play_modifier_select_sound()
+		# open_endless_run may still fail if deck build races; only play select on attempt.
+		if transitions.get_endless_run() != null:
+			MusicManager.play_modifier_select_sound()
+		elif _notice_overlay:
+			_notice_overlay.show_with_actions(
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_TITLE"),
+				tr("SESSION_SETUP_START_EMPTY_SCOPE_BODY"),
+			)
 		return
 	if _notice_overlay:
 		_notice_overlay.show_with_actions(

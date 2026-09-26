@@ -16,6 +16,7 @@ const _CONSOLE := "%s/ConsolePanel/ConsolePanelMargin/ConsoleRows" % _CV
 const _COMPARE := "%s/ComparePanel/ComparePanelMargin/CompareRows" % _CV
 const _GEN := "%s/GenVariantPanel/GenVariantPanelMargin/GenVariantRows" % _CV
 const _TIMING_DEBUG := "%s/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRows" % _CV
+const _CHART_EDITOR := "%s/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows" % _CV
 
 @onready var console_header: Label = get_node("%s/ConsoleHeader" % _CONSOLE)
 @onready var console_hint: Label = get_node("%s/ConsoleHint" % _CONSOLE)
@@ -35,6 +36,11 @@ const _TIMING_DEBUG := "%s/TimingDebugPanel/TimingDebugPanelMargin/TimingDebugRo
 @onready var timing_overlay_checkbox: CheckBox = get_node("%s/TimingOverlayCheckBox" % _TIMING_DEBUG)
 @onready var timing_autoplay_checkbox: CheckBox = get_node("%s/TimingAutoplayCheckBox" % _TIMING_DEBUG)
 @onready var drum_colors_checkbox: CheckBox = get_node("%s/DrumColorsCheckBox" % _TIMING_DEBUG)
+@onready var chart_editor_checkbox: CheckBox = get_node_or_null("%s/ChartEditorCheckBox" % _CHART_EDITOR)
+@onready var test_play_checkbox: CheckBox = get_node_or_null("%s/TestPlayCheckBox" % _CHART_EDITOR)
+@onready var genqa_reports_checkbox: CheckBox = get_node_or_null("%s/GenQAReportsCheckBox" % _CHART_EDITOR)
+@onready var midi_samples_folder_line_edit: LineEdit = get_node_or_null("%s/MidiSamplesFolderHBox/MidiSamplesFolderLineEdit" % _CHART_EDITOR)
+@onready var midi_samples_folder_dialog: FileDialog = get_node_or_null("MidiSamplesFolderDialog")
 
 var _compare_mode_seg: Dictionary = {}
 var _spotlight_tutorial: CanvasLayer = null
@@ -42,6 +48,17 @@ var _spotlight_tutorial: CanvasLayer = null
 
 func _ready() -> void:
 	add_to_group("locale_refresh")
+	if midi_samples_folder_line_edit and not midi_samples_folder_line_edit.text_changed.is_connected(_on_midi_samples_text_changed):
+		midi_samples_folder_line_edit.text_changed.connect(_on_midi_samples_text_changed)
+	var choose_midi_btn: Button = get_node_or_null("%s/MidiSamplesFolderHBox/ChooseMidiSamplesFolderButton" % _CHART_EDITOR)
+	if choose_midi_btn and not choose_midi_btn.pressed.is_connected(_on_choose_midi_samples_folder_pressed):
+		choose_midi_btn.pressed.connect(_on_choose_midi_samples_folder_pressed)
+	var open_midi_btn: Button = get_node_or_null("%s/MidiSamplesFolderHBox/OpenMidiSamplesFolderButton" % _CHART_EDITOR)
+	if open_midi_btn and not open_midi_btn.pressed.is_connected(_on_open_midi_samples_folder_pressed):
+		open_midi_btn.pressed.connect(_on_open_midi_samples_folder_pressed)
+	if midi_samples_folder_dialog and not midi_samples_folder_dialog.dir_selected.is_connected(_on_midi_samples_folder_dir_selected):
+		midi_samples_folder_dialog.dir_selected.connect(_on_midi_samples_folder_dir_selected)
+	_setup_midi_folder_dialog()
 	if debug_menu_checkbox and not debug_menu_checkbox.toggled.is_connected(_on_debug_menu_toggled):
 		debug_menu_checkbox.toggled.connect(_on_debug_menu_toggled)
 	if split_compare_checkbox and not split_compare_checkbox.toggled.is_connected(_on_setting_changed):
@@ -64,6 +81,12 @@ func _ready() -> void:
 		timing_autoplay_checkbox.toggled.connect(_on_setting_changed)
 	if drum_colors_checkbox and not drum_colors_checkbox.toggled.is_connected(_on_setting_changed):
 		drum_colors_checkbox.toggled.connect(_on_setting_changed)
+	if chart_editor_checkbox and not chart_editor_checkbox.toggled.is_connected(_on_chart_editor_toggled):
+		chart_editor_checkbox.toggled.connect(_on_chart_editor_toggled)
+	if test_play_checkbox and not test_play_checkbox.toggled.is_connected(_on_test_play_toggled):
+		test_play_checkbox.toggled.connect(_on_test_play_toggled)
+	if genqa_reports_checkbox and not genqa_reports_checkbox.toggled.is_connected(_on_genqa_reports_toggled):
+		genqa_reports_checkbox.toggled.connect(_on_genqa_reports_toggled)
 	call_deferred("_apply_initial_settings")
 	call_deferred("_build_compare_mode_segmented")
 	call_deferred("apply_locale")
@@ -164,19 +187,39 @@ func apply_locale() -> void:
 	var tag_label: Label = get_node_or_null("%s/VariantTagRow/VariantTagLabel" % _COMPARE)
 	if tag_label:
 		tag_label.text = tr("EXP_VARIANT_TAG_LABEL")
+	var chart_header: Label = get_node_or_null("%s/ChartEditorHeader" % _CHART_EDITOR)
+	if chart_header:
+		chart_header.text = tr("EXP_CHART_EDITOR_HEADER")
+	var chart_hint: Label = get_node_or_null("%s/ChartEditorHint" % _CHART_EDITOR)
+	if chart_hint:
+		chart_hint.text = tr("EXP_CHART_EDITOR_HINT")
+	if chart_editor_checkbox:
+		chart_editor_checkbox.text = tr("EXP_CHART_EDITOR_ENABLE")
+	if test_play_checkbox:
+		var _tp_text := tr("EXP_TEST_PLAY_ENABLE")
+		test_play_checkbox.text = _tp_text if _tp_text != "EXP_TEST_PLAY_ENABLE" else "Показывать «Test Play» при нажатии ПКМ на «Играть»"
+	if genqa_reports_checkbox:
+		genqa_reports_checkbox.text = tr("EXP_GENQA_REPORTS_ENABLE")
 	_apply_tooltips()
 	_sync_compare_mode_segmented()
 
 
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(debug_menu_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(split_compare_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(save_experimental_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(rhythm_dna_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_log_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_overlay_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(timing_autoplay_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(drum_colors_checkbox)
+	const ACCENT := Color(0.52, 0.76, 0.92, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(debug_menu_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(split_compare_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(save_experimental_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(rhythm_dna_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_log_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_overlay_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(timing_autoplay_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(drum_colors_checkbox, 22, false, ACCENT)
+	if chart_editor_checkbox:
+		_SettingsSectionUi.apply_settings_checkbox(chart_editor_checkbox, 22, false, ACCENT)
+	if test_play_checkbox:
+		_SettingsSectionUi.apply_settings_checkbox(test_play_checkbox, 22, false, ACCENT)
+	if genqa_reports_checkbox:
+		_SettingsSectionUi.apply_settings_checkbox(genqa_reports_checkbox, 22, false, ACCENT)
 
 
 func _apply_tooltips() -> void:
@@ -200,6 +243,13 @@ func _apply_tooltips() -> void:
 		timing_autoplay_checkbox.tooltip_text = tr("EXP_TIMING_DEBUG_AUTOPLAY_TOOLTIP")
 	if drum_colors_checkbox:
 		drum_colors_checkbox.tooltip_text = tr("EXP_DRUM_CLASS_COLORS_TOOLTIP")
+	if chart_editor_checkbox:
+		chart_editor_checkbox.tooltip_text = tr("EXP_CHART_EDITOR_ENABLE_TOOLTIP")
+	if test_play_checkbox:
+		var _tp_tip := tr("EXP_TEST_PLAY_ENABLE_TOOLTIP")
+		test_play_checkbox.tooltip_text = _tp_tip if _tp_tip != "EXP_TEST_PLAY_ENABLE_TOOLTIP" else tr("EXP_CHART_EDITOR_ENABLE_TOOLTIP")
+	if genqa_reports_checkbox:
+		genqa_reports_checkbox.tooltip_text = tr("EXP_GENQA_REPORTS_ENABLE_TOOLTIP")
 
 
 func _apply_initial_settings() -> void:
@@ -223,6 +273,20 @@ func _apply_initial_settings() -> void:
 		timing_autoplay_checkbox.button_pressed = SettingsManager.get_autoplay_respects_hit_windows()
 	if drum_colors_checkbox:
 		drum_colors_checkbox.button_pressed = SettingsManager.get_show_drum_class_colors()
+	if chart_editor_checkbox:
+		chart_editor_checkbox.button_pressed = SettingsManager.get_chart_editor_enabled() if SettingsManager and SettingsManager.has_method("get_chart_editor_enabled") else false
+	if test_play_checkbox:
+		test_play_checkbox.button_pressed = SettingsManager.get_chart_editor_test_play_enabled() if SettingsManager and SettingsManager.has_method("get_chart_editor_test_play_enabled") else false
+	if genqa_reports_checkbox:
+		genqa_reports_checkbox.button_pressed = SettingsManager.get_genqa_reports_enabled() if SettingsManager and SettingsManager.has_method("get_genqa_reports_enabled") else true
+	if midi_samples_folder_line_edit:
+		var mp := String(SettingsManager.get_midi_samples_path() if SettingsManager.has_method("get_midi_samples_path") else SettingsManager.get_setting("midi_samples_path", "user://midi"))
+		if mp.strip_edges() == "":
+			mp = "user://midi"
+		# Display default as user://midi/ (with trailing slash) to match replay's user://replays/
+		if mp == "user://midi":
+			mp = "user://midi/"
+		midi_samples_folder_line_edit.text = mp
 
 
 func refresh_ui() -> void:
@@ -251,6 +315,26 @@ func _on_setting_changed(_arg = null) -> void:
 	settings_changed.emit()
 
 
+func _on_chart_editor_toggled(enabled: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_chart_editor_enabled"):
+		SettingsManager.set_chart_editor_enabled(enabled)
+	settings_changed.emit()
+
+
+func _on_test_play_toggled(enabled: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_chart_editor_test_play_enabled"):
+		SettingsManager.set_chart_editor_test_play_enabled(enabled)
+	else:
+		SettingsManager.set_setting("chart_editor_test_play_enabled", enabled)
+	settings_changed.emit()
+
+
+func _on_genqa_reports_toggled(enabled: bool) -> void:
+	if SettingsManager and SettingsManager.has_method("set_genqa_reports_enabled"):
+		SettingsManager.set_genqa_reports_enabled(enabled)
+	settings_changed.emit()
+
+
 func _on_rhythm_dna_toggled(enabled: bool) -> void:
 	SettingsManager.set_setting("show_rhythm_dna_button", enabled)
 	settings_changed.emit()
@@ -260,6 +344,8 @@ func _on_rhythm_dna_toggled(enabled: bool) -> void:
 
 
 func _maybe_show_rhythm_dna_setting_tutorial(force: bool = false) -> void:
+	if FirstStepsManager and FirstStepsManager.is_active():
+		return
 	if not SettingsManager or not SettingsManager.has_method("get_tutorial_rhythm_dna_setting_done"):
 		return
 	if not force and SettingsManager.get_tutorial_rhythm_dna_setting_done():
@@ -312,6 +398,62 @@ func _call_refresh_rhythm_dna_button_recursive(node: Node) -> void:
 	for child in node.get_children():
 		_call_refresh_rhythm_dna_button_recursive(child)
 
+
+func _setup_midi_folder_dialog() -> void:
+	if midi_samples_folder_dialog == null:
+		return
+	midi_samples_folder_dialog.use_native_dialog = true
+	midi_samples_folder_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	midi_samples_folder_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	midi_samples_folder_dialog.unresizable = true
+
+func _on_choose_midi_samples_folder_pressed() -> void:
+	if midi_samples_folder_dialog == null:
+		return
+	var cur := String(SettingsManager.get_midi_samples_path() if SettingsManager.has_method("get_midi_samples_path") else SettingsManager.get_setting("midi_samples_path", "user://midi"))
+	if cur.strip_edges() == "":
+		cur = "user://midi"
+	if cur.begins_with("user://") or cur.begins_with("res://"):
+		cur = ProjectSettings.globalize_path(cur)
+	midi_samples_folder_dialog.current_dir = cur
+	midi_samples_folder_dialog.popup_centered()
+
+func _on_open_midi_samples_folder_pressed() -> void:
+	var path := String(SettingsManager.get_midi_samples_path() if SettingsManager.has_method("get_midi_samples_path") else SettingsManager.get_setting("midi_samples_path", "user://midi"))
+	if path.strip_edges() == "":
+		path = "user://midi"
+	if path.begins_with("user://") or path.begins_with("res://"):
+		path = ProjectSettings.globalize_path(path)
+	path = path.replace("\\", "/")
+	DirAccess.make_dir_recursive_absolute(path)
+	OS.shell_open(path)
+
+func _on_midi_samples_folder_dir_selected(path: String) -> void:
+	if midi_samples_folder_dialog and is_instance_valid(midi_samples_folder_dialog) and midi_samples_folder_dialog.visible:
+		midi_samples_folder_dialog.hide()
+	path = String(path).strip_edges().replace("\\", "/")
+	if path == "":
+		return
+	if SettingsManager.has_method("set_midi_samples_path"):
+		SettingsManager.set_midi_samples_path(path)
+	else:
+		SettingsManager.set_setting("midi_samples_path", path)
+		SettingsManager.save_settings()
+	if midi_samples_folder_line_edit:
+		midi_samples_folder_line_edit.text = path
+	settings_changed.emit()
+
+func _on_midi_samples_text_changed(new_text: String) -> void:
+	var p := String(new_text).strip_edges().replace("\\", "/")
+	if p == "":
+		return
+	# Defer save until focus lost? For now save on change
+	if SettingsManager.has_method("set_midi_samples_path"):
+		SettingsManager.set_midi_samples_path(p)
+	else:
+		SettingsManager.set_setting("midi_samples_path", p)
+		SettingsManager.save_settings()
+	settings_changed.emit()
 
 func _on_debug_menu_toggled(enabled: bool) -> void:
 	SettingsManager.set_enable_debug_menu(enabled)

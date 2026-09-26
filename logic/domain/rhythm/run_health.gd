@@ -1,4 +1,4 @@
-# logic/utils/run_health.gd
+# logic/domain/rhythm/run_health.gd
 extends RefCounted
 class_name RunHealth
 

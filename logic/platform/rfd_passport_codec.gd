@@ -1,4 +1,4 @@
-# logic/utils/rfd_passport_codec.gd
+# logic/platform/rfd_passport_codec.gd
 extends RefCounted
 class_name RfdPassportCodec
 

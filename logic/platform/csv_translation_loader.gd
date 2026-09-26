@@ -1,6 +1,8 @@
-# logic/utils/csv_translation_loader.gd
+# logic/platform/csv_translation_loader.gd
 extends RefCounted
 class_name CsvTranslationLoader
+
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 ## Loads a Godot-style localization CSV (keys,en,ru,...) into TranslationServer at runtime.
 ## Avoids requiring generated *.translation files from the editor importer.
@@ -9,17 +11,35 @@ static var _loaded_by_path: Dictionary = {}
 
 
 static func load_into_translation_server(csv_path: String) -> void:
+	var _perf_cache_inv := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.cache_invalidation")
 	if _loaded_by_path.has(csv_path):
+		var _cached_valid := true
+		var _cached_list: Array = _loaded_by_path[csv_path]
+		if _cached_list.is_empty():
+			_cached_valid = false
+		else:
+			for _tr in _cached_list:
+				if not (_tr is Translation):
+					_cached_valid = false
+					break
+		if _cached_valid and FileAccess.file_exists(csv_path):
+			PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.cache_invalidation", _perf_cache_inv)
+			return
 		for old_translation in _loaded_by_path[csv_path]:
 			if old_translation is Translation:
 				TranslationServer.remove_translation(old_translation)
 		_loaded_by_path.erase(csv_path)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.cache_invalidation", _perf_cache_inv)
+	var _perf_file_read := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.file_read")
 	if not FileAccess.file_exists(csv_path):
+		PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.file_read", _perf_file_read)
 		push_warning("CsvTranslationLoader: missing %s" % csv_path)
 		return
-
 	var text := FileAccess.open(csv_path, FileAccess.READ).get_as_text()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.file_read", _perf_file_read)
+	var _perf_csv_parse := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.csv_parse")
 	var rows := _parse_csv_records(text)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.csv_parse", _perf_csv_parse)
 	if rows.is_empty():
 		return
 
@@ -28,6 +48,7 @@ static func load_into_translation_server(csv_path: String) -> void:
 		push_warning("CsvTranslationLoader: invalid header in %s" % csv_path)
 		return
 
+	var _perf_create := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.translation_create")
 	var locale_columns: Dictionary = {}
 	var created: Array = []
 	for col in range(1, header.size()):
@@ -41,11 +62,13 @@ static func load_into_translation_server(csv_path: String) -> void:
 		TranslationServer.add_translation(translation)
 		locale_columns[col] = translation
 		created.append(translation)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.translation_create", _perf_create)
 
 	if locale_columns.is_empty():
 		push_warning("CsvTranslationLoader: no locale columns in %s" % csv_path)
 		return
 
+	var _perf_messages := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.translation_messages")
 	for row_index in range(1, rows.size()):
 		var cells: PackedStringArray = rows[row_index]
 		if cells.is_empty():
@@ -56,9 +79,14 @@ static func load_into_translation_server(csv_path: String) -> void:
 		for col in locale_columns.keys():
 			if col >= cells.size():
 				continue
+			var _perf_cleanup := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.message_cleanup")
 			var value := _sanitize_unicode(_unescape_translation(String(cells[col])))
+			PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.message_cleanup", _perf_cleanup)
+			var _perf_add := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation.add_message")
 			var translation: Translation = locale_columns[col]
 			translation.add_message(key, value)
+			PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.add_message", _perf_add)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation.translation_messages", _perf_messages)
 
 	_loaded_by_path[csv_path] = created
 

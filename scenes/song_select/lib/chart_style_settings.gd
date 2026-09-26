@@ -239,8 +239,16 @@ func _apply_config(fragment: Dictionary) -> void:
 		var icon: SessionToggleIcon = _difficulty_tier_checks[tier_id]
 		if icon:
 			icon.set_selected(tiers_allowed.has(tier_id))
-	if _difficulty_tiers_panel:
-		_difficulty_tiers_panel.visible = true
+	_sync_difficulty_section_visibility()
+
+
+func _has_arcade_style() -> bool:
+	var arcade: SessionToggleIcon = _style_checks.get("arcade", null)
+	return arcade != null and arcade.button_pressed
+
+
+func _sync_difficulty_section_visibility() -> void:
+	set_difficulty_section_visible(_has_arcade_style())
 
 
 func _emit_changed() -> void:
@@ -257,6 +265,7 @@ func _on_style_check_toggled(_intent_id: String, _on: bool) -> void:
 		var fallback: SessionToggleIcon = _style_checks.get("original", null)
 		if fallback:
 			fallback.set_selected(true)
+	_sync_difficulty_section_visibility()
 	_emit_changed()
 
 
@@ -292,3 +301,4 @@ func _on_help_link_pressed() -> void:
 		if child.has_method("open_help_item"):
 			child.open_help_item(_help_article_id)
 			return
+

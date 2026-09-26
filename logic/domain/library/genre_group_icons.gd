@@ -1,4 +1,4 @@
-# logic/utils/genre_group_icons.gd
+# logic/domain/library/genre_group_icons.gd
 class_name GenreGroupIcons
 extends RefCounted
 

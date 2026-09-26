@@ -56,43 +56,99 @@ def _cache_id(audio_path: str, stem_type: str = "drums") -> Optional[str]:
     return f"{_audio_key(path)}:{kind}"
 
 
-def get_cached_stem(audio_path: str, stem_type: str = "drums") -> Optional[str]:
+def get_cached_stem(audio_path: str, stem_type: str = "drums", content_hash: Optional[str] = None) -> Optional[str]:
+    kind = str(stem_type or "drums").strip().lower() or "drums"
+    # Build cache_id for logging even when disabled/invalid.
+    _log_cache_id: Optional[str] = None
+    if isinstance(content_hash, str) and content_hash.strip():
+        _h = content_hash.strip().lower()
+        if len(_h) == 64 and all(c in "0123456789abcdef" for c in _h):
+            _log_cache_id = f"{_h}:{kind}"
+    if _log_cache_id is None:
+        try:
+            _log_cache_id = _cache_id(audio_path, stem_type)
+        except Exception:
+            _log_cache_id = None
     if not is_enabled():
+        print(f"[StemMemoryCache] MISS reason=disabled key={_log_cache_id or '<unknown>:'+kind}")
         return None
-    cache_id = _cache_id(audio_path, stem_type)
+    cache_id: Optional[str] = _log_cache_id
     if not cache_id:
+        # No valid audio path/hash
+        _fallback_key = f"<unknown>:{kind}"
+        if isinstance(content_hash, str) and content_hash.strip():
+            _fallback_key = f"{content_hash.strip().lower()}:{kind}"
+        print(f"[StemMemoryCache] MISS reason=invalid_key key={_fallback_key}")
         return None
     now = time.time()
     with _LOCK:
         _purge_expired(now)
         entry = _CACHE.get(cache_id)
         if not entry:
+            print(f"[StemMemoryCache] MISS reason=no_entry key={cache_id}")
             return None
         cached_path, expires_at = entry
-        if expires_at <= now or not Path(cached_path).is_file():
+        if expires_at <= now:
+            print(f"[StemMemoryCache] MISS reason=expired key={cache_id} path={cached_path} ttl_remaining=0")
             _CACHE.pop(cache_id, None)
             return None
+        if not Path(cached_path).is_file():
+            print(f"[StemMemoryCache] MISS reason=file_missing key={cache_id} path={cached_path}")
+            _CACHE.pop(cache_id, None)
+            return None
+        ttl_remaining = int(expires_at - now)
+        print(f"[StemMemoryCache] HIT key={cache_id} path={cached_path} ttl_remaining={ttl_remaining}")
         return cached_path
 
 
-def store_cached_stem(audio_path: str, stem_path: str, stem_type: str = "drums") -> Optional[str]:
+def store_cached_stem(audio_path: str, stem_path: str, stem_type: str = "drums", content_hash: Optional[str] = None) -> Optional[str]:
+    kind = str(stem_type or "drums").strip().lower() or "drums"
     if not is_enabled():
+        print(f"[StemMemoryCache] STORE SKIP reason=disabled key=<unknown>:{kind} ttl={_ttl_seconds()}")
         return None
     src = Path(stem_path)
     audio = Path(audio_path)
-    if not src.is_file() or not audio.is_file():
+    if not src.is_file():
+        print(f"[StemMemoryCache] STORE SKIP reason=source_missing src={str(src)} kind={kind}")
         return None
-    cache_id = _cache_id(audio_path, stem_type)
+    if not audio.is_file():
+        print(f"[StemMemoryCache] STORE SKIP reason=audio_missing audio={str(audio)} kind={kind}")
+        return None
+    cache_id: Optional[str] = None
+    if isinstance(content_hash, str) and content_hash.strip():
+        h = content_hash.strip().lower()
+        if len(h) == 64 and all(c in "0123456789abcdef" for c in h):
+            cache_id = f"{h}:{kind}"
+    if cache_id is None:
+        try:
+            cache_id = _cache_id(audio_path, stem_type)
+        except Exception as _e:
+            print(f"[StemMemoryCache] STORE SKIP reason=hash_error key=<unknown>:{kind} error={type(_e).__name__}: {_e}")
+            return None
     if not cache_id:
+        print(f"[StemMemoryCache] STORE SKIP reason=invalid_key audio={str(audio)} kind={kind}")
         return None
-    kind = str(stem_type or "drums").strip().lower() or "drums"
-    _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception as _e:
+        print(f"[StemMemoryCache] STORE FAIL reason=mkdir key={cache_id} error={type(_e).__name__}: {_e}")
+        return None
     dest = _CACHE_DIR / f"{cache_id.split(':', 1)[0][:16]}_{kind}.wav"
     try:
         shutil.copy2(src, dest)
-    except Exception:
+    except Exception as _e:
+        print(f"[StemMemoryCache] STORE FAIL reason=copy key={cache_id} src={str(src)} dst={str(dest)} error={type(_e).__name__}: {_e}")
         return None
-    expires_at = time.time() + _ttl_seconds()
+    # Verify dest exists and size
+    try:
+        if not dest.is_file() or dest.stat().st_size < 1024:
+            print(f"[StemMemoryCache] STORE FAIL reason=copy_verify key={cache_id} dst={str(dest)}")
+            return None
+    except Exception as _e:
+        print(f"[StemMemoryCache] STORE FAIL reason=copy_verify key={cache_id} error={type(_e).__name__}: {_e}")
+        return None
+    ttl = _ttl_seconds()
+    expires_at = time.time() + ttl
     with _LOCK:
         _purge_expired()
         old = _CACHE.get(cache_id)
@@ -102,4 +158,5 @@ def store_cached_stem(audio_path: str, stem_path: str, stem_type: str = "drums")
             except Exception:
                 pass
         _CACHE[cache_id] = (str(dest), expires_at)
+    print(f"[StemMemoryCache] STORE HIT key={cache_id} src={str(src)} dst={str(dest)} ttl={ttl}")
     return str(dest)

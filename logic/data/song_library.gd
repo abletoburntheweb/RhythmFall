@@ -1,5 +1,7 @@
-# logic/song_library.gd
+# logic/data/song_library.gd
 extends Node
+
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 signal metadata_updated(song_file_path: String)
 signal songs_list_changed()
@@ -19,11 +21,78 @@ var _duration_thread: Thread = null
 var _duration_queue: Array = []
 var _duration_running: bool = false
 
+# LibraryIndex: library-side cache for fast eligibility queries (counts without filesystem scan)
+const _SongLibraryIndex = preload("res://logic/domain/library/song_library_index.gd")
+var _library_index: RefCounted = null
+var _library_index_valid: bool = false
+
 func _init():
 	_load_metadata()
 
 func _ready():
 	load_songs()
+
+func _emit_songs_list_changed() -> void:
+	_invalidate_library_index("[songs_list_changed]")
+	emit_signal("songs_list_changed")
+	if PlayerDataManager and PlayerDataManager.has_method("check_library_size_milestones"):
+		# Defer: SongLibrary may emit during boot before PlayerDataManager finished load.
+		PlayerDataManager.call_deferred("check_library_size_milestones", songs.size())
+
+func invalidate_library_index(reason: String = "") -> void:
+	_invalidate_library_index(reason)
+
+func _invalidate_library_index(reason: String = "") -> void:
+	if _library_index_valid or _library_index != null:
+		print("[LibraryIndex] invalidated reason=%s songs=%d" % [reason, songs.size()])
+	_library_index_valid = false
+	_library_index = null
+
+func _ensure_library_index() -> RefCounted:
+	if _library_index_valid and _library_index != null:
+		return _library_index
+	var t0 := Time.get_ticks_usec()
+	var idx = _SongLibraryIndex.new()
+	idx.build()
+	_library_index = idx
+	_library_index_valid = true
+	var dt := (Time.get_ticks_usec() - t0) / 1000.0
+	var stats: Dictionary = idx.get_stats() if idx.has_method("get_stats") else {}
+	print("[LibraryIndex] ensured in %.2fms stats=%s" % [dt, str(stats)])
+	return idx
+
+func get_library_index_stats() -> Dictionary:
+	if _library_index != null and _library_index.has_method("get_stats"):
+		return _library_index.get_stats()
+	return {"songs": 0, "chart_entries": 0, "build_msec": 0.0, "entries": 0}
+
+func has_minimum_matching_songs_via_index(scope_config: Dictionary, min_required: int, instrument: String = "") -> bool:
+	var idx = _ensure_library_index()
+	if idx == null or not idx.has_method("has_minimum_matching_songs"):
+		return false
+	var t0 := Time.get_ticks_usec()
+	var res: bool = idx.has_minimum_matching_songs(scope_config, min_required, instrument)
+	var dt := (Time.get_ticks_usec() - t0) / 1000.0
+	# Extra diagnostic showing index is used instead of filesystem scan
+	return res
+
+func count_matching_songs_via_index(scope_config: Dictionary, max_count: int, instrument: String = "") -> int:
+	var idx = _ensure_library_index()
+	if idx == null or not idx.has_method("count_matching_songs_up_to"):
+		return 0
+	var t0 := Time.get_ticks_usec()
+	var cnt: int = idx.count_matching_songs_up_to(scope_config, max_count, instrument)
+	var dt := (Time.get_ticks_usec() - t0) / 1000.0
+	return cnt
+
+func get_matching_entries_via_index(scope_config: Dictionary, instrument: String = "") -> Array[Dictionary]:
+	var idx = _ensure_library_index()
+	if idx == null or not idx.has_method("get_matching_entries"):
+		return []
+	var t0 := Time.get_ticks_usec()
+	var out: Array[Dictionary] = idx.get_matching_entries(scope_config, instrument)
+	var dt := (Time.get_ticks_usec() - t0) / 1000.0
+	return out
 
 func _get_effective_user_songs_path() -> String:
 	var p = ""
@@ -90,6 +159,7 @@ func _should_queue_id3_for(path: String, metadata: Dictionary) -> bool:
 	return false
 
 func load_songs():
+	var _perf_load_songs := PerfTrace.begin("perf.load.song_library.load_songs")
 	var started_ms := Time.get_ticks_msec()
 	songs.clear()
 	var built_in_found := 0
@@ -152,10 +222,12 @@ func load_songs():
 				md["source"] = "user"
 				songs.append(md)
 	_apply_metadata_seed_if_present()
+	_hide_builtin_duplicates_from_list()
 	_start_duration_enrichment_if_needed()
 	_start_id3_enrichment_if_needed()
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 	var elapsed := Time.get_ticks_msec() - started_ms
+	PerfTrace.end("perf.load.song_library.load_songs", _perf_load_songs)
 	print("[Perf] SongLibrary load_songs: %d ms, songs=%d, duration_queue=%d, id3_queue=%d" % [elapsed, songs.size(), _duration_queue.size(), _id3_queue.size()])
 
 func _apply_metadata_seed_if_present():
@@ -246,6 +318,10 @@ func scan_user_songs() -> int:
 						break
 				if not exists:
 					var metadata = read_metadata(path)
+					var duplicate := find_duplicate_for_candidate(metadata, path)
+					if not duplicate.is_empty():
+						file_name = dir.get_next()
+						continue
 					if str(metadata.get("duration", "00:00")) == "00:00":
 						_queue_duration_if_needed(path)
 					metadata["source"] = "user"
@@ -265,8 +341,9 @@ func scan_user_songs() -> int:
 					added += 1
 		file_name = dir.get_next()
 	dir.list_dir_end()
+	_hide_builtin_duplicates_from_list()
 	_start_id3_enrichment_if_needed()
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 	return added
 
 
@@ -293,12 +370,10 @@ func prune_user_metadata_not_under_root(new_root: String, delete_notes_for_remov
 			var ps := String(p).replace("\\", "/")
 			if ps.begins_with(built_in_root) or ps.begins_with(external_bundled_root):
 				continue
-			var base_name = NotesUtils.base_name_from_song_path(ps)
-			var notes_path = NotesUtils.notes_dir(base_name)
-			DirectoryUtils.delete_dir_recursive(notes_path)
+			NotesUtils.delete_notes_for_song(ps)
 	if changed:
 		_save_metadata()
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 
 func add_song(file_path: String) -> Dictionary:
 	var file_extension = file_path.get_extension().to_lower()
@@ -308,6 +383,17 @@ func add_song(file_path: String) -> Dictionary:
 	var user_root = _get_effective_user_songs_path()
 	_ensure_user_dir_exists()
 	var dest_path = user_root + file_path.get_file()
+	if _song_index_for_path(dest_path) != -1:
+		return _make_duplicate_error(songs[_song_index_for_path(dest_path)], "same_file")
+	var preview := read_metadata(file_path)
+	preview["path"] = dest_path
+	var duplicate := find_duplicate_for_candidate(preview, dest_path)
+	if not duplicate.is_empty():
+		return duplicate
+	if FileAccess.file_exists(dest_path):
+		var on_disk := read_metadata(dest_path)
+		on_disk["path"] = dest_path
+		return _make_duplicate_error(on_disk, "same_file")
 	var base_dir = DirAccess.open("res://")
 	if not base_dir:
 		printerr("SongLibrary.gd: Ошибка открытия корневой директории проекта.")
@@ -334,7 +420,8 @@ func add_song(file_path: String) -> Dictionary:
 	if str(metadata.get("duration", "00:00")) == "00:00":
 		_queue_duration_if_needed(dest_path)
 		_start_duration_enrichment_if_needed()
-	emit_signal("songs_list_changed")
+	_hide_builtin_duplicates_from_list()
+	_emit_songs_list_changed()
 	return metadata
 
 func get_songs_list() -> Array[Dictionary]:
@@ -357,6 +444,103 @@ func request_id3_update(path: String) -> void:
 
 func _normalize_song_path(path: String) -> String:
 	return String(path).replace("\\", "/").strip_edges()
+
+
+func _normalize_identity_text(text: String) -> String:
+	var s := String(text).to_lower().strip_edges()
+	s = s.replace("—", "-").replace("–", "-")
+	while s.find("  ") != -1:
+		s = s.replace("  ", " ")
+	return s
+
+
+func _song_audio_stem(path: String) -> String:
+	if String(path).strip_edges() == "":
+		return ""
+	return NotesUtils.base_name_from_song_path(path).to_lower()
+
+
+func _song_identity_key(artist: String, title: String) -> String:
+	return "%s — %s" % [_normalize_identity_text(artist), _normalize_identity_text(title)]
+
+
+func _make_duplicate_error(existing: Dictionary, reason: String) -> Dictionary:
+	return {
+		"error": "duplicate",
+		"reason": reason,
+		"existing_path": String(existing.get("path", "")),
+		"title": String(existing.get("title", "")),
+		"artist": String(existing.get("artist", "")),
+	}
+
+
+func find_duplicate_for_candidate(candidate: Dictionary, exclude_path: String = "") -> Dictionary:
+	var cand_path := String(candidate.get("path", ""))
+	if cand_path == "":
+		return {}
+	var cand_stem := _song_audio_stem(cand_path)
+	var cand_fname := cand_path.get_file().to_lower()
+	var cand_artist := str(candidate.get("artist", ""))
+	var cand_title := str(candidate.get("title", ""))
+	var cand_identity := ""
+	if not _is_placeholder("artist", cand_artist, cand_path) and not _is_placeholder("title", cand_title, cand_path):
+		cand_identity = _song_identity_key(cand_artist, cand_title)
+	var exclude_norm := _normalize_song_path(exclude_path)
+	for s in songs:
+		var path := String(s.get("path", ""))
+		if path == "":
+			continue
+		if exclude_norm != "" and _normalize_song_path(path) == exclude_norm:
+			continue
+		if cand_fname != "" and path.get_file().to_lower() == cand_fname:
+			return _make_duplicate_error(s, "filename")
+		if cand_stem != "" and _song_audio_stem(path) == cand_stem:
+			return _make_duplicate_error(s, "filename")
+		if cand_identity != "":
+			var artist := str(s.get("artist", ""))
+			var title := str(s.get("title", ""))
+			if _is_placeholder("artist", artist, path) or _is_placeholder("title", title, path):
+				continue
+			if _song_identity_key(artist, title) == cand_identity:
+				return _make_duplicate_error(s, "identity")
+	return {}
+
+
+func _hide_builtin_duplicates_from_list() -> void:
+	var user_stems := {}
+	var user_filenames := {}
+	var user_identities := {}
+	for s in songs:
+		var path := String(s.get("path", ""))
+		if path == "" or is_built_in_path(path):
+			continue
+		var stem := _song_audio_stem(path)
+		if stem != "":
+			user_stems[stem] = path
+		var fname := path.get_file().to_lower()
+		if fname != "":
+			user_filenames[fname] = path
+		var artist := str(s.get("artist", ""))
+		var title := str(s.get("title", ""))
+		if not _is_placeholder("artist", artist, path) and not _is_placeholder("title", title, path):
+			user_identities[_song_identity_key(artist, title)] = path
+	var filtered: Array[Dictionary] = []
+	for s in songs:
+		var path := String(s.get("path", ""))
+		if is_built_in_path(path):
+			var stem := _song_audio_stem(path)
+			if user_stems.has(stem):
+				continue
+			var fname := path.get_file().to_lower()
+			if user_filenames.has(fname):
+				continue
+			var artist := str(s.get("artist", ""))
+			var title := str(s.get("title", ""))
+			if not _is_placeholder("artist", artist, path) and not _is_placeholder("title", title, path):
+				if user_identities.has(_song_identity_key(artist, title)):
+					continue
+		filtered.append(s)
+	songs = filtered
 
 
 func _metadata_cache_key(path: String) -> String:
@@ -388,7 +572,9 @@ func get_display_metadata_for_song(song_file_path: String) -> Dictionary:
 	var meta := get_metadata_for_song(song_file_path)
 	if meta.is_empty():
 		return {}
-	meta["path"] = _normalize_song_path(song_file_path)
+	var norm := _normalize_song_path(song_file_path)
+	meta["path"] = norm
+	meta["chart_id"] = NotesUtils.chart_id_from_song_path(norm)
 	return meta
 
 
@@ -410,6 +596,14 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 		_metadata_cache[cache_key]["file_mtime"] = int(FileAccess.get_modified_time(cache_key))
 	var any_changed := false
 	var had_genres := updated_fields.has("genres") and typeof(updated_fields["genres"]) == TYPE_ARRAY
+	if updated_fields.has("genre_predictions") and typeof(updated_fields["genre_predictions"]) == TYPE_ARRAY:
+		var preds_array: Array = updated_fields["genre_predictions"]
+		var old_preds = _metadata_cache[cache_key].get("genre_predictions", [])
+		if str(old_preds) != str(preds_array):
+			any_changed = true
+		_metadata_cache[cache_key]["genre_predictions"] = preds_array.duplicate(true)
+		updated_fields = updated_fields.duplicate()
+		updated_fields.erase("genre_predictions")
 	if had_genres:
 		var genres_array = updated_fields["genres"]
 		var genres_str = ", ".join(genres_array)
@@ -439,9 +633,73 @@ func update_metadata(song_file_path: String, updated_fields: Dictionary):
 	if any_changed:
 		_save_metadata()
 		_update_song_in_list(song_file_path)
+		_invalidate_library_index("[metadata_updated %s]" % cache_key)
 		emit_signal("metadata_updated", cache_key)
 	else:
 		pass
+
+func get_chart_difficulty_variant(song_file_path: String, instrument: String, mode: String, _lanes: int = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES) -> Dictionary:
+	var meta := get_metadata_for_song(song_file_path)
+	var variants = meta.get("chart_difficulty", {})
+	if typeof(variants) != TYPE_DICTIONARY:
+		return {}
+	var key := ChartDifficultyAnalyzer.variant_key(instrument, mode)
+	var entry = variants.get(key, {})
+	if typeof(entry) == TYPE_DICTIONARY and not entry.is_empty():
+		return entry.duplicate(true)
+	# Fallback for metadata not yet migrated on disk.
+	var legacy_base := ChartDifficultyAnalyzer.legacy_variant_key_base(key)
+	for variant_key in variants.keys():
+		if ChartDifficultyAnalyzer.legacy_variant_key_base(String(variant_key)) == legacy_base:
+			var legacy_entry = variants.get(variant_key, {})
+			if typeof(legacy_entry) == TYPE_DICTIONARY:
+				return legacy_entry.duplicate(true)
+	return {}
+
+
+func set_chart_difficulty_variant(
+	song_file_path: String,
+	instrument: String,
+	mode: String,
+	stats: Dictionary,
+	_lanes: int = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES,
+	emit_update: bool = true
+) -> void:
+	var cache_key := _metadata_cache_key(song_file_path)
+	if not _metadata_cache.has(cache_key):
+		_metadata_cache[cache_key] = {
+			"path": cache_key,
+			"title": "Без названия",
+			"artist": "Неизвестен",
+			"bpm": "Н/Д",
+			"year": "Н/Д",
+			"duration": "00:00",
+			"cover": null,
+			"genres": "",
+			"primary_genre": "unknown"
+		}
+	if not _metadata_cache[cache_key].has("chart_difficulty") or typeof(_metadata_cache[cache_key]["chart_difficulty"]) != TYPE_DICTIONARY:
+		_metadata_cache[cache_key]["chart_difficulty"] = {}
+	var key := ChartDifficultyAnalyzer.variant_key(instrument, mode)
+	_metadata_cache[cache_key]["chart_difficulty"][key] = ChartDifficultyAnalyzer.normalize_persisted_stats(stats)
+	_purge_per_lane_chart_difficulty_keys(_metadata_cache[cache_key]["chart_difficulty"], key)
+	_save_metadata()
+	_update_song_in_list(song_file_path)
+	_invalidate_library_index("[chart_difficulty %s %s]" % [cache_key, key])
+	if emit_update:
+		emit_signal("metadata_updated", cache_key)
+
+
+func _purge_per_lane_chart_difficulty_keys(chart_difficulty: Dictionary, base_key: String) -> void:
+	var to_remove: Array[String] = []
+	for variant_key in chart_difficulty.keys():
+		var key_str := String(variant_key)
+		if key_str == base_key:
+			continue
+		if key_str.begins_with(base_key + "_lanes"):
+			to_remove.append(key_str)
+	for key_str in to_remove:
+		chart_difficulty.erase(key_str)
 
 func remove_metadata(song_file_path: String):
 	var cache_key := _metadata_cache_key(song_file_path)
@@ -454,7 +712,7 @@ func remove_metadata(song_file_path: String):
 		songs.remove_at(index)
 		changed = true
 	if changed:
-		emit_signal("songs_list_changed")
+		_emit_songs_list_changed()
 
 func is_built_in_path(song_file_path: String) -> bool:
 	var norm := _normalize_song_path(song_file_path)
@@ -659,7 +917,7 @@ func apply_user_path_migration(matches: Dictionary, remove_unmatched_under_old_r
 			if s2.begins_with(old_r) and not matches.has(s2):
 				_metadata_cache.erase(k2)
 	_save_metadata()
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 
 func clear_metadata_under_root(root: String):
 	var r = _normalize_dir_path(root)
@@ -672,7 +930,7 @@ func clear_metadata_under_root(root: String):
 			changed = true
 	if changed:
 		_save_metadata()
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 
 func _is_placeholder(field: String, value, path_for_stem: String) -> bool:
 	var v = str(value)
@@ -747,7 +1005,7 @@ func prepare_dedupe_for_user_root(current_root: String) -> Dictionary:
 
 func apply_dedupe_for_user_root(current_root: String):
 	_dedupe_metadata_for_user_root(current_root)
-	emit_signal("songs_list_changed")
+	_emit_songs_list_changed()
 
 func _queue_duration_if_needed(path: String) -> void:
 	if path == "" or _duration_queue.has(path):
@@ -877,76 +1135,3 @@ func _finish_id3_worker():
 	_id3_running = false
 	emit_signal("id3_scan_finished")
 	_start_id3_enrichment_if_needed()
-
-func get_chart_difficulty_variant(song_file_path: String, instrument: String, mode: String, _lanes: int = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES) -> Dictionary:
-	var meta := get_metadata_for_song(song_file_path)
-	var variants = meta.get("chart_difficulty", {})
-	if typeof(variants) != TYPE_DICTIONARY:
-		return {}
-	var key := ChartDifficultyAnalyzer.variant_key(instrument, mode)
-	var entry = variants.get(key, {})
-	if typeof(entry) == TYPE_DICTIONARY and not entry.is_empty():
-		return entry.duplicate(true)
-	# Fallback for metadata not yet migrated on disk.
-	var legacy_base := ChartDifficultyAnalyzer.legacy_variant_key_base(key)
-	for variant_key in variants.keys():
-		if ChartDifficultyAnalyzer.legacy_variant_key_base(String(variant_key)) == legacy_base:
-			var legacy_entry = variants.get(variant_key, {})
-			if typeof(legacy_entry) == TYPE_DICTIONARY:
-				return legacy_entry.duplicate(true)
-	return {}
-
-
-
-func set_chart_difficulty_variant(
-	song_file_path: String,
-	instrument: String,
-	mode: String,
-	stats: Dictionary,
-	_lanes: int = ChartDifficultyAnalyzer.CANONICAL_STATS_LANES,
-	emit_update: bool = true
-) -> void:
-	var cache_key := _metadata_cache_key(song_file_path)
-	if not _metadata_cache.has(cache_key):
-		_metadata_cache[cache_key] = {
-			"path": cache_key,
-			"title": "Без названия",
-			"artist": "Неизвестен",
-			"bpm": "Н/Д",
-			"year": "Н/Д",
-			"duration": "00:00",
-			"cover": null,
-			"genres": "",
-			"primary_genre": "unknown"
-		}
-	if not _metadata_cache[cache_key].has("chart_difficulty") or typeof(_metadata_cache[cache_key]["chart_difficulty"]) != TYPE_DICTIONARY:
-		_metadata_cache[cache_key]["chart_difficulty"] = {}
-	var key := ChartDifficultyAnalyzer.variant_key(instrument, mode)
-	_metadata_cache[cache_key]["chart_difficulty"][key] = ChartDifficultyAnalyzer.normalize_persisted_stats(stats)
-	_purge_per_lane_chart_difficulty_keys(_metadata_cache[cache_key]["chart_difficulty"], key)
-	_save_metadata()
-	_update_song_in_list(song_file_path)
-	# _invalidate_library_index stripped for 1.2.0 minimal
-	# _invalidate_library_index("[chart_difficulty %s %s]" % [cache_key, key])
-	if emit_update:
-		emit_signal("metadata_updated", cache_key)
-
-
-
-func _purge_per_lane_chart_difficulty_keys(chart_difficulty: Dictionary, base_key: String) -> void:
-	var to_remove: Array[String] = []
-	for variant_key in chart_difficulty.keys():
-		var key_str := String(variant_key)
-		if key_str == base_key:
-			continue
-		if key_str.begins_with(base_key + "_lanes"):
-			to_remove.append(key_str)
-	for key_str in to_remove:
-		chart_difficulty.erase(key_str)
-
-
-func _invalidate_library_index(_reason: String = "") -> void:
-	pass
-
-func _ensure_library_index():
-	return null

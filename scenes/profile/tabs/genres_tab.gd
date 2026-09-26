@@ -48,14 +48,18 @@ func get_genres_panel() -> ProfileGenresPanel:
 
 
 func _rebuild_async() -> void:
+	var _perf_t := PerfTrace.begin("perf.load.profile.genres")
 	var token := _genres_refresh_token + 1
 	_genres_refresh_token = token
 	if profile_genres_panel == null:
+		PerfTrace.end("perf.load.profile.genres", _perf_t)
 		return
 	var animate := not _genres_bars_animated
 	await profile_genres_panel.refresh_async({}, animate)
 	if token != _genres_refresh_token:
+		PerfTrace.end("perf.load.profile.genres", _perf_t)
 		return
 	if animate:
 		_genres_bars_animated = true
 	await get_tree().process_frame
+	PerfTrace.end("perf.load.profile.genres", _perf_t)

@@ -1,4 +1,4 @@
-# logic/utils/profile_genre_mastery.gd
+# logic/domain/profile/profile_genre_mastery.gd
 class_name ProfileGenreMastery
 extends RefCounted
 

@@ -52,13 +52,21 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="BackButton" type="Button" parent="Container"]
+[node name="BackButtonWrap" type="MarginContainer" parent="Container"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="BackButton" type="Button" parent="Container/BackButtonWrap"]
 clip_contents = true
 custom_minimum_size = Vector2(140, 36)
 layout_mode = 2
 size_flags_horizontal = 0
 theme = ExtResource("2_theme")
-theme_type_variation = &"FlatBackButton"
+theme_type_variation = &"FlatButton"
+metadata/ui_icon_file = "arrow-left.svg"
 text = "Back"
 
 [node name="TitleLabel" type="Label" parent="Container"]
@@ -113,6 +121,9 @@ size_flags_vertical = 0
 theme_override_constants/separation = 12
 
 [node name="CloseButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatModalPrimaryButton"
 text = "OK"

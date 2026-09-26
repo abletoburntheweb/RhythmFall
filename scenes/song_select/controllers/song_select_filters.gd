@@ -1,4 +1,4 @@
-# scenes/song_select/song_select_filters.gd
+# scenes/song_select/controllers/song_select_filters.gd
 class_name SongSelectFilters
 extends Node
 
@@ -64,6 +64,8 @@ func restore_and_populate() -> void:
 			screen.song_list_manager.filter_items(query)
 	else:
 		if defer_heavy:
+			if screen.song_list_manager.has_method("_forensic_set_pending_populate_reason"):
+				screen.song_list_manager._forensic_set_pending_populate_reason("filters_restore_deferred_heavy_true")
 			screen.song_list_manager.call_deferred("populate_items_grouped", true)
 		else:
 			screen.song_list_manager.populate_items_grouped()

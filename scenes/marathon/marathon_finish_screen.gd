@@ -61,6 +61,10 @@ func apply_locale() -> void:
 				key = "MARATHON_FINISH_SUBTITLE_RULE_MIN_ACCURACY"
 			"rule_max_misses":
 				key = "MARATHON_FINISH_SUBTITLE_RULE_MAX_MISSES"
+			"rule_max_good_notes":
+				key = "MARATHON_FINISH_SUBTITLE_RULE_MAX_GOOD_NOTES"
+			"rule_min_streak":
+				key = "MARATHON_FINISH_SUBTITLE_RULE_MIN_STREAK"
 		_subtitle_label.text = tr(key)
 	if _catalog_button:
 		_catalog_button.text = tr("MARATHON_FINISH_TO_CATALOG")

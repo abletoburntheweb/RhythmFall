@@ -1,4 +1,4 @@
-# scenes/song_select/song_select.gd
+﻿# scenes/song_select/song_select.gd
 extends BaseScreen
 
 const GenerationService = preload("res://logic/services/generation_service.gd")
@@ -14,11 +14,15 @@ const _UiMotionEffects = preload("res://logic/ui/ui_motion_effects.gd")
 const _Overlay = preload("res://logic/ui/app_overlay_helpers.gd")
 const _UserPresets = preload("res://logic/domain/modifiers/user_presets.gd")
 const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficulty.gd")
+const _GenReadyPresets = preload("res://logic/domain/generation/generation_ready_presets.gd")
 const _PlaylistCatalog = preload("res://logic/domain/library/playlist_catalog.gd")
 const _PlaylistLibraryBrowse = preload("res://logic/domain/library/playlist_library_browse.gd")
 const _SongSelectUiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
+const _ReplayLauncher = preload("res://logic/domain/replay/replay_launcher.gd")
 const _UiRoundedClip = preload("res://logic/ui/ui_rounded_clip.gd")
+const _HelpSectionUi = preload("res://logic/ui/settings_section_ui.gd")
 const _COVER_CORNER_RADIUS := 12.0
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 var background_service: GenerationService = null
 var _bg_status_ui_pending := false
@@ -27,10 +31,12 @@ var _pending_highlight_paths: Array[String] = []
 var song_list_manager: SongListController
 var song_details_manager: SongDetailsManager
 var results_manager: ResultsManager
+var _results_view: SongResultsView
 
 var song_metadata_manager = SongLibrary 
 
 @onready var edit_button: Button = $MainVBox/TopBarPanel/TopBarHBox/EditButton
+@onready var edit_chart_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/EditChartButton
 @onready var modifiers_button: Button = $MainVBox/TopBarPanel/TopBarHBox/ModifiersButton
 @onready var _playlists_button: Button = $MainVBox/TopBarPanel/TopBarHBox/PlaylistsButton
 @onready var filter_by_letter: OptionButton = $MainVBox/TopBarPanel/TopBarHBox/FilterByLetter
@@ -38,6 +44,7 @@ var song_metadata_manager = SongLibrary
 @onready var analyze_bpm_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/AnalyzeBPMButton
 @onready var results_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/ResultsButton
 @onready var clear_results_button: Button = $MainVBox/TopBarPanel/TopBarHBox/ClearResultsButton
+@onready var _open_replay_button: Button = $MainVBox/TopBarPanel/TopBarHBox/OpenReplayButton
 @onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
 @onready var _confirm_overlay: AppConfirmOverlay = %ConfirmOverlay
 var _choice_overlay: AppChoiceOverlay = null
@@ -45,7 +52,7 @@ var _choice_overlay: AppChoiceOverlay = null
 @onready var _search_bar: LineEdit = $MainVBox/TopBarPanel/TopBarHBox/SearchBar
 @onready var _gen_settings_button: Button = $MainVBox/TopBarPanel/TopBarHBox/GenerationSettingsButton
 @onready var _generate_notes_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton
-@onready var _play_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton
+@onready var _play_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton
 @onready var _delete_button: Button = $MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/DeleteButton
 @onready var _screen_title_label: Label = $MainVBox/ScreenTitleLabel
 @onready var _screen_subtitle_label: Label = $MainVBox/ScreenSubtitleLabel
@@ -54,6 +61,7 @@ var _choice_overlay: AppChoiceOverlay = null
 
 var generation_settings_selector: Control = null
 var run_modifiers_screen: Control = null
+var _cs_open_count: int = 0
 
 var current_instrument: String = "drums"
 var current_generation_mode: String = "basic"
@@ -62,6 +70,8 @@ var active_run_modifiers: Array[String] = []
 var current_selected_song_data: Dictionary = {}
 var current_displayed_song_path: String = ""
 var _song_list_loading_depth: int = 0
+var _is_initial_library_loading: bool = false
+var _initial_highlight_done: bool = false
 var _details_tween: Tween = null
 var tutorials: SongSelectTutorials = null
 var filters: SongSelectFilters = null
@@ -70,6 +80,8 @@ var _playlist_browse_bar: PanelContainer = null
 var _playlist_browse_label: Label = null
 var _playlist_browse_clear_button: Button = null
 var _pending_browse_playlist_id: String = ""
+var _test_chart_dialog: FileDialog = null
+var _edit_chart_dialog: FileDialog = null
 
 const CHOICE_OVERLAY_SCENE := preload("res://ui/overlays/app_choice_overlay.tscn")
 const _ICON_NEUTRAL := Color(0.82, 0.86, 0.94, 1.0)
@@ -79,10 +91,15 @@ const _ICON_DANGER := Color(0.95, 0.55, 0.48, 1.0)
 const _ICON_RESULTS := Color(0.66, 0.58, 0.86, 1.0)
 
 func _ready():
+	var _perf_total := PerfTrace.begin("perf.load.song_select.total")
 	song_list_manager = SongListController.new()
 	song_details_manager = SongDetailsManager.new()
 	results_manager = ResultsManager.new()
+	if not results_manager.replay_requested.is_connected(_on_result_replay_requested):
+		results_manager.replay_requested.connect(_on_result_replay_requested)
+	_results_view = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost
 	_setup_details_cover_clip()
+	call_deferred("_migrate_song_museum_first_played")
 
 	var game_engine = get_parent()
 	var trans = game_engine.get_transitions()
@@ -94,7 +111,11 @@ func _ready():
 	song_metadata_manager.metadata_updated.connect(_on_song_metadata_updated)
 	if SongLibrary and SongLibrary.has_signal("songs_list_changed"):
 		SongLibrary.songs_list_changed.connect(_on_songs_list_changed_from_library)
-		
+
+	_show_initial_library_loading()
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+
 	SongLibrary.load_songs()
 	
 	add_child(song_list_manager)
@@ -146,14 +167,15 @@ func _ready():
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyModLabel,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDensityRow/ChartDensityLabel,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/CoverWrap/CoverTextureRect,
-		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton,
+		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartIdLabel,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/RhythmRatingLabel,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDensityRow/RhythmDnaButton,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyEffectiveRow,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyEffectiveRow/ChartDifficultyEffectiveLabel,
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyEffectiveRow/ChartDifficultyEffectiveMeter,
-		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyEffectiveRow/ChartDifficultyEffectiveValueLabel
+		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/ChartDifficultySection/ChartDifficultyEffectiveRow/ChartDifficultyEffectiveValueLabel,
+		%LivingInsightLabel
 	)
 	song_details_manager.rhythm_dna_requested.connect(_on_rhythm_dna_requested)
 	song_details_manager.rhythm_dna_unavailable.connect(_on_rhythm_dna_unavailable)
@@ -222,12 +244,87 @@ func _ready():
 	_setup_favorite_button()
 	_update_favorite_button("")
 	_setup_ui_icons()
+	if _open_replay_button and not _open_replay_button.pressed.is_connected(_on_open_replay_pressed):
+		_open_replay_button.pressed.connect(_on_open_replay_pressed)
+	call_deferred("_try_open_pending_replay")
 	call_deferred("_refresh_filter_option_icon")
 	call_deferred("_maybe_show_song_select_tutorial")
 	_ensure_playlist_browse_bar()
 	_sync_playlist_browse_bar()
+	_ensure_help_button()
+	_setup_test_chart_dialog()
+	_setup_edit_chart_dialog()
+	_update_results_topbar_buttons()
+	_update_edit_chart_button()
 	if _pending_browse_playlist_id != "":
 		_pending_browse_playlist_id = ""
+	call_deferred("_hide_initial_library_loading")
+	PerfTrace.end("perf.load.song_select.total", _perf_total)
+
+
+var _pending_focus_path: String = ""
+var _pending_focus_museum: bool = false
+var _pending_focus_tries: int = 0
+
+
+## Focus a library song (from diary deep-link). Retries after list rebuild.
+func focus_song_path(song_path: String, open_museum: bool = false) -> void:
+	_pending_focus_path = str(song_path).replace("\\", "/").strip_edges()
+	_pending_focus_museum = open_museum and _pending_focus_path != ""
+	_pending_focus_tries = 0
+	_try_apply_pending_focus()
+
+
+func _try_apply_pending_focus() -> void:
+	if _pending_focus_path == "":
+		return
+	if song_list_manager == null:
+		return
+	if song_list_manager.has_method("select_song_by_path") \
+			and song_list_manager.select_song_by_path(_pending_focus_path):
+		var open_museum := _pending_focus_museum
+		_pending_focus_path = ""
+		_pending_focus_museum = false
+		_pending_focus_tries = 0
+		# Cover load starts in selectв†’update_details. Do not call update_details
+		# again here: a second pass bumps the cover request id while the worker
+		# thread is still alive (busyв†’silent skip), so the finished cover is discarded.
+		if open_museum:
+			call_deferred("_ensure_results_museum_open")
+		return
+	_pending_focus_tries += 1
+	if _pending_focus_tries <= 8:
+		get_tree().create_timer(0.15).timeout.connect(_try_apply_pending_focus, CONNECT_ONE_SHOT)
+
+
+func _update_results_topbar_buttons() -> void:
+	var results_host = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost
+	var is_results: bool = false
+	if results_host != null:
+		is_results = results_host.visible
+	if clear_results_button:
+		clear_results_button.visible = is_results
+	if _open_replay_button:
+		_open_replay_button.visible = not is_results
+
+
+func _ensure_results_museum_open() -> void:
+	var song_item_list = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/SongItemList
+	var results_host = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost
+	if song_item_list == null or results_host == null:
+		return
+	if results_host.visible:
+		if results_manager and not current_selected_song_data.is_empty():
+			results_manager.show_results_for_song(current_selected_song_data, _results_view)
+		_update_results_topbar_buttons()
+		return
+	if current_selected_song_data.is_empty():
+		return
+	song_item_list.visible = false
+	results_host.visible = true
+	_update_results_topbar_buttons()
+	if results_manager:
+		results_manager.show_results_for_song(current_selected_song_data, _results_view)
 
 
 func _maybe_show_song_select_tutorial(force: bool = false) -> void:
@@ -286,7 +383,7 @@ func _on_modifiers_button_pressed() -> void:
 
 
 func _on_playlists_button_pressed() -> void:
-	MusicManager.play_modifier_select_sound()
+	# Sound plays once inside transitions.open_playlist_hub_from_song_select().
 	if transitions and transitions.has_method("open_playlist_hub_from_song_select"):
 		transitions.open_playlist_hub_from_song_select()
 
@@ -458,10 +555,13 @@ func apply_locale() -> void:
 	_sync_filter_option_selection()
 	if clear_results_button:
 		clear_results_button.text = tr("SONG_CLEAR_RESULTS")
+	if _open_replay_button:
+		_open_replay_button.text = tr("REPLAY_OPEN_BUTTON")
 	if results_button:
 		results_button.text = tr("SONG_RESULTS")
 	if _delete_button:
 		_delete_button.text = tr("SONG_DELETE")
+	_update_delete_button_state()
 	song_details_manager.apply_locale()
 	if _track_medals_strip and _track_medals_strip.has_method("apply_locale"):
 		_track_medals_strip.apply_locale()
@@ -482,10 +582,132 @@ func apply_locale() -> void:
 		_gen_settings_button.text = _format_generation_settings_label(current_instrument, current_generation_mode, current_lanes)
 	if _playlists_button:
 		_playlists_button.text = tr("PLAYLIST_HUB_TITLE")
-		_playlists_button.tooltip_text = tr("SONG_SELECT_PLAYLISTS_TOOLTIP")
 	_sync_playlist_browse_bar()
 	_update_favorite_button(current_displayed_song_path)
 	_update_modifiers_button_label()
+	_ensure_help_button()
+
+
+func _ensure_help_button() -> void:
+	# Library help ? icon removed per request (2026-09-08) — hide any existing instances, do not create new ones
+	if _screen_title_label != null and is_instance_valid(_screen_title_label):
+		if _screen_title_label.has_meta("help_icon_btn"):
+			var b: Variant = _screen_title_label.get_meta("help_icon_btn")
+			if b is Button and is_instance_valid(b):
+				(b as Button).visible = false
+		var parent := _screen_title_label.get_parent()
+		if parent != null:
+			var row_existing := parent.get_node_or_null("ScreenTitleLabelHelpRow") as HBoxContainer
+			if row_existing != null:
+				var btn_in_row := row_existing.get_node_or_null("HelpButton") as Button
+				if btn_in_row != null and is_instance_valid(btn_in_row):
+					btn_in_row.visible = false
+			var btn_existing := parent.get_node_or_null("HelpButton") as Button
+			if btn_existing != null and is_instance_valid(btn_existing):
+				btn_existing.visible = false
+	if filter_by_letter != null and is_instance_valid(filter_by_letter):
+		var f_parent := filter_by_letter.get_parent()
+		if f_parent != null and f_parent is HBoxContainer:
+			var existing := (f_parent as HBoxContainer).get_node_or_null("FilterHelpButton") as Button
+			if existing != null and is_instance_valid(existing):
+				existing.visible = false
+			if filter_by_letter.has_meta("help_icon_btn"):
+				var fb: Variant = filter_by_letter.get_meta("help_icon_btn")
+				if fb is Button and is_instance_valid(fb):
+					(fb as Button).visible = false
+			var legacy := (f_parent as HBoxContainer).get_node_or_null("HelpButton") as Button
+			if legacy != null and is_instance_valid(legacy):
+				legacy.visible = false
+	return
+
+
+func _ensure_library_title_help_button() -> void:
+	if _screen_title_label == null or not is_instance_valid(_screen_title_label):
+		return
+	if _screen_title_label.has_meta("help_icon_btn"):
+		var existing_meta: Variant = _screen_title_label.get_meta("help_icon_btn")
+		if existing_meta is Button and is_instance_valid(existing_meta):
+			(existing_meta as Button).tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+			(existing_meta as Button).visible = true
+			return
+	var parent := _screen_title_label.get_parent()
+	if parent != null:
+		var row_existing := parent.get_node_or_null("ScreenTitleLabelHelpRow") as HBoxContainer
+		if row_existing != null:
+			var btn_in_row := row_existing.get_node_or_null("HelpButton") as Button
+			if btn_in_row != null and is_instance_valid(btn_in_row):
+				btn_in_row.tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+				btn_in_row.visible = true
+				return
+		var btn_existing := parent.get_node_or_null("HelpButton") as Button
+		if btn_existing != null and is_instance_valid(btn_existing):
+			btn_existing.tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+			return
+	var btn := _HelpSectionUi.attach_help_icon_beside_label(
+		_screen_title_label,
+		tr("HELP_LINK_LIBRARY_OVERVIEW"),
+		_on_help_pressed,
+		true
+	)
+	if btn and is_instance_valid(btn):
+		btn.name = "HelpButton"
+		btn.visible = true
+
+
+func _ensure_filter_help_button() -> void:
+	if filter_by_letter == null or not is_instance_valid(filter_by_letter):
+		return
+	var parent := filter_by_letter.get_parent()
+	if parent == null or not parent is HBoxContainer:
+		return
+	var existing := parent.get_node_or_null("FilterHelpButton") as Button
+	if existing != null and is_instance_valid(existing):
+		existing.tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+		existing.visible = true
+		return
+	if filter_by_letter.has_meta("help_icon_btn"):
+		var existing_meta: Variant = filter_by_letter.get_meta("help_icon_btn")
+		if existing_meta is Button and is_instance_valid(existing_meta):
+			(existing_meta as Button).tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+			(existing_meta as Button).visible = true
+			return
+	# Also check generic HelpButton from legacy Library placement in TopBar
+	var legacy := parent.get_node_or_null("HelpButton") as Button
+	if legacy != null and is_instance_valid(legacy):
+		# Reuse legacy button for filter if it is immediately after FilterByLetter
+		if legacy.get_index() == filter_by_letter.get_index() + 1:
+			legacy.name = "FilterHelpButton"
+			legacy.tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+			legacy.visible = true
+			filter_by_letter.set_meta("help_icon_btn", legacy)
+			return
+	var btn := _HelpSectionUi.make_help_icon_button(tr("HELP_LINK_LIBRARY_OVERVIEW"))
+	btn.name = "FilterHelpButton"
+	btn.tooltip_text = tr("HELP_LINK_LIBRARY_OVERVIEW")
+	if not btn.pressed.is_connected(_on_help_pressed):
+		btn.pressed.connect(_on_help_pressed)
+	parent.add_child(btn)
+	parent.move_child(btn, filter_by_letter.get_index() + 1)
+	filter_by_letter.set_meta("help_icon_btn", btn)
+
+
+func _on_help_pressed() -> void:
+	var n: Node = self
+	while n:
+		if n.has_method("open_help_item"):
+			n.open_help_item("library_overview")
+			return
+		if n.has_method("get_transitions"):
+			var t = n.get_transitions()
+			if t and t.has_method("open_help_item"):
+				t.open_help_item("library_overview")
+				return
+		n = n.get_parent()
+	var trans := get_tree().root.get_node_or_null("GameEngine") as Node
+	if trans and trans.has_method("get_transitions"):
+		var t2 = trans.get_transitions()
+		if t2 and t2.has_method("open_help_item"):
+			t2.open_help_item("library_overview")
 
 
 func _setup_ui_icons() -> void:
@@ -493,16 +715,20 @@ func _setup_ui_icons() -> void:
 		UiIconHelper.setup_search_field(_search_bar)
 	UiIconHelper.apply_icons_from_meta([
 		edit_button,
+		edit_chart_button,
 		modifiers_button,
 		_playlists_button,
 		_gen_settings_button,
 		clear_results_button,
+		_open_replay_button,
 		_play_button,
 		analyze_bpm_button,
 		_generate_notes_button,
 		results_button,
 		_delete_button,
 	], 18)
+	if edit_chart_button:
+		UiIconHelper.apply_icon_from_meta(edit_chart_button, 18, _ICON_NEUTRAL)
 	if _generate_notes_button:
 		UiIconHelper.apply_icon_from_meta(_generate_notes_button, 18, UiIconHelper.ACCENT_MINT)
 	if filter_by_letter:
@@ -520,6 +746,8 @@ func _refresh_toolbar_icon_tints() -> void:
 	if modifiers_button:
 		var mod_tint := UiIconHelper.ACCENT if not active_run_modifiers.is_empty() else _ICON_NEUTRAL
 		UiIconHelper.apply_icon_from_meta(modifiers_button, 18, mod_tint)
+	if _open_replay_button:
+		UiIconHelper.apply_icon_from_meta(_open_replay_button, 18, Color(0.45, 0.78, 0.98, 1.0))
 
 
 func _configure_details_scroll() -> void:
@@ -806,7 +1034,7 @@ func _on_bpm_analysis_completed(bpm_value: int):
 	_pop_button(analyze_bpm_button)
 
 func _on_bpm_analysis_error(error_message: String):
-	printerr("SongSelect.gd: Ошибка BPM анализа: " + error_message)
+	printerr("SongSelect.gd: РћС€РёР±РєР° BPM Р°РЅР°Р»РёР·Р°: " + error_message)
 	$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/DetailsInfoScroll/DetailsInfoVBox/BpmLabel.text = _SS._translate("SONG_BPM_ERROR")
 	analyze_bpm_button.text = _SS._translate("SONG_ANALYZE_ERROR")
 	analyze_bpm_button.disabled = false
@@ -819,7 +1047,7 @@ func _on_notes_generation_started():
 
 func _on_notes_generation_completed(notes_data: Array, bpm_value: float, instrument_type: String):
 	_set_generate_notes_button_idle()
-	$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = false  
+	$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = false  
 	song_details_manager._update_play_button_state()
 	song_details_manager.set_generation_status(_SS._translate("SONG_GEN_DONE"), false)
 	_update_metadata_edit_availability()
@@ -838,7 +1066,7 @@ func _maybe_show_first_chart_help_nudge() -> void:
 	_StatusToast.show_from_node(self, "help_nudge_first_chart", tr("HELP_NUDGE_FIRST_CHART"), "info", 5.0)
 
 func _on_notes_generation_error(error_message: String):
-	printerr("SongSelect.gd: Ошибка генерации нот: " + error_message)
+	printerr("SongSelect.gd: РћС€РёР±РєР° РіРµРЅРµСЂР°С†РёРё РЅРѕС‚: " + error_message)
 	$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.text = _SS._translate("SONG_GEN_ERROR")
 	$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.disabled = false
 	song_details_manager.set_generation_status(_SS._translate("SONG_GEN_STATUS_ERROR") % error_message, true)
@@ -945,15 +1173,15 @@ func _apply_bpm_dependent_ui():
 		analyze_bpm_button.text = _SS._translate("SONG_ANALYZE_BPM")
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.text = _SS._translate("SONG_GEN_NEED_BPM")
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.disabled = true
-		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = true
+		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = true
 	else:
 		analyze_bpm_button.text = _SS._translate("SONG_BPM_DONE")
 		_set_generate_notes_button_idle()
 		if _check_if_notes_exist_for_current_settings():
-			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = false
+			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = false
 			song_details_manager._update_play_button_state()
 		else:
-			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = true
+			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = true
 			song_details_manager._update_play_button_state()
 	_apply_background_status_ui()
 
@@ -1093,6 +1321,7 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 			SongLibrary.update_metadata(song_path, {"bpm": _SS._translate("VALUE_NA")})
 	
 	current_selected_song_data = enriched_song_data
+	_update_edit_chart_button()
 	song_details_manager.stop_preview()
 	song_details_manager.update_details(enriched_song_data)
 	_update_track_medals_display(song_path)
@@ -1118,15 +1347,15 @@ func _on_song_item_selected_from_manager(song_data: Dictionary):
 		analyze_bpm_button.text = _SS._translate("SONG_ANALYZE_BPM")
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.text = _SS._translate("SONG_GEN_NEED_BPM")
 		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/GenerateNotesButton.disabled = true
-		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = true
+		$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = true
 	else:
 		analyze_bpm_button.text = _SS._translate("SONG_BPM_DONE")
 		_set_generate_notes_button_idle()
 		if _check_if_notes_exist_for_current_settings():
-			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = false
+			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = false
 			song_details_manager._update_play_button_state()
 		else:
-			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayButton.disabled = true
+			$MainVBox/ContentHBox/DetailsPanel/DetailsMargin/DetailsVBox/ActionsVBox/PlayEditRow/PlayButton.disabled = true
 			song_details_manager._update_play_button_state()
 	_apply_background_status_ui()
 
@@ -1153,6 +1382,8 @@ func _on_song_list_heavy_rebuild_started() -> void:
 
 
 func _on_song_list_heavy_rebuild_finished() -> void:
+	_try_apply_pending_focus()
+
 	_song_list_loading_depth = maxi(0, _song_list_loading_depth - 1)
 	if _song_list_loading_depth != 0:
 		return
@@ -1161,9 +1392,29 @@ func _on_song_list_heavy_rebuild_finished() -> void:
 		overlay.hide_loading()
 
 
+func _show_initial_library_loading() -> void:
+	if _is_initial_library_loading:
+		return
+	_is_initial_library_loading = true
+	_initial_highlight_done = false
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_SONG_LIST"), true)
+
+
+func _hide_initial_library_loading() -> void:
+	if not _is_initial_library_loading:
+		return
+	_is_initial_library_loading = false
+	var overlay := _get_loading_overlay()
+	if overlay:
+		overlay.hide_loading()
+
+
 func _on_song_list_changed():
 	_update_song_count_label()
 	call_deferred("_focus_song_list")
+	call_deferred("_try_apply_pending_focus")
 
 func _on_generation_settings_pressed():
 	_UiModifierSounds.play_select()
@@ -1176,20 +1427,42 @@ func _suppress_favorite_for_overlay() -> void:
 
 
 func _open_generation_settings_selector():
+	_cs_open_count += 1
+	var _perf_cs_open := PerfTrace.begin("perf.detail.song_select.chart_style.open")
+	var _perf_cs_open_n := PerfTrace.begin("perf.detail.song_select.chart_style.open.count%d" % _cs_open_count)
 	_suppress_favorite_for_overlay()
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
 		generation_settings_selector.queue_free()
 
-	generation_settings_selector = load("res://scenes/song_select/dialogs/generation_settings_selector.tscn").instantiate()
+	var _perf_cs_load := PerfTrace.begin("perf.detail.song_select.chart_style.open.load")
+	var _perf_cs_load_n := PerfTrace.begin("perf.detail.song_select.chart_style.open.load.count%d" % _cs_open_count)
+	var _perf_cs_res := load("res://scenes/song_select/dialogs/generation_settings_selector.tscn")
+	PerfTrace.end("perf.detail.song_select.chart_style.open.load.count%d" % _cs_open_count, _perf_cs_load_n)
+	PerfTrace.end("perf.detail.song_select.chart_style.open.load", _perf_cs_load)
+	var _perf_cs_inst := PerfTrace.begin("perf.detail.song_select.chart_style.open.instantiate")
+	var _perf_cs_inst_n := PerfTrace.begin("perf.detail.song_select.chart_style.open.instantiate.count%d" % _cs_open_count)
+	generation_settings_selector = _perf_cs_res.instantiate()
+	PerfTrace.end("perf.detail.song_select.chart_style.open.instantiate.count%d" % _cs_open_count, _perf_cs_inst_n)
+	PerfTrace.end("perf.detail.song_select.chart_style.open.instantiate", _perf_cs_inst)
+	var _perf_cs_setup := PerfTrace.begin("perf.detail.song_select.chart_style.open.setup")
 	generation_settings_selector.generation_settings_confirmed.connect(_on_generation_settings_confirmed)
 	generation_settings_selector.selector_closed.connect(_on_generation_settings_closed)
 	if current_displayed_song_path != "":
 		generation_settings_selector.set_current_song_data(current_selected_song_data)
+	PerfTrace.end("perf.detail.song_select.chart_style.open.setup", _perf_cs_setup)
 	var host := get_parent()
+	var _perf_cs_add := PerfTrace.begin("perf.detail.song_select.chart_style.open.add")
+	var _perf_cs_add_n := PerfTrace.begin("perf.detail.song_select.chart_style.open.add.count%d" % _cs_open_count)
 	host.add_child(generation_settings_selector)
 	host.move_child(generation_settings_selector, -1)
 	UiInteractionApplier.apply_from_engine(generation_settings_selector)
+	PerfTrace.end("perf.detail.song_select.chart_style.open.add.count%d" % _cs_open_count, _perf_cs_add_n)
+	PerfTrace.end("perf.detail.song_select.chart_style.open.add", _perf_cs_add)
 	await get_tree().process_frame
+	PerfTrace.end("perf.detail.song_select.chart_style.open.count%d" % _cs_open_count, _perf_cs_open_n)
+	PerfTrace.end("perf.detail.song_select.chart_style.open", _perf_cs_open)
+	PerfTrace.record("perf.detail.song_select.chart_style.open.count", _cs_open_count)
+	PerfTrace.end("perf.detail.song_select.chart_style.open", _perf_cs_open)
 
 func _is_song_metadata_edit_locked(song_path: String) -> bool:
 	if not background_service:
@@ -1261,7 +1534,7 @@ func _update_delete_button_state() -> void:
 	if current_displayed_song_path != "" and not can_delete:
 		delete_button.tooltip_text = _SS._translate("SONG_TOOLTIP_BUILTIN_DELETE")
 	else:
-		delete_button.tooltip_text = ""
+		delete_button.tooltip_text = _SS._translate("SONG_DELETE")
 
 func _toggle_edit_mode():
 	var entering := not song_list_manager.is_edit_mode_active()
@@ -1279,6 +1552,109 @@ func _update_edit_button_style():
 		edit_button.self_modulate = Color(1.0, 1.0, 1.0, 1.0)
 		edit_button.text = _SS._translate("SONG_EDIT")
 	_refresh_toolbar_icon_tints()
+	_update_edit_chart_button()
+
+
+func _update_edit_chart_button() -> void:
+	if edit_chart_button == null:
+		return
+	var enabled := SettingsManager and SettingsManager.has_method("get_chart_editor_enabled") and SettingsManager.get_chart_editor_enabled()
+	edit_chart_button.visible = enabled
+	if enabled:
+		edit_chart_button.disabled = current_selected_song_data.is_empty()
+	else:
+		edit_chart_button.disabled = true
+
+
+func _setup_edit_chart_dialog() -> void:
+	if _edit_chart_dialog != null:
+		return
+	_edit_chart_dialog = FileDialog.new()
+	_edit_chart_dialog.name = "EditChartDialog"
+	_edit_chart_dialog.title = tr("SONG_SELECT_EDIT_CHART_TITLE") if tr("SONG_SELECT_EDIT_CHART_TITLE") != "SONG_SELECT_EDIT_CHART_TITLE" else "Select chart file"
+	_edit_chart_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_edit_chart_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_edit_chart_dialog.filters = PackedStringArray(["*.rf ; RF Chart Files", "*.rfc ; RFC Correction Files"])
+	_edit_chart_dialog.unresizable = false
+	_edit_chart_dialog.min_size = Vector2(700, 450)
+	if _edit_chart_dialog.has_method("set_use_native_dialog"):
+		_edit_chart_dialog.set_use_native_dialog(true)
+	elif "use_native_dialog" in _edit_chart_dialog:
+		_edit_chart_dialog.use_native_dialog = true
+	add_child(_edit_chart_dialog)
+	if not _edit_chart_dialog.file_selected.is_connected(_on_edit_chart_selected):
+		_edit_chart_dialog.file_selected.connect(_on_edit_chart_selected)
+
+
+func _on_edit_chart_pressed() -> void:
+	if current_selected_song_data.is_empty():
+		return
+	if not (SettingsManager and SettingsManager.has_method("get_chart_editor_enabled") and SettingsManager.get_chart_editor_enabled()):
+		return
+	_setup_edit_chart_dialog()
+	_open_edit_chart_picker()
+
+
+func _open_edit_chart_picker() -> void:
+	if current_selected_song_data.is_empty():
+		return
+	_setup_edit_chart_dialog()
+	if _edit_chart_dialog == null:
+		return
+	var song_path := str(current_selected_song_data.get("path", ""))
+	var chart_id := NotesUtils.chart_id_from_song_path(song_path)
+	var chart_dir := NotesUtils.chart_dir(chart_id) if chart_id != "" else NotesUtils.get_notes_root()
+	var abs_dir := DirectoryUtils.to_absolute(chart_dir)
+	if abs_dir == "" or not DirAccess.dir_exists_absolute(abs_dir):
+		abs_dir = DirectoryUtils.to_absolute(NotesUtils.get_notes_root())
+	if abs_dir != "" and DirAccess.dir_exists_absolute(abs_dir):
+		_edit_chart_dialog.current_dir = abs_dir
+	_edit_chart_dialog.current_file = ""
+	_edit_chart_dialog.popup_centered_ratio(0.7)
+
+
+func _on_edit_chart_selected(path: String) -> void:
+	var sel := String(path).strip_edges()
+	if sel == "":
+		return
+	var lower := sel.to_lower()
+	if not (lower.ends_with(".rf") or lower.ends_with(".rfc")):
+		return
+	MusicManager.play_restart_sound()
+	var song_path := str(current_selected_song_data.get("path", ""))
+	if song_path == "":
+		return
+	# Derive chart stem/lanes from selected file name, preserve version suffix (_vN) and handle .rfc
+	var sel_for_stem := sel
+	if sel_for_stem.to_lower().ends_with(".rfc"):
+		# For .rfc, use associated .rf for stem derivation (existing mechanism: .rfc sidecar for .rf)
+		sel_for_stem = sel_for_stem.substr(0, sel_for_stem.length() - 1) # .rfc -> .rf
+	var stem := current_generation_mode
+	var lanes_v := current_lanes
+	var fname := sel_for_stem.get_file()
+	# Try to parse stem from filename like drums_arcade_medium.rf or drums_arcade_medium_v3.rf (keep version)
+	if fname.to_lower().begins_with("drums_"):
+		var base := fname.get_basename() # removes .rf, keeps _vN
+		# base is like drums_arcade_medium or drums_arcade_medium_v3, extract stem after drums_ (preserve version)
+		if base.to_lower().begins_with("drums_"):
+			var extracted := base.substr(6) # after drums_, includes _vN if present
+			if extracted != "":
+				stem = extracted
+	# Also try to infer lanes from file if contains lanes tag - keep current lanes as fallback
+	if MusicManager and MusicManager.has_method("play_modifier_select_sound"):
+		MusicManager.play_modifier_select_sound()
+	if transitions and transitions.has_method("open_chart_editor"):
+		transitions.open_chart_editor({"song_path": song_path, "chart_stem": stem, "lanes": lanes_v, "chart_path": sel_for_stem})
+	elif transitions and transitions.has_method("_open_screen_async"):
+		var payload := {"song_path": song_path, "chart_stem": stem, "lanes": lanes_v, "chart_path": sel_for_stem}
+		transitions._open_screen_async("res://scenes/chart_editor/chart_editor.tscn", func(screen):
+			if screen.has_method("setup"):
+				screen.setup(payload)
+			elif screen.has_method("setup_with_song"):
+				screen.setup_with_song(song_path, stem, lanes_v)
+		)
+	else:
+		print("[ChartEditor] open_chart_editor not available for ", sel)
 
 
 func _on_generate_pressed():
@@ -1303,7 +1679,7 @@ func _confirm_action(title: String, message: String, ok_text: String) -> bool:
 		title,
 		ok_text,
 	)
-	# Overlay leaves focus on a hidden confirm button — restore list so arrows sync.
+	# Overlay leaves focus on a hidden confirm button вЂ” restore list so arrows sync.
 	call_deferred("_focus_song_list")
 	return accepted
 
@@ -1326,7 +1702,7 @@ func _active_generation_preset_slot() -> int:
 
 
 func _should_block_mass_generation(_scope: int = 0) -> bool:
-	return _scope_is_mass() and _active_generation_preset_slot() > 0
+	return false
 
 
 func _prompt_dirty_preset_generation() -> String:
@@ -1345,7 +1721,9 @@ func _prompt_dirty_preset_generation() -> String:
 
 
 func _scope_is_mass(_scope: int = 0) -> bool:
-	return _GoalDiff.ready_axes_is_mass(_GoalDiff.resolve_ready_axes({}, "", "", current_instrument))
+	if _GoalDiff.ready_axes_is_mass(_GoalDiff.resolve_ready_axes({}, "", "", current_instrument)):
+		return true
+	return _GenReadyPresets.is_mass()
 
 
 func _chart_tag_for_generation_job(mode: String, custom_chart_tag: String) -> String:
@@ -1355,7 +1733,27 @@ func _chart_tag_for_generation_job(mode: String, custom_chart_tag: String) -> St
 
 
 func _collect_missing_generation_jobs(song_path: String, custom_chart_tag: String = "") -> Array:
+	var _perf := PerfTrace.begin("perf.detail.song_select.collect_generation_jobs")
+	var jobs := _collect_production_generation_jobs(song_path, custom_chart_tag, true)
+	jobs.append_array(_collect_preset_generation_jobs(song_path, true))
+	PerfTrace.end("perf.detail.song_select.collect_generation_jobs", _perf)
+	return jobs
+
+
+func _collect_all_generation_jobs(song_path: String) -> Array:
+	var jobs := _collect_production_generation_jobs(song_path, "", false)
+	jobs.append_array(_collect_preset_generation_jobs(song_path, false))
+	return jobs
+
+
+func _collect_production_generation_jobs(
+	song_path: String,
+	custom_chart_tag: String = "",
+	missing_only: bool = true,
+) -> Array:
 	var axes := _GoalDiff.resolve_ready_axes({}, "", "", current_instrument)
+	if not _scope_is_mass():
+		axes["instruments"] = [current_instrument]
 	var stems := _GoalDiff.stems_for_ready_axes(axes.get("goals", []), axes.get("diffs", []))
 	var instruments: Array = axes.get("instruments", [current_instrument])
 	var jobs: Array = []
@@ -1363,16 +1761,56 @@ func _collect_missing_generation_jobs(song_path: String, custom_chart_tag: Strin
 		var inst := str(inst_raw)
 		for stem_id in stems:
 			var tag := _chart_tag_for_generation_job(current_generation_mode, custom_chart_tag)
-			if not NotesUtils.notes_exist(song_path, inst, stem_id, current_lanes, tag):
-				var pair := _GoalDiff.pair_from_stem(stem_id)
-				jobs.append(_generation_job_dict(
-					str(pair.get("goal", _GoalDiff.DEFAULT_GOAL)),
-					str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)),
-					stem_id,
-					current_lanes,
-					inst,
-				))
+			if missing_only and NotesUtils.notes_exist(song_path, inst, stem_id, current_lanes, tag):
+				continue
+			var pair := _GoalDiff.pair_from_stem(stem_id)
+			jobs.append(_generation_job_dict(
+				str(pair.get("goal", _GoalDiff.DEFAULT_GOAL)),
+				str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)),
+				stem_id,
+				current_lanes,
+				inst,
+			))
 	return jobs
+
+
+func _ready_preset_slots_for_generation() -> Array[int]:
+	if _scope_is_mass():
+		return _GenReadyPresets.resolve_ready_slots()
+	if current_generation_mode == "custom" and _active_generation_preset_slot() > 0:
+		return [_active_generation_preset_slot()]
+	return []
+
+
+func _collect_preset_generation_jobs(song_path: String, missing_only: bool = true) -> Array:
+	var slots := _ready_preset_slots_for_generation()
+	if slots.is_empty():
+		return []
+	var presets := SettingsManager.get_generation_presets()
+	var jobs: Array = []
+	for slot in slots:
+		if slot <= 0 or not _UserPresets.is_generation_slot_filled(presets, slot):
+			continue
+		var entry := _UserPresets.get_generation_slot(presets, slot)
+		var inst := str(entry.get("instrument", current_instrument))
+		if missing_only and NotesUtils.preset_chart_exists(song_path, inst, slot):
+			continue
+		jobs.append(_generation_preset_job_dict(slot, entry))
+	return jobs
+
+
+func _generation_preset_job_dict(slot: int, entry: Dictionary) -> Dictionary:
+	return {
+		"mode": "custom",
+		"chart_intent": str(entry.get("intent", "groove")),
+		"chart_stem": "custom",
+		"goal": "",
+		"difficulty": "",
+		"lanes": NotesUtils.CANONICAL_MAX_LANES,
+		"instrument": str(entry.get("instrument", current_instrument)),
+		"chart_tag": NotesUtils.chart_tag_for_preset_slot(slot),
+		"preset_slot": slot,
+	}
 
 
 func _generation_job_dict(goal_v: String, diff_v: String, stem: String, lanes: int, instrument: String = "") -> Dictionary:
@@ -1386,24 +1824,6 @@ func _generation_job_dict(goal_v: String, diff_v: String, stem: String, lanes: i
 		"instrument": instrument if instrument != "" else current_instrument,
 	}
 
-
-func _collect_all_generation_jobs(song_path: String) -> Array:
-	var axes := _GoalDiff.resolve_ready_axes({}, "", "", current_instrument)
-	var stems := _GoalDiff.stems_for_ready_axes(axes.get("goals", []), axes.get("diffs", []))
-	var instruments: Array = axes.get("instruments", [current_instrument])
-	var jobs: Array = []
-	for inst_raw in instruments:
-		var inst := str(inst_raw)
-		for stem_id in stems:
-			var pair := _GoalDiff.pair_from_stem(stem_id)
-			jobs.append(_generation_job_dict(
-				str(pair.get("goal", _GoalDiff.DEFAULT_GOAL)),
-				str(pair.get("difficulty", _GoalDiff.DEFAULT_DIFFICULTY)),
-				stem_id,
-				current_lanes,
-				inst,
-			))
-	return jobs
 
 func _generate_notes_for_current_song():
 	var song_path = current_selected_song_data.get("path", "")
@@ -1489,7 +1909,8 @@ func _generate_notes_for_current_song():
 		if not _confirm_regeneration_enabled():
 			include_existing = true
 		else:
-			var ready_msg := _tr_format("SONG_GEN_CONFIRM_ALREADY_READY", [song_title, _SS.format_gen_settings_label(current_instrument, current_lanes, _saved_generation_goal(), _saved_generation_difficulty())])
+			var ready_label := _SS.format_ready_jobs_label(all_jobs)
+			var ready_msg := _tr_format("SONG_GEN_CONFIRM_ALREADY_READY", [song_title, ready_label])
 			if not await _confirm_action(tr("SONG_GEN_CONFIRM_TITLE"), ready_msg, tr("SONG_GEN_CONFIRM_CONTINUE")):
 				return
 			include_existing = true
@@ -1511,16 +1932,25 @@ func _generate_notes_for_current_song():
 		_StatusToast.show_from_node(self, "gen_no_jobs", tr("SONG_GEN_NOTHING_TO_DO"), "info", 2.5)
 		return
 
+	# Batch guard: while this song already has active/queued notes generation,
+	# a repeated press must not re-enqueue cleared tasks (e.g. a failed first
+	# job would look "missing" again). First batch is unaffected: queue is
+	# empty for the song, position is 0. Reuses the existing already-queued notice.
+	if background_service and background_service.get_notes_queue_position_for_song(song_path) > 0:
+		_StatusToast.show_from_node(self, "gen_queue_dup", tr("GEN_QUEUE_ALREADY"), "info", 2.5)
+		_apply_background_status_ui()
+		return
+
 	var bpm_f := float(song_bpm)
 	var saw_duplicate := false
 	for job in jobs:
 		var mode: String = str(job.get("mode", current_generation_mode))
 		var lanes: int = int(job.get("lanes", current_lanes))
 		var job_instrument := str(job.get("instrument", current_instrument))
-		var chart_tag := ""
-		if not scope_mass:
-			if mode == "custom":
-				chart_tag = generation_chart_tag
+		var chart_tag := str(job.get("chart_tag", "")).strip_edges()
+		if chart_tag == "" and not scope_mass and mode == "custom":
+			chart_tag = generation_chart_tag
+		var preset_slot := int(job.get("preset_slot", 0))
 		var chart_intent := str(job.get("chart_intent", "")).strip_edges()
 		if chart_intent == "":
 			chart_intent = str(SettingsManager.get_setting("last_generation_intent", "original")).strip_edges()
@@ -1551,6 +1981,7 @@ func _generate_notes_for_current_song():
 			chart_intent,
 			job_goal,
 			job_difficulty,
+			preset_slot,
 		)
 		if pos == 0:
 			saw_duplicate = true
@@ -1591,7 +2022,7 @@ func _on_song_add_rejected(reject_info: Dictionary) -> void:
 	var title := str(reject_info.get("title", "")).strip_edges()
 	var label := title
 	if artist != "" and title != "":
-		label = "%s — %s" % [artist, title]
+		label = "%s вЂ” %s" % [artist, title]
 	elif artist != "":
 		label = artist
 	if label == "":
@@ -1601,7 +2032,7 @@ func _on_song_add_rejected(reject_info: Dictionary) -> void:
 func _perform_delete_song(song_path: String) -> void:
 	song_details_manager.stop_preview()
 	if not SongLibrary.delete_song(song_path):
-		printerr("SongSelect.gd: Не удалось удалить файл: ", song_path)
+		printerr("SongSelect.gd: РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ С„Р°Р№Р»: ", song_path)
 		_show_delete_notice(_SS._translate("SONG_DELETE_FAIL"))
 		return
 
@@ -1625,40 +2056,63 @@ func _perform_delete_song(song_path: String) -> void:
 	_apply_bpm_dependent_ui()
 	_update_metadata_edit_availability()
 
+func _migrate_song_museum_first_played() -> void:
+	if results_manager == null or results_manager.results_service == null:
+		return
+	results_manager.results_service.migrate_all_first_played_from_results()
+
+
+func _on_open_replay_pressed() -> void:
+	_ReplayLauncher.open_file_dialog(get_tree(), self)
+
+
+func _try_open_pending_replay() -> void:
+	var pending := _ReplayLauncher.take_pending_path()
+	if pending.strip_edges() == "":
+		return
+	_ReplayLauncher.open_replay_path(self, pending)
+
+
+func _on_result_replay_requested(replay_path: String) -> void:
+	# QOL-RES-02 exact: open only this result's replay_path
+	var rp := replay_path.strip_edges()
+	if rp == "":
+		return
+	_ReplayLauncher.open_replay_path(self, rp)
+
+
 func _on_results_pressed():
 	var song_item_list = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/SongItemList
-	var results_list = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsItemList
+	var results_host = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsHost
 	
 	if song_item_list.visible:
 		song_item_list.visible = false
-		results_list.visible = true
-		clear_results_button.visible = true
-		results_manager.show_results_for_song(current_selected_song_data, results_list)
+		results_host.visible = true
+		_update_results_topbar_buttons()
+		results_manager.show_results_for_song(current_selected_song_data, _results_view)
 	else:
-		results_list.visible = false
+		results_host.visible = false
+		if _results_view:
+			_results_view.clear_view()
 		song_item_list.visible = true
-		clear_results_button.visible = false
+		_update_results_topbar_buttons()
 
 func _on_clear_results_pressed():
 	var song_path = current_selected_song_data.get("path", "")
 	if song_path.is_empty(): return
 	
 	if results_manager.clear_results_for_song(song_path):
-		var results_list = $MainVBox/ContentHBox/ListPanel/ListMargin/SongListVBox/ResultsItemList
-		results_manager.show_results_for_song(current_selected_song_data, results_list)
+		results_manager.show_results_for_song(current_selected_song_data, _results_view)
 		_update_track_medals_display(song_path)
 
 func _on_analyze_bpm_pressed():
-	if background_service and background_service.is_notes_pipeline_busy():
+	if current_selected_song_data.is_empty():
 		return
-	var selected_items = song_item_list_ref.get_selected_items()
-	if selected_items.size() == 0: return
+	var song_path := String(current_selected_song_data.get("path", current_displayed_song_path)).strip_edges()
+	if song_path == "":
+		return
 	
-	var selected_song_data = song_list_manager.get_song_data_by_item_list_index(selected_items[0])
-	if selected_song_data.is_empty(): return
-	
-	var song_path = selected_song_data.get("path", "")
-	if song_path == "": return
+	var selected_song_data := current_selected_song_data
 	var selected_bpm := String(selected_song_data.get("bpm", "")).strip_edges()
 	if not _SS.is_missing_metadata_value(selected_bpm):
 		if _confirm_regeneration_enabled():
@@ -1676,10 +2130,73 @@ func _on_analyze_bpm_pressed():
 			_StatusToast.show_from_node(self, "gen_queue_dup", tr("GEN_QUEUE_ALREADY"), "info", 2.5)
 		_apply_background_status_ui()
 
-func _on_play_pressed():
-	if current_selected_song_data.is_empty():
-		printerr("SongSelect.gd: Нет выбранной песни!")
+func _setup_test_chart_dialog() -> void:
+	if _test_chart_dialog != null:
 		return
+	_test_chart_dialog = FileDialog.new()
+	_test_chart_dialog.name = "TestChartDialog"
+	_test_chart_dialog.title = tr("SONG_SELECT_TEST_CHART_TITLE") if tr("SONG_SELECT_TEST_CHART_TITLE") != "SONG_SELECT_TEST_CHART_TITLE" else "Select chart file"
+	_test_chart_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_test_chart_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_test_chart_dialog.filters = PackedStringArray(["*.rf ; RF Chart Files"])
+	_test_chart_dialog.unresizable = false
+	_test_chart_dialog.min_size = Vector2(700, 450)
+	# Use native Windows file picker when available (Godot 4.5+)
+	if _test_chart_dialog.has_method("set_use_native_dialog"):
+		_test_chart_dialog.set_use_native_dialog(true)
+	elif "use_native_dialog" in _test_chart_dialog:
+		_test_chart_dialog.use_native_dialog = true
+	add_child(_test_chart_dialog)
+	if not _test_chart_dialog.file_selected.is_connected(_on_test_chart_selected):
+		_test_chart_dialog.file_selected.connect(_on_test_chart_selected)
+	# Connect PlayButton right-click via gui_input
+	if _play_button and not _play_button.gui_input.is_connected(_on_play_button_gui_input):
+		_play_button.gui_input.connect(_on_play_button_gui_input)
+
+
+func _on_play_button_gui_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mb := event as InputEventMouseButton
+	if mb.button_index != MOUSE_BUTTON_RIGHT or not mb.pressed:
+		return
+	# Only if test play enabled
+	if not (SettingsManager and SettingsManager.has_method("get_chart_editor_test_play_enabled") and SettingsManager.get_chart_editor_test_play_enabled()):
+		return
+	if current_selected_song_data.is_empty():
+		return
+	# Prevent normal pressed from firing
+	get_viewport().set_input_as_handled()
+	_open_test_chart_picker()
+
+
+func _open_test_chart_picker() -> void:
+	if current_selected_song_data.is_empty():
+		return
+	_setup_test_chart_dialog()
+	if _test_chart_dialog == null:
+		return
+	var song_path := str(current_selected_song_data.get("path", ""))
+	var chart_id := NotesUtils.chart_id_from_song_path(song_path)
+	var chart_dir := NotesUtils.chart_dir(chart_id) if chart_id != "" else NotesUtils.get_notes_root()
+	var abs_dir := DirectoryUtils.to_absolute(chart_dir)
+	if abs_dir == "" or not DirAccess.dir_exists_absolute(abs_dir):
+		abs_dir = DirectoryUtils.to_absolute(NotesUtils.get_notes_root())
+	if abs_dir != "" and DirAccess.dir_exists_absolute(abs_dir):
+		_test_chart_dialog.current_dir = abs_dir
+	_test_chart_dialog.current_file = ""
+	_test_chart_dialog.popup_centered_ratio(0.7)
+
+
+func _on_test_chart_selected(path: String) -> void:
+	var sel := String(path).strip_edges()
+	if sel == "":
+		return
+	if not sel.to_lower().ends_with(".rf"):
+		return
+	if current_selected_song_data.is_empty():
+		return
+	MusicManager.play_restart_sound()
 	var chart_tag := NotesUtils.resolve_play_chart_tag(
 		str(current_selected_song_data.get("path", "")),
 		current_instrument,
@@ -1687,7 +2204,52 @@ func _on_play_pressed():
 		current_lanes,
 	)
 	var lookup_key := GenerationIntents.chart_lookup_key(current_generation_mode, _saved_generation_intent())
+	var pending_path := sel.replace("\\", "/")
+	# Store as global meta so GameScreen can pick it up before loading notes (synchronous, fixes deferred race)
+	var root = Engine.get_main_loop().root if Engine.get_main_loop() else null
+	if root:
+		root.set_meta("rhythmfall_test_preview", true)
+		root.set_meta("rhythmfall_test_chart_path", pending_path)
+	transitions.open_game_with_song(
+		current_selected_song_data,
+		current_instrument,
+		results_manager,
+		lookup_key,
+		current_lanes,
+		active_run_modifiers.duplicate(),
+		chart_tag,
+	)
+	# Fallback deferred for older GameScreen that expects direct call
+	call_deferred("_apply_test_chart_override", pending_path)
+
+
+func _apply_test_chart_override(chart_path: String) -> void:
+	var gs := get_tree().current_scene
+	# Find game_screen instance (may be under transitions or directly)
+	if gs == null or not gs.has_method("_set_test_preview"):
+		# Try to find via GameEngine or tree
+		gs = get_tree().root.find_child("GameScreen", true, false)
+		if gs == null:
+			gs = get_tree().root.get_node_or_null("GameEngine/GameScreen")
+	if gs and gs.has_method("_set_test_preview"):
+		gs.call("_set_test_preview", true)
+	if gs and gs.has_method("_set_overridden_chart_path"):
+		gs.call("_set_overridden_chart_path", chart_path)
+
+
+func _on_play_pressed():
+	if current_selected_song_data.is_empty():
+		printerr("SongSelect.gd: РќРµС‚ РІС‹Р±СЂР°РЅРЅРѕР№ РїРµСЃРЅРё!")
+		return
+
 	MusicManager.play_restart_sound()
+	var chart_tag := NotesUtils.resolve_play_chart_tag(
+		str(current_selected_song_data.get("path", "")),
+		current_instrument,
+		current_generation_mode,
+		current_lanes,
+	)
+	var lookup_key := GenerationIntents.chart_lookup_key(current_generation_mode, _saved_generation_intent())
 	transitions.open_game_with_song(
 		current_selected_song_data,
 		current_instrument,
@@ -1729,8 +2291,10 @@ func _show_gen_settings_toast(instrument: String, mode: String, lanes: int) -> v
 	_StatusToast.show_from_node(self, "gen_settings", text, kind, 2.5)
 
 func _on_generation_queue_changed(snapshot: Dictionary) -> void:
+	var _perf := PerfTrace.begin("perf.detail.song_select.background_status")
 	_apply_background_status_ui()
 	_schedule_list_highlight_refresh(snapshot)
+	PerfTrace.end("perf.detail.song_select.background_status", _perf)
 
 
 func _schedule_list_highlight_refresh(snapshot: Dictionary) -> void:
@@ -1787,23 +2351,21 @@ func _paths_from_queue_snapshot(snapshot: Dictionary) -> Array[String]:
 
 
 func _apply_background_status_ui() -> void:
+	var _perf := PerfTrace.begin("perf.detail.song_select.background_status")
 	if _bg_status_ui_pending:
+		PerfTrace.end("perf.detail.song_select.background_status", _perf)
 		return
 	_bg_status_ui_pending = true
 	call_deferred("_flush_background_status_ui")
+	PerfTrace.end("perf.detail.song_select.background_status", _perf)
 
 
 func _flush_background_status_ui() -> void:
 	_bg_status_ui_pending = false
 	if not background_service:
 		return
-	var notes_busy := background_service.is_notes_pipeline_busy()
 	var pos_bpm = background_service.get_bpm_queue_position(current_displayed_song_path)
-	if notes_busy:
-		analyze_bpm_button.disabled = true
-		if pos_bpm == 0:
-			analyze_bpm_button.text = _SS._translate("SONG_ANALYZE_BPM")
-	elif pos_bpm == 1:
+	if pos_bpm == 1:
 		analyze_bpm_button.text = _SS._translate("SONG_ANALYZE_PROGRESS")
 		analyze_bpm_button.disabled = true
 	elif pos_bpm > 1:
@@ -1865,14 +2427,16 @@ func _saved_generation_goal() -> String:
 
 
 func _saved_generation_difficulty() -> String:
-	return str(SettingsManager.get_setting("generation_difficulty", "standard"))
+	return str(SettingsManager.get_setting("generation_difficulty", "medium"))
 func _on_generation_settings_closed():
+	var _perf_cs_close := PerfTrace.begin("perf.detail.song_select.chart_style.close")
 	if generation_settings_selector and is_instance_valid(generation_settings_selector):
 		generation_settings_selector.queue_free()
 		generation_settings_selector = null
 	_UiModifierSounds.play_deselect()
 	_update_favorite_button(current_displayed_song_path)
 	call_deferred("_focus_song_list")
+	PerfTrace.end("perf.detail.song_select.chart_style.close", _perf_cs_close)
 		
 func _on_song_metadata_updated(song_file_path: String):
 	var norm_path := String(song_file_path).replace("\\", "/")
@@ -1928,13 +2492,34 @@ func _check_if_notes_exist_for_current_settings() -> bool:
 	if current_generation_mode == "custom" and _active_generation_preset_slot() > 0:
 		if not _UserPresets.is_active_generation_preset_dirty():
 			chart_tag = NotesUtils.chart_tag_for_preset_slot(_active_generation_preset_slot())
+	# Align with Play: current instrument + goal/diff must exist first.
+	var play_tag := NotesUtils.resolve_play_chart_tag(
+		song_path, current_instrument, current_generation_mode, current_lanes
+	)
+	if not NotesUtils.notes_exist(
+		song_path,
+		current_instrument,
+		_generation_queue_lookup_key(),
+		current_lanes,
+		play_tag if play_tag != "" else chart_tag,
+	):
+		return false
 	return _collect_missing_generation_jobs(song_path, chart_tag).is_empty() \
 		and not _collect_all_generation_jobs(song_path).is_empty()
 
 func refresh_generation_notes_highlights(paths: Array = []):
+	if paths.is_empty() and _is_initial_library_loading and _initial_highlight_done:
+		PerfTrace.record("perf.detail.song_select.refresh_generation_notes_highlights.guard_skipped", 1)
+		return
 	if paths.is_empty():
+		if song_list_manager and song_list_manager.has_method("_forensic_set_pending_highlight_reason"):
+			song_list_manager._forensic_set_pending_highlight_reason("refresh_generation_notes_highlights_empty")
 		song_list_manager.refresh_highlight_for_current_settings()
+		if _is_initial_library_loading:
+			_initial_highlight_done = true
 	else:
+		if song_list_manager and song_list_manager.has_method("_forensic_set_pending_highlight_reason"):
+			song_list_manager._forensic_set_pending_highlight_reason("refresh_generation_notes_highlights_paths")
 		song_list_manager.refresh_highlights_for_paths(paths, true)
 	song_details_manager._update_play_button_state()
 	song_details_manager._update_generation_status()
@@ -1950,3 +2535,4 @@ func refresh_chart_id_visibility() -> void:
 func refresh_rhythm_dna_button_visibility() -> void:
 	if song_details_manager and song_details_manager.has_method("refresh_rhythm_dna_button_visibility"):
 		song_details_manager.refresh_rhythm_dna_button_visibility()
+

@@ -27,6 +27,8 @@ var _empty_label: Label
 var _back_button: Button
 var _close_button: Button
 var _clear_queue_button: Button
+var _storage_label: Label
+var _storage_reclaim_button: Button
 var _offline_banner: PanelContainer
 var _offline_label: Label
 var _offline_retry_button: Button
@@ -214,6 +216,28 @@ func _build_ui() -> void:
 	_footer_label.add_theme_color_override("font_color", Color(0.58, 0.66, 0.76, 1.0))
 	root.add_child(_footer_label)
 
+	var storage_row := HBoxContainer.new()
+	storage_row.add_theme_constant_override("separation", 8)
+	storage_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	root.add_child(storage_row)
+	var storage_title := Label.new()
+	storage_title.text = "Временный кэш:"
+	storage_title.add_theme_font_size_override("font_size", 12)
+	storage_title.add_theme_color_override("font_color", Color(0.58, 0.66, 0.76, 1.0))
+	storage_row.add_child(storage_title)
+	_storage_label = Label.new()
+	_storage_label.text = "—"
+	_storage_label.add_theme_font_size_override("font_size", 12)
+	_storage_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88, 1.0))
+	_storage_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	storage_row.add_child(_storage_label)
+	_storage_reclaim_button = Button.new()
+	_storage_reclaim_button.text = "Очистить кэш"
+	_storage_reclaim_button.tooltip_text = "Удалить временные файлы в temp_uploads/ (не трогает чарты и .rfd)"
+	_storage_reclaim_button.theme_type_variation = &"FlatButton"
+	_storage_reclaim_button.pressed.connect(_on_storage_reclaim_pressed)
+	storage_row.add_child(_storage_reclaim_button)
+
 	var footer_row := HBoxContainer.new()
 	footer_row.alignment = BoxContainer.ALIGNMENT_END
 	root.add_child(footer_row)
@@ -244,6 +268,7 @@ func refresh() -> void:
 	_last_queue_layout_key = ""
 	var snapshot: Dictionary = _service.get_queue_snapshot()
 	_render_snapshot(snapshot)
+	_refresh_storage_usage()
 
 
 func _queue_layout_key(snapshot: Dictionary) -> String:
@@ -321,7 +346,7 @@ func _apply_snapshot_progress(snapshot: Dictionary) -> void:
 		var item_id := str(d.get("id", ""))
 		if item_id == "":
 			continue
-		var row := _list_vbox.get_node_or_null("Row_%s" % item_id)
+		var row := _find_queue_row(item_id)
 		if row:
 			_update_row_progress(row, d.get("progress", {}) as Dictionary)
 
@@ -396,6 +421,23 @@ func _song_node_key(song_path: String) -> String:
 	return String(song_path).replace("\\", "/").md5_text()
 
 
+## Item ids embed absolute paths (`notes:D:/…|…`); `/` and `:` break NodePath.
+func _row_node_name(item_id: String) -> String:
+	var id := str(item_id).strip_edges()
+	if id == "":
+		return ""
+	return "Row_%s" % id.md5_text()
+
+
+func _find_queue_row(item_id: String) -> Control:
+	if _list_vbox == null:
+		return null
+	var row_name := _row_node_name(item_id)
+	if row_name == "":
+		return null
+	return _list_vbox.find_child(row_name, true, false) as Control
+
+
 func _sync_detail_panels() -> void:
 	if _list_vbox == null:
 		return
@@ -424,18 +466,7 @@ func _wire_song_row_open(panel: PanelContainer, song_path: String, instrument: S
 		return
 	panel.set_meta("song_open_wired", true)
 	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	panel.gui_input.connect(_on_song_row_panel_gui_input.bind(song_path, instrument, lanes))
-
-
-func _on_song_row_panel_gui_input(
-	event: InputEvent,
-	song_path: String,
-	instrument: String,
-	lanes: int,
-) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_toggle_song_detail(song_path, instrument, lanes)
-		get_viewport().set_input_as_handled()
+	UiClick.connect_clicked(panel, func() -> void: _toggle_song_detail(song_path, instrument, lanes))
 
 
 func _render_entry(entry: Dictionary) -> void:
@@ -622,8 +653,9 @@ func _make_kind_icon(kind: String, active: bool) -> TextureRect:
 func _make_row(item: Dictionary, indent_px: int, highlight_active: bool = false) -> Control:
 	var item_id := str(item.get("id", ""))
 	var wrap := MarginContainer.new()
-	if item_id != "":
-		wrap.name = "Row_%s" % item_id
+	var row_name := _row_node_name(item_id)
+	if row_name != "":
+		wrap.name = row_name
 	if indent_px > 0:
 		wrap.add_theme_constant_override("margin_left", indent_px)
 	var panel := _new_row_panel()
@@ -877,8 +909,13 @@ func _update_active_progress_only() -> void:
 		var item_id := str(item.get("id", ""))
 		if item_id == "":
 			continue
-		var row := _list_vbox.get_node_or_null("Row_%s" % item_id)
+		var row := _find_queue_row(item_id)
 		if row == null:
+			_last_queue_layout_key = ""
+			_on_queue_changed(snapshot)
+			return
+		if row.find_child("ProgressBar", true, false) == null:
+			_last_queue_layout_key = ""
 			_on_queue_changed(snapshot)
 			return
 		_update_row_progress(row, item.get("progress", {}) as Dictionary)
@@ -905,6 +942,70 @@ func _on_clear_queue_pressed() -> void:
 	_service.clear_all_queue_work(true)
 	_UiModifierSounds.play_deselect()
 	refresh()
+
+
+func _refresh_storage_usage() -> void:
+	if _storage_label == null:
+		return
+	_storage_label.text = "Загрузка..."
+	if _service == null or _service._api == null:
+		_storage_label.text = "—"
+		if _storage_reclaim_button:
+			_storage_reclaim_button.disabled = true
+		return
+	var api = _service._api
+	if not api.has_method("fetch_storage_usage"):
+		_storage_label.text = "—"
+		return
+	var res: Dictionary = api.fetch_storage_usage()
+	if not bool(res.get("ok", false)):
+		_storage_label.text = "Ошибка (%d)" % int(res.get("code", 0))
+		if _storage_reclaim_button:
+			_storage_reclaim_button.disabled = true
+		return
+	var js: Dictionary = res.get("json", {}) as Dictionary
+	var temp: Dictionary = js.get("temp_uploads_root_artifacts", {}) as Dictionary
+	var bytes: int = int(temp.get("bytes", 0))
+	var count: int = int(temp.get("count", 0))
+	if bytes <= 0 and count <= 0:
+		_storage_label.text = "0 MB (0 файлов)"
+		if _storage_reclaim_button:
+			_storage_reclaim_button.disabled = true
+		return
+	var mb := float(bytes) / (1024.0 * 1024.0)
+	_storage_label.text = "%.1f MB (%d файлов)" % [mb, count]
+	if _storage_reclaim_button:
+		_storage_reclaim_button.disabled = false
+
+
+func _on_storage_reclaim_pressed() -> void:
+	if _service == null or _service._api == null:
+		return
+	var api = _service._api
+	if not api.has_method("reclaim_temp_uploads"):
+		return
+	_storage_label.text = "Очистка..."
+	if _storage_reclaim_button:
+		_storage_reclaim_button.disabled = true
+	var res: Dictionary = api.reclaim_temp_uploads()
+	if not bool(res.get("ok", false)):
+		_storage_label.text = "Ошибка очистки (%d)" % int(res.get("code", 0))
+		var dock := get_tree().root.get_node_or_null("GameEngine/NotificationsLayer/StatusDock") as StatusDock
+		if dock and dock.has_method("show_transient"):
+			dock.show_transient("storage_reclaim", "Ошибка очистки кэша", "error", 3.0)
+		_refresh_storage_usage()
+		return
+	var js: Dictionary = res.get("json", {}) as Dictionary
+	var reclaimed: Dictionary = js.get("temp_uploads_root_artifacts", {}) as Dictionary
+	var freed: int = int(reclaimed.get("bytes_freed", reclaimed.get("bytes", 0)))
+	var freed_mb := float(freed) / (1024.0 * 1024.0)
+	var dock2 := get_tree().root.get_node_or_null("GameEngine/NotificationsLayer/StatusDock") as StatusDock
+	if dock2 and dock2.has_method("show_transient"):
+		if freed > 0:
+			dock2.show_transient("storage_reclaim", "Очищено %.1f MB" % freed_mb, "success", 3.0)
+		else:
+			dock2.show_transient("storage_reclaim", "Кэш уже пуст", "info", 2.5)
+	_refresh_storage_usage()
 
 
 func _on_close_pressed() -> void:

@@ -51,6 +51,23 @@ const PAGE_ACCENT: Dictionary = {
 	PAGE_DANGER: Color(0.95, 0.45, 0.42, 1.0),
 }
 
+## Primary action buttons → lucide icon (optional). Danger / reset-all stay red via FlatExitButton.
+const PAGE_ACTION_ICONS := {
+	"StartCalibrationButton": "metronome.svg",
+	"ResetCalibrationButton": "rotate-ccw.svg",
+	"ScanSongsButton": "folder-search.svg",
+	"ChooseSongsFolderButton": "folder.svg",
+	"OpenSongsFolderButton": "folder-open.svg",
+	"ChooseNotesFolderButton": "folder.svg",
+	"OpenNotesFolderButton": "folder-open.svg",
+	"ChooseStemsFolderButton": "folder.svg",
+	"OpenStemsFolderButton": "folder-open.svg",
+	"ChooseMidiSamplesFolderButton": "folder.svg",
+	"OpenMidiSamplesFolderButton": "folder-open.svg",
+	"ChooseReplayFolderButton": "folder.svg",
+	"OpenReplayFolderButton": "folder-open.svg",
+}
+
 var game_screen = null
 var achievement_manager = null
 
@@ -83,11 +100,14 @@ var _settings_initializing := true
 var _settings_snapshot_json: String = ""
 var _content_shell_default: StyleBoxFlat = null
 var _back_prompt_active := false
+var _first_steps_guide: FirstStepsGuide = null
+var _first_steps_library_switch_done := false
 
 
 func apply_locale() -> void:
 	if back_button:
 		back_button.text = tr("BTN_BACK")
+		apply_back_button_style()
 	if reset_all_button:
 		reset_all_button.text = tr("MISC_RESET_ALL_SETTINGS")
 		reset_all_button.tooltip_text = tr("MISC_RESET_ALL_SETTINGS_TOOLTIP")
@@ -148,6 +168,8 @@ func _ready() -> void:
 	_cache_content_shell_style()
 	_bind_nav_items()
 	_connect_signals()
+	_setup_first_steps_guide()
+	_first_steps_library_switch_done = false
 	_set_content_busy(true)
 	call_deferred("_apply_dialog_styles")
 	call_deferred("_deferred_initial_setup")
@@ -230,7 +252,22 @@ func _connect_signals() -> void:
 		back_button.focus_mode = Control.FOCUS_NONE
 	if reset_all_button:
 		reset_all_button.pressed.connect(_on_reset_all_pressed)
-	UiIconHelper.configure_button_icon(back_button, "arrow-left.svg", UiIconHelper.ACCENT, 16)
+	apply_back_button_style()
+
+
+func _is_overlay_mode() -> bool:
+	if transitions == null or transitions.game_engine == null:
+		return false
+	return self != transitions.game_engine.current_screen
+
+
+func apply_back_button_style() -> void:
+	if back_button == null:
+		return
+	# Full-width sidebar row (match nav items). FlatBackButton fill, not hub outline chip.
+	UiIconHelper.apply_standard_back_button(back_button)
+	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	back_button.custom_minimum_size = Vector2(0, maxf(back_button.custom_minimum_size.y, 40.0))
 
 
 func _apply_dialog_styles() -> void:
@@ -287,6 +324,71 @@ func _deferred_initial_setup() -> void:
 	_capture_settings_snapshot()
 	_settings_initializing = false
 	_update_footer_hint()
+	_first_steps_refresh_guide()
+
+
+func _setup_first_steps_guide() -> void:
+	if not FirstStepsManager:
+		return
+	_first_steps_guide = FirstStepsGuide.new()
+	_first_steps_guide.screen_id = FirstStepsManager.SCREEN_SETTINGS
+	_first_steps_guide.auto_show_on_ready = false
+	_first_steps_guide.navigate_to_expected_screen = Callable(self, "_first_steps_navigate")
+	_first_steps_guide.spotlight_targets_provider = Callable(self, "_first_steps_spotlight_targets")
+	add_child(_first_steps_guide)
+
+
+func _first_steps_navigate() -> void:
+	if not FirstStepsManager:
+		return
+	var step := FirstStepsManager.get_current_step()
+	if step == 0:
+		if _current_page != PAGE_LIBRARY:
+			switch_to_page(PAGE_LIBRARY)
+		return
+	# Шаги BPM / Chart / Run выполняются на экране выбора песни — ведём туда.
+	if step >= 1 and step <= 3 and transitions:
+		transitions.open_song_select()
+
+
+func _first_steps_spotlight_targets() -> Array:
+	if not FirstStepsManager or _library_tab == null:
+		return []
+	if FirstStepsManager.get_current_step() != 0:
+		return []
+	if _current_page != PAGE_LIBRARY:
+		return []
+	var btn: Control = _library_tab.get_node_or_null(
+		"ScrollWrap/CenterWrap/ContentVBox/ScanPanel/ScanPanelMargin/ScanRows/ScanButtonRow/ScanSongsButton"
+	)
+	if btn is Control and btn.is_visible_in_tree():
+		return [btn]
+	return []
+
+
+func _first_steps_refresh_guide() -> void:
+	if _first_steps_guide:
+		_first_steps_guide.refresh()
+	_first_steps_ensure_library_page()
+
+
+## Если intro шага 1 уже было показано (например, ранее в этой сессии) и игрок
+## вернулся в Настройки на другой вкладке — один раз подвести его к Library,
+## не заставляя его искать вкладку. Последующие переключения вкладок не трогаем.
+func _first_steps_ensure_library_page() -> void:
+	if _first_steps_library_switch_done:
+		return
+	if not FirstStepsManager or FirstStepsManager.is_preview_active():
+		return
+	if FirstStepsManager.get_current_step() != 0:
+		return
+	if FirstStepsManager.is_step_done(0):
+		return
+	if not FirstStepsManager.is_step_intro_shown(0):
+		return
+	_first_steps_library_switch_done = true
+	if _current_page != PAGE_LIBRARY:
+		_switch_page(PAGE_LIBRARY)
 
 
 func _set_content_busy(busy: bool) -> void:
@@ -311,8 +413,24 @@ func _switch_page(page_id: String) -> void:
 		if tab_container:
 			tab_container.current_tab = int(PAGE_TAB_INDEX.get(page_id, 0))
 		_update_page_header()
+		_notify_page_shown(page_id)
 	var skip := _settings_skip_transition or not changed
 	_UiListSlideTransition.crossfade(content_card, apply, skip, false)
+	if _first_steps_guide:
+		call_deferred("_first_steps_refresh_guide")
+
+
+func _notify_page_shown(page_id: String) -> void:
+	var tab: Control = null
+	match page_id:
+		PAGE_DATA:
+			tab = _data_tab
+		PAGE_SYSTEM:
+			tab = _system_tab
+		_:
+			return
+	if tab and tab.has_method("on_settings_page_shown"):
+		tab.on_settings_page_shown()
 
 
 func _update_page_header() -> void:
@@ -329,10 +447,145 @@ func _update_page_header() -> void:
 	_apply_content_shell_accent(accent)
 
 
-func _apply_content_shell_accent(_accent: Color) -> void:
+func _apply_content_shell_accent(accent: Color) -> void:
 	if content_card == null or _content_shell_default == null:
 		return
-	content_card.add_theme_stylebox_override("panel", _content_shell_default.duplicate())
+	var box := _content_shell_default.duplicate() as StyleBoxFlat
+	if box:
+		box.border_color = Color(accent.r, accent.g, accent.b, 0.45)
+		content_card.add_theme_stylebox_override("panel", box)
+	_tint_page_action_buttons(accent)
+
+
+func _tint_page_action_buttons(accent: Color) -> void:
+	if tab_container == null:
+		return
+	var tab := tab_container.get_current_tab_control()
+	if tab == null:
+		return
+	var targets: Array[Button] = []
+	_collect_tintable_buttons(tab, targets)
+	var n := targets.size()
+	# Stems must visually match Songs — capture Songs shades first.
+	var _songs_choose_shade: Color = Color.TRANSPARENT
+	var _songs_open_shade: Color = Color.TRANSPARENT
+	for i in range(n):
+		var b := targets[i] as Button
+		if b == null:
+			continue
+		if b.name == "ChooseSongsFolderButton":
+			_songs_choose_shade = _page_accent_shade(accent, i, n, b.name)
+		elif b.name == "OpenSongsFolderButton":
+			_songs_open_shade = _page_accent_shade(accent, i, n, b.name)
+	for i in range(n):
+		var btn := targets[i]
+		var shade := _page_accent_shade(accent, i, n, btn.name)
+		# Reuse exact Songs shades for Stems — same folder-picker pattern, no own palette.
+		if btn.name == "ChooseStemsFolderButton" and _songs_choose_shade != Color.TRANSPARENT:
+			shade = _songs_choose_shade
+		elif btn.name == "OpenStemsFolderButton" and _songs_open_shade != Color.TRANSPARENT:
+			shade = _songs_open_shade
+		var variation := btn.theme_type_variation
+		UiIconHelper.apply_outline_accent(btn, shade, variation if variation != &"" else &"FlatButton")
+		var icon_file := str(PAGE_ACTION_ICONS.get(btn.name, ""))
+		if icon_file != "":
+			UiIconHelper.configure_button_icon(btn, icon_file, shade, 16)
+		_wire_settings_button_sfx(btn)
+	# Also wire sounds on non-tinted action buttons (segmented stay silent — they already play).
+	_wire_settings_button_sfx_under(tab)
+
+
+func _wire_settings_button_sfx_under(node: Node) -> void:
+	if node == null:
+		return
+	if node is Button and not (node is CheckButton) and not (node is OptionButton):
+		var btn := node as Button
+		if not btn.has_meta("option_id"):
+			_wire_settings_button_sfx(btn)
+	for child in node.get_children():
+		_wire_settings_button_sfx_under(child)
+
+
+func _wire_settings_button_sfx(btn: Button) -> void:
+	if btn == null or btn.get_meta("ui_mod_sfx_wired", false):
+		return
+	if btn.toggle_mode:
+		# Toggle controls already play their own select/deselect sound through their
+		# toggled/option_toggled handler (generation ready-axis icons, preset chips, …).
+		# Stacking the generic pressed -> play_select on top would double the feedback.
+		return
+	if UiIconHelper.is_danger_button_variation(btn.theme_type_variation):
+		# Danger keeps cancel-like feedback on press via existing patterns; still soft select.
+		pass
+	btn.set_meta("ui_mod_sfx_wired", true)
+	btn.pressed.connect(func() -> void:
+		UiModifierSounds.play_select()
+	)
+
+
+func _collect_tintable_buttons(node: Node, out: Array[Button]) -> void:
+	if node == null:
+		return
+	if node is Button and not (node is CheckButton) and not (node is OptionButton):
+		var btn := node as Button
+		if _should_tint_settings_button(btn):
+			out.append(btn)
+	for child in node.get_children():
+		_collect_tintable_buttons(child, out)
+
+
+func _should_tint_settings_button(btn: Button) -> bool:
+	if btn == null:
+		return false
+	# Segmented one-of-many (FPS / quality / …) — keep shared FlatModal look.
+	if btn.has_meta("option_id"):
+		return false
+	var parent := btn.get_parent()
+	if parent and str(parent.name).ends_with("Segmented"):
+		return false
+	if btn.button_group != null:
+		return false
+	var variation := btn.theme_type_variation
+	if UiIconHelper.is_danger_button_variation(variation):
+		return false
+	return (
+		variation == &"FlatButton"
+		or variation == &"FlatGenerateButton"
+		or variation == &"FlatModalPrimaryButton"
+		or variation == &"FlatButtonAmber"
+		or variation == &"FlatButtonSky"
+		or variation == &"FlatButtonOrange"
+		or variation == &"FlatButtonYellow"
+		or variation == &""
+	)
+
+
+func _page_accent_shade(base: Color, index: int, total: int, seed_name: String = "") -> Color:
+	## Same hue family, different tone — not one flat accent for every button.
+	if total <= 1:
+		return base
+	var h := base.h
+	var s := base.s
+	var v := base.v
+	# Stable-ish offset from name so order reshuffles less across locale refreshes.
+	var name_hash := int(hash(seed_name))
+	var step := index + (absi(name_hash) % 5)
+	var hue_nudge := ((step % 7) - 3) * 0.012  # ~±4° within blue/teal/…
+	var sat_nudge := ((step % 5) - 2) * 0.07
+	var val_nudge := ((step % 4) - 1) * 0.05
+	# Primary action (Generate / Start…) slightly brighter; later buttons cooler/dimmer.
+	if index == 0:
+		val_nudge += 0.04
+		sat_nudge += 0.04
+	elif index >= total - 1 and total > 2:
+		val_nudge -= 0.03
+		sat_nudge -= 0.05
+	return Color.from_hsv(
+		fposmod(h + hue_nudge, 1.0),
+		clampf(s + sat_nudge, 0.28, 0.92),
+		clampf(v + val_nudge, 0.48, 0.96),
+		base.a
+	)
 
 
 func _on_reset_all_pressed() -> void:
@@ -342,10 +595,10 @@ func _on_reset_all_pressed() -> void:
 
 func _execute_close_transition() -> void:
 	if transitions:
-		var current_parent = get_parent()
+		# Overlay when Settings is not the GameEngine current_screen (pause / contextual).
 		var from_pause := false
 		if transitions.game_engine:
-			from_pause = current_parent == transitions.game_engine.current_screen
+			from_pause = self != transitions.game_engine.current_screen
 		transitions.close_settings(from_pause)
 
 
@@ -370,6 +623,11 @@ func _on_back_pressed() -> void:
 			"extra":
 				_on_unsaved_discard_pressed()
 		return
+	# Not dirty (e.g. only a quick-gen preset F9/F10/F11 switch, which is intentionally
+	# excluded from _is_settings_dirty to avoid a false "unsaved changes" prompt). Still
+	# persist the live settings so those preset edits are not lost on close.
+	SettingsManager.save_settings()
+	_capture_settings_snapshot()
 	_perform_close()
 
 
@@ -411,14 +669,19 @@ func cleanup_before_exit() -> void:
 
 func _revert_pending_settings() -> void:
 	SettingsManager.reload_from_disk()
+	# Pass emit_change=false so an unchanged language early-returns (locale_manager.gd:42)
+	# instead of re-translating the entire UI tree on every discard. The revert to the
+	# open-state language still happens when the user actually changed it.
 	if LocaleManager:
-		LocaleManager.set_locale(String(SettingsManager.get_setting("language", "ru")), true, false)
+		LocaleManager.set_locale(String(SettingsManager.get_setting("language", "ru")), false, false)
 	if MusicManager and MusicManager.has_method("update_volumes_from_settings"):
 		MusicManager.update_volumes_from_settings()
 	var engine := _find_game_engine()
 	if engine and engine.has_method("update_display_settings"):
 		engine.update_display_settings()
-	_refresh_all_tabs()
+	# The settings menu is closing immediately after this, so rebuilding every tab's UI
+	# (incl. regenerating the User Presets chips) here is wasted work that caused a 1–2s
+	# stall. Reverted settings are re-read from the snapshot the next time the menu opens.
 	_capture_settings_snapshot()
 	_update_footer_hint()
 
@@ -463,8 +726,11 @@ func _capture_settings_snapshot() -> void:
 func _parse_settings_json(json_text: String) -> Dictionary:
 	if json_text.strip_edges() == "":
 		return {}
-	var parsed = JSON.parse_string(json_text)
-	return parsed if parsed is Dictionary else {}
+	var json := JSON.new()
+	var err := json.parse(json_text)
+	if err == OK:
+		return json.get_data()
+	return {}
 
 
 func _normalize_settings_value(value: Variant) -> Variant:
@@ -495,9 +761,39 @@ func _settings_json_equal(a: String, b: String) -> bool:
 
 
 func _is_settings_dirty() -> bool:
-	if _settings_snapshot_json == "":
-		return false
-	return not _settings_json_equal(SettingsManager.export_settings_json(), _settings_snapshot_json)
+	var current_json := SettingsManager.export_settings_json()
+	var snapshot_json := _settings_snapshot_json
+	
+	# Parse both JSONs and remove the quick_generation_active key so that switching
+	# the quick preset doesn't trigger a false "unsaved changes" warning.
+	# Real parameter changes (generation_* settings) still correctly trigger the warning.
+	var current_dict := {}
+	var snapshot_dict := {}
+	
+	var json1 := JSON.new()
+	var err1 := json1.parse(current_json)
+	if err1 == OK:
+		current_dict = json1.get_data()
+
+	var json2 := JSON.new()
+	var err2 := json2.parse(snapshot_json)
+	if err2 == OK:
+		snapshot_dict = json2.get_data()
+	
+	# Remove the quick preset selection + the stored preset-body mirror so that
+	# switching / viewing Generation Presets never triggers a false "unsaved changes"
+	# warning. quick_generation_presets is a derived mirror of the real top-level
+	# generation settings (generation_*, generation_ready_*, generation_ready_preset_slots)
+	# and gets re-serialized (re-derived intent / array order) on every preset switch even
+	# when no actual parameter changed. All genuine edits are still caught via those keys.
+	current_dict.erase("quick_generation_active")
+	snapshot_dict.erase("quick_generation_active")
+	current_dict.erase("quick_generation_presets")
+	snapshot_dict.erase("quick_generation_presets")
+	current_json = JSON.stringify(current_dict)
+	snapshot_json = JSON.stringify(snapshot_dict)
+	
+	return not _settings_json_equal(current_json, snapshot_json)
 
 
 func _update_footer_hint() -> void:
@@ -510,15 +806,19 @@ func _update_footer_hint() -> void:
 
 
 func _apply_settings_with_feedback() -> void:
-	if not _is_settings_dirty():
-		return
+	# NOTE: intentionally do NOT early-return when not dirty. Excluding
+	# quick_generation_presets / quick_generation_active from _is_settings_dirty()
+	# (so switching F9/F10/F11 presets doesn't raise a false "unsaved changes"
+	# prompt) would otherwise leave those edits unsaved, since this used to be
+	# the only save gate. Always persist the live settings here.
 	var dock := _find_status_dock()
 	if dock:
-		dock.show_transient("settings", tr("STATUS_SAVING"), "save", 0.0)
+		dock.show_operation({"id":"settings","title":tr("STATUS_SAVING"),"subtitle":"","progress":0.0,"indeterminate":true,"compact":false,"icon_kind":"save"})
 	SettingsManager.save_settings()
 	_capture_settings_snapshot()
 	_update_footer_hint()
 	if dock:
+		dock.clear_operation("settings")
 		dock.show_transient("settings", tr("STATUS_SAVED"), "success", 2.5)
 
 

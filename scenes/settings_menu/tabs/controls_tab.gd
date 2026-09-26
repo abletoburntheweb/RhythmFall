@@ -22,6 +22,7 @@ const _ALT_KEYS := "%s/KeysColumnsHBox/AltColumn" % _PANEL_VBOX
 @onready var section_header: Label = get_node("%s/SectionHeader" % _PANEL_VBOX)
 @onready var keys_hint: Label = get_node("%s/KeysHint" % _PANEL_VBOX)
 @onready var reset_controls_button: Button = get_node("%s/ResetControlsButton" % _PANEL_VBOX)
+@onready var chart_editor_bindings_button: Button = get_node_or_null("%s/ChartEditorBindingsButton" % _PANEL_VBOX)
 @onready var hint_label: Label = get_node("%s/HintLabel" % _CONTENT)
 
 var game_screen = null
@@ -52,6 +53,7 @@ var _gh_fret_indicators: Array[ColorRect] = []
 var _gh_test_lane_labels: Array[Label] = []
 var _gh_fret_row_labels: Array[Label] = []
 var _gh_last_toast_device_id: int = -2
+var _chart_editor_dialog = null
 
 func _ready() -> void:
 	add_to_group("locale_refresh")
@@ -61,6 +63,8 @@ func _ready() -> void:
 	call_deferred("_build_bindings_ui")
 	call_deferred("_setup_layout_option_popup_font")
 	call_deferred("apply_locale")
+	if chart_editor_bindings_button and not chart_editor_bindings_button.pressed.is_connected(_on_chart_editor_bindings_pressed):
+		chart_editor_bindings_button.pressed.connect(_on_chart_editor_bindings_pressed)
 
 
 func setup_ui_and_manager(screen = null) -> void:
@@ -79,6 +83,8 @@ func apply_locale() -> void:
 		layout_hint.text = tr("CONTROLS_LAYOUT_DESC")
 	if reset_controls_button:
 		reset_controls_button.text = tr("CONTROLS_RESET_KEYS")
+	if chart_editor_bindings_button:
+		chart_editor_bindings_button.text = tr("CHART_EDITOR_BINDINGS_BUTTON") if tr("CHART_EDITOR_BINDINGS_BUTTON") != "CHART_EDITOR_BINDINGS_BUTTON" else "Привязка клавиш редактора"
 	if hint_label:
 		hint_label.text = _controls_hint_text()
 	_populate_layout_mode_option()
@@ -132,13 +138,13 @@ func _build_gh_ui() -> void:
 	_gh_enable_check = CheckBox.new()
 	_gh_enable_check.add_theme_font_size_override("font_size", 18)
 	_gh_enable_check.toggled.connect(_on_gh_enable_toggled)
-	_SettingsSectionUi.apply_settings_checkbox(_gh_enable_check, 18)
+	_SettingsSectionUi.apply_settings_checkbox(_gh_enable_check, 18, false, Color(0.86, 0.52, 0.72, 1.0))
 	rows.add_child(_gh_enable_check)
 
 	_gh_auto_detect_check = CheckBox.new()
 	_gh_auto_detect_check.add_theme_font_size_override("font_size", 18)
 	_gh_auto_detect_check.toggled.connect(_on_gh_auto_detect_toggled)
-	_SettingsSectionUi.apply_settings_checkbox(_gh_auto_detect_check, 18)
+	_SettingsSectionUi.apply_settings_checkbox(_gh_auto_detect_check, 18, false, Color(0.86, 0.52, 0.72, 1.0))
 	rows.add_child(_gh_auto_detect_check)
 
 	var device_row := HBoxContainer.new()
@@ -675,6 +681,7 @@ func _build_bindings_ui() -> void:
 	_binding_buttons.clear()
 	_build_layout_column(_primary_keys, tr("CONTROLS_SECTION_PRIMARY"), "primary")
 	_build_layout_column(_alt_keys, tr("CONTROLS_SECTION_ALT"), "alt")
+	_add_quick_gen_section(_primary_keys)
 	_refresh_binding_labels()
 
 
@@ -691,6 +698,15 @@ func _build_layout_column(column: VBoxContainer, title: String, prefix: String) 
 	_add_subheader(column, tr("CONTROLS_SECTION_MEDIATOR"))
 	_add_binding_row(column, "%s:mediator_up" % prefix, tr("CONTROLS_MEDIATOR_UP"))
 	_add_binding_row(column, "%s:mediator_down" % prefix, tr("CONTROLS_MEDIATOR_DOWN"))
+
+
+func _add_quick_gen_section(column: VBoxContainer) -> void:
+	_add_subheader(column, tr("CONTROLS_SECTION_QUICK_GEN"))
+	var fmt_qg := tr("CONTROLS_QUICK_GEN_PRESET")
+	var is_fmt_qg_valid := fmt_qg != "CONTROLS_QUICK_GEN_PRESET" and "%" in fmt_qg
+	_add_binding_row(column, "genqp:preset:1", fmt_qg % 1 if is_fmt_qg_valid else "Quick Gen Preset %d" % 1)
+	_add_binding_row(column, "genqp:preset:2", fmt_qg % 2 if is_fmt_qg_valid else "Quick Gen Preset %d" % 2)
+	_add_binding_row(column, "genqp:preset:3", fmt_qg % 3 if is_fmt_qg_valid else "Quick Gen Preset %d" % 3)
 
 
 func _add_section_header(column: VBoxContainer, text: String) -> void:
@@ -747,6 +763,10 @@ func _binding_label_for(binding_id: String) -> String:
 			return SettingsManager.get_mediator_up_key_text(alt)
 		"mediator_down":
 			return SettingsManager.get_mediator_down_key_text(alt)
+		"preset":
+			if parts.size() < 3:
+				return "?"
+			return SettingsManager.get_quick_gen_preset_key_text(int(parts[2]))
 		_:
 			return "?"
 
@@ -763,6 +783,8 @@ func _scancode_for_binding(binding_id: String) -> int:
 			return SettingsManager.get_mediator_up_scancode(alt)
 		"mediator_down":
 			return SettingsManager.get_mediator_down_scancode(alt)
+		"preset":
+			return SettingsManager.get_quick_gen_preset_scancode(int(parts[2]))
 		_:
 			return KEY_X
 
@@ -779,6 +801,8 @@ func _set_scancode_for_binding(binding_id: String, scancode: int) -> void:
 			SettingsManager.set_mediator_up_scancode(scancode, alt)
 		"mediator_down":
 			SettingsManager.set_mediator_down_scancode(scancode, alt)
+		"preset":
+			SettingsManager.set_quick_gen_preset_scancode(int(parts[2]), scancode)
 
 
 func _on_binding_button_pressed(binding_id: String) -> void:
@@ -836,7 +860,7 @@ func _input(event: InputEvent) -> void:
 	if event.alt_pressed and event.ctrl_pressed:
 		get_viewport().set_input_as_handled()
 		return
-	if SettingsManager.is_service_key(new_scancode):
+	if SettingsManager.is_service_key(new_scancode) and not _remap_target_id.begins_with("genqp:"):
 		get_viewport().set_input_as_handled()
 		return
 	var duplicate_id := _find_duplicate_binding(new_scancode)
@@ -888,6 +912,9 @@ func _on_reset_controls_pressed() -> void:
 	SettingsManager.set_mediator_down_scancode(KEY_DOWN, false)
 	SettingsManager.set_mediator_up_scancode(KEY_Q, true)
 	SettingsManager.set_mediator_down_scancode(KEY_E, true)
+	SettingsManager.set_quick_gen_preset_scancode(1, KEY_F9)
+	SettingsManager.set_quick_gen_preset_scancode(2, KEY_F10)
+	SettingsManager.set_quick_gen_preset_scancode(3, KEY_F11)
 	SettingsManager.set_controls_layout_mode(ControlsBindings.LAYOUT_PRIMARY)
 	_populate_layout_mode_option()
 	emit_signal("settings_changed")
@@ -903,6 +930,47 @@ func _update_player_bindings() -> void:
 			game_screen._reload_strum_keys()
 	if game_screen and game_screen.player:
 		game_screen.player.set_keymap(SettingsManager.build_active_lane_keymap())
+
+
+func _on_chart_editor_bindings_pressed() -> void:
+	if _chart_editor_dialog and is_instance_valid(_chart_editor_dialog):
+		if _chart_editor_dialog.has_method("present_dialog"):
+			_chart_editor_dialog.present_dialog()
+		elif _chart_editor_dialog.has_method("present"):
+			_chart_editor_dialog.present()
+		return
+	var dlg_scene := load("res://scenes/settings_menu/dialogs/chart_editor_bindings_dialog.tscn") as PackedScene
+	if dlg_scene == null:
+		var dlg_script := load("res://scenes/settings_menu/dialogs/chart_editor_bindings_dialog.gd")
+		if dlg_script == null:
+			return
+		_chart_editor_dialog = (dlg_script as GDScript).new()
+	else:
+		_chart_editor_dialog = dlg_scene.instantiate()
+	var top := get_tree().current_scene
+	if top == null:
+		top = get_tree().root
+		if top is Window:
+			for child in top.get_children():
+				if child is Control:
+					top = child
+					break
+			if top is Window:
+				top = get_tree().root
+	if top:
+		top.add_child(_chart_editor_dialog)
+	else:
+		add_child(_chart_editor_dialog)
+	if _chart_editor_dialog.has_method("present_dialog"):
+		_chart_editor_dialog.present_dialog()
+	elif _chart_editor_dialog.has_method("present"):
+		_chart_editor_dialog.present()
+	if _chart_editor_dialog.has_signal("closed") and not _chart_editor_dialog.closed.is_connected(_on_chart_editor_dialog_closed):
+		_chart_editor_dialog.closed.connect(_on_chart_editor_dialog_closed)
+
+func _on_chart_editor_dialog_closed() -> void:
+	# Refresh if needed
+	emit_signal("settings_changed")
 
 
 func refresh_ui() -> void:

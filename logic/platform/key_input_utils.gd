@@ -1,4 +1,4 @@
-# logic/utils/key_input_utils.gd
+# logic/platform/key_input_utils.gd
 extends RefCounted
 class_name KeyInputUtils
 

@@ -151,3 +151,4 @@ RhythmFallServer/models/**
 *.bak
 *.swp
 *.swo
+*.waveform

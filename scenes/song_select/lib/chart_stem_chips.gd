@@ -42,12 +42,7 @@ static func build_panel(
 			selected_stems.has(stem_id),
 		)
 		if on_stem_pressed.is_valid():
-			chip.gui_input.connect(func(event: InputEvent) -> void:
-				if event is InputEventMouseButton:
-					var mb := event as InputEventMouseButton
-					if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-						on_stem_pressed.call(stem_id)
-			)
+			UiClick.connect_clicked(chip, func() -> void: on_stem_pressed.call(stem_id))
 			chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		chips.add_child(chip)
 	return panel

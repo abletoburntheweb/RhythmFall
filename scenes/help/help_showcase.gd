@@ -13,6 +13,7 @@ const _GenreGroupIcons = preload("res://logic/domain/library/genre_group_icons.g
 
 const _HelpTypography = preload("res://scenes/help/lib/help_typography.gd")
 const _HealthBar = preload("res://scenes/game_screen/components/health_bar.gd")
+const _AchievementsUtils = preload("res://logic/domain/profile/achievements_utils.gd")
 
 const MEDAL_CELL_W := 132.0
 const MEDAL_CELL_H := 104.0
@@ -90,6 +91,20 @@ const _CHART_FILES := [
 		"icon_px": 48.0,
 	},
 	{
+		"raster_path": "res://assets/app_icons/rfr_128.png",
+		"color": Color(0.95, 0.35, 0.32, 1.0),
+		"label": "HELP_SHOWCASE_CHART_RFR",
+		"tip": "HELP_SHOWCASE_CHART_RFR_TIP",
+		"icon_px": 48.0,
+	},
+	{
+		"raster_path": "res://assets/app_icons/rfc_128.png",
+		"color": Color(0.392, 0.549, 0.706, 1.0),
+		"label": "HELP_SHOWCASE_CHART_RFC",
+		"tip": "HELP_SHOWCASE_CHART_RFC_TIP",
+		"icon_px": 48.0,
+	},
+	{
 		"icon": "music.svg",
 		"color": Color(0.62, 0.86, 0.72, 1.0),
 		"label": "HELP_SHOWCASE_CHART_AUDIO",
@@ -124,13 +139,36 @@ const _PROFILE_TABS := [
 	{"icon": "trophy.svg", "color": Color(0.98, 0.64, 0.31, 1.0), "label": "HELP_SHOWCASE_PTAB_RECORDS", "tip": "HELP_SHOWCASE_PTAB_RECORDS_TIP"},
 ]
 
-const _ACH_CATS := [
-	{"icon": "list-checks.svg", "color": Color(0.62, 0.86, 0.72, 1.0), "label": "HELP_SHOWCASE_ACH_MODS", "tip": "HELP_SHOWCASE_ACH_MODS_TIP"},
-	{"icon": "flag.svg", "color": Color(0.38, 0.78, 0.74, 1.0), "label": "HELP_SHOWCASE_ACH_MEDALS", "tip": "HELP_SHOWCASE_ACH_MEDALS_TIP"},
-	{"icon": "flame_gen.svg", "color": Color(0.95, 0.45, 0.42, 1.0), "label": "HELP_SHOWCASE_ACH_HARD", "tip": "HELP_SHOWCASE_ACH_HARD_TIP"},
-	{"icon": "music.svg", "color": Color(0.66, 0.58, 0.86, 1.0), "label": "HELP_SHOWCASE_ACH_GENRES", "tip": "HELP_SHOWCASE_ACH_GENRES_TIP"},
-	{"icon": "gauge.svg", "color": Color(0.98, 0.64, 0.31, 1.0), "label": "HELP_SHOWCASE_ACH_RR", "tip": "HELP_SHOWCASE_ACH_RR_TIP"},
+# Real achievement categories, synced with achievements_screen._CATEGORY_SPECS
+# (category id + ACH_CAT_* locale key). Rows are built data-driven from the same
+# specs, icons and accents the game itself uses — no hardcoded fake groups.
+const _ACH_CAT_SPECS := [
+	["mastery", "ACH_CAT_MASTERY"],
+	["drums", "ACH_CAT_DRUMS"],
+	["bass", "ACH_CAT_BASS"],
+	["genres", "ACH_CAT_GENRES"],
+	["system", "ACH_CAT_SYSTEM"],
+	["shop", "ACH_CAT_SHOP"],
+	["economy", "ACH_CAT_ECONOMY"],
+	["daily", "ACH_CAT_DAILY"],
+	["playtime", "ACH_CAT_PLAYTIME"],
+	["events", "ACH_CAT_EVENTS"],
+	["level", "ACH_CAT_LEVEL"],
+	["modifiers", "ACH_CAT_MODIFIERS"],
+	["play_modes", "ACH_CAT_PLAY_MODES"],
 ]
+
+
+static func _achievement_category_rows() -> Array:
+	var rows: Array = []
+	for spec in _ACH_CAT_SPECS:
+		var cid := String(spec[0])
+		rows.append({
+			"raster_path": _AchievementsUtils.icon_path_for_category(cid),
+			"color": _AchievementsUtils.accent_color_for_category(cid),
+			"label": String(spec[1]),
+		})
+	return rows
 
 const _DAILY_QUESTS := [
 	{"icon": "target.svg", "color": Color(0.52, 0.76, 0.92, 1.0), "label": "HELP_SHOWCASE_DAILY_COMBO", "tip": "HELP_SHOWCASE_DAILY_COMBO_TIP"},
@@ -156,6 +194,7 @@ const _HEIGHT_BY_KIND := {
 	"mod_screen": 220.0,
 	"mod_conflicts": 340.0,
 	"chart_files": 240.0,
+	"rf_rfc": 240.0,
 	"genre_mastery": 260.0,
 	"gen_advanced": 430.0,
 	"shop_categories": 260.0,
@@ -212,6 +251,8 @@ func setup(kind: String, params: Dictionary = {}) -> void:
 			_build_mod_conflicts()
 		"chart_files":
 			_build_chart_files()
+		"rf_rfc":
+			_build_rf_rfc()
 		"genre_mastery":
 			_build_genre_mastery()
 		"gen_advanced":
@@ -229,7 +270,7 @@ func setup(kind: String, params: Dictionary = {}) -> void:
 		"profile_tabs":
 			_build_icon_row_showcase("HELP_SHOWCASE_PTABS_TITLE", "HELP_SHOWCASE_PTABS_CAPTION", _PROFILE_TABS)
 		"achievement_categories":
-			_build_icon_row_showcase("HELP_SHOWCASE_ACH_TITLE", "HELP_SHOWCASE_ACH_CAPTION", _ACH_CATS)
+			_build_icon_row_showcase("HELP_SHOWCASE_ACH_TITLE", "HELP_SHOWCASE_ACH_CAPTION", _achievement_category_rows())
 		"daily_quests":
 			_build_icon_row_showcase("HELP_SHOWCASE_DAILY_TITLE", "HELP_SHOWCASE_DAILY_CAPTION", _DAILY_QUESTS)
 		"stems":
@@ -600,6 +641,78 @@ func _build_chart_files() -> void:
 	root.add_child(vbox)
 	_add_showcase_header(vbox, "HELP_SHOWCASE_CHART_FILES_TITLE", "HELP_SHOWCASE_CHART_FILES_CAPTION")
 	_add_icon_row(vbox, _CHART_FILES, 128.0)
+
+
+func _build_rf_rfc() -> void:
+	_apply_shell_style()
+	var root := _content_root()
+	var vbox := _shrink(VBoxContainer.new()) as VBoxContainer
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 12)
+	root.add_child(vbox)
+	var row := _shrink(HBoxContainer.new()) as HBoxContainer
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	vbox.add_child(row)
+	row.add_child(_make_file_interaction_card("rf"))
+	var arrow := _shrink(Label.new()) as Label
+	arrow.text = "↔"
+	_ty(arrow, _HelpTypography.SIZE_ARROW, Color(0.72, 0.78, 0.88, 0.9))
+	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(arrow)
+	row.add_child(_make_file_interaction_card("rfc"))
+
+
+func _make_file_interaction_card(kind: String) -> PanelContainer:
+	var is_rf := kind == "rf"
+	var data: Dictionary = _CHART_FILES[0] if is_rf else _CHART_FILES[3]
+	var accent: Color = data.get("color", Color(0.42, 0.57, 0.82, 1.0))
+	var card := _shrink(PanelContainer.new()) as PanelContainer
+	card.custom_minimum_size = Vector2(148.0, 108.0)
+	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var box := StyleBoxFlat.new()
+	box.set_corner_radius_all(10)
+	box.bg_color = Color(accent.r, accent.g, accent.b, 0.1)
+	box.set_border_width_all(1)
+	box.border_color = Color(accent.r, accent.g, accent.b, 0.3)
+	box.content_margin_left = 4.0
+	box.content_margin_right = 4.0
+	box.content_margin_top = 5.0
+	box.content_margin_bottom = 4.0
+	card.add_theme_stylebox_override("panel", box)
+	var vb := _shrink(VBoxContainer.new()) as VBoxContainer
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 3)
+	card.add_child(vb)
+	var icon := _shrink(TextureRect.new()) as TextureRect
+	icon.custom_minimum_size = Vector2(48.0, 48.0)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	icon.texture = _icon_texture_for_cell(data, accent)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(icon)
+	var label := Label.new()
+	label.text = ".rf" if is_rf else ".rfc"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_ty(label, _HelpTypography.SIZE_SMALL, Color(0.88, 0.91, 0.96, 1.0))
+	vb.add_child(label)
+	var sub := Label.new()
+	sub.text = tr("HELP_SHOWCASE_RF_RFC_RF_SUB") if is_rf else tr("HELP_SHOWCASE_RF_RFC_RFC_SUB")
+	# Fallback if key missing (keep Russian as in screenshot)
+	if sub.text == "HELP_SHOWCASE_RF_RFC_RF_SUB":
+		sub.text = "Чарт для\nигры" if is_rf else "Правки и\nпроисхождение"
+	# Handle two-line text
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_ty(sub, 13, Color(0.72, 0.78, 0.88, 0.9))
+	sub.custom_minimum_size = Vector2(138.0, 32.0)
+	vb.add_child(sub)
+	card.tooltip_text = tr(data.get("tip", ""))
+	return card
 
 
 func _build_genre_mastery() -> void:
@@ -1501,7 +1614,7 @@ func _build_keyboard_nav() -> void:
 
 	for screen in [
 		{"icon": "music.svg", "color": Color(0.42, 0.57, 0.82, 1.0), "label": "HELP_SHOWCASE_KEYS_LIBRARY", "keys": ["2×click"]},
-		{"icon": "settings-2.svg", "color": Color(0.66, 0.58, 0.86, 1.0), "label": "HELP_SHOWCASE_KEYS_GEN", "keys": ["1", "2", "Q/W", "E/R/T", "A/S/D", "Z"]},
+		{"icon": "settings-2.svg", "color": Color(0.66, 0.58, 0.86, 1.0), "label": "HELP_SHOWCASE_KEYS_GEN", "keys": ["F1–F3", "1/2", "Q/W", "A–D", "Z–/"]},
 		{"icon": "wrench.svg", "color": Color(0.62, 0.86, 0.72, 1.0), "label": "HELP_SHOWCASE_KEYS_MODS", "keys": ["grid"]},
 		{"icon": "layout-dashboard.svg", "color": Color(0.98, 0.64, 0.31, 1.0), "label": "HELP_SHOWCASE_KEYS_MENU", "keys": ["1", "2", "3", "4", "5", "6"]},
 		{"icon": "settings-2.svg", "color": Color(0.52, 0.76, 0.92, 1.0), "label": "HELP_SHOWCASE_KEYS_SETTINGS", "keys": ["1", "2", "3", "4"]},

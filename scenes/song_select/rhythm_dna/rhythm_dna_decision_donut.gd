@@ -1,4 +1,4 @@
-# scenes/song_select/rhythm_dna_decision_donut.gd
+# scenes/song_select/rhythm_dna/rhythm_dna_decision_donut.gd
 extends Control
 class_name RhythmDnaDecisionDonut
 

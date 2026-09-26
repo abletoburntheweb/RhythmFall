@@ -1,4 +1,4 @@
-# logic/utils/chart_difficulty_analyzer.gd
+# logic/domain/charts/chart_difficulty_analyzer.gd
 extends RefCounted
 class_name ChartDifficultyAnalyzer
 

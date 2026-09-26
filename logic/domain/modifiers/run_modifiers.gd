@@ -174,7 +174,8 @@ const LANE_REMAP_INTERVAL_MIN := 4.0
 const LANE_REMAP_INTERVAL_MAX := 30.0
 const HALF_HP_START_PCT_DEFAULT := 50.0
 const HALF_HP_START_PCT_MIN := 25.0
-const HALF_HP_START_PCT_MAX := 100.0
+# Cap at half: 100% would neutralize the mod while keeping the reward.
+const HALF_HP_START_PCT_MAX := 50.0
 const MEMORY_SPATIAL_BLIND_PCT_DEFAULT := 78.0
 const MEMORY_SPATIAL_BLIND_PCT_MIN := 0.0
 const MEMORY_SPATIAL_BLIND_PCT_MAX := 100.0
@@ -237,7 +238,8 @@ const HEAT_PEAK_CHART_PCT_DEFAULT := 30.0
 const HEAT_PEAK_CHART_PCT_MIN := 10.0
 const HEAT_PEAK_CHART_PCT_MAX := 80.0
 const HEAT_MAX_SPEED_PCT_DEFAULT := 130.0
-const HEAT_MAX_SPEED_PCT_MIN := 100.0
+# Must still speed up at peak — 100% would neutralize Heat while keeping +10%.
+const HEAT_MAX_SPEED_PCT_MIN := 110.0
 const HEAT_MAX_SPEED_PCT_MAX := 300.0
 
 const SILENCE_SCHEDULE_SECONDS := "seconds"
@@ -253,6 +255,13 @@ const SILENCE_DURATION_MIN_SEC_DEFAULT := 1.0
 const SILENCE_DURATION_MAX_SEC_DEFAULT := 2.0
 const SILENCE_DURATION_SEC_MIN := 0.5
 const SILENCE_DURATION_SEC_MAX := 6.0
+
+const SILENCE_GAP_SOURCE_SILENCE := "silence"
+const SILENCE_GAP_SOURCE_METRONOME := "metronome"
+const SILENCE_GAP_SOURCE_STEMS := "stems"
+const SILENCE_GAP_SOURCE_DEFAULT := SILENCE_GAP_SOURCE_SILENCE
+
+const METRONOME_ONLY_USE_STEMS_DEFAULT := false
 
 const SPOTLIGHT_BAND_PX_DEFAULT := 180.0
 const SPOTLIGHT_BAND_PX_MIN := 80.0
@@ -329,10 +338,16 @@ const WINDOW_GOOD_EASY := 0.225
 const FIXED_SCROLL_SPEED := 20.0
 const VISIBILITY_BAND_PX := 220.0
 const VISIBILITY_BAND_MIN := 120.0
-const VISIBILITY_BAND_MAX := 320.0
+# Softest allowed = default; wider band was easing Hidden/Sudden toward "no mod".
+const VISIBILITY_BAND_MAX := 220.0
 const TIMING_WINDOW_PCT_DEFAULT := 100.0
 const TIMING_WINDOW_PCT_MIN := 50.0
 const TIMING_WINDOW_PCT_MAX := 150.0
+# Strict may only tighten (≤100%); Easy may only loosen (≥100%).
+const STRICT_TIMING_WINDOW_PCT_MIN := 50.0
+const STRICT_TIMING_WINDOW_PCT_MAX := 100.0
+const EASY_TIMING_WINDOW_PCT_MIN := 100.0
+const EASY_TIMING_WINDOW_PCT_MAX := 150.0
 const MEMORY_REVEAL_MS_DEFAULT := 500.0
 const MEMORY_REVEAL_MS_MIN := 200.0
 const MEMORY_REVEAL_MS_MAX := 1000.0
@@ -382,6 +397,8 @@ const REWARD_DELTA: Dictionary = {
 }
 
 const PARAM_REWARD_STRENGTH := 0.42
+const PARAM_REWARD_SCALE_MIN := 0.78
+const PARAM_REWARD_SCALE_MAX := 1.24
 
 
 static func default_params() -> Dictionary:
@@ -436,6 +453,8 @@ static func default_params() -> Dictionary:
 		"silence_duration_min_sec": SILENCE_DURATION_MIN_SEC_DEFAULT,
 		"silence_duration_max_sec": SILENCE_DURATION_MAX_SEC_DEFAULT,
 		"silence_metronome": false,
+		"silence_gap_source": SILENCE_GAP_SOURCE_DEFAULT,
+		"metronome_only_use_stems": METRONOME_ONLY_USE_STEMS_DEFAULT,
 		"spotlight_band_px": SPOTLIGHT_BAND_PX_DEFAULT,
 		"spotlight_darkness_pct": SPOTLIGHT_DARKNESS_PCT_DEFAULT,
 		"rush_bar_mode": true,
@@ -528,20 +547,24 @@ static func sanitize_params(raw: Variant) -> Dictionary:
 			)
 			out["timing_window_pct"] = legacy_timing
 			if not raw.has("easy_timing_window_pct"):
-				out["easy_timing_window_pct"] = legacy_timing
+				out["easy_timing_window_pct"] = clampf(
+					legacy_timing, EASY_TIMING_WINDOW_PCT_MIN, EASY_TIMING_WINDOW_PCT_MAX
+				)
 			if not raw.has("strict_timing_window_pct"):
-				out["strict_timing_window_pct"] = legacy_timing
+				out["strict_timing_window_pct"] = clampf(
+					legacy_timing, STRICT_TIMING_WINDOW_PCT_MIN, STRICT_TIMING_WINDOW_PCT_MAX
+				)
 		if raw.has("easy_timing_window_pct"):
 			out["easy_timing_window_pct"] = clampf(
 				float(raw["easy_timing_window_pct"]),
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX
+				EASY_TIMING_WINDOW_PCT_MIN,
+				EASY_TIMING_WINDOW_PCT_MAX
 			)
 		if raw.has("strict_timing_window_pct"):
 			out["strict_timing_window_pct"] = clampf(
 				float(raw["strict_timing_window_pct"]),
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX
+				STRICT_TIMING_WINDOW_PCT_MIN,
+				STRICT_TIMING_WINDOW_PCT_MAX
 			)
 		if raw.has("visibility_band_px"):
 			out["visibility_band_px"] = clampf(
@@ -760,8 +783,16 @@ static func sanitize_params(raw: Variant) -> Dictionary:
 				SILENCE_INTERVAL_TRACK_PCT_MIN,
 				SILENCE_INTERVAL_TRACK_PCT_MAX
 			)
-		if raw.has("silence_metronome"):
-			out["silence_metronome"] = bool(raw["silence_metronome"])
+		if raw.has("silence_gap_source"):
+			out["silence_gap_source"] = sanitize_silence_gap_source(raw["silence_gap_source"])
+		elif raw.has("silence_metronome"):
+			# Migration: old bool -> new 3-value enum, keep old behaviour
+			var old_metro := bool(raw["silence_metronome"])
+			out["silence_gap_source"] = SILENCE_GAP_SOURCE_METRONOME if old_metro else SILENCE_GAP_SOURCE_SILENCE
+			# Keep legacy key for reading old saves, but sanitize will prefer new key next time
+			out["silence_metronome"] = old_metro
+		if raw.has("metronome_only_use_stems"):
+			out["metronome_only_use_stems"] = bool(raw["metronome_only_use_stems"])
 		if raw.has("spotlight_band_px"):
 			out["spotlight_band_px"] = clampf(
 				float(raw["spotlight_band_px"]),
@@ -876,6 +907,14 @@ static func sanitize_params(raw: Variant) -> Dictionary:
 				out["fast_150_speed_pct"] = legacy
 	return out
 
+
+static func sanitize_silence_gap_source(raw: Variant) -> String:
+	var v := str(raw).strip_edges().to_lower()
+	if v == SILENCE_GAP_SOURCE_METRONOME:
+		return SILENCE_GAP_SOURCE_METRONOME
+	if v == SILENCE_GAP_SOURCE_STEMS:
+		return SILENCE_GAP_SOURCE_STEMS
+	return SILENCE_GAP_SOURCE_SILENCE
 
 static func sanitize_silence_schedule_mode(raw: Variant) -> String:
 	var mode := str(raw).strip_edges()
@@ -1461,6 +1500,22 @@ static func silence_is_muted(
 
 static func silence_metronome_enabled(params: Dictionary = {}) -> bool:
 	return bool(sanitize_params(params).get("silence_metronome", false))
+
+
+static func silence_gap_source(params: Dictionary = {}) -> String:
+	return sanitize_silence_gap_source(sanitize_params(params).get("silence_gap_source", SILENCE_GAP_SOURCE_DEFAULT))
+
+static func silence_gap_source_is_silence(params: Dictionary = {}) -> bool:
+	return silence_gap_source(params) == SILENCE_GAP_SOURCE_SILENCE
+
+static func silence_gap_source_is_metronome(params: Dictionary = {}) -> bool:
+	return silence_gap_source(params) == SILENCE_GAP_SOURCE_METRONOME
+
+static func silence_gap_source_is_stems(params: Dictionary = {}) -> bool:
+	return silence_gap_source(params) == SILENCE_GAP_SOURCE_STEMS
+
+static func metronome_only_use_stems(params: Dictionary = {}) -> bool:
+	return bool(sanitize_params(params).get("metronome_only_use_stems", METRONOME_ONLY_USE_STEMS_DEFAULT))
 
 
 static func spotlight_band_px(params: Dictionary = {}) -> float:
@@ -2770,7 +2825,10 @@ static func modifier_detail_param_keys(modifier_id: String) -> Array[String]:
 				"silence_duration_min_sec",
 				"silence_duration_max_sec",
 				"silence_metronome",
+				"silence_gap_source",
 			]
+		ID_METRONOME_ONLY:
+			return ["metronome_only_use_stems"]
 		ID_SPOTLIGHT:
 			return ["spotlight_band_px", "spotlight_darkness_pct"]
 		ID_RUSH:
@@ -2939,7 +2997,7 @@ static func _reward_pct_deviation(
 
 
 static func _reward_scale_from_deviation(deviation: float) -> float:
-	return clampf(1.0 + deviation * PARAM_REWARD_STRENGTH, 0.78, 1.24)
+	return clampf(1.0 + deviation * PARAM_REWARD_STRENGTH, PARAM_REWARD_SCALE_MIN, PARAM_REWARD_SCALE_MAX)
 
 
 static func _reward_scale_from_float(
@@ -2961,7 +3019,78 @@ static func _combine_reward_scales(scales: Array) -> float:
 	var sum := 0.0
 	for scale in scales:
 		sum += float(scale)
-	return clampf(sum / float(scales.size()), 0.78, 1.24)
+	return clampf(sum / float(scales.size()), PARAM_REWARD_SCALE_MIN, PARAM_REWARD_SCALE_MAX)
+
+
+## Real-world achievable multiplier bounds for a reward-eligible configuration
+## (no autoplay / single-lane, which force ×0). The max enumerates every subset
+## of positive reward mods (parametric ones at their highest scale) that can be
+## active together (conflicts respected), the min stacks the negative deltas at
+## their most punishing scale (parametric ones at their highest scale, e.g. the
+## widest easy-windows); speed contributes its fastest/slowest possible value
+## (song speed 25%..250%, or slow_75 at 25% / fast_150 at 250%).
+static var _cached_bounds: Dictionary = {}
+
+
+static func theoretical_multiplier_bounds() -> Dictionary:
+	if not _cached_bounds.is_empty():
+		return _cached_bounds
+	var positives: Array[String] = []
+	for id in REWARD_DELTA:
+		if id in [ID_SLOW_75, ID_FAST_150]:
+			continue
+		if float(REWARD_DELTA[id]) > 0.0:
+			positives.append(id)
+	var max_sum := 0.0
+	for mask in range(1 << positives.size()):
+		var picked: Array[String] = []
+		var ok := true
+		for i in range(positives.size()):
+			if mask & (1 << i) == 0:
+				continue
+			for other in picked:
+				if modifiers_are_conflicting(positives[i], other):
+					ok = false
+					break
+			if not ok:
+				break
+			picked.append(positives[i])
+		if not ok:
+			continue
+		var sum := 0.0
+		for id in picked:
+			var delta := float(REWARD_DELTA[id])
+			if modifier_has_detail_params(id):
+				delta *= _param_max_scale(id)
+			sum += delta
+		max_sum = maxf(max_sum, sum)
+	var min_sum := 0.0
+	for id in REWARD_DELTA:
+		if id in [ID_SLOW_75, ID_FAST_150]:
+			continue
+		var delta := float(REWARD_DELTA[id])
+		if delta >= 0.0:
+			continue
+		# Negative parametric deltas are scaled by the LARGEST scale so the
+		# penalty is as severe as possible (widest easy windows, etc.).
+		if modifier_has_detail_params(id):
+			delta *= PARAM_REWARD_SCALE_MAX
+		min_sum += delta
+	var max_speed := 0.12 * (SONG_SPEED_MAX / SONG_SPEED_DEFAULT - 1.0)
+	var min_speed := -0.10 * (1.0 - SONG_SPEED_MIN / SONG_SPEED_DEFAULT)
+	_cached_bounds = {
+		"min": maxf(0.0, 1.0 + min_speed + min_sum),
+		"max": 1.0 + max_speed + max_sum,
+	}
+	return _cached_bounds
+
+
+static func theoretical_multiplier_min() -> float:
+	return float(theoretical_multiplier_bounds().get("min", 0.0))
+
+
+static func theoretical_multiplier_max() -> float:
+	return float(theoretical_multiplier_bounds().get("max", 1.0))
 
 
 static func _param_reward_scale(modifier_id: String, params: Dictionary) -> float:
@@ -2975,16 +3104,16 @@ static func _param_reward_scale(modifier_id: String, params: Dictionary) -> floa
 			return _reward_scale_from_float(
 				float(p.get("strict_timing_window_pct", TIMING_WINDOW_PCT_DEFAULT)),
 				TIMING_WINDOW_PCT_DEFAULT,
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX,
+				STRICT_TIMING_WINDOW_PCT_MIN,
+				STRICT_TIMING_WINDOW_PCT_MAX,
 				true
 			)
 		ID_EASY_WINDOWS:
 			return _reward_scale_from_float(
 				float(p.get("easy_timing_window_pct", TIMING_WINDOW_PCT_DEFAULT)),
 				TIMING_WINDOW_PCT_DEFAULT,
-				TIMING_WINDOW_PCT_MIN,
-				TIMING_WINDOW_PCT_MAX,
+				EASY_TIMING_WINDOW_PCT_MIN,
+				EASY_TIMING_WINDOW_PCT_MAX,
 				false
 			)
 		ID_HIDDEN, ID_SUDDEN:
@@ -3118,6 +3247,61 @@ static func _param_reward_scale(modifier_id: String, params: Dictionary) -> floa
 			])
 		_:
 			return 1.0
+
+
+# Params that push a mod's reward scale to its true maximum (each relevant key at
+# its harder extreme). Used by `theoretical_multiplier_bounds` so the reported max
+# matches what `modifier_reward_delta` actually yields — NOT a flat ×1.24, since
+# `_reward_pct_deviation` normalizes by the wider half-span, so a nearer bound
+# (e.g. random_mode min=4 vs default 8 / max 30) only reaches scale ~1.08.
+static func _hardest_extreme_params(modifier_id: String) -> Dictionary:
+	match modifier_id:
+		ID_STRICT_TIMING:
+			return {"strict_timing_window_pct": STRICT_TIMING_WINDOW_PCT_MIN}
+		ID_HALF_HP:
+			return {"half_hp_start_pct": HALF_HP_START_PCT_MIN}
+		ID_RANDOM_MODE:
+			return {"lane_remap_min_interval_sec": LANE_REMAP_INTERVAL_MIN}
+		ID_HIDDEN, ID_SUDDEN:
+			return {"visibility_band_px": VISIBILITY_BAND_MIN}
+		ID_MEMORY_MODE:
+			return {
+				"memory_reveal_ms": MEMORY_REVEAL_MS_MIN,
+				"memory_spatial_blind_pct": MEMORY_SPATIAL_BLIND_PCT_MAX,
+				"memory_fade_ms": MEMORY_FADE_MS_MIN,
+			}
+		ID_HEAT:
+			return {
+				"heat_max_speed_pct": HEAT_MAX_SPEED_PCT_MAX,
+				"heat_step_combo": HEAT_STEP_COMBO_MIN,
+				"heat_peak_combo": HEAT_PEAK_COMBO_MIN,
+			}
+		ID_SPOTLIGHT:
+			return {
+				"spotlight_band_px": SPOTLIGHT_BAND_PX_MIN,
+				"spotlight_darkness_pct": SPOTLIGHT_DARKNESS_PCT_MAX,
+			}
+		ID_SILENCE:
+			return {
+				"silence_interval_sec": SILENCE_INTERVAL_SEC_MIN,
+				"silence_duration_max_sec": SILENCE_DURATION_SEC_MAX,
+			}
+		ID_RUSH:
+			return {
+				"rush_bar_mode": true,
+				"rush_bars_interval": RUSH_BARS_INTERVAL_MIN,
+				"rush_scroll_pct_bars": RUSH_SCROLL_PCT_MAX,
+				"rush_time_interval_min_sec": RUSH_TIME_INTERVAL_MIN_MIN,
+				"rush_scroll_pct_time": RUSH_SCROLL_PCT_MAX,
+			}
+		_:
+			return {}
+
+
+static func _param_max_scale(modifier_id: String) -> float:
+	if not modifier_has_detail_params(modifier_id):
+		return 1.0
+	return _param_reward_scale(modifier_id, _hardest_extreme_params(modifier_id))
 
 
 static func modifier_reward_delta(modifier_id: String, params: Dictionary = {}) -> float:
@@ -3268,9 +3452,18 @@ static func format_summary(modifiers: Array) -> String:
 
 static func format_tooltip(modifier_id: String) -> String:
 	return "%s — %s" % [
-		TranslationServer.translate(title_i18n_key(modifier_id)),
-		TranslationServer.translate(desc_i18n_key(modifier_id)),
+		_strip_markdown_markup(TranslationServer.translate(title_i18n_key(modifier_id))),
+		_strip_markdown_markup(TranslationServer.translate(desc_i18n_key(modifier_id))),
 	]
+
+
+static func _strip_markdown_markup(text: String) -> String:
+	## Descriptions may use **bold** for help/rich UI; tooltips are plain text.
+	var out := text
+	out = out.replace("**", "")
+	out = out.replace("__", "")
+	out = out.replace("`", "")
+	return out
 
 
 static func title_i18n_key(modifier_id: String) -> String:
@@ -3502,6 +3695,147 @@ static func _format_modifier_param_line(modifier_id: String, p: Dictionary) -> S
 		_:
 			return ""
 
+
+static func format_short_param_description(modifier_id: String, params: Dictionary = {}) -> String:
+	var p := sanitize_params(params)
+	match modifier_id:
+		ID_HALF_HP:
+			return TranslationServer.translate("MOD_PARAM_HALF_HP") % str(int(round(float(p.get("half_hp_start_pct", HALF_HP_START_PCT_DEFAULT)))))
+		ID_SINGLE_LANE:
+			return TranslationServer.translate("MOD_PARAM_SINGLE_LANE_COUNT_SHORT") % str(int(p.get("single_lane_count", SINGLE_LANE_COUNT_DEFAULT)))
+		ID_FIXED_SPEED_20:
+			return TranslationServer.translate("MOD_PARAM_FIXED_SPEED") % str(int(round(float(p.get("scroll_speed_value", FIXED_SCROLL_SPEED)))))
+		ID_TIME_WARP:
+			return TranslationServer.translate("MOD_PARAM_TIME_WARP") % [
+				str(int(round(float(p.get("time_warp_min_pct", TIME_WARP_MIN_PCT_DEFAULT))))),
+				str(int(round(float(p.get("time_warp_max_pct", TIME_WARP_MAX_PCT_DEFAULT))))),
+			]
+		ID_MEMORY_MODE:
+			var parts: Array[String] = []
+			# Only show params that are actually user-facing and customized
+			# memory_reveal_ms is internal, not shown unless needed
+			var blind := int(round(float(p.get("memory_spatial_blind_pct", MEMORY_SPATIAL_BLIND_PCT_DEFAULT))))
+			var fade := int(round(float(p.get("memory_fade_ms", MEMORY_FADE_MS_DEFAULT))))
+			parts.append(TranslationServer.translate("MOD_PARAM_MEMORY_SPATIAL_SHORT") % str(blind))
+			parts.append(TranslationServer.translate("MOD_PARAM_MEMORY_FADE_SHORT") % str(fade))
+			return ", ".join(parts)
+		ID_HIDDEN, ID_SUDDEN:
+			return TranslationServer.translate("MOD_PARAM_VISIBILITY_BAND") % str(int(round(float(p.get("visibility_band_px", VISIBILITY_BAND_PX)))))
+		ID_ENERGY_PULSE:
+			return TranslationServer.translate("MOD_PARAM_ENERGY_PULSE") % [
+				str(int(round(float(p.get("energy_pulse_min_pct", ENERGY_PULSE_MIN_PCT_DEFAULT))))),
+				str(int(round(float(p.get("energy_pulse_max_pct", ENERGY_PULSE_MAX_PCT_DEFAULT))))),
+			]
+		ID_DENSITY_FOCUS:
+			return "%s, %s" % [
+				TranslationServer.translate("MOD_PARAM_DENSITY_FOCUS_SCROLL_SHORT") % str(int(round(float(p.get("density_focus_scroll_pct", DENSITY_FOCUS_SCROLL_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_DENSITY_FOCUS_BAND_SHORT") % str(int(round(float(p.get("density_focus_band_px", DENSITY_FOCUS_BAND_PX_DEFAULT))))),
+			]
+		ID_PHRASE_SHIFT:
+			return "%s, %s" % [
+				TranslationServer.translate("MOD_PARAM_PHRASE_SHIFT_HEAT") % str(int(round(float(p.get("phrase_shift_heat_scroll_pct", PHRASE_SHIFT_HEAT_SCROLL_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_PHRASE_SHIFT_HIDDEN") % str(int(round(float(p.get("phrase_shift_hidden_band_px", PHRASE_SHIFT_HIDDEN_BAND_PX_DEFAULT))))),
+			]
+		ID_GROOVE_LOCK:
+			return "%s, %s, %s" % [
+				TranslationServer.translate("MOD_PARAM_GROOVE_LOCK_SCROLL_SHORT") % str(int(round(float(p.get("groove_lock_scroll_pct", GROOVE_LOCK_SCROLL_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_GROOVE_LOCK_TIMING_SHORT") % str(int(round(float(p.get("groove_lock_timing_pct", GROOVE_LOCK_TIMING_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_GROOVE_LOCK_BAND_SHORT") % str(int(round(float(p.get("groove_lock_band_px", GROOVE_LOCK_BAND_PX_DEFAULT))))),
+			]
+		ID_ADAPTIVE:
+			return "%s, %s, %s" % [
+				TranslationServer.translate("MOD_PARAM_ADAPTIVE_SPEED_SHORT") % str(int(round(float(p.get("adaptive_speed_pct", ADAPTIVE_SPEED_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_ADAPTIVE_HIDDEN") % str(int(round(float(p.get("adaptive_hidden_band_px", ADAPTIVE_HIDDEN_BAND_PX_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_ADAPTIVE_HEAT") % str(int(round(float(p.get("adaptive_heat_scroll_pct", ADAPTIVE_HEAT_SCROLL_PCT_DEFAULT))))),
+			]
+		ID_HEAT:
+			var mode := str(p.get("heat_step_mode", HEAT_STEP_MODE_DEFAULT))
+			var max_speed := str(int(round(float(p.get("heat_max_speed_pct", HEAT_MAX_SPEED_PCT_DEFAULT)))))
+			# Existing heat_max_speed already shows, but for short summary we show step and peak
+			if mode == HEAT_STEP_MODE_CHART_PCT:
+				var step := str(float(p.get("heat_step_chart_pct", HEAT_STEP_CHART_PCT_DEFAULT)))
+				# Remove trailing .0 if integer
+				if step.ends_with(".0"):
+					step = step.substr(0, step.length() - 2)
+				var peak := str(float(p.get("heat_peak_chart_pct", HEAT_PEAK_CHART_PCT_DEFAULT)))
+				if peak.ends_with(".0"):
+					peak = peak.substr(0, peak.length() - 2)
+				return "%s, %s" % [
+					TranslationServer.translate("MOD_PARAM_HEAT_STEP_CHART_SHORT") % step,
+					TranslationServer.translate("MOD_PARAM_HEAT_PEAK_CHART_SHORT") % peak,
+				]
+			else:
+				var step_c := str(int(p.get("heat_step_combo", HEAT_STEP_COMBO_DEFAULT)))
+				var peak_c := str(int(p.get("heat_peak_combo", HEAT_PEAK_COMBO_DEFAULT)))
+				return "%s, %s" % [
+					TranslationServer.translate("MOD_PARAM_HEAT_STEP_COMBO_SHORT") % step_c,
+					TranslationServer.translate("MOD_PARAM_HEAT_PEAK_COMBO_SHORT") % peak_c,
+				]
+		ID_SPOTLIGHT:
+			return "%s, %s" % [
+				TranslationServer.translate("MOD_PARAM_SPOTLIGHT_BAND_SHORT") % str(int(round(float(p.get("spotlight_band_px", SPOTLIGHT_BAND_PX_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_SPOTLIGHT_DARKNESS_SHORT") % str(int(round(float(p.get("spotlight_darkness_pct", SPOTLIGHT_DARKNESS_PCT_DEFAULT))))),
+			]
+		ID_SILENCE:
+			var mode_sil := str(p.get("silence_schedule_mode", SILENCE_SCHEDULE_MODE_DEFAULT))
+			var interval_str: String
+			if mode_sil == SILENCE_SCHEDULE_TRACK_PCT:
+				interval_str = TranslationServer.translate("MOD_PARAM_SILENCE_INTERVAL_TRACK_SHORT") % str(float(p.get("silence_interval_track_pct", SILENCE_INTERVAL_TRACK_PCT_DEFAULT)))
+			else:
+				interval_str = TranslationServer.translate("MOD_PARAM_SILENCE_INTERVAL_SEC") % str(float(p.get("silence_interval_sec", SILENCE_INTERVAL_SEC_DEFAULT)))
+			var dur_str := TranslationServer.translate("MOD_PARAM_SILENCE_DURATION") % [
+				str(float(p.get("silence_duration_min_sec", SILENCE_DURATION_MIN_SEC_DEFAULT))),
+				str(float(p.get("silence_duration_max_sec", SILENCE_DURATION_MAX_SEC_DEFAULT))),
+			]
+			var gap_src := str(p.get("silence_gap_source", SILENCE_GAP_SOURCE_DEFAULT))
+			if gap_src != SILENCE_GAP_SOURCE_SILENCE:
+				var gap_val_key := "SILENCE_GAP_SOURCE_" + gap_src.to_upper()
+				var gap_val := TranslationServer.translate(gap_val_key)
+				if gap_val == gap_val_key:
+					gap_val = gap_src.capitalize()
+				var gap_label := TranslationServer.translate("MOD_PARAM_SILENCE_GAP_SOURCE")
+				if gap_label != "MOD_PARAM_SILENCE_GAP_SOURCE":
+					return "%s, %s, %s" % [interval_str, dur_str, gap_label % gap_val]
+				return "%s, %s, %s" % [interval_str, dur_str, gap_val]
+			return "%s, %s" % [interval_str, dur_str]
+		ID_RUSH:
+			var bar_mode := rush_uses_bar_mode(p)
+			var ramp_str := TranslationServer.translate("MOD_PARAM_RUSH_RAMP_SHORT") % str(float(p.get("rush_ramp_sec", RUSH_RAMP_SEC_DEFAULT)))
+			if bar_mode:
+				return "%s, %s, %s, %s" % [
+					TranslationServer.translate("MOD_PARAM_RUSH_INTERVAL_BARS") % str(int(round(float(p.get("rush_bars_interval", RUSH_BARS_INTERVAL_DEFAULT))))),
+					TranslationServer.translate("MOD_PARAM_RUSH_BURST_DURATION_SHORT") % str(float(p.get("rush_burst_duration_sec", RUSH_BURST_DURATION_SEC_DEFAULT))),
+					TranslationServer.translate("MOD_PARAM_RUSH_SCROLL_SHORT") % str(int(round(float(p.get("rush_scroll_pct_bars", RUSH_SCROLL_PCT_BARS_DEFAULT))))),
+					ramp_str,
+				]
+			else:
+				return "%s, %s, %s, %s" % [
+					TranslationServer.translate("MOD_PARAM_RUSH_INTERVAL_TIME") % [
+						str(float(p.get("rush_time_interval_min_sec", RUSH_TIME_INTERVAL_MIN_DEFAULT))),
+						str(float(p.get("rush_time_interval_max_sec", RUSH_TIME_INTERVAL_MAX_DEFAULT))),
+					],
+					TranslationServer.translate("MOD_PARAM_RUSH_BURST_DURATION_SHORT") % str(float(p.get("rush_burst_duration_sec", RUSH_BURST_DURATION_SEC_DEFAULT))),
+					TranslationServer.translate("MOD_PARAM_RUSH_SCROLL_SHORT") % str(int(round(float(p.get("rush_scroll_pct_time", RUSH_SCROLL_PCT_TIME_DEFAULT))))),
+					ramp_str,
+				]
+		ID_ENERGY_BALANCE:
+			return "%s, %s" % [
+				TranslationServer.translate("MOD_PARAM_ENERGY_BALANCE_CALM_SHORT") % str(int(round(float(p.get("energy_balance_calm_pct", ENERGY_BALANCE_CALM_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_ENERGY_BALANCE_INTENSE_SHORT") % str(int(round(float(p.get("energy_balance_intense_pct", ENERGY_BALANCE_INTENSE_PCT_DEFAULT))))),
+			]
+		ID_GROOVE_ADDICTION:
+			return "%s, %s, %s" % [
+				TranslationServer.translate("MOD_PARAM_GROOVE_ADDICTION_SCROLL_SHORT") % str(int(round(float(p.get("groove_addiction_scroll_pct", GROOVE_ADDICTION_SCROLL_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_GROOVE_ADDICTION_TIMING_SHORT") % str(int(round(float(p.get("groove_addiction_timing_pct", GROOVE_ADDICTION_TIMING_PCT_DEFAULT))))),
+				TranslationServer.translate("MOD_PARAM_GROOVE_ADDICTION_TIER") % str(int(p.get("groove_addiction_max_tier", GROOVE_ADDICTION_MAX_TIER_DEFAULT))),
+			]
+		ID_COMBO_ESCALATION:
+			return "%s, %s" % [
+				TranslationServer.translate("MOD_PARAM_COMBO_ESCALATION_STEP") % str(float(p.get("combo_escalation_step_pct", CE_STEP_PCT_DEFAULT))),
+				TranslationServer.translate("MOD_PARAM_COMBO_ESCALATION_MIN") % str(int(p.get("combo_escalation_step_min", CE_STEP_MIN_DEFAULT))),
+			]
+		_:
+			return ""
 
 static func param_affects_label(param_id: String) -> String:
 	var key := "MOD_PARAM_AFFECTS_%s" % param_id.to_upper()

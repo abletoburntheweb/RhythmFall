@@ -13,7 +13,9 @@ const _CV := "ScrollWrap/CenterWrap/ContentVBox"
 const _SONGS := "%s/SongsFolderPanel/SongsFolderPanelMargin/SongsFolderRows" % _CV
 const _SCAN := "%s/ScanPanel/ScanPanelMargin/ScanRows" % _CV
 const _NOTES := "%s/NotesFolderPanel/NotesFolderPanelMargin/NotesFolderRows" % _CV
+const _STEMS := "%s/StemsFolderPanel/StemsFolderPanelMargin/StemsFolderRows" % _CV
 const _OPTS := "%s/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsRows" % _CV
+const _DIARY := "%s/DiaryLinksPanel/DiaryLinksPanelMargin/DiaryLinksRows" % _CV
 
 @onready var songs_header: Label = get_node("%s/SongsFolderHeader" % _SONGS)
 @onready var songs_folder_hint: Label = get_node("%s/SongsFolderHint" % _SONGS)
@@ -23,19 +25,32 @@ const _OPTS := "%s/LibraryOptionsPanel/LibraryOptionsPanelMargin/LibraryOptionsR
 @onready var notes_header: Label = get_node("%s/NotesFolderHeader" % _NOTES)
 @onready var notes_hint: Label = get_node_or_null("%s/NotesHint" % _NOTES)
 @onready var notes_help_link: LinkButton = get_node_or_null("%s/NotesHelpLink" % _NOTES)
+@onready var stems_header: Label = get_node_or_null("%s/StemsFolderHeader" % _STEMS)
+@onready var stems_hint: Label = get_node_or_null("%s/StemsHint" % _STEMS)
 @onready var options_header: Label = get_node("%s/LibraryOptionsHeader" % _OPTS)
 @onready var library_options_hint: Label = get_node("%s/LibraryOptionsHint" % _OPTS)
 @onready var songs_folder_line_edit: LineEdit = get_node("%s/SongsFolderHBox/SongsFolderLineEdit" % _SONGS)
 @onready var notes_folder_line_edit: LineEdit = get_node("%s/NotesFolderHBox/NotesFolderLineEdit" % _NOTES)
+@onready var stems_folder_line_edit: LineEdit = get_node_or_null("%s/StemsFolderHBox/StemsFolderLineEdit" % _STEMS)
+@onready var open_songs_folder_button: Button = %OpenSongsFolderButton
+@onready var open_notes_folder_button: Button = %OpenNotesFolderButton
+@onready var open_stems_folder_button: Button = get_node_or_null("%s/StemsFolderHBox/OpenStemsFolderButton" % _STEMS)
 @onready var show_chart_id_checkbox: CheckBox = get_node("%s/ShowChartIdCheckBox" % _OPTS)
+@onready var diary_links_header: Label = get_node_or_null("%s/DiaryLinksHeader" % _DIARY)
+@onready var diary_links_hint: Label = get_node_or_null("%s/DiaryLinksHint" % _DIARY)
+@onready var diary_history_open_day_checkbox: CheckBox = get_node_or_null("%s/DiaryHistoryOpenDayCheckBox" % _DIARY)
+@onready var diary_history_open_track_checkbox: CheckBox = get_node_or_null("%s/DiaryHistoryOpenTrackCheckBox" % _DIARY)
+@onready var diary_open_track_museum_checkbox: CheckBox = get_node_or_null("%s/DiaryOpenTrackMuseumCheckBox" % _DIARY)
 @onready var songs_folder_dialog: FileDialog = $SongsFolderDialog
 @onready var notes_folder_dialog: FileDialog = $NotesFolderDialog
+@onready var stems_folder_dialog: FileDialog = get_node_or_null("StemsFolderDialog")
 @onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
 @onready var _confirm_overlay: AppConfirmOverlay = %ConfirmOverlay
 @onready var _songs_folder_overlay: AppSongsFolderChangeOverlay = %SongsFolderChangeOverlay
 
 var _pending_new_folder_path: String = ""
 var _pending_new_notes_folder_path: String = ""
+var _pending_new_stems_folder_path: String = ""
 var _pending_dedupe_user_root: String = ""
 var _pending_dedupe_match_count: int = 0
 
@@ -59,7 +74,11 @@ func _apply_dialog_styles() -> void:
 
 
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(show_chart_id_checkbox)
+	const AMBER := Color(0.92, 0.78, 0.45, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(show_chart_id_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_history_open_day_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_history_open_track_checkbox, 22, false, AMBER)
+	_SettingsSectionUi.apply_settings_checkbox(diary_open_track_museum_checkbox, 22, false, AMBER)
 
 
 func apply_locale() -> void:
@@ -79,6 +98,10 @@ func apply_locale() -> void:
 	if notes_help_link:
 		notes_help_link.text = tr("SETTINGS_HELP_LINK_NOTES")
 		notes_help_link.add_theme_color_override("font_color", Color(0.96, 0.82, 0.34, 1.0))
+	if stems_header:
+		stems_header.text = tr("MISC_STEMS_FOLDER_SECTION")
+	if stems_hint:
+		stems_hint.text = tr("MISC_STEMS_FOLDER_HINT")
 	if options_header:
 		options_header.text = tr("MISC_LIBRARY_OPTIONS_SECTION")
 	if library_options_hint:
@@ -89,6 +112,8 @@ func apply_locale() -> void:
 	var choose_folder_btn: Button = get_node_or_null("%s/SongsFolderHBox/ChooseSongsFolderButton" % _SONGS)
 	if choose_folder_btn:
 		choose_folder_btn.text = tr("MISC_CHOOSE_FOLDER")
+	if open_songs_folder_button:
+		open_songs_folder_button.text = tr("LIBRARY_OPEN_FOLDER")
 	var scan_btn: Button = get_node_or_null("%s/ScanButtonRow/ScanSongsButton" % _SCAN)
 	if scan_btn:
 		scan_btn.text = tr("MISC_SCAN_SONGS")
@@ -98,8 +123,32 @@ func apply_locale() -> void:
 	var choose_notes_btn: Button = get_node_or_null("%s/NotesFolderHBox/ChooseNotesFolderButton" % _NOTES)
 	if choose_notes_btn:
 		choose_notes_btn.text = tr("MISC_CHOOSE_FOLDER")
+	if open_notes_folder_button:
+		open_notes_folder_button.text = tr("LIBRARY_OPEN_FOLDER")
+	var stems_folder_label: Label = get_node_or_null("%s/StemsFolderHBox/StemsFolderLabel" % _STEMS)
+	if stems_folder_label:
+		stems_folder_label.text = tr("MISC_STEMS_FOLDER_LABEL")
+	var choose_stems_btn: Button = get_node_or_null("%s/StemsFolderHBox/ChooseStemsFolderButton" % _STEMS)
+	if choose_stems_btn:
+		choose_stems_btn.text = tr("MISC_CHOOSE_FOLDER")
+	var open_stems_btn: Button = get_node_or_null("%s/StemsFolderHBox/OpenStemsFolderButton" % _STEMS)
+	if open_stems_btn:
+		open_stems_btn.text = tr("LIBRARY_OPEN_FOLDER")
 	if show_chart_id_checkbox:
 		show_chart_id_checkbox.text = tr("MISC_SHOW_CHART_ID")
+	if diary_links_header:
+		diary_links_header.text = tr("SETTINGS_DIARY_LINKS_SECTION")
+	if diary_links_hint:
+		diary_links_hint.text = tr("SETTINGS_DIARY_LINKS_HINT")
+	if diary_history_open_day_checkbox:
+		diary_history_open_day_checkbox.text = tr("SETTINGS_DIARY_HISTORY_OPEN_DAY")
+		diary_history_open_day_checkbox.tooltip_text = tr("SETTINGS_DIARY_HISTORY_OPEN_DAY_TIP")
+	if diary_history_open_track_checkbox:
+		diary_history_open_track_checkbox.text = tr("SETTINGS_DIARY_HISTORY_OPEN_TRACK")
+		diary_history_open_track_checkbox.tooltip_text = tr("SETTINGS_DIARY_HISTORY_OPEN_TRACK_TIP")
+	if diary_open_track_museum_checkbox:
+		diary_open_track_museum_checkbox.text = tr("SETTINGS_DIARY_OPEN_TRACK_MUSEUM")
+		diary_open_track_museum_checkbox.tooltip_text = tr("SETTINGS_DIARY_OPEN_TRACK_MUSEUM_TIP")
 	_apply_dialogs()
 	_apply_tooltips()
 	_apply_dialog_styles()
@@ -114,11 +163,26 @@ func _apply_tooltips() -> void:
 	var choose_folder_btn: Button = get_node_or_null("%s/SongsFolderHBox/ChooseSongsFolderButton" % _SONGS)
 	if choose_folder_btn:
 		choose_folder_btn.tooltip_text = tr("MISC_CHOOSE_FOLDER_TOOLTIP")
+	if open_songs_folder_button:
+		open_songs_folder_button.tooltip_text = tr("LIBRARY_OPEN_FOLDER_TOOLTIP")
 	var scan_btn: Button = get_node_or_null("%s/ScanButtonRow/ScanSongsButton" % _SCAN)
 	if scan_btn:
 		scan_btn.tooltip_text = tr("MISC_SCAN_SONGS_TOOLTIP")
+	if open_notes_folder_button:
+		open_notes_folder_button.tooltip_text = tr("LIBRARY_OPEN_FOLDER_TOOLTIP")
 	if notes_folder_line_edit:
 		notes_folder_line_edit.tooltip_text = tr("MISC_NOTES_FOLDER_TOOLTIP")
+	var stems_folder_label: Label = get_node_or_null("%s/StemsFolderHBox/StemsFolderLabel" % _STEMS)
+	if stems_folder_label:
+		stems_folder_label.tooltip_text = tr("MISC_STEMS_FOLDER_TOOLTIP")
+	if stems_folder_line_edit:
+		stems_folder_line_edit.tooltip_text = tr("MISC_STEMS_FOLDER_TOOLTIP")
+	var choose_stems_btn: Button = get_node_or_null("%s/StemsFolderHBox/ChooseStemsFolderButton" % _STEMS)
+	if choose_stems_btn:
+		choose_stems_btn.tooltip_text = tr("MISC_CHOOSE_FOLDER_TOOLTIP")
+	var open_stems_btn: Button = get_node_or_null("%s/StemsFolderHBox/OpenStemsFolderButton" % _STEMS)
+	if open_stems_btn:
+		open_stems_btn.tooltip_text = tr("LIBRARY_OPEN_FOLDER_TOOLTIP")
 	if show_chart_id_checkbox:
 		show_chart_id_checkbox.tooltip_text = tr("MISC_SHOW_CHART_ID_TOOLTIP")
 
@@ -150,7 +214,7 @@ func _apply_dialogs() -> void:
 
 
 func _setup_folder_dialogs() -> void:
-	for dlg in [songs_folder_dialog, notes_folder_dialog]:
+	for dlg in [songs_folder_dialog, notes_folder_dialog, stems_folder_dialog]:
 		if dlg == null:
 			continue
 		dlg.use_native_dialog = true
@@ -178,6 +242,35 @@ func _sanitize_path(path: String) -> String:
 	return String(path).strip_edges().replace("\uFFFD", "")
 
 
+func _on_open_songs_folder_pressed() -> void:
+	var path := _normalize_songs_folder_path(String(SettingsManager.get_setting("user_songs_path", "")))
+	_open_folder_path(path)
+
+
+func _on_open_notes_folder_pressed() -> void:
+	var stored := String(SettingsManager.get_setting("user_notes_path", ""))
+	var path := stored if stored != "" else NotesUtils.DEFAULT_NOTES_ROOT
+	_open_folder_path(path)
+
+
+func _on_open_stems_folder_pressed() -> void:
+	var path := String(SettingsManager.get_stem_storage_path() if SettingsManager.has_method("get_stem_storage_path") else SettingsManager.get_setting("stem_storage_path", ""))
+	if path.strip_edges() == "":
+		path = "user://stems"
+	_open_folder_path(path)
+
+
+func _open_folder_path(path: String) -> void:
+	var abs_path := path.strip_edges()
+	if abs_path == "":
+		return
+	if abs_path.begins_with("user://") or abs_path.begins_with("res://"):
+		abs_path = ProjectSettings.globalize_path(abs_path)
+	abs_path = abs_path.replace("\\", "/")
+	DirAccess.make_dir_recursive_absolute(abs_path)
+	OS.shell_open(abs_path)
+
+
 func _apply_initial_settings() -> void:
 	var p = String(SettingsManager.get_setting("user_songs_path", ""))
 	if p == "":
@@ -187,7 +280,24 @@ func _apply_initial_settings() -> void:
 	if notes_p == "":
 		notes_p = NotesUtils.DEFAULT_NOTES_ROOT
 	notes_folder_line_edit.text = notes_p
+	var stems_p := String(SettingsManager.get_stem_storage_path() if SettingsManager.has_method("get_stem_storage_path") else SettingsManager.get_setting("stem_storage_path", ""))
+	if stems_p.strip_edges() == "":
+		stems_p = "user://stems"
+	if stems_folder_line_edit:
+		stems_folder_line_edit.text = stems_p
 	show_chart_id_checkbox.set_pressed_no_signal(bool(SettingsManager.get_setting("show_chart_id", false)))
+	if diary_history_open_day_checkbox:
+		diary_history_open_day_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_history_open_day", false))
+		)
+	if diary_history_open_track_checkbox:
+		diary_history_open_track_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_history_open_track", false))
+		)
+	if diary_open_track_museum_checkbox:
+		diary_open_track_museum_checkbox.set_pressed_no_signal(
+			bool(SettingsManager.get_setting("diary_open_track_museum", false))
+		)
 	_update_last_scan_label()
 
 
@@ -227,8 +337,23 @@ func _on_choose_notes_folder_pressed() -> void:
 		notes_folder_dialog.popup_centered()
 
 
+func _on_choose_stems_folder_pressed() -> void:
+	if stems_folder_dialog:
+		stems_folder_dialog.current_dir = _folder_dialog_start_dir("stem_storage_path", "user://stems")
+		stems_folder_dialog.popup_centered()
+
+
 func _normalize_notes_folder_path(p: String) -> String:
 	return NotesUtils.normalize_notes_root(p)
+
+
+func _normalize_stems_folder_path(p: String) -> String:
+	var s := String(p).strip_edges().replace("\\", "/")
+	while s.ends_with("/"):
+		s = s.substr(0, s.length() - 1)
+	if s == "":
+		return "user://stems"
+	return s
 
 
 func _on_notes_folder_dir_selected(path: String) -> void:
@@ -275,10 +400,74 @@ func _on_change_notes_folder_canceled() -> void:
 	notes_folder_line_edit.text = stored if stored != "" else NotesUtils.DEFAULT_NOTES_ROOT
 
 
+func _on_stems_folder_dir_selected(path: String) -> void:
+	_hide_window_dialog(stems_folder_dialog)
+	path = _sanitize_path(path)
+	var old_path := _normalize_stems_folder_path(String(SettingsManager.get_stem_storage_path() if SettingsManager.has_method("get_stem_storage_path") else SettingsManager.get_setting("stem_storage_path", "")))
+	var new_path := _normalize_stems_folder_path(path)
+	if stems_folder_line_edit:
+		stems_folder_line_edit.text = new_path
+	if old_path == new_path:
+		return
+	_pending_new_stems_folder_path = new_path
+	_confirm_change_stems_folder()
+
+
+func _confirm_change_stems_folder() -> void:
+	if await _Overlay.ask(
+		_confirm_overlay,
+		tr("DLG_CHANGE_STEMS_FOLDER_TEXT"),
+		"warning",
+		"",
+		tr("BTN_SAVE"),
+	):
+		if _pending_new_stems_folder_path != "":
+			_apply_new_stems_folder_path(_pending_new_stems_folder_path)
+	else:
+		_on_change_stems_folder_canceled()
+
+
+func _apply_new_stems_folder_path(new_path: String) -> void:
+	var stored := new_path
+	if stored == "user://stems":
+		stored = ""
+	if SettingsManager.has_method("set_stem_storage_path"):
+		SettingsManager.set_stem_storage_path(stored)
+	else:
+		SettingsManager.set_setting("stem_storage_path", stored)
+		SettingsManager.save_settings()
+	if stems_folder_line_edit:
+		stems_folder_line_edit.text = new_path if stored != "" else "user://stems"
+	_pending_new_stems_folder_path = ""
+	emit_signal("settings_changed")
+
+
+func _on_change_stems_folder_canceled() -> void:
+	_pending_new_stems_folder_path = ""
+	var stored := String(SettingsManager.get_stem_storage_path() if SettingsManager.has_method("get_stem_storage_path") else SettingsManager.get_setting("stem_storage_path", ""))
+	if stems_folder_line_edit:
+		stems_folder_line_edit.text = stored if stored != "" else "user://stems"
+
+
 func _on_show_chart_id_toggled(enabled: bool) -> void:
 	SettingsManager.set_setting("show_chart_id", enabled)
 	emit_signal("settings_changed")
 	_call_refresh_chart_id_recursive(get_tree().root)
+
+
+func _on_diary_history_open_day_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_history_open_day", enabled)
+	emit_signal("settings_changed")
+
+
+func _on_diary_history_open_track_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_history_open_track", enabled)
+	emit_signal("settings_changed")
+
+
+func _on_diary_open_track_museum_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("diary_open_track_museum", enabled)
+	emit_signal("settings_changed")
 
 
 func _call_refresh_chart_id_recursive(node: Node) -> void:
@@ -360,10 +549,13 @@ func _on_scan_songs_pressed() -> void:
 		return
 	var dock := _find_status_dock()
 	if dock:
-		dock.show_transient("library_scan", tr("STATUS_LIBRARY_SCANNING"), "scan", 0.0)
+		# Показываем как operation с прогрессом, чтобы не висел infinite transient
+		dock.show_operation({"id":"library_scan","title":tr("STATUS_LIBRARY_SCANNING"),"subtitle":"","progress":0.0,"indeterminate":true,"compact":false,"icon_kind":"scan"})
 	var added: int = SongLibrary.scan_user_songs()
 	_record_library_scan()
+	
 	if dock:
+		dock.clear_operation("library_scan")
 		if added > 0:
 			dock.show_transient("library_scan", tr("MISC_SCAN_SONGS_ADDED") % added, "success", 3.0)
 		else:
@@ -397,6 +589,8 @@ func _show_scan_result_flow(added: int) -> void:
 	await _notice_overlay.dismissed
 	if _pending_dedupe_match_count > 0:
 		await _show_dedupe_confirm()
+	if FirstStepsManager:
+		FirstStepsManager.notify_event("song_scanned")
 
 
 func _show_dedupe_confirm() -> void:

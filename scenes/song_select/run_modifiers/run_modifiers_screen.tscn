@@ -10,6 +10,8 @@
 [ext_resource type="PackedScene" uid="uid://crunmodsummary01" path="res://scenes/song_select/run_modifiers/run_modifier_summary_panel.tscn" id="8_summary"]
 [ext_resource type="PackedScene" uid="uid://crunmodparamspanel1" path="res://scenes/song_select/run_modifiers/run_modifier_params_panel.tscn" id="9_paramspanel"]
 
+[ext_resource type="PackedScene" uid="uid://933672956d066f2f38ced100fe01ab25" path="res://scenes/song_select/run_modifiers/tabs/discovery_tab_content.tscn" id="11_discovery"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sidebar"]
 content_margin_left = 12.0
 content_margin_top = 12.0
@@ -177,6 +179,9 @@ tab_id = "dna"
 [node name="NavParams" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
 tab_id = "params"
 
+[node name="NavDiscovery" parent="RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox" instance=ExtResource("3_nav")]
+tab_id = "discovery"
+
 [node name="CenterColumn" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -250,7 +255,14 @@ grow_vertical = 2
 [node name="ParamsTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("6_params")]
 visible = false
 layout_mode = 1
-anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DiscoveryTab" parent="RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack" instance=ExtResource("11_discovery")]
+visible = false
+layout_mode = 1
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -304,12 +316,33 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ParamsPanel" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack" instance=ExtResource("9_paramspanel")]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="SummaryPanel" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack" instance=ExtResource("8_summary")]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="ActionRow" type="VBoxContainer" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ConfirmButton" type="Button" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/ActionRow"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"FlatModalPrimaryButton"
+theme_override_font_sizes/font_size = 17
+text = "Подтвердить"
+
+[node name="ResetButton" type="Button" parent="RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/ActionRow"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"FlatModalDangerButton"
+theme_override_font_sizes/font_size = 15
+text = "Сбросить все моды"
 
 [node name="FooterRow" type="VBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -331,5 +364,5 @@ size_flags_horizontal = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.58, 0.7, 0.88)
 theme_override_font_sizes/font_size = 14
-text = "1–5 вкладки · Esc назад · Enter подтвердить"
+	text = "1–6 вкладки · Esc назад · Enter подтвердить"
 horizontal_alignment = 1

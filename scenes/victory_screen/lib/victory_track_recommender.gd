@@ -1,4 +1,4 @@
-# logic/utils/victory_track_recommender.gd
+# scenes/victory_screen/lib/victory_track_recommender.gd
 extends RefCounted
 class_name VictoryTrackRecommender
 

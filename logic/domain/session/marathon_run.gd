@@ -27,6 +27,7 @@ var total_score: int = 0
 var total_hit_notes: int = 0
 var total_missed_notes: int = 0
 var total_perfect_hits: int = 0
+var total_good_hits: int = 0
 var total_max_combo: int = 0
 var ending_combo: int = 0
 var _accuracy_weight_sum: float = 0.0
@@ -84,6 +85,7 @@ func _start_from_build(built: Dictionary) -> bool:
 	total_hit_notes = 0
 	total_missed_notes = 0
 	total_perfect_hits = 0
+	total_good_hits = 0
 	total_max_combo = 0
 	ending_combo = 0
 	_accuracy_weight_sum = 0.0
@@ -177,7 +179,7 @@ func on_track_cleared(stats: Dictionary) -> bool:
 	tracks_cleared += 1
 	_accumulate_track_stats(stats, true)
 	_record_track_telemetry(stats)
-	var rule_check := _MarathonRunRules.check_after_track(stats, total_missed_notes, run_rules)
+	var rule_check := _MarathonRunRules.check_after_track(stats, total_missed_notes, total_good_hits, run_rules)
 	if not bool(rule_check.get("ok", true)):
 		_last_finish_reason = str(rule_check.get("reason", "defeat"))
 		return false
@@ -305,6 +307,9 @@ func _accumulate_track_stats(stats: Dictionary, cleared: bool) -> void:
 	var missed := int(stats.get("missed_notes", 0))
 	var hit := int(stats.get("hit_notes", 0))
 	var perfect := int(stats.get("perfect_hits", 0))
+	var good := maxi(0, hit - perfect)
+	if stats.has("good_hits"):
+		good = int(stats.get("good_hits", good))
 	var total_notes := int(stats.get("total_notes", hit + missed))
 	var weight := float(maxi(1, total_notes))
 
@@ -312,6 +317,7 @@ func _accumulate_track_stats(stats: Dictionary, cleared: bool) -> void:
 	total_hit_notes += hit
 	total_missed_notes += missed
 	total_perfect_hits += perfect
+	total_good_hits += good
 	total_max_combo = maxi(total_max_combo, max_combo)
 	ending_combo = combo
 	_accuracy_weight_sum += weight

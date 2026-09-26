@@ -1,0 +1,147 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/settings_menu/dialogs/chart_editor_bindings_dialog.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
+
+[node name="ChartEditorBindingsDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.06, 0.97)
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="BackButtonWrap" type="MarginContainer" parent="Container"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_bottom = 2
+
+[node name="BackButton" type="Button" parent="Container/BackButtonWrap"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+metadata/ui_icon_file = "arrow-left.svg"
+text = "Назад"
+
+[node name="TitleLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.98, 1)
+theme_override_font_sizes/font_size = 28
+text = "Привязка клавиш редактора"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="Container"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.7, 0.82, 0.92)
+theme_override_font_sizes/font_size = 13
+text = "Нажмите на кнопку, затем нажмите новую комбинацию. Поддерживаются Ctrl/Shift/Alt + клавиши."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyCenter" type="CenterContainer" parent="Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CardPanel" type="PanelContainer" parent="Container/BodyCenter"]
+custom_minimum_size = Vector2(936, 720)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_type_variation = &"SectionPanelPink"
+
+[node name="CardMargin" type="MarginContainer" parent="Container/BodyCenter/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="InfoHeader" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderPink"
+theme_override_font_sizes/font_size = 22
+text = "Привязка клавиш"
+
+[node name="InfoHint" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Кнопка клавиши меняет её назначение."
+autowrap_mode = 3
+
+[node name="InfoHint2" type="Label" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "ПКМ по клавише открывает дополнительные действия."
+autowrap_mode = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+custom_minimum_size = Vector2(0, 620)
+
+[node name="ContentHost" type="HBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 20
+
+[node name="LeftVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/VBox/Scroll/ContentHost"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="RightVBox" type="VBoxContainer" parent="Container/BodyCenter/CardPanel/CardMargin/VBox/Scroll/ContentHost"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="Button" parent="Container/BodyCenter/CardPanel/CardMargin/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatExitButton"
+theme_override_font_sizes/font_size = 18
+text = "Сбросить назначение клавиш"
+horizontal_alignment = 1

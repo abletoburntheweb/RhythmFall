@@ -123,7 +123,13 @@ static func build_template(iso_date: String) -> Dictionary:
 	out["source_id"] = str(out.get("genre_group_id", ""))
 	out["genre_fallback"] = genre_pick.get("used_fallback", false)
 	out["genre_preferred"] = genre_pick.get("preferred_id", "")
-	return _MarathonRouteRolls.apply_to_template(out, "%s_daily_rolls" % date_key)
+	var rolled := _MarathonRouteRolls.apply_to_template(out, "%s_daily_rolls" % date_key)
+	# Fix: ensure actually selected genre (including fallback) is preserved for UI/title/summary
+	rolled["genre_group_id"] = str(genre_pick.get("genre_id", "rock"))
+	rolled["source_id"] = str(rolled.get("genre_group_id", ""))
+	rolled["genre_fallback"] = bool(genre_pick.get("used_fallback", false))
+	rolled["genre_preferred"] = str(genre_pick.get("preferred_id", ""))
+	return rolled
 
 
 static func summary_line(template: Dictionary) -> String:

@@ -1,0 +1,72 @@
+{
+  "version": "1.3.0",
+  "tagline": "Practice and replays, interactive onboarding, Chart Editor, Profile History and playlists, play mode polish, and performance improvements.",
+  "sections": [
+    {
+      "icon": "map.svg",
+      "tint": "#5eead4",
+      "title": "First Steps · onboarding",
+      "body": "- **First Steps** replaces Daily Tasks on first launch — 5 steps from your real progress\n- Spotlights, Welcome card and **First Steps complete!** on Victory — already done steps credited"
+    },
+    {
+      "icon": "drum.svg",
+      "tint": "#f59e0b",
+      "title": "Persistent drum stems",
+      "body": "- Drum and bass stems saved as **MP3** in a dedicated library — each chart keeps its own take\n- Library folder in **Settings → Library**; **Retention** in **Settings → Generation** — **Delete after generation / Keep 15 min / Keep last 10 / Never delete**"
+    },
+    {
+      "icon": "target.svg",
+      "tint": "#faa34d",
+      "title": "Practice mode",
+      "body": "- Loop any section range from Pause on the progress bar\n- HUD with session stats and **Best Practice** per chart"
+    },
+    {
+      "icon": "rotate-ccw.svg",
+      "tint": "#5eead4",
+      "title": "Replays · Beta",
+      "body": "- Auto-save after Victory and **Open replay** on song select\n- Watch with timeline, **0.5×–2× speed** and auto-hiding player"
+    },
+    {
+      "icon": "history.svg",
+      "tint": "#60a5fa",
+      "title": "History & calendar",
+      "body": "- **History**: Feed / Records / Capsules and **Calendar** with Monthly Recap\n- **Recap** cards for sharing — demo capsules cleaned up"
+    },
+    {
+      "icon": "fingerprint-pattern.svg",
+      "tint": "#fbbf24",
+      "title": "Rhythm DNA & generation",
+      "body": "- Song structure now follows the music more closely\n- Generation queue and presets improved; drum charts denser and fairer\n- Optional song structure analysis via **SongFormer**"
+    },
+    {
+      "icon": "pencil.svg",
+      "tint": "#c084fc",
+      "title": "Chart Editor",
+      "body": "- Fixed viewport with full timeline, ghost drag and box select\n- **MIDI Patterns** browser and **Test Play** for any chart; improved inspector and autosave"
+    },
+    {
+      "icon": "list-music.svg",
+      "tint": "#a78bfa",
+      "title": "Playlists & modes",
+      "body": "- Playlists with cover mosaic and faster editor\n- Optimized Playlist Hub song-list loading to reduce repeated filesystem work when checking available charts\n- **Endless / Marathon** — stabler starts, hints and **Run Rules** with **ZAP** difficulty"
+    },
+    {
+      "icon": "settings-2.svg",
+      "tint": "#94a3b8",
+      "title": "Settings & generation",
+      "body": "- **GPU stack** (Auto / NVIDIA / AMD / CPU) with scan & apply\n- **What's new** and **About** in Settings → System"
+    },
+    {
+      "icon": "gauge.svg",
+      "tint": "#46c98b",
+      "title": "Victory & scoring",
+      "body": "- **Accuracy** and **RR Breakdown** on Victory with per-section details\n- **Reward & RR multiplier** now clearer"
+    },
+    {
+      "icon": "wrench.svg",
+      "tint": "#94a3b8",
+      "title": "Polish & fixes",
+      "body": "- **BPM Cancel** now truly cancels; faster profile, library and achievements\n- Play count and Single Lane fixes; metronome/silence fallback improved"
+    }
+  ]
+}

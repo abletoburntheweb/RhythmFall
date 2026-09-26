@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://bgensettings0001"]
+[gd_scene load_steps=5 format=3 uid="uid://bgensettings0001"]
 
 [ext_resource type="Script" path="res://scenes/settings_menu/tabs/generation_tab.gd" id="1_gen"]
 [ext_resource type="Theme" uid="uid://bnmxj4g0r8748" path="res://ui/theme/app_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" uid="uid://cappconfirmoverlay01" path="res://ui/overlays/app_confirm_overlay.tscn" id="3_confirm"]
+[ext_resource type="PackedScene" uid="uid://cappnoticeoverlay01" path="res://ui/overlays/app_notice_overlay.tscn" id="4_notice"]
 
 [node name="GenerationTab" type="Control"]
 layout_mode = 3
@@ -127,6 +128,184 @@ max_value = 65535.0
 value = 5000.0
 alignment = 1
 
+[node name="GpuStackHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Ускорение стемов (GPU). Нужны интернет и несколько минут; игра будет заблокирована."
+autowrap_mode = 3
+
+[node name="GpuStackStatusLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.9, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "Сейчас: —"
+autowrap_mode = 3
+
+[node name="GpuStackRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GpuStackLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Ускорение стемов"
+
+[node name="GpuStackOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackRow"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
+selected = 0
+item_count = 4
+popup/item_0/text = "Авто"
+popup/item_0/id = 0
+popup/item_1/text = "NVIDIA"
+popup/item_1/id = 1
+popup/item_2/text = "AMD"
+popup/item_2/id = 2
+popup/item_3/text = "CPU"
+popup/item_3/id = 3
+
+[node name="GpuStackActionsRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="GpuStackScanButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+text = "Сканировать"
+
+[node name="GpuStackApplyButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+text = "Применить"
+
+[node name="SongFormerPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelMint"
+
+[node name="SongFormerPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="SongFormerRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SongFormerHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderMint"
+theme_override_font_sizes/font_size = 22
+text = "Структура (SongFormer)"
+
+[node name="SongFormerHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Экспериментально: улучшает границы секций (intro/verse/chorus)."
+autowrap_mode = 3
+
+[node name="SongFormerEnabledCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 22
+text = "Использовать SongFormer для структуры"
+
+[node name="SongFormerBackendRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SongFormerBackendLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerBackendRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Бэкенд"
+
+[node name="SongFormerBackendOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerBackendRow"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 20
+selected = 0
+item_count = 2
+popup/item_0/text = "Авто (CPU)"
+popup/item_0/id = 0
+popup/item_1/text = "CPU"
+popup/item_1/id = 1
+
+[node name="SongFormerStatusLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/SongFormerPanel/SongFormerPanelMargin/SongFormerRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.8, 0.9, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "Статус: выкл (текущий pipeline без изменений)"
+autowrap_mode = 3
+
+[node name="QuickGenPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelMint"
+
+[node name="QuickGenPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="QuickGenRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="QuickGenHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin/QuickGenRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderMint"
+theme_override_font_sizes/font_size = 22
+text = "Быстрые пресеты генерации"
+
+[node name="QuickGenHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin/QuickGenRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+text = "Переключите активный пресет — иконки параметров ниже и окно в библиотеке покажут его настройки."
+
+[node name="QuickGenPresetRow" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin/QuickGenRows"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="QuickGenPresetLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin/QuickGenRows/QuickGenPresetRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Активный пресет"
+
+[node name="QuickGenPresetOption" type="OptionButton" parent="ScrollWrap/CenterWrap/ContentVBox/QuickGenPanel/QuickGenPanelMargin/QuickGenRows/QuickGenPresetRow"]
+custom_minimum_size = Vector2(480, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"Dropdown"
+theme_override_font_sizes/font_size = 18
+selected = 0
+item_count = 3
+popup/item_0/text = "Пресет 1"
+popup/item_0/id = 1
+popup/item_1/text = "Пресет 2"
+popup/item_1/id = 2
+popup/item_2/text = "Пресет 3"
+popup/item_2/id = 3
+
 [node name="ParamsPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
 layout_mode = 2
 theme_type_variation = &"SectionPanelMint"
@@ -227,21 +406,15 @@ custom_minimum_size = Vector2(360, 50)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 selected = 0
-item_count = 3
+item_count = 4
 popup/item_0/text = "Удалять после генерации"
 popup/item_0/id = 0
 popup/item_1/text = "Хранить 15 минут"
 popup/item_1/id = 1
 popup/item_2/text = "Последние 10"
 popup/item_2/id = 2
-
-[node name="StemKeepAllCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme = ExtResource("2_theme")
-theme_override_font_sizes/font_size = 22
-button_pressed = true
-text = "Не удалять стемы (отладка)"
+popup/item_3/text = "Не удалять"
+popup/item_3/id = 3
 
 [node name="StemRetentionHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows"]
 layout_mode = 2
@@ -249,6 +422,31 @@ theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
 theme_override_font_sizes/font_size = 14
 autowrap_mode = 3
 text = "Управляет drum-стемами в temp_uploads на сервере. Ноты и .rf не затрагиваются."
+
+[node name="CacheInvalidateRow" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CacheInvalidateButtonCenter" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/CacheInvalidateRow"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 0
+
+[node name="CacheInvalidateButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/CacheInvalidateRow/CacheInvalidateButtonCenter"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 20
+text = "Обновить кэш генерации"
+
+[node name="CacheInvalidateDesc" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/CacheInvalidateRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 0
+autowrap_mode = 3
+text = "Обновляет кэш чартов и RhythmDNA без перезапуска. Используйте при ручном изменении файлов."
 
 [node name="NotifyDoneMinimizedCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows"]
 layout_mode = 2
@@ -318,12 +516,15 @@ text = "Ноты для всех треков"
 unique_name_in_owner = true
 layout_mode = 1
 
+[node name="NoticeOverlay" parent="." instance=ExtResource("4_notice")]
+unique_name_in_owner = true
+layout_mode = 1
+
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/ServerHelpLink" to="." method="_on_server_help_link_pressed"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/ScopeHelpLink" to="." method="_on_scope_help_link_pressed"]
 [connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/GenerationStatusModeRow/GenerationStatusModeOption" to="." method="_on_generation_status_mode_selected"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/ConfirmBeforeRerunCheckBox" to="." method="_on_confirm_before_rerun_toggled"]
 [connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/StemRetentionRow/StemRetentionOption" to="." method="_on_stem_retention_selected"]
-[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/StemKeepAllCheckBox" to="." method="_on_stem_keep_all_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/ParamsPanel/ParamsPanelMargin/ParamsRows/NotifyDoneMinimizedCheckBox" to="." method="_on_notify_done_minimized_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/BulkPanel/BulkPanelMargin/BulkRows/BulkForceRegenCheckBox" to="." method="_on_bulk_force_regen_toggled"]
 [connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/BulkPanel/BulkPanelMargin/BulkRows/BulkButtonsRow/BulkBpmButton" to="." method="_on_bulk_bpm_pressed"]
@@ -332,3 +533,5 @@ layout_mode = 1
 [connection signal="focus_exited" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_focus_exited"]
 [connection signal="text_submitted" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" to="." method="_on_generation_server_lan_host_submitted"]
 [connection signal="value_changed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GenerationServerPortHBox/GenerationServerPortSpin" to="." method="_on_generation_server_port_changed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow/GpuStackScanButton" to="." method="_on_gpu_stack_scan_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ServerPanel/ServerPanelMargin/ServerRows/GpuStackActionsRow/GpuStackApplyButton" to="." method="_on_gpu_stack_apply_pressed"]

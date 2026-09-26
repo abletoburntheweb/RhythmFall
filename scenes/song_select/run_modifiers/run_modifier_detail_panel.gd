@@ -50,13 +50,18 @@ func _setup_preview_rounded_clip() -> void:
 	var style := _preview_panel.get_theme_stylebox("panel")
 	if style is StyleBoxFlat:
 		var flat := (style as StyleBoxFlat).duplicate() as StyleBoxFlat
-		# Opaque fill for clip_children; border is redrawn on top of media.
+		# Keep bg opaque, but do not clip a framed Panel — CLIP_CHILDREN_AND_DRAW
+		# chops StyleBoxFlat corner AA and makes the overlay's square bounds cover the glow.
+		# Video/image are soft-masked via shader, border is redrawn on top via overlay.
 		flat.bg_color = Color(flat.bg_color.r, flat.bg_color.g, flat.bg_color.b, 1.0)
 		_preview_panel.add_theme_stylebox_override("panel", flat)
-	_UiRoundedClip.clip_to_frame(_preview_panel)
+	_preview_panel.clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
+	if _preview_panel is Control:
+		(_preview_panel as Control).clip_contents = false
 	_UiRoundedClip.apply_to_canvas_item(_preview_image, maxf(0.0, PREVIEW_CORNER_RADIUS - 1.0))
 	if _preview_video:
 		_preview_video.expand = true
+		_UiRoundedClip.apply_to_canvas_item(_preview_video, maxf(0.0, PREVIEW_CORNER_RADIUS - 1.0))
 	# Border must sit above image/video — otherwise square media covers the curve.
 	_UiRoundedClip.ensure_border_on_top(_preview_panel)
 	# Keep overlay above stack if anything reorders children later.
@@ -132,10 +137,19 @@ func show_modifier(
 func _sync_preview_border_pulse(on: bool) -> void:
 	if _preview_panel == null:
 		return
-	_UiMotionEffects.stop_panel_border_pulse(_preview_panel)
+	var overlay: Control = null
+	var host := _preview_panel.get_node_or_null("UiRoundedCoverHost") as Control
+	if host != null:
+		overlay = host.get_node_or_null("UiRoundedBorderOverlay") as Control
+	if overlay == null:
+		overlay = _preview_panel.find_child("UiRoundedBorderOverlay", true, false) as Control
+	var target: Control = overlay if overlay != null else _preview_panel
+	UiMotionEffects.stop_panel_border_pulse(target)
+	if target != _preview_panel:
+		UiMotionEffects.stop_panel_border_pulse(_preview_panel)
 	if on and _current_id != "":
-		_UiMotionEffects.pulse_panel_border(
-			_preview_panel,
+		UiMotionEffects.pulse_panel_border(
+			target,
 			Color(0.55, 0.72, 0.98),
 			0.28,
 			0.72,

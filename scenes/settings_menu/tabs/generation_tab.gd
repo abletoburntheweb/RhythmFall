@@ -10,6 +10,11 @@ const _SegmentedOptionUtils = preload("res://logic/ui/segmented_option_utils.gd"
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
 const _GenerationBulkQueueActions = preload("res://logic/ui/generation_bulk_queue_actions.gd")
 const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
+const _AppOverlayHelpers = preload("res://logic/ui/app_overlay_helpers.gd")
+const _GenerationGpuStack = preload("res://logic/services/generation_gpu_stack.gd")
+
+const _GPU_OPTION_IDS := ["auto", "nvidia", "amd", "cpu"]
+const _SONGFORMER_BACKEND_IDS := ["auto", "cpu"]
 
 const _GenStatusMode = preload("res://logic/domain/library/generation_status_mode.gd")
 
@@ -17,19 +22,22 @@ const _GoalDiff = preload("res://logic/domain/generation/generation_goal_difficu
 const _GenPresetUi = preload("res://logic/ui/generation_preset_ui.gd")
 const _SongSelectUiStyles = preload("res://scenes/song_select/lib/song_select_ui_styles.gd")
 const _ToggleIconScript = preload("res://scenes/song_select/endless/session_toggle_icon.gd")
+const _GenReadyPresetsUi = preload("res://logic/ui/generation_ready_presets_ui.gd")
+const _QuickGen = preload("res://logic/domain/generation/quick_generation_presets.gd")
 
 const _READY_DIFF_ICONS := {
-	"relaxed": "feather.svg",
-	"standard": "circle-check.svg",
-	"dense": "flame_gen.svg",
+	"easy": "feather.svg",
+	"medium": "circle-check.svg",
+	"hard": "flame_gen.svg",
 }
 const _READY_DIFF_COLORS := {
-	"relaxed": Color(0.62, 0.82, 0.96, 1.0),
-	"standard": Color(0.55, 0.78, 0.98, 1.0),
-	"dense": Color(1.0, 0.58, 0.32, 1.0),
+	"easy": Color(0.62, 0.82, 0.96, 1.0),
+	"medium": Color(0.55, 0.78, 0.98, 1.0),
+	"hard": Color(1.0, 0.58, 0.32, 1.0),
 }
 
 const _CV := "ScrollWrap/CenterWrap/ContentVBox"
+const _QUICK_GEN := "%s/QuickGenPanel/QuickGenPanelMargin/QuickGenRows" % _CV
 const _SERVER := "%s/ServerPanel/ServerPanelMargin/ServerRows" % _CV
 const _PARAMS := "%s/ParamsPanel/ParamsPanelMargin/ParamsRows" % _CV
 const _BULK := "%s/BulkPanel/BulkPanelMargin/BulkRows" % _CV
@@ -40,16 +48,30 @@ const _BULK := "%s/BulkPanel/BulkPanelMargin/BulkRows" % _CV
 @onready var confirm_before_rerun_checkbox: CheckBox = get_node("%s/ConfirmBeforeRerunCheckBox" % _PARAMS)
 @onready var notify_done_minimized_checkbox: CheckBox = get_node_or_null("%s/NotifyDoneMinimizedCheckBox" % _PARAMS)
 @onready var stem_retention_option: OptionButton = get_node("%s/StemRetentionRow/StemRetentionOption" % _PARAMS)
-@onready var stem_keep_all_checkbox: CheckBox = get_node("%s/StemKeepAllCheckBox" % _PARAMS)
+@onready var stem_keep_all_checkbox: CheckBox = get_node_or_null("%s/StemKeepAllCheckBox" % _PARAMS)
 @onready var bulk_force_regen_checkbox: CheckBox = get_node("%s/BulkForceRegenCheckBox" % _BULK)
 @onready var bulk_bpm_button: Button = get_node("%s/BulkButtonsRow/BulkBpmButton" % _BULK)
 @onready var bulk_notes_button: Button = get_node("%s/BulkButtonsRow/BulkNotesButton" % _BULK)
 @onready var _confirm_overlay: AppConfirmOverlay = %ConfirmOverlay
+@onready var _notice_overlay: AppNoticeOverlay = %NoticeOverlay
 @onready var ready_axes_host: VBoxContainer = get_node_or_null("%s/GenerationReadyAxesBlock/ReadyAxesHost" % _PARAMS)
 @onready var generation_server_location_option: OptionButton = get_node("%s/GenerationServerLocation/GenerationServerLocationOption" % _SERVER)
 @onready var generation_server_lan_host_hbox: HBoxContainer = get_node("%s/GenerationServerLanHostHBox" % _SERVER)
 @onready var generation_server_lan_host_line_edit: LineEdit = get_node("%s/GenerationServerLanHostHBox/GenerationServerLanHostLineEdit" % _SERVER)
 @onready var generation_server_port_spin: SpinBox = get_node("%s/GenerationServerPortHBox/GenerationServerPortSpin" % _SERVER)
+@onready var gpu_stack_hint: Label = get_node_or_null("%s/GpuStackHint" % _SERVER)
+@onready var gpu_stack_status_label: Label = get_node_or_null("%s/GpuStackStatusLabel" % _SERVER)
+@onready var gpu_stack_label: Label = get_node_or_null("%s/GpuStackRow/GpuStackLabel" % _SERVER)
+@onready var gpu_stack_option: OptionButton = get_node_or_null("%s/GpuStackRow/GpuStackOption" % _SERVER)
+@onready var gpu_stack_scan_button: Button = get_node_or_null("%s/GpuStackActionsRow/GpuStackScanButton" % _SERVER)
+@onready var gpu_stack_apply_button: Button = get_node_or_null("%s/GpuStackActionsRow/GpuStackApplyButton" % _SERVER)
+@onready var songformer_header: Label = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerHeader" % _CV)
+@onready var songformer_hint: Label = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerHint" % _CV)
+@onready var songformer_enabled_checkbox: CheckBox = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerEnabledCheckBox" % _CV)
+@onready var songformer_backend_label: Label = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerBackendRow/SongFormerBackendLabel" % _CV)
+@onready var songformer_backend_option: OptionButton = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerBackendRow/SongFormerBackendOption" % _CV)
+@onready var songformer_status_label: Label = get_node_or_null("%s/SongFormerPanel/SongFormerPanelMargin/SongFormerRows/SongFormerStatusLabel" % _CV)
+@onready var cache_invalidate_button: Button = get_node_or_null("%s/CacheInvalidateRow/CacheInvalidateButtonCenter/CacheInvalidateButton" % _PARAMS)
 
 @onready var server_hint: Label = get_node_or_null("%s/ServerHint" % _SERVER)
 @onready var server_help_link: LinkButton = get_node_or_null("%s/ServerHelpLink" % _SERVER)
@@ -59,15 +81,29 @@ const _BULK := "%s/BulkPanel/BulkPanelMargin/BulkRows" % _CV
 @onready var stem_retention_hint: Label = get_node_or_null("%s/StemRetentionHint" % _PARAMS)
 @onready var bulk_header: Label = get_node_or_null("%s/BulkHeader" % _BULK)
 @onready var bulk_hint: Label = get_node_or_null("%s/BulkHint" % _BULK)
+@onready var quick_gen_header: Label = get_node_or_null("%s/QuickGenHeader" % _QUICK_GEN)
+@onready var quick_gen_hint: Label = get_node_or_null("%s/QuickGenHint" % _QUICK_GEN)
+@onready var quick_gen_preset_label: Label = get_node_or_null("%s/QuickGenPresetRow/QuickGenPresetLabel" % _QUICK_GEN)
+@onready var quick_gen_preset_option: OptionButton = get_node_or_null("%s/QuickGenPresetRow/QuickGenPresetOption" % _QUICK_GEN)
 var _server_loc_seg: Dictionary = {}
 var _status_mode_seg: Dictionary = {}
+var _gpu_stack_seg: Dictionary = {}
 var _lan_host_ipv4_format_lock := false
 var _ready_axis_captions: Dictionary = {}
+var _ready_axis_sections: Dictionary = {}
 var _ready_value_icons: Dictionary = {}
 var _ready_axes_built := false
 var _ready_axes_syncing := false
+var _ready_presets_state: Dictionary = {}
 var _ready_accent := Color(0.42, 0.72, 0.98, 1.0)
-
+var _quick_preset_seg: Dictionary = {}
+var _quick_gen_built := false
+var _gpu_stack_busy := false
+var _songformer_backend_seg: Dictionary = {}
+var _installed_gpu_mode := ""
+var _recommended_gpu_mode := ""
+var _gpu_scan_adapters := ""
+var _gpu_scan_loaded := false
 
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_VISIBILITY_CHANGED:
@@ -75,21 +111,42 @@ func _notification(what: int) -> void:
 	if not is_visible_in_tree():
 		return
 	call_deferred("_sync_generation_server_lan_row_visibility")
+	call_deferred("_refresh_gpu_stack_status")
+	call_deferred("_refresh_songformer_status")
+	if _ready_axes_built:
+		call_deferred("_sync_ready_axes_ui_from_settings")
+	if _quick_gen_built:
+		call_deferred("_refresh_quick_gen_preset_ui")
 
 
 func _ready() -> void:
 	add_to_group("locale_refresh")
+	if cache_invalidate_button == null:
+		cache_invalidate_button = get_node_or_null("%s/CacheInvalidateRow/CacheInvalidateButton" % _PARAMS) as Button
 	if generation_server_lan_host_line_edit:
 		generation_server_lan_host_line_edit.text_changed.connect(_on_generation_server_lan_host_text_changed)
+	if cache_invalidate_button and not cache_invalidate_button.pressed.is_connected(_on_cache_invalidate_pressed):
+		cache_invalidate_button.pressed.connect(_on_cache_invalidate_pressed)
 	call_deferred("_ensure_ready_axes_ui")
+	call_deferred("_ensure_quick_gen_ui")
 	call_deferred("_apply_initial_settings")
 	call_deferred("_setup_generation_server_location_popup_font")
 	call_deferred("_setup_generation_server_port_spin_font")
 	call_deferred("_setup_stem_retention_popup_font")
+	call_deferred("_setup_gpu_stack_popup_font")
+	call_deferred("_setup_songformer_backend_popup_font")
 	call_deferred("_build_server_location_segmented")
 	call_deferred("_build_status_mode_segmented")
 	call_deferred("apply_locale")
+	call_deferred("_build_gpu_stack_segmented")
+	call_deferred("_build_songformer_backend_segmented")
 	call_deferred("_apply_settings_checkbox_styles")
+	call_deferred("_refresh_gpu_stack_status")
+	call_deferred("_refresh_songformer_status")
+	if songformer_enabled_checkbox and not songformer_enabled_checkbox.toggled.is_connected(_on_songformer_enabled_toggled):
+		songformer_enabled_checkbox.toggled.connect(_on_songformer_enabled_toggled)
+	if songformer_backend_option and not songformer_backend_option.item_selected.is_connected(_on_songformer_backend_selected):
+		songformer_backend_option.item_selected.connect(_on_songformer_backend_selected)
 
 
 func apply_locale() -> void:
@@ -111,14 +168,26 @@ func apply_locale() -> void:
 		bulk_header.text = tr("GEN_BULK_SETTINGS_SECTION")
 	if bulk_hint:
 		bulk_hint.text = tr("GEN_BULK_SETTINGS_HINT")
+	if quick_gen_header:
+		quick_gen_header.text = tr("SETTINGS_QUICK_GEN_TITLE")
+	if quick_gen_hint:
+		quick_gen_hint.text = tr("SETTINGS_QUICK_GEN_HINT")
+	if quick_gen_preset_label:
+		quick_gen_preset_label.text = tr("SETTINGS_QUICK_GEN_LABEL")
+	if _quick_gen_built:
+		_refresh_quick_gen_preset_ui()
 	if bulk_bpm_button:
 		bulk_bpm_button.text = tr("GEN_BULK_QUEUE_BPM_ALL")
 	if bulk_notes_button:
 		bulk_notes_button.text = tr("GEN_BULK_QUEUE_NOTES_ALL")
 	if _confirm_overlay:
 		_confirm_overlay.apply_locale()
+	if _notice_overlay:
+		_notice_overlay.apply_locale()
 	_apply_labels()
 	_apply_tooltips()
+	_refresh_gpu_stack_status()
+	_refresh_songformer_status()
 
 
 func _setup_generation_server_location_popup_font() -> void:
@@ -135,11 +204,24 @@ func _setup_stem_retention_popup_font() -> void:
 		_OptionButtonPopupUtils.apply_popup_font_size(stem_retention_option, 24)
 
 
+func _setup_gpu_stack_popup_font() -> void:
+	if gpu_stack_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(gpu_stack_option, 24)
+
+
+func _setup_songformer_backend_popup_font() -> void:
+	if songformer_backend_option:
+		_OptionButtonPopupUtils.apply_popup_font_size(songformer_backend_option, 24)
+
+
 func _apply_settings_checkbox_styles() -> void:
-	_SettingsSectionUi.apply_settings_checkbox(confirm_before_rerun_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(bulk_force_regen_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(stem_keep_all_checkbox)
-	_SettingsSectionUi.apply_settings_checkbox(notify_done_minimized_checkbox)
+	const ACCENT := Color(0.62, 0.86, 0.72, 1.0)
+	_SettingsSectionUi.apply_settings_checkbox(confirm_before_rerun_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(bulk_force_regen_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(stem_keep_all_checkbox, 22, false, ACCENT)
+	_SettingsSectionUi.apply_settings_checkbox(notify_done_minimized_checkbox, 22, false, ACCENT)
+	if songformer_enabled_checkbox:
+		_SettingsSectionUi.apply_settings_checkbox(songformer_enabled_checkbox, 22, false, ACCENT)
 
 
 func _apply_labels() -> void:
@@ -208,6 +290,245 @@ func _apply_labels() -> void:
 	var port_label: Label = get_node_or_null("%s/GenerationServerPortHBox/GenerationServerPortLabel" % _SERVER)
 	if port_label:
 		port_label.text = tr("MISC_SERVER_PORT_LABEL")
+	_apply_gpu_stack_labels()
+	_apply_songformer_labels()
+
+
+func _apply_gpu_stack_labels() -> void:
+	if gpu_stack_hint:
+		gpu_stack_hint.text = tr("MISC_GPU_STACK_HINT")
+	if gpu_stack_label:
+		gpu_stack_label.text = tr("MISC_GPU_STACK_LABEL")
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.text = tr("MISC_GPU_STACK_SCAN")
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.text = tr("MISC_GPU_STACK_APPLY")
+	if gpu_stack_option:
+		gpu_stack_option.set_block_signals(true)
+		if gpu_stack_option.item_count < 4:
+			gpu_stack_option.clear()
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AUTO"), 0)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_NVIDIA"), 1)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AMD"), 2)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_CPU"), 3)
+		else:
+			gpu_stack_option.set_item_text(0, tr("MISC_GPU_STACK_AUTO"))
+			gpu_stack_option.set_item_text(1, tr("MISC_GPU_STACK_NVIDIA"))
+			gpu_stack_option.set_item_text(2, tr("MISC_GPU_STACK_AMD"))
+			gpu_stack_option.set_item_text(3, tr("MISC_GPU_STACK_CPU"))
+		var mode := _GenerationGpuStack.normalize_mode(str(SettingsManager.get_setting("generation_gpu_stack", "auto")))
+		var idx := _GPU_OPTION_IDS.find(mode)
+		gpu_stack_option.select(maxi(idx, 0))
+		gpu_stack_option.set_block_signals(false)
+	_load_gpu_scan_cache()
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _build_gpu_stack_segmented() -> void:
+	if _gpu_stack_seg.is_empty() and gpu_stack_option:
+		if gpu_stack_option.item_count < 4:
+			gpu_stack_option.clear()
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AUTO"), 0)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_NVIDIA"), 1)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_AMD"), 2)
+			gpu_stack_option.add_item(tr("MISC_GPU_STACK_CPU"), 3)
+		_gpu_stack_seg = _SegmentedOptionUtils.build_from_option_button(
+			gpu_stack_option,
+			16,
+			44,
+			420.0
+		)
+		for btn in _gpu_stack_seg.get("buttons", []):
+			(btn as Button).pressed.connect(_on_gpu_stack_segment_pressed.bind(btn))
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _on_gpu_stack_segment_pressed(btn: Button) -> void:
+	if gpu_stack_option == null or _gpu_stack_busy:
+		return
+	var id := _SegmentedOptionUtils.id_from_button(btn)
+	for i in range(gpu_stack_option.item_count):
+		if gpu_stack_option.get_item_id(i) == id:
+			_SegmentedOptionUtils.play_segment_select_sound()
+			gpu_stack_option.set_block_signals(true)
+			gpu_stack_option.select(i)
+			gpu_stack_option.set_block_signals(false)
+			var mode := _selected_gpu_mode()
+			SettingsManager.set_setting("generation_gpu_stack", mode)
+			_SegmentedOptionUtils.select_id(_gpu_stack_seg.get("buttons", []), id)
+			_update_gpu_stack_enabled()
+			emit_signal("settings_changed")
+			return
+
+
+func _sync_gpu_stack_segment_texts() -> void:
+	if _gpu_stack_seg.is_empty():
+		return
+	var installed := _installed_gpu_mode
+	var texts := PackedStringArray([
+		tr("MISC_GPU_STACK_AUTO"),
+		tr("MISC_GPU_STACK_NVIDIA"),
+		tr("MISC_GPU_STACK_AMD"),
+		tr("MISC_GPU_STACK_CPU"),
+	])
+	var mark := tr("MISC_GPU_STACK_INSTALLED_SUFFIX")
+	for i in range(_GPU_OPTION_IDS.size()):
+		var mode := str(_GPU_OPTION_IDS[i])
+		if mode != "auto" and mode == installed and mark.strip_edges() != "":
+			texts[i] = "%s %s" % [texts[i], mark]
+	_SegmentedOptionUtils.apply_texts(_gpu_stack_seg.get("buttons", []), texts)
+	if gpu_stack_option:
+		_SegmentedOptionUtils.select_id(
+			_gpu_stack_seg.get("buttons", []),
+			gpu_stack_option.get_item_id(maxi(gpu_stack_option.selected, 0))
+		)
+
+
+func _apply_songformer_labels() -> void:
+	if songformer_header:
+		songformer_header.text = tr("MISC_SONGFORMER_SECTION")
+	if songformer_hint:
+		songformer_hint.text = tr("MISC_SONGFORMER_HINT")
+	if songformer_enabled_checkbox:
+		songformer_enabled_checkbox.text = tr("MISC_SONGFORMER_ENABLE")
+	if songformer_backend_label:
+		songformer_backend_label.text = tr("MISC_SONGFORMER_BACKEND_LABEL")
+	if songformer_backend_option:
+		songformer_backend_option.set_block_signals(true)
+		if songformer_backend_option.item_count < 2:
+			songformer_backend_option.clear()
+			songformer_backend_option.add_item(tr("MISC_SONGFORMER_BACKEND_AUTO"), 0)
+			songformer_backend_option.add_item(tr("MISC_SONGFORMER_BACKEND_CPU"), 1)
+		else:
+			songformer_backend_option.set_item_text(0, tr("MISC_SONGFORMER_BACKEND_AUTO"))
+			songformer_backend_option.set_item_text(1, tr("MISC_SONGFORMER_BACKEND_CPU"))
+		var mode := str(SettingsManager.get_setting("songformer_backend", "auto")).strip_edges().to_lower()
+		var idx := _SONGFORMER_BACKEND_IDS.find(mode)
+		songformer_backend_option.select(maxi(idx, 0))
+		songformer_backend_option.set_block_signals(false)
+	_sync_songformer_backend_segment_texts()
+	_update_songformer_backend_enabled()
+	_refresh_songformer_status()
+
+
+func _build_songformer_backend_segmented() -> void:
+	if _songformer_backend_seg.is_empty() and songformer_backend_option:
+		if songformer_backend_option.item_count < 2:
+			songformer_backend_option.clear()
+			songformer_backend_option.add_item(tr("MISC_SONGFORMER_BACKEND_AUTO"), 0)
+			songformer_backend_option.add_item(tr("MISC_SONGFORMER_BACKEND_CPU"), 1)
+		_songformer_backend_seg = _SegmentedOptionUtils.build_from_option_button(
+			songformer_backend_option,
+			16,
+			44,
+			220.0
+		)
+		for btn in _songformer_backend_seg.get("buttons", []):
+			(btn as Button).pressed.connect(_on_songformer_backend_segment_pressed.bind(btn))
+	_sync_songformer_backend_segment_texts()
+	_update_songformer_backend_enabled()
+
+
+func _on_songformer_backend_segment_pressed(btn: Button) -> void:
+	if songformer_backend_option == null:
+		return
+	if songformer_enabled_checkbox and not songformer_enabled_checkbox.button_pressed:
+		return
+	var id := _SegmentedOptionUtils.id_from_button(btn)
+	for i in range(songformer_backend_option.item_count):
+		if songformer_backend_option.get_item_id(i) == id:
+			_SegmentedOptionUtils.play_segment_select_sound()
+			songformer_backend_option.set_block_signals(true)
+			songformer_backend_option.select(i)
+			songformer_backend_option.set_block_signals(false)
+			var mode := _selected_songformer_backend()
+			SettingsManager.set_setting("songformer_backend", mode)
+			_SegmentedOptionUtils.select_id(_songformer_backend_seg.get("buttons", []), id)
+			_refresh_songformer_status()
+			emit_signal("settings_changed")
+			return
+
+
+func _sync_songformer_backend_segment_texts() -> void:
+	if _songformer_backend_seg.is_empty():
+		return
+	var texts := PackedStringArray([
+		tr("MISC_SONGFORMER_BACKEND_AUTO"),
+		tr("MISC_SONGFORMER_BACKEND_CPU"),
+	])
+	_SegmentedOptionUtils.apply_texts(_songformer_backend_seg.get("buttons", []), texts)
+	if songformer_backend_option:
+		_SegmentedOptionUtils.select_id(
+			_songformer_backend_seg.get("buttons", []),
+			songformer_backend_option.get_item_id(maxi(songformer_backend_option.selected, 0))
+		)
+
+
+func _selected_songformer_backend() -> String:
+	if songformer_backend_option == null:
+		return "auto"
+	var idx := clampi(songformer_backend_option.selected, 0, _SONGFORMER_BACKEND_IDS.size() - 1)
+	return str(_SONGFORMER_BACKEND_IDS[idx])
+
+
+func _option_id_for_songformer_backend(mode: String) -> int:
+	match String(mode).strip_edges().to_lower():
+		"cpu":
+			return 1
+		_:
+			return 0
+
+
+func _update_songformer_backend_enabled() -> void:
+	var enabled := songformer_enabled_checkbox != null and songformer_enabled_checkbox.button_pressed
+	if songformer_backend_option:
+		songformer_backend_option.disabled = not enabled
+	for btn in _songformer_backend_seg.get("buttons", []):
+		if btn is Button:
+			(btn as Button).disabled = not enabled
+
+
+func _refresh_songformer_status() -> void:
+	if songformer_status_label == null:
+		return
+	var enabled := false
+	if SettingsManager:
+		enabled = bool(SettingsManager.get_setting("songformer_enabled", false))
+	var backend := str(SettingsManager.get_setting("songformer_backend", "auto")).strip_edges().to_lower()
+	if backend not in _SONGFORMER_BACKEND_IDS:
+		backend = "auto"
+	# Auto maps to CPU, DirectML intentionally not exposed per requirements
+	var backend_label := tr("MISC_SONGFORMER_BACKEND_CPU") if backend == "cpu" else tr("MISC_SONGFORMER_BACKEND_AUTO")
+	if not enabled:
+		songformer_status_label.text = tr("MISC_SONGFORMER_STATUS_OFF")
+	else:
+		# CPU works, Auto -> CPU as well
+		var fmt_on := tr("MISC_SONGFORMER_STATUS_ON_FMT")
+		songformer_status_label.text = fmt_on % backend_label if fmt_on != "MISC_SONGFORMER_STATUS_ON_FMT" and "%" in fmt_on else "Songformer: on (%s)" % backend_label
+	_sync_songformer_backend_segment_texts()
+	_update_songformer_backend_enabled()
+
+
+func _on_songformer_enabled_toggled(enabled: bool) -> void:
+	SettingsManager.set_setting("songformer_enabled", enabled)
+	_refresh_songformer_status()
+	emit_signal("settings_changed")
+
+
+func _on_songformer_backend_selected(index: int) -> void:
+	if songformer_backend_option == null:
+		return
+	var option_id := songformer_backend_option.get_item_id(index)
+	var mode := "auto" if option_id == 0 else "cpu"
+	# Both auto and cpu resolve to CPU-only per isolate requirement
+	SettingsManager.set_setting("songformer_backend", mode)
+	_SegmentedOptionUtils.play_segment_select_sound()
+	if not _songformer_backend_seg.is_empty():
+		_SegmentedOptionUtils.select_id(_songformer_backend_seg.get("buttons", []), option_id)
+	_refresh_songformer_status()
+	emit_signal("settings_changed")
 
 
 func _apply_tooltips() -> void:
@@ -242,14 +563,30 @@ func _apply_tooltips() -> void:
 		port_label.tooltip_text = tr("MISC_SERVER_PORT_TOOLTIP")
 	if generation_server_port_spin:
 		generation_server_port_spin.tooltip_text = tr("MISC_SERVER_PORT_TOOLTIP")
+	if gpu_stack_option:
+		gpu_stack_option.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.tooltip_text = tr("MISC_GPU_STACK_SCAN_TOOLTIP")
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+	if gpu_stack_label:
+		gpu_stack_label.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+	if songformer_enabled_checkbox:
+		songformer_enabled_checkbox.tooltip_text = tr("MISC_SONGFORMER_TOOLTIP")
+	if songformer_backend_option:
+		songformer_backend_option.tooltip_text = tr("MISC_SONGFORMER_BACKEND_TOOLTIP")
+	if songformer_backend_label:
+		songformer_backend_label.tooltip_text = tr("MISC_SONGFORMER_BACKEND_TOOLTIP")
+	if songformer_hint:
+		songformer_hint.tooltip_text = tr("MISC_SONGFORMER_HINT")
 
 
 func _on_server_help_link_pressed() -> void:
-	_open_help_topic("SETTINGS_HELP_SEARCH_SERVER")
+	_open_help_item("server_install")
 
 
 func _on_scope_help_link_pressed() -> void:
-	_open_help_topic("SETTINGS_HELP_SEARCH_SCOPE")
+	_open_help_item("gen_scope_setting")
 
 
 func _open_help_topic(search_key: String) -> void:
@@ -258,10 +595,33 @@ func _open_help_topic(search_key: String) -> void:
 		shell.open_help_topic(search_key)
 
 
+func _open_help_item(item_id: String) -> void:
+	var shell := _settings_shell()
+	if shell and shell.has_method("open_help_item"):
+		shell.open_help_item(item_id)
+		return
+	var n: Node = self
+	while n:
+		if n.has_method("open_help_item"):
+			n.open_help_item(item_id)
+			return
+		if n.has_method("get_transitions"):
+			var t = n.get_transitions()
+			if t and t.has_method("open_help_item"):
+				t.open_help_item(item_id)
+				return
+		n = n.get_parent()
+	var trans := get_tree().root.get_node_or_null("GameEngine") as Node
+	if trans and trans.has_method("get_transitions"):
+		var t2 = trans.get_transitions()
+		if t2 and t2.has_method("open_help_item"):
+			t2.open_help_item(item_id)
+
+
 func _settings_shell() -> Node:
 	var node: Node = self
 	while node:
-		if node.has_method("open_help_topic"):
+		if node.has_method("open_help_item") or node.has_method("open_help_topic"):
 			return node
 		node = node.get_parent()
 	return null
@@ -304,6 +664,18 @@ func _apply_initial_settings() -> void:
 		generation_server_port_spin.value = pv
 		generation_server_port_spin.set_block_signals(false)
 	_sync_server_location_segment()
+	if songformer_enabled_checkbox:
+		songformer_enabled_checkbox.set_pressed_no_signal(bool(SettingsManager.get_setting("songformer_enabled", false)))
+	if songformer_backend_option:
+		var sf_mode := str(SettingsManager.get_setting("songformer_backend", "auto")).strip_edges().to_lower()
+		var sf_id := _option_id_for_songformer_backend(sf_mode)
+		songformer_backend_option.set_block_signals(true)
+		for i in range(songformer_backend_option.item_count):
+			if songformer_backend_option.get_item_id(i) == sf_id:
+				songformer_backend_option.select(i)
+				break
+		songformer_backend_option.set_block_signals(false)
+	_refresh_songformer_status()
 
 
 func _status_mode_from_option_id(option_id: int) -> String:
@@ -448,10 +820,202 @@ func _ensure_ready_axes_ui() -> void:
 	if _ready_axes_built:
 		return
 	_ready_axes_built = true
+	# Keep Generation Area from collapsing when last chips are removed (empty Instrument/Goal allowed)
+	# Use a larger minimum to match original panel with all chips visible (was shrinking to ~120px)
+	var block := get_node_or_null("%s/GenerationReadyAxesBlock" % _PARAMS) as Control
+	if block:
+		block.custom_minimum_size.y = 420
+		block.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		print("DEBUG_LAYOUT_TAB: block min y=420 set, has_preset=%s" % str(SettingsManager.get_setting("generation_ready_preset_slots", [])))
+	if ready_axes_host:
+		ready_axes_host.custom_minimum_size.y = 380
+		print("DEBUG_LAYOUT_TAB: host min y=380 set")
+	if ready_axes_host:
+		ready_axes_host.custom_minimum_size.y = 280
+		print("DEBUG_LAYOUT_TAB: host min y=280 set")
 	_add_ready_axis_icons("instruments", "MISC_GEN_SCOPE_AXIS_INSTRUMENTS", _GoalDiff.READY_INSTRUMENTS)
 	_add_ready_axis_icons("goals", "MISC_GEN_SCOPE_AXIS_GOALS", _GoalDiff.GOALS)
 	_add_ready_axis_icons("diffs", "MISC_GEN_SCOPE_AXIS_DIFFS", _GoalDiff.DIFFICULTIES)
+	_ready_presets_state = _GenReadyPresetsUi.attach(ready_axes_host, _ready_accent)
+	_GenReadyPresetsUi.apply_labels(_ready_presets_state)
+	_ready_presets_state["quick_preset_slot"] = _QuickGen.active_index()
 	_sync_ready_axes_ui_from_settings()
+
+
+func _ensure_quick_gen_ui() -> void:
+	if _quick_gen_built:
+		return
+	if quick_gen_preset_option == null:
+		return
+	_quick_gen_built = true
+	_ensure_ready_axes_ui()
+	# Rebuild the option list with "Standard" (id 0) first, then the presets,
+	# so the default preset reads as the leftmost button.
+	var _existing_items := []
+	for i in range(quick_gen_preset_option.get_item_count()):
+		_existing_items.append({"text": quick_gen_preset_option.get_item_text(i), "id": quick_gen_preset_option.get_item_id(i)})
+	quick_gen_preset_option.clear()
+	quick_gen_preset_option.add_item(tr("GEN_PRESET_DEFAULT"), 0)
+	for _e in _existing_items:
+		if int(_e["id"]) != 0:
+			quick_gen_preset_option.add_item(_e["text"], int(_e["id"]))
+	_quick_preset_seg = _SegmentedOptionUtils.build_from_option_button(
+		quick_gen_preset_option,
+		18,
+		40,
+		0.0
+	)
+	# Keep the same modal style as the other segmented controls on this screen,
+	# but let the row shrink to its content and tighten the spacing.
+	var seg_container = _quick_preset_seg.get("container")
+	if seg_container:
+		seg_container.size_flags_horizontal = Control.SIZE_SHRINK_END
+		seg_container.custom_minimum_size.x = 0.0
+		seg_container.add_theme_constant_override("separation", 6)
+		seg_container.alignment = BoxContainer.ALIGNMENT_END
+	for btn in _quick_preset_seg.get("buttons", []):
+		if btn is Button:
+			var b := btn as Button
+			b.custom_minimum_size = Vector2(0, 40)
+			b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			b.pressed.connect(_on_quick_gen_preset_segment_pressed.bind(b))
+	_refresh_quick_gen_preset_ui()
+
+
+func _refresh_quick_gen_preset_ui() -> void:
+	if _quick_preset_seg.is_empty():
+		return
+	var buttons: Array = _quick_preset_seg.get("buttons", [])
+	if buttons.is_empty():
+		return
+	var default_btn: Button = null
+	var slot_buttons := {}
+	for raw_btn in buttons:
+		var b := raw_btn as Button
+		if b == null:
+			continue
+		var oid := _SegmentedOptionUtils.id_from_button(b)
+		if oid <= 0:
+			default_btn = b
+		else:
+			slot_buttons[oid] = b
+	for slot in range(1, _QuickGen.COUNT + 1):
+		var name_label := _QuickGen.display_name(slot)
+		var label := _quick_gen_compact_label(slot)
+		var b: Button = slot_buttons.get(slot)
+		if b != null:
+			b.text = label
+			b.tooltip_text = tr("SETTINGS_QUICK_GEN_PRESET_TOOLTIP_FMT") % name_label
+	if default_btn != null:
+		default_btn.text = tr("GEN_PRESET_DEFAULT")
+		default_btn.tooltip_text = tr("SETTINGS_QUICK_GEN_DEFAULT_TOOLTIP")
+	_SegmentedOptionUtils.select_id(buttons, _QuickGen.active_index())
+
+
+func _quick_gen_compact_label(slot: int) -> String:
+	# Compact form: "<hotkey> · <primary instrument> · +N" where N is the count of
+	# additional active parameters. Keeps the button (and thus the modal width)
+	# from growing with the number of active params; the full list stays in tooltip.
+	# Hotkey is read from the live binding, never hardcoded.
+	# Fix for Generation Area bug: Custom Preset 1 + empty Instrument/Goal should be +1, not +3.
+	# Also fix product-based variant count (Lines from preset never participates).
+	var g_preset: Array = SettingsManager.get_setting("generation_ready_preset_slots", [])
+	var g_instr: Array = SettingsManager.get_setting("generation_ready_instruments", [])
+	var g_goals: Array = SettingsManager.get_setting("generation_ready_goals", [])
+	var g_diffs: Array = SettingsManager.get_setting("generation_ready_diffs", [])
+	print("DEBUG_PRESET_TAB: slot=%d g_preset=%s g_instr=%s g_goals=%s g_diffs=%s" % [slot, str(g_preset), str(g_instr), str(g_goals), str(g_diffs)])
+	# Fix for Generation Area bug: Custom Preset 1 + empty Instrument/Goal should be +1, not +3
+	# Only apply this override when the slot being rendered is the actual selected preset
+	# (otherwise other quick preset buttons would incorrectly show +1)
+	if g_preset.size()==1 and g_instr.is_empty() and g_goals.is_empty() and g_preset.has(slot):
+		print("DEBUG_PRESET_TAB: early +1 for slot %d" % slot)
+		var key_label_fix := _QuickGen.hotkey_label(slot)
+		var p_fix := PackedStringArray()
+		if key_label_fix.strip_edges() != "":
+			p_fix.append(key_label_fix)
+		p_fix.append("+1")
+		return " · ".join(p_fix)
+	if not g_preset.is_empty():
+		# Compute true Generation Area variants as product (not sum), ignoring preset's internal Lines/Instruments
+		var stems := _GoalDiff.stems_for_ready_axes(g_goals, g_diffs)
+		var prod_variants := g_instr.size() * stems.size() if not g_instr.is_empty() and not stems.is_empty() else 0
+		var preset_variants := g_preset.size() if g_instr.is_empty() else g_instr.size() * g_preset.size()
+		var total_variants := prod_variants + preset_variants
+		if total_variants > 0 and g_preset.has(slot):
+			# For the selected preset's button, show product-based +N (e.g., 2 instr +1 preset → 4 → +3)
+			var key_label2 := _QuickGen.hotkey_label(slot)
+			var primary2 := ""
+			if not g_instr.is_empty():
+				primary2 = _GenPresetUi.localized_instrument(str(g_instr[0]))
+			elif not g_goals.is_empty():
+				primary2 = _GenPresetUi.localized_goal(str(g_goals[0]).strip_edges().to_lower())
+			var p2 := PackedStringArray()
+			if key_label2.strip_edges() != "":
+				p2.append(key_label2)
+			if primary2 != "":
+				p2.append(primary2)
+			p2.append("+%d" % (total_variants - 1))
+			return " · ".join(p2)
+	var body := _QuickGen.get_preset(slot)
+	var instruments: Array = body.get("ready_instruments", [])
+	var goals: Array = body.get("ready_goals", [])
+	var diffs: Array = body.get("ready_diffs", [])
+	var key_label := _QuickGen.hotkey_label(slot)
+	var preset_cnt := _QuickGen.ready_user_preset_count(slot)
+	var primary := ""
+	if not instruments.is_empty():
+		primary = _GenPresetUi.localized_instrument(str(instruments[0]))
+	elif not goals.is_empty():
+		primary = _GenPresetUi.localized_goal(str(goals[0]).strip_edges().to_lower())
+	if primary == "":
+		# No primary instrument/goal — still show +N for selected user presets (1 preset → +1)
+		if preset_cnt > 0:
+			var parts2 := PackedStringArray()
+			if key_label.strip_edges() != "":
+				parts2.append(key_label)
+			var full_p := _QuickGen.display_name(slot)
+			if full_p.strip_edges() != "" and full_p != str(slot):
+				parts2.append(full_p)
+			parts2.append("+%d" % preset_cnt)
+			return " · ".join(parts2)
+		var full_q := _QuickGen.display_name(slot)
+		return "%s · %s" % [key_label, full_q] if key_label.strip_edges() != "" else full_q
+	var total := instruments.size() + goals.size() + diffs.size()
+	var extra := maxi(total - 1, 0)
+	extra += preset_cnt
+	var parts := PackedStringArray()
+	if key_label.strip_edges() != "":
+		parts.append(key_label)
+	parts.append(primary)
+	if extra > 0:
+		parts.append("+%d" % extra)
+	return " · ".join(parts)
+
+
+func _on_quick_gen_preset_segment_pressed(btn: Button) -> void:
+	if btn == null:
+		return
+	_on_quick_gen_preset_pressed(_SegmentedOptionUtils.id_from_button(btn))
+
+
+func _on_quick_gen_preset_pressed(slot: int) -> void:
+	if _QuickGen == null:
+		return
+	# Persist the working state of the previously-active preset before switching,
+	# so each quick preset keeps its own independent parameter set.
+	if _QuickGen.active_index() > 0:
+		_QuickGen.sync_active_from_settings()
+	_UiModifierSounds.play_select()
+	_QuickGen.set_active(slot)
+	_sync_ready_axes_ui_from_preset(slot)
+	_ready_presets_state["quick_preset_slot"] = slot
+	_refresh_quick_gen_preset_ui()
+	_GenReadyPresetsUi.sync_from_settings(_ready_presets_state)
+
+
+func _quick_gen_sync_active_preset_from_settings() -> void:
+	if _QuickGen != null:
+		_QuickGen.sync_active_from_settings()
 
 
 func _ready_value_label_key(axis_id: String, value_id: String) -> String:
@@ -494,6 +1058,7 @@ func _add_ready_axis_icons(axis_id: String, caption_key: String, values: Array) 
 	var section := VBoxContainer.new()
 	section.add_theme_constant_override("separation", 6)
 	ready_axes_host.add_child(section)
+	_ready_axis_sections[axis_id] = section
 	var caption := Label.new()
 	caption.text = tr(caption_key)
 	caption.add_theme_font_size_override("font_size", 14)
@@ -512,9 +1077,49 @@ func _add_ready_axis_icons(axis_id: String, caption_key: String, values: Array) 
 		var spec := _ready_icon_spec(axis_id, vid)
 		var icon := _ToggleIconScript.new() as SessionToggleIcon
 		icon.setup(vid, str(spec.get("icon", "")), spec.get("tint", _ready_accent) as Color, _ready_value_tooltip(axis_id, vid))
-		icon.option_toggled.connect(_on_ready_icon_toggled.bind(axis_id))
+		# Keep these icons out of keyboard/GUI focus navigation: focusing them draws
+		# a square focus ring and can emit a spurious ui_cancel that double-plays
+		# with the deselect sound. Mouse toggling is unaffected.
+		icon.focus_mode = Control.FOCUS_NONE
+		var cb := _on_ready_icon_toggled.bind(axis_id)
+		if not icon.option_toggled.is_connected(cb):
+			icon.option_toggled.connect(cb)
 		row.add_child(icon)
 		_ready_value_icons[axis_id][vid] = icon
+
+
+func _ready_goals_include_arcade() -> bool:
+	var icons: Dictionary = _ready_value_icons.get("goals", {})
+	var arcade: SessionToggleIcon = icons.get("arcade")
+	if arcade:
+		return arcade.button_pressed
+	var goals: Variant = SettingsManager.get_setting("generation_ready_goals", [_GoalDiff.DEFAULT_GOAL])
+	if goals is Array or goals is PackedStringArray:
+		for g in goals:
+			if str(g).strip_edges().to_lower() == "arcade":
+				return true
+	return false
+
+
+func _sync_ready_diffs_row_visibility() -> void:
+	## Original is one documentary chart — Arcade difficulties row only when Arcade is selected.
+	var section: Control = _ready_axis_sections.get("diffs")
+	if section:
+		section.visible = _ready_goals_include_arcade()
+
+
+func _reset_diffs_for_non_arcade() -> void:
+	if _ready_goals_include_arcade():
+		return
+	_ready_axes_syncing = true
+	_set_ready_axis_icons(
+		"diffs",
+		[],
+		_GoalDiff.DIFFICULTIES,
+		str(_GoalDiff.DEFAULT_DIFFICULTY)
+	)
+	_ready_axes_syncing = false
+	SettingsManager.set_setting("generation_ready_diffs", [])
 
 
 func _apply_ready_axes_labels() -> void:
@@ -532,6 +1137,7 @@ func _apply_ready_axes_labels() -> void:
 			var icon: SessionToggleIcon = icons[value_id]
 			if icon:
 				icon.set_tooltip_text_value(_ready_value_tooltip(str(axis_id), str(value_id)))
+	_GenReadyPresetsUi.apply_labels(_ready_presets_state)
 
 
 func _sync_ready_axes_ui_from_settings() -> void:
@@ -556,11 +1162,42 @@ func _sync_ready_axes_ui_from_settings() -> void:
 		_GoalDiff.READY_INSTRUMENTS,
 		str(SettingsManager.get_setting("last_generation_instrument", _GoalDiff.DEFAULT_READY_INSTRUMENT))
 	)
+	_sync_ready_diffs_row_visibility()
+	_GenReadyPresetsUi.sync_from_settings(_ready_presets_state)
+	_ready_axes_syncing = false
+
+
+func _sync_ready_axes_ui_from_preset(slot: int) -> void:
+	if ready_axes_host == null or not _ready_axes_built:
+		return
+	_ready_axes_syncing = true
+	var body := _QuickGen.get_preset(slot)
+	_set_ready_axis_icons(
+		"goals",
+		body.get("ready_goals", []),
+		_GoalDiff.GOALS,
+		str(_GoalDiff.DEFAULT_GOAL)
+	)
+	_set_ready_axis_icons(
+		"diffs",
+		body.get("ready_diffs", []),
+		_GoalDiff.DIFFICULTIES,
+		str(_GoalDiff.DEFAULT_DIFFICULTY)
+	)
+	_set_ready_axis_icons(
+		"instruments",
+		body.get("ready_instruments", []),
+		_GoalDiff.READY_INSTRUMENTS,
+		str(_GoalDiff.DEFAULT_READY_INSTRUMENT)
+	)
+	_QuickGen.apply_to_settings(body)
+	_sync_ready_diffs_row_visibility()
 	_ready_axes_syncing = false
 
 
 func _set_ready_axis_icons(axis_id: String, selected_raw: Variant, allowed: Array, fallback: String) -> void:
-	var selected := _GoalDiff.sanitize_ready_string_list(selected_raw, allowed, fallback)
+	var allow_empty := _has_custom_generation_preset() and axis_id in ["instruments", "goals"]
+	var selected := _GoalDiff.sanitize_ready_string_list(selected_raw, allowed, fallback, allow_empty)
 	var icons: Dictionary = _ready_value_icons.get(axis_id, {})
 	for value_id in icons.keys():
 		var icon: SessionToggleIcon = icons[value_id]
@@ -568,22 +1205,38 @@ func _set_ready_axis_icons(axis_id: String, selected_raw: Variant, allowed: Arra
 			icon.set_selected(selected.has(str(value_id)))
 
 
+func _has_custom_generation_preset() -> bool:
+	var slots: Variant = SettingsManager.get_setting("generation_ready_preset_slots", [])
+	if slots is Array and slots.size() > 0:
+		return true
+	var gen_presets: Variant = SettingsManager.get_generation_presets()
+	if gen_presets is Dictionary and int(gen_presets.get("active_slot", 0)) > 0:
+		return true
+	return false
+
 func _on_ready_icon_toggled(_value_id: String, pressed: bool, axis_id: String) -> void:
 	if _ready_axes_syncing:
 		return
 	if not pressed and _count_axis_selected(axis_id) <= 0:
-		var icon: SessionToggleIcon = _ready_value_icons.get(axis_id, {}).get(_value_id)
-		if icon:
-			icon.set_selected(true)
-		if MusicManager and MusicManager.has_method("play_cancel_sound"):
-			MusicManager.play_cancel_sound()
+		# Allow empty Instrument/Goal when a Custom Preset is active (Generation Area requirement)
+		if _has_custom_generation_preset() and axis_id in ["instruments", "goals"]:
+			pass
 		else:
+			var icon: SessionToggleIcon = _ready_value_icons.get(axis_id, {}).get(_value_id)
+			if icon:
+				icon.set_selected(true)
 			_UiModifierSounds.play_deselect()
-		return
+			_refresh_quick_gen_preset_ui()
+			return
 	_persist_ready_axis_values(axis_id)
+	if axis_id == "goals":
+		_sync_ready_diffs_row_visibility()
+		_reset_diffs_for_non_arcade()
+	_quick_gen_sync_active_preset_from_settings()
 	_UiModifierSounds.play_toggle(pressed)
 	NotesUtils.invalidate_notes_cache()
 	emit_signal("settings_changed")
+	_refresh_quick_gen_preset_ui()
 	_refresh_song_select_notes_highlights()
 
 
@@ -616,18 +1269,38 @@ func _ensure_axis_has_selection(axis_id: String) -> void:
 
 
 func _persist_ready_axis_values(axis_id: String) -> void:
-	var selected: Array[String] = []
 	var icons: Dictionary = _ready_value_icons.get(axis_id, {})
+	# Preserve the existing element ordering of generation_ready_<axis>. Rebuilding the
+	# array purely from icons iteration order would reorder it on every toggle, so toggling
+	# a value on then off would not restore the exact same array the dirty-snapshot was
+	# taken from, falsely flagging "Save changes?" on exit.
+	var existing: Array = SettingsManager.get_setting("generation_ready_%s" % axis_id, [])
+	var existing_index := {}
+	for i in existing.size():
+		existing_index[str(existing[i])] = i
+	var pressed := {}
 	for value_id in icons.keys():
 		var icon: SessionToggleIcon = icons[value_id]
 		if icon and icon.button_pressed:
+			pressed[str(value_id)] = true
+	var selected: Array[String] = []
+	for v in existing:
+		var key := str(v)
+		if pressed.has(key):
+			selected.append(key)
+	for value_id in icons.keys():
+		if pressed.has(str(value_id)) and not existing_index.has(str(value_id)):
 			selected.append(str(value_id))
 	if selected.is_empty():
-		_ensure_axis_has_selection(axis_id)
-		for value_id in icons.keys():
-			var icon2: SessionToggleIcon = icons[value_id]
-			if icon2 and icon2.button_pressed:
-				selected.append(str(value_id))
+		if _has_custom_generation_preset() and axis_id in ["instruments", "goals"]:
+			# Allow empty when custom preset active — don't force fallback.
+			pass
+		else:
+			_ensure_axis_has_selection(axis_id)
+			for value_id in icons.keys():
+				var icon2: SessionToggleIcon = icons[value_id]
+				if icon2 and icon2.button_pressed:
+					selected.append(str(value_id))
 	SettingsManager.set_setting("generation_ready_%s" % axis_id, selected)
 
 
@@ -697,6 +1370,8 @@ func _stem_mode_from_option_id(option_id: int) -> String:
 			return "ttl"
 		2:
 			return "keep_recent"
+		3:
+			return "keep_all"
 		_:
 			return "after_job"
 
@@ -707,6 +1382,8 @@ func _option_id_for_stem_mode(mode: String) -> int:
 			return 1
 		"keep_recent", "keep_last_10", "recent":
 			return 2
+		"keep_all", "never_delete", "keepall":
+			return 3
 		_:
 			return 0
 
@@ -714,12 +1391,13 @@ func _option_id_for_stem_mode(mode: String) -> int:
 func _ensure_stem_retention_option() -> void:
 	if stem_retention_option == null:
 		return
-	if stem_retention_option.item_count == 3:
+	if stem_retention_option.item_count == 4:
 		return
 	stem_retention_option.clear()
 	stem_retention_option.add_item(tr("GEN_STEM_RETENTION_AFTER_JOB"), 0)
 	stem_retention_option.add_item(tr("GEN_STEM_RETENTION_TTL"), 1)
 	stem_retention_option.add_item(tr("GEN_STEM_RETENTION_KEEP_RECENT"), 2)
+	stem_retention_option.add_item(tr("GEN_STEM_KEEP_ALL"), 3)
 
 
 func _apply_stem_retention_labels() -> void:
@@ -731,19 +1409,20 @@ func _apply_stem_retention_labels() -> void:
 	if stem_retention_option:
 		_ensure_stem_retention_option()
 		stem_retention_option.set_block_signals(true)
-		if stem_retention_option.item_count >= 3:
+		if stem_retention_option.item_count >= 4:
 			stem_retention_option.set_item_text(0, tr("GEN_STEM_RETENTION_AFTER_JOB"))
 			stem_retention_option.set_item_text(1, tr("GEN_STEM_RETENTION_TTL"))
 			stem_retention_option.set_item_text(2, tr("GEN_STEM_RETENTION_KEEP_RECENT"))
+			stem_retention_option.set_item_text(3, tr("GEN_STEM_KEEP_ALL"))
+		var keep_all := bool(SettingsManager.get_setting("generation_stem_keep_all", true))
 		var mode := str(SettingsManager.get_setting("generation_stem_retention_mode", "after_job"))
+		if keep_all:
+			mode = "keep_all"
 		for i in range(stem_retention_option.item_count):
 			if stem_retention_option.get_item_id(i) == _option_id_for_stem_mode(mode):
 				stem_retention_option.select(i)
 				break
 		stem_retention_option.set_block_signals(false)
-	if stem_keep_all_checkbox:
-		stem_keep_all_checkbox.text = tr("GEN_STEM_KEEP_ALL")
-	_sync_stem_retention_controls_enabled()
 
 
 func _apply_stem_retention_tooltips() -> void:
@@ -752,40 +1431,38 @@ func _apply_stem_retention_tooltips() -> void:
 		stem_label.tooltip_text = tr("GEN_STEM_RETENTION_TOOLTIP")
 	if stem_retention_option:
 		stem_retention_option.tooltip_text = tr("GEN_STEM_RETENTION_TOOLTIP")
-	if stem_keep_all_checkbox:
-		stem_keep_all_checkbox.tooltip_text = tr("GEN_STEM_KEEP_ALL_TOOLTIP")
 	if stem_retention_hint:
 		stem_retention_hint.tooltip_text = tr("GEN_STEM_RETENTION_HINT")
 
 
 func _apply_stem_retention_settings() -> void:
-	if stem_keep_all_checkbox:
-		stem_keep_all_checkbox.set_pressed_no_signal(
-			bool(SettingsManager.get_setting("generation_stem_keep_all", true))
-		)
 	if stem_retention_option:
 		_ensure_stem_retention_option()
+		var keep_all := bool(SettingsManager.get_setting("generation_stem_keep_all", true))
 		var mode := str(SettingsManager.get_setting("generation_stem_retention_mode", "after_job"))
+		if keep_all:
+			mode = "keep_all"
 		stem_retention_option.set_block_signals(true)
 		for i in range(stem_retention_option.item_count):
 			if stem_retention_option.get_item_id(i) == _option_id_for_stem_mode(mode):
 				stem_retention_option.select(i)
 				break
 		stem_retention_option.set_block_signals(false)
-	_sync_stem_retention_controls_enabled()
 
 
 func _sync_stem_retention_controls_enabled() -> void:
-	var keep_all := stem_keep_all_checkbox != null and stem_keep_all_checkbox.button_pressed
-	if stem_retention_option:
-		stem_retention_option.disabled = keep_all
+	# 4-mode unified control — no separate checkbox to disable
+	pass
 
 
 func _on_stem_retention_selected(index: int) -> void:
 	if stem_retention_option == null:
 		return
 	var option_id := stem_retention_option.get_item_id(index)
-	SettingsManager.set_setting("generation_stem_retention_mode", _stem_mode_from_option_id(option_id))
+	var mode := _stem_mode_from_option_id(option_id)
+	SettingsManager.set_setting("generation_stem_retention_mode", mode)
+	# Keep backward compatible keep_all flag
+	SettingsManager.set_setting("generation_stem_keep_all", mode == "keep_all")
 	emit_signal("settings_changed")
 
 
@@ -803,6 +1480,305 @@ func _on_bulk_notes_pressed() -> void:
 	await _GenerationBulkQueueActions.enqueue_notes_for_library(self, _confirm_overlay)
 
 
+func _selected_gpu_mode() -> String:
+	if gpu_stack_option == null:
+		return "auto"
+	var idx := clampi(gpu_stack_option.selected, 0, _GPU_OPTION_IDS.size() - 1)
+	return str(_GPU_OPTION_IDS[idx])
+
+
+func _load_gpu_scan_cache() -> void:
+	_gpu_scan_loaded = false
+	_recommended_gpu_mode = ""
+	_gpu_scan_adapters = ""
+	if SettingsManager == null:
+		return
+	var raw: Variant = SettingsManager.get_setting("generation_gpu_scan", {})
+	if not (raw is Dictionary) or (raw as Dictionary).is_empty():
+		return
+	var scan: Dictionary = raw
+	_gpu_scan_adapters = str(scan.get("adapters", "")).strip_edges()
+	_recommended_gpu_mode = _GenerationGpuStack.normalize_mode(str(scan.get("recommended", "")))
+	if _recommended_gpu_mode == "auto":
+		_recommended_gpu_mode = ""
+	var cached_installed := str(scan.get("installed", "")).strip_edges().to_lower()
+	if cached_installed in ["nvidia", "amd", "cpu"] and _installed_gpu_mode == "":
+		_installed_gpu_mode = cached_installed
+	_gpu_scan_loaded = _gpu_scan_adapters != "" or _recommended_gpu_mode != "" or cached_installed != ""
+
+
+func _save_gpu_scan_cache(hw: Dictionary, installed: String) -> void:
+	var names: PackedStringArray = hw.get("names", PackedStringArray())
+	var adapters := ", ".join(names)
+	var recommended := str(hw.get("recommended", "cpu"))
+	var payload := {
+		"adapters": adapters,
+		"recommended": recommended,
+		"installed": installed,
+		"has_nvidia": bool(hw.get("has_nvidia", false)),
+		"has_amd": bool(hw.get("has_amd", false)),
+		"unix": int(Time.get_unix_time_from_system()),
+	}
+	if SettingsManager:
+		SettingsManager.set_setting("generation_gpu_scan", payload)
+	_gpu_scan_adapters = adapters
+	_recommended_gpu_mode = recommended if recommended in ["nvidia", "amd", "cpu"] else ""
+	_gpu_scan_loaded = true
+
+
+func _gpu_stack_already_ok(selected: String, install_mode: String = "") -> bool:
+	if _installed_gpu_mode == "":
+		return false
+	if selected != "auto" and selected == _installed_gpu_mode:
+		return true
+	if selected == "auto":
+		var target := install_mode
+		if target == "" or target == "auto":
+			target = _recommended_gpu_mode
+		return target != "" and target == _installed_gpu_mode
+	return false
+
+
+func _update_gpu_stack_enabled() -> void:
+	var local_ok := _GenerationGpuStack.is_windows() and not _GenerationGpuStack.is_lan_mode() and not _gpu_stack_busy
+	if gpu_stack_option:
+		gpu_stack_option.disabled = not local_ok
+	for btn in _gpu_stack_seg.get("buttons", []):
+		if btn is Button:
+			(btn as Button).disabled = not local_ok
+	if gpu_stack_scan_button:
+		gpu_stack_scan_button.disabled = not local_ok
+	var already := _gpu_stack_already_ok(_selected_gpu_mode())
+	if gpu_stack_apply_button:
+		gpu_stack_apply_button.disabled = not local_ok or already
+		if already:
+			gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_ALREADY")
+		else:
+			gpu_stack_apply_button.tooltip_text = tr("MISC_GPU_STACK_TOOLTIP")
+
+
+func _refresh_gpu_stack_status() -> void:
+	if gpu_stack_status_label == null:
+		return
+	_load_gpu_scan_cache()
+	if _GenerationGpuStack.is_lan_mode():
+		gpu_stack_status_label.text = tr("MISC_GPU_STACK_STATUS_LAN")
+		_installed_gpu_mode = ""
+		_sync_gpu_stack_segment_texts()
+		_update_gpu_stack_enabled()
+		return
+	if not _GenerationGpuStack.is_windows():
+		gpu_stack_status_label.text = tr("MISC_GPU_STACK_WINDOWS_ONLY")
+		_installed_gpu_mode = ""
+		_sync_gpu_stack_segment_texts()
+		_update_gpu_stack_enabled()
+		return
+	var health := {}
+	if GenerationProcessManager:
+		health = GenerationProcessManager.fetch_health_payload()
+	var live_installed := _GenerationGpuStack.resolve_installed_mode(health)
+	if live_installed != "":
+		_installed_gpu_mode = live_installed
+	var status := ""
+	if health.get("ok", false):
+		status = _GenerationGpuStack.format_backend_status(health)
+	if status == "":
+		status = _GenerationGpuStack.format_backend_status({})
+	var lines: PackedStringArray = PackedStringArray()
+	if status != "":
+		lines.append(tr("MISC_GPU_STACK_STATUS_FMT") % status)
+	elif _installed_gpu_mode != "":
+		lines.append(tr("MISC_GPU_STACK_STATUS_FMT") % _gpu_mode_label(_installed_gpu_mode))
+	else:
+		lines.append(tr("MISC_GPU_STACK_STATUS_UNKNOWN"))
+	if _gpu_scan_loaded:
+		var rec := _gpu_mode_label(_recommended_gpu_mode) if _recommended_gpu_mode != "" else "—"
+		var inst := _gpu_mode_label(_installed_gpu_mode) if _installed_gpu_mode != "" else "—"
+		var adapters := _gpu_scan_adapters if _gpu_scan_adapters != "" else "—"
+		lines.append(tr("MISC_GPU_STACK_SCAN_SUMMARY_FMT") % [adapters, rec, inst])
+	else:
+		lines.append(tr("MISC_GPU_STACK_SCAN_NEEDED"))
+	gpu_stack_status_label.text = "\n".join(lines)
+	_sync_gpu_stack_segment_texts()
+	_update_gpu_stack_enabled()
+
+
+func _gpu_mode_label(mode: String) -> String:
+	if mode.strip_edges() == "":
+		return "—"
+	return tr(_GenerationGpuStack.mode_label_key(mode))
+
+
+func _gpu_adapters_text(hw: Dictionary) -> String:
+	var names: PackedStringArray = hw.get("names", PackedStringArray())
+	if names.is_empty():
+		return tr("MISC_GPU_STACK_DETECT_NONE")
+	return tr("MISC_GPU_STACK_DETECT_ADAPTERS_FMT") % ", ".join(names)
+
+
+func _gpu_selection_mismatch(selected: String, hw: Dictionary) -> bool:
+	match selected:
+		"nvidia":
+			return not bool(hw.get("has_nvidia", false))
+		"amd":
+			return not bool(hw.get("has_amd", false))
+		_:
+			return false
+
+
+func _build_gpu_stack_plan_message(selected: String, install_mode: String, hw: Dictionary) -> String:
+	var adapters := _gpu_adapters_text(hw)
+	var install_label := _gpu_mode_label(install_mode)
+	var footer := tr("DLG_GPU_STACK_REINSTALL_FOOTER")
+	if selected == "auto":
+		return "%s\n%s\n\n%s\n\n%s" % [
+			adapters,
+			tr("MISC_GPU_STACK_DETECT_RECOMMENDED_FMT") % install_label,
+			tr("DLG_GPU_STACK_PLAN_AUTO_BODY") % install_label,
+			footer,
+		]
+	if _gpu_selection_mismatch(selected, hw):
+		var expected := _gpu_mode_label(str(hw.get("recommended", "cpu")))
+		return "%s\n\n%s\n\n%s" % [
+			adapters,
+			tr("DLG_GPU_STACK_PLAN_MISMATCH_BODY") % [_gpu_mode_label(selected), expected, install_label],
+			footer,
+		]
+	if install_mode == "cpu":
+		return "%s\n\n%s\n\n%s" % [adapters, tr("DLG_GPU_STACK_PLAN_CPU_BODY"), footer]
+	return "%s\n\n%s\n\n%s" % [
+		adapters,
+		tr("DLG_GPU_STACK_PLAN_MATCH_BODY") % install_label,
+		footer,
+	]
+
+
+func _run_gpu_probe_with_overlay() -> Dictionary:
+	var overlay: LoadingOverlay = null
+	var ge := get_tree().root.get_node_or_null("GameEngine")
+	if ge and ge.has_method("get_loading_overlay"):
+		overlay = ge.get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_GPU_DETECT"), true)
+		await get_tree().process_frame
+	var hw: Dictionary = _GenerationGpuStack.detect_hardware()
+	var health := {}
+	if GenerationProcessManager:
+		health = GenerationProcessManager.fetch_health_payload()
+	var installed := _GenerationGpuStack.resolve_installed_mode(health)
+	if installed == "":
+		installed = _installed_gpu_mode
+	_installed_gpu_mode = installed
+	_save_gpu_scan_cache(hw, installed)
+	if overlay:
+		overlay.hide_loading()
+	return hw
+
+
+func _on_gpu_stack_scan_pressed() -> void:
+	if _gpu_stack_busy:
+		return
+	if not _GenerationGpuStack.is_windows():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_WINDOWS_ONLY"))
+		return
+	if _GenerationGpuStack.is_lan_mode():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_LAN_BLOCKED"))
+		return
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var hw: Dictionary = await _run_gpu_probe_with_overlay()
+	_gpu_stack_busy = false
+	_refresh_gpu_stack_status()
+	var rec := _gpu_mode_label(str(hw.get("recommended", "cpu")))
+	var inst := _gpu_mode_label(_installed_gpu_mode) if _installed_gpu_mode != "" else "—"
+	var adapters := _gpu_adapters_text(hw)
+	_AppOverlayHelpers.notify(
+		_notice_overlay,
+		tr("MISC_GPU_STACK_SCAN_DONE_FMT") % [adapters, rec, inst]
+	)
+	emit_signal("settings_changed")
+
+
+func _on_gpu_stack_apply_pressed() -> void:
+	if _gpu_stack_busy:
+		return
+	if not _GenerationGpuStack.is_windows():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_WINDOWS_ONLY"))
+		return
+	if _GenerationGpuStack.is_lan_mode():
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_LAN_BLOCKED"))
+		return
+	var selected := _selected_gpu_mode()
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var hw: Dictionary = await _run_gpu_probe_with_overlay()
+	_gpu_stack_busy = false
+	_update_gpu_stack_enabled()
+
+	var install_mode := selected
+	if selected == "auto":
+		install_mode = str(hw.get("recommended", "cpu"))
+
+	if _gpu_stack_already_ok(selected, install_mode):
+		_refresh_gpu_stack_status()
+		_AppOverlayHelpers.notify(
+			_notice_overlay,
+			tr("MISC_GPU_STACK_ALREADY_AUTO_FMT") % _gpu_mode_label(_installed_gpu_mode)
+		)
+		return
+
+	var plan_msg := _build_gpu_stack_plan_message(selected, install_mode, hw)
+	var plan_title := tr("DLG_GPU_STACK_REINSTALL_TITLE")
+	if _gpu_selection_mismatch(selected, hw):
+		plan_title = tr("DLG_GPU_STACK_MISMATCH_TITLE")
+	var accepted := await _AppOverlayHelpers.ask(
+		_confirm_overlay,
+		plan_msg,
+		"warning" if _gpu_selection_mismatch(selected, hw) else "info",
+		plan_title,
+		tr("MISC_GPU_STACK_APPLY"),
+		tr("BTN_CANCEL"),
+	)
+	if not accepted:
+		_refresh_gpu_stack_status()
+		return
+
+	_gpu_stack_busy = true
+	_update_gpu_stack_enabled()
+	var overlay: LoadingOverlay = null
+	var ge := get_tree().root.get_node_or_null("GameEngine")
+	if ge and ge.has_method("get_loading_overlay"):
+		overlay = ge.get_loading_overlay()
+	if overlay:
+		overlay.show_loading(tr("UI_LOADING_GPU_STACK"), true)
+	var result: Dictionary = await _GenerationGpuStack.reinstall_async(install_mode, selected)
+	if overlay:
+		overlay.hide_loading()
+	_gpu_stack_busy = false
+	# Refresh installed from marker/health after install.
+	if GenerationProcessManager:
+		_installed_gpu_mode = _GenerationGpuStack.resolve_installed_mode(
+			GenerationProcessManager.fetch_health_payload()
+		)
+	if _installed_gpu_mode == "":
+		_installed_gpu_mode = install_mode if install_mode in ["nvidia", "amd", "cpu"] else ""
+	_save_gpu_scan_cache(hw, _installed_gpu_mode)
+	_refresh_gpu_stack_status()
+	if result.get("ok", false):
+		_AppOverlayHelpers.notify(_notice_overlay, tr("MISC_GPU_STACK_DONE"))
+	else:
+		var err_key := str(result.get("error_key", "MISC_GPU_STACK_FAILED"))
+		var detail := str(result.get("detail", "")).strip_edges()
+		var msg := tr(err_key)
+		if detail != "":
+			var clipped := detail
+			if clipped.length() > 400:
+				clipped = clipped.substr(clipped.length() - 400, 400)
+			msg = "%s\n\n%s" % [msg, clipped]
+		_AppOverlayHelpers.notify(_notice_overlay, msg)
+	emit_signal("settings_changed")
+
+
 func _on_generation_server_location_selected(index: int) -> void:
 	var use_lan := index == 2
 	var auto_worker := index == 0
@@ -815,6 +1791,7 @@ func _on_generation_server_location_selected(index: int) -> void:
 	SettingsManager.set_setting("generation_auto_worker", auto_worker)
 	_apply_generation_server_lan_visibility(use_lan)
 	_select_server_location_index(index)
+	_refresh_gpu_stack_status()
 	emit_signal("settings_changed")
 
 
@@ -916,6 +1893,32 @@ func _on_generation_server_lan_host_submitted(_new_text: String) -> void:
 
 func _on_generation_server_lan_host_focus_exited() -> void:
 	_save_generation_server_lan_host()
+
+
+func _on_cache_invalidate_pressed() -> void:
+	NotesUtils.invalidate_notes_cache()
+	# Refresh dependent UI without full scan
+	var tree := get_tree()
+	if tree:
+		var root := tree.root
+		if root:
+			var ge := root.get_node_or_null("GameEngine")
+			if ge and ge.has_method("get_background_service"):
+				var svc = ge.get_background_service()
+				if svc and svc.has_method("get_queue_snapshot"):
+					# Trigger UI refresh via existing signals if needed
+					pass
+	for node in get_tree().get_nodes_in_group("song_select_refresh"):
+		if node.has_method("refresh_generation_notes_highlights"):
+			node.refresh_generation_notes_highlights()
+		if node.has_method("refresh_rhythm_dna_button_visibility"):
+			node.refresh_rhythm_dna_button_visibility()
+	var dock := get_tree().root.get_node_or_null("GameEngine/NotificationsLayer/StatusDock")
+	if dock and dock.has_method("show_transient"):
+		dock.show_transient("cache_invalidate", tr("CACHE_INVALIDATED"), "success", 2.0)
+	else:
+		var StatusToast = preload("res://logic/ui/status_toast.gd")
+		StatusToast.show_from_node(self, "cache_invalidate", tr("CACHE_INVALIDATED"), "success", 2.0)
 
 
 func _on_generation_server_port_changed(value: float) -> void:

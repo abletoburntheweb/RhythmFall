@@ -82,7 +82,10 @@ func _sync_style() -> void:
 		UiIconHelper.set_frame_tint(_icon_frame, paint_tint, button_pressed)
 	if button_pressed:
 		modulate = Color(1.0, 1.0, 1.0, 1.0)
-		scale = Vector2(1.06, 1.06)
 	else:
 		modulate = Color(0.72, 0.76, 0.84, 0.82)
-		scale = Vector2.ONE
+	# Size must stay identical regardless of selection state. The pressed look is
+	# conveyed via tint/alpha only — scaling here made selected icons 6% larger,
+	# so icon sizes differed between Generation Presets (and between first open
+	# and a switched preset) since which icons are pressed depends on the preset.
+	scale = Vector2.ONE

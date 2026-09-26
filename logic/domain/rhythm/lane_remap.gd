@@ -1,4 +1,4 @@
-# logic/utils/lane_remap.gd
+# logic/domain/rhythm/lane_remap.gd
 extends RefCounted
 class_name LaneRemap
 

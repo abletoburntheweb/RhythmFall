@@ -14,12 +14,15 @@ const _PresetActiveHeader = preload("res://logic/ui/preset_active_header.gd")
 const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const _SpotlightTutorialScene = preload("res://ui/spotlight_tutorial.tscn")
 const _SettingsSectionUi = preload("res://logic/ui/settings_section_ui.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+static var _rm_ready_count: int = 0
 
 const TAB_OVERVIEW := "overview"
 const TAB_EASING := "easing"
 const TAB_HARDENING := "hardening"
 const TAB_SPECIAL := "special"
 const TAB_DNA := "dna"
+const TAB_DISCOVERY := "discovery"
 
 const RIGHT_VIEW_SUMMARY := "summary"
 const RIGHT_VIEW_DETAIL := "detail"
@@ -27,32 +30,14 @@ const RIGHT_VIEW_PARAMS := "params"
 
 
 static func _dna_tab_title() -> String:
-	var beta := TranslationServer.translate("MOD_DNA_BETA_CAPTION")
-	if beta == "MOD_DNA_BETA_CAPTION":
-		beta = "Бета" if TranslationServer.get_locale().begins_with("ru") else "Beta"
-	return "%s · %s" % [TranslationServer.translate("MOD_CAT_DNA"), beta]
+	return TranslationServer.translate("MOD_CAT_DNA")
 
 
 static func _dna_beta_callout_body() -> String:
-	var body := TranslationServer.translate("MOD_DNA_BETA_CALLOUT")
-	if body != "MOD_DNA_BETA_CALLOUT":
-		return body
-	if TranslationServer.get_locale().begins_with("ru"):
-		return (
-			"Моды по секциям в бете — поведение и отчёты Rhythm DNA ещё дорабатываются. "
-			+ "Нужен sidecar .rfd от генерации ударных."
-		)
-	return (
-		"Section-based mods are in beta — behavior and Rhythm DNA reports may still change. "
-		+ "Requires an .rfd sidecar from drum chart generation."
-	)
-
+	return ""
 
 static func _dna_beta_callout_caption() -> String:
-	var caption := TranslationServer.translate("MOD_DNA_BETA_CAPTION")
-	if caption != "MOD_DNA_BETA_CAPTION":
-		return caption
-	return "Бета" if TranslationServer.get_locale().begins_with("ru") else "Beta"
+	return ""
 
 const _TUTORIAL_PARAMS_DEMO_MOD := "slow_75"
 
@@ -72,12 +57,14 @@ var _clear_preset_link: LinkButton = null
 @onready var _nav_special: RunModifierSidebarTab = $RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox/NavSpecial
 @onready var _nav_dna: RunModifierSidebarTab = $RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox/NavDna
 @onready var _nav_params: RunModifierSidebarTab = $RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox/NavParams
+@onready var _nav_discovery: RunModifierSidebarTab = $RootMargin/RootVBox/MainHBox/SidebarCard/SidebarMargin/SidebarVBox/NavScroll/NavVBox/NavDiscovery
 @onready var _overview_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/OverviewTab
 @onready var _easing_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/EasingTab
 @onready var _hardening_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/HardeningTab
 @onready var _special_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/SpecialTab
 @onready var _dna_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/DnaTab
 @onready var _params_tab = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/ParamsTab
+@onready var _modifier_discovery = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/DiscoveryTab
 @onready var _detail_panel: RunModifierDetailPanel = $RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/DetailPanel
 @onready var _params_panel: RunModifierParamsPanel = $RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/ParamsPanel
 @onready var _summary_panel: RunModifierSummaryPanel = $RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/SummaryPanel
@@ -87,6 +74,8 @@ var _clear_preset_link: LinkButton = null
 @onready var _conflicts_callout_slot: VBoxContainer = $RootMargin/RootVBox/FooterRow/FooterPanels/ConflictsCalloutSlot
 @onready var _hint_callout_slot: VBoxContainer = $RootMargin/RootVBox/FooterRow/FooterPanels/HintCalloutSlot
 @onready var _hotkeys_label: Label = $RootMargin/RootVBox/FooterRow/HotkeysLabel
+@onready var _confirm_button: Button = $RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/ActionRow/ConfirmButton
+@onready var _reset_button: Button = $RootMargin/RootVBox/MainHBox/RightCard/RightMargin/RightStack/ActionRow/ResetButton
 @onready var _sidebar_card: PanelContainer = $RootMargin/RootVBox/MainHBox/SidebarCard
 @onready var _center_card: PanelContainer = $RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard
 
@@ -118,25 +107,53 @@ var _secondary_tabs_built := false
 var _presets_dialog: Control = null
 var _preset_active_slot: int = 0
 var _preset_baseline: Dictionary = {}
+var _keyboard_nav_active := false
+var _kb_focus_mod_id := ""
 
 
 func _ready() -> void:
+	_rm_ready_count += 1
+	var _perf_ready := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.total")
+	var _perf_ready_n := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.total.count%d" % _rm_ready_count)
+	var _perf_data := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data")
+	var _perf_data_translation := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.translation")
 	CsvTranslationLoader.load_into_translation_server("res://translations/ui.csv")
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.translation", _perf_data_translation)
+	var _perf_data_modal := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.modal_overlay")
 	UiIconHelper.configure_modal_overlay(self, 100)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.modal_overlay", _perf_data_modal)
+	var _perf_data_choice := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.data.choice_overlay")
 	_choice_overlay = _ChoiceOverlayScene.instantiate() as AppChoiceOverlay
 	if _choice_overlay:
 		add_child(_choice_overlay)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data.choice_overlay", _perf_data_choice)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.data", _perf_data)
+	var _perf_overview := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview")
+	var _perf_overview_bind := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.bind_nav")
 	_bind_nav()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.bind_nav", _perf_overview_bind)
+	var _perf_overview_build := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.overview.build_overview")
 	if _overview_tab:
 		_overview_tab.build_overview()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview.build_overview", _perf_overview_build)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.overview", _perf_overview)
 	call_deferred("_build_secondary_modifier_tabs")
+	var _perf_icons := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.icons")
 	_setup_ui_icons()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.icons", _perf_icons)
+	var _perf_setup := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.setup")
 	_setup_right_panel_toggle()
 	_back_button.pressed.connect(_on_back_pressed)
 	if _presets_button:
 		_presets_button.pressed.connect(_on_presets_pressed)
 	_summary_panel.confirm_pressed.connect(_on_confirm_pressed)
 	_summary_panel.reset_pressed.connect(_on_reset_pressed)
+	if _confirm_button:
+		_confirm_button.pressed.connect(_on_confirm_pressed)
+		UiIconHelper.setup_confirm_button(_confirm_button)
+	if _reset_button:
+		_reset_button.pressed.connect(_on_reset_pressed)
+		UiIconHelper.setup_reset_button(_reset_button)
 	if _params_panel:
 		_params_panel.param_changed.connect(_on_param_changed)
 	_setup_footer_callouts()
@@ -145,6 +162,7 @@ func _ready() -> void:
 	_connect_card_signals(_hardening_tab)
 	_connect_card_signals(_special_tab)
 	_connect_card_signals(_dna_tab)
+	_discovery_tab_card_signal_connection()
 	if _nav_params:
 		_nav_params.visible = false
 	if _params_tab:
@@ -153,13 +171,19 @@ func _ready() -> void:
 	if title_vbox:
 		_active_preset_row = _PresetActiveHeader.attach(title_vbox, _subtitle_label.get_index() + 1)
 		_setup_clear_preset_link(title_vbox)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.setup", _perf_setup)
+	var _perf_refresh := PerfTrace.begin("perf.detail.song_select.run_modifiers.ready.refresh")
 	_apply_pending_modifier_state()
 	_load_run_params()
 	_select_tab(TAB_OVERVIEW, false)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.refresh", _perf_refresh)
 	call_deferred("_sync_preset_tracking")
 	call_deferred("_sync_detail_params")
 	call_deferred("apply_locale")
 	call_deferred("_maybe_show_modifiers_tutorial")
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.total.count%d" % _rm_ready_count, _perf_ready_n)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.ready.total", _perf_ready)
+	PerfTrace.record("perf.detail.song_select.run_modifiers.ready.count", _rm_ready_count)
 
 
 func _setup_ui_icons() -> void:
@@ -191,6 +215,8 @@ func _setup_ui_icons() -> void:
 
 
 func apply_locale() -> void:
+	var _perf_locale_total := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.total")
+	var _perf_locale_nav := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.navigation")
 	if _title_label:
 		_title_label.text = tr("MOD_POPUP_TITLE")
 	if _subtitle_label:
@@ -201,22 +227,39 @@ func apply_locale() -> void:
 		_back_button.text = tr("BTN_BACK")
 	if _presets_button:
 		_presets_button.text = tr("MOD_PRESETS_BUTTON")
+	if _confirm_button:
+		_confirm_button.text = tr("MOD_CONFIRM")
+	if _reset_button:
+		_reset_button.text = tr("MOD_RESET_ALL")
 	_update_active_preset_header()
 	_refresh_footer_callouts()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.navigation", _perf_locale_nav)
+	var _perf_locale_detail := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.detail_panel")
 	if _detail_panel:
 		_detail_panel.apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.detail_panel", _perf_locale_detail)
+	var _perf_locale_params := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.params_panel")
 	if _params_panel:
 		_params_panel.apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.params_panel", _perf_locale_params)
+	var _perf_locale_nav2 := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.navigation")
 	_nav_overview.setup(TAB_OVERVIEW, tr("MOD_TAB_OVERVIEW"), "layout-dashboard.svg", Color(0.95, 0.82, 0.45, 1.0))
 	_nav_easing.setup(TAB_EASING, tr("MOD_CAT_EASING"), "feather.svg", Color(0.42, 0.88, 0.58, 1.0))
 	_nav_hardening.setup(TAB_HARDENING, tr("MOD_CAT_HARDENING"), "flame_gen.svg", Color(0.95, 0.45, 0.42, 1.0))
 	_nav_special.setup(TAB_SPECIAL, tr("MOD_CAT_SPECIAL"), "wrench.svg", Color(0.42, 0.72, 0.96, 1.0))
 	_nav_dna.setup(TAB_DNA, _dna_tab_title(), "rhythmdna.svg", UiIconHelper.ACCENT_DNA)
+	_nav_discovery.setup(TAB_DISCOVERY, tr("MOD_TAB_DISCOVERY"), "sparkles.svg", Color(0.72, 0.62, 0.95, 1.0))
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.navigation", _perf_locale_nav2)
+	var _perf_locale_overview := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.overview_tree")
 	if _overview_tab:
 		_overview_tab.apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.overview_tree", _perf_locale_overview)
+	var _perf_locale_tabs := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.cards")
 	for tab in [_easing_tab, _hardening_tab, _special_tab, _dna_tab]:
 		if tab and tab.has_method("apply_locale"):
 			tab.apply_locale()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.cards", _perf_locale_tabs)
+	var _perf_locale_summary := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.navigation")
 	if _summary_panel:
 		_summary_panel.apply_locale()
 	if _right_summary_btn:
@@ -225,8 +268,19 @@ func apply_locale() -> void:
 		_right_detail_btn.text = tr("MOD_RIGHT_PANEL_DETAIL")
 	if _right_params_btn:
 		_right_params_btn.text = tr("MOD_RIGHT_PANEL_PARAMS")
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.navigation", _perf_locale_summary)
+	var _perf_locale_refresh := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.refresh")
 	_refresh_ui()
 	_refresh_dna_gated_modifiers()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.refresh", _perf_locale_refresh)
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.total", _perf_locale_total)
+
+
+func refresh_state_after_host_context() -> void:
+	var _perf_host_refresh := PerfTrace.begin("perf.detail.song_select.run_modifiers.locale.refresh")
+	_refresh_ui()
+	_refresh_dna_gated_modifiers()
+	PerfTrace.end("perf.detail.song_select.run_modifiers.locale.refresh", _perf_host_refresh)
 
 
 func set_active_modifiers(modifiers: Array) -> void:
@@ -459,8 +513,9 @@ func _bind_nav() -> void:
 		TAB_HARDENING: _hardening_tab,
 		TAB_SPECIAL: _special_tab,
 		TAB_DNA: _dna_tab,
+		TAB_DISCOVERY: _modifier_discovery,
 	}
-	_nav_items = [_nav_overview, _nav_easing, _nav_hardening, _nav_special, _nav_dna]
+	_nav_items = [_nav_overview, _nav_easing, _nav_hardening, _nav_special, _nav_dna, _nav_discovery]
 	for nav in _nav_items:
 		if nav:
 			nav.tab_selected.connect(_select_tab)
@@ -484,6 +539,7 @@ func _build_secondary_modifier_tabs() -> void:
 		_special_tab.build_sections(_Sections.special_subsections(), 2)
 	if _dna_tab:
 		_dna_tab.build_sections(_Sections.dna_subsections(), 2)
+	_build_discovery_tab()
 
 
 func _connect_card_signals(tab_node) -> void:
@@ -565,11 +621,12 @@ func _set_right_panel_view(view: String, refresh: bool = true) -> void:
 func _select_tab(tab_id: String, play_sound: bool = true) -> void:
 	var prev_tab := _current_tab_id
 	_current_tab_id = tab_id
+	_clear_keyboard_mod_focus()
 	for nav in _nav_items:
 		if nav:
 			nav.set_selected(nav.tab_id == tab_id)
 	for id in _tabs.keys():
-		var node = _tabs[id]
+		var node = _tabs.get(id, null)
 		if node:
 			node.visible = id == tab_id
 	_update_page_title()
@@ -579,9 +636,21 @@ func _select_tab(tab_id: String, play_sound: bool = true) -> void:
 		else:
 			_set_right_panel_view(RIGHT_VIEW_DETAIL, false)
 	_update_right_panel_mode()
-	_refresh_ui()
+	_refresh_footer_callouts()
 	if play_sound and prev_tab != tab_id:
 		MusicManager.play_modifier_select_sound()
+
+
+
+
+func _build_discovery_tab() -> void:
+	if _tabs.get(TAB_DISCOVERY, null) == null:
+		return
+	var _song_path_val := _song_path
+	if _song_path_val == "":
+		_modifier_discovery.build()
+	else:
+		_modifier_discovery.build(_song_path_val)
 
 
 func _update_page_title() -> void:
@@ -598,6 +667,8 @@ func _update_page_title() -> void:
 			_page_title_label.text = tr("MOD_CAT_SPECIAL")
 		TAB_DNA:
 			_page_title_label.text = _dna_tab_title()
+		TAB_DISCOVERY:
+			_page_title_label.text = tr("MOD_TAB_DISCOVERY")
 		_:
 			_page_title_label.text = tr("MOD_POPUP_TITLE")
 
@@ -621,7 +692,7 @@ func _update_right_panel_mode() -> void:
 	var show_params := _right_panel_view == RIGHT_VIEW_PARAMS
 	var full_summary := show_summary and _current_tab_id == TAB_OVERVIEW
 	if _summary_panel:
-		_summary_panel.visible = true
+		_summary_panel.visible = show_summary
 		_summary_panel.set_compact_mode(not full_summary if show_summary else true, not show_summary)
 	if _detail_panel:
 		_detail_panel.visible = show_detail
@@ -1025,10 +1096,11 @@ func _refresh_ui() -> void:
 			ease_count,
 			hard_count,
 			special_count,
-			dna_count
+			dna_count,
+			_run_params
 		)
 		if _should_show_full_active_list():
-			_summary_panel.show_full_active_list(mods)
+			_summary_panel.show_full_active_list(mods, _run_params)
 	_update_nav_badges()
 	_update_conflicts_footer(mods)
 	if _detail_panel and _detail_panel.visible:
@@ -1114,22 +1186,23 @@ func _refresh_footer_callouts() -> void:
 			tr("MOD_CONFLICTS_CAPTION")
 		)
 	if _hint_callout:
-		if _current_tab_id == TAB_DNA:
-			_hint_callout.setup(
-				"warning",
-				_dna_beta_callout_body(),
-				true,
-				_dna_beta_callout_caption(),
-			)
-		else:
-			_hint_callout.setup("tip", tr("MOD_SUMMARY_TIP"), true, tr("MOD_HINT_CAPTION"))
+		_hint_callout.setup("tip", tr("MOD_SUMMARY_TIP"), true, tr("MOD_HINT_CAPTION"))
 	if _dna_help_link:
-		_dna_help_link.tooltip_text = tr("HELP_LINK_RHYTHM_DNA")
-		_dna_help_link.visible = _current_tab_id == TAB_DNA
+		if _current_tab_id == TAB_DNA:
+			_dna_help_link.tooltip_text = tr("HELP_LINK_RHYTHM_DNA")
+			_dna_help_link.visible = true
+		elif _current_tab_id == TAB_DISCOVERY:
+			_dna_help_link.tooltip_text = tr("MODREC_HELP_TOOLTIP")
+			_dna_help_link.visible = true
+		else:
+			_dna_help_link.visible = false
 
 
 func _on_dna_help_link_pressed() -> void:
-	_open_help_item("rhythm_dna_overview")
+	if _current_tab_id == TAB_DISCOVERY:
+		_open_help_item("modifier_discovery")
+	else:
+		_open_help_item("rhythm_dna_overview")
 
 
 func _open_help_item(item_id: String) -> void:
@@ -1162,12 +1235,11 @@ func _update_card_preview_ui() -> void:
 		var tab = _tabs.get(tab_id, null)
 		if tab == null:
 			continue
-		if tab.has_method("set_card_preview_focus"):
-			tab.set_card_preview_focus("")
 		if tab.has_method("set_card_info_locked"):
 			tab.set_card_info_locked(info_lock_id)
 		if tab.has_method("set_conflict_previews"):
 			tab.set_conflict_previews(active_conflicts)
+	_apply_keyboard_preview_focus()
 	_refresh_card_params()
 
 
@@ -1248,12 +1320,30 @@ func _on_reset_pressed() -> void:
 func _on_back_pressed() -> void:
 	if _back_prompt_active:
 		return
-	# Выбор модов/пресета уже подразумевает сохранение — при выходе просто
-	# применяем изменения без вопроса «сохранить?».
 	if _is_dirty():
-		_commit_changes()
-		_notify(tr("MOD_TOAST_APPLIED"))
-	_close()
+		_back_prompt_active = true
+		var choice := await _Overlay.choose(
+			_choice_overlay,
+			tr("DLG_SETTINGS_UNSAVED_TEXT"),
+			"warning",
+			"",
+			tr("BTN_SAVE"),
+			tr("BTN_CANCEL"),
+			tr("BTN_DISCARD_CHANGES"),
+		)
+		_back_prompt_active = false
+		match choice:
+			"confirm":
+				_commit_changes()
+				_notify(tr("MOD_TOAST_APPLIED"))
+				_close()
+			"extra":
+				_revert_pending()
+				_close()
+			_:
+				return
+	else:
+		_close()
 
 
 func _revert_pending() -> void:
@@ -1314,6 +1404,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if _presets_dialog != null and is_instance_valid(_presets_dialog):
 		return
+	if event is InputEventMouseButton and event.pressed:
+		_clear_keyboard_mod_focus()
 	if event is InputEventKey and event.pressed and not event.echo:
 		# Пробел — сохранить изменения на месте (как в настройках).
 		if event.keycode == KEY_SPACE and not _is_text_input_focused():
@@ -1325,18 +1417,113 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_choice_overlay_blocking_input():
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
-			accept_event()
-			_on_back_pressed()
-		elif event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
-			accept_event()
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var key_event := event as InputEventKey
+	var is_card_nav := key_event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]
+	if key_event.echo and not is_card_nav:
+		return
+	if key_event.keycode == KEY_ESCAPE:
+		accept_event()
+		_on_back_pressed()
+		return
+	if _is_text_input_focused():
+		return
+	if is_card_nav:
+		var delta := 0
+		match key_event.keycode:
+			KEY_LEFT, KEY_UP:
+				delta = -1
+			KEY_RIGHT, KEY_DOWN:
+				delta = 1
+		_move_keyboard_mod_focus(delta)
+		accept_event()
+		return
+	if key_event.echo:
+		return
+	if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
+		accept_event()
+		if _keyboard_nav_active and _kb_focus_mod_id != "":
+			_activate_keyboard_focused_modifier()
+		else:
 			_on_confirm_pressed()
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			accept_event()
-			var index := int(event.keycode - KEY_1)
-			if index < _nav_items.size() and _nav_items[index]:
-				_select_tab(_nav_items[index].tab_id)
+	elif key_event.keycode >= KEY_1 and key_event.keycode <= KEY_6:
+		accept_event()
+		var index := int(key_event.keycode - KEY_1)
+		if index < _nav_items.size() and _nav_items[index]:
+			_select_tab(_nav_items[index].tab_id)
+
+
+func _ordered_visible_mod_ids() -> Array[String]:
+	var tab = _tabs.get(_current_tab_id, null)
+	if tab and tab.has_method("get_ordered_visible_modifier_ids"):
+		return tab.get_ordered_visible_modifier_ids()
+	return []
+
+
+func _move_keyboard_mod_focus(delta: int) -> void:
+	var ids := _ordered_visible_mod_ids()
+	if ids.is_empty():
+		return
+	var prev_id := _kb_focus_mod_id
+	_keyboard_nav_active = true
+	var idx := ids.find(_kb_focus_mod_id)
+	if idx < 0:
+		idx = 0 if delta > 0 else ids.size() - 1
+	else:
+		idx = clampi(idx + delta, 0, ids.size() - 1)
+	_kb_focus_mod_id = ids[idx]
+	_focused_modifier_id = _kb_focus_mod_id
+	if _kb_focus_mod_id != prev_id:
+		UiScreenHotkeys.play_section_switch_sound()
+	_apply_keyboard_preview_focus()
+	_ensure_modifier_card_visible(_kb_focus_mod_id)
+
+
+func _activate_keyboard_focused_modifier() -> void:
+	var mod_id := _kb_focus_mod_id
+	if mod_id == "":
+		return
+	if _is_dna_gated(mod_id):
+		_open_modifier_preview(mod_id, _card_click_panel_view())
+		return
+	var new_pressed := not _is_modifier_active(mod_id)
+	var card: Control = _get_card(mod_id)
+	if card and card.has_method("set_modifier_active"):
+		card.set_modifier_active(new_pressed)
+	_on_card_toggled(mod_id, new_pressed)
+
+
+func _clear_keyboard_mod_focus() -> void:
+	if not _keyboard_nav_active and _kb_focus_mod_id == "":
+		return
+	_keyboard_nav_active = false
+	_kb_focus_mod_id = ""
+	_apply_keyboard_preview_focus()
+
+
+func _apply_keyboard_preview_focus() -> void:
+	var focus_id := _kb_focus_mod_id if _keyboard_nav_active else ""
+	for tab_id in [TAB_OVERVIEW, TAB_EASING, TAB_HARDENING, TAB_SPECIAL, TAB_DNA]:
+		var tab = _tabs.get(tab_id, null)
+		if tab == null or not tab.has_method("set_card_preview_focus"):
+			continue
+		if tab_id == _current_tab_id:
+			tab.set_card_preview_focus(focus_id)
+		else:
+			tab.set_card_preview_focus("")
+
+
+func _ensure_modifier_card_visible(mod_id: String) -> void:
+	var card: Control = _get_card(mod_id) as Control
+	if card == null:
+		return
+	var node: Node = card
+	while node:
+		if node is ScrollContainer:
+			(node as ScrollContainer).ensure_control_visible(card)
+			return
+		node = node.get_parent()
 
 
 func _is_choice_overlay_blocking_input() -> bool:
@@ -1425,6 +1612,37 @@ func _tutorial_gear_target() -> Control:
 func _on_modifiers_tutorial_closed() -> void:
 	if SettingsManager and SettingsManager.has_method("set_tutorial_modifiers_done"):
 		SettingsManager.set_tutorial_modifiers_done(true)
+
+
+func _discovery_tab_card_signal_connection() -> void:
+	var disc_content = get_node_or_null("RootMargin/RootVBox/MainHBox/CenterColumn/CenterCard/CenterMargin/TabStack/DiscoveryTab") as Control
+	if disc_content == null:
+		return
+	# Сигнал discovery_try_pressed определён на узле DiscoveryTabContent (скрипт
+	# discovery_tab_content.gd), а не на его дочернем Scroll/Content. Подключаемся
+	# к самому узлу, иначе нажатие ПОПРОБОВАТЬ ничего не делает.
+	if disc_content.has_signal("discovery_try_pressed"):
+		if not disc_content.discovery_try_pressed.is_connected(_on_discovery_try_pressed):
+			disc_content.discovery_try_pressed.connect(_on_discovery_try_pressed)
+
+
+func _on_discovery_try_pressed(mods: Array, params: Dictionary) -> void:
+	_UiModifierSounds.play_select()
+	# Рекомендации без модов (напр. сложность) — показываем осмысленный тост
+	if mods.is_empty():
+		var diff_only: int = int(params.get("_difficulty_only", 0))
+		if diff_only > 0:
+			_notify(tr("MODREC_TOAST_DIFFICULTY_FMT") % diff_only)
+		else:
+			_notify(tr("MODREC_TOAST_PREVIEW"))
+		return
+	# Set pending modifiers without committing
+	_pending_active_modifiers = _RunModifiers.sanitize(mods)
+	_run_params = _RunModifiers.sanitize_params(params.duplicate())
+	_apply_pending_modifier_state()
+	_refresh_ui()
+	# Show preview toast
+	_notify(tr("MODREC_TOAST_PREVIEW"))
 
 
 func debug_show_tutorial() -> void:

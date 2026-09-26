@@ -1,6 +1,7 @@
 extends Node
 class_name SongListController
 
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 const _SS = preload("res://logic/domain/library/song_select_strings.gd")
 const _StatusToast = preload("res://logic/ui/status_toast.gd")
 const _SongFavoriteIcons = preload("res://scenes/song_select/lib/song_favorite_icons.gd")
@@ -9,6 +10,7 @@ const _UiModifierSounds = preload("res://logic/ui/ui_modifier_sounds.gd")
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _ProfileGenrePortrait = preload("res://logic/domain/profile/profile_genre_portrait.gd")
 const _PlaylistLibraryBrowse = preload("res://logic/domain/library/playlist_library_browse.gd")
+const _NotesUtils = preload("res://logic/domain/rhythm/notes_utils.gd")
 
 signal song_selected(song_data: Dictionary)
 signal song_activated(song_data: Dictionary)
@@ -36,6 +38,53 @@ var edit_mode: bool = false
 var _list_first_populate := true
 var _metadata_edit_lock_checker: Callable
 var _unseen_medals_loader: Callable
+var _forensic_song_visuals_text_usec: int = 0
+var _forensic_song_visuals_notes_ready_usec: int = 0
+var _forensic_song_visuals_color_usec: int = 0
+var _forensic_song_visuals_bucket_usec: int = 0
+var _forensic_in_render_items := false
+var _forensic_notes_ready_has_valid_bpm_usec: int = 0
+var _forensic_notes_ready_cache_usec: int = 0
+var _forensic_notes_ready_scope_usec: int = 0
+var _forensic_in_notes_ready_scope := false
+var _forensic_render_count: int = 0
+var _forensic_apply_count: int = 0
+var _forensic_song_ready_total: int = 0
+var _forensic_song_ready_has_valid_false: int = 0
+var _forensic_song_ready_cache_hit: int = 0
+var _forensic_song_ready_cache_miss: int = 0
+var _forensic_bucket_second_call: int = 0
+var _forensic_prev_grouped_size: int = -1
+var _forensic_prev_filter_mode: String = ""
+var _forensic_prev_songs_input_size: int = -1
+var _forensic_prev_is_heavy: bool = false
+var _forensic_pending_populate_reason: String = ""
+var _forensic_pending_highlight_reason: String = ""
+
+func _forensic_set_pending_populate_reason(reason: String) -> void:
+	_forensic_pending_populate_reason = reason
+
+func _forensic_set_pending_highlight_reason(reason: String) -> void:
+	_forensic_pending_highlight_reason = reason
+
+func _forensic_populate_caller_reason() -> String:
+	if _forensic_pending_populate_reason != "":
+		var r := _forensic_pending_populate_reason
+		_forensic_pending_populate_reason = ""
+		return r
+	var stack = get_stack()
+	for i in range(1, mini(stack.size(), 6)):
+		var e: Dictionary = stack[i] if i < stack.size() and stack[i] is Dictionary else {}
+		var fn := String(e.get("function", ""))
+		if fn == "populate_items_grouped" or fn == "_forensic_populate_caller_reason":
+			continue
+		var src := String(e.get("source", "")).get_file()
+		if src != "":
+			fn = "%s_%s" % [src.get_basename(), fn]
+		fn = fn.replace(" ", "_").replace(":", "_").replace("/", "_").replace(".", "_").replace("-", "_")
+		if fn.strip_edges() != "":
+			return fn
+	return "unknown"
 
 const _UNSEEN_MEDALS_GOLD := Color("#F2B35A")
 const _LIST_ITEM_PANEL_BG := Color(0.1, 0.11, 0.15, 1.0)
@@ -67,6 +116,7 @@ func set_generation_settings(instrument: String, mode: String, lanes: int):
 	current_mode = mode
 	current_lanes = lanes
 	_invalidate_scope_caches()
+	_forensic_set_pending_highlight_reason("set_generation_settings")
 	refresh_highlight_for_current_settings()
 
 
@@ -105,16 +155,38 @@ func populate_items():
 	emit_signal("song_list_changed")
 
 func populate_items_grouped(skip_transition: bool = false):
+	var _reason := _forensic_populate_caller_reason()
+	PerfTrace.record("perf.detail.song_select.populate.reason." + _reason, 1)
+	var _is_heavy_now := current_filter_mode == "difficulty"
+	PerfTrace.record("perf.detail.song_select.populate.heavy." + ("true" if _is_heavy_now else "false"), 1)
+	var _perf_pop := PerfTrace.begin("perf.detail.song_select.populate")
 	if not item_list:
+		PerfTrace.end("perf.detail.song_select.populate", _perf_pop)
 		return
 	var prev = _get_selected_song_path()
 	var rebuild := func() -> void:
+		var _perf_render := PerfTrace.begin("perf.detail.song_select.populate.render")
+		var _perf_clear := PerfTrace.begin("perf.detail.song_select.populate.render.clear")
 		item_list.clear()
+		PerfTrace.end("perf.detail.song_select.populate.render.clear", _perf_clear)
+		var _perf_prepare := PerfTrace.begin("perf.detail.song_select.populate.prepare")
 		current_grouped_data = _build_grouped_data(_songs_input_for_grouping(SongLibrary.get_songs_list()))
+		PerfTrace.end("perf.detail.song_select.populate.prepare", _perf_prepare)
+		var _cur_grouped_size := current_grouped_data.size()
+		var _cur_filter := current_filter_mode
+		var _cur_songs_size := SongLibrary.get_songs_list().size()
+		var _is_same := (_cur_grouped_size == _forensic_prev_grouped_size and _cur_filter == _forensic_prev_filter_mode and _cur_songs_size == _forensic_prev_songs_input_size and _is_heavy_now == _forensic_prev_is_heavy)
+		PerfTrace.record("perf.detail.song_select.populate.forensic.same_as_prev" if _is_same else "perf.detail.song_select.populate.forensic.changed", 1)
+		_forensic_prev_grouped_size = _cur_grouped_size
+		_forensic_prev_filter_mode = _cur_filter
+		_forensic_prev_songs_input_size = _cur_songs_size
+		_forensic_prev_is_heavy = _is_heavy_now
 		_render_grouped_data()
 		emit_signal("song_list_changed")
 		_reselect_previous(prev)
+		PerfTrace.end("perf.detail.song_select.populate.render", _perf_render)
 	_run_grouped_rebuild(rebuild, skip_transition)
+	PerfTrace.end("perf.detail.song_select.populate", _perf_pop)
 
 func update_song_count_label(count_label: Label):
 	if count_label:
@@ -149,7 +221,9 @@ func _on_item_activated(index: int) -> void:
 	emit_signal("song_activated", item_data.data)
 
 func filter_items(filter_text: String, skip_transition: bool = false):
+	var _perf_filter := PerfTrace.begin("perf.detail.song_select.filter")
 	if not item_list:
+		PerfTrace.end("perf.detail.song_select.filter", _perf_filter)
 		return
 	var prev = _get_selected_song_path()
 	var q = _normalize_search_text(filter_text)
@@ -168,36 +242,60 @@ func filter_items(filter_text: String, skip_transition: bool = false):
 		emit_signal("song_list_changed")
 		_reselect_previous(prev)
 	_run_grouped_rebuild(rebuild, skip_transition)
+	PerfTrace.end("perf.detail.song_select.filter", _perf_filter)
 
 
 func find_item_list_index_for_path(song_path: String) -> int:
 	if song_path == "":
 		return -1
-	var norm_path := String(song_path).replace("\\", "/")
+	var norm_path := String(song_path).replace("\\", "/").strip_edges()
+	var norm_lower := norm_path.to_lower()
+	var file_lower := norm_path.get_file().to_lower()
+	var file_match := -1
 	for i in range(current_grouped_data.size()):
 		var item_data = current_grouped_data[i]
 		if item_data.type != "song":
 			continue
-		var item_path := String(item_data.data.get("path", "")).replace("\\", "/")
-		if item_path == norm_path:
+		var p := String(item_data.data.get("path", "")).replace("\\", "/").strip_edges()
+		if p == norm_path or p.to_lower() == norm_lower:
 			return i
-	return -1
+		# Diary paths sometimes differ only by absolute/relative prefix.
+		if file_lower != "" and file_match < 0 and p.get_file().to_lower() == file_lower:
+			file_match = i
+	return file_match
+
+
+func select_song_by_path(song_path: String) -> bool:
+	var idx := find_item_list_index_for_path(song_path)
+	if idx < 0 or item_list == null:
+		return false
+	item_list.select(idx, true)
+	item_list.ensure_current_is_visible()
+	_on_item_selected(idx)
+	return true
 
 
 func _run_grouped_rebuild(rebuild: Callable, skip_transition: bool = false) -> void:
+	var _perf_rb := PerfTrace.begin("perf.detail.song_select.populate.run_grouped_rebuild")
 	var heavy := current_filter_mode == "difficulty"
+	PerfTrace.record("perf.detail.song_select.populate.run_grouped_rebuild." + ("heavy" if heavy else "immediate"), 1)
 	if heavy:
+		_forensic_pending_populate_reason = "run_grouped_rebuild_heavy_deferred"
 		emit_signal("heavy_list_rebuild_started")
 		call_deferred("_run_heavy_grouped_rebuild", rebuild, skip_transition)
+		PerfTrace.end("perf.detail.song_select.populate.run_grouped_rebuild", _perf_rb)
 		return
 	_run_grouped_rebuild_immediate(rebuild, skip_transition)
+	PerfTrace.end("perf.detail.song_select.populate.run_grouped_rebuild", _perf_rb)
 
 
 func _run_heavy_grouped_rebuild(rebuild: Callable, skip_transition: bool = false) -> void:
+	var _perf_heavy := PerfTrace.begin("perf.detail.song_select.populate.run_heavy_grouped_rebuild")
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_run_grouped_rebuild_immediate(rebuild, skip_transition)
 	emit_signal("heavy_list_rebuild_finished")
+	PerfTrace.end("perf.detail.song_select.populate.run_heavy_grouped_rebuild", _perf_heavy)
 
 
 func _run_grouped_rebuild_immediate(rebuild: Callable, skip_transition: bool = false) -> void:
@@ -282,8 +380,10 @@ func start_editing(field_type: String, song_data: Dictionary, selected_item_list
 	return true
 
 func _open_metadata_editor(focus_field: String) -> void:
+	var _perf_total := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.total")
 	var song_data = _edit_context["song_data"]
 	var song_path := str(song_data.get("path", ""))
+	var _perf_metadata := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.metadata")
 	if song_path != "":
 		var raw := SongLibrary.get_metadata_for_song(song_path)
 		if not raw.is_empty():
@@ -291,24 +391,37 @@ func _open_metadata_editor(focus_field: String) -> void:
 			merged["path"] = song_path
 			song_data = merged
 			_edit_context["song_data"] = song_data
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.metadata", _perf_metadata)
 	_edit_context["type"] = "metadata_editor"
+	var _perf_load := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.load")
 	var dlg_scene = load("res://scenes/song_select/dialogs/metadata_edit_dialog.tscn")
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.load", _perf_load)
 	if not dlg_scene:
 		_cleanup_edit_context()
+		PerfTrace.end("perf.detail.song_select.metadata_edit.open.total", _perf_total)
 		return
+	var _perf_inst := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.instantiate")
 	var dlg = dlg_scene.instantiate()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.instantiate", _perf_inst)
 	_edit_context["dialog"] = dlg
+	var _perf_setup := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.setup")
 	if dlg.has_method("setup"):
 		dlg.setup(song_data, focus_field)
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.setup", _perf_setup)
 	dlg.metadata_saved.connect(_on_metadata_saved)
 	dlg.cancelled.connect(_on_dialog_closed)
 	var host := get_parent() if get_parent() else self
 	if host and host.has_method("_suppress_favorite_for_overlay"):
 		host.call("_suppress_favorite_for_overlay")
+	var _perf_add := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.add")
 	host.add_child(dlg)
 	host.move_child(dlg, -1)
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.add", _perf_add)
+	var _perf_ui := PerfTrace.begin("perf.detail.song_select.metadata_edit.open.ui_apply")
 	UiInteractionApplier.apply_from_engine(dlg)
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.ui_apply", _perf_ui)
 	_UiModifierSounds.play_select()
+	PerfTrace.end("perf.detail.song_select.metadata_edit.open.total", _perf_total)
 
 func _on_metadata_saved(fields_to_update: Dictionary) -> void:
 	var song_data = _edit_context["song_data"]
@@ -1087,11 +1200,34 @@ func _build_letter_grouped_data(songs_list: Array) -> Array:
 	return grouped
 
 func _render_grouped_data():
+	_NotesUtils.begin_bulk_present_scan()
+	_NotesUtils.begin_scope_fast_cache()
+	var _perf_items := PerfTrace.begin("perf.detail.song_select.populate.render.items")
 	item_list.remove_theme_constant_override("icon_max_width")
 	var difficulty_header_visuals: Dictionary = {}
 	var use_difficulty_header_icons: bool = current_filter_mode == "difficulty"
+	var _perf_headers_usec := 0
+	var _perf_songs_usec := 0
+	var _perf_song_text_usec := 0
+	var _perf_song_visuals_usec := 0
+	_forensic_song_visuals_text_usec = 0
+	_forensic_song_visuals_notes_ready_usec = 0
+	_forensic_song_visuals_color_usec = 0
+	_forensic_song_visuals_bucket_usec = 0
+	_forensic_notes_ready_has_valid_bpm_usec = 0
+	_forensic_notes_ready_cache_usec = 0
+	_forensic_notes_ready_scope_usec = 0
+	_forensic_render_count += 1
+	_forensic_apply_count = 0
+	_forensic_song_ready_total = 0
+	_forensic_song_ready_has_valid_false = 0
+	_forensic_song_ready_cache_hit = 0
+	_forensic_song_ready_cache_miss = 0
+	_forensic_bucket_second_call = 0
+	_forensic_in_render_items = true
 	for item_data in current_grouped_data:
 		if item_data.type == "header":
+			var _t_hdr := Time.get_ticks_usec()
 			var header_text: String = str(item_data.text)
 			if item_data.get("favorites_section", false):
 				header_text = "★ " + header_text
@@ -1100,6 +1236,7 @@ func _render_grouped_data():
 				header_text = " "
 			var idx = item_list.add_item(header_text)
 			item_list.set_item_selectable(idx, false)
+			var _perf_colors_hdr := PerfTrace.begin("perf.detail.song_select.populate.render.colors")
 			if use_difficulty_header_icons and rating > 0:
 				item_list.set_item_custom_bg_color(idx, _LIST_ITEM_PANEL_BG)
 				difficulty_header_visuals[idx] = {
@@ -1118,18 +1255,56 @@ func _render_grouped_data():
 				item_list.set_item_custom_fg_color(idx, Color("#61C7BD") if ready else Color(0.72, 0.8, 0.92, 1.0))
 			elif item_data.get("favorites_section", false):
 				item_list.set_item_custom_fg_color(idx, Color("#F2B35A"))
+			PerfTrace.end("perf.detail.song_select.populate.render.colors", _perf_colors_hdr)
+			_perf_headers_usec += Time.get_ticks_usec() - _t_hdr
 		else:
+			if _forensic_in_render_items:
+				_forensic_apply_count += 1
+			var _t_song := Time.get_ticks_usec()
 			var song_data = item_data.data
+			var _perf_text := PerfTrace.begin("perf.detail.song_select.populate.render.text")
 			var text = _format_display_text(song_data)
+			PerfTrace.end("perf.detail.song_select.populate.render.text", _perf_text)
+			var _perf_fav := PerfTrace.begin("perf.detail.song_select.populate.render.favorite")
 			if _is_favorite_path(String(song_data.get("path", ""))):
 				text = "★ " + text
+			PerfTrace.end("perf.detail.song_select.populate.render.favorite", _perf_fav)
+			var _t_text := Time.get_ticks_usec()
 			var idx = item_list.add_item(text)
+			_perf_song_text_usec += Time.get_ticks_usec() - _t_text
+			var _t_vis := Time.get_ticks_usec()
 			_apply_song_item_visual(idx, song_data)
+			_perf_song_visuals_usec += Time.get_ticks_usec() - _t_vis
+			_perf_songs_usec += Time.get_ticks_usec() - _t_song
+	var _perf_diff_vis := PerfTrace.begin("perf.detail.song_select.populate.render.items.difficulty_visuals")
 	if item_list is SongItemList:
 		var song_list := item_list as SongItemList
 		song_list.set_difficulty_header_visuals(difficulty_header_visuals)
 	elif item_list.has_method("set_difficulty_header_visuals"):
 		item_list.call("set_difficulty_header_visuals", difficulty_header_visuals)
+	PerfTrace.end("perf.detail.song_select.populate.render.items.difficulty_visuals", _perf_diff_vis)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.headers", _perf_headers_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.songs", _perf_songs_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_text", _perf_song_text_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals", _perf_song_visuals_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.text", _forensic_song_visuals_text_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.notes_ready", _forensic_song_visuals_notes_ready_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.color", _forensic_song_visuals_color_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.bucket", _forensic_song_visuals_bucket_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.notes_ready.has_valid_bpm", _forensic_notes_ready_has_valid_bpm_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.notes_ready.cache", _forensic_notes_ready_cache_usec)
+	PerfTrace.record("perf.detail.song_select.populate.render.items.song_visuals.notes_ready.scope", _forensic_notes_ready_scope_usec)
+	PerfTrace.record("perf.detail.song_select.forensic.render_count", 1)
+	PerfTrace.record("perf.detail.song_select.forensic.apply_count", _forensic_apply_count)
+	PerfTrace.record("perf.detail.song_select.forensic.song_ready_total", _forensic_song_ready_total)
+	PerfTrace.record("perf.detail.song_select.forensic.song_ready_has_valid_false", _forensic_song_ready_has_valid_false)
+	PerfTrace.record("perf.detail.song_select.forensic.song_ready_cache_hit", _forensic_song_ready_cache_hit)
+	PerfTrace.record("perf.detail.song_select.forensic.song_ready_cache_miss", _forensic_song_ready_cache_miss)
+	PerfTrace.record("perf.detail.song_select.forensic.bucket_second_call", _forensic_bucket_second_call)
+	_forensic_in_render_items = false
+	PerfTrace.end("perf.detail.song_select.populate.render.items", _perf_items)
+	_NotesUtils.end_scope_fast_cache()
+	_NotesUtils.end_bulk_present_scan()
 	call_deferred("_update_medal_outline_indices")
 
 func _format_display_text(song_data: Dictionary) -> String:
@@ -1224,7 +1399,10 @@ func _reselect_previous(previous_path: String) -> void:
 	for i in range(current_grouped_data.size()):
 		var it = current_grouped_data[i]
 		if it.type == "song" and it.data.get("path", "") == previous_path:
+			# ItemList.select() does not emit item_selected — sync details panel explicitly.
 			item_list.select(i, true)
+			item_list.ensure_current_is_visible()
+			_on_item_selected(i)
 			break
 
 
@@ -1249,15 +1427,49 @@ func move_selection_by_delta(delta: int) -> bool:
 	return false
 
 func refresh_highlight_for_current_settings():
+	var _qh_pending := _forensic_pending_highlight_reason
+	if _qh_pending != "":
+		_forensic_pending_highlight_reason = ""
+		PerfTrace.record("perf.detail.song_select.queue_highlight.reason." + _qh_pending, 1)
+	else:
+		var _qh_reason := _forensic_populate_caller_reason()
+		PerfTrace.record("perf.detail.song_select.queue_highlight.reason." + _qh_reason, 1)
+	# forensic state snapshot
+	var _qh_has_list := item_list != null
+	var _qh_grouped_size := current_grouped_data.size() if current_grouped_data is Array else -1
+	var _qh_filter := String(current_filter_mode)
+	var _qh_is_initial := false
+	var _qh_initial_done := false
+	var _parent := get_parent()
+	if _parent and _parent.has_method("get") and " _is_initial_library_loading" in _parent:
+		pass
+	if _parent and _parent.get("_is_initial_library_loading") != null:
+		_qh_is_initial = bool(_parent.get("_is_initial_library_loading"))
+	if _parent and _parent.get("_initial_highlight_done") != null:
+		_qh_initial_done = bool(_parent.get("_initial_highlight_done"))
+	PerfTrace.record("perf.detail.song_select.queue_highlight.state.has_list_" + ("true" if _qh_has_list else "false"), 1)
+	PerfTrace.record("perf.detail.song_select.queue_highlight.state.filter_" + _qh_filter, 1)
+	PerfTrace.record("perf.detail.song_select.queue_highlight.state.grouped_" + str(_qh_grouped_size), 1)
+	PerfTrace.record("perf.detail.song_select.queue_highlight.state.initial_loading_" + ("true" if _qh_is_initial else "false"), 1)
+	PerfTrace.record("perf.detail.song_select.queue_highlight.state.initial_done_" + ("true" if _qh_initial_done else "false"), 1)
+	var _perf := PerfTrace.begin("perf.detail.song_select.queue_highlight")
 	if not item_list:
+		PerfTrace.record("perf.detail.song_select.queue_highlight.branch.early_no_list", 1)
+		PerfTrace.end("perf.detail.song_select.queue_highlight", _perf)
 		return
 	if current_filter_mode == "notes_ready" and _notes_ready_regroup_needed():
+		PerfTrace.record("perf.detail.song_select.queue_highlight.branch.regroup_populate", 1)
 		populate_items_grouped(true)
+		PerfTrace.end("perf.detail.song_select.queue_highlight", _perf)
 		return
+	PerfTrace.record("perf.detail.song_select.queue_highlight.branch.incremental", 1)
 	_refresh_song_highlights_incremental(false)
+	PerfTrace.end("perf.detail.song_select.queue_highlight", _perf)
 
 
 func refresh_highlights_for_paths(paths: Array, visible_only: bool = false) -> void:
+	var _qh_reason2 := _forensic_populate_caller_reason()
+	PerfTrace.record("perf.detail.song_select.queue_highlight.reason." + _qh_reason2, 1)
 	if not item_list or paths.is_empty():
 		return
 	var normalized: Dictionary = {}
@@ -1287,6 +1499,7 @@ func refresh_highlights_for_paths(paths: Array, visible_only: bool = false) -> v
 
 
 func _refresh_song_highlights_incremental(visible_only: bool) -> void:
+	var _perf_refresh_inc := PerfTrace.begin("perf.detail.song_select.refresh_incremental")
 	for i in range(current_grouped_data.size()):
 		var item_data = current_grouped_data[i]
 		if item_data.type != "song":
@@ -1294,6 +1507,7 @@ func _refresh_song_highlights_incremental(visible_only: bool) -> void:
 		if visible_only and not _is_item_index_visible(i):
 			continue
 		_apply_song_item_visual(i, item_data.data)
+	PerfTrace.end("perf.detail.song_select.refresh_incremental", _perf_refresh_inc)
 
 
 func _is_item_index_visible(index: int) -> bool:
@@ -1343,15 +1557,35 @@ func _apply_song_item_visual(idx: int, song_data: Dictionary) -> void:
 	var display_text := _format_display_text(song_data)
 	if _is_favorite_path(song_path):
 		display_text = "★ " + display_text
+	var _t_text := Time.get_ticks_usec()
 	item_list.set_item_text(idx, display_text)
-	if _song_ready_for_current_settings(song_data):
+	if _forensic_in_render_items:
+		_forensic_song_visuals_text_usec += Time.get_ticks_usec() - _t_text
+	var _t_notes := Time.get_ticks_usec()
+	_forensic_in_notes_ready_scope = true
+	var _perf_notes := PerfTrace.begin("perf.detail.song_select.populate.render.notes_ready")
+	var _is_ready := _song_ready_for_current_settings(song_data)
+	PerfTrace.end("perf.detail.song_select.populate.render.notes_ready", _perf_notes)
+	_forensic_in_notes_ready_scope = false
+	if _forensic_in_render_items:
+		_forensic_song_visuals_notes_ready_usec += Time.get_ticks_usec() - _t_notes
+	var _t_color := Time.get_ticks_usec()
+	var _perf_colors := PerfTrace.begin("perf.detail.song_select.populate.render.colors")
+	if _is_ready:
 		item_list.set_item_custom_fg_color(idx, Color("#61C7BD"))
 	else:
 		item_list.set_item_custom_fg_color(idx, Color.WHITE)
+	PerfTrace.end("perf.detail.song_select.populate.render.colors", _perf_colors)
+	if _forensic_in_render_items:
+		_forensic_song_visuals_color_usec += Time.get_ticks_usec() - _t_color
+	var _t_bucket := Time.get_ticks_usec()
 	if idx < current_grouped_data.size():
 		var item_entry = current_grouped_data[idx]
 		if item_entry.type == "song":
-			item_entry["notes_ready_bucket"] = _song_ready_for_current_settings(song_data)
+			item_entry["notes_ready_bucket"] = _is_ready
+	if _forensic_in_render_items:
+		_forensic_song_visuals_bucket_usec += Time.get_ticks_usec() - _t_bucket
+		_forensic_bucket_second_call += 1
 
 func _remove_legacy_medal_overlay() -> void:
 	if not item_list:
@@ -1362,7 +1596,9 @@ func _remove_legacy_medal_overlay() -> void:
 
 
 func _update_medal_outline_indices() -> void:
+	var _perf_medal := PerfTrace.begin("perf.detail.song_select.medal_outline")
 	if not item_list:
+		PerfTrace.end("perf.detail.song_select.medal_outline", _perf_medal)
 		return
 	var indices := PackedInt32Array()
 	var count := mini(item_list.item_count, current_grouped_data.size())
@@ -1375,27 +1611,49 @@ func _update_medal_outline_indices() -> void:
 		(item_list as SongItemList).set_medal_outline_indices(indices)
 	elif item_list.has_method("set_medal_outline_indices"):
 		item_list.call("set_medal_outline_indices", indices)
+	PerfTrace.end("perf.detail.song_select.medal_outline", _perf_medal)
 
 func _song_has_valid_bpm(song_data: Dictionary) -> bool:
+	var _perf_getmeta := PerfTrace.begin("perf.detail.song_select.populate.render.items.song_visuals.notes_ready.has_valid_bpm.get_metadata")
 	var path := String(song_data.get("path", ""))
 	var bpm = song_data.get("bpm", "")
 	if _SS.is_missing_metadata_value(bpm) and path != "":
 		bpm = SongLibrary.get_metadata_for_song(path).get("bpm", "")
+	PerfTrace.end("perf.detail.song_select.populate.render.items.song_visuals.notes_ready.has_valid_bpm.get_metadata", _perf_getmeta)
 	return not _SS.is_missing_metadata_value(bpm)
 
 
 func _song_ready_for_current_settings(song_data: Dictionary) -> bool:
+	if _forensic_in_render_items:
+		_forensic_song_ready_total += 1
 	var song_path := String(song_data.get("path", ""))
 	if song_path == "":
 		return false
-	if not _song_has_valid_bpm(song_data):
+	var _t_has_valid := Time.get_ticks_usec()
+	var _has_valid := _song_has_valid_bpm(song_data)
+	if _forensic_in_render_items and _forensic_in_notes_ready_scope:
+		_forensic_notes_ready_has_valid_bpm_usec += Time.get_ticks_usec() - _t_has_valid
+	if _forensic_in_render_items and _forensic_in_notes_ready_scope and not _has_valid:
+		_forensic_song_ready_has_valid_false += 1
+	if not _has_valid:
 		return false
+	var _t_cache := Time.get_ticks_usec()
 	var token := _notes_ready_cache_token()
 	if token != _notes_ready_cache_key:
 		_notes_ready_cache.clear()
 		_notes_ready_cache_key = token
-	if _notes_ready_cache.has(song_path):
+	var _cache_hit := _notes_ready_cache.has(song_path)
+	if _forensic_in_render_items and _forensic_in_notes_ready_scope:
+		_forensic_notes_ready_cache_usec += Time.get_ticks_usec() - _t_cache
+		if _cache_hit:
+			_forensic_song_ready_cache_hit += 1
+		else:
+			_forensic_song_ready_cache_miss += 1
+	if _cache_hit:
 		return bool(_notes_ready_cache[song_path])
+	var _t_scope := Time.get_ticks_usec()
 	var ready := NotesUtils.notes_ready_for_scope(song_path, current_instrument, _chart_lookup_key(), current_lanes)
+	if _forensic_in_render_items and _forensic_in_notes_ready_scope:
+		_forensic_notes_ready_scope_usec += Time.get_ticks_usec() - _t_scope
 	_notes_ready_cache[song_path] = ready
 	return ready

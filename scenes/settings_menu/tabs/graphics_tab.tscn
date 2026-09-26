@@ -426,6 +426,13 @@ theme_override_font_sizes/font_size = 22
 button_pressed = true
 text = "Показывать шкалу HP"
 
+[node name="ShowProgressBarCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
+layout_mode = 2
+theme = ExtResource("2_gfom4")
+theme_override_font_sizes/font_size = 22
+button_pressed = true
+text = "Показывать шкалу прогресса песни"
+
 [node name="PauseResumeRewindCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows"]
 layout_mode = 2
 theme = ExtResource("2_gfom4")
@@ -480,6 +487,7 @@ text = "Отсчёт 5–4–3–2–1 между треками серии"
 [connection signal="item_selected" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/DuoPartnerNoteStyle/DuoPartnerNoteStyleOptionButton" to="." method="_on_duo_partner_note_style_selected"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ShowErrorMeterCheckBox" to="." method="_on_show_error_meter_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ShowHealthBarCheckBox" to="." method="_on_show_health_bar_toggled"]
+[connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ShowProgressBarCheckBox" to="." method="_on_show_progress_bar_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/PauseResumeRewindCheckBox" to="." method="_on_pause_resume_rewind_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/ReduceBgEffectsCheckBox" to="." method="_on_reduce_bg_effects_toggled"]
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/GameplayPanel/GameplayPanelMargin/GameplayRows/AmbientParticlesCheckBox" to="." method="_on_ambient_particles_toggled"]

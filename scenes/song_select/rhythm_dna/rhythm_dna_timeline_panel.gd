@@ -1,4 +1,4 @@
-# scenes/song_select/rhythm_dna_timeline_panel.gd
+# scenes/song_select/rhythm_dna/rhythm_dna_timeline_panel.gd
 extends VBoxContainer
 class_name RhythmDnaTimelinePanel
 

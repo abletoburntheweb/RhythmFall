@@ -1,8 +1,9 @@
-# logic/note_manager.gd
+# logic/core/note_manager.gd
 extends RefCounted
 
 const RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const NotesUtils = preload("res://logic/domain/rhythm/notes_utils.gd")
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
 
 var total_loaded_notes_count: int = 0
 
@@ -359,11 +360,18 @@ func _chart_instrument() -> String:
 
 
 func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes: int = 4, chart_tag: String = ""):
+	var _diag_t := Time.get_ticks_usec()
+	if game_screen:
+		game_screen._diag_load_runs += 1
 	self.lanes = clamp(lanes, 3, 5) 
 	
 	var song_path = song_data.get("path", "")
 	if song_path == "":
 		print("NoteManager: Путь к песне пуст, загрузка нот невозможна.")
+		if game_screen:
+			var _dt := Time.get_ticks_usec() - _diag_t
+			game_screen._diag_load_usec_total += _dt
+			game_screen._diag_load_usec_max = maxi(game_screen._diag_load_usec_max, _dt)
 		return
 
 	var instrument := _chart_instrument()
@@ -392,6 +400,10 @@ func load_notes_from_file(song_data: Dictionary, generation_mode: String, lanes:
 			"NoteManager: Не удалось открыть или распарсить файл нот: %s (instrument=%s mode=%s)"
 			% [notes_path, instrument, generation_mode]
 		)
+	if game_screen:
+		var _dt := Time.get_ticks_usec() - _diag_t
+		game_screen._diag_load_usec_total += _dt
+		game_screen._diag_load_usec_max = maxi(game_screen._diag_load_usec_max, _dt)
 
 func _chart_source_tag() -> String:
 	if game_screen == null:
@@ -459,14 +471,25 @@ func annotate_memory_patterns(bpm: float) -> void:
 		prev_t = t
 	
 func spawn_notes():
+	var _diag_t := Time.get_ticks_usec()
+	if game_screen:
+		game_screen._diag_spawn_calls += 1
 	var game_time = game_screen.get_song_time()
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.get_hit_zone_y_for_playfield(playfield_target)
 	var container := _notes_container()
 	if container == null:
+		if game_screen:
+			var _dt := Time.get_ticks_usec() - _diag_t
+			game_screen._diag_spawn_usec_total += _dt
+			game_screen._diag_spawn_usec_max = maxi(game_screen._diag_spawn_usec_max, _dt)
 		return
 
 	if note_spawn_queue.size() == 0:
+		if game_screen:
+			var _dt2 := Time.get_ticks_usec() - _diag_t
+			game_screen._diag_spawn_usec_total += _dt2
+			game_screen._diag_spawn_usec_max = maxi(game_screen._diag_spawn_usec_max, _dt2)
 		return
 		
 	var pixels_per_sec = game_screen.get_note_pixels_per_sec()
@@ -510,6 +533,10 @@ func spawn_notes():
 		if String(note_info.get("type", "")) == "BassOctaveNote":
 			note_info["type"] = "BassTapNote"
 		_spawn_one_note(note_info, game_time, hit_zone_y, pixels_per_sec, playfield_h, chart_lanes)
+	if game_screen:
+		var _dt := Time.get_ticks_usec() - _diag_t
+		game_screen._diag_spawn_usec_total += _dt
+		game_screen._diag_spawn_usec_max = maxi(game_screen._diag_spawn_usec_max, _dt)
 
 
 func _lane_blocked_at_time(chart_lane: int, note_time: float) -> bool:
@@ -744,6 +771,10 @@ func _notes_container() -> Node2D:
 	return null
 
 func update_notes():
+	var _perf_t := PerfTrace.begin("perf.runtime.update_notes")
+	var _diag_t := Time.get_ticks_usec()
+	if game_screen:
+		game_screen._diag_updNotes_calls += 1
 	var speed = game_screen.speed
 	var hit_zone_y = game_screen.get_hit_zone_y_for_playfield(playfield_target)
 	var miss_threshold: float = 40
@@ -903,6 +934,14 @@ func update_notes():
 		if not note.active:
 			notes.remove_at(i)
 		i -= 1
+	if game_screen:
+		var _dt := Time.get_ticks_usec() - _diag_t
+		game_screen._diag_updNotes_usec_total += _dt
+		game_screen._diag_updNotes_usec_max = maxi(game_screen._diag_updNotes_usec_max, _dt)
+		# active runtime is notes.size() after update (shared eligibility array)
+		game_screen._diag_max_active = maxi(game_screen._diag_max_active, notes.size())
+		game_screen._diag_max_queue = maxi(game_screen._diag_max_queue, note_spawn_queue.size())
+	PerfTrace.end("perf.runtime.update_notes", _perf_t)
 
 
 func get_notes():
@@ -955,7 +994,7 @@ func _unconsume_misses_from_time(target_time: float) -> void:
 		_consumed_chart_keys.erase(key)
 
 
-func rewind_chart_to_time(target_time: float) -> void:
+func rewind_chart_to_time(target_time: float, end_bound: float = -1.0) -> void:
 	clear_active_notes()
 	_ensure_chart_master()
 	note_spawn_queue.clear()
@@ -966,9 +1005,37 @@ func rewind_chart_to_time(target_time: float) -> void:
 	for item in _chart_notes_master:
 		if not item is Dictionary:
 			continue
-		if float(item.get("time", 0.0)) < target_time:
+		var item_time := float(item.get("time", 0.0))
+		if item_time < target_time:
+			continue
+		if end_bound > 0.0 and item_time >= end_bound:
 			continue
 		if _consumed_chart_keys.has(_chart_item_key(item)):
+			continue
+		note_spawn_queue.append(item.duplicate(true))
+	note_spawn_queue.sort_custom(func(a, b) -> bool:
+		return float(a.get("time", 0.0)) < float(b.get("time", 0.0))
+	)
+
+## Fully rewinds the chart for a Practice loop: clears active notes, forgets
+## every consumed/missed note and rebuilds the spawn queue from target_time so
+## the whole selected range can be replayed cleanly. Notes at/after end_bound
+## (>= 0) belong to sections AFTER the practice range and are excluded so they
+## are never spawned/displayed as part of the loop.
+func reset_chart_for_loop(target_time: float, end_bound: float = -1.0) -> void:
+	clear_active_notes()
+	_ensure_chart_master()
+	note_spawn_queue.clear()
+	_consumed_chart_keys.clear()
+	if _chart_notes_master.is_empty():
+		return
+	for item in _chart_notes_master:
+		if not item is Dictionary:
+			continue
+		var item_time := float(item.get("time", 0.0))
+		if item_time < target_time:
+			continue
+		if end_bound > 0.0 and item_time >= end_bound:
 			continue
 		note_spawn_queue.append(item.duplicate(true))
 	note_spawn_queue.sort_custom(func(a, b) -> bool:

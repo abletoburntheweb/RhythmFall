@@ -3,6 +3,8 @@ class_name SongItemList
 
 ## Draws gold outlines for tracks with unseen medals, aligned with ItemList rows.
 
+const PerfTrace = preload("res://logic/utils/perf_trace.gd")
+
 var medal_outline_indices: PackedInt32Array = PackedInt32Array()
 var difficulty_header_visuals: Dictionary = {}
 static var _outline_style: StyleBoxFlat
@@ -35,8 +37,10 @@ func set_medal_outline_indices(indices: PackedInt32Array) -> void:
 
 
 func set_difficulty_header_visuals(visuals_by_index: Dictionary) -> void:
+	var _perf_inner := PerfTrace.begin("perf.detail.song_select.populate.render.items.difficulty_visuals.inner")
 	difficulty_header_visuals = visuals_by_index
 	queue_redraw()
+	PerfTrace.end("perf.detail.song_select.populate.render.items.difficulty_visuals.inner", _perf_inner)
 
 
 func _on_scroll_changed(_value: float = 0.0) -> void:

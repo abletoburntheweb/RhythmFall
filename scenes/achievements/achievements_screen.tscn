@@ -115,6 +115,23 @@ theme_override_constants/separation = 8
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="SortHBox" type="HBoxContainer" parent="MainVBox/FilterBarPanel/FilterVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SortLabel" type="Label" parent="MainVBox/FilterBarPanel/FilterVBox/SortHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.62, 0.72, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Sort:"
+
+[node name="SortOptionButton" type="OptionButton" parent="MainVBox/FilterBarPanel/FilterVBox/SortHBox"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_type_variation = &"Dropdown"
+text = "Title"
+
 [node name="SearchBar" type="LineEdit" parent="MainVBox/FilterBarPanel/FilterVBox"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -184,7 +201,7 @@ theme_override_constants/separation = 12
 [node name="AchievementsList" type="VBoxContainer" parent="MainVBox/ContentContainer/AchievementsScroll/BottomMargin/ContentVBox/ListRoot"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="FooterLabel" type="Label" parent="MainVBox"]
 layout_mode = 2

@@ -5,10 +5,12 @@ extends RefCounted
 const _Snapshot = preload("res://scenes/profile/share/profile_share_snapshot.gd")
 const _GenrePortrait = preload("res://logic/domain/profile/profile_genre_portrait.gd")
 const _Facts = preload("res://scenes/profile/share/profile_share_card_facts.gd")
+const _Taglines = preload("res://scenes/profile/share/profile_share_taglines.gd")
 const _RunModifiers = preload("res://logic/domain/modifiers/run_modifiers.gd")
 const _UiIconHelper = preload("res://logic/ui/ui_icon_helper.gd")
 const _GenreGroupIcons = preload("res://logic/domain/library/genre_group_icons.gd")
 const _PlayModes = preload("res://logic/domain/profile/profile_play_modes_stats.gd")
+const _ChartDifficulty = preload("res://logic/domain/charts/chart_difficulty_analyzer.gd")
 
 const CARD_HERO_KEYS := {
 	"overview": "PROFILE_SHARE_RECAP_OVERVIEW",
@@ -50,14 +52,24 @@ const EXTREME_SPECS: Array = [
 	["longest_track_duration_sec", "PROFILE_RECORD_EXTREME_DURATION", "duration"],
 ]
 
+# Prestige ladder (easy → hard). Index drives Recap 4-slot pick.
 const MILESTONE_SPECS: Array = [
+	["first_track_played", "PROFILE_RECORD_MILESTONE_FIRST_TRACK"],
 	["first_ss", "PROFILE_RECORD_MILESTONE_FIRST_SS"],
 	["first_fc", "PROFILE_RECORD_MILESTONE_FIRST_FC"],
+	["first_mod_clear", "PROFILE_RECORD_MILESTONE_FIRST_MOD"],
+	["endless_unlocked", "PROFILE_RECORD_MILESTONE_ENDLESS"],
+	["marathon_unlocked", "PROFILE_RECORD_MILESTONE_MARATHON"],
 	["unique_100_tracks", "PROFILE_RECORD_MILESTONE_UNIQUE_100"],
-	["first_s", "PROFILE_RECORD_MILESTONE_FIRST_S"],
-	["first_hidden_clear", "PROFILE_RECORD_MILESTONE_FIRST_HIDDEN"],
-	["first_medal", "PROFILE_RECORD_MILESTONE_FIRST_MEDAL"],
+	["clears_250", "PROFILE_RECORD_MILESTONE_CLEARS_250"],
+	["total_rr_10000", "PROFILE_RECORD_MILESTONE_RR_10K"],
+	["genre_group_level_10", "PROFILE_RECORD_MILESTONE_GENRE_L10"],
 ]
+
+
+static func _css_hex(color: Color) -> String:
+	## Godot to_html(false) is "rrggbb" without "#"; CSS needs "#rrggbb".
+	return "#" + color.to_html(false)
 
 
 static func build(card_id: String, data: Dictionary) -> Dictionary:
@@ -66,8 +78,8 @@ static func build(card_id: String, data: Dictionary) -> Dictionary:
 		"card_id": card_id,
 		"card_index": CARD_INDEX.get(card_id, 1),
 		"locale": TranslationServer.get_locale(),
-		"accent": accent.to_html(false),
-		"accent2": CARD_ACCENT2.get(card_id, accent.to_html(false)),
+		"accent": _css_hex(accent),
+		"accent2": CARD_ACCENT2.get(card_id, _css_hex(accent)),
 		"brand": TranslationServer.translate("PROFILE_SHARE_RECAP_BRAND"),
 		"hero_subtitle": TranslationServer.translate(CARD_HERO_SUBTITLE_KEYS.get(card_id, "")),
 		"hero_title": TranslationServer.translate(CARD_HERO_KEYS.get(card_id, "")),
@@ -86,6 +98,10 @@ static func build(card_id: String, data: Dictionary) -> Dictionary:
 			_merge_records(payload, data)
 		"play_modes":
 			_merge_play_modes(payload, data)
+	if str(payload.get("tagline", "")).strip_edges() == "":
+		payload["tagline"] = str(data.get("tagline", ""))
+		if str(payload["tagline"]).strip_edges() == "":
+			payload["tagline"] = _Taglines.pick(card_id, data)
 	return payload
 
 
@@ -100,7 +116,7 @@ static func _common_labels() -> Dictionary:
 		"best_grade": TranslationServer.translate("PROFILE_SHARE_BEST_GRADE").split(":")[0].strip_edges(),
 		"sec_fav_track": TranslationServer.translate("PROFILE_SHARE_SEC_FAV_TRACK"),
 		"sec_fav_genre": TranslationServer.translate("PROFILE_SHARE_SEC_FAV_GENRE"),
-		"sec_combat": TranslationServer.translate("PROFILE_SHARE_SEC_RUN_PEAKS"),
+		"sec_combat": TranslationServer.translate("PROFILE_SHARE_SEC_RUN_TOTALS"),
 		"sec_progress": TranslationServer.translate("PROFILE_SHARE_SEC_PROGRESS"),
 		"sec_stats": TranslationServer.translate("PROFILE_SHARE_SEC_STATS_GRID"),
 		"sec_grades": TranslationServer.translate("PROFILE_SHARE_SEC_GRADES_SHORT"),
@@ -115,6 +131,11 @@ static func _common_labels() -> Dictionary:
 		"sec_mastery_hint": TranslationServer.translate("PROFILE_SHARE_MASTERY_HINT"),
 		"sec_leaders": TranslationServer.translate("PROFILE_SHARE_SEC_LEADERS"),
 		"sec_fact": TranslationServer.translate("PROFILE_SHARE_SEC_FACT"),
+		"sec_story": TranslationServer.translate("PROFILE_SHARE_SEC_STORY"),
+		"sec_hall": TranslationServer.translate("PROFILE_SHARE_SEC_HALL"),
+		"sec_discoveries": TranslationServer.translate("PROFILE_SHARE_SEC_DISCOVERIES"),
+		"trend_new": TranslationServer.translate("PROFILE_SHARE_TREND_NEW"),
+		"trend_growing": TranslationServer.translate("PROFILE_SHARE_TREND_GROWING"),
 		"sec_rr_top": TranslationServer.translate("PROFILE_SHARE_SEC_RR_TOP"),
 		"sec_milestones": TranslationServer.translate("PROFILE_SHARE_SEC_MILESTONES"),
 		"sec_records": TranslationServer.translate("PROFILE_SHARE_SEC_RECORDS"),
@@ -161,8 +182,7 @@ static func _merge_overview(payload: Dictionary, data: Dictionary) -> void:
 	payload["max_combo"] = int(data.get("max_combo", 0))
 	payload["total_score"] = int(data.get("total_score", 0))
 	payload["daily_quests"] = int(data.get("daily_quests", 0))
-	var avg := float(data.get("avg_difficulty", 0.0))
-	payload["avg_difficulty_text"] = ("%.1f★" % avg) if avg > 0.01 else TranslationServer.translate("VALUE_NA")
+	_apply_avg_difficulty(payload, float(data.get("avg_difficulty", 0.0)))
 	payload["ss"] = int(data.get("ss", 0))
 	payload["s"] = int(data.get("s", 0))
 	payload["a"] = int(data.get("a", 0))
@@ -179,6 +199,13 @@ static func _merge_overview(payload: Dictionary, data: Dictionary) -> void:
 	if payload["favorite_group_percent"] > 0.0 and group_id != "":
 		payload["genre_percent_text"] = TranslationServer.translate("PROFILE_SHARE_GENRE_PERCENT") % payload["favorite_group_percent"]
 	payload["favorite_group_icon"] = _genre_icon_entry(group_id)
+	var story: Array = []
+	for line in data.get("story_lines", []):
+		var s := str(line).strip_edges()
+		if s != "":
+			story.append(s)
+	payload["story_lines"] = story
+	payload["tagline"] = str(data.get("tagline", ""))
 	payload["card_fact"] = _Facts.pick("overview", data)
 
 
@@ -193,8 +220,7 @@ static func _merge_statistics(payload: Dictionary, data: Dictionary) -> void:
 	payload["medals_total"] = int(data.get("medals_total", 0))
 	payload["rr_earned"] = int(data.get("rr_earned", 0))
 	payload["daily_quests"] = int(data.get("daily_quests", 0))
-	var avg := float(data.get("avg_difficulty", 0.0))
-	payload["avg_difficulty_text"] = ("%.1f★" % avg) if avg > 0.01 else TranslationServer.translate("VALUE_NA")
+	_apply_avg_difficulty(payload, float(data.get("avg_difficulty", 0.0)))
 	payload["ss"] = int(data.get("ss", 0))
 	payload["s"] = int(data.get("s", 0))
 	payload["a"] = int(data.get("a", 0))
@@ -210,6 +236,10 @@ static func _merge_statistics(payload: Dictionary, data: Dictionary) -> void:
 	else:
 		payload["chart_caption"] = ""
 	payload["hero_sub_text"] = TranslationServer.translate("PROFILE_SHARE_STAT_HERO_HITS") % fmt_int(payload["notes_hit"])
+	payload["accuracy_delta_text"] = str(data.get("accuracy_delta_text", ""))
+	payload["tracks_delta_text"] = str(data.get("tracks_delta_text", ""))
+	payload["rr_delta_text"] = str(data.get("rr_delta_text", ""))
+	payload["tagline"] = str(data.get("tagline", ""))
 	payload["card_fact"] = _Facts.pick("statistics", data)
 
 
@@ -229,6 +259,7 @@ static func _merge_music(payload: Dictionary, data: Dictionary) -> void:
 	for row in data.get("top_genres", []):
 		if not row is Dictionary:
 			continue
+		var trend := str(row.get("trend", "")).strip_edges().to_lower()
 		genres.append({
 			"name": _group_label(str(row.get("group_id", ""))),
 			"percent": float(row.get("percent", 0.0)),
@@ -240,9 +271,21 @@ static func _merge_music(payload: Dictionary, data: Dictionary) -> void:
 			"catalog": int(row.get("catalog", 0)),
 			"group_id": str(row.get("group_id", "")),
 			"icon": _genre_icon_entry(str(row.get("group_id", ""))),
+			"trend": trend,
 		})
 		idx += 1
 	payload["top_genres"] = genres
+	var discoveries: Array = []
+	for gid_raw in data.get("new_discovery_ids", []):
+		var gid := str(gid_raw).strip_edges()
+		if gid == "":
+			continue
+		discoveries.append({
+			"name": _group_label(gid),
+			"group_id": gid,
+			"icon": _genre_icon_entry(gid),
+		})
+	payload["new_discoveries"] = discoveries
 	if not genres.is_empty():
 		payload["hero_genre_name"] = str(genres[0].get("name", ""))
 		payload["hero_genre_percent"] = float(genres[0].get("percent", 0.0))
@@ -274,6 +317,7 @@ static func _merge_music(payload: Dictionary, data: Dictionary) -> void:
 		payload["collection_best_text"] = ""
 	var fact_data := data.duplicate(true)
 	fact_data["top_genres"] = genres
+	payload["tagline"] = str(data.get("tagline", ""))
 	payload["card_fact"] = _Facts.pick("music", fact_data)
 
 
@@ -281,36 +325,59 @@ static func _merge_records(payload: Dictionary, data: Dictionary) -> void:
 	payload["best_rr_peak"] = int(data.get("best_rr_peak", 0))
 	payload["best_rr_track"] = str(data.get("best_rr_track", ""))
 
-	var rr_rows: Array = []
-	var rr_entries: Array = data.get("rr_top", [])
-	for i in range(1, rr_entries.size()):
-		var entry: Variant = rr_entries[i]
-		if not entry is Dictionary:
-			continue
-		rr_rows.append({
-			"rr": int(entry.get("best_rr", 0)),
-			"track": _track_line(entry),
-			"rank": i + 1,
-		})
-	payload["rr_top"] = rr_rows
+	# RR #1 is the hero; drop 02–03 on Recap to keep the fact panel on-card.
+	payload["rr_top"] = []
 
 	var milestones: Dictionary = data.get("milestones", {}) if data.get("milestones") is Dictionary else {}
-	var ms_rows: Array = []
-	for spec in MILESTONE_SPECS:
-		ms_rows.append({
-			"title": TranslationServer.translate(str(spec[1])),
-			"unlocked": _milestone_unlocked(milestones, str(spec[0])),
+	payload["milestones"] = _pick_milestone_rows(milestones, 4)
+
+	var hall_rows: Array = []
+	var extremes_for_hall: Dictionary = data.get("extremes", {}) if data.get("extremes") is Dictionary else {}
+	for row in data.get("hall_rows", []):
+		if not row is Dictionary:
+			continue
+		var row_dict: Dictionary = row
+		var caption_key := str(row_dict.get("caption_key", ""))
+		var caption: String = ""
+		if caption_key != "":
+			caption = str(TranslationServer.translate(caption_key))
+		else:
+			caption = str(row_dict.get("caption", ""))
+		var hall_id := str(row_dict.get("id", ""))
+		var value_text := str(row_dict.get("value", ""))
+		var value_color := ""
+		var zap_icon: Dictionary = {}
+		if hall_id == "hardest_chart" and extremes_for_hall.get("hardest_chart_cleared") is Dictionary:
+			var hard_entry: Dictionary = extremes_for_hall["hardest_chart_cleared"]
+			var rating := float(hard_entry.get("value", 0.0))
+			var diff := _difficulty_display(rating)
+			value_text = str(diff.get("text", value_text))
+			value_color = str(diff.get("color", ""))
+			var zap_raw: Variant = diff.get("zap", {})
+			if zap_raw is Dictionary:
+				zap_icon = zap_raw
+		hall_rows.append({
+			"caption": caption,
+			"value": value_text,
+			"track": str(row_dict.get("track", "")),
+			"id": hall_id,
+			"value_color": value_color,
+			"zap_icon": zap_icon,
 		})
-	payload["milestones"] = ms_rows
+	payload["hall_rows"] = hall_rows
 
 	var extremes: Dictionary = data.get("extremes", {}) if data.get("extremes") is Dictionary else {}
 	var rec_rows: Array = []
 	for spec in EXTREME_SPECS:
+		# Hall of fame already covers hardest / FC; keep accuracy / bpm / duration extras.
+		var spec_id := str(spec[0])
+		if spec_id in ["hardest_chart_cleared", "longest_fc"]:
+			continue
 		var caption := TranslationServer.translate(str(spec[1]))
 		var value := TranslationServer.translate("VALUE_NA")
 		var track := ""
-		if extremes.has(str(spec[0])) and extremes[str(spec[0])] is Dictionary:
-			var entry: Dictionary = extremes[str(spec[0])]
+		if extremes.has(spec_id) and extremes[spec_id] is Dictionary:
+			var entry: Dictionary = extremes[spec_id]
 			value = _format_extreme(entry, str(spec[2]))
 			track = _track_line(entry)
 			if value == "":
@@ -322,6 +389,7 @@ static func _merge_records(payload: Dictionary, data: Dictionary) -> void:
 		})
 	payload["records"] = rec_rows
 	payload["mod_rows"] = _mod_rows(data.get("mod_records", {}))
+	payload["tagline"] = str(data.get("tagline", ""))
 	payload["card_fact"] = _Facts.pick("records", data)
 
 
@@ -394,6 +462,9 @@ static func _merge_play_modes(payload: Dictionary, data: Dictionary) -> void:
 	payload["mod_has_data"] = not mod_clear_rows.is_empty()
 	payload["marathon_empty_text"] = TranslationServer.translate("PROFILE_SHARE_PLAY_MODES_MARATHON_EMPTY")
 	payload["endless_empty_text"] = TranslationServer.translate("PROFILE_SHARE_PLAY_MODES_ENDLESS_EMPTY")
+	payload["endless_story"] = str(data.get("endless_story", ""))
+	payload["marathon_story"] = str(data.get("marathon_story", ""))
+	payload["tagline"] = str(data.get("tagline", ""))
 	payload["card_fact"] = _Facts.pick("play_modes", data)
 
 
@@ -407,7 +478,7 @@ static func _genre_icon_entry(group_id: String) -> Dictionary:
 	return {
 		"group_id": gid,
 		"b64": _texture_to_b64(tex),
-		"tint": tint.to_html(false),
+		"tint": _css_hex(tint),
 	}
 
 
@@ -423,7 +494,7 @@ static func _mod_icon_entry(mod_id: String) -> Dictionary:
 	return {
 		"mod_id": id,
 		"b64": _texture_to_b64(tex),
-		"tint": tint.to_html(false),
+		"tint": _css_hex(tint),
 	}
 
 
@@ -446,32 +517,109 @@ static func _mod_rows(mod_records: Variant) -> Array:
 	var rows: Array = []
 	var max_rec: Variant = mod_records.get("max_mod_count")
 	if max_rec is Dictionary and int(max_rec.get("count", 0)) > 0:
-		var val := TranslationServer.translate("PROFILE_RECORDS_MOD_COUNT_SHORT") % int(max_rec.get("count", 0))
-		var mods := _mods_text(max_rec.get("modifiers", []))
-		if mods != "":
-			val += " · " + mods
 		rows.append({
 			"caption": TranslationServer.translate("PROFILE_RECORD_MOD_MAX_COUNT"),
-			"value": val,
+			"value": TranslationServer.translate("PROFILE_RECORDS_MOD_COUNT_SHORT") % int(max_rec.get("count", 0)),
 			"icons": _mod_icon_entries(max_rec.get("modifiers", [])),
 		})
 	var hard_rec: Variant = mod_records.get("hardest_mod_combo")
 	if hard_rec is Dictionary and float(hard_rec.get("hardness", 0.0)) > 0.0:
 		var bonus := int(round(float(hard_rec.get("hardness", 0.0)) * 100.0))
-		var val := TranslationServer.translate("PROFILE_RECORD_MOD_HARD_BONUS") % bonus
-		var mods := _mods_text(hard_rec.get("modifiers", []))
-		if mods != "":
-			val += " · " + mods
 		rows.append({
 			"caption": TranslationServer.translate("PROFILE_RECORD_MOD_HARDEST"),
-			"value": val,
+			"value": TranslationServer.translate("PROFILE_RECORD_MOD_HARD_BONUS") % bonus,
 			"icons": _mod_icon_entries(hard_rec.get("modifiers", [])),
 		})
+	var score_rec: Variant = mod_records.get("best_score_with_mods")
+	if score_rec is Dictionary and int(score_rec.get("score", 0)) > 0:
+		rows.append({
+			"caption": TranslationServer.translate("PROFILE_RECORD_MOD_BEST_SCORE"),
+			"value": fmt_int(int(score_rec.get("score", 0))),
+			"icons": _mod_icon_entries(score_rec.get("modifiers", [])),
+		})
+	var rr_rec: Variant = mod_records.get("best_rr_with_mods")
+	if rr_rec is Dictionary and int(rr_rec.get("best_rr", rr_rec.get("rr", 0))) > 0:
+		var rr_val := int(rr_rec.get("best_rr", 0))
+		if rr_val <= 0:
+			rr_val = int(rr_rec.get("rr", 0))
+		rows.append({
+			"caption": TranslationServer.translate("PROFILE_RECORD_MOD_BEST_RR"),
+			"value": fmt_int(rr_val),
+			"icons": _mod_icon_entries(rr_rec.get("modifiers", [])),
+		})
+	var acc_rec: Variant = mod_records.get("best_accuracy_with_mods")
+	if acc_rec is Dictionary and float(acc_rec.get("accuracy", 0.0)) > 0.0:
+		rows.append({
+			"caption": TranslationServer.translate("PROFILE_RECORD_MOD_BEST_ACCURACY"),
+			"value": "%.1f%%" % float(acc_rec.get("accuracy", 0.0)),
+			"icons": _mod_icon_entries(acc_rec.get("modifiers", [])),
+		})
+	# Stack peaks first; one legendary score run for share. Cap at 3.
+	if rows.size() > 3:
+		rows.resize(3)
 	return rows
 
 
-static func _mods_text(mods: Variant) -> String:
-	return _RunModifiers.format_abbr_list(mods, func(key: String) -> String: return TranslationServer.translate(key))
+static func _pick_milestone_rows(milestones: Dictionary, limit: int = 4) -> Array:
+	## Exactly `limit` slots. Prestige grows with MILESTONE_SPECS index.
+	## ≥limit unlocked → hardest unlocked; else fill empties with easiest locked.
+	var unlocked_idxs: Array[int] = []
+	var locked_idxs: Array[int] = []
+	for i in range(MILESTONE_SPECS.size()):
+		var key := str(MILESTONE_SPECS[i][0])
+		if _milestone_unlocked(milestones, key):
+			unlocked_idxs.append(i)
+		else:
+			locked_idxs.append(i)
+	var pick: Array[int] = []
+	if unlocked_idxs.size() >= limit:
+		unlocked_idxs.sort()
+		for j in range(unlocked_idxs.size() - limit, unlocked_idxs.size()):
+			pick.append(unlocked_idxs[j])
+	else:
+		pick.append_array(unlocked_idxs)
+		locked_idxs.sort()
+		for idx in locked_idxs:
+			if pick.size() >= limit:
+				break
+			pick.append(idx)
+	pick.sort()
+	var ms_rows: Array = []
+	for idx in pick:
+		var spec: Array = MILESTONE_SPECS[idx]
+		ms_rows.append({
+			"title": TranslationServer.translate(str(spec[1])),
+			"unlocked": _milestone_unlocked(milestones, str(spec[0])),
+		})
+	return ms_rows
+
+
+static func _apply_avg_difficulty(payload: Dictionary, avg: float) -> void:
+	var diff := _difficulty_display(avg)
+	payload["avg_difficulty_text"] = str(diff.get("text", TranslationServer.translate("VALUE_NA")))
+	payload["avg_difficulty_color"] = str(diff.get("color", ""))
+	var zap_raw: Variant = diff.get("zap", {})
+	payload["avg_difficulty_zap"] = zap_raw if zap_raw is Dictionary else {}
+
+
+static func _difficulty_display(rating: float) -> Dictionary:
+	if rating <= 0.01:
+		return {
+			"text": TranslationServer.translate("VALUE_NA"),
+			"color": "",
+			"zap": {},
+		}
+	var color := _ChartDifficulty.rating_color_for_decimal(rating)
+	var text := _ChartDifficulty.format_decimal_rating(rating, false)
+	var tex := _UiIconHelper.load_tinted_icon("zap.svg", color, 48)
+	return {
+		"text": text,
+		"color": _css_hex(color),
+		"zap": {
+			"b64": _texture_to_b64(tex),
+			"tint": _css_hex(color),
+		},
+	}
 
 
 static func _track_line(entry: Dictionary) -> String:

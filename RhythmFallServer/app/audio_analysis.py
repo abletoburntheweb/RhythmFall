@@ -100,6 +100,17 @@ _WARM_SEPARATOR_MODEL = ""
 _WARM_SEPARATOR_DML: Optional[bool] = None
 _WARM_OUTPUT_DIR = TEMP_UPLOADS_DIR / "_separator_warm"
 _LAST_STEM_MODELS: Dict[str, str] = {}
+# Fixed output dir for persistent secondary separators. output_dir is the only
+# request-specific Separator field, so cached instances must NOT be bound to a
+# per-song splitter folder; outputs are resolved by absolute path and copied to
+# the request's output_path by the caller (mirrors _WARM_OUTPUT_DIR precedent).
+_COLD_OUTPUT_DIR = TEMP_UPLOADS_DIR / "_separator_cold"
+# Persistent secondary (non-warm) Separators, keyed by (stem_type, use_directml, model).
+# Retained for process lifetime: destroying a secondary DML session while the warm
+# drums session may still reference the shared ORT DirectML recorder expires the
+# allocator and crashes the next warm Alloc (ORT +0x1EE2E0, null this).
+# All access happens under _SEPARATION_LOCK (see separate_stems / _try_separate).
+_COLD_SEPARATORS: Dict[Tuple[str, bool, str], "Separator"] = {}
 
 
 def _stem_warm_enabled() -> bool:
@@ -320,6 +331,33 @@ def _get_warm_separator(use_directml: bool):
     return None
 
 
+def _get_persistent_separator(stem_type: str, use_directml: bool, target_model: str) -> Optional["Separator"]:
+    """Return cached secondary Separator for (stem_type, provider, model), creating it once.
+
+    Must be called under _SEPARATION_LOCK. The separator is bound to the fixed
+    _COLD_OUTPUT_DIR (not a per-song folder) because output_dir is the only
+    request-specific Separator field; all other construction inputs (provider,
+    output_single_stem, mdx_params) derive from the cache key. The instance is
+    never destroyed, so its DML Session/allocator cannot expire underneath the
+    warm drums session during mixed-stem operation.
+    """
+    key = (str(stem_type or "drums").strip().lower() or "drums", bool(use_directml), str(target_model))
+    cached = _COLD_SEPARATORS.get(key)
+    if cached is not None:
+        return cached
+    _COLD_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    separator = _create_separator(_COLD_OUTPUT_DIR, key[1], key[0], model_filename=key[2])
+    try:
+        separator.load_model(key[2])
+    except Exception as e:
+        print(f"[AudioAnalysis] Ошибка загрузки модели: {e}")
+        return None
+    _COLD_SEPARATORS[key] = separator
+    backend = "DirectML" if key[1] else "CPU"
+    print(f"[AudioAnalysis] Persistent separator ready ({backend}, {key[0]}, model={key[2]})")
+    return separator
+
+
 def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", cancel_cb: Optional[Callable[[], None]] = None) -> str:
     from app import song_storage
     global _LAST_STEM_MODELS
@@ -335,16 +373,25 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
         expected_name = f"{song_path.stem}_{stem_type}.wav"
     output_path = splitter_folder / expected_name
 
+    # Single-job SHA memo — avoid 2× full-file read (get + store) inside one POST.
+    _precomputed_content_hash: Optional[str] = None
+    try:
+        _precomputed_content_hash = song_storage.audio_content_hash(str(song_path))
+        if not _precomputed_content_hash:
+            _precomputed_content_hash = None
+    except Exception:
+        _precomputed_content_hash = None
+
     if cancel_cb:
         cancel_cb()
 
     disk_cached = _resolve_disk_cached_stem(song_folder, splitter_folder, output_path, stem_type)
     if disk_cached:
         _LAST_STEM_MODELS[stem_type] = ""
-        stored = stem_memory_cache.store_cached_stem(str(song_path), disk_cached, stem_type)
+        stored = stem_memory_cache.store_cached_stem(str(song_path), disk_cached, stem_type, content_hash=_precomputed_content_hash)
         return stored or disk_cached
 
-    cached_stem = stem_memory_cache.get_cached_stem(str(song_path), stem_type)
+    cached_stem = stem_memory_cache.get_cached_stem(str(song_path), stem_type, content_hash=_precomputed_content_hash)
     if cached_stem:
         _LAST_STEM_MODELS[stem_type] = ""
         try:
@@ -389,15 +436,13 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
                     f"[AudioAnalysis] Запуск разделения: {song_path.name} ({backend}, {stem_type}, "
                     f"model={target_model}, mdx_segment_size={mdx_params['segment_size']})"
                 )
-                separator = _create_separator(
-                    splitter_folder, use_directml, stem_type, model_filename=str(target_model)
-                )
                 if cancel_cb:
                     cancel_cb()
-                try:
-                    separator.load_model(target_model)
-                except Exception as e:
-                    print(f"[AudioAnalysis] Ошибка загрузки модели: {e}")
+                # Persistent secondary session: created once per (stem, provider,
+                # model), retained for process lifetime — never a fresh DML
+                # Session per request, so no allocator can expire mid-operation.
+                separator = _get_persistent_separator(stem_type, use_directml, str(target_model))
+                if separator is None:
                     return None
             if cancel_cb:
                 cancel_cb()
@@ -415,6 +460,11 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
             search_dirs = [splitter_folder.resolve()]
             if warm is not None:
                 search_dirs.append(_WARM_OUTPUT_DIR.resolve())
+            else:
+                # Persistent cold separators write into fixed _COLD_OUTPUT_DIR while
+                # separate() returns bare filenames — resolve them there, otherwise
+                # every cold stem is reported "not found" and never cached.
+                search_dirs.append(_COLD_OUTPUT_DIR.resolve())
             norm_files_set = []
             for f in output_files:
                 try:
@@ -437,9 +487,20 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
                 except Exception:
                     continue
             if not norm_files_set:
+                # Blind salvage when separate() returned nothing usable. Shared fixed
+                # dirs (_WARM/_COLD_OUTPUT_DIR) serve many songs, so only accept this
+                # run's own outputs there, matched by audio basename; the per-song
+                # splitter dir keeps the previous same-song semantics. This prevents
+                # caching another song's stem under this song's content hash.
                 produced: List[str] = []
+                splitter_resolved = splitter_folder.resolve()
+                song_base = song_path.stem.strip().lower()
                 for base in search_dirs:
-                    produced.extend(str(p.resolve()) for p in base.rglob("*.wav"))
+                    for cand in base.rglob("*.wav"):
+                        if base != splitter_resolved:
+                            if not song_base or song_base not in cand.name.lower():
+                                continue
+                        produced.append(str(cand.resolve()))
                 norm_files_set = produced
             norm_files = norm_files_set
             def is_target(name: str) -> bool:
@@ -492,7 +553,7 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
                             p.unlink(missing_ok=True)
                     except Exception:
                         pass
-                stored = stem_memory_cache.store_cached_stem(str(song_path), str(output_path), stem_type)
+                stored = stem_memory_cache.store_cached_stem(str(song_path), str(output_path), stem_type, content_hash=_precomputed_content_hash)
                 if stored:
                     return stored
                 return str(output_path)
@@ -511,7 +572,7 @@ def separate_stems(song_path: str, song_folder: Path, stem_type: str = "drums", 
     with _SEPARATION_LOCK:
         disk_cached = _resolve_disk_cached_stem(song_folder, splitter_folder, output_path, stem_type)
         if disk_cached:
-            stored = stem_memory_cache.store_cached_stem(str(song_path), disk_cached, stem_type)
+            stored = stem_memory_cache.store_cached_stem(str(song_path), disk_cached, stem_type, content_hash=_precomputed_content_hash)
             return stored or disk_cached
         path = _try_separate(use_directml=use_dml)
         if not path and use_dml:

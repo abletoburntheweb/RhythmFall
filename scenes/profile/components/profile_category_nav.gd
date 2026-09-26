@@ -10,13 +10,11 @@ const CATEGORY_BUTTON_SPECS: Array = [
 	["overview", "CategoryButtonOverview"],
 	["stats", "CategoryButtonStats"],
 	["genres", "CategoryButtonGenres"],
-	["records", "CategoryButtonRecords"],
 ]
 const CATEGORY_LOCALE_KEYS := {
 	"overview": "PROFILE_CAT_OVERVIEW",
 	"stats": "PROFILE_CAT_STATS",
-	"genres": "PROFILE_CAT_GENRES",
-	"records": "PROFILE_CAT_RECORDS",
+	"genres": "PROFILE_CAT_MUSIC",
 }
 const CATEGORY_BTN_HORIZONTAL_PAD := 40.0
 const CATEGORY_BTN_MIN_HEIGHT := 42.0
@@ -40,7 +38,7 @@ func is_valid_category(category: String) -> bool:
 
 func restore_from_settings() -> void:
 	var saved := str(SettingsManager.get_setting("last_profile_category", "overview"))
-	if saved == "medals":
+	if saved == "medals" or saved == "records":
 		saved = "overview"
 	current_category = saved if is_valid_category(saved) else "overview"
 
@@ -126,22 +124,14 @@ func sync_all_button_layouts() -> void:
 		profile.call_deferred("_balance_category_export_row")
 
 
-func ensure_records_button() -> void:
+func remove_records_category_button() -> void:
 	var hbox := _categories_hbox()
-	if hbox and hbox.get_node_or_null("CategoryButtonRecords") == null:
-		var ref_btn := hbox.get_node_or_null("CategoryButtonGenres") as Button
-		var records_btn := Button.new()
-		records_btn.name = "CategoryButtonRecords"
-		records_btn.text = profile.tr("PROFILE_CAT_RECORDS")
-		if ref_btn:
-			records_btn.theme = ref_btn.theme
-		records_btn.set_meta("ui_icon_file", "trophy.svg")
-		records_btn.set_meta("ui_variation_inactive", &"CategoryCover")
-		records_btn.set_meta("ui_variation_active", &"ActiveCover")
-		records_btn.theme_type_variation = &"CategoryCover"
-		hbox.add_child(records_btn)
-		if not records_btn.pressed.is_connected(profile._on_profile_category_selected):
-			records_btn.pressed.connect(profile._on_profile_category_selected.bind("records"))
+	if hbox == null:
+		return
+	var records_btn := hbox.get_node_or_null("CategoryButtonRecords") as Button
+	if records_btn:
+		hbox.remove_child(records_btn)
+		records_btn.queue_free()
 
 
 func _setup_bar_style() -> void:
@@ -193,7 +183,5 @@ func _reset_panel_hover(category: String) -> void:
 			panel = profile.stats_tab
 		"genres":
 			panel = profile.genres_tab
-		"records":
-			panel = profile.records_tab
 	if panel:
 		_UiCategoryButton.reset_hover_in_subtree(panel)

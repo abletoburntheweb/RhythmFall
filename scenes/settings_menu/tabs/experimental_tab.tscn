@@ -215,4 +215,101 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Kick blue / snare green note colors"
 
+[node name="ChartEditorPanel" type="PanelContainer" parent="ScrollWrap/CenterWrap/ContentVBox"]
+layout_mode = 2
+theme_type_variation = &"SectionPanelSky"
+
+[node name="ChartEditorPanelMargin" type="MarginContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="ChartEditorRows" type="VBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ChartEditorHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Chart Editor"
+
+[node name="ChartEditorHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Manual editing of generated drum charts."
+autowrap_mode = 3
+
+[node name="ChartEditorCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Enable Chart Editor"
+
+[node name="TestPlayCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Показывать «Test Play» при нажатии ПКМ на «Играть»"
+
+[node name="GenQAReportsCheckBox" type="CheckBox" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Enable F10 generation reports"
+
+[node name="MidiSamplesFolderHeader" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_type_variation = &"SectionHeaderSky"
+theme_override_font_sizes/font_size = 22
+text = "Папка MIDI Samples"
+
+[node name="MidiSamplesHint" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.66, 0.78, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "Исходные .mid файлы для Chart Editor."
+autowrap_mode = 3
+
+[node name="MidiSamplesFolderHBox" type="HBoxContainer" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MidiSamplesFolderLabel" type="Label" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Путь"
+
+[node name="MidiSamplesFolderLineEdit" type="LineEdit" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 50)
+theme = ExtResource("2_theme")
+theme_override_font_sizes/font_size = 18
+
+[node name="ChooseMidiSamplesFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox"]
+custom_minimum_size = Vector2(140, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 18
+text = "Выбрать…"
+
+[node name="OpenMidiSamplesFolderButton" type="Button" parent="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+theme_override_font_sizes/font_size = 18
+text = "Открыть"
+
+[node name="MidiSamplesFolderDialog" type="FileDialog" parent="."]
+unresizable = true
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox/ChooseMidiSamplesFolderButton" to="." method="_on_choose_midi_samples_folder_pressed"]
+[connection signal="pressed" from="ScrollWrap/CenterWrap/ContentVBox/ChartEditorPanel/ChartEditorPanelMargin/ChartEditorRows/MidiSamplesFolderHBox/OpenMidiSamplesFolderButton" to="." method="_on_open_midi_samples_folder_pressed"]
+[connection signal="dir_selected" from="MidiSamplesFolderDialog" to="." method="_on_midi_samples_folder_dir_selected"]
+
 [connection signal="toggled" from="ScrollWrap/CenterWrap/ContentVBox/ConsolePanel/ConsolePanelMargin/ConsoleRows/DebugMenuCheckBox" to="." method="_on_debug_menu_toggled"]
