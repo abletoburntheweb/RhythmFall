@@ -1,0 +1,137 @@
+# POC: проверка схемы gh-large-releases (ТОЛЬКО ручной запуск).
+#
+# Назначение: подготовить проверку цепочки
+#   большой файл -> gh-large-releases Action -> chunk-assets (<2 GiB)
+#   -> Cloudflare Worker -> один исходный файл у пользователя.
+#
+# Безопасность:
+# - триггер ТОЛЬКО workflow_dispatch (на push/pull_request НЕ запускается);
+# - использует ТОЛЬКО синтетический файл poc-dist/poc-payload.bin;
+# - ЗАПРЕЩЕНО подставлять сюда реальные артефакты
+#   (RhythmFall-*-setup.exe, RhythmFall-*-portable.zip);
+# - релиз по умолчанию DRAFT + prerelease, make_latest не выставляется,
+#   т.е. публичный "latest" релиз проекта не затрагивается;
+# - concurrency guard: два запуска на один tag не пересекаются.
+#
+# Размер тестового файла (input payload_size_mb):
+# - 64 (default): "малый путь" action (файл < 2 000 000 000 байт грузится
+#   целиком одним asset, БЕЗ chunking). Проверяет создание релиза, upload,
+#   таблицу ссылок в body. Worker для скачивания НЕ требуется.
+# - 2100: минимальный размер, включающий НАСТОЯЩИЙ chunking
+#   (2 100 MiB = 2 202 009 600 байт > порога 2 000 000 000 байт
+#   -> 2 chunk-asset + manifest). Запускать ТОЛЬКО с разрешения владельца.
+#   Файл генерируется раннером (dd), в репозиторий ничего не коммитится.
+#
+# Проверка скачивания (цели 2-6 POC):
+# - для малого файла: прямая ссылка github.com из body релиза
+#   (для draft — с токеном, см. шаг "show verify hints");
+# - для chunked файла: ТОЛЬКО через Worker. Если задан input worker_url
+#   (собственный задеплоенный Worker), шаг verify скачает файл через него
+#   и сравнит размер + SHA-256. Без worker_url шаг пропускается.
+#
+# ВАЖНО (проверено по action.yml @main от 2026-10-09):
+# input worker_url объявлен, но НЕ пробрасывается в action/main.py,
+# поэтому ссылки в body релиза всегда ведут на дефолтный Worker автора
+# (https://gh-releases.ading2210.workers.dev). Для production нужен форк
+# с пробросом --worker_url либо вызов main.py напрямую. В POC это
+# учитывается: verify-шаг использует worker_url напрямую, минуя body.
+
+name: "POC: gh-large-releases (manual only)"
+run-name: "POC gh-large-releases tag=${{ inputs.tag_name }} size=${{ inputs.payload_size_mb }}MiB"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag тестового релиза (уникальный на каждый прогон)"
+        required: true
+        default: "poc-gh-large-releases-test1"
+      payload_size_mb:
+        description: "Размер синтетического файла, MiB (64=малый путь, 2100=chunking, только с разрешения)"
+        required: true
+        default: "64"
+      draft:
+        description: "Создать релиз как draft"
+        required: false
+        default: true
+        type: boolean
+      worker_url:
+        description: "URL собственного Worker (пусто = пропустить проверку скачивания)"
+        required: false
+        default: ""
+
+concurrency:
+  group: poc-gh-large-releases-${{ inputs.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  poc-upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # требование README gh-large-releases
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: generate synthetic payload (never real artifacts)
+        id: gen
+        run: |
+          set -euo pipefail
+          mkdir -p poc-dist
+          dd if=/dev/urandom of=poc-dist/poc-payload.bin bs=1M count=${{ inputs.payload_size_mb }} status=progress
+          SIZE=$(stat -c%s poc-dist/poc-payload.bin)
+          SHA=$(sha256sum poc-dist/poc-payload.bin | awk '{print $1}')
+          echo "$SHA  poc-payload.bin" > poc-dist/SHA256.txt
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "## POC payload"
+            echo "- file: poc-payload.bin"
+            echo "- size: $SIZE bytes"
+            echo "- sha256: \`$SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: upload via gh-large-releases
+        uses: ading2210/gh-large-releases@v1
+        with:
+          draft: ${{ inputs.draft }}
+          prerelease: true
+          tag_name: ${{ inputs.tag_name }}
+          name: "POC gh-large-releases ${{ inputs.tag_name }} (TEST, not a game release)"
+          body: "Synthetic POC file for gh-large-releases validation. NOT a RhythmFall release."
+          files: poc-dist/poc-payload.bin
+          # make_latest намеренно НЕ передаём: тестовый релиз не должен
+          # становиться latest. worker_url намеренно НЕ передаём:
+          # upstream action.yml @main его игнорирует (см. шапку файла).
+
+      - name: show verify hints
+        run: |
+          {
+            echo "## Verify (manual)"
+            echo "- expected size: ${{ steps.gen.outputs.size }}"
+            echo "- expected sha256: \`${{ steps.gen.outputs.sha }}\`"
+            echo "- small file: прямая ссылка из body релиза;"
+            echo "  для draft качать с токеном:"
+            echo "  \`curl -L -H \"Authorization: Bearer <TOKEN>\" -o got.bin <direct-url>\`"
+            echo "- chunked file: только через Worker:"
+            echo "  \`curl -L -o got.bin <worker_url>/<owner>/<repo>/releases/download/${{ inputs.tag_name }}/poc-payload.bin\`"
+            echo "- затем: \`test $(stat -c%s got.bin) = ${{ steps.gen.outputs.size }} && echo SIZE_OK\`"
+            echo "  и \`echo \"${{ steps.gen.outputs.sha }}  got.bin\" | sha256sum -c\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: verify download via own worker (optional)
+        if: ${{ inputs.worker_url != '' }}
+        env:
+          WORKER_URL: ${{ inputs.worker_url }}
+          EXPECT_SIZE: ${{ steps.gen.outputs.size }}
+          EXPECT_SHA: ${{ steps.gen.outputs.sha }}
+        run: |
+          set -euo pipefail
+          URL="${WORKER_URL%/}/${{ github.repository }}/releases/download/${{ inputs.tag_name }}/poc-payload.bin"
+          echo "downloading: $URL"
+          curl -fSL --retry 3 -o got.bin "$URL"
+          GOT_SIZE=$(stat -c%s got.bin)
+          echo "got size: $GOT_SIZE / expect: $EXPECT_SIZE"
+          test "$GOT_SIZE" = "$EXPECT_SIZE" && echo "SIZE_OK"
+          echo "$EXPECT_SHA  got.bin" | sha256sum -c
+          echo "POC VERIFY OK" >> "$GITHUB_STEP_SUMMARY"
